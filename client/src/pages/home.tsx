@@ -15,8 +15,8 @@ const Home = () => {
   const { playSound } = useSoundEffects();
 
   // Show active quest and a few available quests
-  const activeQuests = quests.filter(q => q.status === "active");
-  const availableQuests = quests.filter(q => q.status === "available").slice(0, 2);
+  const activeQuests = Array.isArray(quests) ? quests.filter(q => q.status === "active") : [];
+  const availableQuests = Array.isArray(quests) ? quests.filter(q => q.status === "available").slice(0, 2) : [];
   const displayQuests = [...activeQuests, ...availableQuests];
 
   // Get ship status
