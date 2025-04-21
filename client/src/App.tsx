@@ -1,5 +1,5 @@
 import { Route, Switch } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Home from "@/pages/home";
 import Login from "@/pages/login";
 import Quests from "@/pages/quests";
@@ -9,25 +9,50 @@ import Achievements from "@/pages/achievements";
 import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 import MainLayout from "@/components/layout/MainLayout";
-import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { getQueryFn } from "@/lib/queryClient";
 import { ProtectedRoute } from "@/lib/protected-route";
 
 function App() {
-  const { user, loading, authenticate } = useAuth();
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   
+  // Check if there's a token in the URL (for Discord redirect)
   useEffect(() => {
-    // Check if there's a token in the URL (from Discord redirect)
     const hashParams = new URLSearchParams(window.location.hash.substr(1));
     const accessToken = hashParams.get("access_token");
     
     if (accessToken) {
-      authenticate(accessToken);
-      // Clean up the URL
-      window.history.replaceState({}, document.title, window.location.pathname);
+      setIsAuthenticating(true);
+      
+      // Make API call to authenticate with Discord token
+      const authenticateWithDiscord = async () => {
+        try {
+          const response = await fetch('/api/auth/discord', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token: accessToken }),
+          });
+          
+          if (response.ok) {
+            // If authentication successful, redirect to home
+            window.location.href = '/';
+          }
+        } catch (error) {
+          console.error('Error authenticating with Discord:', error);
+        } finally {
+          setIsAuthenticating(false);
+          // Clean up the URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      };
+      
+      authenticateWithDiscord();
     }
-  }, [authenticate]);
+  }, []);
 
-  if (loading) {
+  if (isAuthenticating) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin w-12 h-12 border-4 border-brand-orange border-t-transparent rounded-full"></div>
