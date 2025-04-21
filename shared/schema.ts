@@ -12,6 +12,9 @@ export const users = pgTable("users", {
   avatar: text("avatar_url"),
   roles: json("roles").$type<string[]>().default([]),
   level: integer("level").default(1),
+  xp: integer("xp").default(0), // New field for XP tracking
+  xpToNextLevel: integer("xp_to_next_level").default(300), // XP required for next level
+  completedQuests: json("completed_quests").$type<number[]>().default([]), // Track completed quest IDs
   inventory: json("inventory").$type<Record<string, number>>().default({}),
   createdAt: timestamp("created_at").defaultNow(),
   lastLogin: timestamp("last_login").defaultNow(),
@@ -23,11 +26,12 @@ export const quests = pgTable("quests", {
   date: text("date").notNull(), // YYYY-MM-DD format
   title: text("title").notNull(),
   description: text("description").notNull(),
-  kitRequired: text("kit_required").notNull(),
+  adventureLine: text("adventure_line").notNull(), // Changed from kitRequired to adventureLine
   difficulty: integer("difficulty").notNull(),
-  adventureKit: text("adventure_kit").notNull(),
+  orderInLine: integer("order_in_line").notNull().default(0), // New field for sequential ordering
+  xpReward: integer("xp_reward").notNull().default(100), // New field for XP rewards
   rewards: json("rewards").$type<{type: string, quantity: number}[]>().notNull(),
-  active: boolean("active").default(false),
+  active: boolean("active").default(true), // Changed default to true
 });
 
 // User Quests status table
@@ -114,15 +118,19 @@ export const insertUserSchema = createInsertSchema(users).pick({
   roles: true,
   inventory: true,
   level: true,
+  xp: true,
+  xpToNextLevel: true,
+  completedQuests: true,
 });
 
 export const insertQuestSchema = createInsertSchema(quests).pick({
   date: true,
   title: true,
   description: true,
-  kitRequired: true,
+  adventureLine: true,
   difficulty: true,
-  adventureKit: true,
+  orderInLine: true,
+  xpReward: true,
   rewards: true,
   active: true,
 });
