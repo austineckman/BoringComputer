@@ -1,0 +1,70 @@
+<svg width="400" height="80" viewBox="0 0 400 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Rocket Icon - 30 Days Lost in Space -->
+  <g id="rocket">
+    <rect x="0" y="0" width="80" height="80" rx="4" fill="#FF5B00"/>
+    <path d="M40 15 L35 25 L35 45 L40 60 L45 45 L45 25 L40 15 Z" fill="white" opacity="0.8"/>
+    <path d="M35 45 L25 55 L35 60 L40 60 L40 45 L35 45 Z" fill="white" opacity="0.6"/>
+    <path d="M45 45 L55 55 L45 60 L40 60 L40 45 L45 45 Z" fill="white" opacity="0.6"/>
+    <path d="M35 30 L45 30 L45 40 L35 40 L35 30 Z" fill="#FF5B00"/>
+    <path d="M38 33 L42 33 L42 37 L38 37 L38 33 Z" fill="white" opacity="0.6"/>
+    <path d="M30 50 L25 55 L30 60 L35 55 L30 50 Z" fill="white" opacity="0.4"/>
+    <path d="M50 50 L55 55 L50 60 L45 55 L50 50 Z" fill="white" opacity="0.4"/>
+  </g>
+  
+  <!-- Cogs Icon - Cogsworth City -->
+  <g id="cogs">
+    <rect x="80" y="0" width="80" height="80" rx="4" fill="#00C781"/>
+    <circle cx="105" cy="30" r="12" fill="white" opacity="0.8"/>
+    <circle cx="105" cy="30" r="8" fill="#00C781"/>
+    <circle cx="105" cy="30" r="3" fill="white" opacity="0.6"/>
+    <rect x="103" y="15" width="4" height="5" fill="white" opacity="0.8"/>
+    <rect x="103" y="40" width="4" height="5" fill="white" opacity="0.8"/>
+    <rect x="90" y="28" width="5" height="4" fill="white" opacity="0.8"/>
+    <rect x="115" y="28" width="5" height="4" fill="white" opacity="0.8"/>
+    
+    <circle cx="135" cy="50" r="15" fill="white" opacity="0.8"/>
+    <circle cx="135" cy="50" r="10" fill="#00C781"/>
+    <circle cx="135" cy="50" r="4" fill="white" opacity="0.6"/>
+    <rect x="133" y="30" width="4" height="7" fill="white" opacity="0.8"/>
+    <rect x="133" y="63" width="4" height="7" fill="white" opacity="0.8"/>
+    <rect x="115" y="48" width="7" height="4" fill="white" opacity="0.8"/>
+    <rect x="148" y="48" width="7" height="4" fill="white" opacity="0.8"/>
+  </g>
+  
+  <!-- Box Icon - Pandora's Box -->
+  <g id="box">
+    <rect x="160" y="0" width="80" height="80" rx="4" fill="#9C6ADE"/>
+    <path d="M180 25 L220 25 L220 60 L180 60 L180 25 Z" fill="white" opacity="0.6"/>
+    <path d="M180 25 L200 35 L220 25" stroke="white" stroke-width="2"/>
+    <path d="M200 35 L200 60" stroke="white" stroke-width="2"/>
+    <path d="M180 25 L175 20 L225 20 L220 25" fill="#9C6ADE"/>
+    <path d="M175 20 L175 55 L180 60" stroke="white" stroke-width="2"/>
+    <path d="M225 20 L225 55 L220 60" stroke="white" stroke-width="2"/>
+    <rect x="195" y="40" width="10" height="10" fill="#9C6ADE"/>
+    <circle cx="200" cy="45" r="2" fill="white"/>
+  </g>
+  
+  <!-- Lightbulb Icon - Neon Realm -->
+  <g id="lightbulb">
+    <rect x="240" y="0" width="80" height="80" rx="4" fill="#44A0FF"/>
+    <path d="M270 20 C255 20 255 40 270 40 C285 40 285 20 270 20 Z" fill="white" opacity="0.8"/>
+    <path d="M265 40 L265 50 L275 50 L275 40" stroke="white" stroke-width="2"/>
+    <rect x="265" y="50" width="10" height="4" fill="white" opacity="0.8"/>
+    <rect x="267" y="54" width="6" height="4" fill="white" opacity="0.8"/>
+    <path d="M265 30 L275 30" stroke="#44A0FF" stroke-width="2"/>
+    <path d="M267 26 L273 34" stroke="#44A0FF" stroke-width="2"/>
+    <path d="M273 26 L267 34" stroke="#44A0FF" stroke-width="2"/>
+  </g>
+  
+  <!-- Meteor Icon - Nebula Raiders -->
+  <g id="meteor">
+    <rect x="320" y="0" width="80" height="80" rx="4" fill="#FF7EB9"/>
+    <path d="M340 20 L370 50 L350 60 L330 50 L340 20 Z" fill="white" opacity="0.8"/>
+    <path d="M345 25 L365 45 L350 53 L335 45 L345 25 Z" fill="#FF7EB9"/>
+    <path d="M340 20 L345 15 L375 45 L370 50 Z" fill="white" opacity="0.6"/>
+    <path d="M375 45 L365 55 L350 60 L370 50 L375 45 Z" fill="white" opacity="0.4"/>
+    <circle cx="350" cy="35" r="3" fill="white" opacity="0.6"/>
+    <circle cx="340" cy="45" r="2" fill="white" opacity="0.6"/>
+    <circle cx="355" cy="45" r="2" fill="white" opacity="0.6"/>
+  </g>
+</svg>

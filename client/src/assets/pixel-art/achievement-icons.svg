@@ -1,0 +1,75 @@
+<svg width="480" height="80" viewBox="0 0 480 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- First Contact -->
+  <g id="first-contact">
+    <rect x="0" y="0" width="80" height="80" rx="4" fill="#FF5B00"/>
+    <path d="M40 15 L35 25 L35 45 L40 60 L45 45 L45 25 L40 15 Z" fill="white" opacity="0.8"/>
+    <path d="M35 45 L25 55 L35 60 L40 60 L40 45 L35 45 Z" fill="white" opacity="0.6"/>
+    <path d="M45 45 L55 55 L45 60 L40 60 L40 45 L45 45 Z" fill="white" opacity="0.6"/>
+    <circle cx="40" cy="30" r="5" fill="#FF5B00"/>
+    <circle cx="40" cy="30" r="3" fill="white" opacity="0.8"/>
+  </g>
+  
+  <!-- Let There Be Light -->
+  <g id="light-master">
+    <rect x="80" y="0" width="80" height="80" rx="4" fill="#FFD800"/>
+    <circle cx="120" cy="40" r="20" fill="white" opacity="0.8"/>
+    <path d="M110 35 L130 45" stroke="#FFD800" stroke-width="3"/>
+    <path d="M110 45 L130 35" stroke="#FFD800" stroke-width="3"/>
+    <path d="M120 25 L120 55" stroke="#FFD800" stroke-width="3"/>
+    <path d="M105 40 L135 40" stroke="#FFD800" stroke-width="3"/>
+    <circle cx="120" cy="40" r="5" fill="white"/>
+  </g>
+  
+  <!-- Power Restored -->
+  <g id="power-restored">
+    <rect x="160" y="0" width="80" height="80" rx="4" fill="#44A0FF"/>
+    <rect x="175" y="20" width="50" height="30" rx="4" fill="white" opacity="0.8"/>
+    <rect x="185" y="50" width="10" height="10" fill="white" opacity="0.8"/>
+    <rect x="205" y="50" width="10" height="10" fill="white" opacity="0.8"/>
+    <path d="M180 30 L190 30 L190 40 L180 40 L180 30 Z" fill="#44A0FF"/>
+    <path d="M195 25 L205 25 L205 45 L195 45 L195 25 Z" fill="#44A0FF"/>
+    <path d="M210 30 L220 30 L220 40 L210 40 L210 30 Z" fill="#44A0FF"/>
+    <path d="M185 35 L185 55" stroke="#44A0FF" stroke-width="2"/>
+    <path d="M190 35 L190 55" stroke="#44A0FF" stroke-width="2"/>
+    <path d="M210 35 L210 55" stroke="#44A0FF" stroke-width="2"/>
+    <path d="M215 35 L215 55" stroke="#44A0FF" stroke-width="2"/>
+  </g>
+  
+  <!-- Color Wizard -->
+  <g id="color-wizard">
+    <rect x="240" y="0" width="80" height="80" rx="4" fill="#3ECDA2"/>
+    <circle cx="280" cy="40" r="20" fill="white" opacity="0.8"/>
+    <circle cx="280" cy="40" r="15" fill="#3ECDA2"/>
+    <path d="M280 25 L280 35" stroke="red" stroke-width="2"/>
+    <path d="M280 45 L280 55" stroke="blue" stroke-width="2"/>
+    <path d="M265 40 L275 40" stroke="green" stroke-width="2"/>
+    <path d="M285 40 L295 40" stroke="purple" stroke-width="2"/>
+    <path d="M270 30 L275 35" stroke="yellow" stroke-width="2"/>
+    <path d="M285 45 L290 50" stroke="cyan" stroke-width="2"/>
+    <path d="M270 50 L275 45" stroke="magenta" stroke-width="2"/>
+    <path d="M285 35 L290 30" stroke="orange" stroke-width="2"/>
+  </g>
+  
+  <!-- Sound the Alarm -->
+  <g id="sound-alarm">
+    <rect x="320" y="0" width="80" height="80" rx="4" fill="#9C6ADE"/>
+    <path d="M340 35 L360 35 L365 40 L365 50 L360 55 L340 55 L335 50 L335 40 L340 35 Z" fill="white" opacity="0.8"/>
+    <path d="M345 30 L345 25 L355 25 L355 30" stroke="white" stroke-width="2"/>
+    <path d="M345 60 L345 55 L355 55 L355 60" stroke="white" stroke-width="2"/>
+    <path d="M370 30 C375 35, 375 55, 370 60" stroke="white" stroke-width="2"/>
+    <path d="M375 25 C385 35, 385 55, 375 65" stroke="white" stroke-width="2"/>
+    <circle cx="350" cy="45" r="5" fill="#9C6ADE"/>
+  </g>
+  
+  <!-- Display Master -->
+  <g id="display-master">
+    <rect x="400" y="0" width="80" height="80" rx="4" fill="#FF7EB9"/>
+    <rect x="410" y="25" width="60" height="30" rx="2" fill="white" opacity="0.8"/>
+    <rect x="415" y="30" width="50" height="20" fill="#FF7EB9"/>
+    <path d="M420 35 L460 35" stroke="white" stroke-width="1"/>
+    <path d="M420 40 L460 40" stroke="white" stroke-width="1"/>
+    <path d="M420 45 L440 45" stroke="white" stroke-width="1"/>
+    <path d="M425 55 L455 55 L455 65 L425 65 L425 55 Z" fill="white" opacity="0.8"/>
+    <circle cx="440" cy="60" r="3" fill="#FF7EB9"/>
+  </g>
+</svg>

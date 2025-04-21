@@ -1,0 +1,75 @@
+<svg width="480" height="80" viewBox="0 0 480 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- T-Shirt Icon -->
+  <g id="tshirt">
+    <rect x="0" y="0" width="80" height="80" rx="4" fill="#FFD800"/>
+    <path d="M20 20 L35 15 L45 15 L60 20 L55 30 L50 25 L40 25 L30 25 L25 30 L20 20 Z" fill="white" opacity="0.8"/>
+    <path d="M25 30 L25 60 L55 60 L55 30" stroke="white" stroke-width="2"/>
+    <path d="M30 25 L30 35 L40 40 L50 35 L50 25" stroke="#FFD800" stroke-width="2"/>
+    <path d="M35 50 L45 50" stroke="#FFD800" stroke-width="2"/>
+    <path d="M35 45 L45 45" stroke="#FFD800" stroke-width="2"/>
+  </g>
+  
+  <!-- Sensor Pack Icon -->
+  <g id="sensor-pack">
+    <rect x="80" y="0" width="80" height="80" rx="4" fill="#3ECDA2"/>
+    <rect x="90" y="20" width="60" height="40" rx="2" fill="white" opacity="0.6"/>
+    <rect x="95" y="25" width="50" height="30" fill="#3ECDA2"/>
+    <circle cx="110" cy="35" r="5" fill="white" opacity="0.8"/>
+    <rect x="105" y="45" width="10" height="5" fill="white" opacity="0.8"/>
+    <circle cx="130" cy="35" r="5" fill="white" opacity="0.8"/>
+    <rect x="125" y="45" width="10" height="5" fill="white" opacity="0.8"/>
+    <circle cx="150" cy="40" r="7" fill="white" opacity="0.8"/>
+    <rect x="145" y="30" width="10" height="3" fill="white" opacity="0.8"/>
+  </g>
+  
+  <!-- Patch Icon -->
+  <g id="patch">
+    <rect x="160" y="0" width="80" height="80" rx="4" fill="#9C6ADE"/>
+    <circle cx="200" cy="40" r="20" fill="white" opacity="0.8"/>
+    <circle cx="200" cy="40" r="17" fill="#9C6ADE"/>
+    <path d="M190 30 L210 50" stroke="white" stroke-width="2"/>
+    <path d="M190 50 L210 30" stroke="white" stroke-width="2"/>
+    <path d="M195 27 L205 27" stroke="white" stroke-width="2"/>
+    <path d="M195 53 L205 53" stroke="white" stroke-width="2"/>
+    <path d="M185 35 L185 45" stroke="white" stroke-width="2"/>
+    <path d="M215 35 L215 45" stroke="white" stroke-width="2"/>
+  </g>
+  
+  <!-- HERO Board Pro Icon -->
+  <g id="hero-board">
+    <rect x="240" y="0" width="80" height="80" rx="4" fill="#44A0FF"/>
+    <rect x="250" y="20" width="60" height="40" rx="2" fill="white" opacity="0.6"/>
+    <rect x="255" y="25" width="50" height="30" fill="#44A0FF"/>
+    <circle cx="265" cy="35" r="5" fill="white" opacity="0.6"/>
+    <path d="M275 30 L285 30 L285 40 L275 40 L275 30 Z" fill="white" opacity="0.6"/>
+    <path d="M295 30 L295 40" stroke="white" stroke-width="2"/>
+    <path d="M300 30 L300 40" stroke="white" stroke-width="2"/>
+    <path d="M265 45 L295 45" stroke="white" stroke-width="2"/>
+    <path d="M265 50 L295 50" stroke="white" stroke-width="2"/>
+  </g>
+  
+  <!-- Mystery Box Icon -->
+  <g id="mystery-box">
+    <rect x="320" y="0" width="80" height="80" rx="4" fill="#FF5B00"/>
+    <rect x="335" y="20" width="50" height="40" fill="white" opacity="0.6"/>
+    <rect x="340" y="25" width="40" height="30" fill="#FF5B00"/>
+    <path d="M350 35 L370 35" stroke="white" stroke-width="2"/>
+    <path d="M360 25 L360 45" stroke="white" stroke-width="2"/>
+    <path d="M335 60 L385 60 L385 50 L335 50 L335 60 Z" fill="white" opacity="0.6"/>
+    <path d="M340 55 L380 55" stroke="#FF5B00" stroke-width="2"/>
+  </g>
+  
+  <!-- Circuit Upgrade Icon -->
+  <g id="circuit-upgrade">
+    <rect x="400" y="0" width="80" height="80" rx="4" fill="#FF7EB9"/>
+    <path d="M425 20 L455 20 L455 60 L425 60 L425 20 Z" fill="white" opacity="0.6"/>
+    <path d="M430 25 L450 25 L450 55 L430 55 L430 25 Z" fill="#FF7EB9"/>
+    <circle cx="440" cy="35" r="5" fill="white" opacity="0.6"/>
+    <path d="M435 45 L445 45" stroke="white" stroke-width="2"/>
+    <path d="M435 50 L445 50" stroke="white" stroke-width="2"/>
+    <path d="M415 35 L425 35" stroke="white" stroke-width="2"/>
+    <path d="M455 35 L465 35" stroke="white" stroke-width="2"/>
+    <path d="M440 15 L440 25" stroke="white" stroke-width="2"/>
+    <path d="M440 55 L440 65" stroke="white" stroke-width="2"/>
+  </g>
+</svg>

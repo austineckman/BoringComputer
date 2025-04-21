@@ -1,0 +1,31 @@
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Logo Background -->
+  <rect x="10" y="10" width="80" height="80" rx="8" fill="#06090C"/>
+  
+  <!-- Pixel C -->
+  <path d="M20 30 L20 70 L35 70 L35 60 L30 60 L30 40 L35 40 L35 30 L20 30 Z" fill="#FF5B00"/>
+  
+  <!-- Pixel T -->
+  <path d="M40 30 L40 40 L45 40 L45 70 L55 70 L55 40 L60 40 L60 30 L40 30 Z" fill="#FF9300"/>
+  
+  <!-- Pixel Outer Border -->
+  <rect x="10" y="10" width="80" height="80" rx="8" stroke="#FFD800" stroke-width="2" fill="none"/>
+  
+  <!-- Pixel Inner Elements -->
+  <rect x="70" y="30" width="10" height="10" fill="#3ECDA2"/>
+  <rect x="70" y="45" width="10" height="10" fill="#44A0FF"/>
+  <rect x="70" y="60" width="10" height="10" fill="#9C6ADE"/>
+  
+  <!-- Quest Giver Text -->
+  <path d="M25 80 L30 80 L30 85 L25 85 L25 80 Z" fill="#EFEFEF"/>
+  <path d="M35 80 L40 80 L40 85 L35 85 L35 80 Z" fill="#EFEFEF"/>
+  <path d="M45 80 L50 80 L50 85 L45 85 L45 80 Z" fill="#EFEFEF"/>
+  <path d="M55 80 L60 80 L60 85 L55 85 L55 80 Z" fill="#EFEFEF"/>
+  <path d="M65 80 L70 80 L70 85 L65 85 L65 80 Z" fill="#EFEFEF"/>
+  
+  <!-- Pixel Dots -->
+  <rect x="15" y="15" width="5" height="5" fill="#FFD800"/>
+  <rect x="80" y="15" width="5" height="5" fill="#FFD800"/>
+  <rect x="15" y="80" width="5" height="5" fill="#FFD800"/>
+  <rect x="80" y="80" width="5" height="5" fill="#FFD800"/>
+</svg>
