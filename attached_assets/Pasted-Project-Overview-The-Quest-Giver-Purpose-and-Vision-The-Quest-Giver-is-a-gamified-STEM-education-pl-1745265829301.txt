@@ -1,0 +1,129 @@
+Project Overview: The Quest Giver
+Purpose and Vision
+The Quest Giver is a gamified STEM education platform for Crafting Table, designed to motivate students to engage with educational challenges through interactive quests and reward mechanisms. Students complete daily challenges using physical electronics kits, submit their builds, and earn resources that can be used to craft physical or digital rewards.
+
+Key Technologies
+Backend: Python/Flask web framework
+Database: PostgreSQL (recently added)
+Authentication: Discord OAuth2 integration
+UI Design: Modern Material Design with scroll-based elements
+Styling: Custom CSS with Poppins font family and purple/teal color palette
+Resource Management: Inventory-based reward system (cloth, metal, etc.)
+Core Features
+1. Authentication System
+Primary method: Discord OAuth2 integration with real credentials
+Fallback: Development mock login for testing
+User data stored with profile info (username, email, avatar, roles)
+Admin accounts for quest management (separate from Discord)
+2. Quest Management
+Daily challenge system with quest of the day
+Quest attributes: title, description, kit required, difficulty level
+Material rewards (cloth, metal, tech scrap, etc.) instead of XP
+Admin panel for quest creation, editing, and management
+Date-based quest selection
+3. Submission System
+Users submit builds with descriptions, code, and images
+Image uploads stored as base64 in database
+Reward attribution based on quest completion
+Submission history tracking
+4. Inventory & Resource System
+Six primary resources: cloth, metal, tech scrap, sensor crystal, circuit board, alchemy ink
+User inventory tracking and display
+Resource visualization and counting
+Resources earned through quest completion
+5. Workshop & Crafting
+Guild Workshop for crafting items using resources
+Craftable items: T-Shirt, Mystery Sensor Pack, Neon Realm Patch, Hero Board Pro Upgrade
+Recipe-based crafting requiring specific resource quantities
+Category filtering and guild lore integration
+Visual flow process for crafting experience
+6. Achievement System
+Badge-based achievements for progression tracking
+Tiers: Apprentice, Journeyman, Master, Archmage
+Based on submission count and engagement metrics
+Displayed on user dashboard
+Database Schema
+Users
+ID (Discord ID or email identifier)
+Name
+Email
+Discord ID (if logged in via Discord)
+Avatar URL
+Roles (from Discord, if available)
+XP (legacy, being replaced by inventory)
+Submissions (list of submission IDs)
+Inventory (map of resource name to quantity)
+Created/Last Login timestamps
+Quests
+Date (primary identifier in format YYYY-MM-DD)
+Title
+Description
+Kit required
+Difficulty level
+Rewards (map of resource name to quantity)
+Submissions
+ID (UUID)
+Email (user reference)
+Quest date
+Description
+Code (optional)
+Image data (base64 encoded)
+Rewards (copied from quest at submission time)
+Craftables
+Item ID
+Name
+Image
+Description
+Recipe (map of resource name to quantity required)
+Crafted Items
+Email (user reference)
+Item ID (craftable reference)
+Date crafted
+File Structure and Architecture
+Key Files
+app.py: Main application file with routes and controllers
+config.py: Environment variables and application settings
+db_utils.py: Database access utilities
+forms.py: Form definitions using Flask-WTF
+models.py: Data models
+templates/: HTML templates using Jinja2
+static/: CSS, JavaScript, and image assets
+Templates
+base.html: Main layout template with navigation
+landing.html: Homepage with scroll design
+index.html: Quest of the day display
+workshop.html: Craftable items interface
+inventory.html: User resource display
+dashboard.html: User profile and submissions
+admin/: Admin interface templates
+UI/UX Design
+Visual Identity
+Color Palette: Purple (#7c4dff) and teal (#00bcd4) with light backgrounds
+Typography: Poppins font family for modern, clean appearance
+Icons: Font Awesome icon set
+Imagery: SVG illustrations for quests, resources, and craftables
+Navigation
+Header: Main site navigation with logo, quest link, dashboard, etc.
+Footer: Secondary navigation and copyright
+Authentication Area: Login/profile display in header
+Mobile Responsiveness: Adapts to different screen sizes
+Development Notes
+Authentication
+Discord OAuth uses client credentials stored in environment variables
+Redirect URI must match exactly the one configured in Discord Developer Portal
+Mock login available for development via special route parameter
+Data Storage
+Currently using Replit KV store with potential migration to PostgreSQL
+Resource inventories stored as nested JSON/dictionaries
+Images stored as base64 encoded strings to avoid file hosting complexity
+Admin Access
+Admin credentials: Username: admin, Password: craf1ngTable!
+Admin users can create, edit, and delete quests
+Date-specific quest management
+Current Improvement Areas
+Complete migration to PostgreSQL database (currently in progress)
+Enhanced workshop interface with better visual flow
+Improved mobile responsiveness
+Ensuring Discord OAuth works in all environments
+Handling images more efficiently (potential CDN integration)
+This comprehensive documentation should serve as a solid foundation for training a GPT agent to understand the "The Quest Giver" project. It covers the application's purpose, architecture, features, design principles, and key implementation details.

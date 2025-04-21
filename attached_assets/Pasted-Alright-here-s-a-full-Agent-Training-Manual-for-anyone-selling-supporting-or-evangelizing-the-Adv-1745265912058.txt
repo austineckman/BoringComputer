@@ -1,0 +1,142 @@
+Alright, here’s a full Agent Training Manual for anyone selling, supporting, or evangelizing the Adventure Kit: 30 Days Lost in Space. This is your internal gospel, built to arm agents with everything they need to confidently pitch, explain, and believe in this product.
+
+⸻
+
+🚀 Agent Training: 30 Days Lost in Space
+
+Product Role: Sci-fi inspired, 30-day STEM learning adventure kit
+Target Audience: Parents, educators, and curious kids (Ages 10–99)
+
+⸻
+
+🔧 PRODUCT OVERVIEW
+
+What It Is
+A 30-day hands-on electronics and coding challenge disguised as a survival story. The user plays the role of a stranded space cadet who must learn to repair their ship, system by system, using real hardware and programming.
+
+Mission Format
+	•	30 sequential missions (one per day, 30 minutes each)
+	•	Each mission builds on the last, turning the user into a confident builder
+	•	Missions are tied to a sci-fi narrative with characters and escalating tension
+	•	A cinematic, gamified experience—not a dry course
+
+Goal:
+By Day 30, the user has rebuilt a fully functional control system—complete with lights, buzzers, a display, and button inputs.
+
+⸻
+
+🎒 WHAT’S IN THE KIT?
+
+Core Components (All Arduino-compatible and beginner-friendly):
+	•	1x HERO Board (custom microcontroller, Arduino IDE compatible)
+	•	1x Breadboard
+	•	1x Passive Buzzer
+	•	1x RGB LED
+	•	10x Regular LEDs (various colors)
+	•	1x 128x64 OLED Display
+	•	1x 7-Segment Display
+	•	1x 3-switch DIP Switch
+	•	1x 16-button Keypad
+	•	Jumper wires (male/male and female/male bundles)
+	•	USB data cable
+	•	10x each of the following resistors: 220Ω, 1kΩ, 10kΩ, 100kΩ
+
+Printed Materials & Packaging:
+	•	Premium packaging (styled like a spaceship repair kit)
+	•	“Mission Logbook” for tracking progress
+	•	Instruction manual with circuit diagrams and emergency schematics
+	•	Stickers, badges, or log entries depending on bundle
+
+⸻
+
+👩‍🏫 WHO TEACHES IT?
+
+Main Instructor:
+Astrid, your AI repair assistant.
+
+Voice-guided and quirky, Astrid walks the cadet through each mission with a blend of humor, sass, and clear instruction. She’s not a “teacher”—she’s a teammate with sarcasm and a space suit.
+
+Tone:
+	•	No boring lectures
+	•	No tech talk without explanation
+	•	Everything is challenge-based, fun, and forward-moving
+
+Human Instructor:
+The creator (behind the scenes) is an expert in STEM education and Arduino development. Videos are short, clear, and intentionally cinematic.
+
+⸻
+
+🛸 CHARACTERS & NARRATIVE
+
+You (the Cadet)
+	•	Recently crash-landed on an alien world
+	•	Your mission: rebuild your ship and escape
+	•	Your tools: a mysterious crate of electronics and Astrid
+
+Astrid (AI Companion)
+	•	Your glitchy, lovable guide
+	•	Gives tips, missions, and sometimes messes with you
+	•	Adds comic relief and narrative tension
+
+The Mothership
+	•	Trying to reach you
+	•	Sends mission updates and occasional encrypted transmissions
+
+Antagonistic Forces
+	•	Unstable planet conditions
+	•	Failing systems (power, security, communications)
+	•	The ever-ticking countdown to “oxygen depletion”
+
+⸻
+
+🎯 CORE SELLING POINTS
+
+What Makes It Different
+	•	It’s not “just another kit”—it’s an immersive experience
+	•	It makes STEM accessible, thrilling, and progress-driven
+	•	It removes fear of failure through humor and story
+	•	It’s built for bonding (parent + kid), solo learning, or classrooms
+	•	Instant feedback: lights flash, buzzers sound, displays react to your code
+
+⸻
+
+🔥 HOW TO POSITION IT
+
+To Parents:
+	•	“This gives your child a real win every single day.”
+	•	“Takes 30 minutes or less—structured, guided, low-lift.”
+	•	“Teaches real skills like coding, electronics, and problem solving through play.”
+	•	“No tech background needed. You’ll be amazed how far they get.”
+
+To Educators:
+	•	“30 self-contained lessons. Perfect for enrichment or STEM club use.”
+	•	“No prep. No soldering. No burnout.”
+	•	“Progressive curriculum disguised as a fun sci-fi game.”
+
+To Kids (via parents):
+	•	“Build your own control panel, fight failing systems, and escape an alien planet.”
+	•	“Learn to hack, wire, and code with Astrid at your side.”
+	•	“It’s like Among Us, but you actually learn something real.”
+
+⸻
+
+💡 FAQ FOR AGENTS
+
+Q: Do you need any experience to start?
+A: None. If you can follow instructions and plug in a USB cable, you’re good.
+
+Q: What if my child doesn’t like it?
+A: Try the first 5 missions. If they’re not hooked, we offer a money-back guarantee.
+
+Q: Can I reuse the kit?
+A: Yes. Missions can be redone and explored creatively. There are also bonus missions.
+
+Q: Is it screen-based?
+A: Only the video guide and coding environment (Arduino IDE). Most of the time is hands-on.
+
+Q: Is this suitable for classrooms?
+A: 100%. Educator bundles and licenses available.
+
+⸻
+
+Want this turned into a printable one-sheet or a full training deck with talking points and objection handling? I can also generate a script for onboarding new sales reps or support agents.
