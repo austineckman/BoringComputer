@@ -1,0 +1,54 @@
+<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="400" height="400" fill="#06090C"/>
+  
+  <!-- Stars (small) -->
+  <rect x="50" y="60" width="2" height="2" fill="white" opacity="0.7"/>
+  <rect x="120" y="40" width="2" height="2" fill="white" opacity="0.5"/>
+  <rect x="200" y="80" width="2" height="2" fill="white" opacity="0.6"/>
+  <rect x="280" y="30" width="2" height="2" fill="white" opacity="0.7"/>
+  <rect x="350" y="90" width="2" height="2" fill="white" opacity="0.5"/>
+  <rect x="30" y="150" width="2" height="2" fill="white" opacity="0.6"/>
+  <rect x="90" y="120" width="2" height="2" fill="white" opacity="0.7"/>
+  <rect x="170" y="170" width="2" height="2" fill="white" opacity="0.5"/>
+  <rect x="250" y="130" width="2" height="2" fill="white" opacity="0.6"/>
+  <rect x="320" y="180" width="2" height="2" fill="white" opacity="0.7"/>
+  <rect x="60" y="240" width="2" height="2" fill="white" opacity="0.5"/>
+  <rect x="130" y="210" width="2" height="2" fill="white" opacity="0.6"/>
+  <rect x="210" y="260" width="2" height="2" fill="white" opacity="0.7"/>
+  <rect x="290" y="220" width="2" height="2" fill="white" opacity="0.5"/>
+  <rect x="360" y="270" width="2" height="2" fill="white" opacity="0.6"/>
+  <rect x="40" y="330" width="2" height="2" fill="white" opacity="0.7"/>
+  <rect x="110" y="300" width="2" height="2" fill="white" opacity="0.5"/>
+  <rect x="190" y="350" width="2" height="2" fill="white" opacity="0.6"/>
+  <rect x="270" y="310" width="2" height="2" fill="white" opacity="0.7"/>
+  <rect x="340" y="360" width="2" height="2" fill="white" opacity="0.5"/>
+  
+  <!-- Stars (medium) -->
+  <rect x="75" y="85" width="3" height="3" fill="white" opacity="0.8"/>
+  <rect x="235" y="55" width="3" height="3" fill="white" opacity="0.8"/>
+  <rect x="155" y="145" width="3" height="3" fill="white" opacity="0.8"/>
+  <rect x="275" y="195" width="3" height="3" fill="white" opacity="0.8"/>
+  <rect x="85" y="265" width="3" height="3" fill="white" opacity="0.8"/>
+  <rect x="175" y="295" width="3" height="3" fill="white" opacity="0.8"/>
+  <rect x="305" y="335" width="3" height="3" fill="white" opacity="0.8"/>
+  
+  <!-- Nebula effects -->
+  <circle cx="100" y="120" r="50" fill="#FF5B00" opacity="0.1"/>
+  <circle cx="320" y="280" r="70" fill="#FF9300" opacity="0.1"/>
+  
+  <!-- Pixel planet -->
+  <circle cx="320" y="100" r="20" fill="#0D1117" stroke="#21262D" stroke-width="2"/>
+  <rect x="308" y="90" width="4" height="4" fill="#44A0FF" opacity="0.7"/>
+  <rect x="318" y="88" width="6" height="6" fill="#3ECDA2" opacity="0.6"/>
+  <rect x="328" y="94" width="4" height="4" fill="#FF7EB9" opacity="0.5"/>
+  <rect x="312" y="102" width="5" height="5" fill="#FFD800" opacity="0.6"/>
+  <rect x="324" y="106" width="4" height="4" fill="#9C6ADE" opacity="0.7"/>
+  
+  <!-- Pixel comet -->
+  <path d="M70 250 L90 230 L92 232 L72 252 Z" fill="white" opacity="0.9"/>
+  <path d="M60 260 L70 250 L72 252 L62 262 Z" fill="white" opacity="0.7"/>
+  <path d="M50 270 L60 260 L62 262 L52 272 Z" fill="white" opacity="0.5"/>
+  <path d="M40 280 L50 270 L52 272 L42 282 Z" fill="white" opacity="0.3"/>
+  <path d="M30 290 L40 280 L42 282 L32 292 Z" fill="white" opacity="0.2"/>
+</svg>

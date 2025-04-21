@@ -1,0 +1,64 @@
+<svg width="480" height="80" viewBox="0 0 480 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cloth Icon -->
+  <g id="cloth">
+    <rect x="0" y="0" width="80" height="80" rx="4" fill="#9C6ADE"/>
+    <path d="M20 20 V60 H60 V20 H20 Z" fill="white" opacity="0.2"/>
+    <path d="M30 25 H50 V35 H30 V25 Z" fill="white" opacity="0.6"/>
+    <path d="M25 40 V55 H35 V40 H25 Z" fill="white" opacity="0.6"/>
+    <path d="M45 40 V55 H55 V40 H45 Z" fill="white" opacity="0.6"/>
+    <rect x="35" y="37" width="10" height="3" fill="white" opacity="0.6"/>
+  </g>
+  
+  <!-- Metal Icon -->
+  <g id="metal">
+    <rect x="80" y="0" width="80" height="80" rx="4" fill="#B4B4B4"/>
+    <path d="M100 30 L120 20 L140 20 L160 30 V50 L140 60 L120 60 L100 50 V30 Z" fill="white" opacity="0.3"/>
+    <path d="M120 25 L140 25 L150 30 V50 L140 55 L120 55 L110 50 V30 L120 25 Z" fill="white" opacity="0.6"/>
+    <path d="M120 30 L140 30 L145 35 V45 L140 50 L120 50 L115 45 V35 L120 30 Z" fill="#B4B4B4"/>
+    <rect x="125" y="35" width="10" height="10" fill="white" opacity="0.4"/>
+  </g>
+  
+  <!-- Tech Scrap Icon -->
+  <g id="tech-scrap">
+    <rect x="160" y="0" width="80" height="80" rx="4" fill="#3ECDA2"/>
+    <path d="M180 30 H195 V50 H180 V30 Z" fill="white" opacity="0.6"/>
+    <path d="M200 20 H215 V40 H200 V20 Z" fill="white" opacity="0.6"/>
+    <path d="M220 25 H235 V45 H220 V25 Z" fill="white" opacity="0.6"/>
+    <path d="M190 55 H225 V60 H190 V55 Z" fill="white" opacity="0.6"/>
+    <path d="M180 40 H190 V45 H180 V40 Z" fill="white" opacity="0.4"/>
+    <path d="M200 45 H210 V50 H200 V45 Z" fill="white" opacity="0.4"/>
+    <path d="M220 50 H230 V55 H220 V50 Z" fill="white" opacity="0.4"/>
+  </g>
+  
+  <!-- Sensor Crystal Icon -->
+  <g id="sensor-crystal">
+    <rect x="240" y="0" width="80" height="80" rx="4" fill="#44A0FF"/>
+    <path d="M280 15 L300 30 L290 45 L270 60 L260 45 L270 30 L280 15 Z" fill="white" opacity="0.6"/>
+    <path d="M280 20 L295 30 L285 45 L270 55 L265 45 L270 35 L280 20 Z" fill="white" opacity="0.3"/>
+    <path d="M280 25 L290 30 L285 40 L275 50 L270 40 L275 35 L280 25 Z" fill="white" opacity="0.6"/>
+  </g>
+  
+  <!-- Circuit Board Icon -->
+  <g id="circuit-board">
+    <rect x="320" y="0" width="80" height="80" rx="4" fill="#00C781"/>
+    <rect x="330" y="20" width="60" height="40" rx="2" fill="white" opacity="0.2"/>
+    <path d="M335 25 H385 V55 H335 V25 Z" fill="#00C781"/>
+    <circle cx="345" cy="35" r="4" fill="gold"/>
+    <circle cx="345" cy="45" r="4" fill="gold"/>
+    <circle cx="375" cy="35" r="4" fill="gold"/>
+    <circle cx="375" cy="45" r="4" fill="gold"/>
+    <path d="M345 35 H375" stroke="gold" stroke-width="2"/>
+    <path d="M345 45 H375" stroke="gold" stroke-width="2"/>
+    <path d="M350 28 V35" stroke="gold" stroke-width="2"/>
+    <path d="M370 45 V52" stroke="gold" stroke-width="2"/>
+  </g>
+  
+  <!-- Alchemy Ink Icon -->
+  <g id="alchemy-ink">
+    <rect x="400" y="0" width="80" height="80" rx="4" fill="#FF7EB9"/>
+    <path d="M430 20 V35 L440 45 L450 35 V20 H430 Z" fill="white" opacity="0.6"/>
+    <rect x="435" y="20" width="10" height="5" fill="white" opacity="0.3"/>
+    <path d="M425 45 C425 55 435 65 440 65 C445 65 455 55 455 45 L440 30 L425 45 Z" fill="white" opacity="0.6"/>
+    <path d="M430 45 C430 52 435 60 440 60 C445 60 450 52 450 45 L440 35 L430 45 Z" fill="white" opacity="0.3"/>
+  </g>
+</svg>

@@ -1,0 +1,214 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Press+Start+2P&display=swap');
+
+:root {
+  --background: 220 31% 4%;
+  --foreground: 0 0% 94%;
+  --muted: 217 33% 11%;
+  --muted-foreground: 0 0% 80%;
+  --popover: 217 33% 8%;
+  --popover-foreground: 0 0% 94%;
+  --card: 217 33% 11%;
+  --card-foreground: 0 0% 94%;
+  --border: 21 100% 50% / 30%;
+  --input: 217 33% 16%;
+  --primary: 21 100% 50%;
+  --primary-foreground: 220 31% 4%;
+  --secondary: 32 100% 58%;
+  --secondary-foreground: 220 31% 4%;
+  --accent: 49 100% 50%;
+  --accent-foreground: 220 31% 4%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 94%;
+  --ring: 21 100% 50%;
+  --radius: 0.5rem;
+  
+  /* CraftingTable brand colors */
+  --space-darkest: 216 31% 4%;
+  --space-dark: 213 33% 8%;
+  --space-mid: 217 27% 12%;
+  --space-light: 217 19% 16%;
+  --brand-orange: 21 100% 50%;
+  --brand-yellow: 32 100% 58%;
+  --brand-gold: 49 100% 50%;
+  --brand-light: 0 0% 94%;
+  
+  /* Resource colors */
+  --resource-cloth: 270 61% 65%;
+  --resource-metal: 0 0% 71%;
+  --resource-tech-scrap: 160 63% 52%;
+  --resource-sensor-crystal: 210 100% 64%;
+  --resource-circuit-board: 165 100% 39%;
+  --resource-alchemy-ink: 330 100% 75%;
+  
+  /* Chart colors */
+  --chart-1: var(--brand-orange);
+  --chart-2: var(--brand-yellow);
+  --chart-3: var(--brand-gold);
+  --chart-4: var(--resource-tech-scrap);
+  --chart-5: var(--resource-circuit-board);
+  
+  /* Sidebar colors */
+  --sidebar-background: var(--space-dark);
+  --sidebar-foreground: var(--brand-light);
+  --sidebar-primary: var(--brand-orange);
+  --sidebar-primary-foreground: var(--space-darkest);
+  --sidebar-accent: var(--brand-yellow);
+  --sidebar-accent-foreground: var(--space-darkest);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+}
+
+body {
+  background-color: hsl(var(--space-darkest));
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(255, 91, 0, 0.1) 0%, transparent 20%),
+    radial-gradient(circle at 80% 70%, rgba(255, 147, 0, 0.1) 0%, transparent 20%);
+  min-height: 100vh;
+  font-family: 'Poppins', sans-serif;
+  color: hsl(var(--brand-light));
+}
+
+.font-pixel {
+  font-family: 'Press Start 2P', cursive;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply antialiased bg-background text-foreground;
+  }
+}
+
+.pixel-border {
+  position: relative;
+  box-shadow: 0 0 0 2px hsl(var(--space-darkest));
+}
+
+.pixel-border::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  background: transparent;
+  z-index: -1;
+  border: 2px solid rgba(255, 147, 0, 0.5);
+  clip-path: polygon(
+    0 10px, 10px 0, calc(100% - 10px) 0, 100% 10px, 
+    100% calc(100% - 10px), calc(100% - 10px) 100%, 
+    10px 100%, 0 calc(100% - 10px)
+  );
+}
+
+.resource-item {
+  transition: transform 0.2s;
+}
+
+.resource-item:hover {
+  transform: translateY(-5px);
+}
+
+.quest-card {
+  transition: all 0.3s;
+}
+
+.quest-card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 15px rgba(255, 91, 0, 0.4);
+}
+
+.pixel-button {
+  clip-path: polygon(
+    0 5px, 5px 0, calc(100% - 5px) 0, 100% 5px, 
+    100% calc(100% - 5px), calc(100% - 5px) 100%, 
+    5px 100%, 0 calc(100% - 5px)
+  );
+  transition: all 0.2s;
+}
+
+.pixel-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+}
+
+.pixel-button:active {
+  transform: translateY(0);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0.3);
+}
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+}
+
+.crafting-recipe {
+  transition: all 0.3s ease;
+}
+
+.crafting-recipe:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(255, 216, 0, 0.2);
+}
+
+/* Star field animation */
+.star-field {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background-color: white;
+  border-radius: 50%;
+  opacity: 0.5;
+  animation: twinkle 5s infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.8; }
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--space-dark));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--brand-orange));
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--brand-yellow));
+}
