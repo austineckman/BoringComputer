@@ -24,10 +24,11 @@ export const useAuth = () => {
   const { toast } = useToast();
 
   // Get current user
-  const { data: user, isLoading: loading } = useQuery<User | null>({
+  const { data: user, isLoading: loading, refetch } = useQuery<User | null>({
     queryKey: ['/api/auth/me'],
     retry: false,
-    initialData: null
+    initialData: null,
+    refetchOnWindowFocus: true
   });
 
   // Login with Discord
@@ -49,13 +50,21 @@ export const useAuth = () => {
       const response = await apiRequest('POST', '/api/auth/login', credentials);
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setIsLoggingIn(false);
+      // Set the cache and force a refetch to ensure we're synchronized
       queryClient.setQueryData(['/api/auth/me'], data);
+      await refetch();
+      
       toast({
         title: "Login Successful",
         description: `Welcome back, ${data.username}!`,
       });
+      
+      // Give time for React to process the state update before redirecting
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 500);
     },
     onError: (error) => {
       setIsLoggingIn(false);
@@ -78,13 +87,20 @@ export const useAuth = () => {
       const response = await apiRequest('POST', '/api/auth/discord', { token });
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setIsLoggingIn(false);
       queryClient.setQueryData(['/api/auth/me'], data);
+      await refetch();
+      
       toast({
         title: "Login Successful",
         description: `Welcome back, ${data.username}!`,
       });
+      
+      // Give time for React to process the state update before redirecting
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 500);
     },
     onError: (error) => {
       setIsLoggingIn(false);
@@ -113,6 +129,11 @@ export const useAuth = () => {
         title: "Logged Out",
         description: "You have been successfully logged out",
       });
+      
+      // Redirect to login page after logout
+      setTimeout(() => {
+        window.location.href = "/auth";
+      }, 500);
     }
   });
 
@@ -121,7 +142,7 @@ export const useAuth = () => {
   }, [logoutMutation]);
 
   // Admin login for development/testing
-  const adminLogin = useCallback(() => {
+  const adminLogin = useCallback(async () => {
     const adminUser: User = {
       id: "123456789",
       username: "Admin",
@@ -140,12 +161,18 @@ export const useAuth = () => {
     };
     
     queryClient.setQueryData(['/api/auth/me'], adminUser);
+    await refetch();
     
     toast({
       title: "Admin Login",
       description: "Logged in with admin account",
     });
-  }, [toast]);
+    
+    // Give time for React to process the state update before redirecting
+    setTimeout(() => {
+      window.location.href = "/";
+    }, 500);
+  }, [toast, refetch]);
 
   return {
     user,

@@ -12,9 +12,9 @@ interface MainLayoutProps {
 const MainLayout = ({ children }: MainLayoutProps) => {
   const { user, loading } = useAuth();
 
-  // If not loading and no user, redirect to login
+  // If not loading and no user, redirect to auth page
   if (!loading && !user) {
-    return <Redirect to="/login" />;
+    return <Redirect to="/auth" />;
   }
 
   // Show loading indicator while checking auth
