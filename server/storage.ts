@@ -268,6 +268,10 @@ export class MemStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
     return this.users.get(id);
   }
+  
+  async getUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
@@ -630,37 +634,66 @@ export class MemStorage implements IStorage {
       questsByAdventure[adventureLine].push(quest);
     }
     
-    // Sort each adventure's quests by order
-    for (const adventureLine in questsByAdventure) {
-      questsByAdventure[adventureLine].sort((a, b) => 
-        (a.orderInLine || 0) - (b.orderInLine || 0)
-      );
-    }
-    
-    // Determine available quests
+    // For each adventure line, determine available quests
     const availableQuests: Quest[] = [];
     
-    // For each adventure line
     for (const adventureLine in questsByAdventure) {
-      const adventureQuests = questsByAdventure[adventureLine];
+      // Sort quests by order in line
+      const adventureQuests = questsByAdventure[adventureLine].sort(
+        (a, b) => (a.orderInLine || 0) - (b.orderInLine || 0)
+      );
       
-      // First quest in each adventure is always available
+      // First quest in each adventure line is always available
       if (adventureQuests.length > 0) {
         const firstQuest = adventureQuests[0];
+        
+        // Check if user already has this quest in their userQuests
+        const existingUserQuest = userQuests.find(uq => uq.questId === firstQuest.id);
+        
+        if (!existingUserQuest) {
+          // Create user quest entry if it doesn't exist
+          await this.createUserQuest({
+            userId,
+            questId: firstQuest.id,
+            status: 'available'
+          });
+        } else if (existingUserQuest.status === 'locked') {
+          // Update status to available if it's currently locked
+          await this.updateUserQuest(existingUserQuest.id, { status: 'available' });
+        }
+        
+        // Add first quest to available quests if not completed
         if (!completedQuestIds.includes(firstQuest.id)) {
           availableQuests.push(firstQuest);
         }
-      }
-      
-      // For subsequent quests, check if previous quest is completed
-      for (let i = 1; i < adventureQuests.length; i++) {
-        const currentQuest = adventureQuests[i];
-        const previousQuest = adventureQuests[i-1];
         
-        // If previous quest is completed, current quest is available
-        if (completedQuestIds.includes(previousQuest.id) && 
-            !completedQuestIds.includes(currentQuest.id)) {
-          availableQuests.push(currentQuest);
+        // Check subsequent quests
+        for (let i = 1; i < adventureQuests.length; i++) {
+          const quest = adventureQuests[i];
+          const previousQuest = adventureQuests[i - 1];
+          
+          // If previous quest is completed, this quest becomes available
+          if (completedQuestIds.includes(previousQuest.id)) {
+            // Check if user already has this quest in their userQuests
+            const existingUserQuest = userQuests.find(uq => uq.questId === quest.id);
+            
+            if (!existingUserQuest) {
+              // Create user quest entry
+              await this.createUserQuest({
+                userId,
+                questId: quest.id,
+                status: 'available'
+              });
+            } else if (existingUserQuest.status === 'locked') {
+              // Update status to available
+              await this.updateUserQuest(existingUserQuest.id, { status: 'available' });
+            }
+            
+            // Add to available quests if not already completed
+            if (!completedQuestIds.includes(quest.id)) {
+              availableQuests.push(quest);
+            }
+          }
         }
       }
     }
