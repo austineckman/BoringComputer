@@ -113,6 +113,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   avatar: true,
   roles: true,
   inventory: true,
+  level: true,
 });
 
 export const insertQuestSchema = createInsertSchema(quests).pick({
