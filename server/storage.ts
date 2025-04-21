@@ -61,6 +61,11 @@ export interface IStorage {
   // Inventory History methods
   getInventoryHistory(userId: number): Promise<InventoryHistory[]>;
   createInventoryHistory(inventoryHistory: InsertInventoryHistory): Promise<InventoryHistory>;
+  
+  // XP and Level methods
+  addUserXP(userId: number, xpAmount: number): Promise<User>;
+  getAvailableQuestsForUser(userId: number): Promise<Quest[]>;
+  getQuestsByAdventureLine(adventureLine: string): Promise<Quest[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -274,13 +279,19 @@ export class MemStorage implements IStorage {
     const id = this.userIdCounter++;
     const createdAt = new Date();
     const lastLogin = new Date();
-    const level = 1;
-    const inventory = {};
+    const level = insertUser.level || 1;
+    const xp = insertUser.xp || 0;
+    const xpToNextLevel = insertUser.xpToNextLevel || 300;
+    const completedQuests = insertUser.completedQuests || [];
+    const inventory = insertUser.inventory || {};
     
     const user: User = {
       id,
       ...insertUser,
       level,
+      xp,
+      xpToNextLevel,
+      completedQuests,
       inventory,
       createdAt,
       lastLogin
@@ -544,6 +555,111 @@ export class MemStorage implements IStorage {
     
     this.inventoryHistory.set(id, inventoryHistory);
     return inventoryHistory;
+  }
+  
+  // XP and Level methods
+  async addUserXP(userId: number, xpAmount: number): Promise<User> {
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    // Add XP to user
+    let newXP = (user.xp || 0) + xpAmount;
+    let newLevel = user.level || 1;
+    let newXpToNextLevel = user.xpToNextLevel || 300;
+    
+    // Check if user leveled up
+    while (newXP >= newXpToNextLevel) {
+      // Level up!
+      newXP -= newXpToNextLevel;
+      newLevel++;
+      
+      // Calculate new XP requirement for next level (increases with each level)
+      newXpToNextLevel = Math.floor(newXpToNextLevel * 1.2);
+    }
+    
+    // Update user with new XP and level
+    const updatedUser = await this.updateUser(userId, {
+      xp: newXP,
+      level: newLevel,
+      xpToNextLevel: newXpToNextLevel
+    });
+    
+    if (!updatedUser) {
+      throw new Error(`Failed to update user ${userId} with new XP`);
+    }
+    
+    return updatedUser;
+  }
+  
+  async getQuestsByAdventureLine(adventureLine: string): Promise<Quest[]> {
+    // Get all quests for this adventure line, sorted by their order
+    return Array.from(this.quests.values())
+      .filter(quest => quest.adventureLine === adventureLine && quest.active)
+      .sort((a, b) => (a.orderInLine || 0) - (b.orderInLine || 0));
+  }
+  
+  async getAvailableQuestsForUser(userId: number): Promise<Quest[]> {
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    const completedQuestIds = user.completedQuests || [];
+    const userQuests = await this.getUserQuests(userId);
+    
+    // Get all active quests
+    const allQuests = Array.from(this.quests.values())
+      .filter(quest => quest.active);
+    
+    // Group quests by adventure line
+    const questsByAdventure: Record<string, Quest[]> = {};
+    
+    for (const quest of allQuests) {
+      const adventureLine = quest.adventureLine;
+      if (!questsByAdventure[adventureLine]) {
+        questsByAdventure[adventureLine] = [];
+      }
+      questsByAdventure[adventureLine].push(quest);
+    }
+    
+    // Sort each adventure's quests by order
+    for (const adventureLine in questsByAdventure) {
+      questsByAdventure[adventureLine].sort((a, b) => 
+        (a.orderInLine || 0) - (b.orderInLine || 0)
+      );
+    }
+    
+    // Determine available quests
+    const availableQuests: Quest[] = [];
+    
+    // For each adventure line
+    for (const adventureLine in questsByAdventure) {
+      const adventureQuests = questsByAdventure[adventureLine];
+      
+      // First quest in each adventure is always available
+      if (adventureQuests.length > 0) {
+        const firstQuest = adventureQuests[0];
+        if (!completedQuestIds.includes(firstQuest.id)) {
+          availableQuests.push(firstQuest);
+        }
+      }
+      
+      // For subsequent quests, check if previous quest is completed
+      for (let i = 1; i < adventureQuests.length; i++) {
+        const currentQuest = adventureQuests[i];
+        const previousQuest = adventureQuests[i-1];
+        
+        // If previous quest is completed, current quest is available
+        if (completedQuestIds.includes(previousQuest.id) && 
+            !completedQuestIds.includes(currentQuest.id)) {
+          availableQuests.push(currentQuest);
+        }
+      }
+    }
+    
+    return availableQuests;
   }
 }
 
