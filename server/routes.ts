@@ -129,8 +129,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate session token
       const sessionToken = `${user.id.toString(16).padStart(8, '0')}-${uuidv4().substring(9)}`;
       
-      // Set session cookie
-      res.setHeader('Set-Cookie', `sessionToken=${sessionToken}; Path=/; HttpOnly; SameSite=Lax`);
+      // Set session cookie with more permissive settings for development
+      res.setHeader('Set-Cookie', `sessionToken=${sessionToken}; Path=/; HttpOnly; SameSite=None; Secure=false`);
       
       // Return user data
       return res.json({
@@ -224,8 +224,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Generate session token
         const sessionToken = `${user.id.toString(16).padStart(8, '0')}-${uuidv4().substring(9)}`;
         
-        // Set session cookie
-        res.setHeader('Set-Cookie', `sessionToken=${sessionToken}; Path=/; HttpOnly; SameSite=Lax`);
+        // Set session cookie with more permissive settings for development
+        res.setHeader('Set-Cookie', `sessionToken=${sessionToken}; Path=/; HttpOnly; SameSite=None; Secure=false`);
         
         // Return user data
         return res.json({
