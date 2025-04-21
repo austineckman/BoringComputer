@@ -66,6 +66,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Auth routes
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+      
+      // Demo accounts for testing
+      let user;
+      
+      if (username === 'demo' && password === 'demo123') {
+        // Demo user account
+        user = await storage.getUserByUsername('demo');
+        
+        if (!user) {
+          // Create demo user if it doesn't exist
+          user = await storage.createUser({
+            username: 'demo',
+            email: 'demo@questgiver.com',
+            password: 'demo123', // In a real app, this would be hashed
+            roles: ['user'],
+            level: 1,
+            inventory: {
+              'cloth': 5,
+              'metal': 3,
+              'tech-scrap': 2,
+              'sensor-crystal': 1,
+              'circuit-board': 0,
+              'alchemy-ink': 0
+            }
+          });
+        }
+      } else if (username === 'admin' && password === 'admin123') {
+        // Admin account
+        user = await storage.getUserByUsername('admin');
+        
+        if (!user) {
+          // Create admin user if it doesn't exist
+          user = await storage.createUser({
+            username: 'admin',
+            email: 'admin@questgiver.com',
+            password: 'admin123', // In a real app, this would be hashed
+            roles: ['admin', 'user'],
+            level: 10,
+            inventory: {
+              'cloth': 100,
+              'metal': 100,
+              'tech-scrap': 100,
+              'sensor-crystal': 100,
+              'circuit-board': 100,
+              'alchemy-ink': 100
+            }
+          });
+        }
+      } else {
+        // In a real app, this would check the database and verify password hashes
+        return res.status(401).json({ message: "Invalid username or password" });
+      }
+      
+      // Generate session token
+      const sessionToken = `${user.id.toString(16).padStart(8, '0')}-${uuidv4().substring(9)}`;
+      
+      // Set session cookie
+      res.setHeader('Set-Cookie', `sessionToken=${sessionToken}; Path=/; HttpOnly; SameSite=Lax`);
+      
+      // Return user data
+      return res.json({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        avatar: user.avatar,
+        roles: user.roles,
+        level: user.level,
+        inventory: user.inventory
+      });
+      
+    } catch (error) {
+      console.error("Login error:", error);
+      return res.status(500).json({ message: "Server error during login" });
+    }
+  });
+  
   app.post('/api/auth/discord', async (req, res) => {
     try {
       const { token } = req.body;
