@@ -40,6 +40,10 @@ function App() {
         <Login />
       </Route>
       
+      <Route path="/auth">
+        <Login />
+      </Route>
+      
       {/* Protected routes */}
       <Route path="/">
         <MainLayout>
