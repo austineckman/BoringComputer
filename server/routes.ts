@@ -8,24 +8,32 @@ import { createHash } from "crypto";
 
 // Setup authentication middleware
 const authenticate = async (req: Request, res: Response, next: Function) => {
-  const sessionToken = req.cookies.sessionToken;
+  const sessionToken = req.cookies?.sessionToken;
   
   if (!sessionToken) {
+    console.log('No session token found');
     return res.status(401).json({ message: "Authentication required" });
   }
   
   try {
-    // In a real app, validate the session token against a database
-    // For the demo, we'll check if it's a valid UUID
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionToken)) {
-      return res.status(401).json({ message: "Invalid session" });
+    // For the demo, we'll use a simplified approach
+    // Extract user ID from the first part of the token
+    const userIdHex = sessionToken.split('-')[0];
+    // If format is invalid, reject
+    if (!userIdHex || !/^[0-9a-f]+$/i.test(userIdHex)) {
+      console.log('Invalid token format:', sessionToken);
+      return res.status(401).json({ message: "Invalid session token format" });
     }
     
-    // Get the userId from the session (simplified for demo)
-    const userId = parseInt(sessionToken.split('-')[0], 16) % 1000; // Convert first hex part to userId
+    // Convert hex ID to number (limit to reasonable values)
+    const userId = Math.min(parseInt(userIdHex, 16) % 1000, 100);  
+    console.log('Authenticating user ID:', userId);
+    
+    // Get user from storage
     const user = await storage.getUser(userId);
     
     if (!user) {
+      console.log('User not found for ID:', userId);
       return res.status(401).json({ message: "User not found" });
     }
     
@@ -33,6 +41,7 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
     (req as any).user = user;
     next();
   } catch (error) {
+    console.error('Authentication error:', error);
     return res.status(500).json({ message: "Authentication error" });
   }
 };

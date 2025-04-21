@@ -94,7 +94,7 @@ const Login = () => {
                         id="username" 
                         type="text" 
                         placeholder="Enter your username"
-                        className="bg-space-dark pl-10"
+                        className="bg-space-dark pl-10 text-brand-light"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         required
@@ -112,7 +112,7 @@ const Login = () => {
                         id="password" 
                         type="password" 
                         placeholder="Enter your password"
-                        className="bg-space-dark pl-10"
+                        className="bg-space-dark pl-10 text-brand-light"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
@@ -156,7 +156,7 @@ const Login = () => {
                         id="admin-password" 
                         type="password" 
                         placeholder="Enter admin password"
-                        className="bg-space-dark pl-10"
+                        className="bg-space-dark pl-10 text-brand-light"
                         value={adminPassword}
                         onChange={(e) => setAdminPassword(e.target.value)}
                         required
