@@ -24,12 +24,14 @@ const Login = () => {
   // Query to check if user is already logged in
   const { 
     data: user, 
-    isLoading: loading, 
+    isLoading: loading,
+    isFetching,
     error 
   } = useQuery({
     queryKey: ['/api/auth/me'],
     queryFn: getQueryFn({ on401: 'returnNull' }),
     retry: false,
+    refetchOnWindowFocus: true,
   });
   
   // Login with Discord
@@ -135,7 +137,7 @@ const Login = () => {
     adminLoginMutation.mutate(adminPassword);
   };
 
-  if (loading || isLoggingIn || loginMutation.isPending || adminLoginMutation.isPending) {
+  if (loading || isFetching || isLoggingIn || loginMutation.isPending || adminLoginMutation.isPending) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin w-12 h-12 border-4 border-brand-orange border-t-transparent rounded-full"></div>
