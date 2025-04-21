@@ -32,12 +32,9 @@ const Login = () => {
     e.preventDefault();
     playSound("click");
     
-    if (adminPassword === "admin123") {
-      adminLogin();
-    } else {
-      // This will be handled by the normal login flow error
-      loginWithCredentials({ username: "admin", password: adminPassword });
-    }
+    // Pass the admin password directly to adminLogin function
+    // It will handle authentication on the server
+    adminLogin(adminPassword);
   };
 
   if (loading) {

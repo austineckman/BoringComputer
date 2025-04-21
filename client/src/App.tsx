@@ -10,6 +10,7 @@ import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 import MainLayout from "@/components/layout/MainLayout";
 import { useAuth } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/lib/protected-route";
 
 function App() {
   const { user, loading, authenticate } = useAuth();
@@ -45,41 +46,41 @@ function App() {
       </Route>
       
       {/* Protected routes */}
-      <Route path="/">
+      <ProtectedRoute path="/">
         <MainLayout>
           <Home />
         </MainLayout>
-      </Route>
+      </ProtectedRoute>
       
-      <Route path="/quests">
+      <ProtectedRoute path="/quests">
         <MainLayout>
           <Quests />
         </MainLayout>
-      </Route>
+      </ProtectedRoute>
       
-      <Route path="/inventory">
+      <ProtectedRoute path="/inventory">
         <MainLayout>
           <Inventory />
         </MainLayout>
-      </Route>
+      </ProtectedRoute>
       
-      <Route path="/workshop">
+      <ProtectedRoute path="/workshop">
         <MainLayout>
           <Workshop />
         </MainLayout>
-      </Route>
+      </ProtectedRoute>
       
-      <Route path="/achievements">
+      <ProtectedRoute path="/achievements">
         <MainLayout>
           <Achievements />
         </MainLayout>
-      </Route>
+      </ProtectedRoute>
       
-      <Route path="/admin">
+      <ProtectedRoute path="/admin">
         <MainLayout>
           <Admin />
         </MainLayout>
-      </Route>
+      </ProtectedRoute>
       
       <Route>
         <NotFound />
