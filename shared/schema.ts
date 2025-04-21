@@ -7,6 +7,7 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull(),
   email: text("email"),
+  password: text("password"), // Added for regular login
   discordId: text("discord_id"),
   avatar: text("avatar_url"),
   roles: json("roles").$type<string[]>().default([]),
@@ -107,9 +108,11 @@ export const inventoryHistory = pgTable("inventory_history", {
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   email: true,
+  password: true,
   discordId: true,
   avatar: true,
   roles: true,
+  inventory: true,
 });
 
 export const insertQuestSchema = createInsertSchema(quests).pick({
