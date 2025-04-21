@@ -54,17 +54,29 @@ export const useAuth = () => {
       setIsLoggingIn(false);
       // Set the cache and force a refetch to ensure we're synchronized
       queryClient.setQueryData(['/api/auth/me'], data);
-      await refetch();
       
-      toast({
-        title: "Login Successful",
-        description: `Welcome back, ${data.username}!`,
-      });
-      
-      // Give time for React to process the state update before redirecting
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 500);
+      try {
+        await refetch();
+        
+        // Success notification
+        toast({
+          title: "Login Successful",
+          description: `Welcome back, ${data.username}!`,
+        });
+        
+        // Redirect with a full page refresh to ensure cookies are applied
+        console.log("Redirecting to home page...");
+        setTimeout(() => {
+          window.location.replace('/');
+        }, 1500);
+      } catch (error) {
+        console.error("Error refreshing user data:", error);
+        toast({
+          title: "Login Issue",
+          description: "Logged in, but encountered an issue. Please try again.",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error) => {
       setIsLoggingIn(false);
@@ -90,17 +102,29 @@ export const useAuth = () => {
     onSuccess: async (data) => {
       setIsLoggingIn(false);
       queryClient.setQueryData(['/api/auth/me'], data);
-      await refetch();
       
-      toast({
-        title: "Login Successful",
-        description: `Welcome back, ${data.username}!`,
-      });
-      
-      // Give time for React to process the state update before redirecting
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 500);
+      try {
+        await refetch();
+        
+        // Success notification
+        toast({
+          title: "Login Successful",
+          description: `Welcome back, ${data.username}!`,
+        });
+        
+        // Redirect with a full page refresh to ensure cookies are applied
+        console.log("Redirecting to home page...");
+        setTimeout(() => {
+          window.location.replace('/');
+        }, 1500);
+      } catch (error) {
+        console.error("Error refreshing user data:", error);
+        toast({
+          title: "Login Issue",
+          description: "Logged in, but encountered an issue. Please try again.",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error) => {
       setIsLoggingIn(false);
@@ -142,36 +166,47 @@ export const useAuth = () => {
   }, [logoutMutation]);
 
   // Admin login for development/testing
-  const adminLogin = useCallback(async () => {
-    const adminUser: User = {
-      id: "123456789",
-      username: "Admin",
-      email: "admin@questgiver.com",
-      avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
-      roles: ["admin", "user"],
-      level: 10,
-      inventory: {
-        "cloth": 100,
-        "metal": 100,
-        "tech-scrap": 100,
-        "sensor-crystal": 100,
-        "circuit-board": 100,
-        "alchemy-ink": 100
+  const adminLogin = useCallback(async (password: string) => {
+    try {
+      // Use the actual adminLogin API instead of a local mock
+      const response = await apiRequest('POST', '/api/auth/login', {
+        username: 'admin',
+        password: password
+      });
+      const data = await response.json();
+      
+      // Update the cache with admin user data
+      queryClient.setQueryData(['/api/auth/me'], data);
+      
+      try {
+        await refetch();
+        
+        toast({
+          title: "Admin Login",
+          description: "Logged in with admin account",
+        });
+        
+        // Redirect with a full page refresh to ensure cookies are applied
+        console.log("Admin login successful, redirecting to home page...");
+        setTimeout(() => {
+          window.location.replace('/');
+        }, 1500);
+      } catch (error) {
+        console.error("Error refreshing admin user data:", error);
+        toast({
+          title: "Login Issue",
+          description: "Logged in, but encountered an issue. Please try again.",
+          variant: "destructive",
+        });
       }
-    };
-    
-    queryClient.setQueryData(['/api/auth/me'], adminUser);
-    await refetch();
-    
-    toast({
-      title: "Admin Login",
-      description: "Logged in with admin account",
-    });
-    
-    // Give time for React to process the state update before redirecting
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 500);
+    } catch (error) {
+      console.error("Admin login error:", error);
+      toast({
+        title: "Admin Login Failed",
+        description: "Invalid admin credentials",
+        variant: "destructive",
+      });
+    }
   }, [toast, refetch]);
 
   return {
