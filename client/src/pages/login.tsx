@@ -1,46 +1,43 @@
-import React, { useEffect } from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Redirect } from "wouter";
 import PixelButton from "@/components/ui/pixel-button";
-import { FaDiscord } from "react-icons/fa";
+import { FaDiscord, FaUser, FaLock } from "react-icons/fa";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StarBackground from "@/components/layout/StarBackground";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 const Login = () => {
-  const { user, loading, login, mockLogin } = useAuth();
+  const { user, loading, login, loginWithCredentials, adminLogin } = useAuth();
   const { playSound } = useSoundEffects();
-
-  useEffect(() => {
-    // Create stars animation
-    const starField = document.createElement('div');
-    starField.className = 'star-field';
-    document.body.appendChild(starField);
-
-    for (let i = 0; i < 100; i++) {
-      const star = document.createElement('div');
-      star.className = 'star';
-      star.style.left = `${Math.random() * 100}%`;
-      star.style.top = `${Math.random() * 100}%`;
-      star.style.animationDelay = `${Math.random() * 5}s`;
-      star.style.width = `${Math.random() * 2 + 1}px`;
-      star.style.height = star.style.width;
-      starField.appendChild(star);
-    }
-
-    return () => {
-      document.body.removeChild(starField);
-    };
-  }, []);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
 
   const handleLoginClick = () => {
     playSound("click");
     login();
   };
 
-  const handleDevLoginClick = () => {
+  const handleCredentialLogin = (e: React.FormEvent) => {
+    e.preventDefault();
     playSound("click");
-    mockLogin();
+    loginWithCredentials({ username, password });
+  };
+
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    playSound("click");
+    
+    if (adminPassword === "admin123") {
+      adminLogin();
+    } else {
+      // This will be handled by the normal login flow error
+      loginWithCredentials({ username: "admin", password: adminPassword });
+    }
   };
 
   if (loading) {
@@ -73,35 +70,110 @@ const Login = () => {
           <CardHeader>
             <CardTitle className="text-center text-xl">Mission Login</CardTitle>
             <CardDescription className="text-center">
-              Connect with your Discord account to begin your adventure
+              Begin your adventure with the Quest Giver
             </CardDescription>
           </CardHeader>
           
           <CardContent className="space-y-4">
-            <PixelButton
-              onClick={handleLoginClick}
-              className="w-full flex items-center justify-center gap-2"
-            >
-              <FaDiscord className="h-5 w-5" />
-              <span>LOGIN WITH DISCORD</span>
-            </PixelButton>
-            
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-brand-orange/30" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-space-mid px-2 text-brand-light/50">or</span>
-              </div>
-            </div>
-            
-            <PixelButton
-              variant="accent"
-              onClick={handleDevLoginClick}
-              className="w-full"
-            >
-              DEVELOPMENT LOGIN
-            </PixelButton>
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid grid-cols-3 bg-space-dark">
+                <TabsTrigger value="login" onClick={() => playSound("click")}>Login</TabsTrigger>
+                <TabsTrigger value="discord" onClick={() => playSound("click")}>Discord</TabsTrigger>
+                <TabsTrigger value="admin" onClick={() => playSound("click")}>Admin</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="login" className="space-y-4 mt-4">
+                <form onSubmit={handleCredentialLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username</Label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <FaUser className="text-brand-orange/70" />
+                      </div>
+                      <Input 
+                        id="username" 
+                        type="text" 
+                        placeholder="Enter your username"
+                        className="bg-space-dark pl-10"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <FaLock className="text-brand-orange/70" />
+                      </div>
+                      <Input 
+                        id="password" 
+                        type="password" 
+                        placeholder="Enter your password"
+                        className="bg-space-dark pl-10"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <PixelButton type="submit" className="w-full">LOGIN</PixelButton>
+                  
+                  <div className="text-xs text-center text-brand-light/50">
+                    <p>Demo login: username "demo" / password "demo123"</p>
+                  </div>
+                </form>
+              </TabsContent>
+              
+              <TabsContent value="discord" className="space-y-4 mt-4">
+                <div className="space-y-4">
+                  <p className="text-sm text-center text-brand-light/80">
+                    Login with your Discord account to sync progress across devices
+                  </p>
+                  
+                  <PixelButton
+                    onClick={handleLoginClick}
+                    className="w-full flex items-center justify-center gap-2"
+                  >
+                    <FaDiscord className="h-5 w-5" />
+                    <span>LOGIN WITH DISCORD</span>
+                  </PixelButton>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="admin" className="space-y-4 mt-4">
+                <form onSubmit={handleAdminLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-password">Admin Password</Label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <FaLock className="text-brand-orange/70" />
+                      </div>
+                      <Input 
+                        id="admin-password" 
+                        type="password" 
+                        placeholder="Enter admin password"
+                        className="bg-space-dark pl-10"
+                        value={adminPassword}
+                        onChange={(e) => setAdminPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <PixelButton type="submit" variant="secondary" className="w-full">
+                    ADMIN LOGIN
+                  </PixelButton>
+                  
+                  <div className="text-xs text-center text-brand-light/50">
+                    <p>For admins and content managers only</p>
+                  </div>
+                </form>
+              </TabsContent>
+            </Tabs>
           </CardContent>
           
           <CardFooter className="flex flex-col space-y-2">

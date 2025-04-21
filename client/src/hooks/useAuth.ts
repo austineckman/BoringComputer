@@ -14,6 +14,11 @@ interface User {
   inventory: Record<string, number>;
 }
 
+interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
 export const useAuth = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
@@ -29,17 +34,43 @@ export const useAuth = () => {
   const login = useCallback(() => {
     setIsLoggingIn(true);
     
-    // Discord OAuth2 parameters
-    const CLIENT_ID = process.env.DISCORD_CLIENT_ID || import.meta.env.VITE_DISCORD_CLIENT_ID || "YOUR_DISCORD_CLIENT_ID";
-    const REDIRECT_URI = encodeURIComponent(window.location.origin);
-    const SCOPE = encodeURIComponent('identify email');
-    
-    // Construct OAuth URL
-    const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=${SCOPE}`;
-    
-    // Redirect to Discord
-    window.location.href = discordAuthUrl;
-  }, []);
+    // For demo purposes only - this would be replaced with actual Discord OAuth flow
+    toast({
+      title: "Discord Login",
+      description: "Discord authentication is not available in demo mode. Please use username/password login.",
+      variant: "destructive",
+    });
+    setIsLoggingIn(false);
+  }, [toast]);
+
+  // Login with username and password
+  const loginWithCredentialsMutation = useMutation({
+    mutationFn: async (credentials: LoginCredentials) => {
+      const response = await apiRequest('POST', '/api/auth/login', credentials);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setIsLoggingIn(false);
+      queryClient.setQueryData(['/api/auth/me'], data);
+      toast({
+        title: "Login Successful",
+        description: `Welcome back, ${data.username}!`,
+      });
+    },
+    onError: (error) => {
+      setIsLoggingIn(false);
+      toast({
+        title: "Login Failed",
+        description: error instanceof Error ? error.message : "Invalid username or password",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const loginWithCredentials = useCallback((credentials: LoginCredentials) => {
+    setIsLoggingIn(true);
+    loginWithCredentialsMutation.mutate(credentials);
+  }, [loginWithCredentialsMutation]);
 
   // Authenticate with token from Discord
   const authenticateMutation = useMutation({
@@ -89,30 +120,30 @@ export const useAuth = () => {
     logoutMutation.mutate();
   }, [logoutMutation]);
 
-  // Mock login for development
-  const mockLogin = useCallback(() => {
-    const mockUser: User = {
+  // Admin login for development/testing
+  const adminLogin = useCallback(() => {
+    const adminUser: User = {
       id: "123456789",
-      username: "MockUser",
-      email: "mock@example.com",
+      username: "Admin",
+      email: "admin@questgiver.com",
       avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
-      roles: ["user"],
-      level: 3,
+      roles: ["admin", "user"],
+      level: 10,
       inventory: {
-        "cloth": 5,
-        "metal": 7,
-        "tech-scrap": 4,
-        "sensor-crystal": 3,
-        "circuit-board": 2,
-        "alchemy-ink": 3
+        "cloth": 100,
+        "metal": 100,
+        "tech-scrap": 100,
+        "sensor-crystal": 100,
+        "circuit-board": 100,
+        "alchemy-ink": 100
       }
     };
     
-    queryClient.setQueryData(['/api/auth/me'], mockUser);
+    queryClient.setQueryData(['/api/auth/me'], adminUser);
     
     toast({
-      title: "Development Login",
-      description: "Logged in with mock user account",
+      title: "Admin Login",
+      description: "Logged in with admin account",
     });
   }, [toast]);
 
@@ -120,8 +151,9 @@ export const useAuth = () => {
     user,
     loading: loading || isLoggingIn,
     login,
+    loginWithCredentials,
     authenticate,
     logout,
-    mockLogin,
+    adminLogin,
   };
 };
