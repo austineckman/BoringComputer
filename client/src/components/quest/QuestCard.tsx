@@ -14,11 +14,12 @@ interface QuestCardProps {
   id: string;
   title: string;
   description: string;
-  kitRequired: string;
+  adventureLine: string; // Changed from kitRequired
   difficulty: number;
   rewards: QuestReward[];
   status: "active" | "available" | "completed" | "upcoming" | "locked";
-  adventureKit: string;
+  orderInLine?: number; // New field
+  xpReward?: number; // New field
   onStart?: () => void;
   onContinue?: () => void;
 }
@@ -27,19 +28,21 @@ const QuestCard = ({
   id,
   title,
   description,
-  kitRequired,
+  adventureLine,
   difficulty,
   rewards,
   status,
-  adventureKit,
+  orderInLine,
+  xpReward,
   onStart,
   onContinue
 }: QuestCardProps) => {
   const { playSound } = useSoundEffects();
   
-  const kit = themeConfig.adventureKits.find(k => k.id === adventureKit) || {
-    name: "Unknown Kit",
-    icon: "question",
+  // Get adventure line info from config
+  const adventure = themeConfig.adventureLines.find(a => a.id === adventureLine) || {
+    name: adventureLine.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    icon: "rocket",
     color: "#777777"
   };
 
@@ -106,12 +109,12 @@ const QuestCard = ({
 
   return (
     <PixelCard active={status === "active"} interactive={true}>
-      {/* Quest Header with Adventure Kit Label */}
-      <PixelCardHeader color={status === "active" ? kit.color : "bg-space-light"}>
+      {/* Quest Header with Adventure Line Label */}
+      <PixelCardHeader color={status === "active" ? adventure.color : "bg-space-light"}>
         <div className="flex items-center">
-          <i className={`fas fa-${kit.icon} text-xs mr-2`}></i>
+          <i className={`fas fa-${adventure.icon} text-xs mr-2`}></i>
           <span className={`text-xs font-bold ${status === "active" ? "text-space-darkest" : ""}`}>
-            {kit.name.toUpperCase()}
+            {adventure.name.toUpperCase()}
           </span>
         </div>
         <span className={`px-2 py-0.5 rounded text-xs ${statusDisplay.color}`}>
@@ -124,11 +127,23 @@ const QuestCard = ({
         <h3 className="font-bold text-lg mb-2">{title}</h3>
         <p className="text-sm text-brand-light/70 mb-4">{description}</p>
         
-        {/* Required Kit */}
-        <div className="flex items-center space-x-2 mb-4">
-          <span className="text-xs text-brand-light/60">Required Kit:</span>
-          <span className="text-xs bg-space-dark px-2 py-1 rounded">{kitRequired}</span>
-        </div>
+        {/* XP Reward - New! */}
+        {xpReward && (
+          <div className="flex items-center space-x-2 mb-4">
+            <span className="text-xs text-brand-light/60">XP Reward:</span>
+            <span className="text-xs bg-brand-orange/20 text-brand-orange px-2 py-1 rounded-full">
+              +{xpReward} XP
+            </span>
+          </div>
+        )}
+        
+        {/* Sequence Info - New! */}
+        {typeof orderInLine === 'number' && (
+          <div className="flex items-center space-x-2 mb-4">
+            <span className="text-xs text-brand-light/60">Quest:</span>
+            <span className="text-xs bg-space-dark px-2 py-1 rounded">#{orderInLine + 1}</span>
+          </div>
+        )}
         
         {/* Difficulty Level */}
         <div className="flex items-center space-x-1 mb-4">

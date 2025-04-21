@@ -14,9 +14,10 @@ export interface Quest {
   date: string;
   title: string;
   description: string;
-  kitRequired: string;
+  adventureLine: string; // Changed from kitRequired
   difficulty: number;
-  adventureKit: string;
+  orderInLine: number; // New field
+  xpReward: number; // New field
   rewards: QuestReward[];
 }
 
@@ -24,15 +25,23 @@ export interface UserQuest extends Quest {
   status: "active" | "available" | "completed" | "upcoming" | "locked";
 }
 
+interface QuestResponse {
+  questsByAdventureLine: Record<string, UserQuest[]>;
+  allQuests: UserQuest[];
+}
+
 export const useQuests = () => {
   const { toast } = useToast();
   const { playSound } = useSoundEffects();
 
   // Get all quests
-  const { data: quests = [], isLoading: loadingQuests } = useQuery<UserQuest[]>({
+  const { data: questData, isLoading: loadingQuests } = useQuery<QuestResponse>({
     queryKey: ['/api/quests'],
     retry: false
   });
+  
+  // Extract all quests or use empty array as fallback
+  const quests = questData?.allQuests || [];
 
   // Get active quest
   const { data: activeQuest, isLoading: loadingActiveQuest } = useQuery<Quest | null>({

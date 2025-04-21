@@ -16,6 +16,41 @@ export const themeConfig = {
     resourceAlchemyInk: '#FF7EB9'
   },
   
+  // Using adventure lines instead of kits for the new progression system
+  adventureLines: [
+    {
+      id: 'lost-in-space',
+      name: '30 Days Lost in Space',
+      icon: 'rocket',
+      color: '#FF5B00',
+    },
+    {
+      id: 'cogsworth-city',
+      name: 'Cogsworth City',
+      icon: 'cogs',
+      color: '#00C781',
+    },
+    {
+      id: 'pandoras-box',
+      name: 'Pandora\'s Box',
+      icon: 'box',
+      color: '#9C6ADE',
+    },
+    {
+      id: 'neon-realm',
+      name: 'Neon Realm',
+      icon: 'lightbulb',
+      color: '#44A0FF',
+    },
+    {
+      id: 'nebula-raiders',
+      name: 'Nebula Raiders',
+      icon: 'meteor',
+      color: '#FF7EB9',
+    }
+  ],
+  
+  // Keep for backward compatibility
   adventureKits: [
     {
       id: 'lost-in-space',
