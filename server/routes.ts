@@ -60,18 +60,31 @@ const adminOnly = async (req: Request, res: Response, next: Function) => {
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
-  // Set up sessions for users
+  // Set up sessions for users with improved cookie parsing
   app.use((req, res, next) => {
-    // Parse cookies for session management
-    const cookies: Record<string, string> = {};
-    if (req.headers.cookie) {
-      req.headers.cookie.split(';').forEach(cookie => {
-        const parts = cookie.split('=');
-        cookies[parts[0].trim()] = parts[1].trim();
-      });
+    try {
+      // Parse cookies for session management
+      const cookies: Record<string, string> = {};
+      if (req.headers.cookie) {
+        req.headers.cookie.split(';').forEach(cookie => {
+          const parts = cookie.split('=');
+          if (parts.length >= 2) {
+            // Handle any malformed cookies
+            const key = parts[0].trim();
+            const value = parts.slice(1).join('=').trim();
+            cookies[key] = value;
+          }
+        });
+      }
+      
+      console.log('Parsed cookies:', JSON.stringify(cookies));
+      (req as any).cookies = cookies;
+      next();
+    } catch (error) {
+      console.error('Error parsing cookies:', error);
+      (req as any).cookies = {};
+      next();
     }
-    (req as any).cookies = cookies;
-    next();
   });
   
   // Auth routes
@@ -138,8 +151,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate session token
       const sessionToken = `${user.id.toString(16).padStart(8, '0')}-${uuidv4().substring(9)}`;
       
-      // Set session cookie with more permissive settings for development
-      res.setHeader('Set-Cookie', `sessionToken=${sessionToken}; Path=/; HttpOnly; SameSite=None; Secure=false`);
+      // Set session cookie with ultra-permissive settings for development
+      res.setHeader('Set-Cookie', `sessionToken=${sessionToken}; Path=/; Max-Age=86400`);
       
       // Return user data
       return res.json({
@@ -233,8 +246,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Generate session token
         const sessionToken = `${user.id.toString(16).padStart(8, '0')}-${uuidv4().substring(9)}`;
         
-        // Set session cookie with more permissive settings for development
-        res.setHeader('Set-Cookie', `sessionToken=${sessionToken}; Path=/; HttpOnly; SameSite=None; Secure=false`);
+        // Set session cookie with ultra-permissive settings for development
+        res.setHeader('Set-Cookie', `sessionToken=${sessionToken}; Path=/; Max-Age=86400`);
         
         // Return user data
         return res.json({

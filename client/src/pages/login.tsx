@@ -1,6 +1,5 @@
-import React, { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { Redirect } from "wouter";
+import React, { useState, useEffect } from "react";
+import { Redirect, useLocation } from "wouter";
 import PixelButton from "@/components/ui/pixel-button";
 import { FaDiscord, FaUser, FaLock } from "react-icons/fa";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,35 +8,134 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StarBackground from "@/components/layout/StarBackground";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { getQueryFn } from "@/lib/queryClient";
 
 const Login = () => {
-  const { user, loading, login, loginWithCredentials, adminLogin } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { playSound } = useSoundEffects();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
-
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  
+  // Query to check if user is already logged in
+  const { 
+    data: user, 
+    isLoading: loading, 
+    error 
+  } = useQuery({
+    queryKey: ['/api/auth/me'],
+    queryFn: getQueryFn({ on401: 'returnNull' }),
+    retry: false,
+  });
+  
+  // Login with Discord
   const handleLoginClick = () => {
     playSound("click");
-    login();
+    toast({
+      title: 'Discord Login',
+      description: 'Discord login is not available in the demo version.',
+    });
   };
-
+  
+  // Login with credentials mutation
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: { username: string; password: string }) => {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Invalid username or password');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['/api/auth/me'], data);
+      
+      toast({
+        title: "Login Successful",
+        description: `Welcome back, ${data.username}!`,
+      });
+      
+      // Redirect to home page
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000);
+    },
+    onError: (error) => {
+      toast({
+        title: "Login Failed",
+        description: error instanceof Error ? error.message : "An error occurred during login",
+        variant: "destructive",
+      });
+      setIsLoggingIn(false);
+    },
+  });
+  
   const handleCredentialLogin = (e: React.FormEvent) => {
     e.preventDefault();
     playSound("click");
-    loginWithCredentials({ username, password });
+    setIsLoggingIn(true);
+    loginMutation.mutate({ username, password });
   };
+  
+  // Admin login mutation
+  const adminLoginMutation = useMutation({
+    mutationFn: async (password: string) => {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: 'admin', password }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Invalid admin credentials');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['/api/auth/me'], data);
+      
+      toast({
+        title: "Admin Login Successful",
+        description: "Logged in with admin account",
+      });
+      
+      // Redirect to home page
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000);
+    },
+    onError: (error) => {
+      toast({
+        title: "Admin Login Failed",
+        description: error instanceof Error ? error.message : "Invalid admin credentials",
+        variant: "destructive",
+      });
+      setIsLoggingIn(false);
+    },
+  });
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
     playSound("click");
-    
-    // Pass the admin password directly to adminLogin function
-    // It will handle authentication on the server
-    adminLogin(adminPassword);
+    setIsLoggingIn(true);
+    adminLoginMutation.mutate(adminPassword);
   };
 
-  if (loading) {
+  if (loading || isLoggingIn || loginMutation.isPending || adminLoginMutation.isPending) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin w-12 h-12 border-4 border-brand-orange border-t-transparent rounded-full"></div>
