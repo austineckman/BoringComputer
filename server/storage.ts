@@ -13,6 +13,7 @@ import {
 export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
+  getUsers(): Promise<User[]>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByDiscordId(discordId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
@@ -124,14 +125,15 @@ export class MemStorage implements IStorage {
       { id: 'nebula-raiders', name: 'Nebula Raiders' }
     ];
     
-    // Sample quests
+    // Sample quests - Lost in Space adventure line
     this.createQuest({
       date: '2023-06-01',
       title: 'Incoming Broadcast from InventrCorp',
       description: 'Establish communication with InventrCorp headquarters to receive your mission details.',
-      kitRequired: 'HERO Board',
+      adventureLine: 'lost-in-space',
       difficulty: 1,
-      adventureKit: 'lost-in-space',
+      orderInLine: 0,
+      xpReward: 100,
       rewards: [{ type: 'metal', quantity: 2 }, { type: 'cloth', quantity: 1 }],
       active: true
     });
@@ -140,9 +142,10 @@ export class MemStorage implements IStorage {
       date: '2023-06-02',
       title: 'It\'s Really Dark In Here',
       description: 'Set up your first circuit to get some light in your spacecraft.',
-      kitRequired: 'HERO Board + LED',
+      adventureLine: 'lost-in-space',
       difficulty: 1,
-      adventureKit: 'lost-in-space',
+      orderInLine: 1,
+      xpReward: 120,
       rewards: [{ type: 'tech-scrap', quantity: 1 }, { type: 'metal', quantity: 1 }],
       active: true
     });
@@ -151,20 +154,23 @@ export class MemStorage implements IStorage {
       date: '2023-06-03',
       title: 'H_jyfwapj_tlzzhnl',
       description: 'Decrypt the mysterious message received from HQ using the cipher provided.',
-      kitRequired: 'HERO Board + Display Module',
+      adventureLine: 'lost-in-space',
       difficulty: 3,
-      adventureKit: 'lost-in-space',
+      orderInLine: 2,
+      xpReward: 150,
       rewards: [{ type: 'tech-scrap', quantity: 2 }, { type: 'sensor-crystal', quantity: 1 }, { type: 'circuit-board', quantity: 1 }],
       active: true
     });
     
+    // Cogsworth City adventure line
     this.createQuest({
       date: '2023-06-04',
       title: 'The Clockwork Conundrum',
       description: 'Fix the central timing mechanism in Cogsworth Square to restore power to the city\'s main district.',
-      kitRequired: 'Cogsworth Kit + LEDs',
+      adventureLine: 'cogsworth-city',
       difficulty: 2,
-      adventureKit: 'cogsworth-city',
+      orderInLine: 0,
+      xpReward: 100,
       rewards: [{ type: 'metal', quantity: 2 }, { type: 'cloth', quantity: 1 }],
       active: true
     });

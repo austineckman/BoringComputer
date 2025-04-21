@@ -292,28 +292,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/quests', authenticate, async (req, res) => {
     try {
       const user = (req as any).user;
-      const quests = await storage.getQuests();
-      const userQuests = await storage.getUserQuests(user.id);
       
-      // Map quests with status for the user
-      const questsWithStatus = quests.map(quest => {
-        const userQuest = userQuests.find(uq => uq.questId === quest.id);
-        const status = userQuest ? userQuest.status : 'locked';
+      // Get available quests based on user's progression
+      const availableQuests = await storage.getAvailableQuestsForUser(user.id);
+      const userQuests = await storage.getUserQuests(user.id);
+      const allQuests = await storage.getQuests();
+      
+      // Group quests by adventure line to help with frontend organization
+      const questsByAdventureLine: Record<string, any[]> = {};
+      
+      // Process all quests to determine their status
+      allQuests.forEach(quest => {
+        const adventureLine = quest.adventureLine;
+        if (!questsByAdventureLine[adventureLine]) {
+          questsByAdventureLine[adventureLine] = [];
+        }
         
-        return {
+        // Find user's status for this quest
+        const userQuest = userQuests.find(uq => uq.questId === quest.id);
+        let status = 'locked';
+        
+        // If the quest is in available quests or has a user quest entry, determine status
+        if (availableQuests.some(aq => aq.id === quest.id)) {
+          status = 'available';
+        }
+        
+        if (userQuest) {
+          status = userQuest.status; // active or completed
+        }
+        
+        // For completed quests, also check user's completedQuests array
+        if (user.completedQuests && user.completedQuests.includes(quest.id)) {
+          status = 'completed';
+        }
+        
+        questsByAdventureLine[adventureLine].push({
           id: quest.id.toString(),
           date: quest.date,
           title: quest.title,
           description: quest.description,
-          kitRequired: quest.kitRequired,
+          adventureLine: quest.adventureLine,
           difficulty: quest.difficulty,
-          adventureKit: quest.adventureKit,
+          orderInLine: quest.orderInLine,
+          xpReward: quest.xpReward,
           rewards: quest.rewards,
           status
-        };
+        });
       });
       
-      return res.json(questsWithStatus);
+      // Sort each adventure line by orderInLine
+      for (const adventureLine in questsByAdventureLine) {
+        questsByAdventureLine[adventureLine].sort((a, b) => a.orderInLine - b.orderInLine);
+      }
+      
+      return res.json({
+        questsByAdventureLine,
+        // Also include a flat list for backward compatibility
+        allQuests: Object.values(questsByAdventureLine).flat()
+      });
     } catch (error) {
       console.error(error);
       return res.status(500).json({ message: "Failed to fetch quests" });
@@ -341,9 +377,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         date: quest.date,
         title: quest.title,
         description: quest.description,
-        kitRequired: quest.kitRequired,
+        adventureLine: quest.adventureLine,
         difficulty: quest.difficulty,
-        adventureKit: quest.adventureKit,
+        orderInLine: quest.orderInLine,
+        xpReward: quest.xpReward,
         rewards: quest.rewards
       });
     } catch (error) {
@@ -428,6 +465,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Mark quest as completed
       await storage.updateUserQuest(activeQuest.id, { status: 'completed' });
       
+      // Add quest to user's completed quests array
+      const completedQuests = user.completedQuests || [];
+      if (!completedQuests.includes(questId)) {
+        completedQuests.push(questId);
+      }
+      
       // Add rewards to user's inventory
       const inventory = { ...user.inventory };
       for (const reward of quest.rewards) {
@@ -443,15 +486,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Update user's inventory
-      await storage.updateUser(user.id, { inventory });
+      // Award XP for completing the quest
+      const xpReward = quest.xpReward || 100;
+      const updatedUser = await storage.addUserXP(user.id, xpReward);
+      
+      // Update user's inventory and completed quests
+      await storage.updateUser(user.id, { 
+        inventory,
+        completedQuests
+      });
       
       // Check for unlockable achievements
       const achievements = await storage.getAchievements();
       const userAchievements = await storage.getUserAchievements(user.id);
       
       // Count completed quests
-      const completedQuestsCount = userQuests.filter(uq => uq.status === 'completed').length;
+      const completedQuestsCount = completedQuests.length;
       
       // Update progress on quest-related achievements
       for (const achievement of achievements) {
@@ -476,8 +526,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Return rewards
-      return res.json({ rewards: quest.rewards });
+      // Check if we need to make next quest available
+      await storage.getAvailableQuestsForUser(user.id);
+      
+      // Return rewards and XP info
+      return res.json({ 
+        rewards: quest.rewards,
+        xpGained: xpReward,
+        newLevel: updatedUser.level,
+        xp: updatedUser.xp,
+        xpToNextLevel: updatedUser.xpToNextLevel
+      });
     } catch (error) {
       console.error(error);
       return res.status(500).json({ message: "Failed to complete quest" });
@@ -692,9 +751,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         date: z.string(),
         title: z.string(),
         description: z.string(),
-        kitRequired: z.string(),
+        adventureLine: z.string(),
         difficulty: z.number().min(1).max(5),
-        adventureKit: z.string(),
+        orderInLine: z.number().min(0),
+        xpReward: z.number().positive(),
         rewards: z.array(z.object({
           type: z.string(),
           quantity: z.number().positive()
@@ -705,13 +765,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = schema.parse(questData);
       const quest = await storage.createQuest(validatedData);
       
-      // Add this quest to all users
-      const users = Array.from((await storage.getQuests()).values());
+      // Get all users
+      const users = Array.from(await storage.getUsers());
+      
+      // For each user, determine if this quest should be available based on position in adventure line
       for (const user of users) {
+        // Get quests for this adventure line
+        const adventureLineQuests = await storage.getQuestsByAdventureLine(quest.adventureLine);
+        
+        // Sort by order in line
+        adventureLineQuests.sort((a, b) => a.orderInLine - b.orderInLine);
+        
+        // If it's the first quest in the adventure line, make it available
+        let status = 'locked';
+        if (quest.orderInLine === 0) {
+          status = 'available';
+        } else if (adventureLineQuests.length > 1) {
+          // If it's not the first quest, check if previous quest is completed
+          const previousQuest = adventureLineQuests.find(q => q.orderInLine === quest.orderInLine - 1);
+          if (previousQuest && user.completedQuests && user.completedQuests.includes(previousQuest.id)) {
+            status = 'available';
+          }
+        }
+        
+        // Create user quest relation
         await storage.createUserQuest({
           userId: user.id,
           questId: quest.id,
-          status: 'available'
+          status
         });
       }
       
