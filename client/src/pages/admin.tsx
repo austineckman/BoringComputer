@@ -47,7 +47,8 @@ export default function AdminPage() {
     isLoading: isItemsLoading,
     error: itemsError
   } = useQuery({
-    queryKey: ['/api/admin/items']
+    queryKey: ['/api/admin/items'],
+    enabled: activeTab === 'items'
   });
   
   const { 

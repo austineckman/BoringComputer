@@ -1,7 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { seedItems } from "./seedItems";
 
 const app = express();
 app.use(express.json());
@@ -38,13 +37,6 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Seed database items before setting up routes
-  try {
-    await seedItems();
-  } catch (error) {
-    console.error('Error seeding items:', error);
-  }
-  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
