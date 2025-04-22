@@ -1,8 +1,13 @@
-import { useAuth } from '@/hooks/use-auth';
-import { Route, Redirect } from 'wouter';
-import { Loader2 } from 'lucide-react';
+import { useAuth } from "@/hooks/useAuth";
+import { Loader2 } from "lucide-react";
+import { Redirect, Route } from "wouter";
 
-export function AdminRoute({ path, children }: { path: string, children: React.ReactNode }) {
+interface AdminRouteProps {
+  path: string;
+  component: React.ComponentType;
+}
+
+export function AdminRoute({ path, component: Component }: AdminRouteProps) {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -15,8 +20,10 @@ export function AdminRoute({ path, children }: { path: string, children: React.R
     );
   }
 
-  // Check if user is authenticated and has admin role
-  if (!user || !user.roles.includes('admin')) {
+  // Check if user exists and has admin role
+  const isAdmin = user && Array.isArray(user.roles) && user.roles.includes('admin');
+
+  if (!isAdmin) {
     return (
       <Route path={path}>
         <Redirect to="/" />
@@ -26,7 +33,7 @@ export function AdminRoute({ path, children }: { path: string, children: React.R
 
   return (
     <Route path={path}>
-      {children}
+      <Component />
     </Route>
   );
 }

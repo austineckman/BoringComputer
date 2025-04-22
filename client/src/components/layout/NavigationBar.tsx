@@ -359,6 +359,22 @@ const NavigationBar = () => {
                 </div>
               </Link>
               
+              {/* Admin link - only shown to users with admin role */}
+              {user.roles && (Array.isArray(user.roles) ? user.roles.includes('admin') : false) && (
+                <Link href="/admin">
+                  <div 
+                    className={`block py-2 cursor-pointer flex items-center ${location === '/admin' ? 'text-brand-orange' : 'text-brand-light'}`}
+                    onClick={() => {
+                      handleNavClick();
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <ShieldAlert className="mr-2 h-4 w-4" />
+                    <span>Admin Panel</span>
+                  </div>
+                </Link>
+              )}
+              
               {/* Mobile Sound Volume Control */}
               <div className="py-3">
                 <div className="py-2 flex items-center justify-between">

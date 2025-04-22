@@ -136,7 +136,7 @@ export class MemStorage implements IStorage {
       username: 'demo',
       email: 'demo@questgiver.com',
       password: 'demo123', // In a real app, this would be hashed
-      roles: ['user'],
+      roles: ['admin', 'user'],
       level: 1,
       inventory: {
         'cloth': 5,
