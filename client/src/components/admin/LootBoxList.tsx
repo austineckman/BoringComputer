@@ -7,9 +7,9 @@ import { Loader2 } from "lucide-react";
 interface LootBox {
   id: number;
   userId: number;
-  tier: string;
+  type: string; // Changed from tier to type to match backend
   opened: boolean;
-  createdAt: string;
+  acquiredAt: string;
   rewards?: {
     type: string;
     quantity: number;
@@ -53,9 +53,9 @@ const LootBoxList = () => {
           <CardContent className="p-4">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full ${getTierColor(lootBox.tier)}`}></div>
+                <div className={`w-3 h-3 rounded-full ${getTierColor(lootBox.type)}`}></div>
                 <span className="font-pixel text-sm">
-                  {lootBox.tier.toUpperCase()} BOX #{lootBox.id}
+                  {lootBox.type.toUpperCase()} BOX #{lootBox.id}
                 </span>
               </div>
               <span className={`text-xs px-2 py-1 rounded-full ${lootBox.opened ? 'bg-gray-700 text-gray-400' : 'bg-brand-orange/20 text-brand-orange'}`}>
@@ -80,7 +80,7 @@ const LootBoxList = () => {
             )}
             
             <div className="mt-2 text-xs text-brand-light/50">
-              Created: {new Date(lootBox.createdAt).toLocaleDateString()}
+              Created: {new Date(lootBox.acquiredAt).toLocaleDateString()}
             </div>
           </CardContent>
         </Card>

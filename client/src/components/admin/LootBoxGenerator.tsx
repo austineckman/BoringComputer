@@ -36,8 +36,9 @@ export default function LootBoxGenerator({ onLootBoxesCreated }: LootBoxGenerato
   const createLootBoxMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/admin/loot-boxes", {
-        tier,
-        quantity
+        type: tier,
+        count: quantity,
+        source: "admin panel"
       });
       return response.json();
     },
