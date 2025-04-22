@@ -1,71 +1,135 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import CraftingCell from './CraftingCell';
-import { CraftingGridPattern } from '@/../../shared/types';
+import { Recipe } from '@/../../shared/types';
 
 interface CraftingGridProps {
-  grid: CraftingGridPattern;
+  grid: string[][];
   onDropItem: (row: number, col: number, itemId: string) => void;
   onRemoveItem: (row: number, col: number) => void;
-  title?: string;
-  patternToMatch?: CraftingGridPattern | null;
-  canCraft?: boolean;
+  onResetGrid: () => void;
+  highlightedCells: [number, number][];
+  selectedRecipe: Recipe | null;
 }
 
 const CraftingGrid: React.FC<CraftingGridProps> = ({
   grid,
   onDropItem,
   onRemoveItem,
-  title = 'Crafting Grid',
-  patternToMatch = null,
-  canCraft = false,
+  onResetGrid,
+  highlightedCells,
+  selectedRecipe
 }) => {
-  // Determine if a cell should be highlighted based on the pattern to match
-  const shouldHighlightCell = (row: number, col: number): boolean => {
-    if (!patternToMatch || !canCraft) return false;
+  // Check if a cell is highlighted for pattern matching
+  const isCellHighlighted = (row: number, col: number): boolean => {
+    return highlightedCells.some(([r, c]) => r === row && c === col);
+  };
+  
+  // Create a 5x5 grid of crafting cells
+  const renderGrid = () => {
+    const rows = [];
     
-    // Only highlight if there's a pattern and it matches
-    return Boolean(patternToMatch[row][col]);
+    for (let row = 0; row < 5; row++) {
+      const cells = [];
+      
+      for (let col = 0; col < 5; col++) {
+        cells.push(
+          <CraftingCell
+            key={`${row}-${col}`}
+            row={row}
+            col={col}
+            itemId={grid[row][col]}
+            onDropItem={onDropItem}
+            onRemoveItem={onRemoveItem}
+            highlighted={isCellHighlighted(row, col)}
+          />
+        );
+      }
+      
+      rows.push(
+        <div key={row} className="flex gap-1">
+          {cells}
+        </div>
+      );
+    }
+    
+    return (
+      <div className="flex flex-col gap-1">
+        {rows}
+      </div>
+    );
+  };
+  
+  // If a recipe is selected, also show the pattern for reference
+  const renderPatternReference = () => {
+    if (!selectedRecipe) return null;
+    
+    const pattern = selectedRecipe.pattern;
+    const patternHeight = pattern.length;
+    const patternWidth = pattern[0].length;
+    
+    const rows = [];
+    
+    for (let row = 0; row < patternHeight; row++) {
+      const cells = [];
+      
+      for (let col = 0; col < patternWidth; col++) {
+        cells.push(
+          <CraftingCell
+            key={`pattern-${row}-${col}`}
+            row={row}
+            col={col}
+            itemId={pattern[row][col]}
+            onDropItem={() => {}} // No-op for pattern reference
+            onRemoveItem={() => {}} // No-op for pattern reference
+            pattern={true}
+          />
+        );
+      }
+      
+      rows.push(
+        <div key={`pattern-row-${row}`} className="flex gap-1">
+          {cells}
+        </div>
+      );
+    }
+    
+    return (
+      <div className="mt-4">
+        <h3 className="text-sm font-medium mb-2">Recipe Pattern:</h3>
+        <div className="flex flex-col gap-1">
+          {rows}
+        </div>
+      </div>
+    );
   };
   
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-xl">
-          {title}
+          Crafting Grid
         </CardTitle>
         <CardDescription>
-          {patternToMatch 
-            ? 'Arrange your items to match the recipe pattern' 
-            : 'Drag resources here to create an item'}
+          Drag items from your inventory to this grid
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col items-center">
-          <div className="grid grid-cols-5 gap-1 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-            {grid.flatMap((row, rowIndex) => 
-              row.map((cellItem, colIndex) => (
-                <CraftingCell
-                  key={`cell-${rowIndex}-${colIndex}`}
-                  row={rowIndex}
-                  col={colIndex}
-                  itemId={cellItem}
-                  onDropItem={onDropItem}
-                  onRemoveItem={onRemoveItem}
-                  highlighted={shouldHighlightCell(rowIndex, colIndex)}
-                  pattern={false}
-                />
-              ))
-            )}
+        <div>
+          {renderGrid()}
+          
+          <div className="flex justify-end mt-4">
+            <Button 
+              variant="outline" 
+              onClick={onResetGrid}
+              size="sm"
+            >
+              Clear Grid
+            </Button>
           </div>
           
-          <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-            {patternToMatch ? (
-              <span>Follow the pattern to create this item</span>
-            ) : (
-              <span>Drag items from your inventory to craft</span>
-            )}
-          </div>
+          {renderPatternReference()}
         </div>
       </CardContent>
     </Card>

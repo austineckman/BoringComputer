@@ -1,168 +1,197 @@
-import { useState, useEffect } from 'react';
-import { toast } from '@/hooks/use-toast';
-import { useSoundEffects } from '@/hooks/useSoundEffects';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback, useMemo } from 'react';
 import { Recipe, CraftingGridPattern } from '@/../../shared/types';
-import { apiRequest } from '@/lib/queryClient';
+import { useSoundEffects } from './useSoundEffects';
+import { useToast } from './use-toast';
 
-// Define the grid size for crafting
-export const GRID_SIZE = 5;
-
-// Initialize an empty crafting grid
-const createEmptyGrid = (): CraftingGridPattern => {
-  return Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(''));
+// Create a 5x5 empty grid 
+const createEmptyGrid = (): string[][] => {
+  return Array(5).fill(null).map(() => Array(5).fill(''));
 };
 
-// Custom hook to manage the crafting system
+// Interface for the hook's return value
+interface UseCraftingReturn {
+  grid: string[][];
+  selectedRecipe: Recipe | null;
+  selectRecipe: (recipe: Recipe | null) => void;
+  addItemToGrid: (row: number, col: number, itemId: string) => void;
+  removeItemFromGrid: (row: number, col: number) => void;
+  resetGrid: () => void;
+  highlightedCells: [number, number][];
+  canCraft: boolean;
+  craft: () => void;
+  craftedResults: null | {
+    recipe: Recipe;
+    usedItems: Record<string, number>;
+  };
+  clearCraftedResults: () => void;
+}
+
 export function useCrafting(
+  inventory: Record<string, number>,
   recipes: Recipe[],
-  inventory: Record<string, number>
-) {
-  const [grid, setGrid] = useState<CraftingGridPattern>(createEmptyGrid());
+  onCraftComplete?: (recipe: Recipe, usedItems: Record<string, number>) => void
+): UseCraftingReturn {
+  // State for the crafting grid, selected recipe, and highlighted cells
+  const [grid, setGrid] = useState<string[][]>(createEmptyGrid());
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
-  const [canCraft, setCanCraft] = useState<boolean>(false);
+  const [highlightedCells, setHighlightedCells] = useState<[number, number][]>([]);
+  const [craftedResults, setCraftedResults] = useState<null | {
+    recipe: Recipe;
+    usedItems: Record<string, number>;
+  }>(null);
+  
   const { sounds } = useSoundEffects();
-  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  // Effect to check if the current grid matches the selected recipe pattern
-  useEffect(() => {
-    if (!selectedRecipe) {
-      setCanCraft(false);
-      return;
-    }
-
-    // Check if pattern matches
-    const patternMatches = checkPatternMatch(grid, selectedRecipe.pattern);
-    
-    // Check if user has enough materials
-    const hasEnoughMaterials = Object.entries(selectedRecipe.materials).every(([itemId, requiredAmount]) => {
-      const available = inventory[itemId] || 0;
-      return available >= requiredAmount;
-    });
-    
-    setCanCraft(patternMatches && hasEnoughMaterials);
-  }, [grid, selectedRecipe, inventory]);
-
-  // Handle placing an item in the crafting grid
-  const handleDropItem = (row: number, col: number, itemId: string) => {
+  // Update the grid with an item
+  const addItemToGrid = useCallback((row: number, col: number, itemId: string) => {
     setGrid(prevGrid => {
-      const newGrid = [...prevGrid];
-      newGrid[row] = [...newGrid[row]];
+      const newGrid = [...prevGrid.map(r => [...r])];
       newGrid[row][col] = itemId;
       return newGrid;
     });
-  };
+  }, []);
 
-  // Handle removing an item from the crafting grid
-  const handleRemoveItem = (row: number, col: number) => {
+  // Remove an item from the grid
+  const removeItemFromGrid = useCallback((row: number, col: number) => {
     setGrid(prevGrid => {
-      const newGrid = [...prevGrid];
-      newGrid[row] = [...newGrid[row]];
+      const newGrid = [...prevGrid.map(r => [...r])];
       newGrid[row][col] = '';
       return newGrid;
     });
-  };
+  }, []);
 
-  // Handle selecting a recipe
-  const handleSelectRecipe = (recipe: Recipe) => {
-    setSelectedRecipe(recipe);
-    
-    // Clear the grid when a new recipe is selected
+  // Reset the grid to empty
+  const resetGrid = useCallback(() => {
     setGrid(createEmptyGrid());
-  };
+  }, []);
 
-  // Mutation for crafting an item
-  const craftMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedRecipe || !canCraft) return null;
-      
-      const response = await apiRequest('POST', '/api/crafting/craft', {
-        recipeId: selectedRecipe.id,
-        grid: grid
-      });
-      
-      return await response.json();
-    },
-    onSuccess: () => {
-      sounds.craftSuccess();
-      toast({
-        title: 'Item Crafted!',
-        description: `You successfully crafted ${selectedRecipe?.name}`,
-        variant: 'success'
-      });
-      
-      // Reset the crafting grid and clear selected recipe
-      setGrid(createEmptyGrid());
-      setSelectedRecipe(null);
-      
-      // Invalidate queries that need to be updated
-      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/crafted-items'] });
-    },
-    onError: (error) => {
-      sounds.craftFail();
-      toast({
-        title: 'Crafting Failed',
-        description: error.message || 'Failed to craft the item. Please try again.',
-        variant: 'destructive'
-      });
+  // Select a recipe and highlight cells if pattern matching
+  const selectRecipe = useCallback((recipe: Recipe | null) => {
+    setSelectedRecipe(recipe);
+  }, []);
+
+  // Check if the current grid matches the selected recipe pattern
+  const patternMatches = useMemo(() => {
+    if (!selectedRecipe) return false;
+    
+    const pattern = selectedRecipe.pattern;
+    const patternHeight = pattern.length;
+    const patternWidth = pattern[0].length;
+    
+    // Try all possible positions to place the pattern in the grid
+    for (let offsetRow = 0; offsetRow <= 5 - patternHeight; offsetRow++) {
+      for (let offsetCol = 0; offsetCol <= 5 - patternWidth; offsetCol++) {
+        let matches = true;
+        const matchedCells: [number, number][] = [];
+        
+        // Check if pattern matches at this position
+        for (let r = 0; r < patternHeight; r++) {
+          for (let c = 0; c < patternWidth; c++) {
+            const gridRow = offsetRow + r;
+            const gridCol = offsetCol + c;
+            const patternItem = pattern[r][c];
+            
+            // If pattern has an item at this position
+            if (patternItem) {
+              // If grid doesn't match pattern at this position
+              if (grid[gridRow][gridCol] !== patternItem) {
+                matches = false;
+                break;
+              }
+              matchedCells.push([gridRow, gridCol]);
+            }
+          }
+          if (!matches) break;
+        }
+        
+        if (matches) {
+          // Update highlighted cells
+          setHighlightedCells(matchedCells);
+          return true;
+        }
+      }
     }
-  });
+    
+    // No match found
+    setHighlightedCells([]);
+    return false;
+  }, [grid, selectedRecipe]);
 
-  // Function to handle the craft button click
-  const handleCraft = () => {
-    if (!selectedRecipe) return;
+  // Calculate if user has required materials for selected recipe
+  const hasRequiredMaterials = useMemo(() => {
+    if (!selectedRecipe) return false;
     
-    // Double check we have enough materials
-    const missingMaterials = Object.entries(selectedRecipe.materials)
-      .filter(([itemId, requiredAmount]) => {
-        const available = inventory[itemId] || 0;
-        return available < requiredAmount;
-      })
-      .map(([itemId, requiredAmount]) => {
-        const available = inventory[itemId] || 0;
-        return `${itemId}: ${available}/${requiredAmount}`;
-      });
-    
-    if (missingMaterials.length > 0) {
+    return Object.entries(selectedRecipe.materials).every(([itemId, amount]) => {
+      const available = inventory[itemId] || 0;
+      return available >= amount;
+    });
+  }, [inventory, selectedRecipe]);
+  
+  // Determine if crafting is possible
+  const canCraft = useMemo(() => {
+    return Boolean(selectedRecipe && patternMatches && hasRequiredMaterials);
+  }, [selectedRecipe, patternMatches, hasRequiredMaterials]);
+  
+  // Perform crafting
+  const craft = useCallback(() => {
+    if (!canCraft || !selectedRecipe) {
       sounds.craftFail();
       toast({
-        title: 'Missing Materials',
-        description: `You don't have enough materials to craft this item: ${missingMaterials.join(', ')}`,
-        variant: 'destructive'
+        title: "Crafting Failed",
+        description: "The pattern or materials are incorrect.",
+        variant: "destructive",
       });
       return;
     }
     
-    // If all checks pass, execute the craft mutation
-    craftMutation.mutate();
-  };
-
-  // Check if current grid matches a pattern
-  const checkPatternMatch = (
-    currentGrid: CraftingGridPattern,
-    pattern: CraftingGridPattern
-  ): boolean => {
-    for (let row = 0; row < GRID_SIZE; row++) {
-      for (let col = 0; col < GRID_SIZE; col++) {
-        if (pattern[row][col] && currentGrid[row][col] !== pattern[row][col]) {
-          return false;
-        }
-      }
+    // Play success sound
+    sounds.craftSuccess();
+    
+    // Calculate items used
+    const usedItems: Record<string, number> = {};
+    Object.entries(selectedRecipe.materials).forEach(([itemId, amount]) => {
+      usedItems[itemId] = amount;
+    });
+    
+    // Set crafted results
+    setCraftedResults({
+      recipe: selectedRecipe,
+      usedItems
+    });
+    
+    // Show success message
+    toast({
+      title: "Crafting Successful!",
+      description: `You crafted: ${selectedRecipe.name}`,
+      variant: "success", 
+    });
+    
+    // Reset grid after successful craft
+    resetGrid();
+    
+    // Call the callback if provided
+    if (onCraftComplete) {
+      onCraftComplete(selectedRecipe, usedItems);
     }
-    return true;
-  };
-
+  }, [canCraft, selectedRecipe, sounds, toast, resetGrid, onCraftComplete]);
+  
+  // Clear crafted results
+  const clearCraftedResults = useCallback(() => {
+    setCraftedResults(null);
+  }, []);
+  
   return {
     grid,
     selectedRecipe,
+    selectRecipe,
+    addItemToGrid,
+    removeItemFromGrid,
+    resetGrid,
+    highlightedCells,
     canCraft,
-    isCrafting: craftMutation.isPending,
-    onDropItem: handleDropItem,
-    onRemoveItem: handleRemoveItem,
-    onSelectRecipe: handleSelectRecipe,
-    onCraft: handleCraft,
+    craft,
+    craftedResults,
+    clearCraftedResults
   };
 }
-
-export default useCrafting;

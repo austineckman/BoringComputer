@@ -1,64 +1,57 @@
 import { useContext } from 'react';
-import { SoundContext, useSound } from '@/context/SoundContext';
+import { SoundContext } from '@/context/SoundContext';
 
-/**
- * Custom hook to access sound effects from the SoundContext
- * with additional crafting-specific sounds
- */
 export function useSoundEffects() {
-  const context = useSound(); // Use the existing useSound hook
+  const context = useContext(SoundContext);
   
-  // Create a sounds object with the extended crafting sounds
-  const sounds = {
-    // Expose all the original sound methods
-    click: context.playSound.bind(null, 'click'),
-    hover: context.playSound.bind(null, 'hover'),
-    success: context.playSound.bind(null, 'success'),
-    error: context.playSound.bind(null, 'error'),
-    achievement: context.playSound.bind(null, 'achievement'),
-    questComplete: context.playSound.bind(null, 'questComplete'),
-    questAccept: context.playSound.bind(null, 'questAccept'),
-    questStart: context.playSound.bind(null, 'questStart'),
-    reward: context.playSound.bind(null, 'reward'),
-    openBox: context.playSound.bind(null, 'openBox'),
-    boxOpen: context.playSound.bind(null, 'boxOpen'),
-    levelUp: context.playSound.bind(null, 'levelUp'),
-    
-    // Crafting-specific sounds
-    craftSuccess: () => {
-      if (!context.isMuted) {
-        context.playSound('success');
-      }
-    },
-    
-    craftFail: () => {
-      if (!context.isMuted) {
-        context.playSound('error');
-      }
-    },
-    
-    craftDrop: () => {
-      if (!context.isMuted) {
-        context.playSound('click');
-      }
-    },
-    
-    craftPickup: () => {
-      if (!context.isMuted) {
-        context.playSound('click');
-      }
-    },
-    
-    // Library sounds
-    library: {
-      backgroundMusic: null // Reference to the background music (not exposed)
-    }
-  };
+  if (!context) {
+    throw new Error('useSoundEffects must be used within a SoundProvider');
+  }
   
+  // Return a simplified interface with named methods for commonly used sounds
+  // This makes it easier to change sound effects later without changing component code
   return {
-    ...context,
-    sounds
+    sounds: {
+      // UI sounds
+      click: () => context.playSound('click'),
+      hover: () => context.playSound('hover'),
+      success: () => context.playSound('success'),
+      error: () => context.playSound('error'),
+      
+      // Achievement sounds
+      achievement: () => context.playSound('achievement'),
+      
+      // Quest sounds
+      questComplete: () => context.playSound('questComplete'),
+      questAccept: () => context.playSound('questAccept'),
+      questStart: () => context.playSound('questStart'),
+      
+      // Reward sounds
+      reward: () => context.playSound('reward'),
+      openBox: () => context.playSound('openBox'),
+      boxOpen: () => context.playSound('boxOpen'),
+      
+      // Crafting sounds
+      craftPickup: () => context.playSound('craftPickup'),
+      craftDrop: () => context.playSound('craftDrop'),
+      craftSuccess: () => context.playSound('craftSuccess'),
+      craftFail: () => context.playSound('craftFail'),
+      craftComplete: () => context.playSound('craftComplete'),
+      
+      // Direct access to the library
+      library: context.library
+    },
+    
+    // Pass through the rest of the context
+    volume: context.volume,
+    setVolume: context.setVolume,
+    isMuted: context.isMuted,
+    toggleMute: context.toggleMute,
+    playSound: context.playSound,
+    stopAllSounds: context.stopAllSounds,
+    backgroundMusic: context.backgroundMusic,
+    playBackgroundMusic: context.playBackgroundMusic,
+    stopBackgroundMusic: context.stopBackgroundMusic,
+    isBackgroundMusicPlaying: context.isBackgroundMusicPlaying
   };
 }
-
-export default useSoundEffects;

@@ -1,22 +1,18 @@
-/**
- * Shared type definitions for the crafting system
- */
-
-// Item rarity levels
+// Define types for item rarities in the game
 export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
-// Recipe difficulty levels
+// Define recipe difficulty levels
 export type RecipeDifficulty = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 
-// Basic crafting grid type
+// Define the type for the 5x5 crafting grid pattern
 export type CraftingGridPattern = Array<Array<string>>;
 
-// Recipe materials map
+// Material mapping (item ID to quantity)
 export interface MaterialMap {
-  [itemId: string]: number; // item ID to quantity mapping
+  [itemId: string]: number;
 }
 
-// Recipe reward type
+// Recipe reward structure
 export interface RecipeReward {
   itemId: string;
   quantity: number;
@@ -24,7 +20,7 @@ export interface RecipeReward {
   description: string;
 }
 
-// Complete recipe type
+// Recipe definition
 export interface Recipe {
   id: string;
   name: string;
@@ -37,14 +33,14 @@ export interface Recipe {
   imageUrl: string;
 }
 
-// Inventory item with metadata
+// Inventory item structure
 export interface InventoryItem {
   id: string;
   quantity: number;
   lastAcquired: Date | null;
 }
 
-// Crafted item result
+// Crafted item structure
 export interface CraftedItem {
   id: number;
   userId: number;
