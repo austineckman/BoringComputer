@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Redirect, useLocation } from "wouter";
 import PixelButton from "@/components/ui/pixel-button";
 import { FaDiscord, FaUser, FaLock } from "react-icons/fa";
@@ -16,6 +16,8 @@ const Login = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { playSound } = useSoundEffects();
+  
+  // State declarations - keep all state hooks together at the top
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
@@ -33,15 +35,6 @@ const Login = () => {
     retry: false,
     refetchOnWindowFocus: true,
   });
-  
-  // Login with Discord
-  const handleLoginClick = () => {
-    playSound("click");
-    toast({
-      title: 'Discord Login',
-      description: 'Discord login is not available in the demo version.',
-    });
-  };
   
   // Login with credentials mutation
   const loginMutation = useMutation({
@@ -63,6 +56,9 @@ const Login = () => {
     onSuccess: (data) => {
       queryClient.setQueryData(['/api/auth/me'], data);
       
+      // Play the login success sound
+      playSound("loginSuccess");
+      
       toast({
         title: "Login Successful",
         description: `Welcome back, ${data.username}!`,
@@ -74,6 +70,9 @@ const Login = () => {
       }, 1000);
     },
     onError: (error) => {
+      // Play error sound
+      playSound("error");
+      
       toast({
         title: "Login Failed",
         description: error instanceof Error ? error.message : "An error occurred during login",
@@ -82,13 +81,6 @@ const Login = () => {
       setIsLoggingIn(false);
     },
   });
-  
-  const handleCredentialLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    playSound("click");
-    setIsLoggingIn(true);
-    loginMutation.mutate({ username, password });
-  };
   
   // Admin login mutation
   const adminLoginMutation = useMutation({
@@ -110,6 +102,9 @@ const Login = () => {
     onSuccess: (data) => {
       queryClient.setQueryData(['/api/auth/me'], data);
       
+      // Play login success sound
+      playSound("loginSuccess");
+      
       toast({
         title: "Admin Login Successful",
         description: "Logged in with admin account",
@@ -121,6 +116,9 @@ const Login = () => {
       }, 1000);
     },
     onError: (error) => {
+      // Play error sound
+      playSound("error");
+      
       toast({
         title: "Admin Login Failed",
         description: error instanceof Error ? error.message : "Invalid admin credentials",
@@ -129,13 +127,29 @@ const Login = () => {
       setIsLoggingIn(false);
     },
   });
-
-  const handleAdminLogin = (e: React.FormEvent) => {
+  
+  // Callback functions - All useCallback declarations together
+  const handleLoginClick = useCallback(() => {
+    playSound("click");
+    toast({
+      title: 'Discord Login',
+      description: 'Discord login is not available in the demo version.',
+    });
+  }, [playSound, toast]);
+  
+  const handleCredentialLogin = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    playSound("click");
+    setIsLoggingIn(true);
+    loginMutation.mutate({ username, password });
+  }, [playSound, loginMutation, username, password]);
+  
+  const handleAdminLogin = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     playSound("click");
     setIsLoggingIn(true);
     adminLoginMutation.mutate(adminPassword);
-  };
+  }, [playSound, adminLoginMutation, adminPassword]);
 
   if (loading || isFetching || isLoggingIn || loginMutation.isPending || adminLoginMutation.isPending) {
     return (
