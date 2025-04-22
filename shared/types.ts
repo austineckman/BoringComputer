@@ -1,61 +1,51 @@
-// Define types for item rarities in the game
-export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+// Types for the crafting system
 
-// Define recipe difficulty levels
-export type RecipeDifficulty = 'beginner' | 'intermediate' | 'advanced' | 'expert';
-
-// Define the type for the 5x5 crafting grid pattern
-export type CraftingGridPattern = Array<Array<string>>;
-
-// Material mapping (item ID to quantity)
-export interface MaterialMap {
-  [itemId: string]: number;
-}
-
-// Recipe reward structure
-export interface RecipeReward {
-  itemId: string;
-  quantity: number;
-  type: 'digital' | 'physical' | 'blueprint';
-  description: string;
-}
-
-// Recipe definition
+/**
+ * Recipe interface that defines the structure of a crafting recipe
+ */
 export interface Recipe {
   id: string;
   name: string;
-  description: string; 
-  difficulty: RecipeDifficulty;
-  pattern: CraftingGridPattern;
-  materials: MaterialMap;
+  description: string;
+  unlocked: boolean;
+  unlockedAt: number; // Level required to unlock this recipe
+  difficulty: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  
+  // Materials required for crafting (item ID and quantity needed)
+  materials: Record<string, number>;
+  
+  // The pattern is a 2D grid of item IDs or empty strings for empty cells
+  pattern: string[][];
+  
+  // Rewards for successfully crafting the recipe
   rewards: RecipeReward[];
-  unlockedAt: number; // level required to unlock
-  imageUrl: string;
 }
 
-// Inventory item structure
-export interface InventoryItem {
-  id: string;
+/**
+ * Reward received for successfully crafting a recipe
+ */
+export interface RecipeReward {
+  id?: string;
+  itemId: string;
   quantity: number;
-  lastAcquired: Date | null;
+  type: 'item' | 'resource' | 'blueprint' | 'xp';
 }
 
-// Crafted item structure
-export interface CraftedItem {
-  id: number;
-  userId: number;
-  recipeId: string;
-  createdAt: Date;
-  status: 'pending' | 'redeemed' | 'shipped';
-  trackingNumber?: string;
-  redemptionCode?: string;
-  shippingAddress?: {
-    name: string;
-    addressLine1: string;
-    addressLine2?: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-  };
+/**
+ * Information about a crafting pattern match
+ */
+export interface PatternMatch {
+  matches: boolean;
+  recipeId: string | null;
+  matchedCells: { row: number; col: number }[];
+}
+
+/**
+ * Result of a crafting operation
+ */
+export interface CraftingResult {
+  success: boolean;
+  message: string;
+  recipe: Recipe | null;
+  rewards: RecipeReward[];
 }

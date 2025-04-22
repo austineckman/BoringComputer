@@ -1,15 +1,17 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
 import CraftingCell from './CraftingCell';
 import { Recipe } from '@/../../shared/types';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
 
 interface CraftingGridProps {
   grid: string[][];
   onDropItem: (row: number, col: number, itemId: string) => void;
   onRemoveItem: (row: number, col: number) => void;
   onResetGrid: () => void;
-  highlightedCells: [number, number][];
+  highlightedCells: { row: number, col: number }[];
   selectedRecipe: Recipe | null;
 }
 
@@ -21,115 +23,98 @@ const CraftingGrid: React.FC<CraftingGridProps> = ({
   highlightedCells,
   selectedRecipe
 }) => {
-  // Check if a cell is highlighted for pattern matching
-  const isCellHighlighted = (row: number, col: number): boolean => {
-    return highlightedCells.some(([r, c]) => r === row && c === col);
+  const { sounds } = useSoundEffects();
+  
+  // Generate a 2D array of pattern cells to display if a recipe is selected
+  const patternCells = selectedRecipe 
+    ? selectedRecipe.pattern.map((row, rowIndex) => 
+        row.map((cell, colIndex) => ({
+          itemId: cell || '',
+          row: rowIndex,
+          col: colIndex
+        }))
+      )
+    : [];
+  
+  // Check if a cell should be highlighted based on the highlightedCells array
+  const isHighlighted = (row: number, col: number): boolean => {
+    return highlightedCells.some(cell => cell.row === row && cell.col === col);
   };
   
-  // Create a 5x5 grid of crafting cells
-  const renderGrid = () => {
-    const rows = [];
-    
-    for (let row = 0; row < 5; row++) {
-      const cells = [];
-      
-      for (let col = 0; col < 5; col++) {
-        cells.push(
-          <CraftingCell
-            key={`${row}-${col}`}
-            row={row}
-            col={col}
-            itemId={grid[row][col]}
-            onDropItem={onDropItem}
-            onRemoveItem={onRemoveItem}
-            highlighted={isCellHighlighted(row, col)}
-          />
-        );
-      }
-      
-      rows.push(
-        <div key={row} className="flex gap-1">
-          {cells}
-        </div>
-      );
-    }
-    
-    return (
-      <div className="flex flex-col gap-1">
-        {rows}
-      </div>
-    );
-  };
-  
-  // If a recipe is selected, also show the pattern for reference
-  const renderPatternReference = () => {
-    if (!selectedRecipe) return null;
-    
-    const pattern = selectedRecipe.pattern;
-    const patternHeight = pattern.length;
-    const patternWidth = pattern[0].length;
-    
-    const rows = [];
-    
-    for (let row = 0; row < patternHeight; row++) {
-      const cells = [];
-      
-      for (let col = 0; col < patternWidth; col++) {
-        cells.push(
-          <CraftingCell
-            key={`pattern-${row}-${col}`}
-            row={row}
-            col={col}
-            itemId={pattern[row][col]}
-            onDropItem={() => {}} // No-op for pattern reference
-            onRemoveItem={() => {}} // No-op for pattern reference
-            pattern={true}
-          />
-        );
-      }
-      
-      rows.push(
-        <div key={`pattern-row-${row}`} className="flex gap-1">
-          {cells}
-        </div>
-      );
-    }
-    
-    return (
-      <div className="mt-4">
-        <h3 className="text-sm font-medium mb-2">Recipe Pattern:</h3>
-        <div className="flex flex-col gap-1">
-          {rows}
-        </div>
-      </div>
-    );
+  // Handle reset button click
+  const handleReset = () => {
+    sounds.click();
+    onResetGrid();
   };
   
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader className="pb-3">
-        <CardTitle className="text-xl">
-          Crafting Grid
-        </CardTitle>
-        <CardDescription>
-          Drag items from your inventory to this grid
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div>
-          {renderGrid()}
-          
-          <div className="flex justify-end mt-4">
-            <Button 
-              variant="outline" 
-              onClick={onResetGrid}
-              size="sm"
-            >
-              Clear Grid
-            </Button>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle className="text-xl">Crafting Grid</CardTitle>
+            <CardDescription>
+              {selectedRecipe 
+                ? `Crafting ${selectedRecipe.name}`
+                : 'Select a recipe and arrange items'}
+            </CardDescription>
           </div>
           
-          {renderPatternReference()}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleReset}
+            disabled={!grid.some(row => row.some(cell => cell))}
+          >
+            <Trash2 className="h-4 w-4 mr-1" />
+            Clear
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
+          {/* Main crafting grid */}
+          <div className="grid grid-cols-5 gap-1 bg-gray-100 dark:bg-gray-800 p-3 rounded-md">
+            {grid.map((row, rowIndex) => (
+              <React.Fragment key={`row-${rowIndex}`}>
+                {row.map((cell, colIndex) => (
+                  <CraftingCell
+                    key={`cell-${rowIndex}-${colIndex}`}
+                    row={rowIndex}
+                    col={colIndex}
+                    itemId={cell}
+                    onDropItem={onDropItem}
+                    onRemoveItem={onRemoveItem}
+                    highlighted={isHighlighted(rowIndex, colIndex)}
+                  />
+                ))}
+              </React.Fragment>
+            ))}
+          </div>
+          
+          {/* Pattern display for the selected recipe */}
+          {selectedRecipe && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Pattern:</h3>
+              <div className="grid grid-cols-5 gap-1 bg-gray-50 dark:bg-gray-900 p-3 rounded-md border border-dashed">
+                {patternCells.map((row, rowIndex) => (
+                  <React.Fragment key={`pattern-row-${rowIndex}`}>
+                    {row.map((cell, colIndex) => (
+                      <CraftingCell
+                        key={`pattern-cell-${rowIndex}-${colIndex}`}
+                        row={rowIndex}
+                        col={colIndex}
+                        itemId={cell.itemId}
+                        onDropItem={() => {}}
+                        onRemoveItem={() => {}}
+                        pattern={true}
+                      />
+                    ))}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

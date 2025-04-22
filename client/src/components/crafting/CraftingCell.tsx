@@ -1,7 +1,8 @@
 import React from 'react';
 import { useDrop } from 'react-dnd';
-import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { getItemDetails } from '@/lib/itemDatabase';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
+import { cn } from '@/lib/utils';
 
 interface CraftingCellProps {
   row: number;
@@ -20,10 +21,9 @@ const CraftingCell: React.FC<CraftingCellProps> = ({
   onDropItem,
   onRemoveItem,
   highlighted = false,
-  pattern = false,
+  pattern = false
 }) => {
   const { sounds } = useSoundEffects();
-  const hasItem = Boolean(itemId);
   
   // Set up drop target
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
@@ -31,65 +31,54 @@ const CraftingCell: React.FC<CraftingCellProps> = ({
     drop: (item: { id: string }) => {
       sounds.craftDrop();
       onDropItem(row, col, item.id);
-      return { row, col };
+      return { dropped: true };
     },
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),
       canDrop: !!monitor.canDrop(),
     }),
-    // Don't allow dropping if cell already has an item and it's not a pattern view
-    canDrop: () => !hasItem || pattern,
-  }));
+    // Disable dropping for pattern display
+    canDrop: () => !pattern,
+  }), [row, col, onDropItem, pattern, sounds]);
   
-  // Handle click to remove item
-  const handleRemoveItem = () => {
-    if (hasItem && !pattern) {
-      sounds.craftPickup();
+  // Handle cell click to remove item
+  const handleClick = () => {
+    if (itemId && !pattern) {
+      sounds.click();
       onRemoveItem(row, col);
     }
   };
   
-  // Determine cell styling
-  const getCellClassName = () => {
-    let className = 'w-12 h-12 flex items-center justify-center rounded-md transition-all';
-    
-    // Base style
-    if (pattern) {
-      className += ' cursor-default';
-    } else {
-      className += hasItem 
-        ? ' cursor-pointer border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800' 
-        : ' cursor-default border border-dashed border-gray-300 dark:border-gray-700';
-    }
-    
-    // Hover and drop state
-    if (isOver && canDrop) {
-      className += ' border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20';
-    }
-    
-    // Highlight for pattern matching
-    if (highlighted) {
-      className += ' border-amber-400 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20';
-    }
-    
-    return className;
-  };
+  // Get item details if there's an item in the cell
+  const itemDetails = itemId ? getItemDetails(itemId) : null;
   
   return (
-    <div 
-      ref={drop}
-      className={getCellClassName()}
-      onClick={handleRemoveItem}
+    <div
+      ref={pattern ? null : drop}
+      className={cn(
+        'w-12 h-12 border rounded flex items-center justify-center transition-all',
+        {
+          'bg-gray-50 dark:bg-gray-800': !itemId && !isOver && !highlighted && !pattern,
+          'bg-gray-100 dark:bg-gray-700': !itemId && isOver && !pattern,
+          'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700': highlighted,
+          'border-dashed': !itemId && !pattern,
+          'border-solid border-amber-300 dark:border-amber-700': isOver && canDrop,
+          'cursor-pointer': itemId && !pattern,
+          'bg-gray-200 dark:bg-gray-900 border-dashed border-gray-400': pattern && !itemId,
+          'opacity-60': pattern
+        }
+      )}
+      onClick={handleClick}
     >
-      {hasItem && (
-        <div className="w-10 h-10 flex items-center justify-center">
-          <img 
-            src={getItemDetails(itemId).imagePath}
-            alt={getItemDetails(itemId).name}
-            className="max-w-full max-h-full object-contain"
-            draggable={false}
-          />
-        </div>
+      {itemId && itemDetails && (
+        <img
+          src={itemDetails.imagePath}
+          alt={itemDetails.name}
+          className={cn(
+            'max-w-9 max-h-9 object-contain',
+            { 'cursor-pointer hover:scale-105 transition-transform': !pattern }
+          )}
+        />
       )}
     </div>
   );
