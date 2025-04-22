@@ -865,7 +865,7 @@ export class MemStorage implements IStorage {
   // Import default items from itemDatabase.ts
   private initializeItems() {
     // Import the itemDatabase module
-    import('../itemDatabase').then(({ itemDatabase }) => {
+    import('./itemDatabase').then(({ itemDatabase }) => {
       // Convert itemDatabase entries to database Item records
       for (const [id, details] of Object.entries(itemDatabase)) {
         this.createItem({
