@@ -1290,5 +1290,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/crafting/recipes/:id', authenticate, adminOnly, craftingRecipeRoutes.deleteCraftingRecipe);
   app.post('/api/crafting/craft', authenticate, craftingRecipeRoutes.craftItem);
   
+  // Admin routes
+  app.use('/api/admin', authenticate, adminRoutes);
+  
   return httpServer;
 }
