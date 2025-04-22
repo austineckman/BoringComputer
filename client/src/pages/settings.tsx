@@ -276,33 +276,34 @@ export default function SettingsPage() {
             <div className="space-y-8">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <Label htmlFor="mute-toggle">Mute All Sounds</Label>
+                  <Label htmlFor="mute-toggle" className="text-brand-light">Mute All Sounds</Label>
                   <Switch 
                     id="mute-toggle" 
                     checked={isMuted}
                     onCheckedChange={handleToggleMute}
+                    className="data-[state=checked]:bg-brand-orange"
                   />
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-brand-light/60">
                   Toggle all game sound effects on or off
                 </p>
               </div>
               
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <Label>Sound Volume</Label>
+                  <Label className="text-brand-light">Sound Volume</Label>
                   <div 
                     className="h-8 w-8 flex items-center justify-center"
                     onMouseEnter={() => setShowVolumeTooltip(true)}
                     onMouseLeave={() => setShowVolumeTooltip(false)}
                   >
                     {isMuted || volume === 0 ? (
-                      <VolumeX className="h-5 w-5 text-muted-foreground" />
+                      <VolumeX className="h-5 w-5 text-brand-light/50" />
                     ) : (
-                      <Volume2 className="h-5 w-5" />
+                      <Volume2 className="h-5 w-5 text-brand-light" />
                     )}
                     {showVolumeTooltip && (
-                      <div className="absolute bg-background border border-border px-2 py-1 rounded text-xs -mt-8">
+                      <div className="absolute bg-space-dark border border-brand-orange/30 px-2 py-1 rounded text-xs -mt-8 text-brand-light">
                         {volume}%
                       </div>
                     )}
@@ -314,9 +315,9 @@ export default function SettingsPage() {
                   step={1}
                   onValueChange={handleVolumeChange}
                   disabled={isMuted}
-                  className="my-4"
+                  className="my-4 [&>[role=slider]]:bg-brand-orange [&>.range]:bg-brand-orange"
                 />
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="flex justify-between text-xs text-brand-light/60">
                   <span>0%</span>
                   <span>50%</span>
                   <span>100%</span>
@@ -325,7 +326,7 @@ export default function SettingsPage() {
               
               <div className="pt-4">
                 <Button
-                  className="mr-2"
+                  className="mr-2 bg-brand-orange hover:bg-brand-yellow text-space-darkest font-medium"
                   onMouseEnter={() => sounds.hover?.play()}
                   onClick={() => {
                     sounds.success?.play();
@@ -340,6 +341,7 @@ export default function SettingsPage() {
                 </Button>
                 <Button
                   variant="outline"
+                  className="border-brand-orange/50 text-brand-orange hover:bg-brand-orange/10 hover:text-brand-yellow"
                   onMouseEnter={() => sounds.hover?.play()}
                   onClick={() => {
                     sounds.error?.play();
@@ -360,10 +362,10 @@ export default function SettingsPage() {
         </Card>
         
         {/* Display Settings Card */}
-        <Card>
+        <Card className="bg-space-darkest border-brand-orange/30">
           <CardHeader>
-            <CardTitle>Display Settings</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-brand-orange">Display Settings</CardTitle>
+            <CardDescription className="text-brand-light/70">
               Adjust visual preferences for the game interface
             </CardDescription>
           </CardHeader>
@@ -371,12 +373,16 @@ export default function SettingsPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="pixel-toggle" className="block mb-1">Pixel Art Mode</Label>
-                  <p className="text-sm text-muted-foreground">
+                  <Label htmlFor="pixel-toggle" className="block mb-1 text-brand-light">Pixel Art Mode</Label>
+                  <p className="text-sm text-brand-light/60">
                     Enhance pixel art edges for a classic arcade look
                   </p>
                 </div>
-                <Switch id="pixel-toggle" defaultChecked />
+                <Switch 
+                  id="pixel-toggle" 
+                  defaultChecked 
+                  className="data-[state=checked]:bg-brand-orange"
+                />
               </div>
             </div>
           </CardContent>
