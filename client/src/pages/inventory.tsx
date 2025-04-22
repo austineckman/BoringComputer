@@ -19,11 +19,13 @@ interface LootBox {
   id: number;
   userId: number;
   type: string;
-  opened: boolean;
-  rewards: { type: string, quantity: number }[];
+  opened: boolean | null;
+  rewards: { type: string, quantity: number }[] | null;
   source: string;
-  sourceId: number;
-  createdAt: string;
+  sourceId: number | null;
+  acquiredAt: Date | null;
+  openedAt: Date | null;
+  createdAt?: string; // Optional for backward compatibility with our current UI
 }
 
 export default function Inventory() {

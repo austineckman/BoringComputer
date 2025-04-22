@@ -12,11 +12,13 @@ interface LootBox {
   id: number;
   userId: number;
   type: string;
-  opened: boolean;
-  rewards: {type: string, quantity: number}[];
+  opened: boolean | null;
+  rewards: {type: string, quantity: number}[] | null;
   source: string;
-  sourceId: number;
-  createdAt: string;
+  sourceId: number | null;
+  acquiredAt: Date | null;
+  openedAt: Date | null;
+  createdAt?: string; // Optional for backward compatibility
 }
 
 interface LootBoxProps {
@@ -74,7 +76,7 @@ export function LootBoxItem({ lootBox, onOpen }: LootBoxProps) {
     sounds.click();
     if (lootBox.opened) {
       // Just show the rewards if already opened
-      onOpen(lootBox, lootBox.rewards);
+      onOpen(lootBox, lootBox.rewards || []);
     } else {
       // Show opening animation
       setShowOpenModal(true);
