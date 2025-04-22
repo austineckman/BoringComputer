@@ -62,7 +62,7 @@ export const useAuth = () => {
         await refetch();
         
         // Play login success sound
-        playSound("success");
+        playSound("loginSuccess");
         
         // Success notification
         toast({
@@ -117,7 +117,7 @@ export const useAuth = () => {
         await refetch();
         
         // Play success sound
-        playSound("success");
+        playSound("loginSuccess");
         
         // Success notification
         toast({
@@ -203,7 +203,7 @@ export const useAuth = () => {
         await refetch();
         
         // Play success sound
-        playSound("success");
+        playSound("loginSuccess");
         
         toast({
           title: "Admin Login",
