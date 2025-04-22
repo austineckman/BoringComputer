@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Card } from '@/components/ui/card';
 import { useDrag } from 'react-dnd';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 import { getItemDetails } from '@/lib/itemDatabase';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
-import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface InventoryItemProps {
   itemId: string;
@@ -20,124 +20,87 @@ const InventoryItem: React.FC<InventoryItemProps> = ({
   requiredAmount = 0
 }) => {
   const { sounds } = useSoundEffects();
-  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
   
   // Get item details from database
   const itemDetails = getItemDetails(itemId);
   
-  // Setup drag source
+  // Determine if we have enough of this item for the recipe
+  const hasEnough = isRequired ? quantity >= requiredAmount : false;
+  
+  // Set up drag functionality
   const [{ isDragging }, drag] = useDrag(() => ({
-    type: 'inventory-item',
-    item: () => {
-      sounds.craftPickup();
-      return { id: itemId };
-    },
+    type: 'item',
+    item: { itemId },
+    canDrag: quantity > 0,
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
-    canDrag: () => quantity > 0,
-    end: (item, monitor) => {
-      if (!monitor.didDrop()) {
-        sounds.craftDrop();
+    end: (_item, monitor) => {
+      if (monitor.didDrop()) {
+        sounds.craftPickup();
       }
-    }
-  }), [itemId, quantity, sounds]);
+    },
+  }), [itemId, quantity]);
   
-  // Handle hover to show tooltip
-  const handleMouseEnter = () => {
+  // When the user begins dragging, play a sound
+  const handleDragStart = () => {
     sounds.hover();
-    setIsTooltipOpen(true);
   };
   
-  // Handle mouse leave to hide tooltip
-  const handleMouseLeave = () => {
-    setIsTooltipOpen(false);
-  };
-  
-  // Determine background color class based on rarity
-  const getRarityClass = () => {
-    switch (itemDetails.rarity) {
-      case 'common':
-        return 'bg-gray-100 dark:bg-gray-800';
-      case 'uncommon':
-        return 'bg-green-50 dark:bg-green-900/30';
-      case 'rare':
-        return 'bg-blue-50 dark:bg-blue-900/30';
-      case 'epic':
-        return 'bg-purple-50 dark:bg-purple-900/30';
+  // Get rarity-based styling
+  const getRarityStyle = () => {
+    switch (itemDetails?.rarity) {
       case 'legendary':
-        return 'bg-amber-50 dark:bg-amber-900/30';
+        return 'border-amber-500 bg-amber-500/5';
+      case 'epic':
+        return 'border-purple-500 bg-purple-500/5';
+      case 'rare':
+        return 'border-blue-500 bg-blue-500/5';
+      case 'uncommon':
+        return 'border-green-500 bg-green-500/5';
       default:
-        return 'bg-gray-100 dark:bg-gray-800';
+        return 'border-gray-300 bg-background';
     }
-  };
-  
-  // Apply additional styles for required items in crafting
-  const getRequirementStyles = () => {
-    if (!isRequired) return '';
-    return quantity >= requiredAmount 
-      ? 'border-green-400 dark:border-green-600' 
-      : 'border-red-400 dark:border-red-600';
   };
   
   return (
-    <TooltipProvider>
-      <Tooltip open={isTooltipOpen}>
-        <TooltipTrigger asChild>
-          <div
-            ref={drag}
+    <Card
+      ref={drag}
+      onDragStart={handleDragStart}
+      className={cn(
+        'p-1 cursor-grab hover:shadow-md transition-all duration-200 relative',
+        getRarityStyle(),
+        isDragging && 'opacity-50',
+        !quantity && 'opacity-30 cursor-not-allowed',
+        isRequired && !hasEnough && 'border-red-400 animate-pulse'
+      )}
+      title={`${itemDetails?.name || itemId} (${quantity})`}
+    >
+      <div className="w-full aspect-square relative flex items-center justify-center">
+        <img 
+          src={itemDetails?.imagePath} 
+          alt={itemDetails?.name || itemId}
+          className="w-4/5 h-4/5 object-contain"
+        />
+        
+        <div className="absolute bottom-0 right-0 text-xs font-semibold bg-background/80 px-1 rounded-tl-md">
+          {quantity}
+        </div>
+        
+        {isRequired && (
+          <Badge 
+            variant="outline" 
             className={cn(
-              'relative p-1 rounded-md border cursor-pointer',
-              'transition-all duration-200',
-              isDragging ? 'opacity-50' : 'opacity-100',
-              getRarityClass(),
-              getRequirementStyles(),
-              quantity === 0 ? 'grayscale opacity-50' : ''
+              'absolute top-0 left-0 text-xs',
+              hasEnough ? 'border-green-400' : 'border-red-400'
             )}
-            style={{ 
-              boxShadow: isDragging ? '0 5px 10px rgba(0,0,0,0.2)' : 'none',
-              transform: isDragging ? 'scale(1.05)' : 'scale(1)'
-            }}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
           >
-            <div className="w-full h-16 flex items-center justify-center">
-              <img 
-                src={itemDetails.imagePath}
-                alt={itemDetails.name}
-                className="max-w-full max-h-full object-contain"
-                draggable={false}
-              />
-            </div>
-            <div className="absolute bottom-0 right-0 p-0.5">
-              <Badge variant={isRequired ? 'outline' : 'secondary'} className="text-xs">
-                {quantity}
-              </Badge>
-            </div>
-            {isRequired && (
-              <div className="absolute top-0 right-0 p-0.5">
-                <Badge 
-                  variant={quantity >= requiredAmount ? 'outline' : 'secondary'} 
-                  className={cn(
-                    'text-xs',
-                    quantity >= requiredAmount ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'
-                  )}
-                >
-                  {requiredAmount}
-                </Badge>
-              </div>
-            )}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="top" align="center">
-          <div className="space-y-1 max-w-[200px]">
-            <p className="font-medium">{itemDetails.name}</p>
-            <p className="text-xs opacity-80">{itemDetails.description}</p>
-            <p className="text-xs italic opacity-70">{itemDetails.flavorText}</p>
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+            {requiredAmount}
+            {hasEnough ? ' ✓' : ''}
+          </Badge>
+        )}
+      </div>
+    </Card>
   );
 };
 
