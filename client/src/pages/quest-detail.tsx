@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation, useParams } from 'wouter';
-import { Loader2, Edit, Save, Plus, Trash } from 'lucide-react';
+import { Loader2, Edit, Save, Plus, Trash, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
+import { themeConfig } from '@/lib/themeConfig';
 import MainLayout from '@/components/layout/MainLayout';
 
 // YouTube embed component
@@ -65,11 +66,71 @@ export default function QuestDetailPage() {
   const [showImages, setShowImages] = useState(false);
   const [showCode, setShowCode] = useState(false);
 
+  // Auth state to check if user is admin
+  const { user } = useAuth();
+  const isAdmin = user?.roles?.includes('admin');
+  
+  // State for edit mode
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedQuest, setEditedQuest] = useState<any>(null);
+  
   // Fetch quest details
-  const { data: quest, isLoading } = useQuery({
+  const { data: quest, isLoading, refetch } = useQuery({
     queryKey: ['/api/quests', questId],
     queryFn: () => fetch(`/api/quests/${questId}`).then(res => res.json()),
     enabled: !!questId,
+  });
+  
+  // Start editing mode
+  const handleStartEdit = () => {
+    setEditedQuest({...quest});
+    setIsEditing(true);
+    sounds.click?.();
+  };
+  
+  // Cancel editing
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedQuest(null);
+    sounds.click?.();
+  };
+  
+  // Update quest mutation
+  const updateQuestMutation = useMutation({
+    mutationFn: async (updatedData: any) => {
+      const response = await fetch(`/api/quests/${questId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update quest');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      refetch();
+      setIsEditing(false);
+      setEditedQuest(null);
+      toast({
+        title: "Quest Updated",
+        description: "The quest has been successfully updated",
+        variant: "default",
+      });
+      sounds.success?.();
+    },
+    onError: (error) => {
+      toast({
+        title: "Update Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      sounds.error?.();
+    },
   });
 
   // Handle quest completion
@@ -84,7 +145,7 @@ export default function QuestDetailPage() {
         toast({
           title: "Quest Completed!",
           description: "You've earned XP and loot boxes!",
-          variant: "success",
+          variant: "default",
         });
         
         // Navigate back to quests page
@@ -154,14 +215,119 @@ export default function QuestDetailPage() {
           {/* Main content */}
           <div className="w-full md:w-2/3">
             <div className="mb-6">
-              <h1 className="text-3xl font-bold mb-2">{quest.title}</h1>
-              <div className="text-sm text-muted-foreground mb-4">
-                Adventure Line: <span className="font-medium">{quest.adventureLine}</span> • 
-                Difficulty: <span className="font-medium">{quest.difficulty}/5</span>
-              </div>
-              <div className="prose dark:prose-invert max-w-none mb-6">
-                <p>{quest.description}</p>
-              </div>
+              {/* Admin Edit Button */}
+              {isAdmin && (
+                <div className="flex justify-end mb-2">
+                  {isEditing ? (
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={handleCancelEdit}
+                        onMouseEnter={() => sounds.hover?.()}
+                        className="border-red-500/30 text-red-500 hover:text-red-600"
+                      >
+                        <X className="h-4 w-4 mr-1" /> Cancel
+                      </Button>
+                      <Button 
+                        onClick={() => updateQuestMutation.mutate(editedQuest)}
+                        onMouseEnter={() => sounds.hover?.()}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        disabled={updateQuestMutation.isPending}
+                      >
+                        {updateQuestMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4 mr-1" /> Save Changes
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      onClick={handleStartEdit}
+                      onMouseEnter={() => sounds.hover?.()}
+                    >
+                      <Edit className="h-4 w-4 mr-1" /> Edit Quest
+                    </Button>
+                  )}
+                </div>
+              )}
+              
+              {isEditing ? (
+                /* Editing Form */
+                <>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Title</label>
+                    <Input 
+                      value={editedQuest.title}
+                      onChange={(e) => setEditedQuest({...editedQuest, title: e.target.value})}
+                      className="bg-space-dark border-brand-orange/30"
+                    />
+                  </div>
+                  
+                  <div className="mb-4 grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-1">Adventure Line</label>
+                      <select
+                        value={editedQuest.adventureLine}
+                        onChange={(e) => setEditedQuest({...editedQuest, adventureLine: e.target.value})}
+                        className="w-full px-3 py-2 rounded-md bg-space-dark border border-brand-orange/30 text-brand-light"
+                      >
+                        {themeConfig.adventureLines.map((line) => (
+                          <option key={line.id} value={line.id}>{line.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-1">Difficulty (1-5)</label>
+                      <select
+                        value={editedQuest.difficulty}
+                        onChange={(e) => setEditedQuest({...editedQuest, difficulty: Number(e.target.value)})}
+                        className="w-full px-3 py-2 rounded-md bg-space-dark border border-brand-orange/30 text-brand-light"
+                      >
+                        {[1, 2, 3, 4, 5].map((level) => (
+                          <option key={level} value={level}>{level}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Description</label>
+                    <Textarea 
+                      value={editedQuest.description}
+                      onChange={(e) => setEditedQuest({...editedQuest, description: e.target.value})}
+                      className="bg-space-dark border-brand-orange/30 min-h-[100px]"
+                    />
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-400 mb-1">XP Reward</label>
+                    <Input 
+                      type="number"
+                      value={editedQuest.xpReward}
+                      onChange={(e) => setEditedQuest({...editedQuest, xpReward: Number(e.target.value)})}
+                      className="bg-space-dark border-brand-orange/30"
+                    />
+                  </div>
+                </>
+              ) : (
+                /* Display Mode */
+                <>
+                  <h1 className="text-3xl font-bold mb-2">{quest.title}</h1>
+                  <div className="text-sm text-muted-foreground mb-4">
+                    Adventure Line: <span className="font-medium">{quest.adventureLine}</span> • 
+                    Difficulty: <span className="font-medium">{quest.difficulty}/5</span>
+                  </div>
+                  <div className="prose dark:prose-invert max-w-none mb-6">
+                    <p>{quest.description}</p>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="space-y-4 mb-8">
@@ -243,37 +409,129 @@ export default function QuestDetailPage() {
             <Card className="p-6">
               <h3 className="text-xl font-semibold mb-4">Quest Rewards</h3>
               
-              <div className="space-y-2 mb-6">
-                <div className="flex justify-between">
-                  <span>XP:</span>
-                  <span className="font-medium">{quest.xpReward}</span>
-                </div>
-                
-                {quest.lootBoxRewards && quest.lootBoxRewards.length > 0 ? (
+              {isEditing && isAdmin ? (
+                /* Admin editing reward section */
+                <div className="space-y-4 mb-6">
                   <div>
-                    <p className="mb-2">Loot Boxes:</p>
-                    <ul className="space-y-1 ml-4">
-                      {quest.lootBoxRewards.map((reward, index) => (
-                        <li key={index} className="flex justify-between">
-                          <span>{reward.type} Loot Box:</span>
-                          <span>{reward.quantity}x</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">XP Reward</label>
+                    <Input 
+                      type="number"
+                      value={editedQuest.xpReward || 0}
+                      onChange={(e) => setEditedQuest({...editedQuest, xpReward: Number(e.target.value)})}
+                      className="bg-space-dark border-brand-orange/30"
+                    />
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No loot boxes for this quest.</p>
-                )}
-              </div>
+                  
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="text-sm font-medium text-gray-400">Loot Box Rewards</label>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const lootBoxRewards = editedQuest.lootBoxRewards || [];
+                          setEditedQuest({
+                            ...editedQuest, 
+                            lootBoxRewards: [
+                              ...lootBoxRewards, 
+                              { type: 'common', quantity: 1 }
+                            ]
+                          });
+                        }}
+                        className="h-8 px-2 text-xs"
+                      >
+                        <Plus className="h-3 w-3 mr-1" /> Add Reward
+                      </Button>
+                    </div>
+                    
+                    {editedQuest.lootBoxRewards && editedQuest.lootBoxRewards.length > 0 ? (
+                      <div className="space-y-2">
+                        {editedQuest.lootBoxRewards.map((reward: any, index: number) => (
+                          <div key={index} className="flex items-center gap-2 bg-space-dark p-2 rounded-md">
+                            <select
+                              value={reward.type}
+                              onChange={(e) => {
+                                const updatedRewards = [...editedQuest.lootBoxRewards];
+                                updatedRewards[index] = { ...reward, type: e.target.value };
+                                setEditedQuest({...editedQuest, lootBoxRewards: updatedRewards});
+                              }}
+                              className="flex-1 px-2 py-1 rounded-md bg-space-mid border border-brand-orange/30 text-brand-light text-sm"
+                            >
+                              <option value="common">Common</option>
+                              <option value="uncommon">Uncommon</option>
+                              <option value="rare">Rare</option>
+                              <option value="epic">Epic</option>
+                              <option value="legendary">Legendary</option>
+                            </select>
+                            <Input 
+                              type="number"
+                              value={reward.quantity}
+                              onChange={(e) => {
+                                const updatedRewards = [...editedQuest.lootBoxRewards];
+                                updatedRewards[index] = { ...reward, quantity: Number(e.target.value) };
+                                setEditedQuest({...editedQuest, lootBoxRewards: updatedRewards});
+                              }}
+                              className="w-20 bg-space-mid border-brand-orange/30 text-sm h-8"
+                              min={1}
+                            />
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                const updatedRewards = [...editedQuest.lootBoxRewards];
+                                updatedRewards.splice(index, 1);
+                                setEditedQuest({...editedQuest, lootBoxRewards: updatedRewards});
+                              }}
+                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-transparent"
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-2 bg-space-dark rounded-md">
+                        No loot box rewards added yet
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* Regular display reward section */
+                <div className="space-y-2 mb-6">
+                  <div className="flex justify-between">
+                    <span>XP:</span>
+                    <span className="font-medium">{quest.xpReward}</span>
+                  </div>
+                  
+                  {quest.lootBoxRewards && quest.lootBoxRewards.length > 0 ? (
+                    <div>
+                      <p className="mb-2">Loot Boxes:</p>
+                      <ul className="space-y-1 ml-4">
+                        {quest.lootBoxRewards.map((reward, index) => (
+                          <li key={index} className="flex justify-between">
+                            <span>{reward.type} Loot Box:</span>
+                            <span>{reward.quantity}x</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No loot boxes for this quest.</p>
+                  )}
+                </div>
+              )}
               
-              <Button 
-                className="w-full" 
-                size="lg"
-                onClick={handleCompleteQuest}
-                onMouseEnter={sounds.hover}
-              >
-                Complete Quest
-              </Button>
+              {!isEditing && (
+                <Button 
+                  className="w-full" 
+                  size="lg"
+                  onClick={handleCompleteQuest}
+                  onMouseEnter={() => sounds.hover?.()}
+                >
+                  Complete Quest
+                </Button>
+              )}
             </Card>
           </div>
         </div>
