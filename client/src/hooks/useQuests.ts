@@ -59,7 +59,7 @@ export const useQuests = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/quests'] });
       queryClient.invalidateQueries({ queryKey: ['/api/quests/active'] });
-      playSound("complete");
+      playSound("questStart");
       toast({
         title: "Quest Started",
         description: "You've begun a new quest!",
@@ -89,7 +89,10 @@ export const useQuests = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/quests/active'] });
       queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
       
-      playSound("reward");
+      // Play completion sound and then reward sound with a slight delay
+      playSound("questComplete");
+      setTimeout(() => playSound("reward"), 700);
+      
       // Format reward message
       const rewardText = data.rewards?.length 
         ? data.rewards.map((r: { type: string; quantity: number }) => `${r.quantity}x ${r.type}`).join(', ')

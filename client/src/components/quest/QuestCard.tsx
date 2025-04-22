@@ -54,10 +54,12 @@ const QuestCard = ({
 
   const handleAction = () => {
     if (status === "active" || status === "available") {
-      playSound("complete");
+      // Play different sounds based on action type
       if (status === "active" && onContinue) {
+        playSound("questComplete");
         onContinue();
       } else if (status === "available" && onStart) {
+        playSound("questStart");
         onStart();
       }
     }
