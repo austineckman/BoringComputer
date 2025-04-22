@@ -7,6 +7,7 @@ import QuestCard from "@/components/quest/QuestCard";
 import ResourceItem from "@/components/ui/resource-item";
 import { useAuth } from "@/hooks/useAuth";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
+import { useAdventureNavigation } from "@/hooks/useAdventureNavigation";
 
 const Home = () => {
   const { user } = useAuth();

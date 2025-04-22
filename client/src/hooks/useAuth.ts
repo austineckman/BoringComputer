@@ -116,6 +116,9 @@ export const useAuth = () => {
       try {
         await refetch();
         
+        // Play success sound
+        playSound("success");
+        
         // Success notification
         toast({
           title: "Login Successful",
@@ -163,6 +166,10 @@ export const useAuth = () => {
     onSuccess: () => {
       queryClient.setQueryData(['/api/auth/me'], null);
       queryClient.invalidateQueries();
+      
+      // Play logout sound
+      playSound("powerUp");
+      
       toast({
         title: "Logged Out",
         description: "You have been successfully logged out",
@@ -228,7 +235,7 @@ export const useAuth = () => {
         variant: "destructive",
       });
     }
-  }, [toast, refetch]);
+  }, [toast, refetch, playSound]);
   
   // Check for level changes and play level up sound
   useEffect(() => {
