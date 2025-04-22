@@ -47,22 +47,32 @@ export function useSoundEffects() {
   useEffect(() => {
     localStorage.setItem('sound_volume', volume.toString());
     Howler.volume(volume);
-  }, [volume]);
+    
+    // Also update the background music volume if it's playing
+    if (isBgMusicPlaying && bgMusicId.current !== null) {
+      soundLibrary.backgroundMusic.volume(volume * 0.5);
+    }
+  }, [volume, isBgMusicPlaying]);
   
   // Effect to play background music on mount if enabled
   useEffect(() => {
     // Start playing background music if it should be playing and not muted
     if (isBgMusicPlaying && !isMuted) {
-      bgMusicId.current = soundLibrary.backgroundMusic.play();
+      if (bgMusicId.current === null) {
+        // If music is not already playing, start it
+        bgMusicId.current = soundLibrary.backgroundMusic.play();
+        soundLibrary.backgroundMusic.volume(volume * 0.5); // Set background music at half the main volume
+      }
     }
     
     // Cleanup function to stop background music when component unmounts
     return () => {
       if (bgMusicId.current !== null) {
         soundLibrary.backgroundMusic.stop(bgMusicId.current);
+        bgMusicId.current = null;
       }
     };
-  }, []);
+  }, [isBgMusicPlaying, isMuted, volume]);
 
   const toggleMute = useCallback(() => {
     setIsMuted(prev => !prev);
@@ -79,6 +89,7 @@ export function useSoundEffects() {
       if (newState && !isMuted) {
         // Start playing background music
         bgMusicId.current = soundLibrary.backgroundMusic.play();
+        soundLibrary.backgroundMusic.volume(volume * 0.5); // Set background music at half the main volume
       } else if (!newState && bgMusicId.current !== null) {
         // Stop background music
         soundLibrary.backgroundMusic.stop(bgMusicId.current);
@@ -87,7 +98,7 @@ export function useSoundEffects() {
       
       return newState;
     });
-  }, [isMuted]);
+  }, [isMuted, volume]);
 
   const playSoundSafely = useCallback(
     (name: SoundName) => {
