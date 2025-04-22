@@ -15,7 +15,7 @@ import { getQueryFn } from "@/lib/queryClient";
 const Login = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { playSound } = useSoundEffects();
+  const { sounds } = useSoundEffects();
   
   // State declarations - keep all state hooks together at the top
   const [username, setUsername] = useState("");
@@ -57,7 +57,11 @@ const Login = () => {
       queryClient.setQueryData(['/api/auth/me'], data);
       
       // Play the login success sound
-      playSound("loginSuccess");
+      try {
+        sounds.success?.();
+      } catch (e) {
+        console.warn('Could not play success sound', e);
+      }
       
       toast({
         title: "Login Successful",
@@ -71,7 +75,11 @@ const Login = () => {
     },
     onError: (error) => {
       // Play error sound
-      playSound("error");
+      try {
+        sounds.error?.();
+      } catch (e) {
+        console.warn('Could not play error sound', e);
+      }
       
       toast({
         title: "Login Failed",
@@ -103,7 +111,11 @@ const Login = () => {
       queryClient.setQueryData(['/api/auth/me'], data);
       
       // Play login success sound
-      playSound("loginSuccess");
+      try {
+        sounds.success?.();
+      } catch (e) {
+        console.warn('Could not play success sound', e);
+      }
       
       toast({
         title: "Admin Login Successful",
@@ -117,7 +129,11 @@ const Login = () => {
     },
     onError: (error) => {
       // Play error sound
-      playSound("error");
+      try {
+        sounds.error?.();
+      } catch (e) {
+        console.warn('Could not play error sound', e);
+      }
       
       toast({
         title: "Admin Login Failed",
@@ -130,26 +146,52 @@ const Login = () => {
   
   // Callback functions - All useCallback declarations together
   const handleLoginClick = useCallback(() => {
-    playSound("click");
+    try {
+      sounds.click?.();
+    } catch (e) {
+      console.warn('Could not play click sound', e);
+    }
+    
     toast({
       title: 'Discord Login',
       description: 'Discord login is not available in the demo version.',
     });
-  }, [playSound, toast]);
+  }, [sounds, toast]);
   
   const handleCredentialLogin = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    playSound("click");
+    
+    try {
+      sounds.click?.();
+    } catch (e) {
+      console.warn('Could not play click sound', e);
+    }
+    
     setIsLoggingIn(true);
     loginMutation.mutate({ username, password });
-  }, [playSound, loginMutation, username, password]);
+  }, [sounds, loginMutation, username, password]);
   
   const handleAdminLogin = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    playSound("click");
+    
+    try {
+      sounds.click?.();
+    } catch (e) {
+      console.warn('Could not play click sound', e);
+    }
+    
     setIsLoggingIn(true);
     adminLoginMutation.mutate(adminPassword);
-  }, [playSound, adminLoginMutation, adminPassword]);
+  }, [sounds, adminLoginMutation, adminPassword]);
+
+  // Handle tab click sounds
+  const handleTabClick = useCallback(() => {
+    try {
+      sounds.click?.();
+    } catch (e) {
+      console.warn('Could not play click sound', e);
+    }
+  }, [sounds]);
 
   if (loading || isFetching || isLoggingIn || loginMutation.isPending || adminLoginMutation.isPending) {
     return (
@@ -188,9 +230,9 @@ const Login = () => {
           <CardContent className="space-y-4">
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid grid-cols-3 bg-space-dark">
-                <TabsTrigger value="login" onClick={() => playSound("click")}>Login</TabsTrigger>
-                <TabsTrigger value="discord" onClick={() => playSound("click")}>Discord</TabsTrigger>
-                <TabsTrigger value="admin" onClick={() => playSound("click")}>Admin</TabsTrigger>
+                <TabsTrigger value="login" onClick={handleTabClick}>Login</TabsTrigger>
+                <TabsTrigger value="discord" onClick={handleTabClick}>Discord</TabsTrigger>
+                <TabsTrigger value="admin" onClick={handleTabClick}>Admin</TabsTrigger>
               </TabsList>
               
               <TabsContent value="login" className="space-y-4 mt-4">
