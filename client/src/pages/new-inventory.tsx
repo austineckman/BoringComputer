@@ -23,10 +23,10 @@ import { Clock, Gift, Loader2 } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { getLootCrateImage, getResourceDisplay } from '@/lib/resourceImages';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 
-// Import resource images helper
-import { getResourceDisplay } from '@/lib/resourceImages'; 
+// Resource images are already imported above
 
 // Function to render a resource icon or image
 const renderResourceIcon = (type: string, size: 'sm' | 'md' | 'lg' = 'md') => {
@@ -399,14 +399,12 @@ export default function Inventory() {
                             <>
                               <div className="flex items-center justify-center h-full">
                                 {item.isLootBox ? (
-                                  <div className={`w-full h-full flex items-center justify-center rounded-md overflow-hidden ${
-                                    item.lootBoxData?.type === 'common' ? 'bg-gray-700 bg-common-pulse' :
-                                    item.lootBoxData?.type === 'uncommon' ? 'bg-green-800 bg-uncommon-pulse' :
-                                    item.lootBoxData?.type === 'rare' ? 'bg-blue-800 bg-rare-pulse' :
-                                    item.lootBoxData?.type === 'epic' ? 'bg-purple-800 bg-epic-pulse' :
-                                    'bg-amber-700 bg-legendary-pulse'
-                                  }`}>
-                                    <span className="text-2xl relative z-10">📦</span>
+                                  <div className={`w-full h-full flex items-center justify-center rounded-md overflow-hidden bg-space-mid`}>
+                                    <img 
+                                      src={getLootCrateImage().src} 
+                                      alt={getLootCrateImage().alt}
+                                      className="w-full h-full object-contain" 
+                                    />
                                   </div>
                                 ) : (
                                   <span className="resource-icon">{renderResourceIcon(item.type)}</span>
@@ -507,14 +505,12 @@ export default function Inventory() {
                             onClick={() => item.lootBoxData && handleLootBoxOpen(item.lootBoxData, item.lootBoxData?.rewards || [])}
                           >
                             <div className="flex items-center justify-center h-full">
-                              <div className={`w-full h-full flex items-center justify-center rounded-md overflow-hidden ${
-                                item.lootBoxData?.type === 'common' ? 'bg-gray-700 bg-common-pulse' :
-                                item.lootBoxData?.type === 'uncommon' ? 'bg-green-800 bg-uncommon-pulse' :
-                                item.lootBoxData?.type === 'rare' ? 'bg-blue-800 bg-rare-pulse' :
-                                item.lootBoxData?.type === 'epic' ? 'bg-purple-800 bg-epic-pulse' :
-                                'bg-amber-700 bg-legendary-pulse'
-                              }`}>
-                                <span className="text-2xl relative z-10">📦</span>
+                              <div className={`w-full h-full flex items-center justify-center rounded-md overflow-hidden bg-space-mid`}>
+                                <img 
+                                  src={getLootCrateImage().src} 
+                                  alt={getLootCrateImage().alt}
+                                  className="w-full h-full object-contain" 
+                                />
                               </div>
                             </div>
                             <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
