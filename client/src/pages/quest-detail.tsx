@@ -270,7 +270,7 @@ export default function QuestDetailPage() {
                     <Input 
                       value={editedQuest.title}
                       onChange={(e) => setEditedQuest({...editedQuest, title: e.target.value})}
-                      className="bg-space-dark border-brand-orange/30 text-brand-light placeholder:text-gray-500"
+                      className="bg-space-dark border-brand-orange/30 text-white font-medium placeholder:text-gray-500"
                     />
                   </div>
                   
@@ -280,7 +280,7 @@ export default function QuestDetailPage() {
                       <select
                         value={editedQuest.adventureLine}
                         onChange={(e) => setEditedQuest({...editedQuest, adventureLine: e.target.value})}
-                        className="w-full px-3 py-2 rounded-md bg-space-dark border border-brand-orange/30 text-brand-light"
+                        className="w-full px-3 py-2 rounded-md bg-space-dark border border-brand-orange/30 text-white font-medium"
                       >
                         {themeConfig.adventureLines.map((line) => (
                           <option key={line.id} value={line.id}>{line.name}</option>
@@ -292,7 +292,7 @@ export default function QuestDetailPage() {
                       <select
                         value={editedQuest.difficulty}
                         onChange={(e) => setEditedQuest({...editedQuest, difficulty: Number(e.target.value)})}
-                        className="w-full px-3 py-2 rounded-md bg-space-dark border border-brand-orange/30 text-brand-light"
+                        className="w-full px-3 py-2 rounded-md bg-space-dark border border-brand-orange/30 text-white font-medium"
                       >
                         {[1, 2, 3, 4, 5].map((level) => (
                           <option key={level} value={level}>{level}</option>
@@ -306,7 +306,7 @@ export default function QuestDetailPage() {
                     <Textarea 
                       value={editedQuest.description}
                       onChange={(e) => setEditedQuest({...editedQuest, description: e.target.value})}
-                      className="bg-space-dark border-brand-orange/30 min-h-[100px] text-brand-light placeholder:text-gray-500"
+                      className="bg-space-dark border-brand-orange/30 min-h-[100px] text-white font-medium placeholder:text-gray-500"
                     />
                   </div>
                   
@@ -316,7 +316,7 @@ export default function QuestDetailPage() {
                       type="number"
                       value={editedQuest.xpReward}
                       onChange={(e) => setEditedQuest({...editedQuest, xpReward: Number(e.target.value)})}
-                      className="bg-space-dark border-brand-orange/30 text-brand-light placeholder:text-gray-500"
+                      className="bg-space-dark border-brand-orange/30 text-white font-medium placeholder:text-gray-500"
                     />
                   </div>
                   
@@ -517,7 +517,7 @@ export default function QuestDetailPage() {
                                       }
                                     });
                                   }}
-                                  className="w-full px-2 py-1 rounded-md bg-space-mid border border-brand-orange/30 text-brand-light text-sm"
+                                  className="w-full px-2 py-1 rounded-md bg-space-mid border border-brand-orange/30 text-white font-medium text-sm"
                                 >
                                   <option value="javascript">JavaScript</option>
                                   <option value="python">Python</option>
@@ -563,7 +563,7 @@ export default function QuestDetailPage() {
                                     }
                                   });
                                 }}
-                                className="min-h-[120px] bg-space-mid border-brand-orange/30 font-mono text-sm text-brand-light placeholder:text-gray-500"
+                                className="min-h-[120px] bg-space-mid border-brand-orange/30 font-mono text-sm text-white font-medium placeholder:text-gray-500"
                               />
                             </div>
                           </div>
@@ -681,7 +681,7 @@ export default function QuestDetailPage() {
                       type="number"
                       value={editedQuest.xpReward || 0}
                       onChange={(e) => setEditedQuest({...editedQuest, xpReward: Number(e.target.value)})}
-                      className="bg-space-dark border-brand-orange/30 text-brand-light placeholder:text-gray-500"
+                      className="bg-space-dark border-brand-orange/30 text-white font-medium placeholder:text-gray-500"
                     />
                   </div>
                   
