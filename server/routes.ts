@@ -293,6 +293,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.json({ success: true });
   });
   
+  // Debug endpoint to reset database (development only)
+  app.post('/api/debug/reset-database', async (req, res) => {
+    try {
+      // This will reset and reinitialize the database with the new starter loot boxes
+      await storage.resetDatabase();
+      return res.json({ success: true, message: "Database has been reset and reinitialized" });
+    } catch (error) {
+      console.error('Error resetting database:', error);
+      return res.status(500).json({ message: "Failed to reset database" });
+    }
+  });
+  
   app.get('/api/auth/me', authenticate, (req, res) => {
     const user = (req as any).user;
     return res.json({
