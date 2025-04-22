@@ -14,6 +14,43 @@ import {
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { storage } from '../storage';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: function (req, file, cb) {
+      // Ensure the upload directory exists
+      const uploadDir = path.join(__dirname, '../../public/uploads');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+      // Generate a unique filename
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const ext = path.extname(file.originalname);
+      cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+    }
+  }),
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    // Accept only image files
+    const filetypes = /jpeg|jpg|png|gif|webp/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error('Only image files are allowed'));
+  }
+});
 
 const router = Router();
 
@@ -432,6 +469,58 @@ router.delete('/loot-boxes/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting loot box config:', error);
     res.status(500).json({ error: 'Failed to delete loot box config' });
+  }
+});
+
+// =================
+// FILE UPLOADS
+// =================
+
+// Handle image upload for items
+router.post('/upload-image', upload.single('image'), async (req, res) => {
+  try {
+    // Check if a file was uploaded
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file was uploaded' });
+    }
+
+    // Get the itemId from the request body
+    const { itemId } = req.body;
+    
+    if (!itemId) {
+      return res.status(400).json({ error: 'Item ID is required' });
+    }
+
+    // Check if the item exists
+    const existingItem = await storage.getItem(itemId);
+    
+    if (!existingItem) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    // Get the file path relative to the public directory
+    const filePath = `/uploads/${path.basename(req.file.path)}`;
+    
+    // Update the item with the new image path
+    const updatedItem = await storage.updateItem(itemId, { 
+      ...existingItem,
+      imagePath: filePath 
+    });
+
+    if (!updatedItem) {
+      return res.status(500).json({ error: 'Failed to update item with new image' });
+    }
+
+    // Return success response with the image path
+    res.json({ 
+      success: true, 
+      message: 'Image uploaded successfully',
+      imagePath: filePath,
+      item: updatedItem
+    });
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
   }
 });
 
