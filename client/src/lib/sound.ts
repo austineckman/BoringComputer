@@ -2,15 +2,34 @@ import { Howl } from 'howler';
 
 // Create base sound configuration
 const createSound = (path: string, volume: number = 0.6) => {
-  return new Howl({
+  // Create an object that acts like a Howl but falls back to Web Audio
+  const soundObj = new Howl({
     src: [path],
     volume: volume,
     html5: true, // This helps with mobile devices
     // Always provide fallback for missing sounds
     onloaderror: function() {
       console.warn(`Could not load sound: ${path}`);
+      // Set a flag to indicate this sound should use fallbacks
+      (soundObj as any)._useWebAudioFallback = true;
     }
   });
+  
+  // Override the play method to use Web Audio fallbacks when needed
+  const originalPlay = soundObj.play.bind(soundObj);
+  soundObj.play = function() {
+    // If the sound file is actually loaded, play it normally
+    if (this.state() === 'loaded' && !(this as any)._useWebAudioFallback) {
+      return originalPlay();
+    } else {
+      // Extract the sound name from the path
+      const soundName = path.split('/').pop()?.split('.')[0] || '';
+      setTimeout(() => playFallbackSound(soundName), 0);
+      return 1; // Return a fake sound ID
+    }
+  };
+  
+  return soundObj;
 };
 
 // Define all the sound effects we need for the arcade game
@@ -427,37 +446,25 @@ function playFallbackSound(type: string): void {
 
 // Function to play a sound by name
 export function playSound(name: SoundName): void {
-  const sound = sounds[name];
-  if (sound) {
-    // Check if the sound has been loaded successfully
-    if (sound.state() === 'loaded') {
-      // Play the sound
-      const soundId = sound.play();
-      
-      // Check if sound is actually playing
-      if (soundId === undefined) {
-        console.warn(`Sound "${name}" failed to play, using fallback`);
-        playFallbackSound(name);
-      } else {
-        console.log(`Playing sound: ${name}`);
-      }
+  try {
+    const sound = sounds[name];
+    if (sound) {
+      // The play method of our sound objects has been enhanced to automatically
+      // use fallbacks when needed, so we can just call it directly
+      sound.play();
     } else {
-      // Sound is still loading or failed to load, use fallback
-      sound.once('loaderror', () => {
-        console.warn(`Sound file for "${name}" could not be loaded, using fallback`);
-        playFallbackSound(name);
-      });
-      
-      // Try to play anyway (will work if the sound loads in time)
-      const soundId = sound.play();
-      if (soundId === undefined) {
-        console.warn(`Sound "${name}" couldn't be played immediately, using fallback`);
-        playFallbackSound(name);
-      }
+      console.warn(`Sound "${name}" not found, using fallback`);
+      playFallbackSound(name);
     }
-  } else {
-    console.warn(`Sound "${name}" not found, using fallback`);
-    playFallbackSound(name);
+  } catch (error) {
+    console.warn(`Error playing sound "${name}", using fallback:`, error);
+    // Always have a reliable fallback
+    try {
+      playFallbackSound(name);
+    } catch (e) {
+      // Last resort if even the fallback fails - create a simple beep
+      createBeepSound(440, 100, 0.1);
+    }
   }
 }
 

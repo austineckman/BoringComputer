@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Quest Giver Sound Effects Preview</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #06090C;
+      color: #EFEFEF;
+    }
+    h1, h2 {
+      color: #FF9300;
+    }
+    button {
+      background-color: #FF5B00;
+      color: #06090C;
+      border: none;
+      padding: 10px 15px;
+      margin: 5px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #FFD800;
+    }
+    .sound-category {
+      margin-bottom: 20px;
+      padding: 15px;
+      background-color: rgba(255, 91, 0, 0.1);
+      border-radius: 8px;
+    }
+    .info {
+      background-color: rgba(255, 147, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .fallback-toggle {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>The Quest Giver Sound Effects Preview</h1>
+  
+  <div class="info">
+    <p>This page lets you preview all the arcade-style sound effects used in The Quest Giver application.</p>
+    <p>Since actual sound files are missing, we're using Web Audio API to generate synthetic sounds that match the arcade theme.</p>
+  </div>
+  
+  <div class="fallback-toggle">
+    <label>
+      <input type="checkbox" id="useWebAudio" checked> 
+      Use Web Audio API (fallback sounds)
+    </label>
+  </div>
+  
+  <div class="sound-category">
+    <h2>UI Sounds</h2>
+    <button onclick="playSound('click')">Click</button>
+    <button onclick="playSound('hover')">Hover</button>
+    <button onclick="playSound('error')">Error</button>
+    <button onclick="playSound('success')">Success</button>
+  </div>
+  
+  <div class="sound-category">
+    <h2>Quest Sounds</h2>
+    <button onclick="playSound('questComplete')">Quest Complete</button>
+    <button onclick="playSound('questAccept')">Quest Accept</button>
+    <button onclick="playSound('questStart')">Quest Start</button>
+    <button onclick="playSound('reward')">Reward</button>
+  </div>
+  
+  <div class="sound-category">
+    <h2>Achievement Sounds</h2>
+    <button onclick="playSound('achievement')">Achievement</button>
+    <button onclick="playSound('levelUp')">Level Up</button>
+    <button onclick="playSound('fanfare')">Fanfare</button>
+  </div>
+  
+  <div class="sound-category">
+    <h2>Adventure Sounds</h2>
+    <button onclick="playSound('spaceDoor')">Space Door</button>
+    <button onclick="playSound('boostEngine')">Boost Engine</button>
+    <button onclick="playSound('powerUp')">Power Up</button>
+  </div>
+  
+  <div class="sound-category">
+    <h2>Crafting Sounds</h2>
+    <button onclick="playSound('craftSuccess')">Craft Success</button>
+    <button onclick="playSound('craftFail')">Craft Fail</button>
+  </div>
+  
+  <div class="sound-category">
+    <h2>Auth Sounds</h2>
+    <button onclick="playSound('loginSuccess')">Login Success</button>
+    <button onclick="playSound('loginFail')">Login Fail</button>
+  </div>
+
+  <script>
+    // Audio Context
+    let audioCtx = null;
+    
+    // Get or create Audio Context
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return audioCtx;
+    }
+    
+    // Simple beep
+    function createTone(frequency, duration, volume = 0.2, type = 'sine') {
+      const ctx = getAudioContext();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      oscillator.type = type;
+      oscillator.frequency.value = frequency;
+      gainNode.gain.value = volume;
+      
+      oscillator.start();
+      
+      setTimeout(() => {
+        oscillator.stop();
+      }, duration);
+    }
+    
+    // Electronic beep sequence
+    function beepSequence(frequencies, durations, volume = 0.2) {
+      let currentTime = 0;
+      for (let i = 0; i < frequencies.length; i++) {
+        setTimeout(() => {
+          createTone(frequencies[i], durations[i], volume);
+        }, currentTime);
+        currentTime += durations[i];
+      }
+    }
+    
+    // Teleport sound effect
+    function teleportSound(volume = 0.2) {
+      const ctx = getAudioContext();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+      
+      oscillator.connect(filter);
+      filter.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      filter.type = "bandpass";
+      filter.frequency.value = 1000;
+      filter.Q.value = 10;
+      
+      oscillator.type = 'sine';
+      
+      // Create teleport sweep effect
+      oscillator.frequency.setValueAtTime(100, ctx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(3000, ctx.currentTime + 0.2);
+      oscillator.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.4);
+      
+      gainNode.gain.setValueAtTime(0, ctx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.1);
+      gainNode.gain.linearRampToValueAtTime(volume * 0.5, ctx.currentTime + 0.3);
+      gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4);
+      
+      oscillator.start();
+      setTimeout(() => oscillator.stop(), 400);
+    }
+    
+    // Power-up sound effect
+    function powerUpSound(volume = 0.15) {
+      const notes = [261.63, 329.63, 392.00, 523.25, 659.25]; // C4, E4, G4, C5, E5
+      const durations = [50, 50, 50, 100, 150];
+      beepSequence(notes, durations, volume);
+    }
+    
+    // Magic spell sound
+    function magicSound(volume = 0.15) {
+      const ctx = getAudioContext();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(300, ctx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(1800, ctx.currentTime + 1);
+      
+      gainNode.gain.setValueAtTime(0, ctx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.1);
+      gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.2);
+      
+      oscillator.start();
+      
+      setTimeout(() => {
+        // Add sparkle effect after the main sound
+        beepSequence([1500, 1800, 1600, 2000], [50, 60, 40, 100], volume * 0.5);
+        oscillator.stop();
+      }, 1200);
+    }
+    
+    // Error/warning sound
+    function errorSound(volume = 0.15) {
+      const ctx = getAudioContext();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      oscillator.type = 'square';
+      oscillator.frequency.setValueAtTime(150, ctx.currentTime);
+      
+      gainNode.gain.setValueAtTime(volume, ctx.currentTime);
+      
+      oscillator.start();
+      
+      // Create pulsing effect
+      setTimeout(() => oscillator.frequency.setValueAtTime(180, ctx.currentTime + 0.2), 200);
+      setTimeout(() => oscillator.frequency.setValueAtTime(150, ctx.currentTime + 0.4), 400);
+      setTimeout(() => oscillator.stop(), 600);
+    }
+    
+    // Mechanical click sound
+    function clickSound(volume = 0.1) {
+      const ctx = getAudioContext();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      oscillator.type = 'triangle';
+      oscillator.frequency.setValueAtTime(800, ctx.currentTime);
+      
+      gainNode.gain.setValueAtTime(0, ctx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+      
+      oscillator.start();
+      setTimeout(() => oscillator.stop(), 50);
+    }
+    
+    // Hover sound effect
+    function hoverSound(volume = 0.05) {
+      createTone(500, 30, volume, 'sine');
+    }
+    
+    // Door/portal opening sound
+    function doorSound(volume = 0.15) {
+      const ctx = getAudioContext();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(100, ctx.currentTime);
+      oscillator.frequency.linearRampToValueAtTime(300, ctx.currentTime + 0.5);
+      
+      gainNode.gain.setValueAtTime(0, ctx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.1);
+      gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.7);
+      
+      oscillator.start();
+      setTimeout(() => oscillator.stop(), 700);
+    }
+    
+    // Quest acceptance sound
+    function questSound(volume = 0.15) {
+      const notes = [523.25, 587.33, 659.25, 783.99]; // C5, D5, E5, G5
+      const durations = [100, 100, 100, 300];
+      beepSequence(notes, durations, volume);
+    }
+    
+    // Achievement/reward fanfare
+    function achievementSound(volume = 0.2) {
+      const fanfare = [
+        392.00, 493.88, 587.33,  // G4, B4, D5
+        783.99, 880.00, 1046.50  // G5, A5, C6
+      ];
+      const durations = [100, 100, 100, 150, 150, 300];
+      beepSequence(fanfare, durations, volume);
+    }
+    
+    // Engine boost sound
+    function engineSound(volume = 0.15) {
+      const ctx = getAudioContext();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      oscillator.type = 'sawtooth';
+      oscillator.frequency.setValueAtTime(80, ctx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.5);
+      oscillator.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 1);
+      
+      gainNode.gain.setValueAtTime(0, ctx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.2);
+      gainNode.gain.linearRampToValueAtTime(volume * 0.7, ctx.currentTime + 0.7);
+      gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 1);
+      
+      oscillator.start();
+      setTimeout(() => oscillator.stop(), 1000);
+    }
+    
+    // Laser sound effect
+    function laserSound(baseFreq = 880, duration = 200, volume = 0.2) {
+      const ctx = getAudioContext();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      oscillator.type = 'sawtooth';
+      oscillator.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(baseFreq * 2, ctx.currentTime + duration/1000);
+      
+      gainNode.gain.setValueAtTime(volume, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration/1000);
+      
+      oscillator.start();
+      setTimeout(() => oscillator.stop(), duration);
+    }
+    
+    // Play a sound by name
+    function playSound(soundName) {
+      const useWebAudio = document.getElementById('useWebAudio').checked;
+      
+      if (useWebAudio) {
+        switch(soundName) {
+          case 'click':
+            clickSound();
+            break;
+          case 'hover':
+            hoverSound();
+            break;
+          case 'error':
+          case 'craftFail':
+          case 'loginFail':
+            errorSound();
+            break;
+          case 'success':
+          case 'loginSuccess':
+            teleportSound();
+            break;
+          case 'craftSuccess':
+            magicSound();
+            break;
+          case 'achievement':
+            achievementSound();
+            break;
+          case 'levelUp':
+            powerUpSound();
+            setTimeout(() => achievementSound(), 500);
+            break;
+          case 'questComplete':
+            achievementSound();
+            break;
+          case 'questStart':
+          case 'questAccept':
+            questSound();
+            break;
+          case 'reward':
+            magicSound();
+            break;
+          case 'spaceDoor':
+            doorSound();
+            break;
+          case 'boostEngine':
+            engineSound();
+            break;
+          case 'powerUp':
+            powerUpSound();
+            break;
+          case 'fanfare':
+            achievementSound();
+            break;
+          default:
+            laserSound();
+        }
+      } else {
+        // Try to play sound file (expected to fail since files aren't there)
+        const audio = new Audio(`/sounds/${soundName}.mp3`);
+        audio.play().catch(error => {
+          console.warn(`Couldn't load sound file: ${error.message}. Using Web Audio fallback instead.`);
+          document.getElementById('useWebAudio').checked = true;
+          playSound(soundName);
+        });
+      }
+    }
+  </script>
+</body>
+</html>

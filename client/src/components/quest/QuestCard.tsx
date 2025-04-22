@@ -55,7 +55,12 @@ const QuestCard = ({
   // Handle hover on quest card with adventure-specific sound
   const handleHover = () => {
     if (status === "active" || status === "available") {
-      playAdventureSound(adventureLine);
+      // Make sure adventureLine is defined before using it
+      if (adventureLine) {
+        playAdventureSound(adventureLine);
+      } else {
+        sounds.hover();
+      }
     } else {
       sounds.hover();
     }
