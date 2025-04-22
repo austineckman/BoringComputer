@@ -1,8 +1,8 @@
 // Import the pixel art images
-import clothImg from '@assets/cloth.png';
-import copperImg from '@assets/copper.png';
-import crystalImg from '@assets/crystal.png';
-import techscrapImg from '@assets/techscrap.png';
+import clothImg from '../assets/cloth.png';
+import copperImg from '../assets/copper.png';
+import crystalImg from '../assets/crystal.png';
+import techscrapImg from '../assets/techscrap.png';
 
 // Type definition for our resource images
 export interface ResourceImage {
@@ -25,6 +25,10 @@ export const resourceImages: Record<string, ResourceImage> = {
     alt: 'Crystal material'
   },
   'tech-scrap': {
+    src: techscrapImg,
+    alt: 'Tech scrap material'
+  },
+  'techscrap': {
     src: techscrapImg,
     alt: 'Tech scrap material'
   }
