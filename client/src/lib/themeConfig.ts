@@ -23,35 +23,35 @@ export const themeConfig = {
       name: '30 Days Lost in Space',
       icon: 'rocket',
       color: '#FF5B00',
-      image: '/images/adventure-lines/30-days-pixelart.png'
+      imagePath: '30-days-pixelart.png'
     },
     {
       id: 'cogsworth-city',
       name: 'Cogsworth City',
       icon: 'cogs',
       color: '#00C781',
-      image: '/images/adventure-lines/cogsworth-pixelart.png'
+      imagePath: 'cogsworth-pixelart.png'
     },
     {
       id: 'pandoras-box',
       name: 'Pandora\'s Box',
       icon: 'box',
       color: '#9C6ADE',
-      image: '/images/adventure-lines/pandora-pixelart.png'
+      imagePath: 'pandora-pixelart.png'
     },
     {
       id: 'neon-realm',
       name: 'Neon Realm',
       icon: 'lightbulb',
       color: '#44A0FF',
-      image: '/images/adventure-lines/neon-realm-pixelart.png'
+      imagePath: 'neon-realm-pixelart.png'
     },
     {
       id: 'nebula-raiders',
       name: 'Nebula Raiders',
       icon: 'meteor',
       color: '#FF7EB9',
-      image: '/images/adventure-lines/nebula-pixelart.png'
+      imagePath: 'nebula-pixelart.png'
     }
   ],
   

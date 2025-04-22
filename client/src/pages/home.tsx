@@ -221,8 +221,8 @@ const Home = () => {
             >
               {/* Image container */}
               <div className="h-40 w-full overflow-hidden">
-                <img 
-                  src={adventure.image}
+                <AdventureImage 
+                  adventureId={adventure.id}
                   alt={adventure.name}
                   className="w-full h-full object-cover"
                 />
