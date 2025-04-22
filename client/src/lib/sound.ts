@@ -52,7 +52,7 @@ export const sounds = {
   fanfare: createSound('/sounds/fanfare.mp3', 0.7),
   
   // Loot box sounds
-  open: createSound('/sounds/open.mp3', 0.7),
+  open: createSound('/sounds/open.mp3', 0.5),
   
   // Background music - new Fantasy Guild Hall music
   backgroundMusic: createSound('/sounds/fantasy-guild-hall.mp3', 0.3, true),

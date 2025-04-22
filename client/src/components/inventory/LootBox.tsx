@@ -159,7 +159,7 @@ export function LootBoxItem({ lootBox, onOpen }: LootBoxProps) {
         // Start animation sequence for actual rewards
         setCurrentIndex(0);
         setAnimationComplete(false);
-      }, 3000); // Spin for 3 seconds
+      }, 1500); // Reduced from 3000ms to 1500ms - shorter spinning time
       
     } catch (error) {
       console.error('Error opening loot box:', error);
@@ -189,7 +189,7 @@ export function LootBoxItem({ lootBox, onOpen }: LootBoxProps) {
           console.warn('Could not play reward sound', e);
         }
         setCurrentIndex(curr => curr + 1);
-      }, 1000); // 1 second between each reward reveal
+      }, 500); // Reduced from 1000ms to 500ms - faster reward reveals
       
       return () => clearTimeout(timer);
     } else if (rewards.length > 0 && currentIndex >= rewards.length && !animationComplete) {
@@ -201,7 +201,7 @@ export function LootBoxItem({ lootBox, onOpen }: LootBoxProps) {
         setShowOpenModal(false);
         // Call the onOpen callback
         onOpen(lootBox, rewards);
-      }, 2000); // Wait 2 seconds before closing
+      }, 1000); // Reduced from 2000ms to 1000ms - faster closing after rewards
       
       return () => clearTimeout(timer);
     }
@@ -308,7 +308,7 @@ export function LootBoxItem({ lootBox, onOpen }: LootBoxProps) {
                           x: spinningComplete ? '-125%' : ['-5000%', '-100%'] 
                         }}
                         transition={{
-                          duration: spinningComplete ? 0.5 : 3, 
+                          duration: spinningComplete ? 0.5 : 1.5, // Reduced from 3s to 1.5s - faster spinning animation 
                           ease: spinningComplete ? 'easeOut' : [0.2, 0.3, 0.2, 0.2],
                         }}
                       >
