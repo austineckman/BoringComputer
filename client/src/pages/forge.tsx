@@ -13,7 +13,7 @@ import {
   DialogTitle 
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Flame, Wrench, Gift, Truck, Download, Home, UserRound, MapPin, Globe } from "lucide-react";
+import { Sparkles, Flame, Wrench, Gift, Truck, Download, Home, UserRound, MapPin, Globe, Ship, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -465,14 +465,128 @@ const Forge = () => {
                       </div>
                     )}
                     
+                    {/* Shipping status for physical items */}
+                    {item.type === 'physical' && item.status === 'shipping' && (
+                      <div className="mt-3 p-3 bg-space-darkest rounded-lg border border-brand-yellow/30 text-xs">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center">
+                            <Truck className="h-4 w-4 text-brand-yellow mr-2" />
+                            <p className="text-brand-yellow font-semibold">Shipping In Progress</p>
+                          </div>
+                          <span className="px-2 py-1 rounded-full bg-brand-yellow/20 text-brand-yellow text-[10px] font-medium">PREPARING</span>
+                        </div>
+                        <p className="text-brand-light/80">
+                          Gizbo is packing your craftwork with utmost care. You'll receive tracking information soon!
+                        </p>
+                      </div>
+                    )}
+                    
+                    {/* Shipped status for physical items */}
+                    {item.type === 'physical' && item.status === 'shipped' && (
+                      <div className="mt-3 p-3 bg-space-darkest rounded-lg border border-brand-orange/30 text-xs">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center">
+                            <Ship className="h-4 w-4 text-brand-orange mr-2" />
+                            <p className="text-brand-orange font-semibold">Item Shipped</p>
+                          </div>
+                          <span className="px-2 py-1 rounded-full bg-brand-orange/20 text-brand-orange text-[10px] font-medium">ON THE WAY</span>
+                        </div>
+                        {item.tracking ? (
+                          <>
+                            <p className="text-brand-yellow font-semibold mb-1">Tracking Number:</p>
+                            <div className="bg-space-mid p-2 rounded-md border border-brand-orange/30 flex items-center justify-between mb-2">
+                              <code className="font-mono text-brand-light overflow-x-auto">
+                                {item.tracking}
+                              </code>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-6 w-6 p-0 hover:bg-brand-orange/10"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(item.tracking || '');
+                                  toast({
+                                    title: "Tracking copied!",
+                                    description: "The tracking number has been copied to your clipboard.",
+                                    variant: "default"
+                                  });
+                                  sounds.click?.();
+                                }}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brand-light">
+                                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                                </svg>
+                              </Button>
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-brand-light/80 mb-2">
+                            Tracking information will be available soon.
+                          </p>
+                        )}
+                        {item.shippingInfo && (
+                          <div className="text-xs text-brand-light/70">
+                            <p>Shipping to: {item.shippingInfo.name}</p>
+                            <p>{item.shippingInfo.address}, {item.shippingInfo.city}</p>
+                            <p>{item.shippingInfo.postalCode}, {item.shippingInfo.country}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Delivered status for physical items */}
+                    {item.type === 'physical' && item.status === 'delivered' && (
+                      <div className="mt-3 p-3 bg-space-darkest rounded-lg border border-green-500/30 text-xs">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center">
+                            <Package className="h-4 w-4 text-green-500 mr-2" />
+                            <p className="text-green-500 font-semibold">Item Delivered</p>
+                          </div>
+                          <span className="px-2 py-1 rounded-full bg-green-500/20 text-green-500 text-[10px] font-medium">DELIVERED</span>
+                        </div>
+                        <p className="text-brand-light/80">
+                          Your item has been delivered. Enjoy your crafted marvel!
+                        </p>
+                      </div>
+                    )}
+                    
                     {/* Redemption data for digital items */}
                     {item.type === 'digital' && item.status === 'redeemed' && item.redemptionData && (
-                      <div className="mt-2 p-2 bg-space-darkest rounded text-xs">
-                        <p className="text-brand-yellow font-semibold mb-1">Redemption Code:</p>
-                        <code className="bg-space-mid p-1 rounded block overflow-x-auto">
-                          {item.redemptionData.code}
-                        </code>
-                        <p className="text-xs mt-1 text-brand-light/50">
+                      <div className="mt-3 p-3 bg-space-darkest rounded-lg border border-brand-orange/30 text-xs">
+                        <div className="flex items-center mb-2">
+                          <Download className="h-4 w-4 text-brand-orange mr-2" />
+                          <p className="text-brand-orange font-semibold">Digital Item Redeemed</p>
+                        </div>
+                        <p className="text-brand-yellow font-semibold mb-1">Your Redemption Code:</p>
+                        <div className="bg-space-mid p-2 rounded-md border border-brand-orange/30 flex items-center justify-between">
+                          <code className="font-mono text-brand-orange overflow-x-auto">
+                            {item.redemptionData.code}
+                          </code>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-6 w-6 p-0 hover:bg-brand-orange/10"
+                            onClick={() => {
+                              navigator.clipboard.writeText(item.redemptionData?.code || '');
+                              toast({
+                                title: "Code copied!",
+                                description: "The redemption code has been copied to your clipboard.",
+                                variant: "default"
+                              });
+                              sounds.click?.();
+                            }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brand-light">
+                              <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                            </svg>
+                          </Button>
+                        </div>
+                        <p className="text-xs mt-2 text-brand-light/50 flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                          </svg>
                           Redeemed on {new Date(item.redeemedAt || '').toLocaleDateString()}
                         </p>
                       </div>
@@ -486,12 +600,9 @@ const Forge = () => {
                           size="sm"
                           variant="outline"
                           className="text-xs border-brand-yellow text-brand-yellow hover:bg-brand-yellow/10"
-                          onClick={() => {
-                            sounds.click?.();
-                            // Handle shipping info submission
-                            alert("Shipping feature to be implemented");
-                          }}
+                          onClick={() => openShippingForm(item.id)}
                         >
+                          <Truck className="mr-1 h-3 w-3" />
                           Add shipping info
                         </Button>
                       )}
@@ -502,12 +613,11 @@ const Forge = () => {
                           size="sm"
                           variant="outline"
                           className="text-xs border-brand-orange text-brand-orange hover:bg-brand-orange/10"
-                          onClick={() => {
-                            sounds.click?.();
-                            redeemDigitalItem(item.id);
-                          }}
+                          onClick={() => redeemDigitalItem(item.id)}
+                          disabled={isRedeeming}
                         >
-                          Redeem Code
+                          <Download className="mr-1 h-3 w-3" />
+                          {isRedeeming ? 'Processing...' : 'Redeem Code'}
                         </Button>
                       )}
                     </div>
