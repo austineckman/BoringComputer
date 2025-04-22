@@ -7,7 +7,7 @@ import { itemDatabase } from './itemDatabase';
  */
 export async function seedItems() {
   try {
-    // Check if items exist already
+    // First check if we need to seed at all
     const existingItems = await db.select({ count: { count: items.id } }).from(items);
     const count = Number(existingItems[0]?.count?.count || 0);
 
