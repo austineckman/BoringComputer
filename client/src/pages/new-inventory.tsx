@@ -184,7 +184,40 @@ export default function Inventory() {
     const { sounds } = useSoundEffects();
     const [isGenerating, setIsGenerating] = useState(false);
     
-    const generateCratesMutation = useMutation({
+    // Add function to generate a specific type of loot box
+  const generateTestLootBoxes = async (type: string, quantity: number = 1) => {
+    try {
+      setIsGenerating(true);
+      const response = await apiRequest('POST', `/api/loot-boxes/generate-test`);
+      const data = await response.json();
+      
+      try {
+        sounds.questComplete();
+      } catch (e) {
+        console.warn('Could not play sound', e);
+      }
+      
+      toast({
+        title: "Test Crates Generated!",
+        description: `New loot crates have been added to your inventory.`,
+        variant: "default",
+      });
+      
+      // Invalidate the loot boxes query to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['/api/loot-boxes'] });
+      setIsGenerating(false);
+    } catch (error) {
+      console.error('Error generating test crates:', error);
+      toast({
+        title: "Failed to Generate Crates",
+        description: "There was an error generating test crates. Please try again.",
+        variant: "destructive",
+      });
+      setIsGenerating(false);
+    }
+  };
+  
+  const generateCratesMutation = useMutation({
       mutationFn: async () => {
         const response = await apiRequest('POST', '/api/loot-boxes/generate-test');
         return await response.json();
@@ -538,6 +571,49 @@ export default function Inventory() {
                   )
                 ))}
               </div>
+              
+              {/* Test Loot Box Generator */}
+              <div className="mt-8 p-6 border border-brand-orange/30 rounded-lg bg-space-dark">
+                <h3 className="text-xl font-medium text-brand-orange mb-4">Test Loot Boxes Generator</h3>
+                <p className="text-sm text-brand-light/80 mb-4">Generate test loot boxes to try out the CS:GO-style opening animation.</p>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                  <Button 
+                    className="bg-gray-700 hover:bg-gray-700/80 text-white font-medium"
+                    onClick={() => generateTestLootBoxes('common', 2)}
+                  >
+                    Common Crates (x2)
+                  </Button>
+                  
+                  <Button 
+                    className="bg-green-800 hover:bg-green-800/80 text-white font-medium"
+                    onClick={() => generateTestLootBoxes('uncommon', 1)}
+                  >
+                    Uncommon Crate
+                  </Button>
+                  
+                  <Button 
+                    className="bg-blue-800 hover:bg-blue-800/80 text-white font-medium"
+                    onClick={() => generateTestLootBoxes('rare', 1)}
+                  >
+                    Rare Crate
+                  </Button>
+                  
+                  <Button 
+                    className="bg-purple-800 hover:bg-purple-800/80 text-white font-medium"
+                    onClick={() => generateTestLootBoxes('epic', 1)}
+                  >
+                    Epic Crate
+                  </Button>
+                  
+                  <Button 
+                    className="bg-amber-700 hover:bg-amber-700/80 text-white font-medium"
+                    onClick={() => generateTestLootBoxes('legendary', 1)}
+                  >
+                    Legendary Crate
+                  </Button>
+                </div>
+              </div>
             </TabsContent>
             
             <TabsContent value="history" className="mt-0">
@@ -590,14 +666,18 @@ export default function Inventory() {
             
             {currentRewards.length > 0 ? (
               <div className="relative">
-                {/* CS:GO-style item scroll animation - with fixed width */}
+                {/* CS:GO-style item scroll animation - with better container */}
                 <div className="overflow-hidden max-w-full mx-auto my-6 bg-gradient-to-r from-space-dark via-space-mid to-space-dark border-2 border-brand-orange/50 rounded-md relative">
                   {/* Highlight marker in the center */}
-                  <div className="absolute top-0 bottom-0 left-1/2 w-0.5 bg-brand-yellow z-10"></div>
+                  <div className="absolute top-0 bottom-0 left-1/2 w-1 bg-brand-yellow z-10"></div>
                   <div className="absolute top-0 bottom-0 left-1/2 w-12 -translate-x-1/2 bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent z-10"></div>
                   
-                  {/* The scrolling items container */}
-                  <div className="py-6 flex items-center relative w-[300%] md:w-[200%]" style={{ animation: 'slotMachine 4s cubic-bezier(0.1, 0.4, 0.2, 1) forwards' }}>
+                  {/* The scrolling items container - Constrained width with flex-nowrap */}
+                  <div className="py-4 flex flex-nowrap items-center relative" style={{ 
+                    width: '450%', 
+                    animation: 'slotMachine 4.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    transformOrigin: 'left center'
+                  }}>
                     {/* Generate items for animation */}
                     {[...Array(15)].map((_, idx) => {
                       // Random items for the animation

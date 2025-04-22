@@ -375,11 +375,20 @@ body {
   30% {
     transform: translateX(-30%);
   }
-  70% {
+  60% {
     transform: translateX(-60%);
   }
+  80% {
+    transform: translateX(-75%);
+  }
+  90% {
+    transform: translateX(-79%);
+  }
+  95% {
+    transform: translateX(-77%);
+  }
   100% {
-    transform: translateX(-67%);
+    transform: translateX(-78%);
   }
 }
 
