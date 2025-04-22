@@ -8,7 +8,8 @@ import {
   Achievement, InsertAchievement,
   UserAchievement, InsertUserAchievement,
   LootBox, InsertLootBox,
-  InventoryHistory, InsertInventoryHistory
+  InventoryHistory, InsertInventoryHistory,
+  Item, InsertItem
 } from "@shared/schema";
 
 export interface IStorage {
@@ -75,6 +76,13 @@ export interface IStorage {
   getAvailableQuestsForUser(userId: number): Promise<Quest[]>;
   getQuestsByAdventureLine(adventureLine: string): Promise<Quest[]>;
   
+  // Item methods
+  getItems(): Promise<Item[]>;
+  getItem(id: string): Promise<Item | undefined>;
+  createItem(item: InsertItem): Promise<Item>;
+  updateItem(id: string, itemData: Partial<Item>): Promise<Item | undefined>;
+  deleteItem(id: string): Promise<boolean>;
+  
   // Database management methods
   resetDatabase(): Promise<void>;
 }
@@ -90,6 +98,7 @@ export class MemStorage implements IStorage {
   private userAchievements: Map<number, UserAchievement>;
   private lootBoxes: Map<number, LootBox>;
   private inventoryHistory: Map<number, InventoryHistory>;
+  private items: Map<string, Item>;
   
   private userIdCounter: number;
   private questIdCounter: number;
@@ -113,6 +122,7 @@ export class MemStorage implements IStorage {
     this.userAchievements = new Map();
     this.lootBoxes = new Map();
     this.inventoryHistory = new Map();
+    this.items = new Map();
     
     this.userIdCounter = 1;
     this.questIdCounter = 1;
@@ -130,6 +140,9 @@ export class MemStorage implements IStorage {
   }
 
   private initializeData() {
+    // Initialize items from itemDatabase.ts
+    this.initializeItems();
+    
     // Create default users
     // Demo user
     const demoUser = this.createUser({
@@ -804,6 +817,73 @@ export class MemStorage implements IStorage {
     return availableQuests;
   }
   
+  // Item methods
+  async getItems(): Promise<Item[]> {
+    return Array.from(this.items.values());
+  }
+
+  async getItem(id: string): Promise<Item | undefined> {
+    return this.items.get(id);
+  }
+
+  async createItem(insertItem: InsertItem): Promise<Item> {
+    const now = new Date();
+    const createdAt = now;
+    const updatedAt = now;
+    
+    const item: Item = {
+      ...insertItem,
+      createdAt,
+      updatedAt
+    };
+    
+    this.items.set(item.id, item);
+    return item;
+  }
+
+  async updateItem(id: string, itemData: Partial<Item>): Promise<Item | undefined> {
+    const item = this.items.get(id);
+    if (!item) return undefined;
+    
+    const updatedItem = { 
+      ...item, 
+      ...itemData,
+      updatedAt: new Date() // Always update the updatedAt timestamp
+    };
+    
+    this.items.set(id, updatedItem);
+    return updatedItem;
+  }
+
+  async deleteItem(id: string): Promise<boolean> {
+    if (!this.items.has(id)) return false;
+    
+    this.items.delete(id);
+    return true;
+  }
+  
+  // Import default items from itemDatabase.ts
+  private initializeItems() {
+    // Import the itemDatabase module
+    import('../itemDatabase').then(({ itemDatabase }) => {
+      // Convert itemDatabase entries to database Item records
+      for (const [id, details] of Object.entries(itemDatabase)) {
+        this.createItem({
+          id: details.id,
+          name: details.name,
+          description: details.description,
+          flavorText: details.flavorText,
+          rarity: details.rarity as 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary',
+          craftingUses: details.craftingUses,
+          imagePath: details.imagePath,
+          category: details.category || 'resource'
+        });
+      }
+    }).catch(err => {
+      console.error('Failed to initialize items from itemDatabase:', err);
+    });
+  }
+
   async resetDatabase(): Promise<void> {
     // Clear all data
     this.users = new Map();
@@ -816,6 +896,7 @@ export class MemStorage implements IStorage {
     this.userAchievements = new Map();
     this.lootBoxes = new Map();
     this.inventoryHistory = new Map();
+    this.items = new Map();
     
     // Reset ID counters
     this.userIdCounter = 1;
