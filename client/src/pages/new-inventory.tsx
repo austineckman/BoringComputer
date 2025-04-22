@@ -580,37 +580,57 @@ export default function Inventory() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                   <Button 
                     className="bg-gray-700 hover:bg-gray-700/80 text-white font-medium"
-                    onClick={() => generateTestLootBoxes('common', 2)}
+                    onClick={() => handleGenerateCrates()}
+                    disabled={isGenerating}
                   >
-                    Common Crates (x2)
+                    <span className="flex items-center gap-2">
+                      {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                      Generate All Crates
+                    </span>
                   </Button>
                   
                   <Button 
                     className="bg-green-800 hover:bg-green-800/80 text-white font-medium"
-                    onClick={() => generateTestLootBoxes('uncommon', 1)}
+                    onClick={() => handleGenerateCrates()}
+                    disabled={isGenerating}
                   >
-                    Uncommon Crate
+                    <span className="flex items-center gap-2">
+                      {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                      Generate Crates
+                    </span>
                   </Button>
                   
                   <Button 
                     className="bg-blue-800 hover:bg-blue-800/80 text-white font-medium"
-                    onClick={() => generateTestLootBoxes('rare', 1)}
+                    onClick={() => handleGenerateCrates()}
+                    disabled={isGenerating}
                   >
-                    Rare Crate
+                    <span className="flex items-center gap-2">
+                      {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                      Generate Crates
+                    </span>
                   </Button>
                   
                   <Button 
                     className="bg-purple-800 hover:bg-purple-800/80 text-white font-medium"
-                    onClick={() => generateTestLootBoxes('epic', 1)}
+                    onClick={() => handleGenerateCrates()}
+                    disabled={isGenerating}
                   >
-                    Epic Crate
+                    <span className="flex items-center gap-2">
+                      {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                      Generate Crates
+                    </span>
                   </Button>
                   
                   <Button 
                     className="bg-amber-700 hover:bg-amber-700/80 text-white font-medium"
-                    onClick={() => generateTestLootBoxes('legendary', 1)}
+                    onClick={() => handleGenerateCrates()}
+                    disabled={isGenerating}
                   >
-                    Legendary Crate
+                    <span className="flex items-center gap-2">
+                      {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                      Generate Crates
+                    </span>
                   </Button>
                 </div>
               </div>
@@ -656,7 +676,7 @@ export default function Inventory() {
         
         {/* Loot Box Rewards Modal with CS:GO-style Animation */}
         <Dialog open={isRewardModalOpen} onOpenChange={setIsRewardModalOpen}>
-          <DialogContent className="bg-space-dark border-brand-orange/30 sm:max-w-xl">
+          <DialogContent className="bg-space-dark border-brand-orange/30 sm:max-w-md md:max-w-xl mx-auto w-[90%] overflow-hidden">
             <DialogHeader>
               <DialogTitle className="text-center text-xl text-brand-orange">Loot Box Rewards!</DialogTitle>
               <DialogDescription className="text-center text-brand-light/70">
@@ -674,7 +694,7 @@ export default function Inventory() {
                   
                   {/* The scrolling items container - Constrained width with flex-nowrap */}
                   <div className="py-4 flex flex-nowrap items-center relative" style={{ 
-                    width: '450%', 
+                    width: '300%', 
                     animation: 'slotMachine 4.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
                     transformOrigin: 'left center'
                   }}>
