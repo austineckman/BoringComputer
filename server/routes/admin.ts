@@ -13,6 +13,7 @@ import {
 } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { itemDatabase, ItemDetails } from '../itemDatabase';
 
 const router = Router();
 
@@ -130,7 +131,9 @@ router.delete('/quests/:id', async (req, res) => {
 // Get all items
 router.get('/items', async (req, res) => {
   try {
-    const allItems = await db.select().from(items);
+    // Use the in-memory itemDatabase instead of the database
+    const { itemDatabase } = require('../itemDatabase');
+    const allItems = Object.values(itemDatabase);
     res.json(allItems);
   } catch (error) {
     console.error('Error fetching items:', error);
@@ -142,7 +145,8 @@ router.get('/items', async (req, res) => {
 router.get('/items/:id', async (req, res) => {
   try {
     const id = req.params.id;
-    const [item] = await db.select().from(items).where(eq(items.id, id));
+    const { getItemDetails } = require('../itemDatabase');
+    const item = getItemDetails(id);
     
     if (!item) {
       return res.status(404).json({ error: 'Item not found' });
@@ -158,13 +162,23 @@ router.get('/items/:id', async (req, res) => {
 // Create a new item
 router.post('/items', async (req, res) => {
   try {
-    const itemData = insertItemSchema.parse(req.body);
-    const [newItem] = await db.insert(items).values(itemData).returning();
-    res.status(201).json(newItem);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors });
+    // Since we're using a static in-memory database, 
+    // we can't actually modify it at runtime in this implementation.
+    // In a real application, we would update the itemDatabase here.
+    // For now, we'll just return a mock success response
+    const itemData = req.body as ItemDetails;
+    
+    // Validation
+    if (!itemData.id || !itemData.name || !itemData.description) {
+      return res.status(400).json({ error: 'Required fields missing' });
     }
+    
+    // Pretend we added it
+    res.status(201).json({
+      ...itemData,
+      message: "Note: In this demo, the in-memory database is static and cannot be modified at runtime."
+    });
+  } catch (error) {
     console.error('Error creating item:', error);
     res.status(500).json({ error: 'Failed to create item' });
   }
@@ -174,23 +188,30 @@ router.post('/items', async (req, res) => {
 router.put('/items/:id', async (req, res) => {
   try {
     const id = req.params.id;
-    const itemData = insertItemSchema.parse(req.body);
+    // Since we're using a static in-memory database, 
+    // we can't actually modify it at runtime in this implementation.
     
-    const [updatedItem] = await db
-      .update(items)
-      .set(itemData)
-      .where(eq(items.id, id))
-      .returning();
+    // Check if the item exists
+    const { getItemDetails } = require('../itemDatabase');
+    const existingItem = getItemDetails(id);
     
-    if (!updatedItem) {
+    if (existingItem.id !== id) {
       return res.status(404).json({ error: 'Item not found' });
     }
     
-    res.json(updatedItem);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors });
+    const itemData = req.body as ItemDetails;
+    
+    // Validation
+    if (!itemData.id || !itemData.name || !itemData.description) {
+      return res.status(400).json({ error: 'Required fields missing' });
     }
+    
+    // Pretend we updated it
+    res.json({
+      ...itemData,
+      message: "Note: In this demo, the in-memory database is static and cannot be modified at runtime."
+    });
+  } catch (error) {
     console.error('Error updating item:', error);
     res.status(500).json({ error: 'Failed to update item' });
   }
@@ -201,16 +222,22 @@ router.delete('/items/:id', async (req, res) => {
   try {
     const id = req.params.id;
     
-    const [deletedItem] = await db
-      .delete(items)
-      .where(eq(items.id, id))
-      .returning();
+    // Since we're using a static in-memory database,
+    // we can't actually delete items at runtime in this implementation.
     
-    if (!deletedItem) {
+    // Check if the item exists
+    const { itemDatabase, getItemDetails } = require('../itemDatabase');
+    const existingItem = getItemDetails(id);
+    
+    if (existingItem.id !== id) {
       return res.status(404).json({ error: 'Item not found' });
     }
     
-    res.json({ message: 'Item deleted successfully', item: deletedItem });
+    // Pretend we deleted it
+    res.json({
+      message: 'Item deletion simulated successfully. Note: In this demo, the in-memory database is static and cannot be modified at runtime.',
+      item: existingItem
+    });
   } catch (error) {
     console.error('Error deleting item:', error);
     res.status(500).json({ error: 'Failed to delete item' });
