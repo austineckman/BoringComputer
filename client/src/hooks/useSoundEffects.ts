@@ -18,7 +18,8 @@ export function useSoundEffects() {
   // Track if background music is playing
   const [isBgMusicPlaying, setIsBgMusicPlaying] = useState<boolean>(() => {
     const savedBgMusic = localStorage.getItem('bg_music_playing');
-    return savedBgMusic === 'true';
+    // Default to true if no saved preference (enable background music by default)
+    return savedBgMusic === null ? true : savedBgMusic === 'true';
   });
   
   // Keep track of the background music ID
