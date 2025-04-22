@@ -1,9 +1,7 @@
-import React, { useRef } from 'react';
-import { useDrop } from 'react-dnd';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { X } from 'lucide-react';
-import { useSoundEffects } from '@/hooks/useSoundEffects';
+import React from 'react';
+import { useDrag, useDrop } from 'react-dnd';
 import { getItemDetails } from '@/lib/itemDatabase';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
 
 interface CraftingCellProps {
   row: number;
@@ -22,101 +20,81 @@ const CraftingCell: React.FC<CraftingCellProps> = ({
   onDropItem,
   onRemoveItem,
   highlighted = false,
-  pattern = false,
+  pattern = false
 }) => {
   const { sounds } = useSoundEffects();
-  const cellRef = useRef<HTMLDivElement>(null);
-
-  // Set up drop target for inventory items
+  
+  // Set up drag functionality for cells with items
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: 'ITEM',
+    item: { itemId, sourceType: 'GRID', row, col },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+    canDrag: !pattern && !!itemId, // Only allow dragging from grid cells with items and not from pattern
+  }), [row, col, itemId, pattern]);
+  
+  // Set up drop functionality
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
-    accept: 'inventory-item',
-    drop: (item: { id: string }) => {
-      sounds.drop();
-      onDropItem(row, col, item.id);
+    accept: 'ITEM',
+    drop: (item: { itemId: string }) => {
+      if (!pattern) {
+        sounds.drop(); // Play drop sound
+        onDropItem(row, col, item.itemId);
+      }
       return { row, col };
     },
-    canDrop: () => !pattern, // Disable dropping if this is a pattern cell
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),
-      canDrop: !!monitor.canDrop(),
+      canDrop: !!monitor.canDrop() && !pattern,
     }),
-  }));
+    canDrop: () => !pattern, // Don't allow dropping onto pattern cells
+  }), [row, col, onDropItem, pattern]);
 
-  // Apply the drop ref to our element
-  drop(cellRef);
-
-  // Handle removing an item from the cell
-  const handleRemoveItem = () => {
-    if (pattern) return; // Don't allow removing items from pattern cells
-    sounds.remove();
-    onRemoveItem(row, col);
+  const handleCellClick = () => {
+    if (itemId && !pattern) {
+      sounds.remove(); // Play remove sound
+      onRemoveItem(row, col);
+    }
   };
 
-  // Get item details if we have an item in this cell
+  // Get item details if we have an itemId
   const itemDetails = itemId ? getItemDetails(itemId) : null;
 
+  // Determine the cell's styling based on state
+  const cellBaseStyle = `
+    w-12 h-12 border-2 rounded flex items-center justify-center
+    ${pattern ? 'cursor-default' : 'cursor-pointer'}
+    ${isOver && canDrop ? 'border-blue-500 bg-blue-100 dark:bg-blue-900/30' : ''}
+    ${highlighted ? 'border-green-500 bg-green-100 dark:bg-green-900/30' : 'border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800'}
+    ${isDragging ? 'opacity-50' : 'opacity-100'}
+    transition-all duration-150
+  `;
+
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div
-            ref={cellRef}
-            className={`
-              relative aspect-square border-2 rounded-md 
-              ${isOver && canDrop ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/30' : ''}
-              ${highlighted 
-                ? 'border-green-400 bg-green-50 dark:border-green-600 dark:bg-green-900/20' 
-                : 'border-gray-300 dark:border-gray-700'}
-              ${itemId ? 'p-1' : 'p-0'}
-              ${pattern 
-                ? 'cursor-default' 
-                : itemId 
-                  ? 'cursor-pointer' 
-                  : 'cursor-grab'}
-              transition-all duration-150
-            `}
-            onClick={itemId ? handleRemoveItem : undefined}
-          >
-            {itemId && (
-              <>
-                <img
-                  src={itemDetails?.imagePath || `/items/${itemId}.png`}
-                  alt={itemDetails?.name || itemId}
-                  className="w-full h-full object-contain"
-                  onError={(e) => {
-                    // Fallback to placeholder if image fails to load
-                    (e.target as HTMLImageElement).src = '/placeholder-item.png';
-                  }}
-                />
-                {!pattern && (
-                  <button
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveItem();
-                    }}
-                  >
-                    <X size={12} />
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="top">
-          {itemId ? (
-            <div>
-              <div className="font-medium">{itemDetails?.name || itemId}</div>
-              {!pattern && <div className="text-xs text-gray-500">Click to remove</div>}
-            </div>
-          ) : pattern ? (
-            <div className="text-xs">Pattern cell</div>
-          ) : (
-            <div className="text-xs">Drop an item here</div>
-          )}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <div
+      ref={(node) => {
+        // Apply both drag and drop refs if not in pattern mode
+        if (!pattern) {
+          drag(drop(node));
+        }
+      }}
+      className={cellBaseStyle}
+      onClick={handleCellClick}
+    >
+      {itemId && (
+        <div className="relative w-10 h-10 flex items-center justify-center">
+          <img
+            src={itemDetails?.imagePath || `/items/${itemId}.png`}
+            alt={itemDetails?.name || itemId}
+            className="max-w-full max-h-full object-contain"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/placeholder-item.png';
+            }}
+          />
+        </div>
+      )}
+    </div>
   );
 };
 

@@ -1,96 +1,77 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { useDrag } from 'react-dnd';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
+import { getItemDetails } from '@/lib/itemDatabase';
 
 interface InventoryItemProps {
   itemId: string;
-  name: string;
-  imagePath: string;
   quantity: number;
-  isRequired?: boolean;
-  requiredAmount?: number;
-  hasSufficientAmount?: boolean;
+  onUse?: (itemId: string) => void;
 }
 
-const InventoryItem: React.FC<InventoryItemProps> = ({
-  itemId,
-  name,
-  imagePath,
-  quantity,
-  isRequired = false,
-  requiredAmount = 0,
-  hasSufficientAmount = true,
-}) => {
-  const itemRef = useRef<HTMLDivElement>(null);
-
-  // Set up drag and drop functionality
+const InventoryItem: React.FC<InventoryItemProps> = ({ itemId, quantity, onUse }) => {
+  const { toast } = useToast();
+  const { sounds } = useSoundEffects();
+  
+  // Get item details
+  const itemDetails = getItemDetails(itemId);
+  
+  // Set up drag
   const [{ isDragging }, drag] = useDrag(() => ({
-    type: 'inventory-item',
-    item: { id: itemId },
+    type: 'ITEM',
+    item: { itemId, sourceType: 'INVENTORY' },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
-  }));
+    end: (item, monitor) => {
+      const didDrop = monitor.didDrop();
+      if (!didDrop) {
+        // Item was not dropped on a valid target
+        sounds.hover();
+      }
+    },
+  }), [itemId]);
 
-  // Apply the drag ref to our element
-  drag(itemRef);
+  const handleItemClick = () => {
+    if (onUse) {
+      onUse(itemId);
+    } else {
+      // Show item details in a toast
+      toast({
+        title: itemDetails.name,
+        description: itemDetails.description,
+        duration: 3000,
+      });
+      sounds.click();
+    }
+  };
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div
-            ref={itemRef}
-            className={`
-              relative p-1 rounded-md cursor-grab border
-              ${isDragging ? 'opacity-50' : 'opacity-100'}
-              ${isRequired 
-                ? hasSufficientAmount 
-                  ? 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
-                  : 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20'
-                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'}
-            `}
-          >
-            <div className="aspect-square w-full flex items-center justify-center p-1">
-              <img
-                src={imagePath}
-                alt={name}
-                className="w-full h-full object-contain"
-                onError={(e) => {
-                  // Fallback to a placeholder if image fails to load
-                  (e.target as HTMLImageElement).src = '/placeholder-item.png';
-                }}
-              />
-            </div>
-            <div className="absolute top-0 right-0 min-w-[1.5rem] h-[1.5rem] flex items-center justify-center bg-gray-800 rounded-bl-md rounded-tr-md text-white text-xs font-medium">
-              {quantity}
-            </div>
-            {isRequired && (
-              <div 
-                className={`
-                  absolute bottom-0 left-0 px-1 rounded-tr-md text-xs font-semibold
-                  ${hasSufficientAmount
-                    ? 'bg-green-600 text-white'
-                    : 'bg-red-600 text-white'}
-                `}
-              >
-                {requiredAmount}
-              </div>
-            )}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="top">
-          <div className="text-sm font-medium">{name}</div>
-          <div className="text-xs opacity-80">Quantity: {quantity}</div>
-          {isRequired && (
-            <div className={`text-xs ${hasSufficientAmount ? 'text-green-500' : 'text-red-500'}`}>
-              Required: {requiredAmount}
-            </div>
-          )}
-          <div className="text-xs opacity-80 mt-1">Drag to crafting grid</div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <div
+      ref={drag}
+      className={`
+        relative p-1 border-2 border-gray-300 dark:border-gray-700 rounded-md 
+        hover:border-amber-400 dark:hover:border-amber-500 bg-gray-100 dark:bg-gray-800
+        cursor-grab active:cursor-grabbing transition-colors
+        ${isDragging ? 'opacity-50' : 'opacity-100'}
+      `}
+      onClick={handleItemClick}
+    >
+      <div className="w-12 h-12 flex items-center justify-center">
+        <img
+          src={itemDetails.imagePath || `/items/${itemId}.png`}
+          alt={itemDetails.name}
+          className="max-w-full max-h-full object-contain"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/placeholder-item.png';
+          }}
+        />
+      </div>
+      <div className="absolute bottom-0 right-0 bg-gray-800 text-white text-xs px-1 rounded-tl-md">
+        {quantity}
+      </div>
+    </div>
   );
 };
 

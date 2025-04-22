@@ -1,85 +1,147 @@
-// This is a client-side mirror of the server-side itemDatabase for convenience
-export interface ItemDetails {
-  id: string;
-  name: string; 
-  description: string;
-  flavorText: string;
-  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
-  craftingUses: string[];
-  imagePath: string;
-}
+// This is a client-side utility for consistent item metadata
+// It parallels the server-side itemDatabase.ts with client-specific functionality
 
-export const itemDatabase: Record<string, ItemDetails> = {
-  'cloth': {
-    id: 'cloth',
-    name: 'Synthetic Cloth',
-    description: 'A durable synthetic fabric with heat-resistant properties.',
-    flavorText: 'Surprisingly comfortable, despite being made from recycled space suits.',
-    rarity: 'common',
-    craftingUses: ['clothing', 'insulation', 'filters'],
-    imagePath: '/assets/cloth.png'
+import { ItemDetails } from '../../shared/types';
+
+// Define the client-side item database
+const items: Record<string, ItemDetails> = {
+  "cloth": {
+    id: "cloth",
+    name: "Space Cloth",
+    description: "A lightweight and durable synthetic fabric developed for space travel.",
+    flavorText: "Soft yet sturdy, it's rumored to be made from recycled starlight.",
+    rarity: "common",
+    craftingUses: ["clothing", "wiring", "padding"],
+    imagePath: "/assets/cloth.png"
   },
-  'copper': {
-    id: 'copper',
-    name: 'Copper Wire',
-    description: 'Conductive material essential for electrical systems.',
-    flavorText: 'The lifeblood of any electrical circuit. Handle with care!',
-    rarity: 'common',
-    craftingUses: ['circuits', 'sensors', 'communication'],
-    imagePath: '/assets/copper.png'
+  "copper": {
+    id: "copper",
+    name: "Cosmic Copper",
+    description: "Highly conductive copper with unique properties from space exposure.",
+    flavorText: "This copper has seen things you wouldn't believe. It conducts more than just electricity...",
+    rarity: "common",
+    craftingUses: ["circuits", "wiring", "tools"],
+    imagePath: "/assets/copper.png"
   },
-  'crystal': {
-    id: 'crystal',
-    name: 'Power Crystal',
-    description: 'Energy-dense crystal capable of storing enormous charge.',
-    flavorText: 'Glows with an inner light that seems alive. Warm to the touch.',
-    rarity: 'rare',
-    craftingUses: ['power sources', 'weapon systems', 'advanced tech'],
-    imagePath: '/assets/crystal.png'
+  "crystal": {
+    id: "crystal",
+    name: "Nebula Crystal",
+    description: "A rare crystal formation with unusual energy properties.",
+    flavorText: "It hums with the resonance of distant stars.",
+    rarity: "rare",
+    craftingUses: ["energy", "focusing", "decoration"],
+    imagePath: "/assets/crystal.png"
   },
-  'techscrap': {
-    id: 'techscrap',
-    name: 'Technical Scrap',
-    description: 'Salvaged electronic components with various uses.',
-    flavorText: 'One person\'s trash is another person\'s tech breakthrough.',
-    rarity: 'uncommon',
-    craftingUses: ['repairs', 'improvised tools', 'upgrades'],
-    imagePath: '/assets/techscrap.png'
+  "techscrap": {
+    id: "techscrap",
+    name: "Tech Scrap",
+    description: "Salvaged components from various technological devices.",
+    flavorText: "One explorer's trash is another's treasure trove of innovation.",
+    rarity: "uncommon",
+    craftingUses: ["repairs", "crafting", "upgrades"],
+    imagePath: "/assets/techscrap.png"
   },
-  'ink': {
-    id: 'ink',
-    name: 'Conductive Ink',
-    description: 'Specialized ink that can transmit electrical signals.',
-    flavorText: 'Makes circuit drawing an art form. Literally.',
-    rarity: 'uncommon',
-    craftingUses: ['printed circuits', 'flexible electronics', 'rapid prototyping'],
-    imagePath: '/assets/ink.png'
+  "loot-crate": {
+    id: "loot-crate",
+    name: "Mystery Loot Crate",
+    description: "A sealed container with unknown valuable contents inside.",
+    flavorText: "What wonders or oddities might be waiting inside? Only one way to find out!",
+    rarity: "uncommon",
+    craftingUses: ["opening"],
+    imagePath: "/assets/loot crate.png"
   },
-  'loot-crate': {
-    id: 'loot-crate',
-    name: 'Loot Crate',
-    description: 'A mysterious container with unknown contents.',
-    flavorText: 'The anticipation of opening is almost as rewarding as the contents. Almost.',
-    rarity: 'uncommon',
-    craftingUses: ['rewards', 'surprises', 'resources'],
-    imagePath: '/assets/loot crate.png'
-  }
+  "ink": {
+    id: "ink",
+    name: "Cosmic Ink",
+    description: "A strange fluid that responds to electrical signals.",
+    flavorText: "The deepest black you've ever seen, like a portable piece of space itself.",
+    rarity: "rare",
+    craftingUses: ["writing", "drawing", "coding"],
+    imagePath: "/assets/ink.png"
+  },
+  "ciruit-board": {
+    id: "circuit-board",
+    name: "Quantum Circuit Board",
+    description: "An advanced circuit board capable of complex computational operations.",
+    flavorText: "It seems to compute answers before you even ask the question.",
+    rarity: "epic",
+    craftingUses: ["computing", "automation", "communication"],
+    imagePath: "/assets/circuit board.png"
+  },
+  // Add more items as needed
 };
 
-// Helper function to get item details by ID
+// Cache for rarity classes to avoid recalculating
+const rarityClassesCache: Record<string, string> = {
+  "common": "bg-gray-200 text-gray-800 border-gray-300",
+  "uncommon": "bg-green-100 text-green-800 border-green-300",
+  "rare": "bg-blue-100 text-blue-800 border-blue-300",
+  "epic": "bg-purple-100 text-purple-800 border-purple-300",
+  "legendary": "bg-yellow-100 text-yellow-800 border-yellow-300"
+};
+
+/**
+ * Get detailed information about an item by its ID
+ * @param itemId The ID of the item to look up
+ * @returns The item details or a default placeholder if not found
+ */
 export function getItemDetails(itemId: string): ItemDetails {
-  const item = itemDatabase[itemId];
-  if (!item) {
-    // Return a placeholder if item not found
-    return {
-      id: itemId,
-      name: itemId.charAt(0).toUpperCase() + itemId.slice(1),
-      description: 'Unknown item',
-      flavorText: 'Mysterious and undocumented',
-      rarity: 'common',
-      craftingUses: [],
-      imagePath: `/items/${itemId}.png`
-    };
+  if (items[itemId]) {
+    return items[itemId];
   }
-  return item;
+  
+  // If the item is not in our database, return a placeholder
+  return {
+    id: itemId,
+    name: formatItemName(itemId),
+    description: "No description available.",
+    flavorText: "This item is shrouded in mystery.",
+    rarity: "common",
+    craftingUses: [],
+    imagePath: `/assets/${itemId}.png` // Attempt to use a convention-based path
+  };
 }
+
+/**
+ * Get CSS classes for styling based on item rarity
+ * @param rarity The rarity level of the item
+ * @returns CSS classes string for the specified rarity
+ */
+export function getRarityClasses(rarity: string): string {
+  return rarityClassesCache[rarity] || rarityClassesCache.common;
+}
+
+/**
+ * Format an item ID into a more readable name
+ * @param itemId The raw item ID
+ * @returns A formatted, human-readable name
+ */
+function formatItemName(itemId: string): string {
+  return itemId
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+/**
+ * Get all items in the database
+ * @returns An array of all item details
+ */
+export function getAllItems(): ItemDetails[] {
+  return Object.values(items);
+}
+
+/**
+ * Add a new item to the client-side database (useful for dynamic updates)
+ * @param item The item details to add
+ */
+export function addItem(item: ItemDetails): void {
+  items[item.id] = item;
+}
+
+export default {
+  getItemDetails,
+  getRarityClasses,
+  getAllItems,
+  addItem
+};
