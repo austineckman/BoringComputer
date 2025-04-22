@@ -11,6 +11,7 @@ import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import ResetDatabaseButton from '@/components/debug/ResetDatabaseButton';
+import { resourceImages, getResourceDisplay } from '@/lib/resourceImages';
 
 interface Resource {
   type: string;
@@ -49,8 +50,9 @@ export default function Inventory() {
   const { sounds } = useSoundEffects();
   const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
   const [currentRewards, setCurrentRewards] = useState<{type: string, quantity: number}[]>([]);
-  const [activeTab, setActiveTab] = useState("materials");
+  const [activeTab, setActiveTab] = useState("all"); // Default to "all" tab
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<{type: string, quantity: number, isLootBox?: boolean, lootBoxData?: LootBox} | null>(null);
   
   // Get inventory resources
   const { data: resources, isLoading: isLoadingResources } = useQuery({
@@ -299,19 +301,19 @@ export default function Inventory() {
               <TabsList className="bg-space-dark">
                 <TabsTrigger 
                   value="all" 
-                  className="data-[state=active]:text-brand-orange data-[state=active]:bg-brand-orange/20"
+                  className="data-[state=active]:text-brand-orange data-[state=active]:bg-brand-orange/20 border-2 border-transparent data-[state=active]:border-brand-orange"
                 >
                   All Items
                 </TabsTrigger>
                 <TabsTrigger 
                   value="materials" 
-                  className="data-[state=active]:text-brand-orange data-[state=active]:bg-brand-orange/20"
+                  className="data-[state=active]:text-brand-orange data-[state=active]:bg-brand-orange/20 border-2 border-transparent data-[state=active]:border-brand-orange"
                 >
                   Materials
                 </TabsTrigger>
                 <TabsTrigger 
                   value="loot-boxes" 
-                  className="data-[state=active]:text-brand-orange data-[state=active]:bg-brand-orange/20"
+                  className="data-[state=active]:text-brand-orange data-[state=active]:bg-brand-orange/20 border-2 border-transparent data-[state=active]:border-brand-orange"
                 >
                   Loot Crates
                 </TabsTrigger>
