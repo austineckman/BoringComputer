@@ -218,6 +218,22 @@ body {
   animation: float 3s ease-in-out infinite;
 }
 
+/* Resource item pulse animation */
+@keyframes resource-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+    transform: scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 5px 2px rgba(255, 255, 255, 0.6); 
+    transform: scale(1.05);
+  }
+}
+
+.resource-icon-pulse {
+  animation: resource-pulse 2s infinite ease-in-out;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 10px;
