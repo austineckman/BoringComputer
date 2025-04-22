@@ -160,10 +160,13 @@ export default function Inventory() {
     return (
       <Button 
         variant="default" 
-        className="gap-2 bg-brand-orange hover:bg-brand-orange/80"
+        className="gap-2 bg-brand-orange hover:bg-brand-orange/80 text-white font-medium border-2 border-brand-orange/40 shadow-lg shadow-brand-orange/20 relative overflow-hidden"
         disabled={isGenerating}
         onClick={handleGenerateCrates}
       >
+        {/* Animated glow effect */}
+        <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 animate-shine -translate-x-full"></span>
+        
         {isGenerating ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
