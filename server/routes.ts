@@ -809,5 +809,196 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Quest detail route
+  app.get('/api/quests/:questId', authenticate, async (req, res) => {
+    try {
+      const questId = parseInt(req.params.questId);
+      
+      // Verify the quest exists
+      const quest = await storage.getQuest(questId);
+      if (!quest) {
+        return res.status(404).json({ message: "Quest not found" });
+      }
+      
+      // Get the user's status for this quest
+      const user = (req as any).user;
+      const userQuests = await storage.getUserQuests(user.id);
+      const userQuest = userQuests.find(uq => uq.questId === questId);
+      
+      // Format response with additional content details
+      const response = {
+        id: quest.id.toString(),
+        title: quest.title,
+        description: quest.description,
+        adventureLine: quest.adventureLine,
+        difficulty: quest.difficulty,
+        orderInLine: quest.orderInLine,
+        xpReward: quest.xpReward,
+        rewards: quest.rewards,
+        status: userQuest ? userQuest.status : 'locked',
+        content: {
+          videos: quest.content?.videos || [],
+          images: quest.content?.images || [],
+          codeBlocks: quest.content?.codeBlocks || []
+        },
+        lootBoxRewards: [
+          { type: 'common', quantity: 1 },
+          { type: quest.difficulty > 3 ? 'rare' : 'uncommon', quantity: 1 }
+        ]
+      };
+      
+      return res.json(response);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Failed to fetch quest details" });
+    }
+  });
+  
+  // Loot box routes
+  app.get('/api/loot-boxes', authenticate, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const lootBoxes = await storage.getLootBoxes(user.id);
+      
+      return res.json(lootBoxes);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Failed to fetch loot boxes" });
+    }
+  });
+  
+  app.post('/api/loot-boxes/:lootBoxId/open', authenticate, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const lootBoxId = parseInt(req.params.lootBoxId);
+      
+      // Verify the loot box exists and belongs to the user
+      const lootBox = await storage.getLootBox(lootBoxId);
+      if (!lootBox || lootBox.userId !== user.id) {
+        return res.status(404).json({ message: "Loot box not found" });
+      }
+      
+      // Check if the loot box is already opened
+      if (lootBox.opened) {
+        return res.status(400).json({ message: "This loot box has already been opened" });
+      }
+      
+      // Generate rewards based on loot box type
+      const rewards = generateLootBoxRewards(lootBox.type);
+      
+      // Update the loot box as opened with rewards
+      await storage.updateLootBox(lootBoxId, {
+        opened: true,
+        rewards: rewards
+      });
+      
+      // Add rewards to user's inventory
+      for (const reward of rewards) {
+        const currentQuantity = user.inventory[reward.type] || 0;
+        user.inventory[reward.type] = currentQuantity + reward.quantity;
+        
+        // Add to inventory history
+        await storage.createInventoryHistory({
+          userId: user.id,
+          type: reward.type,
+          quantity: reward.quantity,
+          action: 'gained',
+          source: `${lootBox.type} loot box`
+        });
+      }
+      
+      // Update user with new inventory
+      await storage.updateUser(user.id, {
+        inventory: user.inventory
+      });
+      
+      return res.json({ success: true, rewards });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Failed to open loot box" });
+    }
+  });
+  
+  // Function to generate random rewards based on loot box type
+  function generateLootBoxRewards(type: string) {
+    const rewards: { type: string, quantity: number }[] = [];
+    const resources = ['cloth', 'metal', 'tech-scrap', 'circuit-board', 'sensor-crystal', 'alchemy-ink'];
+    
+    // Different loot box types have different reward profiles
+    switch (type) {
+      case 'common':
+        // 2-3 common resources, smaller quantities
+        const commonCount = Math.floor(Math.random() * 2) + 2; // 2-3 items
+        for (let i = 0; i < commonCount; i++) {
+          const resourceType = resources[Math.floor(Math.random() * 3)]; // First 3 resources are more common
+          const quantity = Math.floor(Math.random() * 3) + 1; // 1-3 of each
+          rewards.push({ type: resourceType, quantity });
+        }
+        break;
+        
+      case 'uncommon':
+        // 3-4 mixed resources, medium quantities
+        const uncommonCount = Math.floor(Math.random() * 2) + 3; // 3-4 items
+        for (let i = 0; i < uncommonCount; i++) {
+          const resourceType = resources[Math.floor(Math.random() * 4)]; // First 4 resources
+          const quantity = Math.floor(Math.random() * 4) + 2; // 2-5 of each
+          rewards.push({ type: resourceType, quantity });
+        }
+        break;
+        
+      case 'rare':
+        // 3-5 resources including rare ones, larger quantities
+        const rareCount = Math.floor(Math.random() * 3) + 3; // 3-5 items
+        for (let i = 0; i < rareCount; i++) {
+          const resourceType = resources[Math.floor(Math.random() * 6)]; // All resources
+          const quantity = Math.floor(Math.random() * 5) + 3; // 3-7 of each
+          rewards.push({ type: resourceType, quantity });
+        }
+        break;
+        
+      case 'epic':
+        // 4-6 resources with better odds for rare ones, larger quantities
+        const epicCount = Math.floor(Math.random() * 3) + 4; // 4-6 items
+        for (let i = 0; i < epicCount; i++) {
+          // Higher chance of rare resources (index 3-5)
+          const resourceIndex = Math.floor(Math.random() * 10);
+          const resourceType = resources[Math.min(resourceIndex, 5)]; // Weighted toward rarer ones
+          const quantity = Math.floor(Math.random() * 6) + 5; // 5-10 of each
+          rewards.push({ type: resourceType, quantity });
+        }
+        break;
+        
+      case 'legendary':
+        // 5-7 resources with very high odds for rare ones, largest quantities
+        const legendaryCount = Math.floor(Math.random() * 3) + 5; // 5-7 items
+        for (let i = 0; i < legendaryCount; i++) {
+          // Very high chance of rare resources
+          const resourceIndex = Math.floor(Math.random() * 12);
+          const resourceType = resources[Math.min(resourceIndex, 5)]; // Heavily weighted to rarer ones
+          const quantity = Math.floor(Math.random() * 10) + 8; // 8-17 of each
+          rewards.push({ type: resourceType, quantity });
+        }
+        break;
+        
+      default:
+        // Default case - basic rewards
+        rewards.push({ type: 'cloth', quantity: 2 });
+        rewards.push({ type: 'metal', quantity: 1 });
+    }
+    
+    // Group duplicate resource types and sum their quantities
+    const grouped: Record<string, number> = {};
+    rewards.forEach(reward => {
+      if (grouped[reward.type]) {
+        grouped[reward.type] += reward.quantity;
+      } else {
+        grouped[reward.type] = reward.quantity;
+      }
+    });
+    
+    // Convert back to array format
+    return Object.entries(grouped).map(([type, quantity]) => ({ type, quantity }));
+  }
+  
   return httpServer;
 }

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Home from "@/pages/home";
 import Login from "@/pages/login";
 import Quests from "@/pages/quests";
+import QuestDetail from "@/pages/quest-detail";
 import Inventory from "@/pages/inventory";
 import Workshop from "@/pages/workshop";
 import Achievements from "@/pages/achievements";
@@ -81,6 +82,10 @@ function App() {
         <MainLayout>
           <Quests />
         </MainLayout>
+      </ProtectedRoute>
+
+      <ProtectedRoute path="/quests/:id">
+        <QuestDetail />
       </ProtectedRoute>
       
       <ProtectedRoute path="/inventory">
