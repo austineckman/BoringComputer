@@ -7,6 +7,8 @@ import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { createHash } from "crypto";
 import path from 'path';
+import { openLootBox, generateLootBoxRewards, LootBoxType } from './lootBoxSystem';
+import { getItemDetails } from './itemDatabase';
 
 // Setup authentication middleware
 const authenticate = async (req: Request, res: Response, next: Function) => {
@@ -958,59 +960,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const lootBoxId = parseInt(req.params.id);
       const user = (req as any).user;
-      const lootBox = await storage.getLootBox(lootBoxId);
       
-      if (!lootBox) {
-        return res.status(404).json({ message: "Loot box not found" });
-      }
+      // Use our new loot box system to handle opening
+      const result = await openLootBox(lootBoxId, user.id);
       
-      // Check if the loot box belongs to the user
-      if (lootBox.userId !== user.id) {
-        return res.status(403).json({ message: "Not authorized to open this loot box" });
-      }
-      
-      // Check if the loot box is already opened
-      if (lootBox.opened) {
-        return res.status(400).json({ 
-          message: "Loot box already opened", 
-          rewards: lootBox.rewards 
+      if (!result.success) {
+        // If there was an error or issue, return the appropriate status code
+        const statusCode = 
+          result.message.includes("not found") ? 404 :
+          result.message.includes("do not own") ? 403 :
+          result.message.includes("already opened") ? 400 : 500;
+        
+        return res.status(statusCode).json({ 
+          success: false,
+          message: result.message,
+          rewards: null
         });
       }
       
-      // Mark as opened
-      const updatedLootBox = await storage.updateLootBox(lootBoxId, { 
-        opened: true,
-        openedAt: new Date()
-      });
-      
-      // Add items to user's inventory
-      if (lootBox.rewards) {
-        for (const reward of lootBox.rewards) {
-          // Update user's inventory
-          const inventory = user.inventory || {};
-          inventory[reward.type] = (inventory[reward.type] || 0) + reward.quantity;
-          
-          await storage.updateUser(user.id, { inventory });
-          
-          // Record in inventory history
-          await storage.createInventoryHistory({
-            userId: user.id,
-            type: reward.type,
-            quantity: reward.quantity,
-            action: 'gained',
-            source: 'loot box'
-          });
-        }
-      }
-      
-      res.json({ 
-        success: true, 
-        message: 'Loot box opened successfully', 
-        rewards: lootBox.rewards 
-      });
+      // Return the rewards to the client
+      return res.json(result);
     } catch (error) {
       console.error('Error opening loot box:', error);
-      res.status(500).json({ message: "Failed to open loot box" });
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to open loot box", 
+        rewards: null 
+      });
     }
   });
   
