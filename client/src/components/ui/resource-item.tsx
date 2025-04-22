@@ -4,24 +4,22 @@ import { themeConfig } from "@/lib/themeConfig";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 // Import resource images
-import clothImage from "@/assets/resources/cloth.png";
-import metalImage from "@/assets/resources/metal.png";
-import techScrapImage from "@/assets/resources/tech-scrap.png";
-import sensorCrystalImage from "@/assets/resources/sensor-crystal.png";
-import circuitBoardImage from "@/assets/resources/circuit-board.png";
-import alchemyInkImage from "@/assets/resources/alchemy-ink.png";
-import lootCrateImage from "@/assets/resources/loot-crate.png";
+import clothImage from "@assets/cloth.png";
+import copperImage from "@assets/copper.png";
+import techscrapImage from "@assets/techscrap.png";
+import crystalImage from "@assets/crystal.png";
+import circuitBoardImage from "@assets/circuit board.png";
+import lootCrateImage from "@assets/loot crate.png";
 
-type ResourceType = "cloth" | "metal" | "tech-scrap" | "sensor-crystal" | "circuit-board" | "alchemy-ink" | "loot-crate";
+type ResourceType = "cloth" | "copper" | "techscrap" | "crystal" | "circuit-board" | "loot-crate";
 
 // Resource image mapping
 const resourceImages: Record<ResourceType, string> = {
   "cloth": clothImage,
-  "metal": metalImage,
-  "tech-scrap": techScrapImage,
-  "sensor-crystal": sensorCrystalImage,
+  "copper": copperImage,
+  "techscrap": techscrapImage,
+  "crystal": crystalImage,
   "circuit-board": circuitBoardImage,
-  "alchemy-ink": alchemyInkImage,
   "loot-crate": lootCrateImage
 };
 
@@ -58,20 +56,20 @@ const ResourceItem = ({
     if (interactive) {
       // Map resource types to specific sounds
       switch(type) {
-        case "metal":
-          sounds.boostEngine();
+        case "copper":
+          sounds.success();
           break;
-        case "tech-scrap":
-          sounds.powerUp();
+        case "techscrap":
+          sounds.questComplete();
           break;
-        case "sensor-crystal":
-          sounds.spaceDoor();
+        case "crystal":
+          sounds.achievement();
           break;
         case "circuit-board":
           sounds.craftSuccess();
           break;
-        case "alchemy-ink":
-          sounds.success();
+        case "loot-crate":
+          sounds.boxOpen();
           break;
         default:
           sounds.click();

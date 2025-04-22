@@ -116,11 +116,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             level: 1,
             inventory: {
               'cloth': 5,
-              'metal': 3,
-              'tech-scrap': 2,
-              'sensor-crystal': 1,
+              'copper': 3,
+              'techscrap': 2,
+              'crystal': 1,
               'circuit-board': 0,
-              'alchemy-ink': 0
+              'loot-crate': 3
             }
           });
         }
@@ -138,11 +138,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             level: 10,
             inventory: {
               'cloth': 100,
-              'metal': 100,
-              'tech-scrap': 100,
-              'sensor-crystal': 100,
+              'copper': 100,
+              'techscrap': 100,
+              'crystal': 100,
               'circuit-board': 100,
-              'alchemy-ink': 100
+              'loot-crate': 100
             }
           });
         }
@@ -213,11 +213,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.updateUser(user.id, {
             inventory: {
               'cloth': 5,
-              'metal': 7,
-              'tech-scrap': 4,
-              'sensor-crystal': 3,
+              'copper': 7,
+              'techscrap': 4,
+              'crystal': 3,
               'circuit-board': 2,
-              'alchemy-ink': 3
+              'loot-crate': 3
             }
           });
           
