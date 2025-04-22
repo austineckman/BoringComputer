@@ -3,6 +3,7 @@ import clothImg from '../assets/cloth.png';
 import copperImg from '../assets/copper.png';
 import crystalImg from '../assets/crystal.png';
 import techscrapImg from '../assets/techscrap.png';
+import lootCrateImg from '../assets/loot-crate.png';
 
 // Type definition for our resource images
 export interface ResourceImage {
@@ -31,6 +32,10 @@ export const resourceImages: Record<string, ResourceImage> = {
   'techscrap': {
     src: techscrapImg,
     alt: 'Tech scrap material'
+  },
+  'loot-crate': {
+    src: lootCrateImg,
+    alt: 'Loot Crate'
   }
 };
 
@@ -62,4 +67,9 @@ export const getResourceDisplay = (type: string): { isImage: boolean; value: str
     isImage: false,
     value: resourceEmojis[type] || '🔮' // Fallback to mystery emoji
   };
+};
+
+// Helper function to get loot crate image
+export const getLootCrateImage = (): ResourceImage => {
+  return resourceImages['loot-crate'];
 };
