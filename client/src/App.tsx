@@ -7,6 +7,7 @@ import QuestDetail from "@/pages/quest-detail";
 import Inventory from "@/pages/inventory";
 import Forge from "@/pages/forge";
 import Achievements from "@/pages/achievements";
+import Settings from "@/pages/settings";
 import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 import MainLayout from "@/components/layout/MainLayout";
@@ -118,6 +119,12 @@ function App() {
       <ProtectedRoute path="/admin">
         <MainLayout>
           <Admin />
+        </MainLayout>
+      </ProtectedRoute>
+      
+      <ProtectedRoute path="/settings">
+        <MainLayout>
+          <Settings />
         </MainLayout>
       </ProtectedRoute>
       
