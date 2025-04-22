@@ -1,96 +1,114 @@
 import { Howl } from 'howler';
 
-// Sound effects for the arcade-style interface
-const sounds = {
-  // Basic UI interactions
+// Define all the sound effects we need for the arcade game
+export const sounds = {
+  // UI sounds
   click: new Howl({
-    src: ['https://assets.codepen.io/605876/click.mp3'],
+    src: ['/sounds/click.mp3'],
     volume: 0.5,
   }),
   hover: new Howl({
-    src: ['https://assets.codepen.io/605876/hover.mp3'],
-    volume: 0.2,
+    src: ['/sounds/hover.mp3'],
+    volume: 0.3,
   }),
-  
-  // Quest related sounds
-  complete: new Howl({
-    src: ['https://assets.codepen.io/605876/complete.mp3'],
-    volume: 0.5,
-  }),
-  questStart: new Howl({
-    src: ['https://assets.codepen.io/605876/quest-start.mp3'],
-    volume: 0.6,
-  }),
-  questComplete: new Howl({
-    src: ['https://assets.codepen.io/605876/quest-complete.mp3'],
-    volume: 0.6,
-  }),
-  
-  // Reward related sounds
-  reward: new Howl({
-    src: ['https://assets.codepen.io/605876/reward.mp3'],
-    volume: 0.5,
-  }),
-  coinCollect: new Howl({
-    src: ['https://assets.codepen.io/605876/coin-collect.mp3'],
-    volume: 0.5,
-  }),
-  itemGet: new Howl({
-    src: ['https://assets.codepen.io/605876/item-get.mp3'],
-    volume: 0.5,
-  }),
-  
-  // Notification sounds
   error: new Howl({
-    src: ['https://assets.codepen.io/605876/error.mp3'],
-    volume: 0.5,
-  }),
-  notification: new Howl({
-    src: ['https://assets.codepen.io/605876/notification.mp3'],
-    volume: 0.4,
-  }),
-  
-  // Crafting related sounds
-  craft: new Howl({
-    src: ['https://assets.codepen.io/605876/craft.mp3'],
-    volume: 0.5,
-  }),
-  craftSuccess: new Howl({
-    src: ['https://assets.codepen.io/605876/craft-success.mp3'],
+    src: ['/sounds/error.mp3'],
     volume: 0.6,
   }),
   
-  // Achievement related sounds
+  // Achievement sounds
   achievement: new Howl({
-    src: ['https://assets.codepen.io/605876/achievement.mp3'],
-    volume: 0.6,
-  }),
-  levelUp: new Howl({
-    src: ['https://assets.codepen.io/605876/level-up.mp3'],
+    src: ['/sounds/achievement.mp3'],
     volume: 0.7,
   }),
-  fanfare: new Howl({
-    src: ['https://assets.codepen.io/605876/fanfare.mp3'],
-    volume: 0.5,
+  
+  // Quest sounds
+  questComplete: new Howl({
+    src: ['/sounds/quest-complete.mp3'],
+    volume: 0.8,
   }),
-  success: new Howl({
-    src: ['https://assets.codepen.io/605876/success.mp3'],
-    volume: 0.5,
+  questAccept: new Howl({
+    src: ['/sounds/quest-accept.mp3'],
+    volume: 0.6,
+  }),
+  reward: new Howl({
+    src: ['/sounds/reward.mp3'],
+    volume: 0.7,
   }),
   
-  // Ambient & misc sounds
-  powerUp: new Howl({
-    src: ['https://assets.codepen.io/605876/power-up.mp3'],
-    volume: 0.5,
+  // Crafting sounds
+  craftSuccess: new Howl({
+    src: ['/sounds/craft-success.mp3'],
+    volume: 0.7,
   }),
+  craftFail: new Howl({
+    src: ['/sounds/craft-fail.mp3'],
+    volume: 0.6,
+  }),
+  
+  // Login sounds
+  loginSuccess: new Howl({
+    src: ['/sounds/login-success.mp3'],
+    volume: 0.6,
+  }),
+  loginFail: new Howl({
+    src: ['/sounds/login-fail.mp3'],
+    volume: 0.6,
+  }),
+  
+  // Adventure-specific sounds
   spaceDoor: new Howl({
-    src: ['https://assets.codepen.io/605876/space-door.mp3'],
-    volume: 0.5, 
+    src: ['/sounds/space-door.mp3'],
+    volume: 0.7,
   }),
   boostEngine: new Howl({
-    src: ['https://assets.codepen.io/605876/boost-engine.mp3'],
-    volume: 0.4,
+    src: ['/sounds/boost-engine.mp3'],
+    volume: 0.8,
+  }),
+  powerUp: new Howl({
+    src: ['/sounds/power-up.mp3'],
+    volume: 0.7,
+  }),
+  
+  // Level up sounds
+  levelUp: new Howl({
+    src: ['/sounds/level-up.mp3'],
+    volume: 0.8,
+  }),
+  fanfare: new Howl({
+    src: ['/sounds/fanfare.mp3'],
+    volume: 0.7,
   }),
 };
 
-export default sounds;
+// Export the type with all possible sound names for type checking
+export type SoundName = keyof typeof sounds;
+
+// Function to play a sound by name
+export function playSound(name: SoundName): void {
+  const sound = sounds[name];
+  if (sound) {
+    sound.play();
+  } else {
+    console.warn(`Sound "${name}" not found`);
+  }
+}
+
+// Create a mock implementation for tests or environments without audio
+const mockSounds = Object.keys(sounds).reduce((acc, name) => {
+  acc[name as SoundName] = {
+    play: () => console.log(`[Mock] Playing sound: ${name}`),
+    stop: () => console.log(`[Mock] Stopping sound: ${name}`),
+  };
+  return acc;
+}, {} as Record<SoundName, { play: () => void; stop: () => void }>);
+
+// Export the mock implementation
+export const mockSound = {
+  play: (name: SoundName): void => {
+    mockSounds[name].play();
+  },
+  stop: (name: SoundName): void => {
+    mockSounds[name].stop();
+  },
+};
