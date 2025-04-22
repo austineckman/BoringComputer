@@ -1,36 +1,39 @@
 import React from 'react';
-import { DndProvider as ReactDndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { TouchBackend } from 'react-dnd-touch-backend';
+import { DndProvider as ReactDndProvider } from 'react-dnd';
 
 interface DndProviderProps {
   children: React.ReactNode;
 }
 
 /**
- * DndProvider that detects device capabilities and selects the appropriate backend
+ * Detects if the device is a touch device
  */
-export const DndProvider: React.FC<DndProviderProps> = ({ children }) => {
-  // Helper function to detect touch devices
-  const isTouchDevice = () => {
-    if (typeof window === 'undefined') return false;
-    return (
-      'ontouchstart' in window ||
-      navigator.maxTouchPoints > 0 
-    );
-  };
+const isTouchDevice = (): boolean => {
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+};
 
-  // Select the appropriate backend based on device capabilities
+/**
+ * DndProvider component that automatically switches between HTML5 and Touch backends
+ * based on the device type.
+ */
+const DndProvider: React.FC<DndProviderProps> = ({ children }) => {
+  // Choose the appropriate backend based on the device type
   const backend = isTouchDevice() ? TouchBackend : HTML5Backend;
   
-  // Options for touch backend
-  const touchOptions = {
-    enableMouseEvents: true, // Allow mouse events for testing on desktop
-    delayTouchStart: 100,    // Delay to distinguish between scroll and drag
+  // Configure the touch backend with preview options if needed
+  const touchBackendOptions = {
+    enableMouseEvents: true,
+    enableTouchEvents: true,
+    delayTouchStart: 100,
   };
   
+  // Options to use based on the selected backend
+  const options = isTouchDevice() ? touchBackendOptions : {};
+  
   return (
-    <ReactDndProvider backend={backend} options={isTouchDevice() ? touchOptions : undefined}>
+    <ReactDndProvider backend={backend} options={options}>
       {children}
     </ReactDndProvider>
   );

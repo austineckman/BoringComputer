@@ -1,191 +1,161 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import { CraftingResult, PatternMatch, Recipe } from '@/../../shared/types';
+import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { Recipe } from '@/../../shared/types';
+import { queryClient } from '@/lib/queryClient';
+import { useSoundEffects } from './useSoundEffects';
 
-/**
- * A hook that handles the crafting system logic
- */
-export const useCrafting = () => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
+// Cell position interface
+interface CellPos {
+  row: number;
+  col: number;
+}
+
+export function useCrafting() {
+  const { sounds } = useSoundEffects();
   
-  // Grid state - 5x5 grid of item IDs or empty strings
-  const [grid, setGrid] = useState<string[][]>(Array(5).fill(0).map(() => Array(5).fill('')));
+  // Initialize grid (5x5 empty grid)
+  const [grid, setGrid] = useState<string[][]>(
+    Array(5).fill('').map(() => Array(5).fill(''))
+  );
   
-  // Currently selected recipe
+  // User's inventory state
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
-  
-  // Highlighted cells that match the pattern
-  const [highlightedCells, setHighlightedCells] = useState<{ row: number, col: number }[]>([]);
-  
-  // Check if we have enough materials for the selected recipe
+  const [highlightedCells, setHighlightedCells] = useState<CellPos[]>([]);
   const [canCraft, setCanCraft] = useState(false);
   
-  // Get all available recipes
-  const { data: recipes = [] } = useQuery<Recipe[]>({
+  // Fetch recipes from API
+  const { data: recipes = [], isLoading: isRecipesLoading } = useQuery<Recipe[]>({
     queryKey: ['/api/recipes'],
-    staleTime: 30000, // 30 seconds
   });
   
-  // Get user's inventory
-  const { data: inventory = {} } = useQuery<Record<string, number>>({
+  // Fetch user's inventory from API
+  const { data: inventory = {}, isLoading: isInventoryLoading } = useQuery<Record<string, number>>({
     queryKey: ['/api/inventory'],
-    staleTime: 5000, // 5 seconds
   });
   
-  // Pattern matching result
-  const [patternMatch, setPatternMatch] = useState<PatternMatch>({
-    matches: false,
-    recipeId: null,
-    matchedCells: [],
+  // Mutation for crafting an item
+  const craftMutation = useMutation({
+    mutationFn: async (recipeId: string) => {
+      const response = await fetch('/api/craft', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ recipeId, grid }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Failed to craft item');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      // Clear grid after successful crafting
+      resetGrid();
+      // Invalidate inventory to update counts
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+    },
   });
   
-  // Drop an item into the grid
+  // Reset the crafting grid to empty
+  const resetGrid = useCallback(() => {
+    setGrid(Array(5).fill('').map(() => Array(5).fill('')));
+  }, []);
+  
+  // Handle dropping an item onto the grid
   const handleDropItem = useCallback((row: number, col: number, itemId: string) => {
     setGrid(prevGrid => {
-      const newGrid = [...prevGrid.map(r => [...r])];
+      const newGrid = [...prevGrid];
+      newGrid[row] = [...newGrid[row]];
       newGrid[row][col] = itemId;
       return newGrid;
     });
   }, []);
   
-  // Remove an item from the grid
+  // Handle removing an item from the grid
   const handleRemoveItem = useCallback((row: number, col: number) => {
     setGrid(prevGrid => {
-      const newGrid = [...prevGrid.map(r => [...r])];
+      const newGrid = [...prevGrid];
+      newGrid[row] = [...newGrid[row]];
       newGrid[row][col] = '';
       return newGrid;
     });
   }, []);
   
-  // Reset the grid
-  const handleResetGrid = useCallback(() => {
-    setGrid(Array(5).fill(0).map(() => Array(5).fill('')));
+  // Handle selecting a recipe
+  const handleSelectRecipe = useCallback((recipe: Recipe) => {
+    setSelectedRecipe(recipe);
   }, []);
   
-  // Check if the grid matches a recipe pattern
-  useEffect(() => {
-    // Only check if we have a selected recipe
-    if (!selectedRecipe) {
-      setPatternMatch({
-        matches: false,
-        recipeId: null,
-        matchedCells: [],
-      });
-      return;
+  // Handle crafting an item
+  const handleCraft = useCallback(() => {
+    if (selectedRecipe && canCraft) {
+      craftMutation.mutate(selectedRecipe.id);
     }
-    
-    // Check if the grid matches the selected recipe pattern
-    const pattern = selectedRecipe.pattern;
-    const matchedCells: { row: number, col: number }[] = [];
-    
-    // Find all cells that have the required items
-    for (let row = 0; row < pattern.length; row++) {
-      for (let col = 0; col < pattern[row].length; col++) {
-        const required = pattern[row][col];
-        
-        // Skip empty cells in the pattern
-        if (!required) continue;
-        
-        // Check if the grid cell matches the required item
-        if (grid[row][col] === required) {
-          matchedCells.push({ row, col });
-        }
-      }
-    }
-    
-    // Check if we found all required items
-    const requiredCellCount = pattern.flat().filter(Boolean).length;
-    const matches = matchedCells.length === requiredCellCount;
-    
-    setPatternMatch({
-      matches,
-      recipeId: matches ? selectedRecipe.id : null,
-      matchedCells,
-    });
-    
-    // Also highlight the cells that match
-    setHighlightedCells(matchedCells);
-    
-  }, [grid, selectedRecipe]);
+  }, [selectedRecipe, canCraft, craftMutation]);
   
-  // Check if user has enough materials for the selected recipe
-  useEffect(() => {
-    if (!selectedRecipe || !inventory) {
+  // Determine if the grid matches the selected recipe pattern
+  const checkGridPattern = useCallback(() => {
+    if (!selectedRecipe) {
+      setHighlightedCells([]);
       setCanCraft(false);
       return;
     }
     
-    // Check if all required materials are available in sufficient quantity
-    const hasEnoughMaterials = Object.entries(selectedRecipe.materials).every(
-      ([itemId, requiredAmount]) => {
-        const availableAmount = inventory[itemId] || 0;
-        return availableAmount >= requiredAmount;
-      }
-    );
+    // Keep track of materials used in the crafting grid
+    const usedMaterials: Record<string, number> = {};
     
-    // We can craft if the pattern matches and we have enough materials
-    setCanCraft(patternMatch.matches && hasEnoughMaterials);
+    // Track which cells match the pattern
+    const matchedCells: CellPos[] = [];
     
-  }, [selectedRecipe, inventory, patternMatch]);
-  
-  // Mutation to perform crafting
-  const craftMutation = useMutation({
-    mutationFn: async (): Promise<CraftingResult> => {
-      if (!selectedRecipe) {
-        throw new Error('No recipe selected');
+    // Check if grid matches the pattern
+    let patternMatches = true;
+    
+    for (let row = 0; row < 5; row++) {
+      for (let col = 0; col < 5; col++) {
+        const patternItem = selectedRecipe.pattern[row][col];
+        const gridItem = grid[row][col];
+        
+        if (patternItem && patternItem !== '') {
+          // Pattern requires an item here
+          if (gridItem === patternItem) {
+            // Item matches the pattern
+            matchedCells.push({ row, col });
+            usedMaterials[gridItem] = (usedMaterials[gridItem] || 0) + 1;
+          } else {
+            // Pattern doesn't match
+            patternMatches = false;
+          }
+        } else if (gridItem !== '') {
+          // Extra item that's not in the pattern
+          patternMatches = false;
+        }
       }
-      
-      const response = await apiRequest('POST', '/api/craft', {
-        recipeId: selectedRecipe.id,
-        grid,
-      });
-      
-      return await response.json();
-    },
-    onSuccess: (data: CraftingResult) => {
-      // Show success toast
-      toast({
-        title: 'Crafting successful!',
-        description: `You crafted ${data.recipe?.name}`,
-        variant: 'default',
-      });
-      
-      // Reset grid
-      handleResetGrid();
-      
-      // Update inventory
-      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
-      
-      // Update crafted items
-      queryClient.invalidateQueries({ queryKey: ['/api/crafted-items'] });
-    },
-    onError: (error: Error) => {
-      // Show error toast
-      toast({
-        title: 'Crafting failed',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-  
-  // Handle crafting
-  const handleCraft = useCallback(() => {
-    if (!selectedRecipe || !canCraft) return;
-    craftMutation.mutate();
-  }, [selectedRecipe, canCraft, craftMutation]);
-  
-  // Handle recipe selection
-  const handleSelectRecipe = useCallback((recipe: Recipe | null) => {
-    setSelectedRecipe(recipe);
-    // Clear highlighted cells if deselecting
-    if (!recipe) {
-      setHighlightedCells([]);
     }
-  }, []);
+    
+    // Check if user has enough materials
+    let hasMaterials = true;
+    for (const [itemId, requiredAmount] of Object.entries(selectedRecipe.materials)) {
+      const usedAmount = usedMaterials[itemId] || 0;
+      if (usedAmount < requiredAmount) {
+        hasMaterials = false;
+        break;
+      }
+    }
+    
+    setHighlightedCells(patternMatches ? matchedCells : []);
+    setCanCraft(patternMatches && hasMaterials);
+  }, [selectedRecipe, grid]);
+  
+  // Check grid pattern when dependencies change
+  useEffect(() => {
+    checkGridPattern();
+  }, [grid, selectedRecipe, checkGridPattern]);
+  
+  // Determine if any data is still loading
+  const isLoading = isRecipesLoading || isInventoryLoading || craftMutation.isPending;
   
   return {
     grid,
@@ -194,11 +164,11 @@ export const useCrafting = () => {
     selectedRecipe,
     highlightedCells,
     canCraft,
-    isLoading: craftMutation.isPending,
+    isLoading,
     onDropItem: handleDropItem,
     onRemoveItem: handleRemoveItem,
-    onResetGrid: handleResetGrid,
+    onResetGrid: resetGrid,
     onSelectRecipe: handleSelectRecipe,
     onCraft: handleCraft,
   };
-};
+}

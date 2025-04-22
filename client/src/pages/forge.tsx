@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Container } from '@/components/ui/container';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Sparkles, AlertCircle } from 'lucide-react';
-import MainLayout from '@/components/layout/MainLayout';
 import CraftingGrid from '@/components/crafting/CraftingGrid';
 import InventoryGrid from '@/components/crafting/InventoryGrid';
 import RecipeList from '@/components/crafting/RecipeList';
@@ -148,7 +147,7 @@ const ForgePage: React.FC = () => {
   };
   
   return (
-    <MainLayout>
+    <>
       <div 
         className="bg-cover bg-center h-64 flex items-center justify-center mb-8"
         style={{ backgroundImage: `url(${forgeHeroBg})` }}
@@ -244,7 +243,7 @@ const ForgePage: React.FC = () => {
           </DialogContent>
         </Dialog>
       </Container>
-    </MainLayout>
+    </>
   );
 };
 
