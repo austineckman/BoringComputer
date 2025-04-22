@@ -26,6 +26,9 @@ export function useSoundEffects() {
     // Crafting sounds
     craftSuccess: () => soundContext.playSound('craftSuccess'),
     craftFail: () => soundContext.playSound('craftFail'),
+    craft: () => soundContext.playSound('craft'),
+    drop: () => soundContext.playSound('drop'),
+    remove: () => soundContext.playSound('remove'),
     
     // Login sounds
     loginSuccess: () => soundContext.playSound('loginSuccess'),
