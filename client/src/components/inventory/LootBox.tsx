@@ -93,11 +93,36 @@ export function LootBoxItem({ lootBox, onOpen }: LootBoxProps) {
     }
   };
 
+  // Prepare randomized resource items for the CS:GO style animation
+  const resourceTypes = ['cloth', 'metal', 'tech-scrap', 'circuit-board', 'sensor-crystal', 'alchemy-ink'];
+  const [spinningItems, setSpinningItems] = useState<string[]>([]);
+  const [spinningComplete, setSpinningComplete] = useState(false);
+  
+  // Generate a mix of random items for the spinning animation
+  const generateSpinningItems = () => {
+    // Create a larger set of random resources (30-40 items)
+    const items: string[] = [];
+    const count = 30 + Math.floor(Math.random() * 10);
+    
+    // Generate mostly random items
+    for (let i = 0; i < count; i++) {
+      const randomType = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+      items.push(randomType);
+    }
+    
+    return items;
+  };
+  
   const handleOpenLootBox = async () => {
     setIsOpening(true);
+    setSpinningComplete(false);
+    
+    // Generate spinning items first
+    const spinItems = generateSpinningItems();
+    setSpinningItems(spinItems);
     
     try {
-      sounds.open();
+      sounds.open?.();
     } catch (e) {
       console.warn('Could not play open sound', e);
     }
@@ -106,13 +131,36 @@ export function LootBoxItem({ lootBox, onOpen }: LootBoxProps) {
       const res = await apiRequest('POST', `/api/loot-boxes/${lootBox.id}/open`);
       const data = await res.json();
       
+      if (!data.rewards || data.rewards.length === 0) {
+        toast({
+          title: 'Error',
+          description: 'No rewards found in this loot box',
+          variant: 'destructive'
+        });
+        setIsOpening(false);
+        setShowOpenModal(false);
+        return;
+      }
+      
+      // Store the real rewards to be revealed later
       setRewards(data.rewards || []);
       
-      // Start animation sequence
-      setCurrentIndex(0);
-      setAnimationComplete(false);
+      // Start the spinning animation first
+      // The reveal sequence will be triggered by useEffect after spinning completes
+      setTimeout(() => {
+        setSpinningComplete(true);
+        
+        try {
+          sounds.reward?.();
+        } catch (e) {
+          console.warn('Could not play reward sound', e);
+        }
+        
+        // Start animation sequence for actual rewards
+        setCurrentIndex(0);
+        setAnimationComplete(false);
+      }, 3000); // Spin for 3 seconds
       
-      // Animation will be handled by useEffect
     } catch (error) {
       console.error('Error opening loot box:', error);
       toast({
@@ -124,7 +172,7 @@ export function LootBoxItem({ lootBox, onOpen }: LootBoxProps) {
       setShowOpenModal(false);
       
       try {
-        sounds.error();
+        sounds.error?.();
       } catch (e) {
         console.warn('Could not play error sound', e);
       }
