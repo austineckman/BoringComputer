@@ -1,30 +1,65 @@
-// Define shared types that are used by both client and server
+/**
+ * Shared type definitions for the crafting system
+ */
 
-export interface ItemDetails {
+// Item rarity levels
+export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+
+// Recipe difficulty levels
+export type RecipeDifficulty = 'beginner' | 'intermediate' | 'advanced' | 'expert';
+
+// Basic crafting grid type
+export type CraftingGridPattern = Array<Array<string>>;
+
+// Recipe materials map
+export interface MaterialMap {
+  [itemId: string]: number; // item ID to quantity mapping
+}
+
+// Recipe reward type
+export interface RecipeReward {
+  itemId: string;
+  quantity: number;
+  type: 'digital' | 'physical' | 'blueprint';
+  description: string;
+}
+
+// Complete recipe type
+export interface Recipe {
   id: string;
   name: string;
-  description: string;
-  flavorText: string;
-  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
-  craftingUses: string[];
-  imagePath: string;
+  description: string; 
+  difficulty: RecipeDifficulty;
+  pattern: CraftingGridPattern;
+  materials: MaterialMap;
+  rewards: RecipeReward[];
+  unlockedAt: number; // level required to unlock
+  imageUrl: string;
 }
 
-export interface Recipe {
-  id: number;
-  name: string;
-  description: string;
-  difficulty: string;
-  resultItem: string;
-  resultQuantity: number;
-  materials: { [key: string]: number };
-  pattern?: (string | null)[][];
-}
-
+// Inventory item with metadata
 export interface InventoryItem {
-  type: string;
+  id: string;
   quantity: number;
-  lastAcquired?: Date | null;
+  lastAcquired: Date | null;
 }
 
-export type RarityLevel = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+// Crafted item result
+export interface CraftedItem {
+  id: number;
+  userId: number;
+  recipeId: string;
+  createdAt: Date;
+  status: 'pending' | 'redeemed' | 'shipped';
+  trackingNumber?: string;
+  redemptionCode?: string;
+  shippingAddress?: {
+    name: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  };
+}

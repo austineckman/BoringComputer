@@ -1,64 +1,64 @@
-// This is now a wrapper hook to use the SoundContext
-// The actual implementation is in the SoundContext.tsx file
-import { useSound } from '@/context/SoundContext';
-import { sounds as soundLibrary } from '@/lib/sound';
+import { useContext } from 'react';
+import { SoundContext, useSound } from '@/context/SoundContext';
 
+/**
+ * Custom hook to access sound effects from the SoundContext
+ * with additional crafting-specific sounds
+ */
 export function useSoundEffects() {
-  const soundContext = useSound();
+  const context = useSound(); // Use the existing useSound hook
   
-  // Create a sounds object with methods that call the playSound function
+  // Create a sounds object with the extended crafting sounds
   const sounds = {
-    // UI sounds
-    click: () => soundContext.playSound('click'),
-    hover: () => soundContext.playSound('hover'),
-    error: () => soundContext.playSound('error'),
-    success: () => soundContext.playSound('success'),
+    // Expose all the original sound methods
+    click: context.playSound.bind(null, 'click'),
+    hover: context.playSound.bind(null, 'hover'),
+    success: context.playSound.bind(null, 'success'),
+    error: context.playSound.bind(null, 'error'),
+    achievement: context.playSound.bind(null, 'achievement'),
+    questComplete: context.playSound.bind(null, 'questComplete'),
+    questAccept: context.playSound.bind(null, 'questAccept'),
+    questStart: context.playSound.bind(null, 'questStart'),
+    reward: context.playSound.bind(null, 'reward'),
+    openBox: context.playSound.bind(null, 'openBox'),
+    boxOpen: context.playSound.bind(null, 'boxOpen'),
+    levelUp: context.playSound.bind(null, 'levelUp'),
     
-    // Achievement sounds
-    achievement: () => soundContext.playSound('achievement'),
+    // Crafting-specific sounds
+    craftSuccess: () => {
+      if (!context.isMuted) {
+        context.playSound('success');
+      }
+    },
     
-    // Quest sounds
-    questComplete: () => soundContext.playSound('questComplete'),
-    questAccept: () => soundContext.playSound('questAccept'),
-    questStart: () => soundContext.playSound('questStart'),
-    reward: () => soundContext.playSound('reward'),
+    craftFail: () => {
+      if (!context.isMuted) {
+        context.playSound('error');
+      }
+    },
     
-    // Crafting sounds
-    craftSuccess: () => soundContext.playSound('craftSuccess'),
-    craftFail: () => soundContext.playSound('craftFail'),
-    craft: () => soundContext.playSound('craft'),
-    drop: () => soundContext.playSound('drop'),
-    remove: () => soundContext.playSound('remove'),
+    craftDrop: () => {
+      if (!context.isMuted) {
+        context.playSound('click');
+      }
+    },
     
-    // Login sounds
-    loginSuccess: () => soundContext.playSound('loginSuccess'),
-    loginFail: () => soundContext.playSound('loginFail'),
+    craftPickup: () => {
+      if (!context.isMuted) {
+        context.playSound('click');
+      }
+    },
     
-    // Adventure-specific sounds
-    spaceDoor: () => soundContext.playSound('spaceDoor'),
-    boostEngine: () => soundContext.playSound('boostEngine'),
-    powerUp: () => soundContext.playSound('powerUp'),
-    
-    // Level up sounds
-    levelUp: () => soundContext.playSound('levelUp'),
-    fanfare: () => soundContext.playSound('fanfare'),
-    
-    // Loot box sounds
-    open: () => soundContext.playSound('open'),
-    
-    // Direct access to the original sound library if needed
-    library: soundLibrary
+    // Library sounds
+    library: {
+      backgroundMusic: null // Reference to the background music (not exposed)
+    }
   };
   
-  // Return the same interface as before to maintain backward compatibility with existing components
   return {
-    volume: soundContext.volume * 100, // Convert from 0-1 to 0-100 for backward compatibility
-    changeVolume: soundContext.changeVolume,
-    isMuted: soundContext.isMuted,
-    toggleMute: soundContext.toggleMute, 
-    isBgMusicPlaying: soundContext.isBgMusicPlaying,
-    toggleBackgroundMusic: soundContext.toggleBackgroundMusic,
-    playSoundSafely: soundContext.playSound,
-    sounds // The new sounds object with methods
+    ...context,
+    sounds
   };
 }
+
+export default useSoundEffects;
