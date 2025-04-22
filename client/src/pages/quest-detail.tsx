@@ -144,7 +144,6 @@ export default function QuestDetailPage() {
   const codeBlocks = quest.content?.codeBlocks || [];
 
   return (
-    <MainLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row justify-between items-start gap-6">
           {/* Main content */}
@@ -274,6 +273,5 @@ export default function QuestDetailPage() {
           </div>
         </div>
       </div>
-    </MainLayout>
   );
 }
