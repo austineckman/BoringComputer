@@ -1,10 +1,12 @@
 import type { Express, Request, Response } from "express";
+import express from 'express';
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { createHash } from "crypto";
+import path from 'path';
 
 // Setup authentication middleware
 const authenticate = async (req: Request, res: Response, next: Function) => {
@@ -61,12 +63,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
   // Serve static files from the public directory
-  app.use('/sounds', (req, res, next) => {
-    const path = require('path');
-    const express = require('express');
-    const publicPath = path.join(process.cwd(), 'public', 'sounds');
-    express.static(publicPath)(req, res, next);
-  });
+  const publicPath = path.join(process.cwd(), 'public');
+  app.use('/sounds', express.static(path.join(publicPath, 'sounds')));
   
   // Set up sessions for users with improved cookie parsing
   app.use((req, res, next) => {
