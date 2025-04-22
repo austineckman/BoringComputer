@@ -63,7 +63,7 @@ export default function SettingsPage() {
     
     toast({
       title: !isBgMusicPlaying ? "Background music enabled" : "Background music disabled",
-      description: !isBgMusicPlaying ? "Pixel Dreams is now playing" : "Background music has been turned off",
+      description: !isBgMusicPlaying ? "Fantasy Guild Hall is now playing" : "Background music has been turned off",
       duration: 2000,
     });
   };
@@ -331,7 +331,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <p className="text-sm text-brand-light/60 mb-4">
-                  Play "Pixel Dreams" music in the background while browsing
+                  Play "Fantasy Guild Hall" music in the background while browsing
                 </p>
               </div>
               

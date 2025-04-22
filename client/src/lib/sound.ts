@@ -21,7 +21,7 @@ const createSound = (path: string, volume: number = 0.6, loop: boolean = false) 
 export const sounds = {
   // UI sounds
   click: createSound('/sounds/click.mp3', 0.5),
-  hover: createSound('/sounds/hover.mp3', 0.3),
+  hover: createSound('/sounds/hover.mp3', 0.06), // Reduced to 20% of original volume (0.3 * 0.2 = 0.06)
   error: createSound('/sounds/error.mp3', 0.6),
   success: createSound('/sounds/success.mp3', 0.6),
   
@@ -54,8 +54,8 @@ export const sounds = {
   // Loot box sounds
   open: createSound('/sounds/open.mp3', 0.7),
   
-  // Background music
-  backgroundMusic: createSound('/sounds/pixel-dreams.mp3', 0.3, true),
+  // Background music - new Fantasy Guild Hall music
+  backgroundMusic: createSound('/sounds/fantasy-guild-hall.mp3', 0.3, true),
 };
 
 // Export the type with all possible sound names for type checking
