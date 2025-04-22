@@ -184,40 +184,7 @@ export default function Inventory() {
     const { sounds } = useSoundEffects();
     const [isGenerating, setIsGenerating] = useState(false);
     
-    // Add function to generate a specific type of loot box
-  const generateTestLootBoxes = async (type: string, quantity: number = 1) => {
-    try {
-      setIsGenerating(true);
-      const response = await apiRequest('POST', `/api/loot-boxes/generate-test`);
-      const data = await response.json();
-      
-      try {
-        sounds.questComplete();
-      } catch (e) {
-        console.warn('Could not play sound', e);
-      }
-      
-      toast({
-        title: "Test Crates Generated!",
-        description: `New loot crates have been added to your inventory.`,
-        variant: "default",
-      });
-      
-      // Invalidate the loot boxes query to refresh the list
-      queryClient.invalidateQueries({ queryKey: ['/api/loot-boxes'] });
-      setIsGenerating(false);
-    } catch (error) {
-      console.error('Error generating test crates:', error);
-      toast({
-        title: "Failed to Generate Crates",
-        description: "There was an error generating test crates. Please try again.",
-        variant: "destructive",
-      });
-      setIsGenerating(false);
-    }
-  };
-  
-  const generateCratesMutation = useMutation({
+    const generateCratesMutation = useMutation({
       mutationFn: async () => {
         const response = await apiRequest('POST', '/api/loot-boxes/generate-test');
         return await response.json();
@@ -250,6 +217,7 @@ export default function Inventory() {
       }
     });
     
+    // Function to handle generating test crates
     const handleGenerateCrates = () => {
       try {
         sounds.click();
@@ -578,60 +546,11 @@ export default function Inventory() {
                 <p className="text-sm text-brand-light/80 mb-4">Generate test loot boxes to try out the CS:GO-style opening animation.</p>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                  <Button 
-                    className="bg-gray-700 hover:bg-gray-700/80 text-white font-medium"
-                    onClick={() => handleGenerateCrates()}
-                    disabled={isGenerating}
-                  >
-                    <span className="flex items-center gap-2">
-                      {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                      Generate All Crates
-                    </span>
-                  </Button>
-                  
-                  <Button 
-                    className="bg-green-800 hover:bg-green-800/80 text-white font-medium"
-                    onClick={() => handleGenerateCrates()}
-                    disabled={isGenerating}
-                  >
-                    <span className="flex items-center gap-2">
-                      {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                      Generate Crates
-                    </span>
-                  </Button>
-                  
-                  <Button 
-                    className="bg-blue-800 hover:bg-blue-800/80 text-white font-medium"
-                    onClick={() => handleGenerateCrates()}
-                    disabled={isGenerating}
-                  >
-                    <span className="flex items-center gap-2">
-                      {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                      Generate Crates
-                    </span>
-                  </Button>
-                  
-                  <Button 
-                    className="bg-purple-800 hover:bg-purple-800/80 text-white font-medium"
-                    onClick={() => handleGenerateCrates()}
-                    disabled={isGenerating}
-                  >
-                    <span className="flex items-center gap-2">
-                      {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                      Generate Crates
-                    </span>
-                  </Button>
-                  
-                  <Button 
-                    className="bg-amber-700 hover:bg-amber-700/80 text-white font-medium"
-                    onClick={() => handleGenerateCrates()}
-                    disabled={isGenerating}
-                  >
-                    <span className="flex items-center gap-2">
-                      {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                      Generate Crates
-                    </span>
-                  </Button>
+                  <GenerateTestCrates />
+                  <GenerateTestCrates />
+                  <GenerateTestCrates />
+                  <GenerateTestCrates />
+                  <GenerateTestCrates />
                 </div>
               </div>
             </TabsContent>
