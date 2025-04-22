@@ -4,6 +4,12 @@ import copperImg from '../assets/copper.png';
 import crystalImg from '../assets/crystal.png';
 import techscrapImg from '../assets/techscrap.png';
 import lootCrateImg from '../assets/loot-crate.png';
+import circuitBoardImg from '@assets/circuit board.png';
+import inkImg from '@assets/ink.png';
+import gizboImg from '@assets/gizbo.png';  // Optional character image for future use
+
+// Import the item database
+import { getItemDetails } from './itemDatabase';
 
 // Type definition for our resource images
 export interface ResourceImage {
@@ -16,88 +22,107 @@ export const resourceImages: Record<string, ResourceImage> = {
   // Base materials
   'cloth': {
     src: clothImg,
-    alt: 'Cloth material'
+    alt: 'Astral Cloth'
   },
   'copper': {
     src: copperImg,
-    alt: 'Copper material'
+    alt: 'Copper Ingot'
   },
   'crystal': {
     src: crystalImg,
-    alt: 'Crystal material'
+    alt: 'Prismatic Crystal'
   },
   'tech-scrap': {
     src: techscrapImg,
-    alt: 'Tech scrap material'
+    alt: 'Tech Scrap'
   },
   'techscrap': {
     src: techscrapImg,
-    alt: 'Tech scrap material'
+    alt: 'Tech Scrap'
   },
   'metal': {
     src: copperImg, // Reusing copper image for metal
-    alt: 'Metal material'
+    alt: 'Reinforced Metal'
   },
   
-  // Additional materials - all using existing images as fallbacks
+  // Updated materials with proper images and names
   'circuit-board': {
-    src: techscrapImg, // Using tech scrap for circuit boards
-    alt: 'Circuit board'
+    src: circuitBoardImg,
+    alt: 'Logic Circuit'
   },
   'wire': {
     src: techscrapImg,
-    alt: 'Wire'
+    alt: 'Conductive Wire'
   },
   'gear': {
     src: techscrapImg,
-    alt: 'Gear'
+    alt: 'Precision Gears'
   },
   'battery': {
     src: techscrapImg,
-    alt: 'Battery'
+    alt: 'Power Cell'
   },
   'microchip': {
     src: techscrapImg, 
-    alt: 'Microchip'
+    alt: 'Neural Processor'
   },
   'plastic': {
     src: techscrapImg,
-    alt: 'Plastic'
+    alt: 'Synthetic Polymer'
   },
   'rubber': {
     src: techscrapImg,
-    alt: 'Rubber'
+    alt: 'Elastic Compound'
   },
   'nano-fiber': {
     src: clothImg, // Using cloth for nano-fiber
-    alt: 'Nano-fiber'
+    alt: 'Nano-fiber Weave'
   },
   'quantum-bit': {
     src: crystalImg, // Using crystal for quantum-bit
-    alt: 'Quantum bit'
+    alt: 'Quantum Bit'
   },
   'sensor-crystal': {
     src: crystalImg,
-    alt: 'Sensor crystal'
+    alt: 'Sensor Crystal Array'
+  },
+  'ink': {
+    src: inkImg,
+    alt: 'Luminous Ink'
   },
   'alchemy-ink': {
-    src: crystalImg,
-    alt: 'Alchemy ink'
+    src: inkImg,
+    alt: 'Alchemical Ink'
   },
   'loot-crate': {
     src: lootCrateImg,
-    alt: 'Loot Crate'
+    alt: 'Adventure Loot Crate'
   }
 };
 
-// Helper function to get a resource image
+/**
+ * Helper function to get a resource display information
+ * This now uses the central item database for consistent naming
+ */
 export const getResourceDisplay = (type: string): { isImage: boolean; value: string; alt?: string } => {
-  // If the resource type is directly in our map, return it
+  // Get item details from the database
+  const itemDetails = getItemDetails(type);
+  
+  // If the resource type is directly in our map, return it with the proper name
   if (type in resourceImages) {
     return {
       isImage: true,
       value: resourceImages[type].src,
-      alt: resourceImages[type].alt
+      alt: itemDetails.name // Use the name from our centralized database
+    };
+  }
+  
+  // Special case for loot boxes with type prefix (e.g. "common-loot-box")
+  if (type.includes('loot') || type.endsWith('-box') || type.endsWith('-crate')) {
+    return {
+      isImage: true,
+      value: lootCrateImg,
+      alt: itemDetails.name // Use the name from our centralized database
     };
   }
   
@@ -105,11 +130,14 @@ export const getResourceDisplay = (type: string): { isImage: boolean; value: str
   return {
     isImage: true,
     value: resourceImages['crystal'].src,
-    alt: `${type.replace('-', ' ')} material`
+    alt: itemDetails.name // Use the name from our centralized database
   };
 };
 
-// Helper function to get loot crate image
+/**
+ * Helper function to get loot crate image
+ * This returns a consistent image for all loot boxes
+ */
 export const getLootCrateImage = (): ResourceImage => {
   return resourceImages['loot-crate'];
 };
