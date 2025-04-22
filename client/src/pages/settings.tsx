@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Volume2, VolumeX, Edit, Save, User, Gift, ExternalLink } from "lucide-react";
+import { Volume2, VolumeX, Edit, Save, User, Gift, ExternalLink, Music, MusicOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { sounds } from "@/lib/sound";
+import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -16,8 +16,15 @@ import { Badge } from "@/components/ui/badge";
 export default function SettingsPage() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [volume, setVolume] = useState(50);
-  const [isMuted, setIsMuted] = useState(false);
+  const { 
+    volume, 
+    changeVolume, 
+    isMuted, 
+    toggleMute, 
+    isBgMusicPlaying, 
+    toggleBackgroundMusic,
+    sounds 
+  } = useSoundEffects();
   const [showVolumeTooltip, setShowVolumeTooltip] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({
@@ -34,39 +41,12 @@ export default function SettingsPage() {
       });
     }
   }, [user]);
-
-  // Load volume settings from localStorage on component mount
-  useEffect(() => {
-    const savedVolume = localStorage.getItem("sound-volume");
-    const savedMuted = localStorage.getItem("sound-muted");
-    
-    if (savedVolume !== null) {
-      setVolume(parseInt(savedVolume));
-    }
-    
-    if (savedMuted !== null) {
-      setIsMuted(savedMuted === "true");
-    }
-  }, []);
-  
-  // Save settings to localStorage when they change
-  useEffect(() => {
-    localStorage.setItem("sound-volume", volume.toString());
-    localStorage.setItem("sound-muted", isMuted.toString());
-    
-    // Update global sound settings by adjusting volume on all sounds
-    Object.values(sounds).forEach(sound => {
-      if (sound && typeof sound.volume === 'function') {
-        sound.volume(isMuted ? 0 : volume / 100);
-      }
-    });
-  }, [volume, isMuted]);
   
   const handleToggleMute = () => {
-    if (!isMuted && sounds.click) {
-      sounds.click.play();
+    if (!isMuted) {
+      sounds.click();
     }
-    setIsMuted(!isMuted);
+    toggleMute();
     
     toast({
       title: !isMuted ? "Sound muted" : "Sound unmuted",
@@ -75,22 +55,26 @@ export default function SettingsPage() {
     });
   };
   
-  const handleVolumeChange = (newValue: number[]) => {
-    const newVolume = newValue[0];
-    setVolume(newVolume);
-    
-    // If volume is set to 0, mute the sound
-    if (newVolume === 0 && !isMuted) {
-      setIsMuted(true);
-    } 
-    // If volume is changed from 0 to a value and the sound is muted, unmute it
-    else if (newVolume > 0 && isMuted) {
-      setIsMuted(false);
+  const handleToggleBackgroundMusic = () => {
+    if (!isMuted) {
+      sounds.click();
     }
+    toggleBackgroundMusic();
     
-    // Play a sound when adjusting volume
-    if (newVolume > 0 && !isMuted && sounds.click) {
-      sounds.click.play();
+    toast({
+      title: !isBgMusicPlaying ? "Background music enabled" : "Background music disabled",
+      description: !isBgMusicPlaying ? "Pixel Dreams is now playing" : "Background music has been turned off",
+      duration: 2000,
+    });
+  };
+  
+  const handleVolumeChange = (newValue: number[]) => {
+    const newVolume = newValue[0] / 100; // Convert from 0-100 to 0-1
+    changeVolume(newVolume);
+    
+    // Play a sound when adjusting volume (if not muted and volume > 0)
+    if (newVolume > 0 && !isMuted) {
+      sounds.click();
     }
   };
   
