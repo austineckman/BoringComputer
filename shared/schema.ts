@@ -208,6 +208,8 @@ export const insertLootBoxSchema = createInsertSchema(lootBoxes).pick({
   rewards: true,
   source: true,
   sourceId: true,
+  acquiredAt: true,
+  openedAt: true,
 });
 
 export const insertInventoryHistorySchema = createInsertSchema(inventoryHistory).pick({
