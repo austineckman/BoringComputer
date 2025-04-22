@@ -9,9 +9,11 @@ export interface ItemDetails {
   rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
   craftingUses: string[];
   imagePath: string;
+  category?: string; // Optional category for filtering
 }
 
-export const itemDatabase: Record<string, ItemDetails> = {
+// Create a mutable database that can be modified at runtime by admin operations
+export let itemDatabase: Record<string, ItemDetails> = {
   'cloth': {
     id: 'cloth',
     name: 'Synthetic Fabric',
@@ -88,4 +90,49 @@ export function getItemDetails(itemId: string): ItemDetails {
     craftingUses: [],
     imagePath: '/images/resources/placeholder.png'
   };
+}
+
+// Add an item to the database (create or update)
+export function addOrUpdateItem(item: ItemDetails): ItemDetails {
+  if (!item.id) {
+    throw new Error('Item ID is required');
+  }
+  
+  // Store the item in the database
+  itemDatabase[item.id] = {
+    ...item,
+    // Ensure all required fields are present
+    craftingUses: item.craftingUses || [],
+    // Convert any non-array craftingUses to array format
+    ...(item.craftingUses && !Array.isArray(item.craftingUses) 
+        ? { craftingUses: String(item.craftingUses).split(',').map(s => s.trim()) } 
+        : {})
+  };
+  
+  return itemDatabase[item.id];
+}
+
+// Remove an item from the database
+export function removeItem(itemId: string): boolean {
+  if (!itemDatabase[itemId]) {
+    return false;
+  }
+  
+  delete itemDatabase[itemId];
+  return true;
+}
+
+// Get all items in the database
+export function getAllItems(): ItemDetails[] {
+  return Object.values(itemDatabase);
+}
+
+// Get items by rarity
+export function getItemsByRarity(rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'): ItemDetails[] {
+  return Object.values(itemDatabase).filter(item => item.rarity === rarity);
+}
+
+// Get items by category
+export function getItemsByCategory(category: string): ItemDetails[] {
+  return Object.values(itemDatabase).filter(item => item.category === category);
 }
