@@ -30,8 +30,14 @@ export const quests = pgTable("quests", {
   difficulty: integer("difficulty").notNull(),
   orderInLine: integer("order_in_line").notNull().default(0), // New field for sequential ordering
   xpReward: integer("xp_reward").notNull().default(100), // New field for XP rewards
-  rewards: json("rewards").$type<{type: string, quantity: number}[]>().notNull(),
+  lootBoxRewards: json("loot_box_rewards").$type<{type: string, quantity: number}[]>().default([]),
   active: boolean("active").default(true), // Changed default to true
+  // Quest page content
+  content: json("content").$type<{
+    videos: string[],
+    images: string[],
+    codeBlocks: {language: string, code: string}[]
+  }>().default({videos: [], images: [], codeBlocks: []}),
 });
 
 // User Quests status table
@@ -97,6 +103,19 @@ export const userAchievements = pgTable("user_achievements", {
   progress: integer("progress").default(0),
 });
 
+// Loot Boxes table
+export const lootBoxes = pgTable("loot_boxes", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  type: text("type").notNull(), // common, rare, epic, legendary
+  opened: boolean("opened").default(false),
+  acquiredAt: timestamp("acquired_at").defaultNow(),
+  openedAt: timestamp("opened_at"),
+  rewards: json("rewards").$type<{type: string, quantity: number}[]>().default([]),
+  source: text("source").notNull(), // quest, achievement, etc.
+  sourceId: integer("source_id"), // ID of the quest, achievement, etc.
+});
+
 // Inventory History table
 export const inventoryHistory = pgTable("inventory_history", {
   id: serial("id").primaryKey(),
@@ -104,7 +123,7 @@ export const inventoryHistory = pgTable("inventory_history", {
   type: text("type").notNull(),
   quantity: integer("quantity").notNull(),
   action: text("action").notNull(), // gained, used
-  source: text("source").notNull(), // quest, crafting, etc.
+  source: text("source").notNull(), // quest, crafting, loot_box, etc.
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -131,7 +150,8 @@ export const insertQuestSchema = createInsertSchema(quests).pick({
   difficulty: true,
   orderInLine: true,
   xpReward: true,
-  rewards: true,
+  lootBoxRewards: true,
+  content: true,
   active: true,
 });
 
@@ -181,6 +201,15 @@ export const insertUserAchievementSchema = createInsertSchema(userAchievements).
   progress: true,
 });
 
+export const insertLootBoxSchema = createInsertSchema(lootBoxes).pick({
+  userId: true,
+  type: true,
+  opened: true,
+  rewards: true,
+  source: true,
+  sourceId: true,
+});
+
 export const insertInventoryHistorySchema = createInsertSchema(inventoryHistory).pick({
   userId: true,
   type: true,
@@ -213,6 +242,9 @@ export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
 
 export type UserAchievement = typeof userAchievements.$inferSelect;
 export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
+
+export type LootBox = typeof lootBoxes.$inferSelect;
+export type InsertLootBox = z.infer<typeof insertLootBoxSchema>;
 
 export type InventoryHistory = typeof inventoryHistory.$inferSelect;
 export type InsertInventoryHistory = z.infer<typeof insertInventoryHistorySchema>;
