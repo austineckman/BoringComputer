@@ -6,22 +6,43 @@ interface PixelButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>
   variant?: "primary" | "secondary" | "accent" | "disabled";
   size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
+  soundEffect?: "click" | "laser" | "magic" | "success" | "achievement" | "quest";
 }
 
 const PixelButton = React.forwardRef<HTMLButtonElement, PixelButtonProps>(
-  ({ className, variant = "primary", size = "md", fullWidth = false, children, disabled, ...props }, ref) => {
-    const { playSound } = useSoundEffects();
+  ({ className, variant = "primary", size = "md", fullWidth = false, children, disabled, soundEffect = "click", ...props }, ref) => {
+    const { sounds } = useSoundEffects();
 
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
       if (!disabled) {
-        playSound("click");
+        // Play different sounds based on button type
+        switch(soundEffect) {
+          case "laser":
+            sounds.spaceDoor();
+            break;
+          case "magic":
+            sounds.powerUp();
+            break;
+          case "success":
+            sounds.success();
+            break;
+          case "achievement":
+            sounds.achievement();
+            break;
+          case "quest":
+            sounds.questAccept();
+            break;
+          default:
+            sounds.click();
+        }
+        
         props.onClick?.(e);
       }
     };
 
     const handleMouseEnter = () => {
       if (!disabled) {
-        playSound("hover");
+        sounds.hover();
       }
     };
 

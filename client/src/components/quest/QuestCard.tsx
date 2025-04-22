@@ -37,7 +37,7 @@ const QuestCard = ({
   onStart,
   onContinue
 }: QuestCardProps) => {
-  const { playSound } = useSoundEffects();
+  const { playAdventureSound, sounds } = useSoundEffects();
   
   // Get adventure line info from config
   const adventure = adventureLine ? 
@@ -52,14 +52,23 @@ const QuestCard = ({
       color: "#777777"
     };
 
+  // Handle hover on quest card with adventure-specific sound
+  const handleHover = () => {
+    if (status === "active" || status === "available") {
+      playAdventureSound(adventureLine);
+    } else {
+      sounds.hover();
+    }
+  };
+
   const handleAction = () => {
     if (status === "active" || status === "available") {
       // Play different sounds based on action type
       if (status === "active" && onContinue) {
-        playSound("questComplete");
+        sounds.questComplete();
         onContinue();
       } else if (status === "available" && onStart) {
-        playSound("questStart");
+        sounds.questStart();
         onStart();
       }
     }
@@ -86,13 +95,13 @@ const QuestCard = ({
     switch (status) {
       case "active":
         return (
-          <PixelButton fullWidth onClick={handleAction}>
+          <PixelButton soundEffect="quest" fullWidth onClick={handleAction}>
             CONTINUE QUEST
           </PixelButton>
         );
       case "available":
         return (
-          <PixelButton variant="secondary" fullWidth onClick={handleAction}>
+          <PixelButton variant="secondary" soundEffect="quest" fullWidth onClick={handleAction}>
             START QUEST
           </PixelButton>
         );
@@ -116,73 +125,78 @@ const QuestCard = ({
   const statusDisplay = getStatusDisplay();
 
   return (
-    <PixelCard active={status === "active"} interactive={true}>
-      {/* Quest Header with Adventure Line Label */}
-      <PixelCardHeader color={status === "active" ? adventure.color : "bg-space-light"}>
-        <div className="flex items-center">
-          <i className={`fas fa-${adventure.icon} text-xs mr-2`}></i>
-          <span className={`text-xs font-bold ${status === "active" ? "text-space-darkest" : ""}`}>
-            {adventure.name.toUpperCase()}
-          </span>
-        </div>
-        <span className={`px-2 py-0.5 rounded text-xs ${statusDisplay.color}`}>
-          {statusDisplay.text}
-        </span>
-      </PixelCardHeader>
-      
-      {/* Quest Content */}
-      <PixelCardContent>
-        <h3 className="font-bold text-lg mb-2">{title}</h3>
-        <p className="text-sm text-brand-light/70 mb-4">{description}</p>
-        
-        {/* XP Reward - New! */}
-        {xpReward && (
-          <div className="flex items-center space-x-2 mb-4">
-            <span className="text-xs text-brand-light/60">XP Reward:</span>
-            <span className="text-xs bg-brand-orange/20 text-brand-orange px-2 py-1 rounded-full">
-              +{xpReward} XP
+    <div 
+      onMouseEnter={handleHover}
+      className={status === "active" || status === "available" ? "cursor-pointer" : ""}
+    >
+      <PixelCard active={status === "active"} interactive={true}>
+        {/* Quest Header with Adventure Line Label */}
+        <PixelCardHeader color={status === "active" ? adventure.color : "bg-space-light"}>
+          <div className="flex items-center">
+            <i className={`fas fa-${adventure.icon} text-xs mr-2`}></i>
+            <span className={`text-xs font-bold ${status === "active" ? "text-space-darkest" : ""}`}>
+              {adventure.name.toUpperCase()}
             </span>
           </div>
-        )}
+          <span className={`px-2 py-0.5 rounded text-xs ${statusDisplay.color}`}>
+            {statusDisplay.text}
+          </span>
+        </PixelCardHeader>
         
-        {/* Sequence Info - New! */}
-        {typeof orderInLine === 'number' && (
-          <div className="flex items-center space-x-2 mb-4">
-            <span className="text-xs text-brand-light/60">Quest:</span>
-            <span className="text-xs bg-space-dark px-2 py-1 rounded">#{orderInLine + 1}</span>
-          </div>
-        )}
-        
-        {/* Difficulty Level */}
-        <div className="flex items-center space-x-1 mb-4">
-          <span className="text-xs text-brand-light/60 mr-2">Difficulty:</span>
-          {[1, 2, 3, 4, 5].map((level) => (
-            <div 
-              key={level}
-              className={`w-3 h-3 rounded-full ${level <= difficulty ? "bg-brand-orange" : "bg-space-dark"}`}
-            ></div>
-          ))}
-        </div>
-        
-        {/* Rewards Preview */}
-        <div className="mb-4">
-          <span className="text-xs text-brand-light/60 block mb-2">Rewards:</span>
-          <div className="flex space-x-2">
-            {rewards.map((reward, index) => (
+        {/* Quest Content */}
+        <PixelCardContent>
+          <h3 className="font-bold text-lg mb-2">{title}</h3>
+          <p className="text-sm text-brand-light/70 mb-4">{description}</p>
+          
+          {/* XP Reward */}
+          {xpReward && (
+            <div className="flex items-center space-x-2 mb-4">
+              <span className="text-xs text-brand-light/60">XP Reward:</span>
+              <span className="text-xs bg-brand-orange/20 text-brand-orange px-2 py-1 rounded-full">
+                +{xpReward} XP
+              </span>
+            </div>
+          )}
+          
+          {/* Sequence Info */}
+          {typeof orderInLine === 'number' && (
+            <div className="flex items-center space-x-2 mb-4">
+              <span className="text-xs text-brand-light/60">Quest:</span>
+              <span className="text-xs bg-space-dark px-2 py-1 rounded">#{orderInLine + 1}</span>
+            </div>
+          )}
+          
+          {/* Difficulty Level */}
+          <div className="flex items-center space-x-1 mb-4">
+            <span className="text-xs text-brand-light/60 mr-2">Difficulty:</span>
+            {[1, 2, 3, 4, 5].map((level) => (
               <div 
-                key={index} 
-                className={`flex flex-col items-center ${status === "upcoming" || status === "locked" ? "opacity-50" : ""}`}
-              >
-                <ResourceItem type={reward.type as any} quantity={reward.quantity} size="sm" />
-              </div>
+                key={level}
+                className={`w-3 h-3 rounded-full ${level <= difficulty ? "bg-brand-orange" : "bg-space-dark"}`}
+              ></div>
             ))}
           </div>
-        </div>
-        
-        {/* Action Button */}
-        {getActionButton()}
-      </PixelCardContent>
-    </PixelCard>
+          
+          {/* Rewards Preview */}
+          <div className="mb-4">
+            <span className="text-xs text-brand-light/60 block mb-2">Rewards:</span>
+            <div className="flex space-x-2">
+              {rewards.map((reward, index) => (
+                <div 
+                  key={index} 
+                  className={`flex flex-col items-center ${status === "upcoming" || status === "locked" ? "opacity-50" : ""}`}
+                >
+                  <ResourceItem type={reward.type as any} quantity={reward.quantity} size="sm" />
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Action Button */}
+          {getActionButton()}
+        </PixelCardContent>
+      </PixelCard>
+    </div>
   );
 };
 
