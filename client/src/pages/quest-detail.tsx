@@ -61,10 +61,10 @@ export default function QuestDetailPage() {
   const { toast } = useToast();
   const { sounds } = useSoundEffects();
 
-  // States for showing/hiding content
-  const [showVideos, setShowVideos] = useState(false);
-  const [showImages, setShowImages] = useState(false);
-  const [showCode, setShowCode] = useState(false);
+  // States for showing/hiding content - now default to show
+  const [showVideos, setShowVideos] = useState(true);
+  const [showImages, setShowImages] = useState(true);
+  const [showCode, setShowCode] = useState(true);
 
   // Auth state to check if user is admin
   const { user } = useAuth();
@@ -83,7 +83,12 @@ export default function QuestDetailPage() {
   
   // Start editing mode
   const handleStartEdit = () => {
-    setEditedQuest({...quest});
+    // Initialize content fields if not present
+    const contentInit = quest.content || { videos: [], images: [], codeBlocks: [] };
+    setEditedQuest({
+      ...quest,
+      content: contentInit
+    });
     setIsEditing(true);
     sounds.click?.();
   };
@@ -313,6 +318,264 @@ export default function QuestDetailPage() {
                       onChange={(e) => setEditedQuest({...editedQuest, xpReward: Number(e.target.value)})}
                       className="bg-space-dark border-brand-orange/30"
                     />
+                  </div>
+                  
+                  {/* Content Editing Sections */}
+                  <div className="border border-brand-orange/20 rounded-md p-4 space-y-4 mt-6">
+                    <h3 className="text-lg font-semibold border-b border-brand-orange/20 pb-2">Quest Content</h3>
+                    
+                    {/* YouTube Videos Section */}
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="block text-sm font-medium text-gray-400">YouTube Videos</label>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const content = editedQuest.content || { videos: [], images: [], codeBlocks: [] };
+                            setEditedQuest({
+                              ...editedQuest,
+                              content: {
+                                ...content,
+                                videos: [...(content.videos || []), ""]
+                              }
+                            });
+                          }}
+                          className="h-8 px-2 text-xs"
+                        >
+                          <Plus className="h-3 w-3 mr-1" /> Add Video
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        {(editedQuest.content?.videos || []).map((videoId: string, index: number) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Input
+                              value={videoId}
+                              placeholder="YouTube Video ID or full URL"
+                              onChange={(e) => {
+                                const videoUrl = e.target.value;
+                                // Extract the video ID if a full URL is pasted
+                                let videoId = videoUrl;
+                                // Handle youtube.com/watch?v= format
+                                const watchMatch = videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+                                if (watchMatch && watchMatch[1]) {
+                                  videoId = watchMatch[1];
+                                }
+                                
+                                const videos = [...(editedQuest.content?.videos || [])];
+                                videos[index] = videoId;
+                                setEditedQuest({
+                                  ...editedQuest,
+                                  content: {
+                                    ...editedQuest.content,
+                                    videos
+                                  }
+                                });
+                              }}
+                              className="flex-1 bg-space-dark border-brand-orange/30"
+                            />
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                const videos = [...(editedQuest.content?.videos || [])];
+                                videos.splice(index, 1);
+                                setEditedQuest({
+                                  ...editedQuest,
+                                  content: {
+                                    ...editedQuest.content,
+                                    videos
+                                  }
+                                });
+                              }}
+                              className="h-9 w-9 p-0 text-red-500 hover:text-red-700 hover:bg-transparent"
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        
+                        {(editedQuest.content?.videos || []).length === 0 && (
+                          <p className="text-sm text-muted-foreground text-center py-2 bg-space-dark rounded-md">
+                            No videos added yet
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Images Section */}
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="block text-sm font-medium text-gray-400">Images</label>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const content = editedQuest.content || { videos: [], images: [], codeBlocks: [] };
+                            setEditedQuest({
+                              ...editedQuest,
+                              content: {
+                                ...content,
+                                images: [...(content.images || []), ""]
+                              }
+                            });
+                          }}
+                          className="h-8 px-2 text-xs"
+                        >
+                          <Plus className="h-3 w-3 mr-1" /> Add Image
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        {(editedQuest.content?.images || []).map((image: string, index: number) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Input
+                              value={image}
+                              placeholder="Image URL"
+                              onChange={(e) => {
+                                const images = [...(editedQuest.content?.images || [])];
+                                images[index] = e.target.value;
+                                setEditedQuest({
+                                  ...editedQuest,
+                                  content: {
+                                    ...editedQuest.content,
+                                    images
+                                  }
+                                });
+                              }}
+                              className="flex-1 bg-space-dark border-brand-orange/30"
+                            />
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                const images = [...(editedQuest.content?.images || [])];
+                                images.splice(index, 1);
+                                setEditedQuest({
+                                  ...editedQuest,
+                                  content: {
+                                    ...editedQuest.content,
+                                    images
+                                  }
+                                });
+                              }}
+                              className="h-9 w-9 p-0 text-red-500 hover:text-red-700 hover:bg-transparent"
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        
+                        {(editedQuest.content?.images || []).length === 0 && (
+                          <p className="text-sm text-muted-foreground text-center py-2 bg-space-dark rounded-md">
+                            No images added yet
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Code Blocks Section */}
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="block text-sm font-medium text-gray-400">Code Examples</label>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const content = editedQuest.content || { videos: [], images: [], codeBlocks: [] };
+                            setEditedQuest({
+                              ...editedQuest,
+                              content: {
+                                ...content,
+                                codeBlocks: [...(content.codeBlocks || []), { language: "javascript", code: "" }]
+                              }
+                            });
+                          }}
+                          className="h-8 px-2 text-xs"
+                        >
+                          <Plus className="h-3 w-3 mr-1" /> Add Code Block
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        {(editedQuest.content?.codeBlocks || []).map((codeBlock: { language: string, code: string }, index: number) => (
+                          <div key={index} className="border border-brand-orange/20 rounded-md p-3 space-y-2 bg-space-dark">
+                            <div className="flex justify-between items-center">
+                              <div className="flex-1">
+                                <label className="block text-xs text-gray-400 mb-1">Language</label>
+                                <select
+                                  value={codeBlock.language}
+                                  onChange={(e) => {
+                                    const codeBlocks = [...(editedQuest.content?.codeBlocks || [])];
+                                    codeBlocks[index] = { ...codeBlock, language: e.target.value };
+                                    setEditedQuest({
+                                      ...editedQuest,
+                                      content: {
+                                        ...editedQuest.content,
+                                        codeBlocks
+                                      }
+                                    });
+                                  }}
+                                  className="w-full px-2 py-1 rounded-md bg-space-mid border border-brand-orange/30 text-brand-light text-sm"
+                                >
+                                  <option value="javascript">JavaScript</option>
+                                  <option value="python">Python</option>
+                                  <option value="css">CSS</option>
+                                  <option value="html">HTML</option>
+                                  <option value="c">C</option>
+                                  <option value="cpp">C++</option>
+                                  <option value="arduino">Arduino</option>
+                                </select>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  const codeBlocks = [...(editedQuest.content?.codeBlocks || [])];
+                                  codeBlocks.splice(index, 1);
+                                  setEditedQuest({
+                                    ...editedQuest,
+                                    content: {
+                                      ...editedQuest.content,
+                                      codeBlocks
+                                    }
+                                  });
+                                }}
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-transparent mt-6"
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            
+                            <div>
+                              <label className="block text-xs text-gray-400 mb-1">Code</label>
+                              <Textarea
+                                value={codeBlock.code}
+                                onChange={(e) => {
+                                  const codeBlocks = [...(editedQuest.content?.codeBlocks || [])];
+                                  codeBlocks[index] = { ...codeBlock, code: e.target.value };
+                                  setEditedQuest({
+                                    ...editedQuest,
+                                    content: {
+                                      ...editedQuest.content,
+                                      codeBlocks
+                                    }
+                                  });
+                                }}
+                                className="min-h-[120px] bg-space-mid border-brand-orange/30 font-mono text-sm"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                        
+                        {(editedQuest.content?.codeBlocks || []).length === 0 && (
+                          <p className="text-sm text-muted-foreground text-center py-2 bg-space-dark rounded-md">
+                            No code examples added yet
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </>
               ) : (
