@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { themeConfig } from "@/lib/themeConfig";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 
-type ResourceType = "cloth" | "metal" | "tech-scrap" | "sensor-crystal" | "circuit-board" | "alchemy-ink";
+type ResourceType = "cloth" | "metal" | "tech-scrap" | "sensor-crystal" | "circuit-board" | "alchemy-ink" | "loot-crate";
 
 interface ResourceItemProps {
   type: ResourceType;
@@ -102,13 +102,17 @@ const ResourceItem = ({
     >
       <div 
         className={cn(
-          "rounded-lg flex items-center justify-center", 
+          "rounded-lg flex items-center justify-center overflow-hidden", 
           styles.iconContainer,
           interactive && "resource-icon-pulse"
         )}
-        style={{ backgroundColor: resourceConfig.color }}
+        style={{ backgroundColor: 'transparent' }}
       >
-        <i className={`fas fa-${resourceConfig.icon} text-white ${styles.icon}`}></i>
+        <img 
+          src={`/images/resources/${type}.png`} 
+          alt={resourceConfig.name} 
+          className="w-full h-full object-contain"
+        />
       </div>
       <div className="text-center">
         <div className="text-xs font-semibold">{resourceConfig.name}</div>

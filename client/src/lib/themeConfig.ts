@@ -13,7 +13,8 @@ export const themeConfig = {
     resourceTechScrap: '#3ECDA2',
     resourceSensorCrystal: '#44A0FF',
     resourceCircuitBoard: '#00C781',
-    resourceAlchemyInk: '#FF7EB9'
+    resourceAlchemyInk: '#FF7EB9',
+    resourceLootCrate: '#FFD800'
   },
   
   // Using adventure lines instead of kits for the new progression system
@@ -125,6 +126,12 @@ export const themeConfig = {
       name: 'Alchemy Ink',
       icon: 'flask',
       color: 'var(--resource-alchemy-ink)',
+    },
+    {
+      id: 'loot-crate',
+      name: 'Salvage Crate',
+      icon: 'box',
+      color: 'var(--resource-loot-crate)',
     }
   ],
   
