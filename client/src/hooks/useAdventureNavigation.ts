@@ -34,8 +34,8 @@ export function useAdventureNavigation() {
   }, [navigate, playSound]);
   
   // Get adventure line details from theme config
-  const getAdventureDetails = useCallback((adventureSlug: string) => {
-    return themeConfig.adventureLines.find(adv => adv.slug === adventureSlug);
+  const getAdventureDetails = useCallback((adventureId: string) => {
+    return themeConfig.adventureLines.find(adv => adv.id === adventureId);
   }, []);
   
   return {
