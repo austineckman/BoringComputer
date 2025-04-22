@@ -915,7 +915,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Authentication required" });
       }
 
-      const { type = 'common', count = 1, source = 'admin testing' } = req.body;
+      const { type = 'common', count = 1, source = 'admin testing', targetUserId } = req.body;
+      
+      // Determine which user to add the loot boxes to
+      const lootBoxUserId = targetUserId ? parseInt(targetUserId) : user.id;
+      
+      // If a targetUserId was specified, verify that user exists
+      if (targetUserId) {
+        const targetUser = await storage.getUser(lootBoxUserId);
+        if (!targetUser) {
+          return res.status(404).json({ message: "Target user not found" });
+        }
+      }
       
       // Validate type
       const validTypes = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
@@ -924,7 +935,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Validate count
-      const boxCount = Math.min(Math.max(1, count), 10); // Between 1 and 10
+      const boxCount = Math.min(Math.max(1, count), 100); // Between 1 and 100
       
       // Create loot boxes
       const createdBoxes = [];
@@ -933,7 +944,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const rewards = generateLootBoxRewards(type);
         
         const lootBox = await storage.createLootBox({
-          userId: user.id,
+          userId: lootBoxUserId,
           type,
           opened: false,
           rewards,
