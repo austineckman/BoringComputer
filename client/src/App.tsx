@@ -5,7 +5,7 @@ import Login from "@/pages/login";
 import Quests from "@/pages/quests";
 import QuestDetail from "@/pages/quest-detail";
 import Inventory from "@/pages/inventory";
-import Workshop from "@/pages/workshop";
+import Forge from "@/pages/forge";
 import Achievements from "@/pages/achievements";
 import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
@@ -94,9 +94,16 @@ function App() {
         </MainLayout>
       </ProtectedRoute>
       
+      <ProtectedRoute path="/forge">
+        <MainLayout>
+          <Forge />
+        </MainLayout>
+      </ProtectedRoute>
+      
+      {/* Redirect workshop to forge */}
       <ProtectedRoute path="/workshop">
         <MainLayout>
-          <Workshop />
+          <Forge />
         </MainLayout>
       </ProtectedRoute>
       
