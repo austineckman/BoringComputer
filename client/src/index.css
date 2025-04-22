@@ -167,6 +167,65 @@ body {
   box-shadow: 0 0 0 rgba(0, 0, 0, 0.3);
 }
 
+/* Button glow effect */
+.button-glow {
+  animation: button-pulse 2s infinite;
+  position: relative;
+  z-index: 1;
+}
+
+.button-glow::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  z-index: -1;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: 0 0 15px 3px rgba(255, 147, 0, 0.7);
+  opacity: 0;
+  animation: glow-pulse 2s infinite;
+}
+
+@keyframes button-pulse {
+  0%, 100% { transform: translateY(-2px) scale(1); }
+  50% { transform: translateY(-2px) scale(1.03); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+/* Button animation for special actions */
+.button-animated {
+  position: relative;
+  overflow: hidden;
+}
+
+.button-animated::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: button-shine 2s infinite;
+}
+
+@keyframes button-shine {
+  0% { left: -100%; }
+  50%, 100% { left: 100%; }
+}
+
 .inventory-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
