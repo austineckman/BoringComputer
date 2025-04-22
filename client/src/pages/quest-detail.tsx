@@ -270,7 +270,7 @@ export default function QuestDetailPage() {
                     <Input 
                       value={editedQuest.title}
                       onChange={(e) => setEditedQuest({...editedQuest, title: e.target.value})}
-                      className="bg-space-dark border-brand-orange/30"
+                      className="bg-space-dark border-brand-orange/30 text-brand-light placeholder:text-gray-500"
                     />
                   </div>
                   
@@ -306,7 +306,7 @@ export default function QuestDetailPage() {
                     <Textarea 
                       value={editedQuest.description}
                       onChange={(e) => setEditedQuest({...editedQuest, description: e.target.value})}
-                      className="bg-space-dark border-brand-orange/30 min-h-[100px]"
+                      className="bg-space-dark border-brand-orange/30 min-h-[100px] text-brand-light placeholder:text-gray-500"
                     />
                   </div>
                   
@@ -316,7 +316,7 @@ export default function QuestDetailPage() {
                       type="number"
                       value={editedQuest.xpReward}
                       onChange={(e) => setEditedQuest({...editedQuest, xpReward: Number(e.target.value)})}
-                      className="bg-space-dark border-brand-orange/30"
+                      className="bg-space-dark border-brand-orange/30 text-brand-light placeholder:text-gray-500"
                     />
                   </div>
                   
@@ -373,7 +373,7 @@ export default function QuestDetailPage() {
                                   }
                                 });
                               }}
-                              className="flex-1 bg-space-dark border-brand-orange/30"
+                              className="flex-1 bg-space-dark border-brand-orange/30 text-brand-light placeholder:text-gray-500"
                             />
                             <Button
                               size="sm"
@@ -444,7 +444,7 @@ export default function QuestDetailPage() {
                                   }
                                 });
                               }}
-                              className="flex-1 bg-space-dark border-brand-orange/30"
+                              className="flex-1 bg-space-dark border-brand-orange/30 text-brand-light placeholder:text-gray-500"
                             />
                             <Button
                               size="sm"
@@ -563,7 +563,7 @@ export default function QuestDetailPage() {
                                     }
                                   });
                                 }}
-                                className="min-h-[120px] bg-space-mid border-brand-orange/30 font-mono text-sm"
+                                className="min-h-[120px] bg-space-mid border-brand-orange/30 font-mono text-sm text-brand-light placeholder:text-gray-500"
                               />
                             </div>
                           </div>
@@ -681,7 +681,7 @@ export default function QuestDetailPage() {
                       type="number"
                       value={editedQuest.xpReward || 0}
                       onChange={(e) => setEditedQuest({...editedQuest, xpReward: Number(e.target.value)})}
-                      className="bg-space-dark border-brand-orange/30"
+                      className="bg-space-dark border-brand-orange/30 text-brand-light placeholder:text-gray-500"
                     />
                   </div>
                   
@@ -734,7 +734,7 @@ export default function QuestDetailPage() {
                                 updatedRewards[index] = { ...reward, quantity: Number(e.target.value) };
                                 setEditedQuest({...editedQuest, lootBoxRewards: updatedRewards});
                               }}
-                              className="w-20 bg-space-mid border-brand-orange/30 text-sm h-8"
+                              className="w-20 bg-space-mid border-brand-orange/30 text-sm h-8 text-brand-light placeholder:text-gray-500"
                               min={1}
                             />
                             <Button
