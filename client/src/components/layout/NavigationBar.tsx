@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import {
   DropdownMenu,
@@ -16,7 +16,27 @@ const NavigationBar = () => {
   const { user, logout, playSoundSafely } = useAuth();
   const { sounds, isMuted, toggleMute } = useSoundEffects();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
+  // Handle scroll event to change navbar background
+  useEffect(() => {
+    const handleScroll = () => {
+      const offset = window.scrollY;
+      if (offset > 50) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    
+    // Clean up event listener on component unmount
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+  
   const navItems = [
     { name: "Quests", path: "/quests" },
     { name: "Inventory", path: "/inventory" },
@@ -47,33 +67,50 @@ const NavigationBar = () => {
     : userLevel <= 7 ? 'Commander'
     : 'Master';
 
+  // Determine navbar background style based on scroll position and login status
+  const navBackground = user && scrolled 
+    ? "bg-black border-b border-brand-orange/50 transition-all duration-300" 
+    : "bg-space-darkest border-b border-brand-orange/30 transition-all duration-300";
+
   return (
-    <nav className="bg-space-darkest border-b border-brand-orange/30 px-4 py-2 sticky top-0 z-50">
+    <nav className={`${navBackground} px-4 py-2 sticky top-0 z-50`}>
       <div className="container mx-auto flex items-center justify-between">
-        <Link href="/" onClick={handleNavClick} onMouseEnter={handleNavHover}>
-          <a className="flex items-center">
-            <svg className="h-10 w-10 mr-2">
-              <use href="#logo" />
-            </svg>
+        <Link href="/">
+          <div 
+            className="flex items-center cursor-pointer" 
+            onClick={handleNavClick} 
+            onMouseEnter={handleNavHover}
+          >
+            {/* Use the new logo image when user is logged in */}
+            {user ? (
+              <img 
+                src="/images/quest-giver-logo.png" 
+                alt="The Quest Giver Logo" 
+                className="h-10 w-auto mr-2"
+              />
+            ) : (
+              <svg className="h-10 w-10 mr-2">
+                <use href="#logo" />
+              </svg>
+            )}
             <div>
               <div className="text-brand-orange font-bold">CraftingTable</div>
               <div className="text-xs">The Quest Giver</div>
             </div>
-          </a>
+          </div>
         </Link>
         
         {/* Desktop Navigation */}
         <div className="space-x-6 hidden md:flex">
           {navItems.map((item) => (
-            <Link 
-              key={item.path} 
-              href={item.path}
-              onClick={handleNavClick}
-              onMouseEnter={handleNavHover}
-            >
-              <a className={`transition ${location === item.path ? 'text-brand-orange' : 'text-brand-light hover:text-brand-yellow'}`}>
+            <Link key={item.path} href={item.path}>
+              <div
+                className={`transition cursor-pointer ${location === item.path ? 'text-brand-orange' : 'text-brand-light hover:text-brand-yellow'}`}
+                onClick={handleNavClick}
+                onMouseEnter={handleNavHover}
+              >
                 {item.name}
-              </a>
+              </div>
             </Link>
           ))}
         </div>
@@ -81,7 +118,7 @@ const NavigationBar = () => {
         {/* User Section */}
         {user ? (
           <div className="flex items-center space-x-4">
-            {/* Sound Toggle Button - New! */}
+            {/* Sound Toggle Button */}
             <button 
               className="p-2 text-brand-light/70 hover:text-brand-orange transition-colors"
               onClick={() => {
@@ -174,17 +211,16 @@ const NavigationBar = () => {
       {mobileMenuOpen && (
         <div className="md:hidden py-3 px-4 bg-space-mid mt-2 rounded-lg">
           {navItems.map((item) => (
-            <Link 
-              key={item.path} 
-              href={item.path}
-              onClick={() => {
-                handleNavClick();
-                setMobileMenuOpen(false);
-              }}
-            >
-              <a className={`block py-2 ${location === item.path ? 'text-brand-orange' : 'text-brand-light'}`}>
+            <Link key={item.path} href={item.path}>
+              <div 
+                className={`block py-2 cursor-pointer ${location === item.path ? 'text-brand-orange' : 'text-brand-light'}`}
+                onClick={() => {
+                  handleNavClick();
+                  setMobileMenuOpen(false);
+                }}
+              >
                 {item.name}
-              </a>
+              </div>
             </Link>
           ))}
         </div>
