@@ -51,11 +51,37 @@ export const useSoundEffects = () => {
     playSoundSequence(['questComplete', 'reward'], 500);
   }, [muted, playSoundSequence]);
 
+  // Play adventure-specific sound based on which adventure line the user is interacting with
+  const playAdventureSound = useCallback((adventureLine: string) => {
+    if (muted) return;
+    
+    switch(adventureLine) {
+      case 'lost-in-space':
+        playSound("spaceDoor");
+        break;
+      case 'cogsworth-city':
+        playSound("craftSuccess");
+        break;
+      case 'pandoras-box':
+        playSound("achievement");
+        break;
+      case 'neon-realm':
+        playSound("powerUp");
+        break;
+      case 'nebula-raiders':
+        playSound("boostEngine");
+        break;
+      default:
+        playSound("click");
+    }
+  }, [muted]);
+
   return {
     playSound: playSoundEffect,
     playSoundSequence,
     playLevelUpSound,
     playQuestCompleteSound,
+    playAdventureSound,
     muted,
     toggleMute
   };
