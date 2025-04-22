@@ -23,7 +23,7 @@ interface LoginCredentials {
 export const useAuth = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
-  const { playSound } = useSoundEffects();
+  const { sounds } = useSoundEffects();
   const previousLevel = useRef<number>(0);
 
   // Get current user
@@ -33,6 +33,41 @@ export const useAuth = () => {
     initialData: null,
     refetchOnWindowFocus: true
   });
+
+  // Function to safely play sounds
+  const playSoundSafely = useCallback((soundType: string) => {
+    try {
+      switch (soundType) {
+        case "success":
+        case "loginSuccess":
+          sounds.success?.();
+          break;
+        case "error":
+          sounds.error?.();
+          break;
+        case "powerUp":
+          sounds.success?.();
+          break;
+        case "levelUp":
+          sounds.levelUp?.();
+          break;
+        case "fanfare":
+        case "reward":
+          sounds.reward?.();
+          break;
+        case "click":
+          sounds.click?.();
+          break;
+        case "hover":
+          sounds.hover?.();
+          break;
+        default:
+          console.warn(`No sound mapping for: ${soundType}`);
+      }
+    } catch (e) {
+      console.warn(`Could not play ${soundType} sound:`, e);
+    }
+  }, [sounds]);
 
   // Login with Discord
   const login = useCallback(() => {
@@ -62,7 +97,7 @@ export const useAuth = () => {
         await refetch();
         
         // Play login success sound
-        playSound("loginSuccess");
+        playSoundSafely("success");
         
         // Success notification
         toast({
@@ -88,7 +123,7 @@ export const useAuth = () => {
       setIsLoggingIn(false);
       
       // Play error sound
-      playSound("error");
+      playSoundSafely("error");
       
       toast({
         title: "Login Failed",
@@ -117,7 +152,7 @@ export const useAuth = () => {
         await refetch();
         
         // Play success sound
-        playSound("loginSuccess");
+        playSoundSafely("success");
         
         // Success notification
         toast({
@@ -143,7 +178,7 @@ export const useAuth = () => {
       setIsLoggingIn(false);
       
       // Play error sound
-      playSound("error");
+      playSoundSafely("error");
       
       toast({
         title: "Login Failed",
@@ -168,7 +203,7 @@ export const useAuth = () => {
       queryClient.invalidateQueries();
       
       // Play logout sound
-      playSound("powerUp");
+      playSoundSafely("powerUp");
       
       toast({
         title: "Logged Out",
@@ -203,7 +238,7 @@ export const useAuth = () => {
         await refetch();
         
         // Play success sound
-        playSound("loginSuccess");
+        playSoundSafely("success");
         
         toast({
           title: "Admin Login",
@@ -227,7 +262,7 @@ export const useAuth = () => {
       console.error("Admin login error:", error);
       
       // Play error sound
-      playSound("error");
+      playSoundSafely("error");
       
       toast({
         title: "Admin Login Failed",
@@ -235,14 +270,18 @@ export const useAuth = () => {
         variant: "destructive",
       });
     }
-  }, [toast, refetch, playSound]);
+  }, [toast, refetch, playSoundSafely]);
   
   // Check for level changes and play level up sound
   useEffect(() => {
     if (user && previousLevel.current > 0 && user.level > previousLevel.current) {
       // User has leveled up!
-      playSound("levelUp");
-      setTimeout(() => playSound("fanfare"), 500);
+      playSoundSafely("levelUp");
+      
+      // Play fanfare after a short delay
+      setTimeout(() => {
+        playSoundSafely("fanfare");
+      }, 500);
       
       toast({
         title: "Level Up!",
@@ -255,7 +294,7 @@ export const useAuth = () => {
     if (user) {
       previousLevel.current = user.level;
     }
-  }, [user, playSound, toast]);
+  }, [user, playSoundSafely, toast]);
 
   return {
     user,
@@ -265,5 +304,6 @@ export const useAuth = () => {
     authenticate,
     logout,
     adminLogin,
+    playSoundSafely // Export this so other components can use it
   };
 };

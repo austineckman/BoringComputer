@@ -13,8 +13,8 @@ import { ChevronDown, LogOut, User, Volume2, VolumeX } from "lucide-react";
 
 const NavigationBar = () => {
   const [location] = useLocation();
-  const { user, logout } = useAuth();
-  const { playSound, sounds, isMuted, toggleMute } = useSoundEffects();
+  const { user, logout, playSoundSafely } = useAuth();
+  const { sounds, isMuted, toggleMute } = useSoundEffects();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
@@ -25,11 +25,19 @@ const NavigationBar = () => {
   ];
 
   const handleNavClick = () => {
-    sounds.click();
+    try {
+      sounds.click?.();
+    } catch (e) {
+      console.warn('Could not play click sound', e);
+    }
   };
 
   const handleNavHover = () => {
-    sounds.hover();
+    try {
+      sounds.hover?.();
+    } catch (e) {
+      console.warn('Could not play hover sound', e);
+    }
   };
 
   const userLevel = user?.level || 1;
