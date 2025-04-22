@@ -7,6 +7,7 @@ import {
   CraftedItem, InsertCraftedItem,
   Achievement, InsertAchievement,
   UserAchievement, InsertUserAchievement,
+  LootBox, InsertLootBox,
   InventoryHistory, InsertInventoryHistory
 } from "@shared/schema";
 
@@ -59,6 +60,12 @@ export interface IStorage {
   createUserAchievement(userAchievement: InsertUserAchievement): Promise<UserAchievement>;
   updateUserAchievement(id: number, userAchievementData: Partial<UserAchievement>): Promise<UserAchievement | undefined>;
   
+  // Loot Box methods
+  getLootBoxes(userId: number): Promise<LootBox[]>;
+  getLootBox(id: number): Promise<LootBox | undefined>;
+  createLootBox(lootBox: InsertLootBox): Promise<LootBox>;
+  updateLootBox(id: number, lootBoxData: Partial<LootBox>): Promise<LootBox | undefined>;
+  
   // Inventory History methods
   getInventoryHistory(userId: number): Promise<InventoryHistory[]>;
   createInventoryHistory(inventoryHistory: InsertInventoryHistory): Promise<InventoryHistory>;
@@ -78,6 +85,7 @@ export class MemStorage implements IStorage {
   private craftedItems: Map<number, CraftedItem>;
   private achievements: Map<number, Achievement>;
   private userAchievements: Map<number, UserAchievement>;
+  private lootBoxes: Map<number, LootBox>;
   private inventoryHistory: Map<number, InventoryHistory>;
   
   private userIdCounter: number;
@@ -88,6 +96,7 @@ export class MemStorage implements IStorage {
   private craftedItemIdCounter: number;
   private achievementIdCounter: number;
   private userAchievementIdCounter: number;
+  private lootBoxIdCounter: number;
   private inventoryHistoryIdCounter: number;
 
   constructor() {
@@ -99,6 +108,7 @@ export class MemStorage implements IStorage {
     this.craftedItems = new Map();
     this.achievements = new Map();
     this.userAchievements = new Map();
+    this.lootBoxes = new Map();
     this.inventoryHistory = new Map();
     
     this.userIdCounter = 1;
@@ -109,6 +119,7 @@ export class MemStorage implements IStorage {
     this.craftedItemIdCounter = 1;
     this.achievementIdCounter = 1;
     this.userAchievementIdCounter = 1;
+    this.lootBoxIdCounter = 1;
     this.inventoryHistoryIdCounter = 1;
     
     // Initialize with sample data
@@ -503,6 +514,40 @@ export class MemStorage implements IStorage {
     
     this.achievements.set(id, achievement);
     return achievement;
+  }
+  
+  // Loot Box methods
+  async getLootBoxes(userId: number): Promise<LootBox[]> {
+    return Array.from(this.lootBoxes.values()).filter(
+      (lootBox) => lootBox.userId === userId
+    );
+  }
+
+  async getLootBox(id: number): Promise<LootBox | undefined> {
+    return this.lootBoxes.get(id);
+  }
+
+  async createLootBox(insertLootBox: InsertLootBox): Promise<LootBox> {
+    const id = this.lootBoxIdCounter++;
+    const createdAt = new Date();
+    
+    const lootBox: LootBox = {
+      id,
+      ...insertLootBox,
+      createdAt
+    };
+    
+    this.lootBoxes.set(id, lootBox);
+    return lootBox;
+  }
+
+  async updateLootBox(id: number, lootBoxData: Partial<LootBox>): Promise<LootBox | undefined> {
+    const lootBox = this.lootBoxes.get(id);
+    if (!lootBox) return undefined;
+    
+    const updatedLootBox = { ...lootBox, ...lootBoxData };
+    this.lootBoxes.set(id, updatedLootBox);
+    return updatedLootBox;
   }
 
   // UserAchievement methods
