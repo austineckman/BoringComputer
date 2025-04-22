@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ChevronDown, LogOut, User, Volume2, VolumeX, Award, Settings } from "lucide-react";
+import { ChevronDown, LogOut, User, Volume2, VolumeX, Award, Settings, ShieldAlert } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 
 const NavigationBar = () => {
@@ -204,7 +204,7 @@ const NavigationBar = () => {
                   <ChevronDown className="ml-2 text-gray-400 hover:text-brand-orange h-4 w-4" />
                 </div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-space-mid border border-brand-orange/30">
+              <DropdownMenuContent align="end" className="bg-black border border-brand-orange/30">
                 <DropdownMenuLabel className="text-brand-orange">
                   {user.username}
                 </DropdownMenuLabel>
@@ -242,6 +242,25 @@ const NavigationBar = () => {
                     <span>Settings</span>
                   </DropdownMenuItem>
                 </Link>
+                
+                {/* Admin menu item - only shown to users with admin role */}
+                {user.roles && (Array.isArray(user.roles) ? user.roles.includes('admin') : false) && (
+                  <Link href="/admin">
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        try {
+                          sounds.click?.();
+                        } catch (e) {
+                          console.warn('Could not play click sound', e);
+                        }
+                      }}
+                      className="text-brand-light hover:text-brand-orange cursor-pointer"
+                    >
+                      <ShieldAlert className="mr-2 h-4 w-4" />
+                      <span>Admin Panel</span>
+                    </DropdownMenuItem>
+                  </Link>
+                )}
                 
                 <DropdownMenuSeparator className="bg-brand-orange/20" />
                 
