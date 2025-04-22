@@ -32,6 +32,7 @@ interface ResourceItemProps {
   className?: string;
   interactive?: boolean;
   onClick?: () => void;
+  imagePath?: string; // Optional custom image path from the database
 }
 
 const ResourceItem = ({ 
@@ -40,7 +41,8 @@ const ResourceItem = ({
   size = "md", 
   className, 
   interactive = false, 
-  onClick 
+  onClick,
+  imagePath
 }: ResourceItemProps) => {
   const { sounds } = useSoundEffects();
   
@@ -129,7 +131,7 @@ const ResourceItem = ({
         style={{ backgroundColor: 'transparent' }}
       >
         <img 
-          src={resourceImages[type]} 
+          src={imagePath || resourceImages[type] || '/placeholder.png'} 
           alt={resourceConfig.name} 
           className="w-full h-full object-contain"
         />
