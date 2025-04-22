@@ -13,8 +13,14 @@ import {
   DialogTitle 
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Flame, Wrench, Gift, Truck, Download } from "lucide-react";
+import { Sparkles, Flame, Wrench, Gift, Truck, Download, Home, UserRound, MapPin, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 import { apiRequest } from "@/lib/queryClient";
 
 // Import Gizbo's image
@@ -60,6 +66,31 @@ const ForgeQuotes = [
   "Ah, that component? Found it in a crashed pod from the Neon Realm!"
 ];
 
+// Define shipping form schema
+const shippingFormSchema = z.object({
+  name: z.string().min(2, {
+    message: "Name must be at least 2 characters.",
+  }),
+  address: z.string().min(5, {
+    message: "Please enter a valid address.",
+  }),
+  city: z.string().min(2, {
+    message: "Please enter a valid city.",
+  }),
+  state: z.string().min(2, {
+    message: "Please enter a valid state/province.",
+  }),
+  postalCode: z.string().min(3, {
+    message: "Please enter a valid postal code.",
+  }),
+  country: z.string().min(2, {
+    message: "Please enter a valid country.",
+  }),
+});
+
+// Infer shipping form type
+type ShippingFormValues = z.infer<typeof shippingFormSchema>;
+
 const Forge = () => {
   const { 
     craftableItems, 
@@ -67,7 +98,9 @@ const Forge = () => {
     loading, 
     craftItem, 
     redeemItem,
+    submitShipping,
     isRedeeming,
+    isSubmittingShipping,
     canCraftItem, 
     fetchCraftedItems 
   } = useCrafting();
@@ -78,6 +111,8 @@ const Forge = () => {
   const [showCraftedItems, setShowCraftedItems] = useState(false);
   const [gizboQuote, setGizboQuote] = useState("");
   const [showQuote, setShowQuote] = useState(false);
+  const [showShippingForm, setShowShippingForm] = useState(false);
+  const [selectedItemForShipping, setSelectedItemForShipping] = useState<string | null>(null);
   
   // Cast craftedItems to our interface that includes the extended properties
   const craftedItems = rawCraftedItems as CraftedItemType[];
@@ -133,6 +168,51 @@ const Forge = () => {
         setShowQuote(false);
       }, 4000);
     }, 2000);
+  };
+  
+  // Function to open shipping form
+  const openShippingForm = (itemId: string) => {
+    setSelectedItemForShipping(itemId);
+    setShowShippingForm(true);
+    sounds.click?.();
+  };
+  
+  // Initialize form for shipping information
+  const form = useForm<ShippingFormValues>({
+    resolver: zodResolver(shippingFormSchema),
+    defaultValues: {
+      name: "",
+      address: "",
+      city: "",
+      state: "",
+      postalCode: "",
+      country: "",
+    },
+  });
+  
+  // Function to handle shipping form submission
+  const onSubmitShippingInfo = (values: ShippingFormValues) => {
+    if (selectedItemForShipping) {
+      // Set a quote from Gizbo
+      setGizboQuote("Excellent! I'll make sure my assistant doesn't drop it this time... probably.");
+      setShowQuote(true);
+      
+      // Call the submitShipping function from the hook
+      submitShipping({
+        itemId: selectedItemForShipping,
+        shippingInfo: values
+      });
+      
+      // Close the shipping form dialog
+      setShowShippingForm(false);
+      setSelectedItemForShipping(null);
+      form.reset();
+      
+      // Hide quote after 4 seconds
+      setTimeout(() => {
+        setShowQuote(false);
+      }, 4000);
+    }
   };
   
   return (
@@ -448,6 +528,154 @@ const Forge = () => {
               Close
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Shipping Information Dialog */}
+      <Dialog open={showShippingForm} onOpenChange={setShowShippingForm}>
+        <DialogContent className="bg-space-dark border-brand-orange/30">
+          <DialogHeader>
+            <DialogTitle className="font-pixel text-brand-orange">SHIPPING INFORMATION</DialogTitle>
+            <DialogDescription>
+              Tell Gizbo's assistants where to deliver your physical marvel
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmitShippingInfo)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <UserRound className="h-4 w-4 inline mr-2" />
+                      Full Name
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder="Who shall receive this marvel?" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <Home className="h-4 w-4 inline mr-2" />
+                      Street Address
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder="Where Gizbo's assistant should go" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        <MapPin className="h-4 w-4 inline mr-2" />
+                        City
+                      </FormLabel>
+                      <FormControl>
+                        <Input placeholder="City" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>State/Province</FormLabel>
+                      <FormControl>
+                        <Input placeholder="State/Province" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="postalCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Postal Code</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Postal/ZIP Code" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="country"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        <Globe className="h-4 w-4 inline mr-2" />
+                        Country
+                      </FormLabel>
+                      <FormControl>
+                        <Input placeholder="Country" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="pt-4 border-t border-brand-orange/20 text-xs text-brand-light/50 italic">
+                <p className="mb-2">
+                  "Don't worry about my assistant getting lost. He's got a built-in compass! 
+                  ...Though I do occasionally have to recalibrate it when he ends up in another dimension." - Gizbo
+                </p>
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowShippingForm(false)}
+                  className="border-brand-orange/30 hover:bg-brand-orange/10"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="bg-brand-orange hover:bg-brand-orange/90 text-space-darkest"
+                  disabled={isSubmittingShipping}
+                >
+                  {isSubmittingShipping ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-space-darkest border-t-transparent"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    <>Submit Shipping Info</>
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>
