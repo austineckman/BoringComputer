@@ -1122,7 +1122,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if the loot box is already opened
       if (lootBox.opened) {
-        return res.status(400).json({ message: "This loot box has already been opened" });
+        if (lootBox.rewards && lootBox.rewards.length > 0) {
+          return res.json({ success: true, rewards: lootBox.rewards, alreadyOpened: true });
+        } else {
+          return res.status(400).json({ message: "This loot box has already been opened" });
+        }
       }
       
       // Generate rewards based on loot box type
@@ -1131,7 +1135,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update the loot box as opened with rewards
       await storage.updateLootBox(lootBoxId, {
         opened: true,
-        rewards: rewards
+        rewards: rewards,
+        openedAt: new Date()
       });
       
       // Add rewards to user's inventory
