@@ -35,8 +35,8 @@ const renderResourceIcon = (type: string, size: 'sm' | 'md' | 'lg' = 'md') => {
   if (resource.isImage) {
     const sizeClasses = {
       sm: 'w-5 h-5',
-      md: 'w-8 h-8',
-      lg: 'w-12 h-12'
+      md: 'w-full h-full',
+      lg: 'w-full h-full'
     };
     
     return (
@@ -407,7 +407,9 @@ export default function Inventory() {
                                     />
                                   </div>
                                 ) : (
-                                  <span className="resource-icon">{renderResourceIcon(item.type)}</span>
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    {renderResourceIcon(item.type)}
+                                  </div>
                                 )}
                               </div>
                               <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
@@ -463,7 +465,9 @@ export default function Inventory() {
                             onMouseEnter={() => handleItemHover(item.type)}
                           >
                             <div className="flex items-center justify-center h-full">
-                              <span className="resource-icon">{renderResourceIcon(item.type)}</span>
+                              <div className="w-full h-full flex items-center justify-center">
+                                {renderResourceIcon(item.type)}
+                              </div>
                             </div>
                             <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
                               {item.quantity}
@@ -569,7 +573,9 @@ export default function Inventory() {
                     {inventoryHistory.map((entry: any, index: number) => (
                       <div key={index} className="flex items-center justify-between border-b border-space-light/10 pb-2">
                         <div className="flex items-center gap-2">
-                          <span className="resource-icon">{renderResourceIcon(entry.type, 'sm')}</span>
+                          <div className="resource-icon w-6 h-6 flex items-center justify-center">
+                            {renderResourceIcon(entry.type, 'sm')}
+                          </div>
                           <div>
                             <p className="font-medium capitalize">{entry.type.replace('-', ' ')}</p>
                             <p className="text-xs text-brand-light/60">
@@ -645,7 +651,9 @@ export default function Inventory() {
                           key={`random-${idx}`} 
                           className={`flex flex-col items-center mx-2 p-3 w-20 h-24 md:w-24 md:h-32 ${itemRarityClass} rounded-lg border border-space-light/40 shadow-lg flex-shrink-0`}
                         >
-                          <span className="resource-icon mb-1">{renderResourceIcon(randomItem.type, 'lg')}</span>
+                          <div className="resource-icon w-12 h-12 flex items-center justify-center mb-1">
+                            {renderResourceIcon(randomItem.type, 'lg')}
+                          </div>
                           <span className="font-medium capitalize text-white text-center text-xs md:text-sm">{randomItem.type.replace('-', ' ')}</span>
                           <span className="text-brand-yellow text-sm md:text-lg font-bold">+{randomItem.quantity}</span>
                         </div>
@@ -667,7 +675,9 @@ export default function Inventory() {
                           key={`reward-${index}`} 
                           className={`flex flex-col items-center mx-2 p-3 w-20 h-24 md:w-24 md:h-32 ${itemRarityClass} rounded-lg border-2 border-amber-400/60 shadow-lg flex-shrink-0`}
                         >
-                          <span className="resource-icon mb-1">{renderResourceIcon(reward.type, 'lg')}</span>
+                          <div className="resource-icon w-12 h-12 flex items-center justify-center mb-1">
+                            {renderResourceIcon(reward.type, 'lg')}
+                          </div>
                           <span className="font-medium capitalize text-white text-center text-xs md:text-sm">{reward.type.replace('-', ' ')}</span>
                           <span className="text-brand-yellow text-sm md:text-lg font-bold">+{reward.quantity}</span>
                         </div>
@@ -693,7 +703,9 @@ export default function Inventory() {
                         className={`flex flex-col items-center p-4 rounded-lg ${rarityClass} border-2 shadow-lg animate-fade-in-up`}
                         style={{ animationDelay: `${4 + index * 0.2}s` }}
                       >
-                        <span className="resource-icon mb-2">{renderResourceIcon(reward.type, 'lg')}</span>
+                        <div className="resource-icon w-16 h-16 flex items-center justify-center mb-2">
+                          {renderResourceIcon(reward.type, 'lg')}
+                        </div>
                         <span className="font-medium capitalize text-brand-light">{reward.type.replace('-', ' ')}</span>
                         <span className="text-brand-yellow text-lg font-bold">+{reward.quantity}</span>
                       </div>
