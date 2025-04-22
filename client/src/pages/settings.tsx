@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Volume2, VolumeX, Edit, Save, User, Gift, ExternalLink, Music, MusicOff } from "lucide-react";
+import { Volume2, VolumeX, Edit, Save, User, Gift, ExternalLink, Music, MicOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { useAuth } from "@/hooks/useAuth";
@@ -79,7 +79,9 @@ export default function SettingsPage() {
   };
   
   const handleUpdateProfile = () => {
-    if (sounds.success) sounds.success.play();
+    if (!isMuted) {
+      sounds.success();
+    }
     // In a real app, we'd send an API request here
     toast({
       title: "Profile Updated",
@@ -90,12 +92,16 @@ export default function SettingsPage() {
   };
 
   const handleConnectDiscord = () => {
-    if (sounds.questStart) sounds.questStart.play();
+    if (!isMuted) {
+      sounds.questStart();
+    }
     
     // In a real application, this would redirect to Discord OAuth
     // For demo purposes, we'll simulate the connection with a toast message
     setTimeout(() => {
-      if (sounds.reward) sounds.reward.play();
+      if (!isMuted) {
+        sounds.reward();
+      }
       toast({
         title: "Discord Connected!",
         description: "Your Discord account has been connected and a Rare Loot Box has been added to your inventory!",
@@ -308,12 +314,29 @@ export default function SettingsPage() {
                 </div>
               </div>
               
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label htmlFor="bg-music-toggle" className="text-brand-light">Background Music</Label>
+                  <Switch 
+                    id="bg-music-toggle" 
+                    checked={isBgMusicPlaying}
+                    onCheckedChange={handleToggleBackgroundMusic}
+                    className="data-[state=checked]:bg-brand-orange"
+                  />
+                </div>
+                <p className="text-sm text-brand-light/60 mb-4">
+                  Play "Pixel Dreams" music in the background while browsing
+                </p>
+              </div>
+              
               <div className="pt-4">
                 <Button
                   className="mr-2 bg-brand-orange hover:bg-brand-yellow text-space-darkest font-medium"
-                  onMouseEnter={() => sounds.hover?.play()}
+                  onMouseEnter={() => {
+                    if (!isMuted) sounds.hover();
+                  }}
                   onClick={() => {
-                    sounds.success?.play();
+                    if (!isMuted) sounds.success();
                     toast({
                       title: "Settings saved",
                       description: "Your settings have been applied",
@@ -326,14 +349,18 @@ export default function SettingsPage() {
                 <Button
                   variant="outline"
                   className="border-brand-orange/50 text-brand-orange hover:bg-brand-orange/10 hover:text-brand-yellow"
-                  onMouseEnter={() => sounds.hover?.play()}
+                  onMouseEnter={() => {
+                    if (!isMuted) sounds.hover();
+                  }}
                   onClick={() => {
-                    sounds.error?.play();
-                    setVolume(50);
-                    setIsMuted(false);
+                    // Reset to defaults
+                    changeVolume(0.6); // Default volume
+                    if (isMuted) toggleMute(); // If it was muted, unmute it
+                    
+                    if (!isMuted) sounds.powerUp();
                     toast({
-                      title: "Settings reset",
-                      description: "Sound settings have been reset to defaults",
+                      title: "Settings Reset",
+                      description: "Sound settings have been restored to defaults",
                       duration: 3000,
                     });
                   }}
