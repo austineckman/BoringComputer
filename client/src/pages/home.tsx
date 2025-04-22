@@ -219,11 +219,12 @@ const Home = () => {
                   id={quest.id}
                   title={quest.title}
                   description={quest.description}
-                  kitRequired={quest.kitRequired}
+                  adventureLine={quest.adventureLine}
                   difficulty={quest.difficulty}
                   rewards={quest.rewards}
                   status={quest.status}
-                  adventureKit={quest.adventureKit}
+                  orderInLine={quest.orderInLine}
+                  xpReward={quest.xpReward}
                 />
               ))
             ) : (

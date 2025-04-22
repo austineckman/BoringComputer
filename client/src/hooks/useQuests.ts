@@ -90,9 +90,14 @@ export const useQuests = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
       
       playSound("reward");
+      // Format reward message
+      const rewardText = data.rewards?.length 
+        ? data.rewards.map((r: { type: string; quantity: number }) => `${r.quantity}x ${r.type}`).join(', ')
+        : 'experience points';
+        
       toast({
         title: "Quest Completed!",
-        description: `You've earned rewards: ${data.rewards.map(r => `${r.quantity}x ${r.type}`).join(', ')}`,
+        description: `You've earned rewards: ${rewardText}`,
       });
     },
     onError: (error) => {
