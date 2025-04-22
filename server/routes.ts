@@ -9,6 +9,7 @@ import { createHash } from "crypto";
 import path from 'path';
 import { openLootBox, generateLootBoxRewards, LootBoxType } from './lootBoxSystem';
 import { getItemDetails } from './itemDatabase';
+import * as craftingRecipeRoutes from './routes/craftingRecipes';
 
 // Setup authentication middleware
 const authenticate = async (req: Request, res: Response, next: Function) => {
@@ -1279,6 +1280,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Crafting Recipe routes
+  app.get('/api/crafting/recipes', authenticate, craftingRecipeRoutes.getCraftingRecipes);
+  app.get('/api/crafting/recipes/:id', authenticate, craftingRecipeRoutes.getCraftingRecipeById);
+  app.post('/api/crafting/recipes', authenticate, adminOnly, craftingRecipeRoutes.createCraftingRecipe);
+  app.put('/api/crafting/recipes/:id', authenticate, adminOnly, craftingRecipeRoutes.updateCraftingRecipe);
+  app.delete('/api/crafting/recipes/:id', authenticate, adminOnly, craftingRecipeRoutes.deleteCraftingRecipe);
+  app.post('/api/crafting/craft', authenticate, craftingRecipeRoutes.craftItem);
   
   return httpServer;
 }
