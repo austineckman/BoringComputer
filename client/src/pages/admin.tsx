@@ -4,7 +4,7 @@ import { Redirect } from "wouter";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { themeConfig } from "@/lib/themeConfig";
+import LootBoxGenerator from "@/components/admin/LootBoxGenerator";
 
 // Form schema for creating a quest
 const createQuestSchema = z.object({
@@ -39,9 +40,23 @@ type CreateQuestFormValues = z.infer<typeof createQuestSchema>;
 const Admin = () => {
   const { user, loading } = useAuth();
   const { toast } = useToast();
-  const { playSound } = useSoundEffects();
+  const { sounds } = useSoundEffects();
   const [activeRewardType, setActiveRewardType] = useState("cloth");
   const [activeRewardQuantity, setActiveRewardQuantity] = useState(1);
+  
+  const playSound = (type: string) => {
+    try {
+      if (type === "click" && sounds.click) {
+        sounds.click();
+      } else if (type === "error" && sounds.error) {
+        sounds.error();
+      } else if (type === "complete" && sounds.success) {
+        sounds.success();
+      }
+    } catch (e) {
+      console.warn(`Could not play ${type} sound`, e);
+    }
+  };
   
   // Check if user is admin
   const isAdmin = user?.roles?.includes("admin");
@@ -173,6 +188,13 @@ const Admin = () => {
               onClick={() => playSound("click")}
             >
               Craftables
+            </TabsTrigger>
+            <TabsTrigger 
+              value="lootboxes" 
+              className="data-[state=active]:bg-brand-orange/20 data-[state=active]:text-brand-orange"
+              onClick={() => playSound("click")}
+            >
+              Loot Boxes
             </TabsTrigger>
           </TabsList>
           
