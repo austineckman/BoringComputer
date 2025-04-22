@@ -137,9 +137,9 @@ export default function SettingsPage() {
               <div className="pt-4">
                 <Button
                   className="mr-2"
-                  onMouseEnter={() => sounds.hover?.()}
+                  onMouseEnter={() => playSound('hover')}
                   onClick={() => {
-                    sounds.confirm?.();
+                    playSound('success');
                     toast({
                       title: "Settings saved",
                       description: "Your settings have been applied",
@@ -151,9 +151,9 @@ export default function SettingsPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  onMouseEnter={() => sounds.hover?.()}
+                  onMouseEnter={() => playSound('hover')}
                   onClick={() => {
-                    sounds.error?.();
+                    playSound('error');
                     setVolume(50);
                     setIsMuted(false);
                     toast({
