@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
-import { Loader2, Package2, Clock, Sparkles, Info, Book } from 'lucide-react';
+import { Loader2, Package2, Clock, Sparkles, Info, Book, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LootBoxItem, LootBoxRewardModal } from '@/components/inventory/LootBox';
 import MainLayout from '@/components/layout/MainLayout';
 import { useToast } from '@/hooks/use-toast';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface Resource {
   type: string;
@@ -183,14 +184,18 @@ export default function Inventory() {
             <p className="text-brand-light/70">All the crafting materials and loot you've gathered</p>
           </div>
           
-          <Button 
-            variant="outline" 
-            className="gap-2 border-brand-orange/30 hover:bg-brand-orange/10"
-            onClick={() => handleTabChange('history')}
-          >
-            <Clock size={16} />
-            <span>View History</span>
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              className="gap-2 border-brand-orange/30 hover:bg-brand-orange/10"
+              onClick={() => handleTabChange('history')}
+            >
+              <Clock size={16} />
+              <span>View History</span>
+            </Button>
+            
+            <GenerateTestCrates />
+          </div>
         </div>
         
         <div className="bg-space-mid rounded-lg border-2 border-space-light/20 p-4 mb-8">
