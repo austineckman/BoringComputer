@@ -211,7 +211,7 @@ const Home = () => {
           {adventureLines.map((adventure) => (
             <div 
               key={adventure.id}
-              className="bg-space-mid rounded-lg p-4 cursor-pointer hover:bg-space-light transition-colors duration-300 pixel-border-sm"
+              className="bg-space-mid rounded-lg overflow-hidden cursor-pointer hover:bg-space-light transition-colors duration-300 pixel-border-sm"
               style={{ 
                 boxShadow: `0 0 15px ${adventure.color}22`,
                 borderColor: adventure.color
@@ -219,31 +219,41 @@ const Home = () => {
               onClick={() => navigateToAdventure(adventure.id)}
               onMouseEnter={handleButtonHover}
             >
-              <div className="flex items-center space-x-3 mb-3">
-                <div 
-                  className="w-10 h-10 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: `${adventure.color}22`, color: adventure.color }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={
-                      adventure.icon === 'rocket' ? 'M13 10V3L4 14h7v7l9-11h-7z' :
-                      adventure.icon === 'cogs' ? 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' :
-                      adventure.icon === 'box' ? 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' :
-                      adventure.icon === 'lightbulb' ? 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z' :
-                      'M6.115 5.19l.319 1.913A6 6 0 008.11 10.36L9.75 12l-.387.775c-.217.433-.132.956.21 1.298l1.348 1.348c.21.21.329.497.329.795v1.089c0 .426.24.815.622 1.006l.153.076c.433.217.956.132 1.298-.21l.723-.723a8.7 8.7 0 002.288-4.042 1.087 1.087 0 00-.358-1.099l-1.33-1.108c-.251-.21-.582-.299-.905-.245l-1.17.195a1.125 1.125 0 01-.98-.314l-.295-.295a1.125 1.125 0 010-1.591l.13-.132a1.125 1.125 0 011.3-.21l.603.302a.809.809 0 001.086-1.086L14.25 7.5l1.256-.837a4.5 4.5 0 001.528-1.732l.146-.292M6.115 5.19A9 9 0 1017.18 4.64M6.115 5.19A8.965 8.965 0 0112 3c1.929 0 3.716.607 5.18 1.64'
-                    } />
-                  </svg>
-                </div>
-                <div>
+              {/* Image container */}
+              <div className="h-40 w-full overflow-hidden">
+                <img 
+                  src={adventure.image}
+                  alt={adventure.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              
+              {/* Content area */}
+              <div className="p-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div 
+                    className="w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: `${adventure.color}22`, color: adventure.color }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={
+                        adventure.icon === 'rocket' ? 'M13 10V3L4 14h7v7l9-11h-7z' :
+                        adventure.icon === 'cogs' ? 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' :
+                        adventure.icon === 'box' ? 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' :
+                        adventure.icon === 'lightbulb' ? 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z' :
+                        'M6.115 5.19l.319 1.913A6 6 0 008.11 10.36L9.75 12l-.387.775c-.217.433-.132.956.21 1.298l1.348 1.348c.21.21.329.497.329.795v1.089c0 .426.24.815.622 1.006l.153.076c.433.217.956.132 1.298-.21l.723-.723a8.7 8.7 0 002.288-4.042 1.087 1.087 0 00-.358-1.099l-1.33-1.108c-.251-.21-.582-.299-.905-.245l-1.17.195a1.125 1.125 0 01-.98-.314l-.295-.295a1.125 1.125 0 010-1.591l.13-.132a1.125 1.125 0 011.3-.21l.603.302a.809.809 0 001.086-1.086L14.25 7.5l1.256-.837a4.5 4.5 0 001.528-1.732l.146-.292M6.115 5.19A9 9 0 1017.18 4.64M6.115 5.19A8.965 8.965 0 0112 3c1.929 0 3.716.607 5.18 1.64'
+                      } />
+                    </svg>
+                  </div>
                   <h3 className="font-medium text-brand-light">{adventure.name}</h3>
                 </div>
-              </div>
-              <div className="mt-2 text-xs text-brand-light/70">
-                {adventure.id === 'lost-in-space' ? 'Survive 30 days stranded in space' :
-                 adventure.id === 'cogsworth-city' ? 'Unravel the mysteries of a mechanical metropolis' :
-                 adventure.id === 'pandoras-box' ? 'Contain the chaos of an ancient artifact' :
-                 adventure.id === 'neon-realm' ? 'Navigate the digital world of light and energy' :
-                 'Chart a course through dangerous stellar phenomena'}
+                <div className="mt-2 text-xs text-brand-light/70">
+                  {adventure.id === 'lost-in-space' ? 'Survive 30 days stranded in space' :
+                   adventure.id === 'cogsworth-city' ? 'Unravel the mysteries of a mechanical metropolis' :
+                   adventure.id === 'pandoras-box' ? 'Contain the chaos of an ancient artifact' :
+                   adventure.id === 'neon-realm' ? 'Navigate the digital world of light and energy' :
+                   'Chart a course through dangerous stellar phenomena'}
+                </div>
               </div>
             </div>
           ))}
