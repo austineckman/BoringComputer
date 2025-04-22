@@ -885,6 +885,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Admin route to create test loot boxes
+  app.post('/api/admin/loot-boxes', authenticate, adminOnly, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (!user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const { type = 'common', count = 1, source = 'admin testing' } = req.body;
+      
+      // Validate type
+      const validTypes = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+      if (!validTypes.includes(type)) {
+        return res.status(400).json({ message: "Invalid loot box type" });
+      }
+      
+      // Validate count
+      const boxCount = Math.min(Math.max(1, count), 10); // Between 1 and 10
+      
+      // Create loot boxes
+      const createdBoxes = [];
+      for (let i = 0; i < boxCount; i++) {
+        // Pre-generate rewards for each loot box
+        const rewards = generateLootBoxRewards(type);
+        
+        const lootBox = await storage.createLootBox({
+          userId: user.id,
+          type,
+          opened: false,
+          rewards,
+          source,
+          sourceId: null,
+          acquiredAt: new Date(),
+          openedAt: null
+        });
+        
+        createdBoxes.push(lootBox);
+      }
+      
+      return res.status(201).json({ 
+        message: `Created ${boxCount} ${type} loot box(es)`, 
+        lootBoxes: createdBoxes 
+      });
+    } catch (error) {
+      console.error('Error creating test loot boxes:', error);
+      return res.status(500).json({ message: "Failed to create test loot boxes" });
+    }
+  });
+
   // Admin routes
   app.post('/api/admin/quests', authenticate, adminOnly, async (req, res) => {
     try {
