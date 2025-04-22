@@ -679,21 +679,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update user's inventory
       await storage.updateUser(user.id, { inventory });
       
-      // Create crafted item
+      // Create crafted item with copied data from craftable
       const craftedItem = await storage.createCraftedItem({
         userId: user.id,
         craftableId,
+        name: craftable.name,
+        description: craftable.description,
+        image: craftable.image,
+        type: craftable.type,
         status: craftable.type === 'physical' ? 'pending' : 'unlocked',
         tracking: null,
-        address: null
+        address: null,
+        redemptionData: {},
+        redeemedAt: null,
+        shippingInfo: {}
       });
       
       return res.json({
         id: craftedItem.id.toString(),
         itemId: craftable.id.toString(),
-        name: craftable.name,
-        type: craftable.type,
-        status: craftedItem.status
+        name: craftedItem.name,
+        description: craftedItem.description,
+        image: craftedItem.image,
+        type: craftedItem.type,
+        status: craftedItem.status,
+        dateCrafted: craftedItem.dateCrafted?.toISOString()
       });
     } catch (error) {
       console.error(error);
@@ -706,24 +716,204 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = (req as any).user;
       const craftedItems = await storage.getCraftedItems(user.id);
       
-      const formattedItems = await Promise.all(craftedItems.map(async item => {
-        const craftable = await storage.getCraftable(item.craftableId);
+      const formattedItems = craftedItems.map(item => {
         return {
           id: item.id.toString(),
           itemId: item.craftableId.toString(),
-          name: craftable?.name || 'Unknown Item',
-          image: craftable?.image || '',
-          type: craftable?.type || 'unknown',
-          dateCrafted: item.dateCrafted.toISOString(),
+          name: item.name,
+          description: item.description,
+          image: item.image,
+          type: item.type,
+          dateCrafted: item.dateCrafted?.toISOString(),
           status: item.status,
-          tracking: item.tracking
+          tracking: item.tracking,
+          redemptionData: item.redemptionData,
+          redeemedAt: item.redeemedAt?.toISOString(),
+          shippingInfo: item.shippingInfo
         };
-      }));
+      });
       
       return res.json(formattedItems);
     } catch (error) {
       console.error(error);
       return res.status(500).json({ message: "Failed to fetch crafted items" });
+    }
+  });
+  
+  // Redeem a digital crafted item
+  app.post('/api/crafted-items/:id/redeem', authenticate, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const craftedItemId = parseInt(req.params.id);
+      
+      // Get the crafted item
+      const craftedItem = await storage.getCraftedItem(craftedItemId);
+      
+      if (!craftedItem) {
+        return res.status(404).json({ message: "Crafted item not found" });
+      }
+      
+      // Check if this item belongs to the user
+      if (craftedItem.userId !== user.id) {
+        return res.status(403).json({ message: "Not authorized to redeem this item" });
+      }
+      
+      // Check if the item is digital
+      if (craftedItem.type !== 'digital') {
+        return res.status(400).json({ message: "Only digital items can be redeemed with this endpoint" });
+      }
+      
+      // Check if the item is already redeemed
+      if (craftedItem.status === 'redeemed') {
+        return res.status(400).json({ message: "This item has already been redeemed" });
+      }
+      
+      // Digital items should have status 'unlocked' before redemption 
+      if (craftedItem.status !== 'unlocked') {
+        return res.status(400).json({ message: "This item is not ready for redemption" });
+      }
+      
+      // Generate redemption code or download link based on item
+      // This is a placeholder - in a real application, you would have logic to generate 
+      // actual redemption codes or create download links
+      const redemptionCode = `CODE-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      
+      // Update the item
+      const updatedItem = await storage.updateCraftedItem(craftedItemId, {
+        status: 'redeemed',
+        redeemedAt: new Date(),
+        redemptionData: {
+          code: redemptionCode,
+          redeemedOn: new Date().toISOString()
+        }
+      });
+      
+      return res.json({
+        success: true,
+        message: "Item redeemed successfully",
+        item: {
+          id: updatedItem.id.toString(),
+          name: updatedItem.name,
+          status: updatedItem.status,
+          redemptionData: updatedItem.redemptionData
+        }
+      });
+    } catch (error) {
+      console.error('Error redeeming item:', error);
+      return res.status(500).json({ message: "Failed to redeem item" });
+    }
+  });
+  
+  // Submit shipping information for a physical crafted item
+  app.post('/api/crafted-items/:id/ship', authenticate, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const craftedItemId = parseInt(req.params.id);
+      const { name, address, city, state, postalCode, country, email, phone } = req.body;
+      
+      // Validate shipping info
+      if (!name || !address || !city || !state || !postalCode || !country) {
+        return res.status(400).json({ message: "Missing required shipping information" });
+      }
+      
+      // Get the crafted item
+      const craftedItem = await storage.getCraftedItem(craftedItemId);
+      
+      if (!craftedItem) {
+        return res.status(404).json({ message: "Crafted item not found" });
+      }
+      
+      // Check if this item belongs to the user
+      if (craftedItem.userId !== user.id) {
+        return res.status(403).json({ message: "Not authorized to ship this item" });
+      }
+      
+      // Check if the item is physical
+      if (craftedItem.type !== 'physical') {
+        return res.status(400).json({ message: "Only physical items can be shipped" });
+      }
+      
+      // Check if the item status is pending
+      if (craftedItem.status !== 'pending') {
+        return res.status(400).json({ message: "This item is not in a shippable state" });
+      }
+      
+      // Collect shipping information
+      const shippingInfo = {
+        name,
+        address,
+        city,
+        state,
+        postalCode,
+        country,
+        email: email || user.email,
+        phone: phone || '',
+        submittedAt: new Date().toISOString()
+      };
+      
+      // Update the item
+      const updatedItem = await storage.updateCraftedItem(craftedItemId, {
+        status: 'shipping',
+        shippingInfo
+      });
+      
+      return res.json({
+        success: true,
+        message: "Shipping information submitted successfully",
+        item: {
+          id: updatedItem.id.toString(),
+          name: updatedItem.name,
+          status: updatedItem.status
+        }
+      });
+    } catch (error) {
+      console.error('Error processing shipping request:', error);
+      return res.status(500).json({ message: "Failed to process shipping request" });
+    }
+  });
+  
+  // Admin endpoint to update crafted item status (e.g., mark as shipped, delivered)
+  app.post('/api/admin/crafted-items/:id/status', authenticate, adminOnly, async (req, res) => {
+    try {
+      const craftedItemId = parseInt(req.params.id);
+      const { status, tracking } = req.body;
+      
+      // Validate status
+      const validStatuses = ['pending', 'shipping', 'shipped', 'delivered', 'unlocked', 'redeemed'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      // Get the crafted item
+      const craftedItem = await storage.getCraftedItem(craftedItemId);
+      
+      if (!craftedItem) {
+        return res.status(404).json({ message: "Crafted item not found" });
+      }
+      
+      // Update the item
+      const updateData: Partial<CraftedItem> = { status };
+      
+      // Add tracking number if provided
+      if (tracking) {
+        updateData.tracking = tracking;
+      }
+      
+      const updatedItem = await storage.updateCraftedItem(craftedItemId, updateData);
+      
+      return res.json({
+        success: true,
+        message: `Item status updated to ${status}`,
+        item: {
+          id: updatedItem.id.toString(),
+          name: updatedItem.name,
+          status: updatedItem.status,
+          tracking: updatedItem.tracking
+        }
+      });
+    } catch (error) {
+      console.error('Error updating item status:', error);
+      return res.status(500).json({ message: "Failed to update item status" });
     }
   });
   
