@@ -95,7 +95,8 @@ const Forge = () => {
               <img 
                 src={gizboImg} 
                 alt="Gizbo the Ogre Craftsman" 
-                className="h-auto w-full max-w-xs rounded-lg shadow-lg border-2 border-brand-orange/30"
+                className="h-auto w-full max-w-md rounded-lg shadow-lg border-2 border-brand-orange/30"
+                style={{ maxHeight: "400px", objectFit: "contain" }}
               />
             </div>
           </div>
@@ -130,23 +131,23 @@ const Forge = () => {
       {/* Gizbo's Character Section */}
       <section className="mb-8">
         <div className="bg-space-mid rounded-lg p-6 pixel-border relative overflow-hidden">
-          <div className="flex items-start">
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
             <div className="relative">
-              <div className="w-24 h-24 rounded-full bg-brand-orange/20 border-2 border-brand-orange/50 overflow-hidden flex items-center justify-center">
+              <div className="w-48 h-48 rounded-full bg-brand-orange/20 border-3 border-brand-orange/50 overflow-hidden flex items-center justify-center shadow-lg">
                 <img 
                   src={gizboImg} 
                   alt="Gizbo the Master Craftsman" 
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="absolute -bottom-1 -right-1 bg-brand-orange text-space-darkest rounded-full w-8 h-8 flex items-center justify-center border-2 border-space-darkest">
-                <Wrench className="w-4 h-4" />
+              <div className="absolute -bottom-2 -right-2 bg-brand-orange text-space-darkest rounded-full w-12 h-12 flex items-center justify-center border-2 border-space-darkest shadow-md">
+                <Wrench className="w-6 h-6" />
               </div>
             </div>
             
-            <div className="ml-4 flex-1">
-              <h3 className="font-pixel text-lg text-brand-yellow">Gizbo the Master Craftsman</h3>
-              <p className="text-brand-light/80 text-sm mt-1">
+            <div className="flex-1">
+              <h3 className="font-pixel text-xl text-brand-yellow">Gizbo the Master Craftsman</h3>
+              <p className="text-brand-light/80 mt-3">
                 A wide-bellied, oil-stained ogre with soot on his sleeves and a monocle made from a magnifying 
                 lens and an old servo mount. Once a master engineer in the Clockwork Wars, Gizbo now runs the 
                 Forge — a place where sparks fly, cogs grind, and steam hisses from copper pipes.
@@ -154,9 +155,9 @@ const Forge = () => {
               
               {/* Gizbo's current quote - shown when crafting */}
               {showQuote && (
-                <div className="mt-3 bg-space-dark p-3 rounded-lg border border-brand-orange/30 relative">
+                <div className="mt-4 bg-space-dark p-4 rounded-lg border border-brand-orange/30 relative">
                   <div className="absolute -top-2 left-4 w-4 h-4 bg-space-dark border-t border-l border-brand-orange/30 transform rotate-45"></div>
-                  <p className="text-brand-orange italic">"{gizboQuote}"</p>
+                  <p className="text-brand-orange italic text-lg">"{gizboQuote}"</p>
                   <div className="mt-1 text-xs text-brand-light/50">- Gizbo</div>
                 </div>
               )}
