@@ -1,177 +1,209 @@
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Hammer, ShieldAlert, Gift, Sparkles } from 'lucide-react';
-import { Recipe } from '@/../../shared/types';
-import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { Search, Filter } from 'lucide-react';
+import { Recipe } from '@/../../shared/types';
+import { getItemDetails } from '@/lib/itemDatabase';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
 
 interface RecipeListProps {
   recipes: Recipe[];
   selectedRecipe: Recipe | null;
   onSelectRecipe: (recipe: Recipe) => void;
-  inventory: Record<string, number>;
-  canCraft: boolean;
-  onCraft: () => void;
+  isLoading: boolean;
 }
 
 const RecipeList: React.FC<RecipeListProps> = ({
   recipes,
   selectedRecipe,
   onSelectRecipe,
-  inventory,
-  canCraft,
-  onCraft
+  isLoading
 }) => {
   const { sounds } = useSoundEffects();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState('all');
   
-  // Handle recipe selection
+  // Get unique categories from recipes
+  const categories = ['all', ...new Set(recipes.map(recipe => recipe.category))];
+  
+  // Filter recipes based on search query and category
+  const filteredRecipes = recipes.filter(recipe => {
+    const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         recipe.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = activeCategory === 'all' || recipe.category === activeCategory;
+    return matchesSearch && matchesCategory;
+  });
+  
+  // Group recipes by difficulty
+  const recipesByDifficulty = {
+    easy: filteredRecipes.filter(recipe => recipe.difficulty === 'easy'),
+    medium: filteredRecipes.filter(recipe => recipe.difficulty === 'medium'),
+    hard: filteredRecipes.filter(recipe => recipe.difficulty === 'hard')
+  };
+  
+  // Handle selecting a recipe
   const handleSelectRecipe = (recipe: Recipe) => {
     onSelectRecipe(recipe);
     sounds.click();
   };
   
-  // Handle craft button click
-  const handleCraft = () => {
-    if (canCraft) {
-      onCraft();
-    }
+  // Handle category change
+  const handleCategoryChange = (category: string) => {
+    setActiveCategory(category);
+    sounds.hover();
   };
   
-  // Get difficulty badge color
-  const getDifficultyColor = (difficulty: string) => {
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+  
+  // Get result item details
+  const getResultItemDetails = (itemId: string) => {
+    return getItemDetails(itemId);
+  };
+  
+  // Get difficulty badge variant
+  const getDifficultyBadge = (difficulty: 'easy' | 'medium' | 'hard') => {
     switch (difficulty) {
-      case 'beginner':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      case 'intermediate':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'advanced':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
-      case 'expert':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      case 'easy':
+        return 'bg-green-500/10 text-green-500 border-green-500/50';
+      case 'medium':
+        return 'bg-amber-500/10 text-amber-500 border-amber-500/50';
+      case 'hard':
+        return 'bg-red-500/10 text-red-500 border-red-500/50';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+        return '';
     }
   };
   
-  // Check if user has required materials for a recipe
-  const hasRequiredMaterials = (recipe: Recipe): boolean => {
-    for (const [itemId, requiredAmount] of Object.entries(recipe.materials)) {
-      const userAmount = inventory[itemId] || 0;
-      if (userAmount < requiredAmount) {
-        return false;
-      }
-    }
-    return true;
+  // Render recipe card
+  const renderRecipeCard = (recipe: Recipe) => {
+    const resultItem = getResultItemDetails(recipe.resultItem);
+    const isSelected = selectedRecipe?.id === recipe.id;
+    
+    return (
+      <Card 
+        key={recipe.id}
+        className={`cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected ? 'border-primary ring-1 ring-primary' : ''}`}
+        onClick={() => handleSelectRecipe(recipe)}
+      >
+        <CardContent className="p-4">
+          <div className="flex items-center space-x-3 mb-2">
+            <div className="w-12 h-12 rounded overflow-hidden bg-muted">
+              <img 
+                src={resultItem.imagePath} 
+                alt={resultItem.name}
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-medium">{recipe.name}</h4>
+              <Badge 
+                variant="outline" 
+                className={getDifficultyBadge(recipe.difficulty)}
+              >
+                {recipe.difficulty}
+              </Badge>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mb-2">{recipe.description}</p>
+          <div className="text-xs">
+            <span className="font-medium">Creates: </span>
+            {recipe.resultQuantity}x {resultItem.name}
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
   
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-xl">Recipes</CardTitle>
-        <CardDescription>
-          Select a recipe to craft
-        </CardDescription>
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xl">Crafting Recipes</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col">
-        <ScrollArea className="flex-1 pr-4 mb-4">
-          <div className="space-y-3">
-            {recipes.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
-                No recipes available
-              </div>
-            ) : (
-              recipes.map((recipe) => {
-                const isSelected = selectedRecipe?.id === recipe.id;
-                const hasMaterials = hasRequiredMaterials(recipe);
-                
-                return (
-                  <div
-                    key={recipe.id}
-                    className={cn(
-                      'p-3 rounded-md border cursor-pointer transition-all',
-                      isSelected
-                        ? 'bg-primary/5 border-primary/50 dark:bg-primary/10'
-                        : 'bg-card hover:bg-accent/5',
-                      !recipe.unlocked && 'opacity-60'
-                    )}
-                    onClick={() => handleSelectRecipe(recipe)}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="font-medium">{recipe.name}</div>
-                      <Badge
-                        variant="outline"
-                        className={cn('text-xs', getDifficultyColor(recipe.difficulty))}
-                      >
-                        {recipe.difficulty}
-                      </Badge>
-                    </div>
-                    
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {recipe.description}
-                    </p>
-                    
-                    <div className="space-y-2">
-                      <div className="text-xs font-medium">Materials:</div>
-                      <div className="flex flex-wrap gap-1">
-                        {Object.entries(recipe.materials).map(([itemId, amount]) => {
-                          const userAmount = inventory[itemId] || 0;
-                          const hasEnough = userAmount >= amount;
-                          
-                          return (
-                            <Badge
-                              key={itemId}
-                              variant="outline"
-                              className={cn(
-                                'text-xs',
-                                hasEnough
-                                  ? 'border-green-400 dark:border-green-600'
-                                  : 'border-red-400 dark:border-red-600'
-                              )}
-                            >
-                              {itemId} ×{amount} {hasEnough ? '✓' : `(${userAmount})`}
-                            </Badge>
-                          );
-                        })}
-                      </div>
-                      
-                      <div className="text-xs font-medium">Rewards:</div>
-                      <div className="flex flex-wrap gap-1">
-                        {recipe.rewards.map((reward, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            <Sparkles className="h-3 w-3 mr-1 text-amber-400" />
-                            {reward.itemId} ×{reward.quantity}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
+      <CardContent>
+        <div className="space-y-4">
+          {/* Search and filter */}
+          <div className="flex space-x-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search recipes..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                className="pl-8"
+              />
+            </div>
+            <Button variant="outline" size="icon" title="Filter recipes">
+              <Filter className="h-4 w-4" />
+            </Button>
           </div>
-        </ScrollArea>
-        
-        <Button
-          onClick={handleCraft}
-          disabled={!canCraft}
-          className="w-full"
-          size="lg"
-        >
-          {canCraft ? (
-            <>
-              <Hammer className="mr-2 h-4 w-4" />
-              Craft Item
-            </>
-          ) : (
-            <>
-              <ShieldAlert className="mr-2 h-4 w-4" />
-              {selectedRecipe ? 'Missing Materials' : 'Select a Recipe'}
-            </>
-          )}
-        </Button>
+          
+          {/* Category tabs */}
+          <div className="overflow-x-auto">
+            <TabsList className="w-full justify-start">
+              {categories.map(category => (
+                <TabsTrigger
+                  key={category}
+                  value={category}
+                  onClick={() => handleCategoryChange(category)}
+                  className="capitalize"
+                >
+                  {category}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
+          
+          {/* Recipe lists by difficulty */}
+          <Tabs defaultValue="easy" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="easy">Easy</TabsTrigger>
+              <TabsTrigger value="medium">Medium</TabsTrigger>
+              <TabsTrigger value="hard">Hard</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="easy" className="space-y-3">
+              {isLoading ? (
+                <div className="text-center py-8">Loading recipes...</div>
+              ) : recipesByDifficulty.easy.length > 0 ? (
+                recipesByDifficulty.easy.map(recipe => renderRecipeCard(recipe))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No easy recipes found
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="medium" className="space-y-3">
+              {isLoading ? (
+                <div className="text-center py-8">Loading recipes...</div>
+              ) : recipesByDifficulty.medium.length > 0 ? (
+                recipesByDifficulty.medium.map(recipe => renderRecipeCard(recipe))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No medium recipes found
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="hard" className="space-y-3">
+              {isLoading ? (
+                <div className="text-center py-8">Loading recipes...</div>
+              ) : recipesByDifficulty.hard.length > 0 ? (
+                recipesByDifficulty.hard.map(recipe => renderRecipeCard(recipe))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No hard recipes found
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
       </CardContent>
     </Card>
   );
