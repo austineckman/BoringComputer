@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Package2, Clock, Sparkles, Info, Book } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LootBoxItem, LootBoxRewardModal } from '@/components/inventory/LootBox';
 import MainLayout from '@/components/layout/MainLayout';
 import { useToast } from '@/hooks/use-toast';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Resource {
   type: string;
@@ -28,11 +29,26 @@ interface LootBox {
   createdAt?: string; // Optional for backward compatibility with our current UI
 }
 
+// Resource images mapping - these are just placeholders for the material icons
+const resourceIcons: Record<string, string> = {
+  'cloth': '🧵',
+  'metal': '🔗',
+  'tech-scrap': '🔌',
+  'circuit-board': '🖥️',
+  'crystal-core': '💎',
+  'energy-cell': '🔋',
+  'nano-chip': '🔬',
+  'quantum-relay': '📡',
+  'loot-box': '📦'
+};
+
 export default function Inventory() {
   const { toast } = useToast();
   const { sounds } = useSoundEffects();
   const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
   const [currentRewards, setCurrentRewards] = useState<{type: string, quantity: number}[]>([]);
+  const [activeTab, setActiveTab] = useState("materials");
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   
   // Get inventory resources
   const { data: resources, isLoading: isLoadingResources } = useQuery({
@@ -53,55 +69,99 @@ export default function Inventory() {
   });
   
   const handleLootBoxOpen = (lootBox: LootBox, rewards: {type: string, quantity: number}[]) => {
-    sounds.questComplete();
+    try {
+      sounds.questComplete();
+    } catch (e) {
+      console.warn('Could not play sound', e);
+    }
     setCurrentRewards(rewards);
     setIsRewardModalOpen(true);
   };
   
   const closeRewardModal = () => {
-    sounds.click();
+    try {
+      sounds.click();
+    } catch (e) {
+      console.warn('Could not play sound', e);
+    }
     setIsRewardModalOpen(false);
   };
-  
-  // Group resources by category
-  const groupedResources = {
-    basicMaterials: [] as Resource[],
-    advancedMaterials: [] as Resource[],
-    specialMaterials: [] as Resource[],
+
+  const handleItemHover = (type: string) => {
+    setHoveredItem(type);
+    try {
+      sounds.hover();
+    } catch (e) {
+      console.warn('Could not play sound', e);
+    }
   };
+  
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    try {
+      sounds.click();
+    } catch (e) {
+      console.warn('Could not play sound', e);
+    }
+  };
+  
+  // Combine resources with loot boxes to display in grid
+  const allInventoryItems: {type: string, quantity: number, isLootBox?: boolean, lootBoxData?: LootBox}[] = [];
   
   if (resources) {
     resources.forEach((resource: Resource) => {
-      if (['cloth', 'metal'].includes(resource.type)) {
-        groupedResources.basicMaterials.push(resource);
-      } else if (['tech-scrap', 'circuit-board'].includes(resource.type)) {
-        groupedResources.advancedMaterials.push(resource);
-      } else {
-        groupedResources.specialMaterials.push(resource);
-      }
+      allInventoryItems.push({
+        type: resource.type,
+        quantity: resource.quantity
+      });
     });
   }
   
-  // Group loot boxes by type (opened/unopened)
-  const groupedLootBoxes = {
-    unopened: [] as LootBox[],
-    opened: [] as LootBox[],
-  };
-  
+  // Add loot boxes to inventory items
   if (lootBoxes) {
-    lootBoxes.forEach((lootBox: LootBox) => {
-      if (lootBox.opened) {
-        groupedLootBoxes.opened.push(lootBox);
-      } else {
-        groupedLootBoxes.unopened.push(lootBox);
+    const unopenedLootBoxes = lootBoxes.filter((box: LootBox) => !box.opened);
+    
+    // Group unopened loot boxes by type
+    const groupedBoxes: Record<string, {count: number, boxes: LootBox[]}> = {};
+    unopenedLootBoxes.forEach((box: LootBox) => {
+      const boxType = `${box.type}-loot-box`;
+      if (!groupedBoxes[boxType]) {
+        groupedBoxes[boxType] = { count: 0, boxes: [] };
       }
+      groupedBoxes[boxType].count += 1;
+      groupedBoxes[boxType].boxes.push(box);
+    });
+    
+    // Add grouped loot boxes to inventory
+    Object.keys(groupedBoxes).forEach(boxType => {
+      allInventoryItems.push({
+        type: boxType,
+        quantity: groupedBoxes[boxType].count,
+        isLootBox: true,
+        lootBoxData: groupedBoxes[boxType].boxes[0] // Use first box for display
+      });
     });
   }
   
-  // Sort tabs to show unopened first
-  groupedLootBoxes.unopened.sort((a, b) => {
-    const typeOrder = { legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4 };
-    return (typeOrder[a.type as keyof typeof typeOrder] || 999) - (typeOrder[b.type as keyof typeof typeOrder] || 999);
+  // Filter items based on active tab
+  const filteredItems = allInventoryItems.filter(item => {
+    if (activeTab === 'materials') {
+      return !item.isLootBox;
+    } else if (activeTab === 'loot-boxes') {
+      return item.isLootBox;
+    }
+    return true; // 'all' tab
+  });
+  
+  // Create a grid with empty slots for WoW-style guild bank
+  const totalSlots = 42; // 7x6 grid
+  const inventoryGrid = Array(totalSlots).fill(null);
+  
+  // Fill the grid with our items
+  filteredItems.forEach((item, index) => {
+    if (index < totalSlots) {
+      inventoryGrid[index] = item;
+    }
   });
   
   if (isLoadingResources || isLoadingLootBoxes || isLoadingHistory) {
@@ -116,153 +176,287 @@ export default function Inventory() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold mb-6">Inventory</h1>
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-brand-orange">ADVENTURES INVENTORY</h1>
+            <p className="text-brand-light/70">All the crafting materials and loot you've gathered</p>
+          </div>
+          
+          <Button 
+            variant="outline" 
+            className="gap-2 border-brand-orange/30 hover:bg-brand-orange/10"
+            onClick={() => handleTabChange('history')}
+          >
+            <Clock size={16} />
+            <span>View History</span>
+          </Button>
+        </div>
         
-        <Tabs defaultValue="resources" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
-            <TabsTrigger 
-              value="resources" 
-              className="text-lg py-3"
-              onClick={() => sounds.hover()}
-            >
-              Resources
-            </TabsTrigger>
-            <TabsTrigger 
-              value="loot-boxes" 
-              className="text-lg py-3"
-              onClick={() => sounds.hover()}
-            >
-              Loot Boxes
-            </TabsTrigger>
-            <TabsTrigger 
-              value="history" 
-              className="text-lg py-3"
-              onClick={() => sounds.hover()}
-            >
-              History
-            </TabsTrigger>
-          </TabsList>
-          
-          {/* Resources Tab */}
-          <TabsContent value="resources" className="w-full">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <Card className="p-6">
-                <h3 className="text-xl font-bold mb-4 border-b pb-2">Basic Materials</h3>
-                <ul className="space-y-3">
-                  {groupedResources.basicMaterials.map((resource) => (
-                    <li key={resource.type} className="flex justify-between items-center">
-                      <span className="capitalize">{resource.type}</span>
-                      <span className="text-lg font-medium">{resource.quantity}</span>
-                    </li>
-                  ))}
-                  {groupedResources.basicMaterials.length === 0 && (
-                    <li className="text-sm text-muted-foreground">No basic materials yet.</li>
-                  )}
-                </ul>
-              </Card>
+        <div className="bg-space-mid rounded-lg border-2 border-space-light/20 p-4 mb-8">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+            <div className="flex items-center justify-between border-b border-space-light/20 pb-3 mb-4">
+              <TabsList className="bg-space-dark">
+                <TabsTrigger 
+                  value="all" 
+                  className="data-[state=active]:text-brand-orange data-[state=active]:bg-brand-orange/20"
+                >
+                  All Items
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="materials" 
+                  className="data-[state=active]:text-brand-orange data-[state=active]:bg-brand-orange/20"
+                >
+                  Materials
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="loot-boxes" 
+                  className="data-[state=active]:text-brand-orange data-[state=active]:bg-brand-orange/20"
+                >
+                  Loot Crates
+                </TabsTrigger>
+              </TabsList>
               
-              <Card className="p-6">
-                <h3 className="text-xl font-bold mb-4 border-b pb-2">Advanced Materials</h3>
-                <ul className="space-y-3">
-                  {groupedResources.advancedMaterials.map((resource) => (
-                    <li key={resource.type} className="flex justify-between items-center">
-                      <span className="capitalize">{resource.type.replace('-', ' ')}</span>
-                      <span className="text-lg font-medium">{resource.quantity}</span>
-                    </li>
-                  ))}
-                  {groupedResources.advancedMaterials.length === 0 && (
-                    <li className="text-sm text-muted-foreground">No advanced materials yet.</li>
-                  )}
-                </ul>
-              </Card>
-              
-              <Card className="p-6">
-                <h3 className="text-xl font-bold mb-4 border-b pb-2">Special Materials</h3>
-                <ul className="space-y-3">
-                  {groupedResources.specialMaterials.map((resource) => (
-                    <li key={resource.type} className="flex justify-between items-center">
-                      <span className="capitalize">{resource.type.replace('-', ' ')}</span>
-                      <span className="text-lg font-medium">{resource.quantity}</span>
-                    </li>
-                  ))}
-                  {groupedResources.specialMaterials.length === 0 && (
-                    <li className="text-sm text-muted-foreground">No special materials yet.</li>
-                  )}
-                </ul>
-              </Card>
-            </div>
-          </TabsContent>
-          
-          {/* Loot Boxes Tab */}
-          <TabsContent value="loot-boxes" className="w-full">
-            <div className="mb-8">
-              <h3 className="text-2xl font-bold mb-4">Unopened Loot Boxes</h3>
-              {groupedLootBoxes.unopened.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {groupedLootBoxes.unopened.map((lootBox) => (
-                    <LootBoxItem 
-                      key={lootBox.id} 
-                      lootBox={lootBox}
-                      onOpen={handleLootBoxOpen}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <Card className="p-4 text-center">
-                  <p className="text-muted-foreground">No unopened loot boxes. Complete quests to earn more!</p>
-                </Card>
-              )}
+              <div className="text-xs text-brand-light/60 hidden md:block">
+                <span className="mr-4">Total Items: {allInventoryItems.length}/{totalSlots}</span>
+              </div>
             </div>
             
-            <div>
-              <h3 className="text-2xl font-bold mb-4">Opened Loot Boxes</h3>
-              {groupedLootBoxes.opened.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {groupedLootBoxes.opened.map((lootBox) => (
-                    <LootBoxItem 
-                      key={lootBox.id} 
-                      lootBox={lootBox}
-                      onOpen={handleLootBoxOpen}
-                    />
-                  ))}
+            {/* Grid Layout View - Applies to all tabs except history */}
+            <TabsContent value="all" className="mt-0">
+              <div className="grid grid-cols-6 sm:grid-cols-7 gap-2 relative">
+                {inventoryGrid.map((item, index) => (
+                  <TooltipProvider key={index}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div 
+                          className={`aspect-square bg-space-dark border ${item ? 'border-space-light/40 hover:border-brand-orange/60' : 'border-space-light/10'} rounded-md p-1 relative cursor-pointer transition-colors`}
+                          onMouseEnter={() => item && handleItemHover(item.type)}
+                          onClick={() => item?.isLootBox && item.lootBoxData && handleLootBoxOpen(item.lootBoxData, [])}
+                        >
+                          {item && (
+                            <>
+                              <div className="flex items-center justify-center h-full">
+                                {item.isLootBox ? (
+                                  <div className={`w-full h-full flex items-center justify-center rounded-md ${
+                                    item.lootBoxData?.type === 'common' ? 'bg-gray-700' :
+                                    item.lootBoxData?.type === 'uncommon' ? 'bg-green-800' :
+                                    item.lootBoxData?.type === 'rare' ? 'bg-blue-800' :
+                                    item.lootBoxData?.type === 'epic' ? 'bg-purple-800' :
+                                    'bg-amber-700'
+                                  }`}>
+                                    <span className="text-2xl">📦</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-2xl">{resourceIcons[item.type] || '🔮'}</span>
+                                )}
+                              </div>
+                              <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
+                                {item.quantity}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      {item && (
+                        <TooltipContent side="top" className="bg-space-dark border-brand-orange/30 text-brand-light p-3">
+                          <div className="space-y-1">
+                            <p className="font-bold capitalize text-brand-orange">
+                              {item.isLootBox ? `${item.lootBoxData?.type} Loot Crate` : item.type.replace('-', ' ')}
+                            </p>
+                            <p className="text-xs text-brand-light/70">
+                              {item.isLootBox 
+                                ? "A sealed container with valuable materials. Free to open."
+                                : `Used for crafting in Gizbo's Forge.`
+                              }
+                            </p>
+                            <p className="text-xs text-brand-yellow">
+                              Quantity: {item.quantity}
+                            </p>
+                            {item.isLootBox && (
+                              <p className="text-xs mt-1 text-brand-light/60">
+                                Click to open this crate
+                              </p>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="materials" className="mt-0">
+              <div className="grid grid-cols-6 sm:grid-cols-7 gap-2">
+                {inventoryGrid.map((item, index) => (
+                  <TooltipProvider key={index}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div 
+                          className={`aspect-square bg-space-dark border ${item ? 'border-space-light/40 hover:border-brand-orange/60' : 'border-space-light/10'} rounded-md p-1 relative cursor-pointer transition-colors`}
+                          onMouseEnter={() => item && handleItemHover(item.type)}
+                        >
+                          {item && !item.isLootBox && (
+                            <>
+                              <div className="flex items-center justify-center h-full">
+                                <span className="text-2xl">{resourceIcons[item.type] || '🔮'}</span>
+                              </div>
+                              <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
+                                {item.quantity}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      {item && !item.isLootBox && (
+                        <TooltipContent side="top" className="bg-space-dark border-brand-orange/30 text-brand-light p-3">
+                          <div className="space-y-1">
+                            <p className="font-bold capitalize text-brand-orange">
+                              {item.type.replace('-', ' ')}
+                            </p>
+                            <p className="text-xs text-brand-light/70">
+                              Used for crafting in Gizbo's Forge.
+                            </p>
+                            <p className="text-xs text-brand-yellow">
+                              Quantity: {item.quantity}
+                            </p>
+                          </div>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="loot-boxes" className="mt-0">
+              <div className="grid grid-cols-6 sm:grid-cols-7 gap-2">
+                {inventoryGrid.map((item, index) => (
+                  <TooltipProvider key={index}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div 
+                          className={`aspect-square bg-space-dark border ${item ? 'border-space-light/40 hover:border-brand-orange/60' : 'border-space-light/10'} rounded-md p-1 relative cursor-pointer transition-colors`}
+                          onMouseEnter={() => item && handleItemHover(item.type)}
+                          onClick={() => item?.isLootBox && item.lootBoxData && handleLootBoxOpen(item.lootBoxData, [])}
+                        >
+                          {item && item.isLootBox && (
+                            <>
+                              <div className="flex items-center justify-center h-full">
+                                <div className={`w-full h-full flex items-center justify-center rounded-md ${
+                                  item.lootBoxData?.type === 'common' ? 'bg-gray-700' :
+                                  item.lootBoxData?.type === 'uncommon' ? 'bg-green-800' :
+                                  item.lootBoxData?.type === 'rare' ? 'bg-blue-800' :
+                                  item.lootBoxData?.type === 'epic' ? 'bg-purple-800' :
+                                  'bg-amber-700'
+                                }`}>
+                                  <span className="text-2xl">📦</span>
+                                </div>
+                              </div>
+                              <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
+                                {item.quantity}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      {item && item.isLootBox && (
+                        <TooltipContent side="top" className="bg-space-dark border-brand-orange/30 text-brand-light p-3">
+                          <div className="space-y-1">
+                            <p className="font-bold capitalize text-brand-orange">
+                              {item.lootBoxData?.type} Loot Crate
+                            </p>
+                            <p className="text-xs text-brand-light/70">
+                              A sealed container with valuable materials. Free to open.
+                            </p>
+                            <p className="text-xs text-brand-yellow">
+                              Quantity: {item.quantity}
+                            </p>
+                            <p className="text-xs mt-1 text-brand-light/60">
+                              Click to open this crate
+                            </p>
+                          </div>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                ))}
+              </div>
+            </TabsContent>
+            
+            {/* History Tab */}
+            <TabsContent value="history" className="mt-0">
+              <div className="bg-space-dark rounded-lg border border-space-light/10 p-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <Book className="text-brand-orange" size={20} />
+                  <h3 className="text-xl font-bold">Resource History</h3>
                 </div>
-              ) : (
-                <Card className="p-4 text-center">
-                  <p className="text-muted-foreground">No opened loot boxes yet.</p>
-                </Card>
-              )}
+                
+                {history && history.length > 0 ? (
+                  <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                    {history.map((entry: any, index: number) => (
+                      <div key={index} className="p-3 border border-space-light/10 rounded-md flex justify-between items-center bg-space-mid hover:bg-space-mid/80 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-md bg-space-dark flex items-center justify-center">
+                            <span className="text-xl">{resourceIcons[entry.type] || '🔮'}</span>
+                          </div>
+                          <div>
+                            <span className={`font-medium capitalize ${entry.action === 'gained' ? 'text-green-400' : 'text-red-400'}`}>
+                              {entry.action === 'gained' ? '+' : '-'}{entry.quantity} {entry.type.replace('-', ' ')}
+                            </span>
+                            <p className="text-xs text-brand-light/60">
+                              {entry.source}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-xs text-brand-light/50 whitespace-nowrap">
+                          {new Date(entry.date).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-10 text-brand-light/40">
+                    <Package2 className="mx-auto mb-2 h-10 w-10 opacity-50" />
+                    <p>No resource history yet.</p>
+                    <p className="text-xs mt-2">Complete quests to earn resources!</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+        
+        {/* Item Details Panel (showing when hovering over an item) */}
+        {hoveredItem && (
+          <div className="bg-space-dark rounded-lg border border-brand-orange/20 p-4 mb-8">
+            <div className="flex items-start gap-4">
+              <div className="w-16 h-16 rounded-md bg-space-mid flex items-center justify-center">
+                <span className="text-3xl">{resourceIcons[hoveredItem] || '🔮'}</span>
+              </div>
+              
+              <div className="flex-1">
+                <h3 className="text-xl font-bold capitalize text-brand-orange">
+                  {hoveredItem.replace('-', ' ')}
+                </h3>
+                <p className="text-sm text-brand-light/70 mt-1">
+                  {hoveredItem.includes('loot-box') 
+                    ? "A sealed container with valuable materials. Free to open and received as quest rewards."
+                    : "A crafting material used in Gizbo's Forge to create both digital and physical rewards."
+                  }
+                </p>
+              </div>
+              
+              <div className="hidden sm:block">
+                <Button variant="outline" size="sm" className="gap-2 border-brand-orange/20">
+                  <Info size={14} />
+                  <span>Details</span>
+                </Button>
+              </div>
             </div>
-          </TabsContent>
-          
-          {/* History Tab */}
-          <TabsContent value="history" className="w-full">
-            <Card className="p-6">
-              <h3 className="text-xl font-bold mb-4">Resource History</h3>
-              {history && history.length > 0 ? (
-                <div className="space-y-4">
-                  {history.map((entry: any, index: number) => (
-                    <div key={index} className="p-3 border rounded-md flex justify-between items-center">
-                      <div>
-                        <span className={`font-medium capitalize ${entry.action === 'gained' ? 'text-green-600' : 'text-red-600'}`}>
-                          {entry.action === 'gained' ? '+' : '-'}{entry.quantity} {entry.type.replace('-', ' ')}
-                        </span>
-                        <p className="text-sm text-muted-foreground">
-                          from {entry.source}
-                        </p>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(entry.createdAt).toLocaleDateString()}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center text-muted-foreground">No resource history yet.</p>
-              )}
-            </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
         
         {/* Loot Box Rewards Modal */}
         <LootBoxRewardModal 
