@@ -67,89 +67,8 @@ interface LootBox {
   createdAt?: string; // Optional for backward compatibility with our current UI
 }
 
-// Define our resource descriptions for flavor text and usage descriptions
-interface ResourceDetail {
-  name: string;
-  flavorText: string;
-  usageDescription: string;
-}
-
-// Resource descriptions map
-const resourceDetails: Record<string, ResourceDetail> = {
-  'cloth': {
-    name: 'Astral Cloth',
-    flavorText: 'Shimmering fabric woven from starlight and cosmic dust. It feels cool to the touch yet radiates a gentle warmth.',
-    usageDescription: 'Used in crafting armor, bandages, and enchanted gear. Highly sought after by wizards for its magical conductivity.'
-  },
-  'copper': {
-    name: 'Copper Ingot',
-    flavorText: 'Gleaming with a warm reddish glow, these ingots were mined from the heart of Cogsworth\'s mechanical mountains.',
-    usageDescription: 'Essential component for basic circuitry, wiring, and foundational machine parts in Gizbo\'s workshop.'
-  },
-  'crystal': {
-    name: 'Prismatic Crystal',
-    flavorText: 'Faceted gems that capture and refract light in impossible patterns. Some say they contain fragments of frozen time.',
-    usageDescription: 'Powers high-end devices and serves as energy storage. Can be refined into sensor arrays or focusing lenses.'
-  },
-  'tech-scrap': {
-    name: 'Tech Scrap',
-    flavorText: 'Salvaged components from abandoned machinery. Each piece tells a story of innovation and obsolescence.',
-    usageDescription: 'Gizbo\'s favorite material for prototype building. Can be broken down or reassembled into various gadget parts.'
-  },
-  'techscrap': {
-    name: 'Tech Scrap',
-    flavorText: 'Salvaged components from abandoned machinery. Each piece tells a story of innovation and obsolescence.',
-    usageDescription: 'Gizbo\'s favorite material for prototype building. Can be broken down or reassembled into various gadget parts.'
-  },
-  'metal': {
-    name: 'Reinforced Metal',
-    flavorText: 'Alloyed plates with an unusually high tensile strength. Surprisingly lightweight despite their durability.',
-    usageDescription: 'Structural component for advanced machinery and weapons. Forms the backbone of Gizbo\'s most impressive creations.'
-  },
-  'circuit-board': {
-    name: 'Logic Circuit',
-    flavorText: 'Intricate pathways etched into synthetic substrate, pulsing with electrical potential.',
-    usageDescription: 'The brain of any complex machine. Can be programmed for various functions from simple automation to AI capabilities.'
-  },
-  'wire': {
-    name: 'Conductive Wire',
-    flavorText: 'Spools of impossibly thin metal filament that seem to hum with anticipation when uncoiled.',
-    usageDescription: 'Connects components and transmits power or data. Essential for any electrical system Gizbo designs.'
-  },
-  'gear': {
-    name: 'Precision Gears',
-    flavorText: 'Perfectly toothed wheels that mesh together with satisfying clicks. Each one is calibrated to micrometer precision.',
-    usageDescription: 'Mechanical components for clockwork devices. Gizbo insists these never go out of style despite newer technologies.'
-  },
-  'battery': {
-    name: 'Power Cell',
-    flavorText: 'Compact energy storage that emits a faint blue glow. Warm to the touch and occasionally makes soft chirping noises.',
-    usageDescription: 'Portable power source for gadgets and gizmos. Can be overcharged for explosive results (not recommended by Gizbo).'
-  },
-  'microchip': {
-    name: 'Neural Processor',
-    flavorText: 'Microscopic architecture denser than a city skyline, etched onto a sliver of material no larger than a fingernail.',
-    usageDescription: 'The cutting edge of computational technology. Enables advanced features in Gizbo\'s most ambitious projects.'
-  },
-  'loot-crate': {
-    name: 'Adventure Loot Crate',
-    flavorText: 'A mysterious container covered in arcane symbols. Something valuable rattles inside when you shake it.',
-    usageDescription: 'Contains random materials salvaged from adventure sites. Free to open and always yields useful components.'
-  }
-};
-
-// Get default details for resources without specific entries
-const getResourceDetails = (type: string): ResourceDetail => {
-  if (type in resourceDetails) {
-    return resourceDetails[type];
-  }
-  
-  return {
-    name: type.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase()),
-    flavorText: 'A mysterious material with untapped potential. Gizbo seems very interested in studying it further.',
-    usageDescription: 'Can be used in various experimental crafting projects. Gizbo is still discovering its applications.'
-  };
-};
+// Import the centralized item database instead of duplicating data
+import { getItemDetails, getRarityClasses } from '@/lib/itemDatabase';
 
 export default function Inventory() {
   const [activeTab, setActiveTab] = useState('all');
@@ -469,20 +388,18 @@ export default function Inventory() {
               {/* Center Column - Name and description */}
               <div className="flex flex-col">
                 <h3 className="text-xl font-bold text-brand-orange mb-2">
-                  {selectedItem.isLootBox 
-                    ? `${selectedItem.lootBoxData?.type || 'Standard'} Loot Crate` 
-                    : getResourceDetails(selectedItem.type).name}
+                  {getItemDetails(selectedItem.type).name}
                 </h3>
                 <div className="mb-3 flex items-center">
                   <span className="text-brand-yellow font-medium mr-2">Quantity: {selectedItem.quantity}</span>
                   {!selectedItem.isLootBox && (
-                    <span className="text-xs px-2 py-1 bg-brand-orange/20 rounded-full">Material</span>
+                    <span className="text-xs px-2 py-1 bg-brand-orange/20 rounded-full">
+                      {getItemDetails(selectedItem.type).category === 'material' ? 'Material' : 'Item'}
+                    </span>
                   )}
                 </div>
                 <p className="text-sm text-brand-light/80 italic mb-4">
-                  {selectedItem.isLootBox 
-                    ? resourceDetails['loot-crate'].flavorText 
-                    : getResourceDetails(selectedItem.type).flavorText}
+                  {getItemDetails(selectedItem.type).flavorText}
                 </p>
                 <Button 
                   variant="ghost"
@@ -498,9 +415,7 @@ export default function Inventory() {
               <div className="bg-space-mid/30 rounded-lg p-4">
                 <h4 className="text-sm font-medium text-brand-yellow mb-2">Usage Information</h4>
                 <p className="text-sm text-brand-light/90">
-                  {selectedItem.isLootBox 
-                    ? resourceDetails['loot-crate'].usageDescription 
-                    : getResourceDetails(selectedItem.type).usageDescription}
+                  {getItemDetails(selectedItem.type).usageDescription}
                 </p>
                 {selectedItem.isLootBox && (
                   <Button 
@@ -584,13 +499,10 @@ export default function Inventory() {
                         <TooltipContent side="top" className="bg-space-dark border-brand-orange/30 text-brand-light p-3">
                           <div className="space-y-1">
                             <p className="font-bold capitalize text-brand-orange">
-                              {item.isLootBox ? `${item.lootBoxData?.type} Loot Crate` : item.type.replace('-', ' ')}
+                              {getItemDetails(item.type).name}
                             </p>
                             <p className="text-xs text-brand-light/70">
-                              {item.isLootBox 
-                                ? "A sealed container with valuable materials. Free to open."
-                                : `Used for crafting in Gizbo's Forge.`
-                              }
+                              {getItemDetails(item.type).flavorText.substring(0, 60)}...
                             </p>
                             <p className="text-xs text-brand-yellow">
                               Quantity: {item.quantity}
@@ -639,10 +551,10 @@ export default function Inventory() {
                         <TooltipContent side="top" className="bg-space-dark border-brand-orange/30 text-brand-light p-3">
                           <div className="space-y-1">
                             <p className="font-bold capitalize text-brand-orange">
-                              {item.type.replace('-', ' ')}
+                              {getItemDetails(item.type).name}
                             </p>
                             <p className="text-xs text-brand-light/70">
-                              Used for crafting in Gizbo's Forge.
+                              {getItemDetails(item.type).flavorText.substring(0, 60)}...
                             </p>
                             <p className="text-xs text-brand-yellow">
                               Quantity: {item.quantity}
@@ -687,10 +599,10 @@ export default function Inventory() {
                         <TooltipContent side="top" className="bg-space-dark border-brand-orange/30 text-brand-light p-3">
                           <div className="space-y-1">
                             <p className="font-bold capitalize text-brand-orange">
-                              {`${item.lootBoxData?.type} Loot Crate`}
+                              {getItemDetails(item.type).name}
                             </p>
                             <p className="text-xs text-brand-light/70">
-                              A sealed container with valuable materials. Free to open.
+                              {getItemDetails(item.type).flavorText.substring(0, 60)}...
                             </p>
                             <p className="text-xs text-brand-yellow">
                               Quantity: {item.quantity}
