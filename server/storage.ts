@@ -182,9 +182,7 @@ export class MemStorage implements IStorage {
       opened: false,
       rewards: null, // Will be generated when opened
       source: 'Admin Account Welcome Gift',
-      sourceId: null,
-      acquiredAt: new Date(),
-      openedAt: null
+      sourceId: null
     });
     
     // Initialize with adventure kits and sample quests
