@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, LogOut, User, Volume2, VolumeX } from "lucide-react";
+import logoImage from "@/assets/logo.png";
 
 const NavigationBar = () => {
   const [location] = useLocation();
@@ -81,18 +82,12 @@ const NavigationBar = () => {
             onClick={handleNavClick} 
             onMouseEnter={handleNavHover}
           >
-            {/* Use the new logo image when user is logged in */}
-            {user ? (
-              <img 
-                src="/images/quest-giver-logo.png" 
-                alt="The Quest Giver Logo" 
-                className="h-10 w-auto mr-2"
-              />
-            ) : (
-              <svg className="h-10 w-10 mr-2">
-                <use href="#logo" />
-              </svg>
-            )}
+            {/* Use the diamond logo for both logged in and non-logged in states */}
+            <img 
+              src={logoImage} 
+              alt="The Quest Giver Logo" 
+              className="h-10 w-auto mr-2"
+            />
             <div>
               <div className="text-brand-orange font-bold">CraftingTable</div>
               <div className="text-xs">The Quest Giver</div>
