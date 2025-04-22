@@ -25,6 +25,8 @@ import { apiRequest } from "@/lib/queryClient";
 
 // Import Gizbo's image
 import gizboImg from '../assets/gizbo.png';
+// Import forge hero image
+import forgeHeroImg from '@assets/forgehero.png';
 
 // Define interface for a crafted item with the expanded properties
 interface CraftedItemType {
@@ -217,26 +219,40 @@ const Forge = () => {
   
   return (
     <div>
-      {/* Gizbo Welcome Banner */}
+      {/* Gizbo's Forge Hero Banner */}
       <section className="mb-8">
-        <div className="bg-space-dark rounded-lg p-6 pixel-border relative overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            <div className="md:order-1 order-2">
-              <h1 className="font-pixel text-2xl md:text-3xl text-brand-orange mb-3">GIZBO'S FORGE</h1>
-              <p className="text-brand-light/80 text-lg">
-                <span className="text-brand-yellow font-semibold">"Where the broken becomes brilliant!"</span>
-              </p>
-              <p className="text-brand-light/80 mt-3">
-                Welcome to the cluttered wonder-cave of master engineer Gizbo, the ogre craftsman.
-              </p>
-            </div>
-            <div className="md:order-2 order-1 flex justify-center md:justify-end">
-              <img 
-                src={gizboImg} 
-                alt="Gizbo the Ogre Craftsman" 
-                className="h-auto w-full max-w-md rounded-lg shadow-lg border-2 border-brand-orange/30"
-                style={{ maxHeight: "400px", objectFit: "contain" }}
-              />
+        <div className="bg-space-dark rounded-lg overflow-hidden pixel-border relative">
+          {/* Hero Image */}
+          <div className="w-full h-64 md:h-80 lg:h-96 relative">
+            <img 
+              src={forgeHeroImg} 
+              alt="Gizbo's Forge" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+          
+          {/* Content Overlay */}
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              <div className="md:order-1 order-2">
+                <h1 className="font-pixel text-2xl md:text-3xl text-brand-orange mb-3">GIZBO'S FORGE</h1>
+                <p className="text-brand-light/80 text-lg">
+                  <span className="text-brand-yellow font-semibold">"Where the broken becomes brilliant!"</span>
+                </p>
+                <p className="text-brand-light/80 mt-3">
+                  Welcome to the cluttered wonder-cave of master engineer Gizbo, the ogre craftsman.
+                </p>
+              </div>
+              <div className="md:order-2 order-1 flex justify-center md:justify-end">
+                <div className="bg-space-darkest p-4 rounded-lg border-2 border-brand-orange/30 shadow-lg">
+                  <img 
+                    src={gizboImg} 
+                    alt="Gizbo the Ogre Craftsman" 
+                    className="h-auto w-full max-w-xs rounded-lg"
+                    style={{ maxHeight: "240px", objectFit: "contain" }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
           
