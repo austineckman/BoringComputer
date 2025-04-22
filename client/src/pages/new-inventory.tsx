@@ -25,25 +25,36 @@ import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 
-// Define resource icons map
-const resourceIcons: Record<string, string> = {
-  'cloth': '🧵',
-  'metal': '🔧',
-  'wood': '🪵',
-  'crystal': '💎',
-  'energy': '⚡',
-  'circuit': '🔌',
-  'plating': '🛡️',
-  'data': '💾',
-  'glass': '🔍',
-  'wire': '📎',
-  'gear': '⚙️',
-  'battery': '🔋',
-  'microchip': '🖥️',
-  'plastic': '📏',
-  'rubber': '🧊',
-  'nano-fiber': '🧪',
-  'quantum-bit': '✨',
+// Import resource images helper
+import { getResourceDisplay } from '@/lib/resourceImages'; 
+
+// Function to render a resource icon or image
+const renderResourceIcon = (type: string, size: 'sm' | 'md' | 'lg' = 'md') => {
+  const resource = getResourceDisplay(type);
+  
+  if (resource.isImage) {
+    const sizeClasses = {
+      sm: 'w-5 h-5',
+      md: 'w-8 h-8',
+      lg: 'w-12 h-12'
+    };
+    
+    return (
+      <img 
+        src={resource.value} 
+        alt={resource.alt || type} 
+        className={`pixelated ${sizeClasses[size]} object-contain`} 
+      />
+    );
+  } else {
+    const sizeClasses = {
+      sm: 'text-lg',
+      md: 'text-2xl',
+      lg: 'text-3xl'
+    };
+    
+    return <span className={sizeClasses[size]}>{resource.value}</span>;
+  }
 };
 
 interface Resource {
