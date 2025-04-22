@@ -1052,6 +1052,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // User endpoint to generate test loot crates for demo purposes
+  app.post('/api/loot-boxes/generate-test', authenticate, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (!user) return res.status(401).json({ message: "User not found" });
+      
+      // Create one of each loot box type
+      const types = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+      const createdBoxes = [];
+      
+      for (const type of types) {
+        // Create loot box without pre-generating rewards (they'll be generated on open)
+        const lootBox = await storage.createLootBox({
+          userId: user.id,
+          type,
+          opened: false,
+          rewards: null, // Will be generated when opened
+          source: 'Test Crate Generator',
+          sourceId: null,
+          acquiredAt: new Date(),
+          openedAt: null
+        });
+        
+        createdBoxes.push(lootBox);
+      }
+      
+      return res.status(201).json({
+        message: "Test loot crates generated successfully",
+        lootBoxes: createdBoxes
+      });
+    } catch (error) {
+      console.error('Error generating test loot crates:', error);
+      return res.status(500).json({ message: "Failed to generate test loot crates" });
+    }
+  });
+  
   app.post('/api/loot-boxes/:lootBoxId/open', authenticate, async (req, res) => {
     try {
       const user = (req as any).user;
