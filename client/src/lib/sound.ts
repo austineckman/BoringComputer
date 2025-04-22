@@ -69,6 +69,14 @@ const sounds = {
     src: ['https://assets.codepen.io/605876/level-up.mp3'],
     volume: 0.7,
   }),
+  fanfare: new Howl({
+    src: ['https://assets.codepen.io/605876/fanfare.mp3'],
+    volume: 0.5,
+  }),
+  success: new Howl({
+    src: ['https://assets.codepen.io/605876/success.mp3'],
+    volume: 0.5,
+  }),
   
   // Ambient & misc sounds
   powerUp: new Howl({

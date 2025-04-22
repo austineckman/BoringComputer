@@ -23,6 +23,8 @@ interface LoginCredentials {
 export const useAuth = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
+  const { playSound } = useSoundEffects();
+  const previousLevel = useRef<number>(0);
 
   // Get current user
   const { data: user, isLoading: loading, refetch } = useQuery<User | null>({
@@ -59,6 +61,9 @@ export const useAuth = () => {
       try {
         await refetch();
         
+        // Play login success sound
+        playSound("success");
+        
         // Success notification
         toast({
           title: "Login Successful",
@@ -81,6 +86,10 @@ export const useAuth = () => {
     },
     onError: (error) => {
       setIsLoggingIn(false);
+      
+      // Play error sound
+      playSound("error");
+      
       toast({
         title: "Login Failed",
         description: error instanceof Error ? error.message : "Invalid username or password",
@@ -129,6 +138,10 @@ export const useAuth = () => {
     },
     onError: (error) => {
       setIsLoggingIn(false);
+      
+      // Play error sound
+      playSound("error");
+      
       toast({
         title: "Login Failed",
         description: error instanceof Error ? error.message : "An error occurred during login",
@@ -182,6 +195,9 @@ export const useAuth = () => {
       try {
         await refetch();
         
+        // Play success sound
+        playSound("success");
+        
         toast({
           title: "Admin Login",
           description: "Logged in with admin account",
@@ -202,6 +218,10 @@ export const useAuth = () => {
       }
     } catch (error) {
       console.error("Admin login error:", error);
+      
+      // Play error sound
+      playSound("error");
+      
       toast({
         title: "Admin Login Failed",
         description: "Invalid admin credentials",
@@ -209,6 +229,26 @@ export const useAuth = () => {
       });
     }
   }, [toast, refetch]);
+  
+  // Check for level changes and play level up sound
+  useEffect(() => {
+    if (user && previousLevel.current > 0 && user.level > previousLevel.current) {
+      // User has leveled up!
+      playSound("levelUp");
+      setTimeout(() => playSound("fanfare"), 500);
+      
+      toast({
+        title: "Level Up!",
+        description: `You've reached level ${user.level}!`,
+        variant: "default",
+      });
+    }
+    
+    // Update previous level reference
+    if (user) {
+      previousLevel.current = user.level;
+    }
+  }, [user, playSound, toast]);
 
   return {
     user,
