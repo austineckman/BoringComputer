@@ -61,7 +61,16 @@ const ForgeQuotes = [
 ];
 
 const Forge = () => {
-  const { craftableItems, craftedItems: rawCraftedItems, loading, craftItem, canCraftItem, fetchCraftedItems } = useCrafting();
+  const { 
+    craftableItems, 
+    craftedItems: rawCraftedItems, 
+    loading, 
+    craftItem, 
+    redeemItem,
+    isRedeeming,
+    canCraftItem, 
+    fetchCraftedItems 
+  } = useCrafting();
   const { totalItems } = useInventory();
   const { sounds } = useSoundEffects();
   const { toast } = useToast();
@@ -69,7 +78,6 @@ const Forge = () => {
   const [showCraftedItems, setShowCraftedItems] = useState(false);
   const [gizboQuote, setGizboQuote] = useState("");
   const [showQuote, setShowQuote] = useState(false);
-  const [redeeming, setRedeeming] = useState(false);
   
   // Cast craftedItems to our interface that includes the extended properties
   const craftedItems = rawCraftedItems as CraftedItemType[];
@@ -108,57 +116,23 @@ const Forge = () => {
   };
   
   // Function to handle digital item redemption
-  const redeemDigitalItem = async (itemId: string) => {
-    try {
-      setRedeeming(true);
-      
-      // Call the API to redeem the digital item
-      const response = await apiRequest('POST', `/api/crafted-items/${itemId}/redeem`);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to redeem item');
-      }
-      
-      const data = await response.json();
-      
-      // Play a success sound
-      sounds.success?.();
-      
-      // Show toast notification
-      toast({
-        title: "Item Redeemed!",
-        description: "Gizbo has provided you with a redemption code.",
-        variant: "success",
-      });
-      
-      // Refresh crafted items list
-      fetchCraftedItems();
-      
-      // Display a quote from Gizbo
-      setGizboQuote("Aha! The digital enchantment is complete! Guard that code like it's the key to my secret stash!");
-      setShowQuote(true);
+  const redeemDigitalItem = (itemId: string) => {
+    // Display a quote from Gizbo
+    setGizboQuote("Aha! Let me divine the arcane codes from this digital contraption...");
+    setShowQuote(true);
+    
+    // Call the redeem function from the hook
+    redeemItem(itemId);
+    
+    // After successful redemption, we'll display a message
+    setTimeout(() => {
+      setGizboQuote("The digital enchantment is complete! Guard that code like it's the key to my secret stash!");
       
       // Hide quote after 4 seconds
       setTimeout(() => {
         setShowQuote(false);
       }, 4000);
-      
-    } catch (error) {
-      console.error('Error redeeming item:', error);
-      
-      // Play error sound
-      sounds.error?.();
-      
-      // Show error toast
-      toast({
-        title: "Redemption Failed",
-        description: error instanceof Error ? error.message : "Something went wrong with the redemption process",
-        variant: "destructive",
-      });
-    } finally {
-      setRedeeming(false);
-    }
+    }, 2000);
   };
   
   return (
