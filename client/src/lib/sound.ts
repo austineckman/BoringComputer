@@ -48,6 +48,9 @@ export const sounds = {
   // Level up sounds
   levelUp: createSound('/sounds/level-up.mp3', 0.8),
   fanfare: createSound('/sounds/fanfare.mp3', 0.7),
+  
+  // Loot box sounds
+  open: createSound('/sounds/open.mp3', 0.7),
 };
 
 // Export the type with all possible sound names for type checking

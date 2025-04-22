@@ -1,162 +1,274 @@
-import React, { useState } from "react";
-import { useInventory } from "@/hooks/useInventory";
-import InventoryItem from "@/components/inventory/InventoryItem";
-import { Button } from "@/components/ui/button";
-import { useSoundEffects } from "@/hooks/useSoundEffects";
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { LootBoxItem, LootBoxRewardModal } from '@/components/inventory/LootBox';
+import MainLayout from '@/components/layout/MainLayout';
+import { useToast } from '@/hooks/use-toast';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
 
-const Inventory = () => {
-  const { inventory, history, loading, totalItems } = useInventory();
-  const { playSound } = useSoundEffects();
-  const [activeTab, setActiveTab] = useState("all");
+interface Resource {
+  type: string;
+  quantity: number;
+  lastAcquired?: string;
+}
+
+interface LootBox {
+  id: number;
+  userId: number;
+  type: string;
+  opened: boolean;
+  rewards: { type: string, quantity: number }[];
+  source: string;
+  sourceId: number;
+  createdAt: string;
+}
+
+export default function Inventory() {
+  const { toast } = useToast();
+  const { sounds } = useSoundEffects();
+  const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
+  const [currentRewards, setCurrentRewards] = useState<{type: string, quantity: number}[]>([]);
   
-  const handleTabClick = (tab: string) => {
-    setActiveTab(tab);
-    playSound("click");
-  };
-  
-  const filteredInventory = inventory.filter(item => {
-    if (activeTab === "all") return true;
-    
-    // Map tabs to resource types
-    if (activeTab === "materials") {
-      return ["cloth", "metal"].includes(item.type);
-    } else if (activeTab === "circuits") {
-      return ["tech-scrap", "circuit-board"].includes(item.type);
-    } else if (activeTab === "special") {
-      return ["sensor-crystal", "alchemy-ink"].includes(item.type);
-    }
-    
-    return false;
+  // Get inventory resources
+  const { data: resources, isLoading: isLoadingResources } = useQuery({
+    queryKey: ['/api/inventory'],
+    queryFn: () => fetch('/api/inventory').then(res => res.json()),
   });
   
+  // Get loot boxes
+  const { data: lootBoxes, isLoading: isLoadingLootBoxes } = useQuery({
+    queryKey: ['/api/loot-boxes'],
+    queryFn: () => fetch('/api/loot-boxes').then(res => res.json()),
+  });
+  
+  // Get inventory history
+  const { data: history, isLoading: isLoadingHistory } = useQuery({
+    queryKey: ['/api/inventory/history'],
+    queryFn: () => fetch('/api/inventory/history').then(res => res.json()),
+  });
+  
+  const handleLootBoxOpen = (lootBox: LootBox, rewards: {type: string, quantity: number}[]) => {
+    sounds.questComplete();
+    setCurrentRewards(rewards);
+    setIsRewardModalOpen(true);
+  };
+  
+  const closeRewardModal = () => {
+    sounds.click();
+    setIsRewardModalOpen(false);
+  };
+  
+  // Group resources by category
+  const groupedResources = {
+    basicMaterials: [] as Resource[],
+    advancedMaterials: [] as Resource[],
+    specialMaterials: [] as Resource[],
+  };
+  
+  if (resources) {
+    resources.forEach((resource: Resource) => {
+      if (['cloth', 'metal'].includes(resource.type)) {
+        groupedResources.basicMaterials.push(resource);
+      } else if (['tech-scrap', 'circuit-board'].includes(resource.type)) {
+        groupedResources.advancedMaterials.push(resource);
+      } else {
+        groupedResources.specialMaterials.push(resource);
+      }
+    });
+  }
+  
+  // Group loot boxes by type (opened/unopened)
+  const groupedLootBoxes = {
+    unopened: [] as LootBox[],
+    opened: [] as LootBox[],
+  };
+  
+  if (lootBoxes) {
+    lootBoxes.forEach((lootBox: LootBox) => {
+      if (lootBox.opened) {
+        groupedLootBoxes.opened.push(lootBox);
+      } else {
+        groupedLootBoxes.unopened.push(lootBox);
+      }
+    });
+  }
+  
+  // Sort tabs to show unopened first
+  groupedLootBoxes.unopened.sort((a, b) => {
+    const typeOrder = { legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4 };
+    return (typeOrder[a.type as keyof typeof typeOrder] || 999) - (typeOrder[b.type as keyof typeof typeOrder] || 999);
+  });
+  
+  if (isLoadingResources || isLoadingLootBoxes || isLoadingHistory) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
-    <div>
-      <section className="mb-12">
-        <div className="bg-space-mid rounded-lg p-6 pixel-border relative overflow-hidden">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
-            <div>
-              <h1 className="font-pixel text-xl md:text-2xl text-brand-orange mb-2">INVENTORY</h1>
-              <p className="text-brand-light/80 mb-4">Manage your resources collected from quests</p>
+    <MainLayout>
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-4xl font-bold mb-6">Inventory</h1>
+        
+        <Tabs defaultValue="resources" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-8">
+            <TabsTrigger 
+              value="resources" 
+              className="text-lg py-3"
+              onClick={() => sounds.hover()}
+            >
+              Resources
+            </TabsTrigger>
+            <TabsTrigger 
+              value="loot-boxes" 
+              className="text-lg py-3"
+              onClick={() => sounds.hover()}
+            >
+              Loot Boxes
+            </TabsTrigger>
+            <TabsTrigger 
+              value="history" 
+              className="text-lg py-3"
+              onClick={() => sounds.hover()}
+            >
+              History
+            </TabsTrigger>
+          </TabsList>
+          
+          {/* Resources Tab */}
+          <TabsContent value="resources" className="w-full">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <Card className="p-6">
+                <h3 className="text-xl font-bold mb-4 border-b pb-2">Basic Materials</h3>
+                <ul className="space-y-3">
+                  {groupedResources.basicMaterials.map((resource) => (
+                    <li key={resource.type} className="flex justify-between items-center">
+                      <span className="capitalize">{resource.type}</span>
+                      <span className="text-lg font-medium">{resource.quantity}</span>
+                    </li>
+                  ))}
+                  {groupedResources.basicMaterials.length === 0 && (
+                    <li className="text-sm text-muted-foreground">No basic materials yet.</li>
+                  )}
+                </ul>
+              </Card>
+              
+              <Card className="p-6">
+                <h3 className="text-xl font-bold mb-4 border-b pb-2">Advanced Materials</h3>
+                <ul className="space-y-3">
+                  {groupedResources.advancedMaterials.map((resource) => (
+                    <li key={resource.type} className="flex justify-between items-center">
+                      <span className="capitalize">{resource.type.replace('-', ' ')}</span>
+                      <span className="text-lg font-medium">{resource.quantity}</span>
+                    </li>
+                  ))}
+                  {groupedResources.advancedMaterials.length === 0 && (
+                    <li className="text-sm text-muted-foreground">No advanced materials yet.</li>
+                  )}
+                </ul>
+              </Card>
+              
+              <Card className="p-6">
+                <h3 className="text-xl font-bold mb-4 border-b pb-2">Special Materials</h3>
+                <ul className="space-y-3">
+                  {groupedResources.specialMaterials.map((resource) => (
+                    <li key={resource.type} className="flex justify-between items-center">
+                      <span className="capitalize">{resource.type.replace('-', ' ')}</span>
+                      <span className="text-lg font-medium">{resource.quantity}</span>
+                    </li>
+                  ))}
+                  {groupedResources.specialMaterials.length === 0 && (
+                    <li className="text-sm text-muted-foreground">No special materials yet.</li>
+                  )}
+                </ul>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          {/* Loot Boxes Tab */}
+          <TabsContent value="loot-boxes" className="w-full">
+            <div className="mb-8">
+              <h3 className="text-2xl font-bold mb-4">Unopened Loot Boxes</h3>
+              {groupedLootBoxes.unopened.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {groupedLootBoxes.unopened.map((lootBox) => (
+                    <LootBoxItem 
+                      key={lootBox.id} 
+                      lootBox={lootBox}
+                      onOpen={handleLootBoxOpen}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <Card className="p-4 text-center">
+                  <p className="text-muted-foreground">No unopened loot boxes. Complete quests to earn more!</p>
+                </Card>
+              )}
             </div>
             
-            <div className="text-sm text-brand-light/70">
-              <span>Total Items: </span>
-              <span className="text-brand-orange font-bold">{totalItems}</span>
-            </div>
-          </div>
-          
-          {/* Decorative Elements */}
-          <div className="absolute -bottom-8 -right-8 w-32 h-32 rounded-full bg-brand-orange/10 blur-3xl"></div>
-          <div className="absolute -top-4 -left-4 w-24 h-24 rounded-full bg-brand-yellow/10 blur-3xl"></div>
-        </div>
-      </section>
-      
-      {/* Inventory Container */}
-      <section className="mb-16">
-        <div className="bg-space-mid rounded-lg p-6 pixel-border">
-          <div className="mb-4 overflow-x-auto">
-            <div className="flex space-x-4 pb-2">
-              <Button
-                onClick={() => handleTabClick("all")}
-                className={activeTab === "all" 
-                  ? "bg-brand-orange/20 text-brand-orange hover:bg-brand-orange/30" 
-                  : "bg-transparent hover:bg-space-light text-brand-light"
-                }
-                variant="ghost"
-              >
-                All Items
-              </Button>
-              <Button
-                onClick={() => handleTabClick("materials")}
-                className={activeTab === "materials" 
-                  ? "bg-brand-orange/20 text-brand-orange hover:bg-brand-orange/30" 
-                  : "bg-transparent hover:bg-space-light text-brand-light"
-                }
-                variant="ghost"
-              >
-                Materials
-              </Button>
-              <Button
-                onClick={() => handleTabClick("circuits")}
-                className={activeTab === "circuits" 
-                  ? "bg-brand-orange/20 text-brand-orange hover:bg-brand-orange/30" 
-                  : "bg-transparent hover:bg-space-light text-brand-light"
-                }
-                variant="ghost"
-              >
-                Circuits
-              </Button>
-              <Button
-                onClick={() => handleTabClick("special")}
-                className={activeTab === "special" 
-                  ? "bg-brand-orange/20 text-brand-orange hover:bg-brand-orange/30" 
-                  : "bg-transparent hover:bg-space-light text-brand-light"
-                }
-                variant="ghost"
-              >
-                Special
-              </Button>
-            </div>
-          </div>
-          
-          {loading ? (
-            <div className="flex justify-center py-10">
-              <div className="animate-spin w-10 h-10 border-4 border-brand-orange border-t-transparent rounded-full"></div>
-            </div>
-          ) : (
-            <>
-              {/* Inventory Grid */}
-              <div className="inventory-grid mb-8">
-                {filteredInventory.length > 0 ? (
-                  filteredInventory.map((item, index) => (
-                    <InventoryItem
-                      key={index}
-                      type={item.type}
-                      quantity={item.quantity}
-                      lastAcquired={item.lastAcquired}
+            <div>
+              <h3 className="text-2xl font-bold mb-4">Opened Loot Boxes</h3>
+              {groupedLootBoxes.opened.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {groupedLootBoxes.opened.map((lootBox) => (
+                    <LootBoxItem 
+                      key={lootBox.id} 
+                      lootBox={lootBox}
+                      onOpen={handleLootBoxOpen}
                     />
-                  ))
-                ) : (
-                  <div className="col-span-full flex justify-center py-10 text-brand-light/50">
-                    No items found in this category
-                  </div>
-                )}
-              </div>
-              
-              {/* Inventory History */}
-              <div>
-                <h3 className="text-sm font-semibold mb-3">Recent Acquisitions</h3>
-                <div className="bg-space-dark rounded-lg p-4">
-                  {history.length > 0 ? (
-                    <div className="space-y-3">
-                      {history.slice(0, 5).map((entry, index) => (
-                        <div key={index} className="flex justify-between items-center text-sm">
-                          <div className="flex items-center">
-                            <i className={`fas fa-${entry.action === 'gained' ? 'plus-circle text-green-400' : 'minus-circle text-red-400'} mr-2`}></i>
-                            <span>
-                              {entry.action === 'gained' ? 'Gained' : 'Used'} {entry.quantity}x {entry.type.replace('-', ' ')}
-                              {entry.source && ` (${entry.source})`}
-                            </span>
-                          </div>
-                          <div className="text-brand-light/50 text-xs">
-                            {new Date(entry.date).toLocaleDateString()}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-4 text-brand-light/50">
-                      No history available
-                    </div>
-                  )}
+                  ))}
                 </div>
-              </div>
-            </>
-          )}
-        </div>
-      </section>
-    </div>
+              ) : (
+                <Card className="p-4 text-center">
+                  <p className="text-muted-foreground">No opened loot boxes yet.</p>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
+          
+          {/* History Tab */}
+          <TabsContent value="history" className="w-full">
+            <Card className="p-6">
+              <h3 className="text-xl font-bold mb-4">Resource History</h3>
+              {history && history.length > 0 ? (
+                <div className="space-y-4">
+                  {history.map((entry: any, index: number) => (
+                    <div key={index} className="p-3 border rounded-md flex justify-between items-center">
+                      <div>
+                        <span className={`font-medium capitalize ${entry.action === 'gained' ? 'text-green-600' : 'text-red-600'}`}>
+                          {entry.action === 'gained' ? '+' : '-'}{entry.quantity} {entry.type.replace('-', ' ')}
+                        </span>
+                        <p className="text-sm text-muted-foreground">
+                          from {entry.source}
+                        </p>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {new Date(entry.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground">No resource history yet.</p>
+              )}
+            </Card>
+          </TabsContent>
+        </Tabs>
+        
+        {/* Loot Box Rewards Modal */}
+        <LootBoxRewardModal 
+          isOpen={isRewardModalOpen}
+          onClose={closeRewardModal}
+          rewards={currentRewards}
+        />
+      </div>
+    </MainLayout>
   );
-};
-
-export default Inventory;
+}
