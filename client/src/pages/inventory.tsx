@@ -569,7 +569,7 @@ export default function Inventory() {
         {selectedItem && (
           <div className="bg-space-dark rounded-lg border-2 border-brand-orange/40 p-4 mb-6 shadow-lg shadow-brand-orange/5">
             <div className="flex items-start gap-4">
-              <div className="w-20 h-20 rounded-md bg-space-mid flex items-center justify-center p-2">
+              <div className="w-24 h-24 rounded-md bg-space-mid flex items-center justify-center p-2">
                 {selectedItem.isLootBox ? (
                   <div className={`w-full h-full flex items-center justify-center rounded-md overflow-hidden ${
                     selectedItem.lootBoxData?.type === 'common' ? 'bg-gray-700 bg-common-pulse' :
@@ -585,10 +585,10 @@ export default function Inventory() {
                     <img 
                       src={getResourceDisplay(selectedItem.type).value} 
                       alt={getResourceDisplay(selectedItem.type).alt || selectedItem.type}
-                      className="max-w-full max-h-full object-contain" 
+                      className="w-full h-full object-contain" 
                     />
                   ) : (
-                    <span className="text-4xl">{resourceIcons[selectedItem.type] || '🔮'}</span>
+                    <span className="text-5xl">{resourceIcons[selectedItem.type] || '🔮'}</span>
                   )
                 )}
               </div>
