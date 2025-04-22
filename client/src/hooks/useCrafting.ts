@@ -25,7 +25,7 @@ export function useCrafting() {
   
   // Fetch recipes from API
   const { data: recipes = [], isLoading: isRecipesLoading } = useQuery<Recipe[]>({
-    queryKey: ['/api/recipes'],
+    queryKey: ['/api/crafting/recipes'],
   });
   
   // Fetch user's inventory from API
@@ -36,12 +36,12 @@ export function useCrafting() {
   // Mutation for crafting an item
   const craftMutation = useMutation({
     mutationFn: async (recipeId: string) => {
-      const response = await fetch('/api/craft', {
+      const response = await fetch('/api/crafting/craft', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ recipeId, grid }),
+        body: JSON.stringify({ recipeId, gridPattern: grid }),
       });
       
       if (!response.ok) {
