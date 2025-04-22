@@ -32,29 +32,20 @@ import { useSoundEffects } from '@/hooks/useSoundEffects';
 const renderResourceIcon = (type: string, size: 'sm' | 'md' | 'lg' = 'md') => {
   const resource = getResourceDisplay(type);
   
-  if (resource.isImage) {
-    const sizeClasses = {
-      sm: 'w-5 h-5',
-      md: 'w-full h-full',
-      lg: 'w-full h-full'
-    };
-    
-    return (
-      <img 
-        src={resource.value} 
-        alt={resource.alt || type} 
-        className={`pixelated ${sizeClasses[size]} object-contain`} 
-      />
-    );
-  } else {
-    const sizeClasses = {
-      sm: 'text-lg',
-      md: 'text-2xl',
-      lg: 'text-3xl'
-    };
-    
-    return <span className={sizeClasses[size]}>{resource.value}</span>;
-  }
+  // All resources are now images
+  const sizeClasses = {
+    sm: 'w-5 h-5',
+    md: 'w-full h-full',
+    lg: 'w-full h-full'
+  };
+  
+  return (
+    <img 
+      src={resource.value} 
+      alt={resource.alt || type} 
+      className={`pixelated ${sizeClasses[size]} object-contain`} 
+    />
+  );
 };
 
 interface Resource {
