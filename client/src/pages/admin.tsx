@@ -295,8 +295,28 @@ export default function AdminPage() {
 
   const handleOpenEditDialog = (item: any) => {
     sounds.click();
-    setSelectedItem(item);
-    setEditDialogOpen(true);
+    // Create a clean copy of the item to prevent issues with direct manipulation
+    if (item && item.id) {
+      // Only copy the properties we need for the form
+      const itemCopy = {
+        id: item.id,
+        name: item.name || '',
+        description: item.description || '',
+        flavorText: item.flavorText || '',
+        rarity: item.rarity || 'common',
+        category: item.category || '',
+        imagePath: item.imagePath || '',
+        craftingUses: Array.isArray(item.craftingUses) ? [...item.craftingUses] : []
+      };
+      setSelectedItem(itemCopy);
+      setEditDialogOpen(true);
+    } else {
+      toast({
+        title: "Error",
+        description: "Invalid item data",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleItemFormSubmit = async (data: ItemFormValues) => {
@@ -535,7 +555,21 @@ export default function AdminPage() {
             
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-              <Button onClick={() => handleItemFormSubmit(selectedItem)} disabled={updateItemMutation.isPending}>
+              <Button 
+                onClick={() => {
+                  if (selectedItem && selectedItem.id) {
+                    // Handle the form submission carefully
+                    handleItemFormSubmit({...selectedItem});
+                  } else {
+                    toast({
+                      title: "Error",
+                      description: "No item selected or item data is invalid",
+                      variant: "destructive"
+                    });
+                  }
+                }} 
+                disabled={updateItemMutation.isPending || !selectedItem}
+              >
                 {updateItemMutation.isPending ? "Saving..." : "Save changes"}
               </Button>
             </DialogFooter>
