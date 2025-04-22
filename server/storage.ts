@@ -74,6 +74,9 @@ export interface IStorage {
   addUserXP(userId: number, xpAmount: number): Promise<User>;
   getAvailableQuestsForUser(userId: number): Promise<Quest[]>;
   getQuestsByAdventureLine(adventureLine: string): Promise<Quest[]>;
+  
+  // Database management methods
+  resetDatabase(): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
