@@ -131,8 +131,8 @@ router.delete('/quests/:id', async (req, res) => {
 // Get all items
 router.get('/items', async (req, res) => {
   try {
-    // Use our new getAllItems function
-    const allItems = getAllItems();
+    // Use the storage interface for items
+    const allItems = await storage.getItems();
     res.json(allItems);
   } catch (error) {
     console.error('Error fetching items:', error);
@@ -144,7 +144,7 @@ router.get('/items', async (req, res) => {
 router.get('/items/:id', async (req, res) => {
   try {
     const id = req.params.id;
-    const item = getItemDetails(id);
+    const item = await storage.getItem(id);
     
     if (!item) {
       return res.status(404).json({ error: 'Item not found' });
@@ -160,17 +160,16 @@ router.get('/items/:id', async (req, res) => {
 // Create a new item
 router.post('/items', async (req, res) => {
   try {
-    const itemData = req.body as ItemDetails;
+    // Validate with insertItemSchema
+    const itemData = insertItemSchema.parse(req.body);
     
-    // Validation
-    if (!itemData.id || !itemData.name || !itemData.description) {
-      return res.status(400).json({ error: 'Required fields missing' });
-    }
-    
-    // Add the item to our mutable database
-    const newItem = addOrUpdateItem(itemData);
+    // Add the item to our storage
+    const newItem = await storage.createItem(itemData);
     res.status(201).json(newItem);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors });
+    }
     console.error('Error creating item:', error);
     res.status(500).json({ error: 'Failed to create item' });
   }
@@ -182,23 +181,27 @@ router.put('/items/:id', async (req, res) => {
     const id = req.params.id;
     
     // Check if the item exists
-    const existingItem = getItemDetails(id);
+    const existingItem = await storage.getItem(id);
     
-    if (existingItem.id !== id) {
+    if (!existingItem) {
       return res.status(404).json({ error: 'Item not found' });
     }
     
-    const itemData = req.body as ItemDetails;
+    // Validate with insertItemSchema but allow partial updates
+    const itemData = insertItemSchema.partial().parse(req.body);
     
-    // Validation
-    if (!itemData.id || !itemData.name || !itemData.description) {
-      return res.status(400).json({ error: 'Required fields missing' });
+    // Update the item in our storage
+    const updatedItem = await storage.updateItem(id, itemData);
+    
+    if (!updatedItem) {
+      return res.status(500).json({ error: 'Failed to update item' });
     }
     
-    // Update the item in our mutable database
-    const updatedItem = addOrUpdateItem(itemData);
     res.json(updatedItem);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors });
+    }
     console.error('Error updating item:', error);
     res.status(500).json({ error: 'Failed to update item' });
   }
@@ -210,14 +213,14 @@ router.delete('/items/:id', async (req, res) => {
     const id = req.params.id;
     
     // Check if the item exists
-    const existingItem = getItemDetails(id);
+    const existingItem = await storage.getItem(id);
     
-    if (existingItem.id !== id) {
+    if (!existingItem) {
       return res.status(404).json({ error: 'Item not found' });
     }
     
-    // Remove the item from our mutable database
-    const success = removeItem(id);
+    // Remove the item from our storage
+    const success = await storage.deleteItem(id);
     
     if (success) {
       res.json({
