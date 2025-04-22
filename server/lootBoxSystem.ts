@@ -565,7 +565,36 @@ export async function openLootBox(lootBoxId: number, userId: number): Promise<{ 
         continue;
       }
       
-      // Update the user's inventory
+      // 1. First, ensure the item exists in our item database
+      let itemDetails = await storage.getItem(reward.type);
+      
+      // If it doesn't exist in our new system but is a valid reward, create it with default values
+      if (!itemDetails) {
+        try {
+          // Try to get item details from the item database
+          const allItems = await storage.getItems();
+          const existingItem = allItems.find(item => item.id === reward.type);
+          
+          if (!existingItem) {
+            // Create a new item in our item system with default values
+            console.log(`Creating new item in database: ${reward.type}`);
+            await storage.createItem({
+              id: reward.type,
+              name: reward.type.charAt(0).toUpperCase() + reward.type.slice(1).replace(/-/g, ' '),
+              description: `A resource that can be used for crafting`,
+              flavorText: `This ${reward.type.replace(/-/g, ' ')} seems valuable.`,
+              rarity: 'common',
+              craftingUses: ['crafting'],
+              imagePath: `/items/${reward.type}.png`,
+              category: 'resource'
+            });
+          }
+        } catch (error) {
+          console.error(`Failed to create item ${reward.type}:`, error);
+        }
+      }
+      
+      // 2. Update the user's inventory (legacy approach for backwards compatibility)
       const currentInventory = user.inventory || {};
       const currentAmount = currentInventory[reward.type] || 0;
       
@@ -577,7 +606,7 @@ export async function openLootBox(lootBoxId: number, userId: number): Promise<{ 
         }
       });
       
-      // Add entry to inventory history
+      // 3. Add entry to inventory history
       await storage.createInventoryHistory({
         userId,
         type: reward.type,

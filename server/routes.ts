@@ -572,20 +572,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/inventory', authenticate, async (req, res) => {
     try {
       const user = (req as any).user;
-      const inventory = user.inventory;
       
-      // Get inventory history for last acquired info
+      // Use both sources for now for backwards compatibility
+      // 1. Get inventory from user.inventory for quantities
+      const userInventory = user.inventory || {};
+      
+      // 2. Get items from storage for item details
+      const allItems = await storage.getItems();
+      
+      // 3. Get inventory history for last acquired info
       const history = await storage.getInventoryHistory(user.id);
       
-      // Format the inventory with last acquired date
-      const formattedInventory = Object.entries(inventory).map(([type, quantity]) => {
-        const lastHistoryItem = history.find(h => h.type === type && h.action === 'gained');
-        return {
-          type,
-          quantity,
-          lastAcquired: lastHistoryItem ? lastHistoryItem.createdAt.toISOString() : null
-        };
-      });
+      // 4. Format the inventory with complete item details
+      const formattedInventory = [];
+      
+      // First add all items that exist in the user's inventory
+      for (const [type, quantity] of Object.entries(userInventory)) {
+        if (quantity > 0) {
+          // Find item details in the storage
+          const itemDetails = allItems.find(item => item.id === type);
+          const lastHistoryItem = history.find(h => h.type === type && h.action === 'gained');
+          
+          // Combine data from both sources
+          formattedInventory.push({
+            id: type,
+            type: type,
+            name: itemDetails ? itemDetails.name : type,
+            description: itemDetails ? itemDetails.description : '',
+            flavorText: itemDetails ? itemDetails.flavorText : '',
+            rarity: itemDetails ? itemDetails.rarity : 'common',
+            craftingUses: itemDetails ? itemDetails.craftingUses : [],
+            imagePath: itemDetails ? itemDetails.imagePath : '',
+            category: itemDetails ? itemDetails.category : 'resource',
+            quantity: quantity as number,
+            lastAcquired: lastHistoryItem ? lastHistoryItem.createdAt.toISOString() : null
+          });
+        }
+      }
       
       return res.json(formattedInventory);
     } catch (error) {
