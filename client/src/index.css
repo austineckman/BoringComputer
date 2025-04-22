@@ -369,14 +369,17 @@ body {
   0% {
     transform: translateX(0);
   }
-  30% {
-    transform: translateX(-1000px);
+  10% {
+    transform: translateX(-5%);
   }
-  80% {
-    transform: translateX(-1800px);
+  30% {
+    transform: translateX(-30%);
+  }
+  70% {
+    transform: translateX(-60%);
   }
   100% {
-    transform: translateX(-1920px);
+    transform: translateX(-67%);
   }
 }
 
