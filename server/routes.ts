@@ -231,9 +231,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             opened: false,
             rewards: null, // Will be generated when opened
             source: 'Discord Account Link Bonus',
-            sourceId: null,
-            acquiredAt: new Date(),
-            openedAt: null
+            sourceId: null
           });
           
           // Set up achievements for the user
@@ -1084,9 +1082,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           opened: false,
           rewards: null, // Will be generated when opened
           source: 'Test Crate Generator',
-          sourceId: null,
-          acquiredAt: new Date(),
-          openedAt: null
+          sourceId: null
         });
         
         createdBoxes.push(lootBox);
