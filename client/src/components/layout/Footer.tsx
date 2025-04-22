@@ -3,14 +3,14 @@ import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { FaDiscord, FaYoutube, FaInstagram, FaTwitter } from "react-icons/fa";
 
 const Footer = () => {
-  const { playSound } = useSoundEffects();
+  const { sounds } = useSoundEffects();
 
   const handleClick = () => {
-    playSound("click");
+    sounds.click?.();
   };
 
   const handleHover = () => {
-    playSound("hover");
+    sounds.hover?.();
   };
 
   return (
