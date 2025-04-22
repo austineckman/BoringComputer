@@ -5,9 +5,16 @@ import ResourceItem from "@/components/ui/resource-item";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { themeConfig } from "@/lib/themeConfig";
 import { Link } from "wouter";
+import { Badge } from "@/components/ui/badge";
 
 interface QuestReward {
   type: string;
+  quantity: number;
+}
+
+// Loot box types interface
+interface LootBoxReward {
+  type: "common" | "uncommon" | "rare" | "epic" | "legendary";
   quantity: number;
 }
 
@@ -19,8 +26,9 @@ interface QuestCardProps {
   difficulty: number;
   rewards: QuestReward[];
   status: "active" | "available" | "completed" | "upcoming" | "locked";
-  orderInLine?: number; // New field
-  xpReward?: number; // New field
+  orderInLine?: number; 
+  xpReward?: number;
+  lootBoxRewards?: LootBoxReward[]; // New field for loot box rewards
   onStart?: () => void;
   onContinue?: () => void;
 }
@@ -35,6 +43,7 @@ const QuestCard = ({
   status,
   orderInLine,
   xpReward,
+  lootBoxRewards,
   onStart,
   onContinue
 }: QuestCardProps) => {
@@ -119,6 +128,24 @@ const QuestCard = ({
     }
   };
 
+  // Get color for loot box tier
+  const getLootBoxColor = (type: string) => {
+    switch (type) {
+      case "common":
+        return "border-gray-400 bg-gray-400/10 text-gray-300";
+      case "uncommon":
+        return "border-green-500 bg-green-500/10 text-green-400";
+      case "rare":
+        return "border-blue-500 bg-blue-500/10 text-blue-400";
+      case "epic":
+        return "border-purple-500 bg-purple-500/10 text-purple-400";
+      case "legendary":
+        return "border-yellow-500 bg-yellow-500/10 text-yellow-400";
+      default:
+        return "border-gray-500 bg-gray-500/10 text-gray-400";
+    }
+  };
+
   const statusDisplay = getStatusDisplay();
 
   // Wrap the content
@@ -171,20 +198,38 @@ const QuestCard = ({
           ))}
         </div>
         
-        {/* Rewards Preview */}
-        <div className="mb-4">
-          <span className="text-xs text-brand-light/60 block mb-2">Rewards:</span>
-          <div className="flex space-x-2">
-            {rewards.map((reward, index) => (
-              <div 
-                key={index} 
-                className={`flex flex-col items-center ${status === "upcoming" || status === "locked" ? "opacity-50" : ""}`}
-              >
-                <ResourceItem type={reward.type as any} quantity={reward.quantity} size="sm" />
-              </div>
-            ))}
+        {/* Loot Box Rewards (prioritize this) */}
+        {lootBoxRewards && lootBoxRewards.length > 0 ? (
+          <div className="mb-4">
+            <span className="text-xs text-brand-light/60 block mb-2">Loot Box Rewards:</span>
+            <div className="flex flex-wrap gap-2">
+              {lootBoxRewards.map((lootBox, index) => (
+                <Badge 
+                  key={index} 
+                  variant="outline" 
+                  className={`${getLootBoxColor(lootBox.type)} ${status === "upcoming" || status === "locked" ? "opacity-50" : ""}`}
+                >
+                  {lootBox.quantity}x {lootBox.type.charAt(0).toUpperCase() + lootBox.type.slice(1)} Box
+                </Badge>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          /* Legacy Resource Rewards */
+          <div className="mb-4">
+            <span className="text-xs text-brand-light/60 block mb-2">Rewards:</span>
+            <div className="flex space-x-2">
+              {rewards.map((reward, index) => (
+                <div 
+                  key={index} 
+                  className={`flex flex-col items-center ${status === "upcoming" || status === "locked" ? "opacity-50" : ""}`}
+                >
+                  <ResourceItem type={reward.type as any} quantity={reward.quantity} size="sm" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         
         {/* Action Button */}
         {getActionButton()}
