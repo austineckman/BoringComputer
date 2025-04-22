@@ -34,7 +34,7 @@ const CraftingRecipe = ({
 
   const handleCraft = () => {
     if (canCraft) {
-      playSound("craft");
+      playSound("craftSuccess");
       onCraft();
       toast({
         title: "Item Crafted!",
@@ -42,7 +42,7 @@ const CraftingRecipe = ({
         variant: "default",
       });
     } else {
-      playSound("error");
+      playSound("craftFail");
       toast({
         title: "Cannot Craft Item",
         description: "You don't have enough resources for this recipe",
