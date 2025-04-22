@@ -12,7 +12,7 @@ interface SoundContextType {
   playSound: (name: string) => void;
 }
 
-const SoundContext = createContext<SoundContextType | undefined>(undefined);
+export const SoundContext = createContext<SoundContextType | undefined>(undefined);
 
 export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Get saved volume from localStorage or default to 0.6 (60%)

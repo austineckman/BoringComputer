@@ -1,47 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Container } from '@/components/ui/container';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInventory } from '@/hooks/useInventory';
 import { useCrafting } from '@/hooks/useCrafting';
+import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import RecipeList from '@/components/crafting/RecipeList';
 import CraftingGrid from '@/components/crafting/CraftingGrid';
 import InventoryGrid from '@/components/crafting/InventoryGrid';
+import DndProvider from '@/components/crafting/DndProvider';
+import { Recipe } from '../../shared/types';
 import forgeHeroPath from '@assets/forgehero.png';
 
-// Temporary interface until we can import from schema.ts
-interface CraftingRecipe {
-  id: number;
-  name: string;
-  description: string;
-  difficulty: string;
-  createdAt: string;
-  image?: string;
-  pattern: (string | null)[][];
-  requiredItems: Record<string, number>;
-  resultItem: string;
-  resultQuantity: number;
-  unlocked: boolean;
-}
+// Mock recipes until we get them from the API
+const MOCK_RECIPES: Recipe[] = [
+  {
+    id: 1,
+    name: "Basic Circuit",
+    description: "A simple electronic circuit that can be used in various devices.",
+    difficulty: "beginner",
+    resultItem: "circuit-board",
+    resultQuantity: 1,
+    materials: {
+      "copper": 2,
+      "techscrap": 1
+    },
+    pattern: [
+      [null, "copper", "copper", null, null],
+      [null, "techscrap", null, null, null],
+      [null, null, null, null, null],
+      [null, null, null, null, null],
+      [null, null, null, null, null]
+    ]
+  },
+  {
+    id: 2,
+    name: "Space Fabric",
+    description: "A reinforced fabric with special properties.",
+    difficulty: "beginner",
+    resultItem: "cloth",
+    resultQuantity: 3,
+    materials: {
+      "cloth": 2
+    }
+  },
+  {
+    id: 3,
+    name: "Cosmic Ink Cartridge",
+    description: "A cartridge filled with mysterious ink from the cosmos.",
+    difficulty: "intermediate",
+    resultItem: "ink",
+    resultQuantity: 1,
+    materials: {
+      "crystal": 1,
+      "techscrap": 2
+    }
+  }
+];
 
 const ForgePage = () => {
   const { inventory, loading: isLoadingInventory } = useInventory();
-  const {
-    recipes: rawRecipes = [],
-    selectedRecipe: rawSelectedRecipe,
-    isLoadingRecipes,
-    selectRecipe,
-    craftItem,
-    isCrafting,
-  } = useCrafting();
-  
-  // Cast the recipes to the correct type
-  const recipes = rawRecipes as unknown as CraftingRecipe[];
-  const selectedRecipe = rawSelectedRecipe as unknown as CraftingRecipe | null;
   const [activeTab, setActiveTab] = useState('crafting');
-
+  
   // Convert inventory array to record format for easier lookup
   const inventoryRecord: Record<string, number> = {};
   if (Array.isArray(inventory)) {
@@ -49,16 +71,32 @@ const ForgePage = () => {
       inventoryRecord[item.type] = item.quantity;
     });
   }
-
-  const handleSelectRecipe = (recipe: any) => {
-    selectRecipe(recipe.id);
-  };
-
-  const handleCraft = async (gridPattern: (string | null)[][], recipeId: number) => {
-    await craftItem(gridPattern, recipeId);
-  };
-
-  const isLoading = isLoadingInventory || isLoadingRecipes;
+  
+  // Add some items to the inventory for testing
+  if (Object.keys(inventoryRecord).length === 0) {
+    inventoryRecord["copper"] = 10;
+    inventoryRecord["cloth"] = 5;
+    inventoryRecord["crystal"] = 3;
+    inventoryRecord["techscrap"] = 8;
+    inventoryRecord["ink"] = 2;
+    inventoryRecord["circuit-board"] = 1;
+  }
+  
+  // Use our crafting hook
+  const crafting = useCrafting({
+    inventory: inventoryRecord,
+    recipes: MOCK_RECIPES,
+    onCraftSuccess: (recipeId, resultItem, quantity) => {
+      console.log(`Crafted ${quantity}x ${resultItem} from recipe ${recipeId}`);
+      // Here we would update the inventory
+    }
+  });
+  
+  const handleSelectRecipe = useCallback((recipeId: number) => {
+    crafting.setSelectedRecipeId(recipeId);
+  }, [crafting]);
+  
+  const isLoading = isLoadingInventory;
 
   return (
     <MainLayout>
@@ -100,30 +138,69 @@ const ForgePage = () => {
             ) : (
               <>
                 <TabsContent value="crafting" className="space-y-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
-                    <div className="lg:col-span-3">
-                      <RecipeList
-                        recipes={recipes}
-                        selectedRecipe={selectedRecipe}
-                        onSelectRecipe={handleSelectRecipe}
-                        inventory={inventoryRecord}
-                      />
-                    </div>
-                    <div className="lg:col-span-4">
-                      <div className="space-y-4">
-                        <CraftingGrid
-                          selectedRecipe={selectedRecipe}
+                  <DndProvider>
+                    <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
+                      <div className="lg:col-span-3">
+                        <RecipeList
+                          recipes={MOCK_RECIPES}
+                          selectedRecipeId={crafting.selectedRecipeId}
+                          onSelectRecipe={handleSelectRecipe}
                           inventory={inventoryRecord}
-                          onCraft={handleCraft}
-                          isCrafting={isCrafting}
-                        />
-                        <InventoryGrid
-                          inventory={inventoryRecord}
-                          selectedRecipeRequirements={selectedRecipe?.requiredItems}
                         />
                       </div>
+                      <div className="lg:col-span-4">
+                        <div className="space-y-4">
+                          <CraftingGrid
+                            grid={crafting.grid}
+                            patternToMatch={crafting.selectedRecipe?.pattern}
+                            onDropItem={crafting.placeItemInGrid}
+                            onRemoveItem={crafting.removeItemFromGrid}
+                            canCraft={crafting.canCraft}
+                            title="Crafting Grid"
+                          />
+                          
+                          <div className="flex justify-between items-center mt-4">
+                            <div className="text-sm text-gray-500">
+                              {crafting.selectedRecipe 
+                                ? `Selected Recipe: ${crafting.selectedRecipe.name}` 
+                                : 'No recipe selected'}
+                            </div>
+                            <Button 
+                              onClick={crafting.craft}
+                              disabled={!crafting.canCraft}
+                              className="bg-amber-600 hover:bg-amber-700 text-white"
+                            >
+                              Craft Item
+                            </Button>
+                          </div>
+                          
+                          <div className="mt-6">
+                            <h3 className="text-lg font-medium mb-2">Your Inventory</h3>
+                            <div className="grid grid-cols-5 md:grid-cols-8 gap-2 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                              {Object.entries(inventoryRecord).map(([itemId, quantity]) => (
+                                <div 
+                                  key={itemId} 
+                                  className="flex flex-col items-center"
+                                >
+                                  <div className="w-12 h-12 bg-white dark:bg-gray-700 rounded-md flex items-center justify-center relative mb-1">
+                                    <img 
+                                      src={`/assets/${itemId}.png`} 
+                                      alt={itemId}
+                                      className="w-10 h-10 object-contain" 
+                                    />
+                                    <span className="absolute bottom-0 right-0 bg-gray-800 text-white text-xs px-1 rounded-sm">
+                                      {quantity}
+                                    </span>
+                                  </div>
+                                  <span className="text-xs truncate w-full text-center">{itemId}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  </DndProvider>
                 </TabsContent>
 
                 <TabsContent value="schematics">
@@ -134,9 +211,9 @@ const ForgePage = () => {
                     </p>
                     <Separator className="my-4" />
                     
-                    {recipes.length > 0 ? (
+                    {MOCK_RECIPES.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {recipes.map((recipe) => (
+                        {MOCK_RECIPES.map((recipe) => (
                           <div
                             key={recipe.id}
                             className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900"
@@ -146,7 +223,7 @@ const ForgePage = () => {
                               {recipe.description}
                             </p>
                             <div className="text-xs text-gray-500 dark:text-gray-500">
-                              <span className="capitalize">{recipe.difficulty}</span> • Discovered {new Date(recipe.createdAt).toLocaleDateString()}
+                              <span className="capitalize">{recipe.difficulty}</span> • Gives {recipe.resultQuantity}x {recipe.resultItem}
                             </div>
                           </div>
                         ))}

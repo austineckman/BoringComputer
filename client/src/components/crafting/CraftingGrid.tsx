@@ -43,22 +43,20 @@ const CraftingGrid: React.FC<CraftingGridProps> = ({
       <CardContent>
         <div className="flex flex-col items-center">
           <div className="grid grid-cols-5 gap-1 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-            {grid.map((row, rowIndex) => (
-              <React.Fragment key={`row-${rowIndex}`}>
-                {row.map((cellItem, colIndex) => (
-                  <CraftingCell
-                    key={`cell-${rowIndex}-${colIndex}`}
-                    row={rowIndex}
-                    col={colIndex}
-                    itemId={cellItem}
-                    onDropItem={onDropItem}
-                    onRemoveItem={onRemoveItem}
-                    highlighted={shouldHighlightCell(rowIndex, colIndex)}
-                    pattern={false}
-                  />
-                ))}
-              </React.Fragment>
-            ))}
+            {grid.flatMap((row, rowIndex) => 
+              row.map((cellItem, colIndex) => (
+                <CraftingCell
+                  key={`cell-${rowIndex}-${colIndex}`}
+                  row={rowIndex}
+                  col={colIndex}
+                  itemId={cellItem}
+                  onDropItem={onDropItem}
+                  onRemoveItem={onRemoveItem}
+                  highlighted={shouldHighlightCell(rowIndex, colIndex)}
+                  pattern={false}
+                />
+              ))
+            )}
           </div>
           
           <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
