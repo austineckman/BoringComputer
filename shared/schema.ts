@@ -76,10 +76,17 @@ export const craftedItems = pgTable("crafted_items", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   craftableId: integer("craftable_id").notNull(),
+  name: text("name").notNull(),         // Copy of the craftable name at time of crafting
+  description: text("description").notNull(), // Copy of the description at time of crafting
+  image: text("image").notNull(),        // Copy of the image at time of crafting
+  type: text("type").notNull(),         // physical, digital (copy from craftable)
   dateCrafted: timestamp("date_crafted").defaultNow(),
-  status: text("status").default("pending"), // pending, shipped, delivered, unlocked
+  status: text("status").default("pending"), // pending, shipped, delivered, unlocked, redeemed
   tracking: text("tracking"),
   address: text("address"),
+  redemptionData: json("redemption_data").default({}), // Could store codes, download links, etc.
+  redeemedAt: timestamp("redeemed_at"),
+  shippingInfo: json("shipping_info").default({}), // Name, address, etc. for physical items
 });
 
 // Achievements table
@@ -180,9 +187,16 @@ export const insertCraftableSchema = createInsertSchema(craftables).pick({
 export const insertCraftedItemSchema = createInsertSchema(craftedItems).pick({
   userId: true,
   craftableId: true,
+  name: true,
+  description: true,
+  image: true,
+  type: true,
   status: true,
   tracking: true,
   address: true,
+  redemptionData: true,
+  redeemedAt: true,
+  shippingInfo: true,
 });
 
 export const insertAchievementSchema = createInsertSchema(achievements).pick({
