@@ -44,6 +44,13 @@
   --resource-circuit-board: 165 100% 39%;
   --resource-alchemy-ink: 330 100% 75%;
   
+  /* Loot box colors */
+  --loot-common: 0 0% 71%;
+  --loot-uncommon: 142 65% 45%;
+  --loot-rare: 213 94% 65%;
+  --loot-epic: 267 70% 60%;
+  --loot-legendary: 36 100% 60%;
+  
   /* Chart colors */
   --chart-1: var(--brand-orange);
   --chart-2: var(--brand-yellow);
@@ -291,6 +298,52 @@ body {
 
 .resource-icon-pulse {
   animation: resource-pulse 2s infinite ease-in-out;
+}
+
+/* Loot box background pulse animations */
+@keyframes common-pulse {
+  0%, 100% { background-color: rgba(156, 163, 175, 0.1); }
+  50% { background-color: rgba(156, 163, 175, 0.25); }
+}
+
+@keyframes uncommon-pulse {
+  0%, 100% { background-color: rgba(16, 185, 129, 0.1); }
+  50% { background-color: rgba(16, 185, 129, 0.25); }
+}
+
+@keyframes rare-pulse {
+  0%, 100% { background-color: rgba(59, 130, 246, 0.1); }
+  50% { background-color: rgba(59, 130, 246, 0.25); }
+}
+
+@keyframes epic-pulse {
+  0%, 100% { background-color: rgba(139, 92, 246, 0.1); }
+  50% { background-color: rgba(139, 92, 246, 0.25); }
+}
+
+@keyframes legendary-pulse {
+  0%, 100% { background-color: rgba(245, 158, 11, 0.1); }
+  50% { background-color: rgba(245, 158, 11, 0.25); }
+}
+
+.bg-common-pulse {
+  animation: common-pulse 1.5s infinite;
+}
+
+.bg-uncommon-pulse {
+  animation: uncommon-pulse 1.5s infinite;
+}
+
+.bg-rare-pulse {
+  animation: rare-pulse 1.5s infinite;
+}
+
+.bg-epic-pulse {
+  animation: epic-pulse 1.5s infinite;
+}
+
+.bg-legendary-pulse {
+  animation: legendary-pulse 1.5s infinite;
 }
 
 /* Scrollbar styling */

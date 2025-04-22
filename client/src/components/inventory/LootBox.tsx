@@ -275,67 +275,121 @@ export function LootBoxItem({ lootBox, onOpen }: LootBoxProps) {
             </DialogHeader>
             
             <div className="flex flex-col items-center justify-center p-6">
-              {isOpening && rewards.length === 0 ? (
-                // CSGO-style opening animation before rewards are fetched
-                <div className="py-10">
+              {isOpening && (rewards.length === 0 || !spinningComplete) ? (
+                // CS:GO style spinning animation (like a slot machine or weapon case)
+                <div className="py-6">
                   <div className="relative">
-                    <motion.div
-                      animate={{
-                        rotateY: [0, 360],
-                      }}
-                      transition={{ 
-                        duration: 2, 
-                        repeat: Infinity,
-                        ease: "linear" 
-                      }}
-                      className="relative z-10"
-                    >
-                      <div className={`w-40 h-40 flex items-center justify-center rounded-md bg-gradient-to-br ${colorScheme.gradient} relative overflow-hidden`}>
-                        <div className="absolute inset-0 bg-black/20"></div>
-                        <div className="absolute top-0 left-0 right-0 h-1/4 bg-gradient-to-b from-white/10 to-transparent"></div>
-                        
-                        <span className="text-6xl drop-shadow-lg">📦</span>
-                        
-                        <motion.div 
-                          className="absolute inset-0 bg-white/30"
-                          animate={{ opacity: [0, 0.3, 0] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        />
-                      </div>
-                    </motion.div>
+                    {/* Title banner for the animation */}
+                    <div className="text-center mb-4">
+                      <h3 className={`text-xl font-bold uppercase ${
+                        lootBox.type === 'common' ? 'text-gray-300' :
+                        lootBox.type === 'uncommon' ? 'text-green-400' : 
+                        lootBox.type === 'rare' ? 'text-blue-400' :
+                        lootBox.type === 'epic' ? 'text-purple-400' :
+                        'text-amber-400'
+                      }`}>
+                        {rewards.length === 0 ? 'Unlocking...' : 'Opening...'}
+                      </h3>
+                    </div>
+
+                    {/* CS:GO style spinning container */}
+                    <div className="relative w-full h-24 overflow-hidden rounded-md border-2 border-space-light/20 bg-space-darkest">
+                      {/* Highlight marker in center - doesn't move */}
+                      <div className="absolute inset-y-0 left-1/2 w-0.5 bg-brand-orange z-30 shadow-[0_0_10px_2px_rgba(255,150,0,0.7)]"></div>
+                      
+                      {/* Overlay gradient to fade out sides */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-black/80 z-20 pointer-events-none"></div>
+                      
+                      {/* Spinning items container */}
+                      <motion.div 
+                        className="flex items-center absolute top-0 bottom-0 z-10"
+                        initial={{ x: '100%' }}
+                        animate={{ 
+                          x: spinningComplete ? '-125%' : ['-5000%', '-100%'] 
+                        }}
+                        transition={{
+                          duration: spinningComplete ? 0.5 : 3, 
+                          ease: spinningComplete ? 'easeOut' : [0.2, 0.3, 0.2, 0.2],
+                        }}
+                      >
+                        {/* Generate random spinning resources */}
+                        {spinningItems.map((itemType, idx) => (
+                          <div 
+                            key={`spin-${idx}`}
+                            className={`flex-shrink-0 mx-1 p-3 w-20 h-20 rounded flex flex-col items-center justify-center
+                              ${
+                                idx === spinningItems.length - 3 && spinningComplete 
+                                  ? `bg-${lootBox.type}-pulse border-2` : 'bg-space-dark/60'
+                              }
+                              ${
+                                idx === spinningItems.length - 3 && spinningComplete
+                                  ? lootBox.type === 'common' ? 'border-gray-400' :
+                                    lootBox.type === 'uncommon' ? 'border-green-500' :
+                                    lootBox.type === 'rare' ? 'border-blue-500' :
+                                    lootBox.type === 'epic' ? 'border-purple-500' :
+                                    'border-amber-400'
+                                  : ''
+                              }
+                            `}
+                          >
+                            <span className="text-2xl mb-1">
+                              {itemType === 'cloth' ? '🧵' :
+                               itemType === 'metal' ? '🔗' :
+                               itemType === 'tech-scrap' ? '🔌' :
+                               itemType === 'circuit-board' ? '🖥️' :
+                               itemType === 'sensor-crystal' ? '💎' :
+                               itemType === 'alchemy-ink' ? '🧪' : '🔮'}
+                            </span>
+                            <span className="text-xs capitalize">
+                              {itemType.replace('-', ' ')}
+                            </span>
+                          </div>
+                        ))}
+                      </motion.div>
+                    </div>
                     
-                    {/* Glow effect under the crate */}
+                    {/* Glow effect around spinner */}
                     <motion.div 
-                      className="absolute -inset-4 rounded-full blur-xl z-0 opacity-60"
+                      className="absolute -inset-1 rounded-xl blur-md z-0 opacity-40"
                       style={{ 
-                        background: lootBox.type === 'common' ? 'radial-gradient(#9ca3af, transparent 70%)' :
-                                   lootBox.type === 'uncommon' ? 'radial-gradient(#10b981, transparent 70%)' :
-                                   lootBox.type === 'rare' ? 'radial-gradient(#3b82f6, transparent 70%)' :
-                                   lootBox.type === 'epic' ? 'radial-gradient(#8b5cf6, transparent 70%)' :
-                                   'radial-gradient(#f59e0b, transparent 70%)'
+                        background: lootBox.type === 'common' ? 'linear-gradient(to right, transparent 15%, rgba(156, 163, 175, 0.5) 50%, transparent 85%)' :
+                                   lootBox.type === 'uncommon' ? 'linear-gradient(to right, transparent 15%, rgba(16, 185, 129, 0.5) 50%, transparent 85%)' :
+                                   lootBox.type === 'rare' ? 'linear-gradient(to right, transparent 15%, rgba(59, 130, 246, 0.5) 50%, transparent 85%)' :
+                                   lootBox.type === 'epic' ? 'linear-gradient(to right, transparent 15%, rgba(139, 92, 246, 0.5) 50%, transparent 85%)' :
+                                   'linear-gradient(to right, transparent 15%, rgba(245, 158, 11, 0.5) 50%, transparent 85%)'
                       }}
-                      animate={{ scale: [0.8, 1.2, 0.8] }}
-                      transition={{ duration: 3, repeat: Infinity }}
                     />
                   </div>
                   
-                  <div className="mt-8 text-center text-lg flex flex-col items-center">
-                    <div className="uppercase tracking-wide text-brand-light/80 text-sm mb-3">Processing...</div>
-                    <motion.div
-                      className="w-32 h-1 bg-brand-light/20 rounded-full overflow-hidden relative"
-                    >
+                  {/* Loading bar and status message */}
+                  <div className="mt-6 text-center flex flex-col items-center">
+                    <div className={`uppercase tracking-wide text-sm mb-3 ${
+                      lootBox.type === 'common' ? 'text-gray-400' :
+                      lootBox.type === 'uncommon' ? 'text-green-400' : 
+                      lootBox.type === 'rare' ? 'text-blue-400' :
+                      lootBox.type === 'epic' ? 'text-purple-400' :
+                      'text-amber-300'
+                    }`}>
+                      {rewards.length === 0 ? 'Contacting server...' : spinningComplete ? 'Selection complete!' : 'Selecting items...'}
+                    </div>
+                    
+                    {!spinningComplete && (
                       <motion.div
-                        className={`absolute top-0 left-0 h-full rounded-full ${
-                          lootBox.type === 'common' ? 'bg-gray-400' :
-                          lootBox.type === 'uncommon' ? 'bg-green-500' :
-                          lootBox.type === 'rare' ? 'bg-blue-500' :
-                          lootBox.type === 'epic' ? 'bg-purple-500' :
-                          'bg-amber-500'
-                        }`}
-                        animate={{ width: ['0%', '100%'] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      />
-                    </motion.div>
+                        className="w-40 h-1.5 bg-brand-light/20 rounded-full overflow-hidden relative"
+                      >
+                        <motion.div
+                          className={`absolute top-0 left-0 h-full rounded-full ${
+                            lootBox.type === 'common' ? 'bg-gray-400' :
+                            lootBox.type === 'uncommon' ? 'bg-green-500' :
+                            lootBox.type === 'rare' ? 'bg-blue-500' :
+                            lootBox.type === 'epic' ? 'bg-purple-500' :
+                            'bg-amber-500'
+                          }`}
+                          animate={{ width: ['0%', '100%'] }}
+                          transition={{ duration: 2, repeat: rewards.length === 0 ? Infinity : 0 }}
+                        />
+                      </motion.div>
+                    )}
                   </div>
                 </div>
               ) : isOpening && rewards.length > 0 ? (

@@ -128,7 +128,7 @@ export default function Inventory() {
         toast({
           title: "Test Crates Generated!",
           description: `${data.lootBoxes.length} new loot crates have been added to your inventory.`,
-          variant: "success",
+          variant: "default",
         });
         
         // Invalidate the loot boxes query to refresh the list
@@ -313,14 +313,14 @@ export default function Inventory() {
                             <>
                               <div className="flex items-center justify-center h-full">
                                 {item.isLootBox ? (
-                                  <div className={`w-full h-full flex items-center justify-center rounded-md ${
-                                    item.lootBoxData?.type === 'common' ? 'bg-gray-700' :
-                                    item.lootBoxData?.type === 'uncommon' ? 'bg-green-800' :
-                                    item.lootBoxData?.type === 'rare' ? 'bg-blue-800' :
-                                    item.lootBoxData?.type === 'epic' ? 'bg-purple-800' :
-                                    'bg-amber-700'
+                                  <div className={`w-full h-full flex items-center justify-center rounded-md overflow-hidden ${
+                                    item.lootBoxData?.type === 'common' ? 'bg-gray-700 bg-common-pulse' :
+                                    item.lootBoxData?.type === 'uncommon' ? 'bg-green-800 bg-uncommon-pulse' :
+                                    item.lootBoxData?.type === 'rare' ? 'bg-blue-800 bg-rare-pulse' :
+                                    item.lootBoxData?.type === 'epic' ? 'bg-purple-800 bg-epic-pulse' :
+                                    'bg-amber-700 bg-legendary-pulse'
                                   }`}>
-                                    <span className="text-2xl">📦</span>
+                                    <span className="text-2xl relative z-10">📦</span>
                                   </div>
                                 ) : (
                                   <span className="text-2xl">{resourceIcons[item.type] || '🔮'}</span>
@@ -419,14 +419,14 @@ export default function Inventory() {
                           {item && item.isLootBox && (
                             <>
                               <div className="flex items-center justify-center h-full">
-                                <div className={`w-full h-full flex items-center justify-center rounded-md ${
-                                  item.lootBoxData?.type === 'common' ? 'bg-gray-700' :
-                                  item.lootBoxData?.type === 'uncommon' ? 'bg-green-800' :
-                                  item.lootBoxData?.type === 'rare' ? 'bg-blue-800' :
-                                  item.lootBoxData?.type === 'epic' ? 'bg-purple-800' :
-                                  'bg-amber-700'
+                                <div className={`w-full h-full flex items-center justify-center rounded-md overflow-hidden ${
+                                  item.lootBoxData?.type === 'common' ? 'bg-gray-700 bg-common-pulse' :
+                                  item.lootBoxData?.type === 'uncommon' ? 'bg-green-800 bg-uncommon-pulse' :
+                                  item.lootBoxData?.type === 'rare' ? 'bg-blue-800 bg-rare-pulse' :
+                                  item.lootBoxData?.type === 'epic' ? 'bg-purple-800 bg-epic-pulse' :
+                                  'bg-amber-700 bg-legendary-pulse'
                                 }`}>
-                                  <span className="text-2xl">📦</span>
+                                  <span className="text-2xl relative z-10">📦</span>
                                 </div>
                               </div>
                               <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
