@@ -155,6 +155,35 @@ export const craftingRecipes = pgTable("crafting_recipes", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Items database table for centralized item management
+export const items = pgTable("items", {
+  id: text("id").primaryKey(), // e.g., "copper", "crystal"
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  flavorText: text("flavor_text").notNull(),
+  rarity: text("rarity", { enum: ["common", "uncommon", "rare", "epic", "legendary"] }).notNull(),
+  craftingUses: jsonb("crafting_uses").$type<string[]>().notNull(),
+  imagePath: text("image_path").notNull(),
+  category: text("category").notNull().default("resource"), // resource, component, tool, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Loot box configuration table
+export const lootBoxConfigs = pgTable("loot_box_configs", {
+  id: text("id").primaryKey(), // e.g., "common", "rare", "legendary", "quest"
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  rarity: text("rarity", { enum: ["common", "uncommon", "rare", "epic", "legendary"] }).notNull(),
+  // Array of {itemId: string, weight: number, minQuantity: number, maxQuantity: number}
+  itemDropTable: jsonb("item_drop_table").$type<{itemId: string, weight: number, minQuantity: number, maxQuantity: number}[]>().notNull(),
+  minRewards: integer("min_rewards").notNull().default(1),
+  maxRewards: integer("max_rewards").notNull().default(3),
+  image: text("image").notNull().default("/images/loot-crate.png"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
