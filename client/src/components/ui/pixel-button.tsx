@@ -94,9 +94,11 @@ const PixelButton = React.forwardRef<HTMLButtonElement, PixelButtonProps>(
         disabled={disabled}
         className={cn(
           "pixel-button transition-colors",
-          variantStyles[disabled ? "disabled" : variant],
-          sizeStyles[size],
+          variantStyles[disabled ? "disabled" : variant as keyof typeof variantStyles],
+          sizeStyles[size as keyof typeof sizeStyles],
           fullWidth ? "w-full" : "",
+          glow && !disabled && "button-glow",
+          animated && !disabled && "button-animated",
           className
         )}
         onClick={handleClick}
