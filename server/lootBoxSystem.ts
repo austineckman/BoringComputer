@@ -554,29 +554,29 @@ export async function openLootBox(lootBoxId: number, userId: number): Promise<{ 
     // Update the loot box to mark it as opened
     await storage.updateLootBox(lootBoxId, {
       opened: true,
-      openedAt: new Date().toISOString()
+      openedAt: new Date()
     });
     
     // Add the rewards to the user's inventory
     for (const reward of rewards) {
-      // Check if user already has this item
-      const userInventory = await storage.getInventory(userId);
-      const existingItem = userInventory.find(item => item.type === reward.type);
-      
-      if (existingItem) {
-        // Update existing inventory item
-        await storage.updateInventoryItem(userId, reward.type, {
-          quantity: existingItem.quantity + reward.quantity,
-          lastAcquired: new Date().toISOString()
-        });
-      } else {
-        // Add new inventory item
-        await storage.addInventoryItem(userId, {
-          type: reward.type,
-          quantity: reward.quantity,
-          lastAcquired: new Date().toISOString()
-        });
+      // Get user
+      const user = await storage.getUser(userId);
+      if (!user) {
+        console.error(`User with ID ${userId} not found`);
+        continue;
       }
+      
+      // Update the user's inventory
+      const currentInventory = user.inventory || {};
+      const currentAmount = currentInventory[reward.type] || 0;
+      
+      // Update user inventory
+      await storage.updateUser(userId, {
+        inventory: {
+          ...currentInventory,
+          [reward.type]: currentAmount + reward.quantity
+        }
+      });
       
       // Add entry to inventory history
       await storage.createInventoryHistory({
@@ -584,8 +584,7 @@ export async function openLootBox(lootBoxId: number, userId: number): Promise<{ 
         type: reward.type,
         quantity: reward.quantity,
         action: 'gained',
-        source: `${lootBox.type} Loot Crate`,
-        createdAt: new Date().toISOString()
+        source: `${lootBox.type} Loot Crate`
       });
     }
     

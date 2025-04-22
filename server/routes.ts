@@ -956,39 +956,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/loot-boxes/:id/open', authenticate, async (req, res) => {
-    try {
-      const lootBoxId = parseInt(req.params.id);
-      const user = (req as any).user;
-      
-      // Use our new loot box system to handle opening
-      const result = await openLootBox(lootBoxId, user.id);
-      
-      if (!result.success) {
-        // If there was an error or issue, return the appropriate status code
-        const statusCode = 
-          result.message.includes("not found") ? 404 :
-          result.message.includes("do not own") ? 403 :
-          result.message.includes("already opened") ? 400 : 500;
-        
-        return res.status(statusCode).json({ 
-          success: false,
-          message: result.message,
-          rewards: null
-        });
-      }
-      
-      // Return the rewards to the client
-      return res.json(result);
-    } catch (error) {
-      console.error('Error opening loot box:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Failed to open loot box", 
-        rewards: null 
-      });
-    }
-  });
+  // This route was moved to use lootBoxId parameter
   
   // Inventory Routes
   app.get('/api/inventory', authenticate, async (req, res) => {
@@ -1277,201 +1245,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post('/api/loot-boxes/:lootBoxId/open', authenticate, async (req, res) => {
     try {
-      const user = (req as any).user;
       const lootBoxId = parseInt(req.params.lootBoxId);
+      const user = (req as any).user;
       
-      // Verify the loot box exists and belongs to the user
-      const lootBox = await storage.getLootBox(lootBoxId);
-      if (!lootBox || lootBox.userId !== user.id) {
-        return res.status(404).json({ message: "Loot box not found" });
-      }
+      console.log('Opening loot box with ID:', lootBoxId);
       
-      // Check if the loot box is already opened
-      if (lootBox.opened) {
-        if (lootBox.rewards && lootBox.rewards.length > 0) {
-          console.log('Loot box already opened, returning stored rewards:', lootBox.rewards);
-          return res.json({ 
-            success: true, 
-            rewards: lootBox.rewards, 
-            alreadyOpened: true,
-            message: "Loot box already opened"
-          });
-        } else {
-          // Something went wrong previously - regenerate rewards for this already opened box
-          console.log('Loot box was opened but has no rewards, regenerating...');
-          const regeneratedRewards = generateLootBoxRewards(lootBox.type);
-          
-          // Update the loot box with the regenerated rewards
-          await storage.updateLootBox(lootBoxId, {
-            rewards: regeneratedRewards
-          });
-          
-          return res.json({ 
-            success: true, 
-            rewards: regeneratedRewards, 
-            alreadyOpened: true,
-            regenerated: true,
-            message: "Regenerated rewards for previously opened loot box"
-          });
-        }
-      }
+      // Use our new loot box system to handle opening
+      const result = await openLootBox(lootBoxId, user.id);
+      console.log('Loot box open response:', result);
       
-      // Generate rewards based on loot box type
-      console.log(`Generating rewards for ${lootBox.type} loot box...`);
-      const rewards = generateLootBoxRewards(lootBox.type);
-      console.log('Generated rewards:', rewards);
-      
-      if (!rewards || rewards.length === 0) {
-        console.log('Warning: No rewards were generated, using fallback rewards');
-        // Make sure we have an array to work with
-        const fallbackRewards = [];
+      if (!result.success) {
+        // If there was an error or issue, return the appropriate status code
+        const statusCode = 
+          result.message.includes("not found") ? 404 :
+          result.message.includes("do not own") ? 403 :
+          result.message.includes("already opened") ? 400 : 500;
         
-        // Generate random amount of cloth (1-5)
-        fallbackRewards.push({ 
-          type: 'cloth', 
-          quantity: Math.floor(Math.random() * 5) + 1 
-        });
-        
-        // Generate random amount of metal (1-3)
-        fallbackRewards.push({ 
-          type: 'metal', 
-          quantity: Math.floor(Math.random() * 3) + 1 
-        });
-        
-        // 50% chance to add tech-scrap (1-2)
-        if (Math.random() > 0.5) {
-          fallbackRewards.push({ 
-            type: 'tech-scrap', 
-            quantity: Math.floor(Math.random() * 2) + 1 
-          });
-        }
-        
-        // Replace the empty rewards with our fallback ones
-        rewards.push(...fallbackRewards);
-      }
-      
-      // Update the loot box as opened with rewards
-      await storage.updateLootBox(lootBoxId, {
-        opened: true,
-        rewards: rewards,
-        openedAt: new Date()
-      });
-      
-      // Add rewards to user's inventory
-      for (const reward of rewards) {
-        const currentQuantity = user.inventory[reward.type] || 0;
-        user.inventory[reward.type] = currentQuantity + reward.quantity;
-        
-        // Add to inventory history
-        await storage.createInventoryHistory({
-          userId: user.id,
-          type: reward.type,
-          quantity: reward.quantity,
-          action: 'gained',
-          source: `${lootBox.type} loot box`
+        return res.status(statusCode).json({ 
+          success: false,
+          message: result.message,
+          rewards: null
         });
       }
       
-      // Update user with new inventory
-      await storage.updateUser(user.id, {
-        inventory: user.inventory
-      });
-      
-      console.log('Successfully opened loot box, returning rewards:', rewards);
-      return res.json({ 
-        success: true, 
-        rewards,
-        message: "Loot box opened successfully" 
-      });
+      // Return the rewards to the client
+      return res.json(result);
     } catch (error) {
       console.error('Error opening loot box:', error);
-      return res.status(500).json({ 
-        message: "Failed to open loot box",
-        error: error.message
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to open loot box", 
+        rewards: null 
       });
     }
   });
-  
-  // Function to generate random rewards based on loot box type
-  function generateLootBoxRewards(type: string) {
-    const rewards: { type: string, quantity: number }[] = [];
-    const resources = ['cloth', 'metal', 'tech-scrap', 'circuit-board', 'sensor-crystal', 'alchemy-ink'];
-    
-    // Different loot box types have different reward profiles
-    switch (type) {
-      case 'common':
-        // 2-3 common resources, smaller quantities
-        const commonCount = Math.floor(Math.random() * 2) + 2; // 2-3 items
-        for (let i = 0; i < commonCount; i++) {
-          const resourceType = resources[Math.floor(Math.random() * 3)]; // First 3 resources are more common
-          const quantity = Math.floor(Math.random() * 3) + 1; // 1-3 of each
-          rewards.push({ type: resourceType, quantity });
-        }
-        break;
-        
-      case 'uncommon':
-        // 3-4 mixed resources, medium quantities
-        const uncommonCount = Math.floor(Math.random() * 2) + 3; // 3-4 items
-        for (let i = 0; i < uncommonCount; i++) {
-          const resourceType = resources[Math.floor(Math.random() * 4)]; // First 4 resources
-          const quantity = Math.floor(Math.random() * 4) + 2; // 2-5 of each
-          rewards.push({ type: resourceType, quantity });
-        }
-        break;
-        
-      case 'rare':
-        // 3-5 resources including rare ones, larger quantities
-        const rareCount = Math.floor(Math.random() * 3) + 3; // 3-5 items
-        for (let i = 0; i < rareCount; i++) {
-          const resourceType = resources[Math.floor(Math.random() * 6)]; // All resources
-          const quantity = Math.floor(Math.random() * 5) + 3; // 3-7 of each
-          rewards.push({ type: resourceType, quantity });
-        }
-        break;
-        
-      case 'epic':
-        // 4-6 resources with better odds for rare ones, larger quantities
-        const epicCount = Math.floor(Math.random() * 3) + 4; // 4-6 items
-        for (let i = 0; i < epicCount; i++) {
-          // Higher chance of rare resources (index 3-5)
-          const resourceIndex = Math.floor(Math.random() * 10);
-          const resourceType = resources[Math.min(resourceIndex, 5)]; // Weighted toward rarer ones
-          const quantity = Math.floor(Math.random() * 6) + 5; // 5-10 of each
-          rewards.push({ type: resourceType, quantity });
-        }
-        break;
-        
-      case 'legendary':
-        // 5-7 resources with very high odds for rare ones, largest quantities
-        const legendaryCount = Math.floor(Math.random() * 3) + 5; // 5-7 items
-        for (let i = 0; i < legendaryCount; i++) {
-          // Very high chance of rare resources
-          const resourceIndex = Math.floor(Math.random() * 12);
-          const resourceType = resources[Math.min(resourceIndex, 5)]; // Heavily weighted to rarer ones
-          const quantity = Math.floor(Math.random() * 10) + 8; // 8-17 of each
-          rewards.push({ type: resourceType, quantity });
-        }
-        break;
-        
-      default:
-        // Default case - basic rewards
-        rewards.push({ type: 'cloth', quantity: 2 });
-        rewards.push({ type: 'metal', quantity: 1 });
-    }
-    
-    // Group duplicate resource types and sum their quantities
-    const grouped: Record<string, number> = {};
-    rewards.forEach(reward => {
-      if (grouped[reward.type]) {
-        grouped[reward.type] += reward.quantity;
-      } else {
-        grouped[reward.type] = reward.quantity;
-      }
-    });
-    
-    // Convert back to array format
-    return Object.entries(grouped).map(([type, quantity]) => ({ type, quantity }));
-  }
   
   return httpServer;
 }
