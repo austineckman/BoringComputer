@@ -118,27 +118,23 @@ export default function QuestDetailPage() {
 
   if (isLoading) {
     return (
-      <MainLayout>
-        <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      </MainLayout>
+      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
     );
   }
 
   if (!quest) {
     return (
-      <MainLayout>
-        <div className="container mx-auto px-4 py-8">
-          <Card className="p-6 text-center">
-            <h2 className="text-2xl font-bold mb-4">Quest Not Found</h2>
-            <p className="mb-4">The quest you're looking for doesn't exist or has been removed.</p>
-            <Button onClick={() => navigate('/quests')} onMouseEnter={sounds.hover}>
-              Return to Quests
-            </Button>
-          </Card>
-        </div>
-      </MainLayout>
+      <div className="container mx-auto px-4 py-8">
+        <Card className="p-6 text-center">
+          <h2 className="text-2xl font-bold mb-4">Quest Not Found</h2>
+          <p className="mb-4">The quest you're looking for doesn't exist or has been removed.</p>
+          <Button onClick={() => navigate('/quests')} onMouseEnter={sounds.hover}>
+            Return to Quests
+          </Button>
+        </Card>
+      </div>
     );
   }
 
