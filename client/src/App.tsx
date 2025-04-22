@@ -14,6 +14,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { SoundProvider } from "@/context/SoundContext";
 
 function App() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
