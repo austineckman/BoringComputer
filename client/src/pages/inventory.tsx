@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import ResetDatabaseButton from '@/components/debug/ResetDatabaseButton';
 
 interface Resource {
   type: string;
@@ -538,6 +539,18 @@ export default function Inventory() {
           onClose={closeRewardModal}
           rewards={currentRewards}
         />
+        
+        {/* Development tools */}
+        <div className="mt-8 border-t border-space-light/20 pt-4">
+          <h3 className="text-xl font-bold text-brand-orange mb-2">Development Tools</h3>
+          <p className="text-brand-light/70 text-sm mb-4">
+            These tools are for development and testing purposes only. 
+            Use them to reset your progress and test features.
+          </p>
+          <div className="max-w-xs">
+            <ResetDatabaseButton />
+          </div>
+        </div>
       </div>
   );
 }
