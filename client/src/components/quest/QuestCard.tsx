@@ -40,11 +40,17 @@ const QuestCard = ({
   const { playSound } = useSoundEffects();
   
   // Get adventure line info from config
-  const adventure = themeConfig.adventureLines.find(a => a.id === adventureLine) || {
-    name: adventureLine.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    icon: "rocket",
-    color: "#777777"
-  };
+  const adventure = adventureLine ? 
+    (themeConfig.adventureLines.find(a => a.id === adventureLine) || {
+      name: adventureLine.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      icon: "rocket",
+      color: "#777777"
+    })
+    : {
+      name: "Adventure",
+      icon: "rocket",
+      color: "#777777"
+    };
 
   const handleAction = () => {
     if (status === "active" || status === "available") {

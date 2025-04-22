@@ -9,12 +9,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, LogOut, User } from "lucide-react";
+import { ChevronDown, LogOut, User, Volume2, VolumeX } from "lucide-react";
 
 const NavigationBar = () => {
   const [location] = useLocation();
   const { user, logout } = useAuth();
-  const { playSound } = useSoundEffects();
+  const { playSound, muted, toggleMute } = useSoundEffects();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
@@ -73,6 +73,18 @@ const NavigationBar = () => {
         {/* User Section */}
         {user ? (
           <div className="flex items-center space-x-4">
+            {/* Sound Toggle Button - New! */}
+            <button 
+              className="p-2 text-brand-light/70 hover:text-brand-orange transition-colors"
+              onClick={() => {
+                toggleMute();
+                if (!muted) playSound("click");
+              }}
+              title={muted ? "Unmute Sound Effects" : "Mute Sound Effects"}
+            >
+              {muted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+            </button>
+            
             <div className="flex items-center bg-space-mid rounded-full px-3 py-1">
               <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
               <span className="text-xs">Level {userLevel} {userTitle}</span>
