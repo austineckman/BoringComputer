@@ -130,7 +130,9 @@ export default function SettingsPage() {
                 size="sm"
                 className="border-brand-orange/50 text-brand-orange hover:bg-brand-orange/10 hover:text-brand-yellow"
                 onClick={() => setEditingProfile(!editingProfile)}
-                onMouseEnter={() => sounds.hover?.play()}
+                onMouseEnter={() => {
+                  if (!isMuted) sounds.hover();
+                }}
               >
                 {editingProfile ? (
                   <><Save className="mr-2 h-4 w-4" /> Save</>
@@ -192,7 +194,9 @@ export default function SettingsPage() {
                     <div className="pt-4">
                       <Button 
                         onClick={handleUpdateProfile}
-                        onMouseEnter={() => sounds.hover?.play()}
+                        onMouseEnter={() => {
+                          if (!isMuted) sounds.hover();
+                        }}
                       >
                         <Save className="mr-2 h-4 w-4" /> Save Profile
                       </Button>
@@ -242,7 +246,9 @@ export default function SettingsPage() {
                     <Button 
                       className="bg-[#5865F2] hover:bg-[#4752C4] text-white"
                       size="lg"
-                      onMouseEnter={() => sounds.hover?.play()}
+                      onMouseEnter={() => {
+                        if (!isMuted) sounds.hover();
+                      }}
                       onClick={handleConnectDiscord}
                     >
                       <Gift className="mr-2 h-5 w-5" /> Connect & Get Loot
