@@ -807,6 +807,35 @@ export class MemStorage implements IStorage {
     
     return availableQuests;
   }
+  
+  async resetDatabase(): Promise<void> {
+    // Clear all data
+    this.users = new Map();
+    this.quests = new Map();
+    this.userQuests = new Map();
+    this.submissions = new Map();
+    this.craftables = new Map();
+    this.craftedItems = new Map();
+    this.achievements = new Map();
+    this.userAchievements = new Map();
+    this.lootBoxes = new Map();
+    this.inventoryHistory = new Map();
+    
+    // Reset ID counters
+    this.userIdCounter = 1;
+    this.questIdCounter = 1;
+    this.userQuestIdCounter = 1;
+    this.submissionIdCounter = 1;
+    this.craftableIdCounter = 1;
+    this.craftedItemIdCounter = 1;
+    this.achievementIdCounter = 1;
+    this.userAchievementIdCounter = 1;
+    this.lootBoxIdCounter = 1;
+    this.inventoryHistoryIdCounter = 1;
+    
+    // Re-initialize with sample data
+    this.initializeData();
+  }
 }
 
 export const storage = new MemStorage();
