@@ -1,263 +1,249 @@
-import React from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
+import React, { useState } from 'react';
+import { Container } from '@/components/ui/container';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Sparkles, AlertCircle } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import CraftingGrid from '@/components/crafting/CraftingGrid';
 import InventoryGrid from '@/components/crafting/InventoryGrid';
 import RecipeList from '@/components/crafting/RecipeList';
 import DndProvider from '@/components/crafting/DndProvider';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { CircleCheck, Sparkles } from 'lucide-react';
-import { useSoundEffects } from '@/hooks/useSoundEffects';
-import { useToast } from '@/hooks/use-toast';
 import { useCrafting } from '@/hooks/useCrafting';
-import { Recipe } from '@/../../shared/types';
-import forgeHeroImage from '@assets/forgehero.png';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import forgeHeroBg from '@assets/forgehero.png';
+import { Recipe, RecipeReward } from '@/../../shared/types';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
 
-const SAMPLE_RECIPES: Recipe[] = [
+// Sample mock recipes until API is ready
+const mockRecipes: Recipe[] = [
   {
-    id: 'basic-circuit',
-    name: 'Basic Circuit',
-    description: 'A simple electronic circuit board, the foundation of many devices.',
+    id: 'simple-circuit',
+    name: 'Simple Circuit',
+    description: 'A basic electronic circuit that can power small devices.',
+    unlocked: true,
+    unlockedAt: 1,
     difficulty: 'beginner',
-    pattern: [
-      ['copper', 'copper', 'copper'],
-      ['copper', 'circuit-board', 'copper'],
-      ['copper', 'copper', 'copper']
-    ],
     materials: {
-      'copper': 8,
-      'circuit-board': 1
+      'copper': 2,
+      'techscrap': 1
     },
+    pattern: [
+      ['', '', '', '', ''],
+      ['', 'copper', 'copper', '', ''],
+      ['', '', 'techscrap', '', ''],
+      ['', '', '', '', ''],
+      ['', '', '', '', '']
+    ],
     rewards: [
-      {
-        itemId: 'basic-circuit',
+      { 
+        itemId: 'circuit-board',
         quantity: 1,
-        type: 'digital',
-        description: 'Can be used in more advanced recipes'
-      }
-    ],
-    unlockedAt: 1,
-    imageUrl: '/images/recipes/basic-circuit.png'
-  },
-  {
-    id: 'insulated-wire',
-    name: 'Insulated Wire',
-    description: 'Copper wire wrapped in cloth for insulation.',
-    difficulty: 'beginner',
-    pattern: [
-      ['cloth', 'cloth', 'cloth'],
-      ['copper', 'copper', 'copper'],
-      ['cloth', 'cloth', 'cloth']
-    ],
-    materials: {
-      'copper': 3,
-      'cloth': 6
-    },
-    rewards: [
+        type: 'item'
+      },
       {
-        itemId: 'insulated-wire',
-        quantity: 3,
-        type: 'digital',
-        description: 'Used in electrical connections'
+        itemId: 'xp',
+        quantity: 25,
+        type: 'xp'
       }
-    ],
-    unlockedAt: 1,
-    imageUrl: '/images/recipes/insulated-wire.png'
+    ]
   },
   {
-    id: 'power-crystal',
-    name: 'Power Crystal',
-    description: 'A crystal infused with energy, capable of powering advanced devices.',
+    id: 'reinforced-fabric',
+    name: 'Reinforced Fabric',
+    description: 'A stronger fabric material woven with special techniques.',
+    unlocked: true,
+    unlockedAt: 2,
     difficulty: 'intermediate',
+    materials: {
+      'cloth': 3,
+      'crystal': 1
+    },
     pattern: [
-      ['copper', 'crystal', 'copper'],
-      ['crystal', 'crystal', 'crystal'],
-      ['copper', 'crystal', 'copper']
+      ['', '', '', '', ''],
+      ['', 'cloth', 'cloth', '', ''],
+      ['', 'cloth', 'crystal', '', ''],
+      ['', '', '', '', ''],
+      ['', '', '', '', '']
     ],
+    rewards: [
+      { 
+        itemId: 'reinforced-fabric',
+        quantity: 1,
+        type: 'item'
+      },
+      {
+        itemId: 'xp',
+        quantity: 40,
+        type: 'xp'
+      }
+    ]
+  },
+  {
+    id: 'advanced-power-core',
+    name: 'Advanced Power Core',
+    description: 'A high-energy power core that can run advanced machinery.',
+    unlocked: true,
+    unlockedAt: 5,
+    difficulty: 'advanced',
     materials: {
       'copper': 4,
-      'crystal': 5
+      'crystal': 2,
+      'techscrap': 3
     },
-    rewards: [
-      {
-        itemId: 'power-crystal',
-        quantity: 1,
-        type: 'digital',
-        description: 'Powers energy-intensive recipes'
-      }
+    pattern: [
+      ['', '', '', '', ''],
+      ['', 'techscrap', 'copper', 'techscrap', ''],
+      ['', 'copper', 'crystal', 'copper', ''],
+      ['', 'techscrap', 'crystal', 'techscrap', ''],
+      ['', '', '', '', '']
     ],
-    unlockedAt: 5,
-    imageUrl: '/images/recipes/power-crystal.png'
+    rewards: [
+      { 
+        itemId: 'power-core',
+        quantity: 1,
+        type: 'item'
+      },
+      {
+        itemId: 'xp',
+        quantity: 75,
+        type: 'xp'
+      }
+    ]
   }
 ];
 
 const ForgePage: React.FC = () => {
   const { sounds } = useSoundEffects();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [showResults, setShowResults] = useState(false);
   
-  // Fetch inventory
-  const { data: inventory = {} } = useQuery({
-    queryKey: ['/api/inventory'],
-    staleTime: 10000
-  });
-  
-  // Setup crafting hook with inventory and recipes
+  // Use the crafting hook
   const {
     grid,
+    recipes = mockRecipes, // Use mock recipes until API is available
+    inventory,
     selectedRecipe,
-    selectRecipe,
-    addItemToGrid,
-    removeItemFromGrid,
-    resetGrid,
     highlightedCells,
     canCraft,
-    craft,
-    craftedResults,
-    clearCraftedResults
-  } = useCrafting(
-    inventory, 
-    SAMPLE_RECIPES,
-    (recipe, usedItems) => {
-      // When crafting completes, remove used items from inventory
-      updateInventoryMutation.mutate({ 
-        action: 'craft',
-        recipe: recipe.id,
-        usedItems
-      });
-    }
-  );
+    isLoading,
+    onDropItem,
+    onRemoveItem,
+    onResetGrid,
+    onSelectRecipe,
+    onCraft
+  } = useCrafting();
   
-  // Mutation to update inventory
-  const updateInventoryMutation = useMutation({
-    mutationFn: async (data: {
-      action: string,
-      recipe: string,
-      usedItems: Record<string, number>
-    }) => {
-      const res = await apiRequest('POST', '/api/crafting/craft', data);
-      return await res.json();
-    },
-    onSuccess: () => {
-      // Play completion sound
+  // Handle craft button click
+  const handleCraft = () => {
+    if (canCraft) {
+      onCraft();
+      setShowResults(true);
       sounds.craftComplete();
-      
-      // Invalidate inventory query to refresh
-      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
-      
-      // Show completion toast if not shown already
-      if (craftedResults) {
-        toast({
-          title: "Item Crafted!",
-          description: `You have crafted ${craftedResults.recipe.name}`,
-          variant: "default",
-        });
-      }
-      
-      // Reset crafting state
-      clearCraftedResults();
-    },
-    onError: (error) => {
-      toast({
-        title: "Crafting Failed",
-        description: error.message || "An error occurred during crafting",
-        variant: "destructive",
-      });
     }
-  });
-
+  };
+  
+  // Close the results dialog
+  const closeResults = () => {
+    setShowResults(false);
+  };
+  
   return (
     <MainLayout>
-      <div className="container max-w-7xl py-6 space-y-8">
-        <div className="relative w-full h-64 overflow-hidden rounded-lg mb-8">
-          <img 
-            src={forgeHeroImage}
-            alt="Gizbo's Forge" 
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent flex items-center">
-            <div className="px-8 text-white">
-              <h1 className="text-4xl font-bold mb-2">Gizbo's Forge</h1>
-              <p className="text-lg max-w-lg">
-                Welcome to Gizbo's Forge, where raw materials become valuable resources! 
-                Drag items into the crafting grid to match recipes and create new items.
-              </p>
+      <div 
+        className="bg-cover bg-center h-64 flex items-center justify-center mb-8"
+        style={{ backgroundImage: `url(${forgeHeroBg})` }}
+      >
+        <div className="text-center p-6 bg-black/50 rounded-lg backdrop-blur-sm">
+          <h1 className="text-4xl font-bold text-white mb-2">Gizbo's Forge</h1>
+          <p className="text-xl text-white">Transform your resources into powerful tools and artifacts</p>
+        </div>
+      </div>
+      
+      <Container>
+        {/* Introduction alert */}
+        <Alert className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Welcome to Gizbo's Forge!</AlertTitle>
+          <AlertDescription>
+            Select a recipe from the list, then drag items from your inventory to the crafting grid
+            to match the pattern. When the pattern matches, click the Craft button to create new items!
+          </AlertDescription>
+        </Alert>
+        
+        {/* Crafting interface */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <DndProvider>
+            <div className="lg:col-span-2 space-y-6">
+              {/* Crafting grid */}
+              <CraftingGrid 
+                grid={grid} 
+                onDropItem={onDropItem} 
+                onRemoveItem={onRemoveItem} 
+                onResetGrid={onResetGrid}
+                highlightedCells={highlightedCells}
+                selectedRecipe={selectedRecipe}
+              />
+              
+              {/* Inventory */}
+              <InventoryGrid
+                inventory={inventory as Record<string, number>}
+                selectedRecipe={selectedRecipe}
+              />
             </div>
+          </DndProvider>
+          
+          {/* Recipe list */}
+          <div>
+            <RecipeList
+              recipes={recipes}
+              selectedRecipe={selectedRecipe}
+              onSelectRecipe={onSelectRecipe}
+              inventory={inventory as Record<string, number>}
+              canCraft={canCraft}
+              onCraft={handleCraft}
+            />
           </div>
         </div>
         
-        {craftedResults && (
-          <Alert className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-            <Sparkles className="h-5 w-5 text-green-600 dark:text-green-400" />
-            <AlertTitle className="text-green-800 dark:text-green-400">
-              Crafting Success!
-            </AlertTitle>
-            <AlertDescription className="text-green-700 dark:text-green-300">
-              <div className="flex items-center gap-2 mt-1">
-                <span>You have crafted:</span>
-                <Badge variant="outline" className="text-green-600 dark:text-green-400 border-green-200 dark:border-green-700">
-                  <CircleCheck className="mr-1 h-3 w-3" />
-                  {craftedResults.recipe.name}
-                </Badge>
+        {/* Crafting results dialog */}
+        <Dialog open={showResults} onOpenChange={closeResults}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                <Sparkles className="h-5 w-5 mr-2 text-amber-500" />
+                Crafting Complete!
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedRecipe && (
+              <div className="space-y-4">
+                <p>You successfully crafted a <strong>{selectedRecipe.name}</strong>!</p>
+                
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Rewards:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedRecipe.rewards.map((reward: RecipeReward, index: number) => (
+                      <Badge 
+                        key={index} 
+                        variant="outline"
+                        className="flex items-center gap-1 p-2"
+                      >
+                        <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                        {reward.itemId} x{reward.quantity}
+                        {reward.type === 'xp' && <span className="text-green-500">XP</span>}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        <DndProvider>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <InventoryGrid
-              inventory={inventory}
-              selectedRecipe={selectedRecipe}
-            />
+            )}
             
-            <CraftingGrid
-              grid={grid}
-              onDropItem={addItemToGrid}
-              onRemoveItem={removeItemFromGrid}
-              onResetGrid={resetGrid}
-              highlightedCells={highlightedCells}
-              selectedRecipe={selectedRecipe}
-            />
-            
-            <RecipeList
-              recipes={SAMPLE_RECIPES}
-              selectedRecipe={selectedRecipe}
-              onSelectRecipe={selectRecipe}
-              inventory={inventory}
-              canCraft={canCraft}
-              onCraft={craft}
-            />
-          </div>
-        </DndProvider>
-        
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>About Gizbo's Forge</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="prose dark:prose-invert max-w-none">
-              <p>
-                Gizbo is a wide-bellied, oil-stained ogre with a monocle who runs this forge. 
-                He's known throughout the realms for his ability to transform simple materials 
-                into extraordinary creations.
-              </p>
-              <p>
-                As you progress through your quests, you'll unlock more advanced recipes. 
-                Some crafted items will give you digital rewards, while others can be 
-                redeemed for physical items that will be shipped to you!
-              </p>
-              <p>
-                <strong>Tip:</strong> Pay close attention to the pattern required for each recipe. 
-                The arrangement of materials matters just as much as having the right quantities.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            <DialogFooter>
+              <Button onClick={closeResults}>Continue Crafting</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </Container>
     </MainLayout>
   );
 };

@@ -1,14 +1,10 @@
 import React, { useState } from 'react';
 import { useDrag } from 'react-dnd';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getItemDetails } from '@/lib/itemDatabase';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 interface InventoryItemProps {
   itemId: string;
@@ -90,14 +86,14 @@ const InventoryItem: React.FC<InventoryItemProps> = ({
         <TooltipTrigger asChild>
           <div
             ref={drag}
-            className={`
-              relative p-1 rounded-md border cursor-pointer
-              transition-all duration-200
-              ${isDragging ? 'opacity-50' : 'opacity-100'}
-              ${getRarityClass()}
-              ${getRequirementStyles()}
-              ${quantity === 0 ? 'grayscale opacity-50' : ''}
-            `}
+            className={cn(
+              'relative p-1 rounded-md border cursor-pointer',
+              'transition-all duration-200',
+              isDragging ? 'opacity-50' : 'opacity-100',
+              getRarityClass(),
+              getRequirementStyles(),
+              quantity === 0 ? 'grayscale opacity-50' : ''
+            )}
             style={{ 
               boxShadow: isDragging ? '0 5px 10px rgba(0,0,0,0.2)' : 'none',
               transform: isDragging ? 'scale(1.05)' : 'scale(1)'
@@ -122,7 +118,10 @@ const InventoryItem: React.FC<InventoryItemProps> = ({
               <div className="absolute top-0 right-0 p-0.5">
                 <Badge 
                   variant={quantity >= requiredAmount ? 'outline' : 'secondary'} 
-                  className={`text-xs ${quantity >= requiredAmount ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}
+                  className={cn(
+                    'text-xs',
+                    quantity >= requiredAmount ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'
+                  )}
                 >
                   {requiredAmount}
                 </Badge>
