@@ -361,18 +361,18 @@ export default function Inventory() {
                                     item.lootBoxData?.type === 'epic' ? 'bg-purple-800 bg-epic-pulse' :
                                     'bg-amber-700 bg-legendary-pulse'
                                   }`}>
-                                    <span className="text-4xl relative z-10 scale-[0.8]">📦</span>
+                                    <span className="text-6xl relative z-10">📦</span>
                                   </div>
                                 ) : (
-                                  <div className="flex items-center justify-center w-4/5 h-4/5 mx-auto">
+                                  <div className="flex items-center justify-center w-full h-full mx-auto p-1.5">
                                     {getResourceDisplay(item.type).isImage ? (
                                       <img 
                                         src={getResourceDisplay(item.type).value} 
                                         alt={getResourceDisplay(item.type).alt || item.type}
-                                        className="max-w-full max-h-full object-contain" 
+                                        className="w-full h-full object-contain" 
                                       />
                                     ) : (
-                                      <span className="text-4xl">{resourceIcons[item.type] || '🔮'}</span>
+                                      <span className="text-5xl">{resourceIcons[item.type] || '🔮'}</span>
                                     )}
                                   </div>
                                 )}
@@ -427,15 +427,15 @@ export default function Inventory() {
                           {item && !item.isLootBox && (
                             <>
                               <div className="flex items-center justify-center h-full">
-                                <div className="flex items-center justify-center w-4/5 h-4/5 mx-auto">
+                                <div className="flex items-center justify-center w-full h-full mx-auto p-1.5">
                                   {getResourceDisplay(item.type).isImage ? (
                                     <img 
                                       src={getResourceDisplay(item.type).value} 
                                       alt={getResourceDisplay(item.type).alt || item.type}
-                                      className="max-w-full max-h-full object-contain" 
+                                      className="w-full h-full object-contain" 
                                     />
                                   ) : (
-                                    <span className="text-4xl">{resourceIcons[item.type] || '🔮'}</span>
+                                    <span className="text-5xl">{resourceIcons[item.type] || '🔮'}</span>
                                   )}
                                 </div>
                               </div>
@@ -488,7 +488,7 @@ export default function Inventory() {
                                   item.lootBoxData?.type === 'epic' ? 'bg-purple-800 bg-epic-pulse' :
                                   'bg-amber-700 bg-legendary-pulse'
                                 }`}>
-                                  <span className="text-4xl relative z-10 scale-[0.8]">📦</span>
+                                  <span className="text-6xl relative z-10">📦</span>
                                 </div>
                               </div>
                               <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
@@ -578,7 +578,7 @@ export default function Inventory() {
                     selectedItem.lootBoxData?.type === 'epic' ? 'bg-purple-800 bg-epic-pulse' :
                     'bg-amber-700 bg-legendary-pulse'
                   }`}>
-                    <span className="text-4xl relative z-10">📦</span>
+                    <span className="text-6xl relative z-10">📦</span>
                   </div>
                 ) : (
                   getResourceDisplay(selectedItem.type).isImage ? (
