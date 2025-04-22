@@ -127,6 +127,41 @@ export class MemStorage implements IStorage {
   }
 
   private initializeData() {
+    // Create default users
+    // Demo user
+    this.createUser({
+      username: 'demo',
+      email: 'demo@questgiver.com',
+      password: 'demo123', // In a real app, this would be hashed
+      roles: ['user'],
+      level: 1,
+      inventory: {
+        'cloth': 5,
+        'metal': 3,
+        'tech-scrap': 2,
+        'sensor-crystal': 1,
+        'circuit-board': 0,
+        'alchemy-ink': 0
+      }
+    });
+    
+    // Admin user
+    this.createUser({
+      username: 'admin',
+      email: 'admin@questgiver.com',
+      password: 'admin123', // In a real app, this would be hashed
+      roles: ['admin', 'user'],
+      level: 10,
+      inventory: {
+        'cloth': 100,
+        'metal': 100,
+        'tech-scrap': 100,
+        'sensor-crystal': 100,
+        'circuit-board': 100,
+        'alchemy-ink': 100
+      }
+    });
+    
     // Initialize with adventure kits and sample quests
     const adventureKits = [
       { id: 'lost-in-space', name: '30 Days Lost in Space' },
