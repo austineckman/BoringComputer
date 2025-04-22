@@ -10,6 +10,7 @@ import path from 'path';
 import { openLootBox, generateLootBoxRewards, LootBoxType } from './lootBoxSystem';
 import { getItemDetails } from './itemDatabase';
 import * as craftingRecipeRoutes from './routes/craftingRecipes';
+import adminRoutes from './routes/admin';
 
 // Setup authentication middleware
 const authenticate = async (req: Request, res: Response, next: Function) => {
