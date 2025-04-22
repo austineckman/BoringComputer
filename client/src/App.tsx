@@ -4,7 +4,7 @@ import Home from "@/pages/home";
 import Login from "@/pages/login";
 import Quests from "@/pages/quests";
 import QuestDetail from "@/pages/quest-detail";
-import Inventory from "@/pages/inventory";
+import Inventory from "@/pages/new-inventory";
 import Forge from "@/pages/forge";
 import Achievements from "@/pages/achievements";
 import Settings from "@/pages/settings";
