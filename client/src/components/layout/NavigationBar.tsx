@@ -7,9 +7,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, LogOut, User, Volume2, VolumeX } from "lucide-react";
+import { ChevronDown, LogOut, User, Volume2, VolumeX, Award, Settings } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 
 const NavigationBar = () => {
@@ -42,7 +44,6 @@ const NavigationBar = () => {
     { name: "Quests", path: "/quests" },
     { name: "Inventory", path: "/inventory" },
     { name: "Gizbo's Forge", path: "/forge" },
-    { name: "Achievements", path: "/achievements" },
   ];
 
   const handleNavClick = () => {
@@ -86,9 +87,9 @@ const NavigationBar = () => {
             <img 
               src={logoImage} 
               alt="The Quest Giver Logo" 
-              className="h-10 w-auto mr-2"
+              className="h-10 w-auto mr-3"
             />
-            <div>
+            <div className="mr-10">
               <div className="text-brand-orange font-bold">CraftingTable</div>
               <div className="text-xs">The Quest Giver</div>
             </div>
@@ -154,6 +155,46 @@ const NavigationBar = () => {
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-space-mid border border-brand-orange/30">
+                <DropdownMenuLabel className="text-brand-orange">
+                  {user.username}
+                </DropdownMenuLabel>
+                
+                <DropdownMenuSeparator className="bg-brand-orange/20" />
+                
+                <Link href="/achievements">
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      try {
+                        sounds.click?.();
+                      } catch (e) {
+                        console.warn('Could not play click sound', e);
+                      }
+                    }}
+                    className="text-brand-light hover:text-brand-orange cursor-pointer"
+                  >
+                    <Award className="mr-2 h-4 w-4" />
+                    <span>Achievements</span>
+                  </DropdownMenuItem>
+                </Link>
+                
+                <Link href="/settings">
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      try {
+                        sounds.click?.();
+                      } catch (e) {
+                        console.warn('Could not play click sound', e);
+                      }
+                    }}
+                    className="text-brand-light hover:text-brand-orange cursor-pointer"
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                </Link>
+                
+                <DropdownMenuSeparator className="bg-brand-orange/20" />
+                
                 <DropdownMenuItem 
                   onClick={() => { 
                     try {
@@ -218,6 +259,38 @@ const NavigationBar = () => {
               </div>
             </Link>
           ))}
+          
+          {user && (
+            <>
+              <div className="h-px w-full bg-brand-orange/20 my-2"></div>
+              
+              <Link href="/achievements">
+                <div 
+                  className={`block py-2 cursor-pointer flex items-center ${location === '/achievements' ? 'text-brand-orange' : 'text-brand-light'}`}
+                  onClick={() => {
+                    handleNavClick();
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <Award className="mr-2 h-4 w-4" />
+                  <span>Achievements</span>
+                </div>
+              </Link>
+              
+              <Link href="/settings">
+                <div 
+                  className={`block py-2 cursor-pointer flex items-center ${location === '/settings' ? 'text-brand-orange' : 'text-brand-light'}`}
+                  onClick={() => {
+                    handleNavClick();
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </div>
+              </Link>
+            </>
+          )}
         </div>
       )}
     </nav>
