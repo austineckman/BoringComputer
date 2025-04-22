@@ -1,230 +1,243 @@
-import React, { useState, useEffect } from 'react';
-import CraftingCell from './CraftingCell';
-import { Badge } from '@/components/ui/badge';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
+import CraftingCell from './CraftingCell';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
-import ResourceItem from '@/components/ui/resource-item';
-import { Separator } from '@/components/ui/separator';
-import { CraftingRecipe } from '@/shared/schema';
-import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { CraftingRecipe } from '@shared/schema';
 
 interface CraftingGridProps {
-  gridSize?: number;
   selectedRecipe: CraftingRecipe | null;
   inventory: Record<string, number>;
-  onCraft: (recipe: CraftingRecipe, grid: (string | null)[][]) => void;
+  onCraft: (gridPattern: (string | null)[][], recipeId: number) => Promise<void>;
+  isCrafting: boolean;
 }
 
+const GRID_SIZE = 5;
+
 const CraftingGrid: React.FC<CraftingGridProps> = ({
-  gridSize = 5,
   selectedRecipe,
   inventory,
-  onCraft
+  onCraft,
+  isCrafting,
 }) => {
+  // Initialize a 5x5 grid with all null values
   const [grid, setGrid] = useState<(string | null)[][]>(
-    Array(gridSize).fill(null).map(() => Array(gridSize).fill(null))
+    Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(null))
   );
-  const [isPatternCorrect, setIsPatternCorrect] = useState(false);
-  const [hasEnoughResources, setHasEnoughResources] = useState(false);
+  
+  const [selectedItems, setSelectedItems] = useState<Record<string, number>>({});
   const { sounds } = useSoundEffects();
-
-  // Reset grid when selected recipe changes
+  const { toast } = useToast();
+  
+  // Reset the grid when a new recipe is selected
   useEffect(() => {
-    if (selectedRecipe) {
-      // Start with a clean grid of the right size
-      const newGrid = Array(gridSize)
-        .fill(null)
-        .map(() => Array(gridSize).fill(null));
-      setGrid(newGrid);
-      setIsPatternCorrect(false);
-    }
-  }, [selectedRecipe, gridSize]);
-
-  // Check if pattern is correct and if player has enough resources
-  useEffect(() => {
-    if (!selectedRecipe) {
-      setIsPatternCorrect(false);
-      setHasEnoughResources(false);
+    setGrid(Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(null)));
+    setSelectedItems({});
+  }, [selectedRecipe]);
+  
+  // Add item to the grid
+  const handleCellDrop = useCallback((row: number, col: number, itemId: string) => {
+    if (row < 0 || row >= GRID_SIZE || col < 0 || col >= GRID_SIZE) {
       return;
     }
-
-    // Check pattern correctness
-    let patternMatches = true;
-    const recipePattern = selectedRecipe.pattern;
     
-    // For each position in the recipe pattern, check if grid has matching item
-    for (let row = 0; row < recipePattern.length; row++) {
-      for (let col = 0; col < recipePattern[row].length; col++) {
-        const expectedItem = recipePattern[row][col];
-        const actualItem = grid[row][col];
+    // Check if we have this item in our inventory
+    const currentInventoryCount = inventory[itemId] || 0;
+    const currentlyUsed = selectedItems[itemId] || 0;
+    
+    if (currentlyUsed >= currentInventoryCount) {
+      toast({
+        title: "Not enough items",
+        description: `You don't have any more ${itemId} in your inventory.`,
+        variant: "destructive",
+      });
+      sounds.error();
+      return;
+    }
+    
+    // Update the grid
+    setGrid(prev => {
+      const newGrid = [...prev];
+      newGrid[row] = [...newGrid[row]];
+      newGrid[row][col] = itemId;
+      return newGrid;
+    });
+    
+    // Update selected item counts
+    setSelectedItems(prev => ({
+      ...prev,
+      [itemId]: (prev[itemId] || 0) + 1
+    }));
+    
+    sounds.hover();
+  }, [inventory, selectedItems, sounds, toast]);
+  
+  // Remove item from the grid
+  const handleCellRemove = useCallback((row: number, col: number) => {
+    if (row < 0 || row >= GRID_SIZE || col < 0 || col >= GRID_SIZE) {
+      return;
+    }
+    
+    const itemId = grid[row][col];
+    if (!itemId) return;
+    
+    // Update the grid
+    setGrid(prev => {
+      const newGrid = [...prev];
+      newGrid[row] = [...newGrid[row]];
+      newGrid[row][col] = null;
+      return newGrid;
+    });
+    
+    // Update selected item counts
+    setSelectedItems(prev => {
+      const newSelectedItems = { ...prev };
+      newSelectedItems[itemId] = Math.max(0, (newSelectedItems[itemId] || 0) - 1);
+      if (newSelectedItems[itemId] === 0) {
+        delete newSelectedItems[itemId];
+      }
+      return newSelectedItems;
+    });
+  }, [grid]);
+  
+  // Check if the current grid matches the selected recipe pattern
+  const canCraftSelectedRecipe = useCallback(() => {
+    if (!selectedRecipe) return false;
+    
+    const pattern = selectedRecipe.pattern as (string | null)[][];
+    
+    // Check if we have all the required items in our inventory
+    for (const [itemId, quantity] of Object.entries(selectedRecipe.requiredItems)) {
+      const available = inventory[itemId] || 0;
+      if (available < quantity) return false;
+    }
+    
+    // Check if pattern matches
+    for (let row = 0; row < GRID_SIZE; row++) {
+      for (let col = 0; col < GRID_SIZE; col++) {
+        const recipeItem = pattern[row]?.[col] || null;
+        const gridItem = grid[row][col];
         
         // If recipe expects an item but grid doesn't have it (or has wrong item)
-        if (expectedItem && expectedItem !== actualItem) {
-          patternMatches = false;
-          break;
+        if (recipeItem && recipeItem !== gridItem) {
+          return false;
         }
         
         // If recipe expects empty but grid has an item
-        if (expectedItem === null && actualItem !== null) {
-          patternMatches = false;
-          break;
+        if (recipeItem === null && gridItem !== null) {
+          return false;
         }
       }
-      if (!patternMatches) break;
     }
     
-    setIsPatternCorrect(patternMatches);
+    return true;
+  }, [selectedRecipe, grid, inventory]);
+  
+  // Craft the item
+  const handleCraft = async () => {
+    if (!selectedRecipe || !canCraftSelectedRecipe()) return;
     
-    // Check if player has all required resources
-    if (patternMatches) {
-      const requiredItems = selectedRecipe.requiredItems;
-      let hasAll = true;
+    try {
+      await onCraft(grid, selectedRecipe.id);
+      sounds.craftSuccess();
       
-      // Count items already placed in grid
-      const placedItems: Record<string, number> = {};
-      for (const row of grid) {
-        for (const cell of row) {
-          if (cell) {
-            placedItems[cell] = (placedItems[cell] || 0) + 1;
-          }
-        }
-      }
+      // Reset grid after successful crafting
+      setGrid(Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(null)));
+      setSelectedItems({});
       
-      // Check each required item
-      for (const [itemId, quantity] of Object.entries(requiredItems)) {
-        const availableInInventory = inventory[itemId] || 0;
-        const alreadyPlaced = placedItems[itemId] || 0;
-        
-        if (availableInInventory < quantity - alreadyPlaced) {
-          hasAll = false;
-          break;
-        }
-      }
-      
-      setHasEnoughResources(hasAll);
-    } else {
-      setHasEnoughResources(false);
+    } catch (error) {
+      console.error('Failed to craft item:', error);
+      toast({
+        title: "Crafting failed",
+        description: "Something went wrong while crafting. Please try again.",
+        variant: "destructive",
+      });
+      sounds.error();
     }
-  }, [grid, selectedRecipe, inventory]);
-
-  const handleItemDrop = (itemId: string, rowIndex: number, colIndex: number) => {
-    const newGrid = [...grid.map(row => [...row])];
-    newGrid[rowIndex][colIndex] = itemId;
-    setGrid(newGrid);
   };
-
-  const handleCellClear = (rowIndex: number, colIndex: number) => {
-    const newGrid = [...grid.map(row => [...row])];
-    newGrid[rowIndex][colIndex] = null;
-    setGrid(newGrid);
-  };
-
-  const handleCraftClick = () => {
-    if (!selectedRecipe || !isPatternCorrect || !hasEnoughResources) return;
-    
-    sounds.craftSuccess();
-    onCraft(selectedRecipe, grid);
-    
-    // Reset grid after crafting
-    setGrid(Array(gridSize).fill(null).map(() => Array(gridSize).fill(null)));
-  };
-
-  const handleClearGrid = () => {
+  
+  // Clear the crafting grid
+  const handleClear = () => {
+    setGrid(Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(null)));
+    setSelectedItems({});
     sounds.click();
-    setGrid(Array(gridSize).fill(null).map(() => Array(gridSize).fill(null)));
   };
-
+  
+  // Determine which cells to highlight based on recipe pattern
+  const getHighlightStatus = (row: number, col: number) => {
+    if (!selectedRecipe) return false;
+    
+    const pattern = selectedRecipe.pattern as (string | null)[][];
+    const recipeItem = pattern[row]?.[col];
+    
+    return recipeItem !== undefined && recipeItem !== null;
+  };
+  
   return (
-    <div className="crafting-table-container bg-gray-200 dark:bg-gray-800 rounded-lg p-6 shadow-lg">
-      <div className="flex flex-col items-center">
-        <div className="crafting-title mb-4 flex items-center">
-          <h3 className="text-xl font-bold mr-3">Crafting Table</h3>
-          {selectedRecipe ? (
-            <Badge variant="outline" className="bg-yellow-100 dark:bg-yellow-900">
-              {selectedRecipe.name}
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="bg-gray-100 dark:bg-gray-700">
-              Select a Recipe
-            </Badge>
-          )}
-        </div>
-        
-        <div className="flex flex-row items-center justify-between mb-4">
-          <div className="crafting-grid grid gap-1" style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}>
-            {grid.map((row, rowIndex) => (
-              row.map((cell, colIndex) => (
-                <CraftingCell
-                  key={`${rowIndex}-${colIndex}`}
-                  rowIndex={rowIndex}
-                  colIndex={colIndex}
-                  item={cell}
-                  isHighlighted={selectedRecipe?.pattern[rowIndex]?.[colIndex] !== undefined}
-                  onDrop={handleItemDrop}
-                  onClear={handleCellClear}
-                  disabled={!selectedRecipe}
-                />
-              ))
-            ))}
+    <Card className="w-full">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-xl flex justify-between items-center">
+          <span>Crafting Grid</span>
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClear}
+              disabled={isCrafting || !grid.some(row => row.some(cell => cell !== null))}
+            >
+              Clear
+            </Button>
+            <Button
+              onClick={handleCraft}
+              disabled={isCrafting || !canCraftSelectedRecipe()}
+              size="sm"
+            >
+              {isCrafting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Crafting...
+                </>
+              ) : (
+                'Craft Item'
+              )}
+            </Button>
           </div>
-
-          {selectedRecipe && (
-            <div className="flex flex-col items-center mx-4">
-              <ArrowRight className="h-8 w-8 text-gray-400 mb-2" />
-              <motion.div 
-                className="result-container w-16 h-16 border-2 border-green-500 rounded-lg bg-green-50 dark:bg-green-900/30 flex items-center justify-center"
-                animate={{ 
-                  scale: [1, 1.05, 1],
-                  borderColor: isPatternCorrect && hasEnoughResources ? ['#10b981', '#34d399', '#10b981'] : undefined
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <ResourceItem
-                  type={selectedRecipe.resultItem as any}
-                  quantity={selectedRecipe.resultQuantity}
-                  size="md"
-                  interactive={false}
-                />
-              </motion.div>
-            </div>
-          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-5 gap-1 md:gap-2 mb-4">
+          {grid.map((row, rowIndex) => (
+            row.map((cell, colIndex) => (
+              <CraftingCell 
+                key={`${rowIndex}-${colIndex}`}
+                row={rowIndex}
+                col={colIndex}
+                item={cell}
+                onDrop={handleCellDrop}
+                onRemove={handleCellRemove}
+                isHighlighted={getHighlightStatus(rowIndex, colIndex)}
+              />
+            ))
+          ))}
         </div>
         
-        <Separator className="my-4" />
-        
-        <div className="crafting-actions flex space-x-3">
-          <Button 
-            variant="outline" 
-            onClick={handleClearGrid}
-            disabled={!selectedRecipe}
-          >
-            Clear Grid
-          </Button>
-          
-          <Button 
-            variant="default" 
-            onClick={handleCraftClick}
-            disabled={!selectedRecipe || !isPatternCorrect || !hasEnoughResources}
-            className={!selectedRecipe || !isPatternCorrect || !hasEnoughResources ? 'opacity-50' : 'bg-green-600 hover:bg-green-700'}
-          >
-            Craft Item
-          </Button>
-        </div>
-        
-        {selectedRecipe && !isPatternCorrect && (
-          <p className="text-amber-600 dark:text-amber-400 text-sm mt-2">
-            Pattern doesn't match the recipe. Arrange items according to the recipe guide.
-          </p>
+        {selectedRecipe && (
+          <div className="text-center text-sm text-gray-500 dark:text-gray-400 mt-2">
+            {canCraftSelectedRecipe() 
+              ? "✅ Pattern complete! Click 'Craft Item' to create your item." 
+              : "Place the required items in the highlighted positions to craft this recipe."}
+          </div>
         )}
         
-        {selectedRecipe && isPatternCorrect && !hasEnoughResources && (
-          <p className="text-red-600 dark:text-red-400 text-sm mt-2">
-            Not enough resources in your inventory to craft this item.
-          </p>
+        {!selectedRecipe && (
+          <div className="text-center text-sm text-gray-500 dark:text-gray-400 mt-2">
+            Select a recipe from the list to start crafting.
+          </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
