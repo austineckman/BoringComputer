@@ -10,7 +10,8 @@ const createSound = (path: string, volume: number = 0.6, loop: boolean = false) 
     loop: loop, // Enable looping for background music
     onloaderror: function() {
       console.warn(`Could not load sound: ${path}`);
-    }
+    },
+    preload: path.includes('pixel-dreams') ? false : true // Only preload smaller sounds, not bg music
   });
   
   return soundObj;
