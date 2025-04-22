@@ -67,9 +67,94 @@ interface LootBox {
   createdAt?: string; // Optional for backward compatibility with our current UI
 }
 
+// Define our resource descriptions for flavor text and usage descriptions
+interface ResourceDetail {
+  name: string;
+  flavorText: string;
+  usageDescription: string;
+}
+
+// Resource descriptions map
+const resourceDetails: Record<string, ResourceDetail> = {
+  'cloth': {
+    name: 'Astral Cloth',
+    flavorText: 'Shimmering fabric woven from starlight and cosmic dust. It feels cool to the touch yet radiates a gentle warmth.',
+    usageDescription: 'Used in crafting armor, bandages, and enchanted gear. Highly sought after by wizards for its magical conductivity.'
+  },
+  'copper': {
+    name: 'Copper Ingot',
+    flavorText: 'Gleaming with a warm reddish glow, these ingots were mined from the heart of Cogsworth\'s mechanical mountains.',
+    usageDescription: 'Essential component for basic circuitry, wiring, and foundational machine parts in Gizbo\'s workshop.'
+  },
+  'crystal': {
+    name: 'Prismatic Crystal',
+    flavorText: 'Faceted gems that capture and refract light in impossible patterns. Some say they contain fragments of frozen time.',
+    usageDescription: 'Powers high-end devices and serves as energy storage. Can be refined into sensor arrays or focusing lenses.'
+  },
+  'tech-scrap': {
+    name: 'Tech Scrap',
+    flavorText: 'Salvaged components from abandoned machinery. Each piece tells a story of innovation and obsolescence.',
+    usageDescription: 'Gizbo\'s favorite material for prototype building. Can be broken down or reassembled into various gadget parts.'
+  },
+  'techscrap': {
+    name: 'Tech Scrap',
+    flavorText: 'Salvaged components from abandoned machinery. Each piece tells a story of innovation and obsolescence.',
+    usageDescription: 'Gizbo\'s favorite material for prototype building. Can be broken down or reassembled into various gadget parts.'
+  },
+  'metal': {
+    name: 'Reinforced Metal',
+    flavorText: 'Alloyed plates with an unusually high tensile strength. Surprisingly lightweight despite their durability.',
+    usageDescription: 'Structural component for advanced machinery and weapons. Forms the backbone of Gizbo\'s most impressive creations.'
+  },
+  'circuit-board': {
+    name: 'Logic Circuit',
+    flavorText: 'Intricate pathways etched into synthetic substrate, pulsing with electrical potential.',
+    usageDescription: 'The brain of any complex machine. Can be programmed for various functions from simple automation to AI capabilities.'
+  },
+  'wire': {
+    name: 'Conductive Wire',
+    flavorText: 'Spools of impossibly thin metal filament that seem to hum with anticipation when uncoiled.',
+    usageDescription: 'Connects components and transmits power or data. Essential for any electrical system Gizbo designs.'
+  },
+  'gear': {
+    name: 'Precision Gears',
+    flavorText: 'Perfectly toothed wheels that mesh together with satisfying clicks. Each one is calibrated to micrometer precision.',
+    usageDescription: 'Mechanical components for clockwork devices. Gizbo insists these never go out of style despite newer technologies.'
+  },
+  'battery': {
+    name: 'Power Cell',
+    flavorText: 'Compact energy storage that emits a faint blue glow. Warm to the touch and occasionally makes soft chirping noises.',
+    usageDescription: 'Portable power source for gadgets and gizmos. Can be overcharged for explosive results (not recommended by Gizbo).'
+  },
+  'microchip': {
+    name: 'Neural Processor',
+    flavorText: 'Microscopic architecture denser than a city skyline, etched onto a sliver of material no larger than a fingernail.',
+    usageDescription: 'The cutting edge of computational technology. Enables advanced features in Gizbo\'s most ambitious projects.'
+  },
+  'loot-crate': {
+    name: 'Adventure Loot Crate',
+    flavorText: 'A mysterious container covered in arcane symbols. Something valuable rattles inside when you shake it.',
+    usageDescription: 'Contains random materials salvaged from adventure sites. Free to open and always yields useful components.'
+  }
+};
+
+// Get default details for resources without specific entries
+const getResourceDetails = (type: string): ResourceDetail => {
+  if (type in resourceDetails) {
+    return resourceDetails[type];
+  }
+  
+  return {
+    name: type.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase()),
+    flavorText: 'A mysterious material with untapped potential. Gizbo seems very interested in studying it further.',
+    usageDescription: 'Can be used in various experimental crafting projects. Gizbo is still discovering its applications.'
+  };
+};
+
 export default function Inventory() {
   const [activeTab, setActiveTab] = useState('all');
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<{type: string, quantity: number, isLootBox?: boolean, lootBoxData?: LootBox} | null>(null);
   const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
   const [currentRewards, setCurrentRewards] = useState<{type: string, quantity: number}[]>([]);
   const { sounds } = useSoundEffects();
@@ -169,6 +254,23 @@ export default function Inventory() {
     } catch (e) {
       console.warn('Could not play sound', e);
     }
+  };
+  
+  const handleItemClick = (item: {type: string, quantity: number, isLootBox?: boolean, lootBoxData?: LootBox}) => {
+    try {
+      sounds.click();
+    } catch (e) {
+      console.warn('Could not play sound', e);
+    }
+    
+    // If it's a loot box, open it
+    if (item.isLootBox && item.lootBoxData) {
+      handleLootBoxOpen(item.lootBoxData, item.lootBoxData?.rewards || []);
+      return;
+    }
+    
+    // Otherwise select the item to show details
+    setSelectedItem(item);
   };
   
   const handleTabChange = (value: string) => {
@@ -346,6 +448,74 @@ export default function Inventory() {
         </div>
         
         <div className="bg-space-mid rounded-lg border-2 border-space-light/20 p-4 mb-8">
+          {/* Item Details Panel - Shown when an item is selected */}
+          {selectedItem && (
+            <div className="mb-6 bg-space-dark rounded-lg border border-space-light/20 p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Left Column - Large Image */}
+              <div className="flex items-center justify-center">
+                <div className="w-32 h-32 md:w-40 md:h-40 bg-space-mid rounded-lg border-2 border-brand-orange/30 p-4 flex items-center justify-center">
+                  {selectedItem.isLootBox ? (
+                    <img 
+                      src={getLootCrateImage().src} 
+                      alt={getLootCrateImage().alt}
+                      className="w-full h-full object-contain pixelated" 
+                    />
+                  ) : (
+                    renderResourceIcon(selectedItem.type, 'lg')
+                  )}
+                </div>
+              </div>
+              
+              {/* Center Column - Name and description */}
+              <div className="flex flex-col">
+                <h3 className="text-xl font-bold text-brand-orange mb-2">
+                  {selectedItem.isLootBox 
+                    ? `${selectedItem.lootBoxData?.type || 'Standard'} Loot Crate` 
+                    : getResourceDetails(selectedItem.type).name}
+                </h3>
+                <div className="mb-3 flex items-center">
+                  <span className="text-brand-yellow font-medium mr-2">Quantity: {selectedItem.quantity}</span>
+                  {!selectedItem.isLootBox && (
+                    <span className="text-xs px-2 py-1 bg-brand-orange/20 rounded-full">Material</span>
+                  )}
+                </div>
+                <p className="text-sm text-brand-light/80 italic mb-4">
+                  {selectedItem.isLootBox 
+                    ? resourceDetails['loot-crate'].flavorText 
+                    : getResourceDetails(selectedItem.type).flavorText}
+                </p>
+                <Button 
+                  variant="ghost"
+                  size="sm"
+                  className="self-end text-brand-orange/60 hover:text-brand-orange hover:bg-transparent"
+                  onClick={() => setSelectedItem(null)}
+                >
+                  Close Details
+                </Button>
+              </div>
+              
+              {/* Right Column - Usage information */}
+              <div className="bg-space-mid/30 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-brand-yellow mb-2">Usage Information</h4>
+                <p className="text-sm text-brand-light/90">
+                  {selectedItem.isLootBox 
+                    ? resourceDetails['loot-crate'].usageDescription 
+                    : getResourceDetails(selectedItem.type).usageDescription}
+                </p>
+                {selectedItem.isLootBox && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-4 w-full bg-brand-orange/20 hover:bg-brand-orange/30 border-brand-orange/30"
+                    onClick={() => selectedItem.lootBoxData && handleLootBoxOpen(selectedItem.lootBoxData, selectedItem.lootBoxData?.rewards || [])}
+                  >
+                    Open Crate
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+          
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <div className="flex items-center justify-between border-b border-space-light/20 pb-3 mb-4">
               <TabsList className="bg-space-dark">
@@ -384,7 +554,7 @@ export default function Inventory() {
                         <div 
                           className={`aspect-square bg-space-dark border ${item ? 'border-space-light/40 hover:border-brand-orange/60' : 'border-space-light/10'} rounded-md p-1 relative cursor-pointer transition-colors`}
                           onMouseEnter={() => item && handleItemHover(item.type)}
-                          onClick={() => item?.isLootBox && item.lootBoxData && handleLootBoxOpen(item.lootBoxData, item.lootBoxData?.rewards || [])}
+                          onClick={() => item && handleItemClick(item)}
                         >
                           {item && (
                             <>
@@ -454,6 +624,7 @@ export default function Inventory() {
                           <div 
                             className="aspect-square bg-space-dark border border-space-light/40 hover:border-brand-orange/60 rounded-md p-1 relative cursor-pointer transition-colors"
                             onMouseEnter={() => handleItemHover(item.type)}
+                            onClick={() => handleItemClick(item)}
                           >
                             <div className="flex items-center justify-center h-full">
                               <div className="w-full h-full flex items-center justify-center">
@@ -497,7 +668,7 @@ export default function Inventory() {
                           <div 
                             className="aspect-square bg-space-dark border border-space-light/40 hover:border-brand-orange/60 rounded-md p-1 relative cursor-pointer transition-colors"
                             onMouseEnter={() => handleItemHover(item.type)}
-                            onClick={() => item.lootBoxData && handleLootBoxOpen(item.lootBoxData, item.lootBoxData?.rewards || [])}
+                            onClick={() => handleItemClick(item)}
                           >
                             <div className="flex items-center justify-center h-full">
                               <div className={`w-full h-full flex items-center justify-center rounded-md overflow-hidden bg-space-mid`}>
