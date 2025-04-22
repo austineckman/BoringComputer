@@ -1,16 +1,50 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card } from '@/components/ui/card';
-import { Loader2, Package2, Clock, Sparkles, Info, Book, Gift } from 'lucide-react';
+import React, { useState } from 'react';
+import { 
+  Tabs, 
+  TabsList, 
+  TabsTrigger, 
+  TabsContent 
+} from '@/components/ui/tabs';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from '@/components/ui/tooltip';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { LootBoxItem, LootBoxRewardModal } from '@/components/inventory/LootBox';
-import MainLayout from '@/components/layout/MainLayout';
+import { Clock, Gift, Loader2 } from 'lucide-react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { apiRequest, queryClient } from '@/lib/queryClient';
-import ResetDatabaseButton from '@/components/debug/ResetDatabaseButton';
+
+// Define resource icons map
+const resourceIcons: Record<string, string> = {
+  'cloth': '🧵',
+  'metal': '🔧',
+  'wood': '🪵',
+  'crystal': '💎',
+  'energy': '⚡',
+  'circuit': '🔌',
+  'plating': '🛡️',
+  'data': '💾',
+  'glass': '🔍',
+  'wire': '📎',
+  'gear': '⚙️',
+  'battery': '🔋',
+  'microchip': '🖥️',
+  'plastic': '📏',
+  'rubber': '🧊',
+  'nano-fiber': '🧪',
+  'quantum-bit': '✨',
+};
 
 interface Resource {
   type: string;
@@ -31,41 +65,27 @@ interface LootBox {
   createdAt?: string; // Optional for backward compatibility with our current UI
 }
 
-// Resource images mapping - these are just placeholders for the material icons
-const resourceIcons: Record<string, string> = {
-  'cloth': '🧵',
-  'metal': '🔗',
-  'tech-scrap': '🔌',
-  'circuit-board': '🖥️',
-  'crystal-core': '💎',
-  'energy-cell': '🔋',
-  'nano-chip': '🔬',
-  'quantum-relay': '📡',
-  'loot-box': '📦'
-};
-
 export default function Inventory() {
-  const { toast } = useToast();
-  const { sounds } = useSoundEffects();
+  const [activeTab, setActiveTab] = useState('all');
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
   const [currentRewards, setCurrentRewards] = useState<{type: string, quantity: number}[]>([]);
-  const [activeTab, setActiveTab] = useState("materials");
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const { sounds } = useSoundEffects();
   
-  // Get inventory resources
+  // Fetch resources from inventory API
   const { data: resources, isLoading: isLoadingResources } = useQuery({
     queryKey: ['/api/inventory'],
     queryFn: () => fetch('/api/inventory').then(res => res.json()),
   });
   
-  // Get loot boxes
+  // Fetch loot boxes
   const { data: lootBoxes, isLoading: isLoadingLootBoxes } = useQuery({
     queryKey: ['/api/loot-boxes'],
     queryFn: () => fetch('/api/loot-boxes').then(res => res.json()),
   });
   
-  // Get inventory history
-  const { data: history, isLoading: isLoadingHistory } = useQuery({
+  // Fetch inventory history
+  const { data: inventoryHistory, isLoading: isLoadingHistory } = useQuery({
     queryKey: ['/api/inventory/history'],
     queryFn: () => fetch('/api/inventory/history').then(res => res.json()),
   });
@@ -332,7 +352,7 @@ export default function Inventory() {
                         <div 
                           className={`aspect-square bg-space-dark border ${item ? 'border-space-light/40 hover:border-brand-orange/60' : 'border-space-light/10'} rounded-md p-1 relative cursor-pointer transition-colors`}
                           onMouseEnter={() => item && handleItemHover(item.type)}
-                          onClick={() => item?.isLootBox && item.lootBoxData && handleLootBoxOpen(item.lootBoxData, [])}
+                          onClick={() => item?.isLootBox && item.lootBoxData && handleLootBoxOpen(item.lootBoxData, item.lootBoxData?.rewards || [])}
                         >
                           {item && (
                             <>
@@ -374,9 +394,14 @@ export default function Inventory() {
                               Quantity: {item.quantity}
                             </p>
                             {item.isLootBox && (
-                              <p className="text-xs mt-1 text-brand-light/60">
-                                Click to open this crate
-                              </p>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="mt-2 w-full bg-brand-orange/20 hover:bg-brand-orange/30 border-brand-orange/30"
+                                onClick={() => item.lootBoxData && handleLootBoxOpen(item.lootBoxData, item.lootBoxData?.rewards || [])}
+                              >
+                                Open Crate
+                              </Button>
                             )}
                           </div>
                         </TooltipContent>
@@ -390,26 +415,22 @@ export default function Inventory() {
             <TabsContent value="materials" className="mt-0">
               <div className="grid grid-cols-6 sm:grid-cols-7 gap-2">
                 {inventoryGrid.map((item, index) => (
-                  <TooltipProvider key={index}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div 
-                          className={`aspect-square bg-space-dark border ${item ? 'border-space-light/40 hover:border-brand-orange/60' : 'border-space-light/10'} rounded-md p-1 relative cursor-pointer transition-colors`}
-                          onMouseEnter={() => item && handleItemHover(item.type)}
-                        >
-                          {item && !item.isLootBox && (
-                            <>
-                              <div className="flex items-center justify-center h-full">
-                                <span className="text-2xl">{resourceIcons[item.type] || '🔮'}</span>
-                              </div>
-                              <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
-                                {item.quantity}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </TooltipTrigger>
-                      {item && !item.isLootBox && (
+                  item && !item.isLootBox ? (
+                    <TooltipProvider key={index}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div 
+                            className="aspect-square bg-space-dark border border-space-light/40 hover:border-brand-orange/60 rounded-md p-1 relative cursor-pointer transition-colors"
+                            onMouseEnter={() => handleItemHover(item.type)}
+                          >
+                            <div className="flex items-center justify-center h-full">
+                              <span className="text-2xl">{resourceIcons[item.type] || '🔮'}</span>
+                            </div>
+                            <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
+                              {item.quantity}
+                            </div>
+                          </div>
+                        </TooltipTrigger>
                         <TooltipContent side="top" className="bg-space-dark border-brand-orange/30 text-brand-light p-3">
                           <div className="space-y-1">
                             <p className="font-bold capitalize text-brand-orange">
@@ -423,9 +444,11 @@ export default function Inventory() {
                             </p>
                           </div>
                         </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </TooltipProvider>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    <div key={index} className="aspect-square bg-space-dark border border-space-light/10 rounded-md"></div>
+                  )
                 ))}
               </div>
             </TabsContent>
@@ -433,39 +456,35 @@ export default function Inventory() {
             <TabsContent value="loot-boxes" className="mt-0">
               <div className="grid grid-cols-6 sm:grid-cols-7 gap-2">
                 {inventoryGrid.map((item, index) => (
-                  <TooltipProvider key={index}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div 
-                          className={`aspect-square bg-space-dark border ${item ? 'border-space-light/40 hover:border-brand-orange/60' : 'border-space-light/10'} rounded-md p-1 relative cursor-pointer transition-colors`}
-                          onMouseEnter={() => item && handleItemHover(item.type)}
-                          onClick={() => item?.isLootBox && item.lootBoxData && handleLootBoxOpen(item.lootBoxData, [])}
-                        >
-                          {item && item.isLootBox && (
-                            <>
-                              <div className="flex items-center justify-center h-full">
-                                <div className={`w-full h-full flex items-center justify-center rounded-md overflow-hidden ${
-                                  item.lootBoxData?.type === 'common' ? 'bg-gray-700 bg-common-pulse' :
-                                  item.lootBoxData?.type === 'uncommon' ? 'bg-green-800 bg-uncommon-pulse' :
-                                  item.lootBoxData?.type === 'rare' ? 'bg-blue-800 bg-rare-pulse' :
-                                  item.lootBoxData?.type === 'epic' ? 'bg-purple-800 bg-epic-pulse' :
-                                  'bg-amber-700 bg-legendary-pulse'
-                                }`}>
-                                  <span className="text-2xl relative z-10">📦</span>
-                                </div>
+                  item && item.isLootBox ? (
+                    <TooltipProvider key={index}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div 
+                            className="aspect-square bg-space-dark border border-space-light/40 hover:border-brand-orange/60 rounded-md p-1 relative cursor-pointer transition-colors"
+                            onMouseEnter={() => handleItemHover(item.type)}
+                            onClick={() => item.lootBoxData && handleLootBoxOpen(item.lootBoxData, item.lootBoxData?.rewards || [])}
+                          >
+                            <div className="flex items-center justify-center h-full">
+                              <div className={`w-full h-full flex items-center justify-center rounded-md overflow-hidden ${
+                                item.lootBoxData?.type === 'common' ? 'bg-gray-700 bg-common-pulse' :
+                                item.lootBoxData?.type === 'uncommon' ? 'bg-green-800 bg-uncommon-pulse' :
+                                item.lootBoxData?.type === 'rare' ? 'bg-blue-800 bg-rare-pulse' :
+                                item.lootBoxData?.type === 'epic' ? 'bg-purple-800 bg-epic-pulse' :
+                                'bg-amber-700 bg-legendary-pulse'
+                              }`}>
+                                <span className="text-2xl relative z-10">📦</span>
                               </div>
-                              <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
-                                {item.quantity}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </TooltipTrigger>
-                      {item && item.isLootBox && (
+                            </div>
+                            <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
+                              {item.quantity}
+                            </div>
+                          </div>
+                        </TooltipTrigger>
                         <TooltipContent side="top" className="bg-space-dark border-brand-orange/30 text-brand-light p-3">
                           <div className="space-y-1">
                             <p className="font-bold capitalize text-brand-orange">
-                              {item.lootBoxData?.type} Loot Crate
+                              {`${item.lootBoxData?.type} Loot Crate`}
                             </p>
                             <p className="text-xs text-brand-light/70">
                               A sealed container with valuable materials. Free to open.
@@ -473,54 +492,56 @@ export default function Inventory() {
                             <p className="text-xs text-brand-yellow">
                               Quantity: {item.quantity}
                             </p>
-                            <p className="text-xs mt-1 text-brand-light/60">
-                              Click to open this crate
-                            </p>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="mt-2 w-full bg-brand-orange/20 hover:bg-brand-orange/30 border-brand-orange/30"
+                              onClick={() => item.lootBoxData && handleLootBoxOpen(item.lootBoxData, item.lootBoxData?.rewards || [])}
+                            >
+                              Open Crate
+                            </Button>
                           </div>
                         </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </TooltipProvider>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    <div key={index} className="aspect-square bg-space-dark border border-space-light/10 rounded-md"></div>
+                  )
                 ))}
               </div>
             </TabsContent>
             
-            {/* History Tab */}
             <TabsContent value="history" className="mt-0">
-              <div className="bg-space-dark rounded-lg border border-space-light/10 p-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <Book className="text-brand-orange" size={20} />
-                  <h3 className="text-xl font-bold">Resource History</h3>
-                </div>
-                
-                {history && history.length > 0 ? (
-                  <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-                    {history.map((entry: any, index: number) => (
-                      <div key={index} className="p-3 border border-space-light/10 rounded-md flex justify-between items-center bg-space-mid hover:bg-space-mid/80 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-md bg-space-dark flex items-center justify-center">
-                            <span className="text-xl">{resourceIcons[entry.type] || '🔮'}</span>
-                          </div>
+              <div className="bg-space-dark rounded-lg p-4">
+                {inventoryHistory && inventoryHistory.length > 0 ? (
+                  <div className="space-y-2">
+                    {inventoryHistory.map((entry: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between border-b border-space-light/10 pb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">{resourceIcons[entry.type] || '🔮'}</span>
                           <div>
-                            <span className={`font-medium capitalize ${entry.action === 'gained' ? 'text-green-400' : 'text-red-400'}`}>
-                              {entry.action === 'gained' ? '+' : '-'}{entry.quantity} {entry.type.replace('-', ' ')}
-                            </span>
+                            <p className="font-medium capitalize">{entry.type.replace('-', ' ')}</p>
                             <p className="text-xs text-brand-light/60">
-                              {entry.source}
+                              {entry.action === 'gained' ? 'Gained from ' : 'Used for '} 
+                              <span className="text-brand-orange">{entry.source}</span>
                             </p>
                           </div>
                         </div>
-                        <div className="text-xs text-brand-light/50 whitespace-nowrap">
-                          {new Date(entry.date).toLocaleDateString()}
+                        <div className="text-right">
+                          <p className={`font-bold ${entry.action === 'gained' ? 'text-green-500' : 'text-red-500'}`}>
+                            {entry.action === 'gained' ? '+' : '-'}{entry.quantity}
+                          </p>
+                          <p className="text-xs text-brand-light/60">
+                            {new Date(entry.createdAt).toLocaleDateString()}
+                          </p>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-10 text-brand-light/40">
-                    <Package2 className="mx-auto mb-2 h-10 w-10 opacity-50" />
-                    <p>No resource history yet.</p>
-                    <p className="text-xs mt-2">Complete quests to earn resources!</p>
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <p className="text-lg text-brand-light/60">No inventory history yet</p>
+                    <p className="text-sm text-brand-light/40 mt-1">Complete quests to earn resources</p>
                   </div>
                 )}
               </div>
@@ -528,54 +549,45 @@ export default function Inventory() {
           </Tabs>
         </div>
         
-        {/* Item Details Panel (showing when hovering over an item) */}
-        {hoveredItem && (
-          <div className="bg-space-dark rounded-lg border border-brand-orange/20 p-4 mb-8">
-            <div className="flex items-start gap-4">
-              <div className="w-16 h-16 rounded-md bg-space-mid flex items-center justify-center">
-                <span className="text-3xl">{resourceIcons[hoveredItem] || '🔮'}</span>
-              </div>
-              
-              <div className="flex-1">
-                <h3 className="text-xl font-bold capitalize text-brand-orange">
-                  {hoveredItem.replace('-', ' ')}
-                </h3>
-                <p className="text-sm text-brand-light/70 mt-1">
-                  {hoveredItem.includes('loot-box') 
-                    ? "A sealed container with valuable materials. Free to open and received as quest rewards."
-                    : "A crafting material used in Gizbo's Forge to create both digital and physical rewards."
-                  }
-                </p>
-              </div>
-              
-              <div className="hidden sm:block">
-                <Button variant="outline" size="sm" className="gap-2 border-brand-orange/20">
-                  <Info size={14} />
-                  <span>Details</span>
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-        
         {/* Loot Box Rewards Modal */}
-        <LootBoxRewardModal 
-          isOpen={isRewardModalOpen}
-          onClose={closeRewardModal}
-          rewards={currentRewards}
-        />
-        
-        {/* Development tools */}
-        <div className="mt-8 border-t border-space-light/20 pt-4">
-          <h3 className="text-xl font-bold text-brand-orange mb-2">Development Tools</h3>
-          <p className="text-brand-light/70 text-sm mb-4">
-            These tools are for development and testing purposes only. 
-            Use them to reset your progress and test features.
-          </p>
-          <div className="max-w-xs">
-            <ResetDatabaseButton />
-          </div>
-        </div>
+        <Dialog open={isRewardModalOpen} onOpenChange={setIsRewardModalOpen}>
+          <DialogContent className="bg-space-dark border-brand-orange/30 sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-center text-xl text-brand-orange">Loot Box Rewards!</DialogTitle>
+              <DialogDescription className="text-center text-brand-light/70">
+                You received the following items:
+              </DialogDescription>
+            </DialogHeader>
+            
+            {currentRewards.length > 0 ? (
+              <div className="grid grid-cols-2 gap-4 py-4">
+                {currentRewards.map((reward, index) => (
+                  <div 
+                    key={index} 
+                    className="flex flex-col items-center p-3 bg-space-mid rounded-lg border border-space-light/20 hover:border-brand-orange/40 transition-colors"
+                  >
+                    <span className="text-3xl mb-2">{resourceIcons[reward.type] || '🔮'}</span>
+                    <span className="font-medium capitalize text-brand-light">{reward.type.replace('-', ' ')}</span>
+                    <span className="text-brand-yellow text-lg font-bold">+{reward.quantity}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center">
+                <p className="text-brand-light/70">No rewards found in this loot box.</p>
+              </div>
+            )}
+            
+            <div className="mt-4 flex justify-center">
+              <Button 
+                className="bg-brand-orange hover:bg-brand-orange/80 text-white"
+                onClick={closeRewardModal}
+              >
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
   );
 }
