@@ -13,7 +13,14 @@ import {
 } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { itemDatabase, ItemDetails } from '../itemDatabase';
+import { 
+  itemDatabase, 
+  ItemDetails, 
+  getItemDetails, 
+  addOrUpdateItem, 
+  removeItem, 
+  getAllItems 
+} from '../itemDatabase';
 
 const router = Router();
 
@@ -131,8 +138,8 @@ router.delete('/quests/:id', async (req, res) => {
 // Get all items
 router.get('/items', async (req, res) => {
   try {
-    // Use the in-memory itemDatabase that was imported at the top of the file
-    const allItems = Object.values(itemDatabase);
+    // Use our new getAllItems function
+    const allItems = getAllItems();
     res.json(allItems);
   } catch (error) {
     console.error('Error fetching items:', error);
@@ -160,10 +167,6 @@ router.get('/items/:id', async (req, res) => {
 // Create a new item
 router.post('/items', async (req, res) => {
   try {
-    // Since we're using a static in-memory database, 
-    // we can't actually modify it at runtime in this implementation.
-    // In a real application, we would update the itemDatabase here.
-    // For now, we'll just return a mock success response
     const itemData = req.body as ItemDetails;
     
     // Validation
@@ -171,11 +174,9 @@ router.post('/items', async (req, res) => {
       return res.status(400).json({ error: 'Required fields missing' });
     }
     
-    // Pretend we added it
-    res.status(201).json({
-      ...itemData,
-      message: "Note: In this demo, the in-memory database is static and cannot be modified at runtime."
-    });
+    // Add the item to our mutable database
+    const newItem = addOrUpdateItem(itemData);
+    res.status(201).json(newItem);
   } catch (error) {
     console.error('Error creating item:', error);
     res.status(500).json({ error: 'Failed to create item' });
@@ -186,8 +187,6 @@ router.post('/items', async (req, res) => {
 router.put('/items/:id', async (req, res) => {
   try {
     const id = req.params.id;
-    // Since we're using a static in-memory database, 
-    // we can't actually modify it at runtime in this implementation.
     
     // Check if the item exists
     const existingItem = getItemDetails(id);
@@ -203,11 +202,9 @@ router.put('/items/:id', async (req, res) => {
       return res.status(400).json({ error: 'Required fields missing' });
     }
     
-    // Pretend we updated it
-    res.json({
-      ...itemData,
-      message: "Note: In this demo, the in-memory database is static and cannot be modified at runtime."
-    });
+    // Update the item in our mutable database
+    const updatedItem = addOrUpdateItem(itemData);
+    res.json(updatedItem);
   } catch (error) {
     console.error('Error updating item:', error);
     res.status(500).json({ error: 'Failed to update item' });
@@ -219,9 +216,6 @@ router.delete('/items/:id', async (req, res) => {
   try {
     const id = req.params.id;
     
-    // Since we're using a static in-memory database,
-    // we can't actually delete items at runtime in this implementation.
-    
     // Check if the item exists
     const existingItem = getItemDetails(id);
     
@@ -229,11 +223,17 @@ router.delete('/items/:id', async (req, res) => {
       return res.status(404).json({ error: 'Item not found' });
     }
     
-    // Pretend we deleted it
-    res.json({
-      message: 'Item deletion simulated successfully. Note: In this demo, the in-memory database is static and cannot be modified at runtime.',
-      item: existingItem
-    });
+    // Remove the item from our mutable database
+    const success = removeItem(id);
+    
+    if (success) {
+      res.json({
+        message: 'Item deleted successfully',
+        item: existingItem
+      });
+    } else {
+      res.status(500).json({ error: 'Failed to delete item' });
+    }
   } catch (error) {
     console.error('Error deleting item:', error);
     res.status(500).json({ error: 'Failed to delete item' });
