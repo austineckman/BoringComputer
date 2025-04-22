@@ -340,7 +340,7 @@ export default function Inventory() {
             
             {/* Grid Layout View - Applies to all tabs except history */}
             <TabsContent value="all" className="mt-0">
-              <div className="grid grid-cols-6 sm:grid-cols-7 gap-2 relative">
+              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3 relative">
                 {inventoryGrid.map((item, index) => (
                   <TooltipProvider key={index}>
                     <Tooltip>
