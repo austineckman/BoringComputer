@@ -60,11 +60,11 @@ export type SoundName = keyof typeof sounds;
 export function playSound(name: SoundName): void {
   try {
     const sound = sounds[name];
-    if (sound) {
+    if (sound && typeof sound.play === 'function') {
       // Play the actual sound file without any synthetic fallbacks
       sound.play();
     } else {
-      console.warn(`Sound "${name}" not found`);
+      console.warn(`Sound "${name}" not found or play is not a function`);
     }
   } catch (error) {
     console.warn(`Error playing sound "${name}":`, error);
