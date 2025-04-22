@@ -73,7 +73,12 @@ export function LootBoxItem({ lootBox, onOpen }: LootBoxProps) {
   const colorScheme = lootBoxColors[lootBox.type as keyof typeof lootBoxColors] || lootBoxColors.common;
 
   const handleClick = () => {
-    sounds.click();
+    try {
+      sounds.click();
+    } catch (e) {
+      console.warn('Could not play click sound', e);
+    }
+    
     if (lootBox.opened) {
       // Just show the rewards if already opened
       onOpen(lootBox, lootBox.rewards || []);
@@ -85,13 +90,18 @@ export function LootBoxItem({ lootBox, onOpen }: LootBoxProps) {
 
   const handleOpenLootBox = async () => {
     setIsOpening(true);
-    sounds.open();
+    
+    try {
+      sounds.open();
+    } catch (e) {
+      console.warn('Could not play open sound', e);
+    }
     
     try {
       const res = await apiRequest('POST', `/api/loot-boxes/${lootBox.id}/open`);
       const data = await res.json();
       
-      setRewards(data.rewards);
+      setRewards(data.rewards || []);
       
       // Start animation sequence
       setCurrentIndex(0);
@@ -107,6 +117,12 @@ export function LootBoxItem({ lootBox, onOpen }: LootBoxProps) {
       });
       setIsOpening(false);
       setShowOpenModal(false);
+      
+      try {
+        sounds.error();
+      } catch (e) {
+        console.warn('Could not play error sound', e);
+      }
     }
   };
 
@@ -114,7 +130,11 @@ export function LootBoxItem({ lootBox, onOpen }: LootBoxProps) {
   useEffect(() => {
     if (rewards.length > 0 && currentIndex < rewards.length) {
       const timer = setTimeout(() => {
-        sounds.reward();
+        try {
+          sounds.reward();
+        } catch (e) {
+          console.warn('Could not play reward sound', e);
+        }
         setCurrentIndex(curr => curr + 1);
       }, 1000); // 1 second between each reward reveal
       
@@ -254,8 +274,19 @@ interface LootBoxRewardModalProps {
 }
 
 export function LootBoxRewardModal({ isOpen, onClose, rewards }: LootBoxRewardModalProps) {
+  const { sounds } = useSoundEffects();
+  
+  const handleClose = () => {
+    try {
+      sounds.click();
+    } catch (e) {
+      console.warn('Could not play click sound', e);
+    }
+    onClose();
+  };
+  
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl mb-4">
@@ -279,7 +310,7 @@ export function LootBoxRewardModal({ isOpen, onClose, rewards }: LootBoxRewardMo
         </div>
         
         <DialogFooter>
-          <Button onClick={onClose} className="w-full">
+          <Button onClick={handleClose} className="w-full">
             Close
           </Button>
         </DialogFooter>
