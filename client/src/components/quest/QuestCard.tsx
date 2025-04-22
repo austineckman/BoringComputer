@@ -4,6 +4,7 @@ import PixelButton from "@/components/ui/pixel-button";
 import ResourceItem from "@/components/ui/resource-item";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { themeConfig } from "@/lib/themeConfig";
+import { Link } from "wouter";
 
 interface QuestReward {
   type: string;
@@ -37,7 +38,7 @@ const QuestCard = ({
   onStart,
   onContinue
 }: QuestCardProps) => {
-  const { playAdventureSound, sounds } = useSoundEffects();
+  const { sounds } = useSoundEffects();
   
   // Get adventure line info from config
   const adventure = adventureLine ? 
@@ -52,15 +53,10 @@ const QuestCard = ({
       color: "#777777"
     };
 
-  // Handle hover on quest card with adventure-specific sound
+  // Handle hover on quest card with sound
   const handleHover = () => {
     if (status === "active" || status === "available") {
-      // Make sure adventureLine is defined before using it
-      if (adventureLine) {
-        playAdventureSound(adventureLine);
-      } else {
-        sounds.hover();
-      }
+      sounds.hover();
     } else {
       sounds.hover();
     }
@@ -134,7 +130,12 @@ const QuestCard = ({
       onMouseEnter={handleHover}
       className={status === "active" || status === "available" ? "cursor-pointer" : ""}
     >
-      <PixelCard active={status === "active"} interactive={true}>
+      <PixelCard 
+        active={status === "active"} 
+        interactive={true}
+        as="a" 
+        href={`/quests/${id}`}
+      >
         {/* Quest Header with Adventure Line Label */}
         <PixelCardHeader color={status === "active" ? adventure.color : "bg-space-light"}>
           <div className="flex items-center">
