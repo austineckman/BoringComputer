@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import PixelButton from "@/components/ui/pixel-button";
 import { themeConfig } from "@/lib/themeConfig";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
+import AdventureImage from "@/components/adventure/AdventureImage";
 import { Link } from "wouter";
 
 const Quests = () => {
@@ -173,8 +174,8 @@ const Quests = () => {
             >
               {/* Image container */}
               <div className="h-40 w-full overflow-hidden">
-                <img 
-                  src={adventure.image}
+                <AdventureImage 
+                  adventureId={adventure.id}
                   alt={adventure.name}
                   className="w-full h-full object-cover"
                 />
