@@ -239,16 +239,13 @@ export default function Inventory() {
   
   if (isLoadingResources || isLoadingLootBoxes || isLoadingHistory) {
     return (
-      <MainLayout>
         <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
-      </MainLayout>
     );
   }
 
   return (
-    <MainLayout>
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -542,6 +539,5 @@ export default function Inventory() {
           rewards={currentRewards}
         />
       </div>
-    </MainLayout>
   );
 }
