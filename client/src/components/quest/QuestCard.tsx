@@ -151,6 +151,17 @@ const QuestCard = ({
   // Wrap the content
   const content = (
     <PixelCard active={status === "active"} interactive={true}>
+      {/* Adventure Line Image Banner */}
+      {adventure.image && (
+        <div className="h-24 w-full overflow-hidden">
+          <img 
+            src={adventure.image}
+            alt={adventure.name}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+      
       {/* Quest Header with Adventure Line Label */}
       <PixelCardHeader color={status === "active" ? adventure.color : "bg-space-light"}>
         <div className="flex items-center">
