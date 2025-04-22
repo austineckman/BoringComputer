@@ -11,7 +11,7 @@ import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import ResetDatabaseButton from '@/components/debug/ResetDatabaseButton';
-import { resourceImages, getResourceDisplay } from '@/lib/resourceImages';
+import { resourceImages, getResourceDisplay, getLootCrateImage } from '@/lib/resourceImages';
 
 interface Resource {
   type: string;
@@ -354,14 +354,12 @@ export default function Inventory() {
                             <>
                               <div className="flex items-center justify-center h-full">
                                 {item.isLootBox ? (
-                                  <div className={`w-full h-full flex items-center justify-center rounded-md overflow-hidden ${
-                                    item.lootBoxData?.type === 'common' ? 'bg-gray-700 bg-common-pulse' :
-                                    item.lootBoxData?.type === 'uncommon' ? 'bg-green-800 bg-uncommon-pulse' :
-                                    item.lootBoxData?.type === 'rare' ? 'bg-blue-800 bg-rare-pulse' :
-                                    item.lootBoxData?.type === 'epic' ? 'bg-purple-800 bg-epic-pulse' :
-                                    'bg-amber-700 bg-legendary-pulse'
-                                  }`}>
-                                    <span className="text-6xl relative z-10">📦</span>
+                                  <div className={`w-full h-full flex items-center justify-center rounded-md overflow-hidden bg-space-mid`}>
+                                    <img 
+                                      src={getLootCrateImage().src} 
+                                      alt={getLootCrateImage().alt}
+                                      className="w-full h-full object-contain" 
+                                    />
                                   </div>
                                 ) : (
                                   <div className="flex items-center justify-center w-full h-full mx-auto p-0">
@@ -482,13 +480,17 @@ export default function Inventory() {
                             <>
                               <div className="flex items-center justify-center h-full">
                                 <div className={`w-full h-full flex items-center justify-center rounded-md overflow-hidden ${
-                                  item.lootBoxData?.type === 'common' ? 'bg-gray-700 bg-common-pulse' :
-                                  item.lootBoxData?.type === 'uncommon' ? 'bg-green-800 bg-uncommon-pulse' :
-                                  item.lootBoxData?.type === 'rare' ? 'bg-blue-800 bg-rare-pulse' :
-                                  item.lootBoxData?.type === 'epic' ? 'bg-purple-800 bg-epic-pulse' :
-                                  'bg-amber-700 bg-legendary-pulse'
+                                  item.lootBoxData?.type === 'common' ? 'bg-space-mid' :
+                                  item.lootBoxData?.type === 'uncommon' ? 'bg-space-mid' :
+                                  item.lootBoxData?.type === 'rare' ? 'bg-space-mid' :
+                                  item.lootBoxData?.type === 'epic' ? 'bg-space-mid' :
+                                  'bg-space-mid'
                                 }`}>
-                                  <span className="text-6xl relative z-10">📦</span>
+                                  <img 
+                                    src={getLootCrateImage().src} 
+                                    alt={getLootCrateImage().alt}
+                                    className="w-full h-full object-contain" 
+                                  />
                                 </div>
                               </div>
                               <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
@@ -536,7 +538,23 @@ export default function Inventory() {
                       <div key={index} className="p-3 border border-space-light/10 rounded-md flex justify-between items-center bg-space-mid hover:bg-space-mid/80 transition-colors">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-md bg-space-dark flex items-center justify-center">
-                            <span className="text-xl">{resourceIcons[entry.type] || '🔮'}</span>
+                            {entry.type.includes('loot') ? (
+                              <img 
+                                src={getLootCrateImage().src} 
+                                alt={getLootCrateImage().alt}
+                                className="w-full h-full object-contain" 
+                              />
+                            ) : (
+                              getResourceDisplay(entry.type).isImage ? (
+                                <img 
+                                  src={getResourceDisplay(entry.type).value} 
+                                  alt={getResourceDisplay(entry.type).alt || entry.type}
+                                  className="w-full h-full object-contain" 
+                                />
+                              ) : (
+                                <span className="text-xl">{resourceIcons[entry.type] || '🔮'}</span>
+                              )
+                            )}
                           </div>
                           <div>
                             <span className={`font-medium capitalize ${entry.action === 'gained' ? 'text-green-400' : 'text-red-400'}`}>
@@ -571,14 +589,12 @@ export default function Inventory() {
             <div className="flex items-start gap-4">
               <div className="w-24 h-24 rounded-md bg-space-mid flex items-center justify-center p-2">
                 {selectedItem.isLootBox ? (
-                  <div className={`w-full h-full flex items-center justify-center rounded-md overflow-hidden ${
-                    selectedItem.lootBoxData?.type === 'common' ? 'bg-gray-700 bg-common-pulse' :
-                    selectedItem.lootBoxData?.type === 'uncommon' ? 'bg-green-800 bg-uncommon-pulse' :
-                    selectedItem.lootBoxData?.type === 'rare' ? 'bg-blue-800 bg-rare-pulse' :
-                    selectedItem.lootBoxData?.type === 'epic' ? 'bg-purple-800 bg-epic-pulse' :
-                    'bg-amber-700 bg-legendary-pulse'
-                  }`}>
-                    <span className="text-6xl relative z-10">📦</span>
+                  <div className={`w-full h-full flex items-center justify-center rounded-md overflow-hidden bg-space-mid`}>
+                    <img 
+                      src={getLootCrateImage().src} 
+                      alt={getLootCrateImage().alt}
+                      className="w-full h-full object-contain" 
+                    />
                   </div>
                 ) : (
                   getResourceDisplay(selectedItem.type).isImage ? (
