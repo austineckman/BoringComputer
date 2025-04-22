@@ -122,6 +122,20 @@ export default function Inventory() {
     }
   };
   
+  const handleItemClick = (item: {type: string, quantity: number, isLootBox?: boolean, lootBoxData?: LootBox}) => {
+    setSelectedItem(item);
+    try {
+      sounds.click();
+    } catch (e) {
+      console.warn('Could not play sound', e);
+    }
+    
+    // If it's a loot box, open it
+    if (item.isLootBox && item.lootBoxData) {
+      handleLootBoxOpen(item.lootBoxData, []);
+    }
+  };
+  
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     try {
@@ -332,9 +346,9 @@ export default function Inventory() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div 
-                          className={`aspect-square bg-space-dark border ${item ? 'border-space-light/40 hover:border-brand-orange/60' : 'border-space-light/10'} rounded-md p-1 relative cursor-pointer transition-colors`}
+                          className={`aspect-square bg-space-dark border ${item ? (selectedItem?.type === item.type ? 'border-brand-orange' : 'border-space-light/40 hover:border-brand-orange/60') : 'border-space-light/10'} rounded-md p-1 relative cursor-pointer transition-colors`}
                           onMouseEnter={() => item && handleItemHover(item.type)}
-                          onClick={() => item?.isLootBox && item.lootBoxData && handleLootBoxOpen(item.lootBoxData, [])}
+                          onClick={() => item && handleItemClick(item)}
                         >
                           {item && (
                             <>
@@ -347,10 +361,20 @@ export default function Inventory() {
                                     item.lootBoxData?.type === 'epic' ? 'bg-purple-800 bg-epic-pulse' :
                                     'bg-amber-700 bg-legendary-pulse'
                                   }`}>
-                                    <span className="text-2xl relative z-10">📦</span>
+                                    <span className="text-4xl relative z-10 scale-[0.8]">📦</span>
                                   </div>
                                 ) : (
-                                  <span className="text-2xl">{resourceIcons[item.type] || '🔮'}</span>
+                                  <div className="flex items-center justify-center w-4/5 h-4/5 mx-auto">
+                                    {getResourceDisplay(item.type).isImage ? (
+                                      <img 
+                                        src={getResourceDisplay(item.type).value} 
+                                        alt={getResourceDisplay(item.type).alt || item.type}
+                                        className="max-w-full max-h-full object-contain" 
+                                      />
+                                    ) : (
+                                      <span className="text-4xl">{resourceIcons[item.type] || '🔮'}</span>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                               <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
@@ -396,13 +420,24 @@ export default function Inventory() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div 
-                          className={`aspect-square bg-space-dark border ${item ? 'border-space-light/40 hover:border-brand-orange/60' : 'border-space-light/10'} rounded-md p-1 relative cursor-pointer transition-colors`}
+                          className={`aspect-square bg-space-dark border ${item ? (selectedItem?.type === item.type ? 'border-brand-orange' : 'border-space-light/40 hover:border-brand-orange/60') : 'border-space-light/10'} rounded-md p-1 relative cursor-pointer transition-colors`}
                           onMouseEnter={() => item && handleItemHover(item.type)}
+                          onClick={() => item && handleItemClick(item)}
                         >
                           {item && !item.isLootBox && (
                             <>
                               <div className="flex items-center justify-center h-full">
-                                <span className="text-2xl">{resourceIcons[item.type] || '🔮'}</span>
+                                <div className="flex items-center justify-center w-4/5 h-4/5 mx-auto">
+                                  {getResourceDisplay(item.type).isImage ? (
+                                    <img 
+                                      src={getResourceDisplay(item.type).value} 
+                                      alt={getResourceDisplay(item.type).alt || item.type}
+                                      className="max-w-full max-h-full object-contain" 
+                                    />
+                                  ) : (
+                                    <span className="text-4xl">{resourceIcons[item.type] || '🔮'}</span>
+                                  )}
+                                </div>
                               </div>
                               <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
                                 {item.quantity}
@@ -439,9 +474,9 @@ export default function Inventory() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div 
-                          className={`aspect-square bg-space-dark border ${item ? 'border-space-light/40 hover:border-brand-orange/60' : 'border-space-light/10'} rounded-md p-1 relative cursor-pointer transition-colors`}
+                          className={`aspect-square bg-space-dark border ${item ? (selectedItem?.type === item.type ? 'border-brand-orange' : 'border-space-light/40 hover:border-brand-orange/60') : 'border-space-light/10'} rounded-md p-1 relative cursor-pointer transition-colors`}
                           onMouseEnter={() => item && handleItemHover(item.type)}
-                          onClick={() => item?.isLootBox && item.lootBoxData && handleLootBoxOpen(item.lootBoxData, [])}
+                          onClick={() => item && handleItemClick(item)}
                         >
                           {item && item.isLootBox && (
                             <>
@@ -453,7 +488,7 @@ export default function Inventory() {
                                   item.lootBoxData?.type === 'epic' ? 'bg-purple-800 bg-epic-pulse' :
                                   'bg-amber-700 bg-legendary-pulse'
                                 }`}>
-                                  <span className="text-2xl relative z-10">📦</span>
+                                  <span className="text-4xl relative z-10 scale-[0.8]">📦</span>
                                 </div>
                               </div>
                               <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
@@ -530,30 +565,76 @@ export default function Inventory() {
           </Tabs>
         </div>
         
-        {/* Item Details Panel (showing when hovering over an item) */}
-        {hoveredItem && (
-          <div className="bg-space-dark rounded-lg border border-brand-orange/20 p-4 mb-8">
+        {/* Item Details Panel (showing when an item is selected) */}
+        {selectedItem && (
+          <div className="bg-space-dark rounded-lg border-2 border-brand-orange/40 p-4 mb-6 shadow-lg shadow-brand-orange/5">
             <div className="flex items-start gap-4">
-              <div className="w-16 h-16 rounded-md bg-space-mid flex items-center justify-center">
-                <span className="text-3xl">{resourceIcons[hoveredItem] || '🔮'}</span>
+              <div className="w-20 h-20 rounded-md bg-space-mid flex items-center justify-center p-2">
+                {selectedItem.isLootBox ? (
+                  <div className={`w-full h-full flex items-center justify-center rounded-md overflow-hidden ${
+                    selectedItem.lootBoxData?.type === 'common' ? 'bg-gray-700 bg-common-pulse' :
+                    selectedItem.lootBoxData?.type === 'uncommon' ? 'bg-green-800 bg-uncommon-pulse' :
+                    selectedItem.lootBoxData?.type === 'rare' ? 'bg-blue-800 bg-rare-pulse' :
+                    selectedItem.lootBoxData?.type === 'epic' ? 'bg-purple-800 bg-epic-pulse' :
+                    'bg-amber-700 bg-legendary-pulse'
+                  }`}>
+                    <span className="text-4xl relative z-10">📦</span>
+                  </div>
+                ) : (
+                  getResourceDisplay(selectedItem.type).isImage ? (
+                    <img 
+                      src={getResourceDisplay(selectedItem.type).value} 
+                      alt={getResourceDisplay(selectedItem.type).alt || selectedItem.type}
+                      className="max-w-full max-h-full object-contain" 
+                    />
+                  ) : (
+                    <span className="text-4xl">{resourceIcons[selectedItem.type] || '🔮'}</span>
+                  )
+                )}
               </div>
               
               <div className="flex-1">
-                <h3 className="text-xl font-bold capitalize text-brand-orange">
-                  {hoveredItem.replace('-', ' ')}
+                <h3 className="text-2xl font-bold capitalize text-brand-orange">
+                  {selectedItem.isLootBox 
+                    ? `${selectedItem.lootBoxData?.type} Loot Crate` 
+                    : selectedItem.type.replace('-', ' ')}
                 </h3>
-                <p className="text-sm text-brand-light/70 mt-1">
-                  {hoveredItem.includes('loot-box') 
-                    ? "A sealed container with valuable materials. Free to open and received as quest rewards."
+                
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-xl font-bold text-brand-yellow">
+                    {selectedItem.quantity}
+                  </p>
+                  <p className="text-sm text-brand-light/70">in inventory</p>
+                </div>
+                
+                <p className="text-sm text-brand-light/80 mt-2">
+                  {selectedItem.isLootBox 
+                    ? "A sealed container with valuable crafting materials. Free to open and received as quest rewards."
                     : "A crafting material used in Gizbo's Forge to create both digital and physical rewards."
                   }
                 </p>
               </div>
               
-              <div className="hidden sm:block">
-                <Button variant="outline" size="sm" className="gap-2 border-brand-orange/20">
+              <div className="hidden sm:flex flex-col gap-2">
+                {selectedItem.isLootBox && (
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    className="gap-2 bg-brand-orange hover:bg-brand-orange/80"
+                    onClick={() => selectedItem.lootBoxData && handleLootBoxOpen(selectedItem.lootBoxData, [])}
+                  >
+                    <Package2 size={14} />
+                    <span>Open Crate</span>
+                  </Button>
+                )}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2 border-brand-orange/20"
+                  onClick={() => setSelectedItem(null)}
+                >
                   <Info size={14} />
-                  <span>Details</span>
+                  <span>Close</span>
                 </Button>
               </div>
             </div>
