@@ -13,10 +13,36 @@ import {
   DialogTitle 
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Flame, Wrench } from "lucide-react";
+import { Sparkles, Flame, Wrench, Gift, Truck, Download } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 // Import Gizbo's image
 import gizboImg from '../assets/gizbo.png';
+
+// Define interface for a crafted item with the expanded properties
+interface CraftedItemType {
+  id: string;
+  itemId: string;
+  name: string;
+  description: string;
+  image: string;
+  type: 'physical' | 'digital';
+  dateCrafted: string;
+  status: 'pending' | 'shipping' | 'shipped' | 'delivered' | 'unlocked' | 'redeemed';
+  tracking?: string;
+  redemptionData?: {
+    code?: string;
+    redeemedOn?: string;
+    [key: string]: any;
+  };
+  redeemedAt?: string;
+  shippingInfo?: {
+    name?: string;
+    address?: string;
+    [key: string]: any;
+  };
+}
 
 const ForgeQuotes = [
   "Oho! I haven't seen that combo since the Great Servo Fry of '93!",
@@ -35,13 +61,18 @@ const ForgeQuotes = [
 ];
 
 const Forge = () => {
-  const { craftableItems, craftedItems, loading, craftItem, canCraftItem } = useCrafting();
+  const { craftableItems, craftedItems: rawCraftedItems, loading, craftItem, canCraftItem, fetchCraftedItems } = useCrafting();
   const { totalItems } = useInventory();
   const { sounds } = useSoundEffects();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("all");
   const [showCraftedItems, setShowCraftedItems] = useState(false);
   const [gizboQuote, setGizboQuote] = useState("");
   const [showQuote, setShowQuote] = useState(false);
+  const [redeeming, setRedeeming] = useState(false);
+  
+  // Cast craftedItems to our interface that includes the extended properties
+  const craftedItems = rawCraftedItems as CraftedItemType[];
   
   const handleTabClick = (tab: string) => {
     setActiveTab(tab);
@@ -74,6 +105,60 @@ const Forge = () => {
       setShowQuote(false);
       sounds.fanfare?.();
     }, 4000);
+  };
+  
+  // Function to handle digital item redemption
+  const redeemDigitalItem = async (itemId: string) => {
+    try {
+      setRedeeming(true);
+      
+      // Call the API to redeem the digital item
+      const response = await apiRequest('POST', `/api/crafted-items/${itemId}/redeem`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to redeem item');
+      }
+      
+      const data = await response.json();
+      
+      // Play a success sound
+      sounds.success?.();
+      
+      // Show toast notification
+      toast({
+        title: "Item Redeemed!",
+        description: "Gizbo has provided you with a redemption code.",
+        variant: "success",
+      });
+      
+      // Refresh crafted items list
+      fetchCraftedItems();
+      
+      // Display a quote from Gizbo
+      setGizboQuote("Aha! The digital enchantment is complete! Guard that code like it's the key to my secret stash!");
+      setShowQuote(true);
+      
+      // Hide quote after 4 seconds
+      setTimeout(() => {
+        setShowQuote(false);
+      }, 4000);
+      
+    } catch (error) {
+      console.error('Error redeeming item:', error);
+      
+      // Play error sound
+      sounds.error?.();
+      
+      // Show error toast
+      toast({
+        title: "Redemption Failed",
+        description: error instanceof Error ? error.message : "Something went wrong with the redemption process",
+        variant: "destructive",
+      });
+    } finally {
+      setRedeeming(false);
+    }
   };
   
   return (
@@ -309,19 +394,69 @@ const Forge = () => {
                       <span className="text-sm">{item.type === 'physical' ? 'Being delivered by Gizbo\'s assistant' : 'Digital enhancement'}</span>
                       <span className={`text-xs px-2 py-1 rounded-full ${
                         item.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
+                        item.status === 'shipping' ? 'bg-purple-500/20 text-purple-300' :
                         item.status === 'shipped' ? 'bg-blue-500/20 text-blue-300' :
                         item.status === 'delivered' || item.status === 'unlocked' ? 'bg-green-500/20 text-green-300' :
+                        item.status === 'redeemed' ? 'bg-brand-orange/20 text-brand-orange' :
                         'bg-gray-500/20 text-gray-300'
                       }`}>
                         {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
                       </span>
                     </div>
                     
+                    {/* Display tracking information for physical items */}
                     {item.type === 'physical' && item.tracking && (
                       <div className="mt-2 text-xs text-brand-light/70">
                         Tracking: {item.tracking}
                       </div>
                     )}
+                    
+                    {/* Redemption data for digital items */}
+                    {item.type === 'digital' && item.status === 'redeemed' && item.redemptionData && (
+                      <div className="mt-2 p-2 bg-space-darkest rounded text-xs">
+                        <p className="text-brand-yellow font-semibold mb-1">Redemption Code:</p>
+                        <code className="bg-space-mid p-1 rounded block overflow-x-auto">
+                          {item.redemptionData.code}
+                        </code>
+                        <p className="text-xs mt-1 text-brand-light/50">
+                          Redeemed on {new Date(item.redeemedAt || '').toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {/* Action buttons based on item status */}
+                    <div className="mt-3 flex justify-end">
+                      {/* For physical items in pending state, show ship button */}
+                      {item.type === 'physical' && item.status === 'pending' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs border-brand-yellow text-brand-yellow hover:bg-brand-yellow/10"
+                          onClick={() => {
+                            sounds.click?.();
+                            // Handle shipping info submission
+                            alert("Shipping feature to be implemented");
+                          }}
+                        >
+                          Add shipping info
+                        </Button>
+                      )}
+                      
+                      {/* For digital items in unlocked state, show redeem button */}
+                      {item.type === 'digital' && item.status === 'unlocked' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs border-brand-orange text-brand-orange hover:bg-brand-orange/10"
+                          onClick={() => {
+                            sounds.click?.();
+                            redeemDigitalItem(item.id);
+                          }}
+                        >
+                          Redeem Code
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
