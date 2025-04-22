@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useRef } from 'react';
 import { Container } from '@/components/ui/container';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +13,9 @@ import {
   Edit, 
   Archive,
   Search,
-  Filter
+  Filter,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,6 +26,43 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { apiRequest } from '@/lib/queryClient';
 import MainLayout from '@/components/layout/MainLayout';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+// Item form schema
+const itemFormSchema = z.object({
+  id: z.string().min(2).max(50),
+  name: z.string().min(2).max(100),
+  description: z.string().min(5).max(500),
+  flavorText: z.string().max(200).optional(),
+  rarity: z.enum(['common', 'uncommon', 'rare', 'epic', 'legendary']),
+  craftingUses: z.array(z.string()).optional(),
+  imagePath: z.string().optional(),
+  category: z.string().optional(),
+});
+
+type ItemFormValues = z.infer<typeof itemFormSchema>;
 
 export default function AdminPage() {
   const { toast } = useToast();
@@ -31,6 +70,9 @@ export default function AdminPage() {
   const sounds = soundContext?.sounds || { click: () => {}, success: () => {}, error: () => {} };
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('quests');
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Queries for each resource type
   const { 
@@ -190,6 +232,95 @@ export default function AdminPage() {
     );
   };
   
+  // Mutation for updating an item
+  const updateItemMutation = useMutation({
+    mutationFn: async (item: any) => {
+      const res = await apiRequest('PUT', `/api/admin/items/${item.id}`, item);
+      return await res.json();
+    },
+    onSuccess: () => {
+      sounds.success();
+      toast({
+        title: 'Success',
+        description: 'Item updated successfully.',
+      });
+      // Close the dialog
+      setEditDialogOpen(false);
+      setSelectedItem(null);
+      // Invalidate the query to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/items'] });
+    },
+    onError: (error: Error) => {
+      sounds.error();
+      toast({
+        title: 'Error',
+        description: `Failed to update item: ${error.message}`,
+        variant: 'destructive',
+      });
+    }
+  });
+
+  // Handle image upload
+  const handleImageUpload = async (file: File, itemId: string) => {
+    try {
+      // Create a FormData object
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('itemId', itemId);
+      
+      // Make a fetch request to upload the image
+      const response = await fetch('/api/admin/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+      
+      const data = await response.json();
+      return data.imagePath;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to upload image. Please try again.',
+        variant: 'destructive',
+      });
+      return null;
+    }
+  };
+
+  const handleOpenEditDialog = (item: any) => {
+    sounds.click();
+    setSelectedItem(item);
+    setEditDialogOpen(true);
+  };
+
+  const handleItemFormSubmit = async (data: ItemFormValues) => {
+    try {
+      // If there's a file selected for upload
+      if (fileInputRef.current?.files?.length) {
+        const file = fileInputRef.current.files[0];
+        const imagePath = await handleImageUpload(file, data.id);
+        
+        if (imagePath) {
+          data.imagePath = imagePath;
+        }
+      }
+      
+      // Update the item
+      updateItemMutation.mutate(data);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update item. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const renderItemsTab = () => {
     if (isItemsLoading) return <p className="text-center py-8">Loading items...</p>;
     if (itemsError) return <p className="text-center text-red-500 py-8">Error loading items</p>;
@@ -232,7 +363,12 @@ export default function AdminPage() {
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">{item.name}</CardTitle>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => sounds.click()}>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8" 
+                        onClick={() => handleOpenEditDialog(item)}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button 
@@ -257,7 +393,20 @@ export default function AdminPage() {
                     {item.rarity}
                   </Badge>
                 </CardHeader>
-                <CardContent className="p-4 pt-2">
+                <div className="p-4 flex justify-center">
+                  {item.imagePath ? (
+                    <img 
+                      src={item.imagePath} 
+                      alt={item.name} 
+                      className="h-32 object-contain" 
+                    />
+                  ) : (
+                    <div className="h-32 w-32 bg-muted rounded-md flex items-center justify-center">
+                      <ImageIcon className="h-12 w-12 text-muted-foreground/40" />
+                    </div>
+                  )}
+                </div>
+                <CardContent className="p-4 pt-0">
                   <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
                   {item.flavorText && (
                     <p className="text-sm italic text-muted-foreground">{item.flavorText}</p>
@@ -269,6 +418,112 @@ export default function AdminPage() {
             <p className="text-center py-8 col-span-3">No items found. Add your first item.</p>
           )}
         </div>
+
+        {/* Edit Item Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="sm:max-w-[560px]">
+            <DialogHeader>
+              <DialogTitle>Edit Item</DialogTitle>
+              <DialogDescription>
+                Make changes to the item details. Click save when you're done.
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedItem && (
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    defaultValue={selectedItem.name}
+                    className="col-span-3"
+                    onChange={(e) => setSelectedItem({...selectedItem, name: e.target.value})}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    defaultValue={selectedItem.description}
+                    className="col-span-3"
+                    onChange={(e) => setSelectedItem({...selectedItem, description: e.target.value})}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="flavorText">Flavor Text (Optional)</Label>
+                  <Textarea
+                    id="flavorText"
+                    defaultValue={selectedItem.flavorText}
+                    className="col-span-3"
+                    onChange={(e) => setSelectedItem({...selectedItem, flavorText: e.target.value})}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="rarity">Rarity</Label>
+                  <Select 
+                    defaultValue={selectedItem.rarity}
+                    onValueChange={(value) => setSelectedItem({...selectedItem, rarity: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select rarity" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="common">Common</SelectItem>
+                      <SelectItem value="uncommon">Uncommon</SelectItem>
+                      <SelectItem value="rare">Rare</SelectItem>
+                      <SelectItem value="epic">Epic</SelectItem>
+                      <SelectItem value="legendary">Legendary</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category (Optional)</Label>
+                  <Input
+                    id="category"
+                    defaultValue={selectedItem.category}
+                    className="col-span-3"
+                    onChange={(e) => setSelectedItem({...selectedItem, category: e.target.value})}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="image">Item Image</Label>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <Input
+                        id="image"
+                        type="file"
+                        accept="image/*"
+                        ref={fileInputRef}
+                        className="col-span-3"
+                      />
+                    </div>
+                    {selectedItem.imagePath && (
+                      <div className="flex-shrink-0 h-16 w-16 bg-muted rounded-md overflow-hidden">
+                        <img 
+                          src={selectedItem.imagePath} 
+                          alt={selectedItem.name} 
+                          className="h-full w-full object-cover" 
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+              <Button onClick={() => handleItemFormSubmit(selectedItem)} disabled={updateItemMutation.isPending}>
+                {updateItemMutation.isPending ? "Saving..." : "Save changes"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   };
