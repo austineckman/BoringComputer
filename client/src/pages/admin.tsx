@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { SoundContext } from '@/context/SoundContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'wouter';
 import { apiRequest } from '@/lib/queryClient';
 import MainLayout from '@/components/layout/MainLayout';
 
@@ -440,9 +441,9 @@ export default function AdminPage() {
     <MainLayout>
       <Container>
         <div className="flex items-center my-4 text-sm text-muted-foreground">
-          <a href="/" className="hover:text-foreground transition-colors" onClick={() => sounds.click()}>
+          <Link href="/" className="hover:text-foreground transition-colors" onClick={() => sounds.click()}>
             Dashboard
-          </a>
+          </Link>
           <ChevronRight className="h-4 w-4 mx-1" />
           <span className="text-foreground">Admin</span>
         </div>
