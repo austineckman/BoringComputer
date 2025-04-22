@@ -121,9 +121,7 @@ function App() {
         </ProtectedRoute>
         
         <AdminRoute path="/admin">
-          <MainLayout>
-            <Admin />
-          </MainLayout>
+          <Admin />
         </AdminRoute>
         
         <ProtectedRoute path="/settings">
