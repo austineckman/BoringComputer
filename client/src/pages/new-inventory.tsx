@@ -651,7 +651,7 @@ export default function Inventory() {
                             {renderResourceIcon(entry.type, 'sm')}
                           </div>
                           <div>
-                            <p className="font-medium capitalize">{entry.type.replace('-', ' ')}</p>
+                            <p className="font-medium">{getItemDetails(entry.type).name}</p>
                             <p className="text-xs text-brand-light/60">
                               {entry.action === 'gained' ? 'Gained from ' : 'Used for '} 
                               <span className="text-brand-orange">{entry.source}</span>
@@ -728,7 +728,7 @@ export default function Inventory() {
                           <div className="resource-icon w-12 h-12 flex items-center justify-center mb-1">
                             {renderResourceIcon(randomItem.type, 'lg')}
                           </div>
-                          <span className="font-medium capitalize text-white text-center text-xs md:text-sm">{randomItem.type.replace('-', ' ')}</span>
+                          <span className="font-medium text-white text-center text-xs md:text-sm">{getItemDetails(randomItem.type).name}</span>
                           <span className="text-brand-yellow text-sm md:text-lg font-bold">+{randomItem.quantity}</span>
                         </div>
                       );
@@ -752,7 +752,7 @@ export default function Inventory() {
                           <div className="resource-icon w-12 h-12 flex items-center justify-center mb-1">
                             {renderResourceIcon(reward.type, 'lg')}
                           </div>
-                          <span className="font-medium capitalize text-white text-center text-xs md:text-sm">{reward.type.replace('-', ' ')}</span>
+                          <span className="font-medium text-white text-center text-xs md:text-sm">{getItemDetails(reward.type).name}</span>
                           <span className="text-brand-yellow text-sm md:text-lg font-bold">+{reward.quantity}</span>
                         </div>
                       );
@@ -780,7 +780,7 @@ export default function Inventory() {
                         <div className="resource-icon w-16 h-16 flex items-center justify-center mb-2">
                           {renderResourceIcon(reward.type, 'lg')}
                         </div>
-                        <span className="font-medium capitalize text-brand-light">{reward.type.replace('-', ' ')}</span>
+                        <span className="font-medium text-brand-light">{getItemDetails(reward.type).name}</span>
                         <span className="text-brand-yellow text-lg font-bold">+{reward.quantity}</span>
                       </div>
                     );
