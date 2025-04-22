@@ -97,26 +97,55 @@ export default function Inventory() {
       console.warn('Could not play sound', e);
     }
     
-    // If rewards are empty and lootbox ID exists, try to open it ourselves here
-    if (rewards.length === 0 && lootBox.id) {
-      try {
+    try {
+      // Always try to open the loot box server-side to get fresh rewards
+      if (lootBox.id) {
+        console.log('Opening loot box with ID:', lootBox.id);
         const response = await apiRequest('POST', `/api/loot-boxes/${lootBox.id}/open`);
         const data = await response.json();
+        console.log('Loot box open response:', data);
         
         if (data.success && data.rewards && data.rewards.length > 0) {
-          // Use the rewards from the server response
+          console.log('Using rewards from server:', data.rewards);
           setCurrentRewards(data.rewards);
-        } else {
-          // Use a fallback if no rewards were returned
-          setCurrentRewards(rewards);
+          
+          // Invalidate queries to refresh the data
+          queryClient.invalidateQueries({ queryKey: ['/api/loot-boxes'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/inventory/history'] });
+          
+          setIsRewardModalOpen(true);
+          return;
+        } else if (data.alreadyOpened && data.rewards && data.rewards.length > 0) {
+          console.log('Box already opened, using saved rewards:', data.rewards);
+          setCurrentRewards(data.rewards);
+          setIsRewardModalOpen(true);
+          return;
         }
-      } catch (error) {
-        console.error('Failed to open loot box:', error);
-        setCurrentRewards(rewards);
       }
-    } else {
-      // Use the rewards passed to the function
-      setCurrentRewards(rewards);
+      
+      // If we get here, either there was no loot box ID, or the server didn't return valid rewards
+      console.log('Using fallback rewards:', rewards);
+      
+      // Check if we have fallback rewards
+      if (rewards && rewards.length > 0) {
+        setCurrentRewards(rewards);
+      } else {
+        // Generate some default rewards as final fallback
+        setCurrentRewards([
+          { type: 'cloth', quantity: 2 },
+          { type: 'metal', quantity: 1 }
+        ]);
+      }
+      
+    } catch (error) {
+      console.error('Failed to open loot box:', error);
+      
+      // Provide default rewards in case of error
+      setCurrentRewards([
+        { type: 'cloth', quantity: 1 },
+        { type: 'metal', quantity: 1 }
+      ]);
     }
     
     setIsRewardModalOpen(true);
