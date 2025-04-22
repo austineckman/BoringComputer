@@ -13,7 +13,7 @@ const Home = () => {
   const { user } = useAuth();
   const { quests, activeQuest, loading: loadingQuests } = useQuests();
   const { inventory, loading: loadingInventory } = useInventory();
-  const { playSound } = useSoundEffects();
+  const { sounds, playSoundSafely } = useSoundEffects();
   const { navigateToAdventure, adventureLines } = useAdventureNavigation();
 
   // Show active quest and a few available quests
@@ -27,11 +27,19 @@ const Home = () => {
   const communicationsLevel = Math.floor(Math.random() * 40) + 60; // 60-100%
 
   const handleButtonClick = () => {
-    playSound("click");
+    try {
+      sounds.click?.();
+    } catch (e) {
+      console.warn('Could not play click sound', e);
+    }
   };
 
   const handleButtonHover = () => {
-    playSound("hover");
+    try {
+      sounds.hover?.();
+    } catch (e) {
+      console.warn('Could not play hover sound', e);
+    }
   };
 
   return (
@@ -247,13 +255,13 @@ const Home = () => {
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-pixel text-xl text-brand-light">AVAILABLE QUESTS</h2>
           <Link href="/quests">
-            <a 
-              className="text-brand-orange hover:text-brand-yellow text-sm font-bold"
+            <div
+              className="text-brand-orange hover:text-brand-yellow text-sm font-bold cursor-pointer"
               onClick={handleButtonClick}
               onMouseEnter={handleButtonHover}
             >
               View All
-            </a>
+            </div>
           </Link>
         </div>
         
