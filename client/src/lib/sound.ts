@@ -15,6 +15,10 @@ export const sounds = {
     src: ['/sounds/error.mp3'],
     volume: 0.6,
   }),
+  success: new Howl({
+    src: ['/sounds/success.mp3'],
+    volume: 0.6,
+  }),
   
   // Achievement sounds
   achievement: new Howl({
@@ -29,6 +33,10 @@ export const sounds = {
   }),
   questAccept: new Howl({
     src: ['/sounds/quest-accept.mp3'],
+    volume: 0.6,
+  }),
+  questStart: new Howl({
+    src: ['/sounds/quest-start.mp3'],
     volume: 0.6,
   }),
   reward: new Howl({
@@ -88,6 +96,12 @@ export type SoundName = keyof typeof sounds;
 export function playSound(name: SoundName): void {
   const sound = sounds[name];
   if (sound) {
+    // Handle missing sound files gracefully
+    sound.once('loaderror', () => {
+      console.warn(`Sound file for "${name}" could not be loaded`);
+    });
+    
+    // Play the sound
     sound.play();
   } else {
     console.warn(`Sound "${name}" not found`);
