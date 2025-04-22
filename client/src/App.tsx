@@ -14,7 +14,9 @@ import MainLayout from "@/components/layout/MainLayout";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { AdminRoute } from "@/lib/admin-route";
 import { SoundProvider } from "@/context/SoundContext";
+import { AuthProvider } from "@/hooks/use-auth";
 
 function App() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -64,75 +66,77 @@ function App() {
   }
 
   return (
-    <Switch>
-      <Route path="/login">
-        <Login />
-      </Route>
-      
-      <Route path="/auth">
-        <Login />
-      </Route>
-      
-      {/* Protected routes */}
-      <ProtectedRoute path="/">
-        <MainLayout>
-          <Home />
-        </MainLayout>
-      </ProtectedRoute>
-      
-      <ProtectedRoute path="/quests">
-        <MainLayout>
-          <Quests />
-        </MainLayout>
-      </ProtectedRoute>
+    <AuthProvider>
+      <Switch>
+        <Route path="/login">
+          <Login />
+        </Route>
+        
+        <Route path="/auth">
+          <Login />
+        </Route>
+        
+        {/* Protected routes */}
+        <ProtectedRoute path="/">
+          <MainLayout>
+            <Home />
+          </MainLayout>
+        </ProtectedRoute>
+        
+        <ProtectedRoute path="/quests">
+          <MainLayout>
+            <Quests />
+          </MainLayout>
+        </ProtectedRoute>
 
-      <ProtectedRoute path="/quests/:id">
-        <MainLayout>
-          <QuestDetail />
-        </MainLayout>
-      </ProtectedRoute>
-      
-      <ProtectedRoute path="/inventory">
-        <MainLayout>
-          <Inventory />
-        </MainLayout>
-      </ProtectedRoute>
-      
-      <ProtectedRoute path="/forge">
-        <MainLayout>
-          <Forge />
-        </MainLayout>
-      </ProtectedRoute>
-      
-      {/* Redirect workshop to forge */}
-      <ProtectedRoute path="/workshop">
-        <MainLayout>
-          <Forge />
-        </MainLayout>
-      </ProtectedRoute>
-      
-      <ProtectedRoute path="/achievements">
-        <MainLayout>
-          <Achievements />
-        </MainLayout>
-      </ProtectedRoute>
-      
-      <ProtectedRoute path="/admin">
-        <MainLayout>
-          <Admin />
-        </MainLayout>
-      </ProtectedRoute>
-      
-      <ProtectedRoute path="/settings">
-        <MainLayout>
-          <Settings />
-        </MainLayout>
-      </ProtectedRoute>
-      
-      <Route>
-        <NotFound />
-      </Route>
-    </Switch>
+        <ProtectedRoute path="/quests/:id">
+          <MainLayout>
+            <QuestDetail />
+          </MainLayout>
+        </ProtectedRoute>
+        
+        <ProtectedRoute path="/inventory">
+          <MainLayout>
+            <Inventory />
+          </MainLayout>
+        </ProtectedRoute>
+        
+        <ProtectedRoute path="/forge">
+          <MainLayout>
+            <Forge />
+          </MainLayout>
+        </ProtectedRoute>
+        
+        {/* Redirect workshop to forge */}
+        <ProtectedRoute path="/workshop">
+          <MainLayout>
+            <Forge />
+          </MainLayout>
+        </ProtectedRoute>
+        
+        <ProtectedRoute path="/achievements">
+          <MainLayout>
+            <Achievements />
+          </MainLayout>
+        </ProtectedRoute>
+        
+        <AdminRoute path="/admin">
+          <MainLayout>
+            <Admin />
+          </MainLayout>
+        </AdminRoute>
+        
+        <ProtectedRoute path="/settings">
+          <MainLayout>
+            <Settings />
+          </MainLayout>
+        </ProtectedRoute>
+        
+        <Route>
+          <NotFound />
+        </Route>
+      </Switch>
+    </AuthProvider>
   );
 }
 

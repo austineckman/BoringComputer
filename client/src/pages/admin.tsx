@@ -1,483 +1,489 @@
-import React, { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { Redirect } from "wouter";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { queryClient } from "@/lib/queryClient";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { useSoundEffects } from "@/hooks/useSoundEffects";
-import { themeConfig } from "@/lib/themeConfig";
-import LootBoxGenerator from "@/components/admin/LootBoxGenerator";
-import LootBoxList from "@/components/admin/LootBoxList";
+import React, { useState, useContext } from 'react';
+import { Container } from '@/components/ui/container';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { 
+  ChevronRight, 
+  Database, 
+  Package, 
+  FileText, 
+  Plus, 
+  Trash2, 
+  Edit, 
+  Archive,
+  Search,
+  Filter
+} from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { SoundContext } from '@/context/SoundContext';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import MainLayout from '@/components/layout/MainLayout';
 
-// Form schema for creating a quest
-const createQuestSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Date must be in YYYY-MM-DD format" }),
-  title: z.string().min(5, { message: "Title must be at least 5 characters" }),
-  description: z.string().min(20, { message: "Description must be at least 20 characters" }),
-  kitRequired: z.string().min(2, { message: "Kit information is required" }),
-  difficulty: z.number().min(1).max(5),
-  adventureKit: z.string(),
-  rewards: z.array(
-    z.object({
-      type: z.string(),
-      quantity: z.number().min(1)
-    })
-  ).min(1, { message: "At least one reward is required" })
-});
-
-type CreateQuestFormValues = z.infer<typeof createQuestSchema>;
-
-const Admin = () => {
-  const { user, loading } = useAuth();
+export default function AdminPage() {
   const { toast } = useToast();
-  const { sounds } = useSoundEffects();
-  const [activeRewardType, setActiveRewardType] = useState("cloth");
-  const [activeRewardQuantity, setActiveRewardQuantity] = useState(1);
+  const soundContext = useContext(SoundContext);
+  const sounds = soundContext?.sounds || { click: () => {}, success: () => {}, error: () => {} };
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState('quests');
   
-  const playSound = (type: string) => {
-    try {
-      if (type === "click" && sounds.click) {
-        sounds.click();
-      } else if (type === "error" && sounds.error) {
-        sounds.error();
-      } else if (type === "complete" && sounds.success) {
-        sounds.success();
-      }
-    } catch (e) {
-      console.warn(`Could not play ${type} sound`, e);
-    }
-  };
+  // Queries for each resource type
+  const { 
+    data: quests,
+    isLoading: isQuestsLoading,
+    error: questsError
+  } = useQuery({
+    queryKey: ['/api/admin/quests'],
+    enabled: activeTab === 'quests'
+  });
   
-  // Check if user is admin
-  const isAdmin = user?.roles?.includes("admin");
+  const { 
+    data: items,
+    isLoading: isItemsLoading,
+    error: itemsError
+  } = useQuery({
+    queryKey: ['/api/admin/items'],
+    enabled: activeTab === 'items'
+  });
   
-  const form = useForm<CreateQuestFormValues>({
-    resolver: zodResolver(createQuestSchema),
-    defaultValues: {
-      date: new Date().toISOString().split("T")[0],
-      title: "",
-      description: "",
-      kitRequired: "",
-      difficulty: 1,
-      adventureKit: "lost-in-space",
-      rewards: []
+  const { 
+    data: recipes,
+    isLoading: isRecipesLoading,
+    error: recipesError
+  } = useQuery({
+    queryKey: ['/api/admin/recipes'],
+    enabled: activeTab === 'recipes'
+  });
+  
+  const { 
+    data: lootBoxes,
+    isLoading: isLootBoxesLoading,
+    error: lootBoxesError
+  } = useQuery({
+    queryKey: ['/api/admin/loot-boxes'],
+    enabled: activeTab === 'lootBoxes'
+  });
+  
+  // Mutation for deleting a resource
+  const deleteMutation = useMutation({
+    mutationFn: async ({ resourceType, id }: { resourceType: string, id: string | number }) => {
+      const res = await apiRequest('DELETE', `/api/admin/${resourceType}/${id}`);
+      return await res.json();
+    },
+    onSuccess: (_, variables) => {
+      const { resourceType } = variables;
+      sounds.success();
+      toast({
+        title: 'Success',
+        description: `${resourceType.slice(0, -1)} deleted successfully.`,
+      });
+      // Invalidate the relevant query to refresh the data
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/${resourceType}`] });
+    },
+    onError: (error: Error) => {
+      sounds.error();
+      toast({
+        title: 'Error',
+        description: `Failed to delete: ${error.message}`,
+        variant: 'destructive',
+      });
     }
   });
   
-  const createQuestMutation = useMutation({
-    mutationFn: async (data: CreateQuestFormValues) => {
-      const response = await apiRequest("POST", "/api/admin/quests", data);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/quests"] });
-      toast({
-        title: "Quest Created",
-        description: "The quest has been successfully created",
-      });
-      playSound("complete");
-      form.reset();
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create quest",
-        variant: "destructive",
-      });
-      playSound("error");
+  const handleDelete = (resourceType: string, id: string | number) => {
+    if (window.confirm(`Are you sure you want to delete this ${resourceType.slice(0, -1)}?`)) {
+      sounds.click();
+      deleteMutation.mutate({ resourceType, id });
     }
-  });
-  
-  function onSubmit(data: CreateQuestFormValues) {
-    if (data.rewards.length === 0) {
-      toast({
-        title: "Error",
-        description: "At least one reward is required",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    createQuestMutation.mutate(data);
-  }
-  
-  const addReward = () => {
-    const currentRewards = form.getValues("rewards") || [];
-    form.setValue("rewards", [
-      ...currentRewards,
-      { type: activeRewardType, quantity: activeRewardQuantity }
-    ]);
-    
-    toast({
-      title: "Reward Added",
-      description: `Added ${activeRewardQuantity}x ${activeRewardType}`,
-    });
-    playSound("click");
   };
   
-  const removeReward = (index: number) => {
-    const currentRewards = form.getValues("rewards") || [];
-    form.setValue("rewards", currentRewards.filter((_, i) => i !== index));
-    
-    toast({
-      title: "Reward Removed",
-      description: "The reward has been removed from the quest",
-    });
-    playSound("click");
+  const handleTabChange = (value: string) => {
+    sounds.click();
+    setActiveTab(value);
   };
   
-  if (loading) {
+  const renderQuestsTab = () => {
+    if (isQuestsLoading) return <p className="text-center py-8">Loading quests...</p>;
+    if (questsError) return <p className="text-center text-red-500 py-8">Error loading quests</p>;
+    
     return (
-      <div className="flex justify-center py-10">
-        <div className="animate-spin w-10 h-10 border-4 border-brand-orange border-t-transparent rounded-full"></div>
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <div className="flex gap-2">
+            <div className="relative">
+              <Input 
+                placeholder="Search quests..." 
+                className="w-64 pl-8" 
+              />
+              <Search className="h-4 w-4 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+            </div>
+            <Select>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Adventure Line" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Lines</SelectItem>
+                <SelectItem value="lost-in-space">Lost in Space</SelectItem>
+                <SelectItem value="cogsworth">Cogsworth</SelectItem>
+                <SelectItem value="pandora">Pandora's Box</SelectItem>
+                <SelectItem value="neon-realm">Neon Realm</SelectItem>
+                <SelectItem value="nebula">Nebula Raiders</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button className="bg-primary hover:bg-primary/90" onClick={() => sounds.click()}>
+            <Plus className="h-4 w-4 mr-2" /> Add Quest
+          </Button>
+        </div>
+        
+        <div className="grid gap-4">
+          {quests && quests.length > 0 ? (
+            quests.map((quest: any) => (
+              <Card key={quest.id} className="overflow-hidden border border-border">
+                <div className="flex">
+                  <div className="bg-muted p-4 flex items-center justify-center w-16">
+                    <FileText className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardContent className="flex-1 p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-bold">{quest.title}</h3>
+                        <p className="text-sm text-muted-foreground line-clamp-1">
+                          {quest.description}
+                        </p>
+                        <div className="flex gap-2 mt-2">
+                          <Badge variant="outline">{quest.adventureLine}</Badge>
+                          <Badge variant="outline">Order: {quest.orderInLine}</Badge>
+                          <Badge variant="outline">XP: {quest.xpReward}</Badge>
+                          <Badge variant={quest.active ? "default" : "secondary"}>
+                            {quest.active ? "Active" : "Inactive"}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => sounds.click()}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => handleDelete('quests', quest.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </div>
+              </Card>
+            ))
+          ) : (
+            <p className="text-center py-8">No quests found. Add your first quest.</p>
+          )}
+        </div>
       </div>
     );
-  }
+  };
   
-  if (!isAdmin) {
-    return <Redirect to="/" />;
-  }
+  const renderItemsTab = () => {
+    if (isItemsLoading) return <p className="text-center py-8">Loading items...</p>;
+    if (itemsError) return <p className="text-center text-red-500 py-8">Error loading items</p>;
+    
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <div className="flex gap-2">
+            <div className="relative">
+              <Input 
+                placeholder="Search items..." 
+                className="w-64 pl-8" 
+              />
+              <Search className="h-4 w-4 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+            </div>
+            <Select>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Rarity" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Rarities</SelectItem>
+                <SelectItem value="common">Common</SelectItem>
+                <SelectItem value="uncommon">Uncommon</SelectItem>
+                <SelectItem value="rare">Rare</SelectItem>
+                <SelectItem value="epic">Epic</SelectItem>
+                <SelectItem value="legendary">Legendary</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button className="bg-primary hover:bg-primary/90" onClick={() => sounds.click()}>
+            <Plus className="h-4 w-4 mr-2" /> Add Item
+          </Button>
+        </div>
+        
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {items && items.length > 0 ? (
+            items.map((item: any) => (
+              <Card key={item.id} className="overflow-hidden">
+                <CardHeader className="p-4 pb-2">
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-lg">{item.name}</CardTitle>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => sounds.click()}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-destructive" 
+                        onClick={() => handleDelete('items', item.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <Badge 
+                    className={`mt-1 ${
+                      item.rarity === 'legendary' ? 'bg-amber-500' :
+                      item.rarity === 'epic' ? 'bg-purple-500' :
+                      item.rarity === 'rare' ? 'bg-blue-500' :
+                      item.rarity === 'uncommon' ? 'bg-green-500' :
+                      'bg-gray-500'
+                    }`}
+                  >
+                    {item.rarity}
+                  </Badge>
+                </CardHeader>
+                <CardContent className="p-4 pt-2">
+                  <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
+                  {item.flavorText && (
+                    <p className="text-sm italic text-muted-foreground">{item.flavorText}</p>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <p className="text-center py-8 col-span-3">No items found. Add your first item.</p>
+          )}
+        </div>
+      </div>
+    );
+  };
+  
+  const renderRecipesTab = () => {
+    if (isRecipesLoading) return <p className="text-center py-8">Loading recipes...</p>;
+    if (recipesError) return <p className="text-center text-red-500 py-8">Error loading recipes</p>;
+    
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <div className="flex gap-2">
+            <div className="relative">
+              <Input 
+                placeholder="Search recipes..." 
+                className="w-64 pl-8" 
+              />
+              <Search className="h-4 w-4 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+            </div>
+            <Select>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Difficulty" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Difficulties</SelectItem>
+                <SelectItem value="easy">Easy</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="hard">Hard</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button className="bg-primary hover:bg-primary/90" onClick={() => sounds.click()}>
+            <Plus className="h-4 w-4 mr-2" /> Add Recipe
+          </Button>
+        </div>
+        
+        <div className="grid gap-4">
+          {recipes && recipes.length > 0 ? (
+            recipes.map((recipe: any) => (
+              <Card key={recipe.id} className="overflow-hidden border border-border">
+                <div className="flex">
+                  <div className="bg-muted p-4 flex items-center justify-center w-16">
+                    <Package className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardContent className="flex-1 p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-bold">{recipe.name}</h3>
+                        <p className="text-sm text-muted-foreground line-clamp-1">
+                          {recipe.description}
+                        </p>
+                        <div className="flex gap-2 mt-2">
+                          <Badge>{recipe.difficulty}</Badge>
+                          <Badge variant="outline">{recipe.category}</Badge>
+                          <Badge variant="outline">Result: {recipe.resultItem} x{recipe.resultQuantity}</Badge>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => sounds.click()}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => handleDelete('recipes', recipe.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </div>
+              </Card>
+            ))
+          ) : (
+            <p className="text-center py-8">No recipes found. Add your first recipe.</p>
+          )}
+        </div>
+      </div>
+    );
+  };
+  
+  const renderLootBoxesTab = () => {
+    if (isLootBoxesLoading) return <p className="text-center py-8">Loading loot box configurations...</p>;
+    if (lootBoxesError) return <p className="text-center text-red-500 py-8">Error loading loot box configurations</p>;
+    
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <div className="flex gap-2">
+            <div className="relative">
+              <Input 
+                placeholder="Search configurations..." 
+                className="w-64 pl-8" 
+              />
+              <Search className="h-4 w-4 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+            </div>
+            <Select>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="common">Common</SelectItem>
+                <SelectItem value="uncommon">Uncommon</SelectItem>
+                <SelectItem value="rare">Rare</SelectItem>
+                <SelectItem value="epic">Epic</SelectItem>
+                <SelectItem value="legendary">Legendary</SelectItem>
+                <SelectItem value="welcome">Welcome</SelectItem>
+                <SelectItem value="quest">Quest</SelectItem>
+                <SelectItem value="event">Event</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button className="bg-primary hover:bg-primary/90" onClick={() => sounds.click()}>
+            <Plus className="h-4 w-4 mr-2" /> Add Configuration
+          </Button>
+        </div>
+        
+        <div className="grid gap-4">
+          {lootBoxes && lootBoxes.length > 0 ? (
+            lootBoxes.map((config: any) => (
+              <Card key={config.id} className="overflow-hidden border border-border">
+                <div className="flex">
+                  <div className="bg-muted p-4 flex items-center justify-center w-16">
+                    <Archive className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardContent className="flex-1 p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-bold">{config.name}</h3>
+                        <p className="text-sm text-muted-foreground line-clamp-1">
+                          {config.description}
+                        </p>
+                        <div className="flex gap-2 mt-2">
+                          <Badge>{config.type}</Badge>
+                          <Badge variant="outline">Items: {
+                            config.itemDropTable ? 
+                              (Array.isArray(config.itemDropTable) ? config.itemDropTable.length : 'N/A') 
+                              : 'N/A'
+                          }</Badge>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => sounds.click()}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => handleDelete('loot-boxes', config.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </div>
+              </Card>
+            ))
+          ) : (
+            <p className="text-center py-8">No loot box configurations found. Add your first configuration.</p>
+          )}
+        </div>
+      </div>
+    );
+  };
   
   return (
-    <div>
-      <section className="mb-12">
-        <div className="bg-space-mid rounded-lg p-6 pixel-border relative overflow-hidden">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
-            <div>
-              <h1 className="font-pixel text-xl md:text-2xl text-brand-orange mb-2">ADMIN PANEL</h1>
-              <p className="text-brand-light/80 mb-4">Manage quests, craftables, and user progress</p>
-            </div>
-          </div>
-          
-          {/* Decorative Elements */}
-          <div className="absolute -bottom-8 -right-8 w-32 h-32 rounded-full bg-brand-orange/10 blur-3xl"></div>
-          <div className="absolute -top-4 -left-4 w-24 h-24 rounded-full bg-brand-yellow/10 blur-3xl"></div>
+    <MainLayout>
+      <Container>
+        <div className="flex items-center my-4 text-sm text-muted-foreground">
+          <a href="/" className="hover:text-foreground transition-colors" onClick={() => sounds.click()}>
+            Dashboard
+          </a>
+          <ChevronRight className="h-4 w-4 mx-1" />
+          <span className="text-foreground">Admin</span>
         </div>
-      </section>
-      
-      <section>
-        <Tabs defaultValue="quests" className="w-full">
-          <TabsList className="bg-space-dark mb-6">
-            <TabsTrigger 
-              value="quests" 
-              className="data-[state=active]:bg-brand-orange/20 data-[state=active]:text-brand-orange"
-              onClick={() => playSound("click")}
-            >
-              Quests
+        
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+        </div>
+        
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="mb-10">
+          <TabsList className="grid grid-cols-4 w-full max-w-2xl">
+            <TabsTrigger value="quests" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" /> Quests
             </TabsTrigger>
-            <TabsTrigger 
-              value="users" 
-              className="data-[state=active]:bg-brand-orange/20 data-[state=active]:text-brand-orange"
-              onClick={() => playSound("click")}
-            >
-              Users
+            <TabsTrigger value="items" className="flex items-center gap-2">
+              <Database className="h-4 w-4" /> Items
             </TabsTrigger>
-            <TabsTrigger 
-              value="craftables" 
-              className="data-[state=active]:bg-brand-orange/20 data-[state=active]:text-brand-orange"
-              onClick={() => playSound("click")}
-            >
-              Craftables
+            <TabsTrigger value="recipes" className="flex items-center gap-2">
+              <Package className="h-4 w-4" /> Recipes
             </TabsTrigger>
-            <TabsTrigger 
-              value="lootboxes" 
-              className="data-[state=active]:bg-brand-orange/20 data-[state=active]:text-brand-orange"
-              onClick={() => playSound("click")}
-            >
-              Loot Boxes
+            <TabsTrigger value="lootBoxes" className="flex items-center gap-2">
+              <Archive className="h-4 w-4" /> Loot Boxes
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="quests" className="space-y-4">
-            <Card className="bg-space-mid border-brand-orange/30">
-              <CardHeader>
-                <CardTitle>Create New Quest</CardTitle>
-                <CardDescription>Add a new quest to the adventure system</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField
-                        control={form.control}
-                        name="title"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Quest Title</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Enter quest title" 
-                                {...field} 
-                                className="bg-space-dark border-brand-orange/30"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="date"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Quest Date</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="date" 
-                                {...field} 
-                                className="bg-space-dark border-brand-orange/30"
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              Format: YYYY-MM-DD
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="kitRequired"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Required Kit</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="E.g. HERO Board + LED" 
-                                {...field} 
-                                className="bg-space-dark border-brand-orange/30"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="difficulty"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Difficulty (1-5)</FormLabel>
-                            <FormControl>
-                              <Select 
-                                onValueChange={(value) => field.onChange(parseInt(value))} 
-                                defaultValue={field.value.toString()}
-                              >
-                                <SelectTrigger className="bg-space-dark border-brand-orange/30">
-                                  <SelectValue placeholder="Select difficulty" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-space-dark border-brand-orange/30">
-                                  <SelectItem value="1">1 - Very Easy</SelectItem>
-                                  <SelectItem value="2">2 - Easy</SelectItem>
-                                  <SelectItem value="3">3 - Medium</SelectItem>
-                                  <SelectItem value="4">4 - Hard</SelectItem>
-                                  <SelectItem value="5">5 - Very Hard</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="adventureKit"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Adventure Kit</FormLabel>
-                            <FormControl>
-                              <Select 
-                                onValueChange={field.onChange} 
-                                defaultValue={field.value}
-                              >
-                                <SelectTrigger className="bg-space-dark border-brand-orange/30">
-                                  <SelectValue placeholder="Select adventure kit" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-space-dark border-brand-orange/30">
-                                  {themeConfig.adventureKits.map((kit) => (
-                                    <SelectItem key={kit.id} value={kit.id}>{kit.name}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <div className="md:col-span-2">
-                        <FormField
-                          control={form.control}
-                          name="description"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Quest Description</FormLabel>
-                              <FormControl>
-                                <Textarea 
-                                  placeholder="Enter quest description" 
-                                  {...field} 
-                                  className="bg-space-dark border-brand-orange/30 min-h-[100px]"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      <div className="md:col-span-2">
-                        <FormLabel>Quest Rewards</FormLabel>
-                        <div className="bg-space-dark border border-brand-orange/30 rounded-md p-4 mb-4">
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {form.watch("rewards")?.map((reward, index) => (
-                              <div 
-                                key={index} 
-                                className="flex items-center bg-space-mid px-3 py-1 rounded-full"
-                              >
-                                <span>
-                                  {reward.quantity}x {reward.type.replace('-', ' ')}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => removeReward(index)}
-                                  className="ml-2 text-red-400 hover:text-red-300"
-                                >
-                                  <i className="fas fa-times"></i>
-                                </button>
-                              </div>
-                            ))}
-                            
-                            {!form.watch("rewards")?.length && (
-                              <div className="text-brand-light/50 text-sm">No rewards added yet</div>
-                            )}
-                          </div>
-                          
-                          <div className="flex gap-3">
-                            <Select 
-                              onValueChange={setActiveRewardType} 
-                              defaultValue={activeRewardType}
-                            >
-                              <SelectTrigger className="bg-space-mid border-brand-orange/30 w-[180px]">
-                                <SelectValue placeholder="Resource type" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-space-dark border-brand-orange/30">
-                                {themeConfig.resourceTypes.map((resource) => (
-                                  <SelectItem key={resource.id} value={resource.id}>
-                                    {resource.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            
-                            <Select 
-                              onValueChange={(value) => setActiveRewardQuantity(parseInt(value))} 
-                              defaultValue={activeRewardQuantity.toString()}
-                            >
-                              <SelectTrigger className="bg-space-mid border-brand-orange/30 w-[100px]">
-                                <SelectValue placeholder="Quantity" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-space-dark border-brand-orange/30">
-                                {[1, 2, 3, 4, 5].map((num) => (
-                                  <SelectItem key={num} value={num.toString()}>
-                                    {num}x
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            
-                            <Button 
-                              type="button" 
-                              onClick={addReward}
-                              className="bg-brand-orange hover:bg-brand-yellow text-space-darkest"
-                            >
-                              Add Reward
-                            </Button>
-                          </div>
-                        </div>
-                        <FormMessage />
-                      </div>
-                    </div>
-                    
-                    <Button 
-                      type="submit" 
-                      className="bg-brand-orange hover:bg-brand-yellow text-space-darkest font-bold pixel-button"
-                      disabled={createQuestMutation.isPending}
-                    >
-                      {createQuestMutation.isPending ? "Creating..." : "Create Quest"}
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
+          <TabsContent value="quests" className="mt-6">
+            {renderQuestsTab()}
           </TabsContent>
           
-          <TabsContent value="users" className="space-y-4">
-            <Card className="bg-space-mid border-brand-orange/30">
-              <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>Coming soon...</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-brand-light/70">User management features will be available in a future update.</p>
-              </CardContent>
-            </Card>
+          <TabsContent value="items" className="mt-6">
+            {renderItemsTab()}
           </TabsContent>
           
-          <TabsContent value="craftables" className="space-y-4">
-            <Card className="bg-space-mid border-brand-orange/30">
-              <CardHeader>
-                <CardTitle>Craftable Items</CardTitle>
-                <CardDescription>Coming soon...</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-brand-light/70">Craftable item management will be available in a future update.</p>
-              </CardContent>
-            </Card>
+          <TabsContent value="recipes" className="mt-6">
+            {renderRecipesTab()}
           </TabsContent>
           
-          <TabsContent value="lootboxes" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <LootBoxGenerator 
-                onLootBoxesCreated={() => {
-                  queryClient.invalidateQueries({ queryKey: ['/api/loot-boxes'] });
-                  toast({
-                    title: "Loot Boxes Created",
-                    description: "Loot boxes created successfully!",
-                  });
-                  playSound("complete");
-                }}
-              />
-              
-              <Card className="bg-space-mid border-brand-orange/30">
-                <CardHeader>
-                  <CardTitle>Your Loot Boxes</CardTitle>
-                  <CardDescription>Currently available loot boxes</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <LootBoxList />
-                </CardContent>
-              </Card>
-            </div>
+          <TabsContent value="lootBoxes" className="mt-6">
+            {renderLootBoxesTab()}
           </TabsContent>
         </Tabs>
-      </section>
-    </div>
+      </Container>
+    </MainLayout>
   );
-};
-
-export default Admin;
+}
