@@ -197,6 +197,7 @@ const ForgePage: React.FC = () => {
               recipes={recipes}
               selectedRecipe={selectedRecipe}
               onSelectRecipe={onSelectRecipe}
+              isLoading={isLoading}
               inventory={inventory as Record<string, number>}
               canCraft={canCraft}
               onCraft={handleCraft}

@@ -14,6 +14,9 @@ interface RecipeListProps {
   selectedRecipe: Recipe | null;
   onSelectRecipe: (recipe: Recipe) => void;
   isLoading: boolean;
+  inventory?: Record<string, number>;
+  canCraft?: boolean;
+  onCraft?: () => void;
 }
 
 const RecipeList: React.FC<RecipeListProps> = ({
@@ -27,7 +30,8 @@ const RecipeList: React.FC<RecipeListProps> = ({
   const [activeCategory, setActiveCategory] = useState('all');
   
   // Get unique categories from recipes
-  const categories = ['all', ...new Set(recipes.map(recipe => recipe.category))];
+  const uniqueCategories = Array.from(new Set(recipes.map(recipe => recipe.category || 'uncategorized')));
+  const categories = ['all', ...uniqueCategories];
   
   // Filter recipes based on search query and category
   const filteredRecipes = recipes.filter(recipe => {
@@ -145,18 +149,19 @@ const RecipeList: React.FC<RecipeListProps> = ({
           
           {/* Category tabs */}
           <div className="overflow-x-auto">
-            <TabsList className="w-full justify-start">
-              {categories.map(category => (
-                <TabsTrigger
-                  key={category}
-                  value={category}
-                  onClick={() => handleCategoryChange(category)}
-                  className="capitalize"
-                >
-                  {category}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+            <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
+              <TabsList className="w-full justify-start">
+                {categories.map(category => (
+                  <TabsTrigger
+                    key={category}
+                    value={category}
+                    className="capitalize"
+                  >
+                    {category}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
           </div>
           
           {/* Recipe lists by difficulty */}
