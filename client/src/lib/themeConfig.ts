@@ -98,20 +98,20 @@ export const themeConfig = {
       color: 'var(--resource-cloth)',
     },
     {
-      id: 'metal',
-      name: 'Metal',
+      id: 'copper',
+      name: 'Copper',
       icon: 'cog',
       color: 'var(--resource-metal)',
     },
     {
-      id: 'tech-scrap',
+      id: 'techscrap',
       name: 'Tech Scrap',
       icon: 'microchip',
       color: 'var(--resource-tech-scrap)',
     },
     {
-      id: 'sensor-crystal',
-      name: 'Sensor Crystal',
+      id: 'crystal',
+      name: 'Crystal',
       icon: 'gem',
       color: 'var(--resource-sensor-crystal)',
     },
@@ -122,14 +122,8 @@ export const themeConfig = {
       color: 'var(--resource-circuit-board)',
     },
     {
-      id: 'alchemy-ink',
-      name: 'Alchemy Ink',
-      icon: 'flask',
-      color: 'var(--resource-alchemy-ink)',
-    },
-    {
       id: 'loot-crate',
-      name: 'Salvage Crate',
+      name: 'Loot Crate',
       icon: 'box',
       color: 'var(--resource-loot-crate)',
     }

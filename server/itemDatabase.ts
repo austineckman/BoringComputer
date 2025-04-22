@@ -14,68 +14,59 @@ export interface ItemDetails {
 
 // Create a mutable database that can be modified at runtime by admin operations
 export let itemDatabase: Record<string, ItemDetails> = {
+  'copper': {
+    id: 'copper',
+    name: 'Copper',
+    description: 'A conductive metal used in basic circuits and components.',
+    flavorText: 'The foundation of all electronics. Shiny and malleable.',
+    rarity: 'common',
+    craftingUses: ['circuits', 'wiring', 'conductors'],
+    imagePath: '/assets/copper.png'
+  },
   'cloth': {
     id: 'cloth',
-    name: 'Synthetic Fabric',
-    description: 'A lightweight, durable synthetic fabric with excellent tensile strength. Used in various crafting recipes.',
-    flavorText: 'Nano-woven threads create a material stronger than steel but light as a feather.',
+    name: 'Cloth',
+    description: 'Soft fabric material used for insulation and wrapping.',
+    flavorText: 'Carefully woven threads create a versatile material.',
     rarity: 'common',
-    craftingUses: ['insulation', 'wiring-protection', 'circuit-backing'],
-    imagePath: '/images/resources/cloth.png'
+    craftingUses: ['insulation', 'wrapping', 'padding'],
+    imagePath: '/assets/cloth.png'
   },
-  'metal': {
-    id: 'metal',
-    name: 'Duranium Alloy',
-    description: 'A high-strength metal alloy resistant to extreme temperatures and pressures. Commonly used in advanced engineering.',
-    flavorText: 'This space-age metal blend can withstand the vacuum of space and the heat of reentry.',
-    rarity: 'common',
-    craftingUses: ['chassis', 'structural-support', 'heat-sink'],
-    imagePath: '/images/resources/metal.png'
+  'crystal': {
+    id: 'crystal',
+    name: 'Crystal',
+    description: 'A rare energy-focusing crystal with unique properties.',
+    flavorText: 'It hums with an inner energy when held up to the light.',
+    rarity: 'rare',
+    craftingUses: ['energy', 'focusing', 'amplification'],
+    imagePath: '/assets/crystal.png'
   },
-  'tech-scrap': {
-    id: 'tech-scrap',
+  'techscrap': {
+    id: 'techscrap',
     name: 'Tech Scrap',
-    description: 'Salvaged electronic components that can be repurposed for new devices. Contains valuable rare earth elements.',
-    flavorText: 'One explorer\'s junk is a crafter\'s treasure. These bits of technology hold secrets of past civilizations.',
+    description: 'Salvaged remnants of advanced technology.',
+    flavorText: 'One machine\'s trash is an inventor\'s treasure.',
     rarity: 'uncommon',
-    craftingUses: ['microcontrollers', 'sensors', 'power-supply'],
-    imagePath: '/images/resources/tech-scrap.png'
+    craftingUses: ['recycling', 'components', 'rare materials'],
+    imagePath: '/assets/techscrap.png'
   },
   'circuit-board': {
     id: 'circuit-board',
-    name: 'Quantum Circuit Board',
-    description: 'Advanced circuitry capable of quantum computing operations. The foundation of most high-tech equipment.',
-    flavorText: 'Microscopic superconducting pathways capable of computing in multiple dimensions simultaneously.',
-    rarity: 'rare',
-    craftingUses: ['processing-unit', 'memory-banks', 'communication-array'],
-    imagePath: '/images/resources/circuit-board.png'
-  },
-  'sensor-crystal': {
-    id: 'sensor-crystal',
-    name: 'Resonant Crystal',
-    description: 'A rare crystal with unique electromagnetic properties. Used in advanced sensing and scanning equipment.',
-    flavorText: 'These crystals hum with energy, vibrating in tune with quantum fluctuations in the environment.',
-    rarity: 'epic',
-    craftingUses: ['signal-amplifier', 'detection-array', 'energy-focus'],
-    imagePath: '/images/resources/crystal.png'
-  },
-  'alchemy-ink': {
-    id: 'alchemy-ink',
-    name: 'Luminous Ink',
-    description: 'A mysterious bioluminescent substance that responds to electrical impulses. Crucial for advanced interfaces.',
-    flavorText: 'Harvested from deep-sea creatures on distant worlds, this ink seems almost aware of its surroundings.',
-    rarity: 'legendary',
-    craftingUses: ['neural-interface', 'holographic-display', 'quantum-inscription'],
-    imagePath: '/images/resources/ink.png'
+    name: 'Circuit Board',
+    description: 'The foundation of electronic devices.',
+    flavorText: 'A maze of pathways for electricity to travel.',
+    rarity: 'uncommon',
+    craftingUses: ['electronics', 'computers', 'devices'],
+    imagePath: '/assets/circuit board.png'
   },
   'loot-crate': {
     id: 'loot-crate',
-    name: 'Salvage Crate',
-    description: 'A sealed container with valuable materials. Free to open and may contain various resources.',
-    flavorText: 'Scattered across abandoned outposts, these crates contain treasures from fallen civilizations.',
+    name: 'Loot Crate',
+    description: 'A mysterious box containing random resources.',
+    flavorText: 'What treasures await inside?',
     rarity: 'common',
     craftingUses: [],
-    imagePath: '/images/resources/loot-crate.png'
+    imagePath: '/assets/loot crate.png'
   }
 };
 
