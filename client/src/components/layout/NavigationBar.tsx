@@ -86,7 +86,13 @@ const NavigationBar = () => {
               className="p-2 text-brand-light/70 hover:text-brand-orange transition-colors"
               onClick={() => {
                 toggleMute();
-                if (!isMuted) sounds.click();
+                if (!isMuted) {
+                  try {
+                    sounds.click?.();
+                  } catch (e) {
+                    console.warn('Could not play click sound', e);
+                  }
+                }
               }}
               title={isMuted ? "Unmute Sound Effects" : "Mute Sound Effects"}
             >
@@ -117,7 +123,14 @@ const NavigationBar = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-space-mid border border-brand-orange/30">
                 <DropdownMenuItem 
-                  onClick={() => { sounds.click(); logout(); }}
+                  onClick={() => { 
+                    try {
+                      sounds.click?.();
+                    } catch (e) {
+                      console.warn('Could not play click sound', e);
+                    }
+                    logout(); 
+                  }}
                   className="text-brand-light hover:text-brand-orange cursor-pointer"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
@@ -144,7 +157,11 @@ const NavigationBar = () => {
           className="md:hidden text-brand-light"
           onClick={() => {
             setMobileMenuOpen(!mobileMenuOpen);
-            sounds.click();
+            try {
+              sounds.click?.();
+            } catch (e) {
+              console.warn('Could not play click sound', e);
+            }
           }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
