@@ -13,14 +13,7 @@ import {
 } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { 
-  itemDatabase, 
-  ItemDetails, 
-  getItemDetails, 
-  addOrUpdateItem, 
-  removeItem, 
-  getAllItems 
-} from '../itemDatabase';
+import { storage } from '../storage';
 
 const router = Router();
 
