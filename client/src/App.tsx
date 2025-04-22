@@ -85,7 +85,9 @@ function App() {
       </ProtectedRoute>
 
       <ProtectedRoute path="/quests/:id">
-        <QuestDetail />
+        <MainLayout>
+          <QuestDetail />
+        </MainLayout>
       </ProtectedRoute>
       
       <ProtectedRoute path="/inventory">
