@@ -1,18 +1,27 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { DndProvider as ReactDndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { TouchBackend } from 'react-dnd-touch-backend';
 
-/**
- * DndProvider wraps components with react-dnd's DndProvider
- * Enables drag and drop functionality for the crafting system
- * 
- * @param props.children Child components that need drag and drop functionality
- */
-export const DndProvider: React.FC<{ 
-  children: React.ReactNode 
-}> = ({ children }) => {
+// Use this component to wrap any components that need drag-and-drop functionality
+interface DndProviderProps {
+  children: ReactNode;
+}
+
+const DndProvider: React.FC<DndProviderProps> = ({ children }) => {
+  // Use TouchBackend for mobile devices, HTML5Backend for desktop
+  const isTouchDevice = () => {
+    return ('ontouchstart' in window) || 
+      (navigator.maxTouchPoints > 0) || 
+      ((navigator as any).msMaxTouchPoints > 0);
+  };
+  
+  // Choose the appropriate backend based on device type
+  const backend = isTouchDevice() ? TouchBackend : HTML5Backend;
+  const options = isTouchDevice() ? { enableMouseEvents: true } : {};
+  
   return (
-    <ReactDndProvider backend={HTML5Backend}>
+    <ReactDndProvider backend={backend} options={options}>
       {children}
     </ReactDndProvider>
   );

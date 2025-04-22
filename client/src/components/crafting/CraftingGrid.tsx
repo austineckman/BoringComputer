@@ -1,44 +1,44 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import CraftingCell from './CraftingCell';
-import { GRID_SIZE, CraftingGridPattern } from '@/hooks/useCrafting';
+import { CraftingGridPattern } from '@/../../shared/types';
 
 interface CraftingGridProps {
   grid: CraftingGridPattern;
-  patternToMatch?: CraftingGridPattern;
   onDropItem: (row: number, col: number, itemId: string) => void;
   onRemoveItem: (row: number, col: number) => void;
   title?: string;
+  patternToMatch?: CraftingGridPattern | null;
   canCraft?: boolean;
 }
 
 const CraftingGrid: React.FC<CraftingGridProps> = ({
   grid,
-  patternToMatch,
   onDropItem,
   onRemoveItem,
   title = 'Crafting Grid',
-  canCraft = false
+  patternToMatch = null,
+  canCraft = false,
 }) => {
-  // Helper function to determine if a cell should be highlighted
+  // Determine if a cell should be highlighted based on the pattern to match
   const shouldHighlightCell = (row: number, col: number): boolean => {
-    if (!patternToMatch) return false;
+    if (!patternToMatch || !canCraft) return false;
     
-    // Highlight if this cell has an item in the pattern
-    return !!patternToMatch[row][col] && grid[row][col] === patternToMatch[row][col];
+    // Only highlight if there's a pattern and it matches
+    return Boolean(patternToMatch[row][col]);
   };
   
   return (
-    <Card className={`h-full transition-colors ${canCraft ? 'shadow-md shadow-green-200 dark:shadow-green-900/30' : ''}`}>
-      <CardHeader className="pb-4">
-        <CardTitle className="text-xl flex items-center justify-between">
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-xl">
           {title}
-          {canCraft && (
-            <span className="text-sm font-normal text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded">
-              Ready to craft!
-            </span>
-          )}
         </CardTitle>
+        <CardDescription>
+          {patternToMatch 
+            ? 'Arrange your items to match the recipe pattern' 
+            : 'Drag resources here to create an item'}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col items-center">

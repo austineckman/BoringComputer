@@ -1,245 +1,232 @@
-import React, { useState, useCallback } from 'react';
-import MainLayout from '@/components/layout/MainLayout';
-import { Container } from '@/components/ui/container';
-import { Separator } from '@/components/ui/separator';
+import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useInventory } from '@/hooks/useInventory';
-import { useCrafting } from '@/hooks/useCrafting';
+import { Separator } from '@/components/ui/separator';
+import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { Loader2 } from 'lucide-react';
-import RecipeList from '@/components/crafting/RecipeList';
+import { useToast } from '@/hooks/use-toast';
 import CraftingGrid from '@/components/crafting/CraftingGrid';
+import RecipeList from '@/components/crafting/RecipeList';
 import InventoryGrid from '@/components/crafting/InventoryGrid';
 import DndProvider from '@/components/crafting/DndProvider';
-import { Recipe } from '../../shared/types';
-import forgeHeroPath from '@assets/forgehero.png';
+import useCrafting from '@/hooks/useCrafting';
+import { Recipe } from '@/../../shared/types';
 
-// Mock recipes until we get them from the API
-const MOCK_RECIPES: Recipe[] = [
+// Import forge hero image
+import forgeHeroImage from '@assets/forgehero.png';
+
+// Mock recipes data
+const mockRecipes: Recipe[] = [
   {
-    id: 1,
-    name: "Basic Circuit",
-    description: "A simple electronic circuit that can be used in various devices.",
-    difficulty: "beginner",
-    resultItem: "circuit-board",
-    resultQuantity: 1,
-    materials: {
-      "copper": 2,
-      "techscrap": 1
-    },
+    id: 'basic-circuit',
+    name: 'Basic Circuit',
+    description: 'A simple circuit board for basic electronics.',
+    difficulty: 'beginner',
+    unlockedAt: 1,
+    imageUrl: '/images/items/circuit-board.png',
     pattern: [
-      [null, "copper", "copper", null, null],
-      [null, "techscrap", null, null, null],
-      [null, null, null, null, null],
-      [null, null, null, null, null],
-      [null, null, null, null, null]
+      ['', '', '', '', ''],
+      ['', 'copper', 'copper', 'copper', ''],
+      ['', 'copper', 'crystal', 'copper', ''],
+      ['', 'copper', 'copper', 'copper', ''],
+      ['', '', '', '', '']
+    ],
+    materials: {
+      'copper': 7,
+      'crystal': 1
+    },
+    rewards: [
+      {
+        itemId: 'circuit-board',
+        quantity: 1,
+        type: 'digital',
+        description: 'A basic circuit board'
+      }
     ]
   },
   {
-    id: 2,
-    name: "Space Fabric",
-    description: "A reinforced fabric with special properties.",
-    difficulty: "beginner",
-    resultItem: "cloth",
-    resultQuantity: 3,
+    id: 'radio-transmitter',
+    name: 'Radio Transmitter',
+    description: 'Used for long-range communication.',
+    difficulty: 'intermediate',
+    unlockedAt: 5,
+    imageUrl: '/images/items/techscrap.png',
+    pattern: [
+      ['', '', 'crystal', '', ''],
+      ['', 'copper', 'copper', 'copper', ''],
+      ['crystal', 'copper', 'circuit-board', 'copper', 'crystal'],
+      ['', 'copper', 'copper', 'copper', ''],
+      ['', '', 'crystal', '', '']
+    ],
     materials: {
-      "cloth": 2
-    }
-  },
-  {
-    id: 3,
-    name: "Cosmic Ink Cartridge",
-    description: "A cartridge filled with mysterious ink from the cosmos.",
-    difficulty: "intermediate",
-    resultItem: "ink",
-    resultQuantity: 1,
-    materials: {
-      "crystal": 1,
-      "techscrap": 2
-    }
+      'copper': 8,
+      'crystal': 4,
+      'circuit-board': 1
+    },
+    rewards: [
+      {
+        itemId: 'radio-transmitter',
+        quantity: 1,
+        type: 'digital',
+        description: 'A radio transmitter for long-range communication'
+      }
+    ]
   }
 ];
 
-const ForgePage = () => {
-  const { inventory, loading: isLoadingInventory } = useInventory();
-  const [activeTab, setActiveTab] = useState('crafting');
-  
-  // Convert inventory array to record format for easier lookup
-  const inventoryRecord: Record<string, number> = {};
-  if (Array.isArray(inventory)) {
-    inventory.forEach((item: any) => {
-      inventoryRecord[item.type] = item.quantity;
-    });
-  }
-  
-  // Add some items to the inventory for testing
-  if (Object.keys(inventoryRecord).length === 0) {
-    inventoryRecord["copper"] = 10;
-    inventoryRecord["cloth"] = 5;
-    inventoryRecord["crystal"] = 3;
-    inventoryRecord["techscrap"] = 8;
-    inventoryRecord["ink"] = 2;
-    inventoryRecord["circuit-board"] = 1;
-  }
-  
-  // Use our crafting hook
-  const crafting = useCrafting({
-    inventory: inventoryRecord,
-    recipes: MOCK_RECIPES,
-    onCraftSuccess: (recipeId, resultItem, quantity) => {
-      console.log(`Crafted ${quantity}x ${resultItem} from recipe ${recipeId}`);
-      // Here we would update the inventory
-    }
+const ForgePage: React.FC = () => {
+  const { sounds } = useSoundEffects();
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<string>('crafting');
+
+  // Fetch inventory data
+  const { data: inventoryData, isLoading: isLoadingInventory } = useQuery({
+    queryKey: ['/api/inventory'],
+    keepPreviousData: true
   });
-  
-  const handleSelectRecipe = useCallback((recipeId: number) => {
-    crafting.setSelectedRecipeId(recipeId);
-  }, [crafting]);
-  
-  const isLoading = isLoadingInventory;
+
+  // Convert inventory array to record for easier access
+  const inventory = React.useMemo(() => {
+    if (!inventoryData) return {};
+    
+    return inventoryData.reduce((acc: Record<string, number>, item: any) => {
+      acc[item.type] = item.quantity;
+      return acc;
+    }, {});
+  }, [inventoryData]);
+
+  // Set up crafting system with the useCrafting hook
+  const {
+    grid,
+    selectedRecipe,
+    canCraft,
+    isCrafting,
+    onDropItem,
+    onRemoveItem,
+    onSelectRecipe,
+    onCraft
+  } = useCrafting(mockRecipes, inventory);
+
+  // Play sound when changing tabs
+  const handleTabChange = (value: string) => {
+    sounds.click();
+    setActiveTab(value);
+  };
 
   return (
     <MainLayout>
-      <Container>
-        <div className="pt-6 pb-8">
-          <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold tracking-tight text-amber-600">
-              Gizbo's Forge
-            </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mt-2">
-              Craft valuable items using resources from your adventures. Gizbo the ogre offers mysterious recipes with powerful rewards!
-            </p>
-          </div>
-
-          <div className="relative w-full h-64 mb-8 overflow-hidden rounded-lg bg-gray-800">
+      <div className="container max-w-7xl py-6">
+        <header className="mb-8">
+          <div className="relative w-full h-[200px] mb-6 rounded-lg overflow-hidden">
             <img
-              src={forgeHeroPath}
+              src={forgeHeroImage}
               alt="Gizbo's Forge"
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-            <div className="absolute bottom-4 left-4 text-white text-xl font-bold">
-              <span className="text-xs block text-amber-400">Welcome to</span>
-              Gizbo's Crafting Station
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent flex flex-col justify-end p-6">
+              <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-md">
+                Gizbo's Forge
+              </h1>
+              <p className="text-sm md:text-base text-gray-200 max-w-md mt-2">
+                Welcome to Gizbo's workshop! Drag and drop resources from your inventory
+                to craft new items and unlock powerful equipment.
+              </p>
             </div>
           </div>
+        </header>
 
-          <Tabs defaultValue="crafting" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="crafting">Crafting Workshop</TabsTrigger>
-              <TabsTrigger value="schematics">Recipe Collection</TabsTrigger>
-            </TabsList>
-
-            {isLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
-                <span className="ml-2 text-gray-600 dark:text-gray-400">Loading forge...</span>
+        <Tabs defaultValue="crafting" value={activeTab} onValueChange={handleTabChange}>
+          <TabsList className="grid w-full md:w-[400px] grid-cols-2">
+            <TabsTrigger value="crafting">Crafting Workshop</TabsTrigger>
+            <TabsTrigger value="crafted">Crafted Items</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="crafting" className="mt-6">
+            {isLoadingInventory ? (
+              <div className="flex items-center justify-center h-[500px]">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
             ) : (
-              <>
-                <TabsContent value="crafting" className="space-y-6">
-                  <DndProvider>
-                    <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
-                      <div className="lg:col-span-3">
-                        <RecipeList
-                          recipes={MOCK_RECIPES}
-                          selectedRecipeId={crafting.selectedRecipeId}
-                          onSelectRecipe={handleSelectRecipe}
-                          inventory={inventoryRecord}
-                        />
-                      </div>
-                      <div className="lg:col-span-4">
-                        <div className="space-y-4">
-                          <CraftingGrid
-                            grid={crafting.grid}
-                            patternToMatch={crafting.selectedRecipe?.pattern}
-                            onDropItem={crafting.placeItemInGrid}
-                            onRemoveItem={crafting.removeItemFromGrid}
-                            canCraft={crafting.canCraft}
-                            title="Crafting Grid"
-                          />
-                          
-                          <div className="flex justify-between items-center mt-4">
-                            <div className="text-sm text-gray-500">
-                              {crafting.selectedRecipe 
-                                ? `Selected Recipe: ${crafting.selectedRecipe.name}` 
-                                : 'No recipe selected'}
-                            </div>
-                            <Button 
-                              onClick={crafting.craft}
-                              disabled={!crafting.canCraft}
-                              className="bg-amber-600 hover:bg-amber-700 text-white"
-                            >
-                              Craft Item
-                            </Button>
-                          </div>
-                          
-                          <div className="mt-6">
-                            <h3 className="text-lg font-medium mb-2">Your Inventory</h3>
-                            <div className="grid grid-cols-5 md:grid-cols-8 gap-2 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                              {Object.entries(inventoryRecord).map(([itemId, quantity]) => (
-                                <div 
-                                  key={itemId} 
-                                  className="flex flex-col items-center"
-                                >
-                                  <div className="w-12 h-12 bg-white dark:bg-gray-700 rounded-md flex items-center justify-center relative mb-1">
-                                    <img 
-                                      src={`/assets/${itemId}.png`} 
-                                      alt={itemId}
-                                      className="w-10 h-10 object-contain" 
-                                    />
-                                    <span className="absolute bottom-0 right-0 bg-gray-800 text-white text-xs px-1 rounded-sm">
-                                      {quantity}
-                                    </span>
-                                  </div>
-                                  <span className="text-xs truncate w-full text-center">{itemId}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+              <DndProvider>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <CraftingGrid
+                        grid={grid}
+                        onDropItem={onDropItem}
+                        onRemoveItem={onRemoveItem}
+                        title="Crafting Table"
+                        patternToMatch={selectedRecipe?.pattern}
+                        canCraft={canCraft}
+                      />
+                      <InventoryGrid
+                        inventory={inventory}
+                        selectedRecipe={selectedRecipe}
+                      />
                     </div>
-                  </DndProvider>
-                </TabsContent>
-
-                <TabsContent value="schematics">
-                  <div className="p-6 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                    <h2 className="text-xl font-bold mb-4">Recipe Collection</h2>
-                    <p className="mb-4">
-                      The library of Gizbo's ancient recipes. Complete quests and adventures to unlock more powerful crafting schematics!
-                    </p>
-                    <Separator className="my-4" />
                     
-                    {MOCK_RECIPES.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {MOCK_RECIPES.map((recipe) => (
-                          <div
-                            key={recipe.id}
-                            className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900"
+                    {selectedRecipe && (
+                      <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                        <h3 className="font-medium mb-2">Recipe: {selectedRecipe.name}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{selectedRecipe.description}</p>
+                        
+                        <div className="flex justify-end">
+                          <Button
+                            onClick={onCraft}
+                            disabled={!canCraft || isCrafting}
+                            className="px-4"
                           >
-                            <h3 className="font-bold">{recipe.name}</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                              {recipe.description}
-                            </p>
-                            <div className="text-xs text-gray-500 dark:text-gray-500">
-                              <span className="capitalize">{recipe.difficulty}</span> • Gives {recipe.resultQuantity}x {recipe.resultItem}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        No recipes discovered yet. Complete quests to unlock recipes!
+                            {isCrafting ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Crafting...
+                              </>
+                            ) : (
+                              'Craft Item'
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </div>
-                </TabsContent>
-              </>
+                  
+                  <div>
+                    <RecipeList
+                      recipes={mockRecipes}
+                      selectedRecipe={selectedRecipe}
+                      onSelectRecipe={onSelectRecipe}
+                      inventory={inventory}
+                      canCraft={canCraft}
+                      onCraft={onCraft}
+                    />
+                  </div>
+                </div>
+              </DndProvider>
             )}
-          </Tabs>
-        </div>
-      </Container>
+          </TabsContent>
+          
+          <TabsContent value="crafted" className="mt-6">
+            <div className="rounded-lg border p-6 bg-card">
+              <h2 className="text-xl font-semibold mb-4">Your Crafted Items</h2>
+              <Separator className="mb-4" />
+              
+              <div className="py-8 text-center text-muted-foreground">
+                <p>You haven't crafted any items yet.</p>
+                <p className="mt-2">Head over to the Crafting Workshop to get started!</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => setActiveTab('crafting')}
+                >
+                  Go to Workshop
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </MainLayout>
   );
 };
