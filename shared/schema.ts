@@ -299,6 +299,28 @@ export const insertCraftingRecipeSchema = createInsertSchema(craftingRecipes).pi
   image: true
 });
 
+export const insertItemSchema = createInsertSchema(items).pick({
+  id: true,
+  name: true,
+  description: true,
+  flavorText: true,
+  rarity: true,
+  craftingUses: true,
+  imagePath: true,
+  category: true
+});
+
+export const insertLootBoxConfigSchema = createInsertSchema(lootBoxConfigs).pick({
+  id: true,
+  name: true,
+  description: true,
+  rarity: true,
+  itemDropTable: true,
+  minRewards: true,
+  maxRewards: true,
+  image: true
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -332,3 +354,9 @@ export type InsertInventoryHistory = z.infer<typeof insertInventoryHistorySchema
 
 export type CraftingRecipe = typeof craftingRecipes.$inferSelect;
 export type InsertCraftingRecipe = z.infer<typeof insertCraftingRecipeSchema>;
+
+export type Item = typeof items.$inferSelect;
+export type InsertItem = z.infer<typeof insertItemSchema>;
+
+export type LootBoxConfig = typeof lootBoxConfigs.$inferSelect;
+export type InsertLootBoxConfig = z.infer<typeof insertLootBoxConfigSchema>;
