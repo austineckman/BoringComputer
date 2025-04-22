@@ -1123,14 +1123,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if the loot box is already opened
       if (lootBox.opened) {
         if (lootBox.rewards && lootBox.rewards.length > 0) {
-          return res.json({ success: true, rewards: lootBox.rewards, alreadyOpened: true });
+          console.log('Loot box already opened, returning stored rewards:', lootBox.rewards);
+          return res.json({ 
+            success: true, 
+            rewards: lootBox.rewards, 
+            alreadyOpened: true,
+            message: "Loot box already opened"
+          });
         } else {
-          return res.status(400).json({ message: "This loot box has already been opened" });
+          // Something went wrong previously - regenerate rewards for this already opened box
+          console.log('Loot box was opened but has no rewards, regenerating...');
+          const regeneratedRewards = generateLootBoxRewards(lootBox.type);
+          
+          // Update the loot box with the regenerated rewards
+          await storage.updateLootBox(lootBoxId, {
+            rewards: regeneratedRewards
+          });
+          
+          return res.json({ 
+            success: true, 
+            rewards: regeneratedRewards, 
+            alreadyOpened: true,
+            regenerated: true,
+            message: "Regenerated rewards for previously opened loot box"
+          });
         }
       }
       
       // Generate rewards based on loot box type
+      console.log(`Generating rewards for ${lootBox.type} loot box...`);
       const rewards = generateLootBoxRewards(lootBox.type);
+      console.log('Generated rewards:', rewards);
+      
+      if (!rewards || rewards.length === 0) {
+        console.log('Warning: No rewards were generated, using fallback rewards');
+        rewards.push({ type: 'cloth', quantity: 3 });
+        rewards.push({ type: 'metal', quantity: 2 });
+      }
       
       // Update the loot box as opened with rewards
       await storage.updateLootBox(lootBoxId, {
@@ -1159,10 +1188,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         inventory: user.inventory
       });
       
-      return res.json({ success: true, rewards });
+      console.log('Successfully opened loot box, returning rewards:', rewards);
+      return res.json({ 
+        success: true, 
+        rewards,
+        message: "Loot box opened successfully" 
+      });
     } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: "Failed to open loot box" });
+      console.error('Error opening loot box:', error);
+      return res.status(500).json({ 
+        message: "Failed to open loot box",
+        error: error.message
+      });
     }
   });
   
