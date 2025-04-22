@@ -11,6 +11,8 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ChevronDown, LogOut, User, Volume2, VolumeX, Award, Settings } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 

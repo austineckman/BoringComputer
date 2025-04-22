@@ -1,7 +1,14 @@
 import { useCallback, useState, useEffect } from 'react';
 import { playSound, SoundName, sounds as soundLibrary } from '@/lib/sound';
+import { Howler } from 'howler';
 
 export function useSoundEffects() {
+  // Get saved volume from localStorage or default to 0.6 (60%)
+  const [volume, setVolume] = useState<number>(() => {
+    const savedVolume = localStorage.getItem('sound_volume');
+    return savedVolume ? parseFloat(savedVolume) : 0.6;
+  });
+  
   const [isMuted, setIsMuted] = useState<boolean>(() => {
     // Check if user has previously muted sounds and stored in localStorage
     const savedMute = localStorage.getItem('sound_muted');
@@ -12,9 +19,19 @@ export function useSoundEffects() {
   useEffect(() => {
     localStorage.setItem('sound_muted', isMuted.toString());
   }, [isMuted]);
+  
+  // Effect to save volume preference to localStorage and update global Howler volume
+  useEffect(() => {
+    localStorage.setItem('sound_volume', volume.toString());
+    Howler.volume(volume);
+  }, [volume]);
 
   const toggleMute = useCallback(() => {
     setIsMuted(prev => !prev);
+  }, []);
+  
+  const changeVolume = useCallback((newVolume: number) => {
+    setVolume(newVolume);
   }, []);
 
   const playSoundSafely = useCallback(
@@ -57,6 +74,8 @@ export function useSoundEffects() {
     sounds, 
     playSoundSafely, 
     isMuted, 
-    toggleMute 
+    toggleMute,
+    volume,
+    changeVolume
   };
 }
