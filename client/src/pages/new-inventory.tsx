@@ -578,28 +578,85 @@ export default function Inventory() {
           </Tabs>
         </div>
         
-        {/* Loot Box Rewards Modal */}
+        {/* Loot Box Rewards Modal with CS:GO-style Animation */}
         <Dialog open={isRewardModalOpen} onOpenChange={setIsRewardModalOpen}>
-          <DialogContent className="bg-space-dark border-brand-orange/30 sm:max-w-md">
+          <DialogContent className="bg-space-dark border-brand-orange/30 sm:max-w-xl">
             <DialogHeader>
               <DialogTitle className="text-center text-xl text-brand-orange">Loot Box Rewards!</DialogTitle>
               <DialogDescription className="text-center text-brand-light/70">
-                You received the following items:
+                {currentRewards.length > 0 ? "Spinning the loot wheel..." : "No rewards found in this loot box."}
               </DialogDescription>
             </DialogHeader>
             
             {currentRewards.length > 0 ? (
-              <div className="grid grid-cols-2 gap-4 py-4">
-                {currentRewards.map((reward, index) => (
-                  <div 
-                    key={index} 
-                    className="flex flex-col items-center p-3 bg-space-mid rounded-lg border border-space-light/20 hover:border-brand-orange/40 transition-colors"
-                  >
-                    <span className="text-3xl mb-2">{resourceIcons[reward.type] || '🔮'}</span>
-                    <span className="font-medium capitalize text-brand-light">{reward.type.replace('-', ' ')}</span>
-                    <span className="text-brand-yellow text-lg font-bold">+{reward.quantity}</span>
+              <div className="relative">
+                {/* CS:GO-style item scroll animation */}
+                <div className="overflow-hidden mx-auto my-6 bg-gradient-to-r from-space-dark via-space-mid to-space-dark border-2 border-brand-orange/50 rounded-md relative">
+                  {/* Highlight marker in the center */}
+                  <div className="absolute top-0 bottom-0 left-1/2 w-0.5 bg-brand-yellow z-10"></div>
+                  <div className="absolute top-0 bottom-0 left-1/2 w-12 -translate-x-1/2 bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent z-10"></div>
+                  
+                  {/* The scrolling items container */}
+                  <div className="animate-slot-machine flex items-center py-8" style={{ animation: 'slotMachine 3s cubic-bezier(0.2, 0.6, 0.8, 1) forwards' }}>
+                    {/* Generate a longer list with randomized items for animation, ending with actual rewards */}
+                    {[...Array(20)].map((_, idx) => {
+                      // Random items for the animation
+                      const randomItem = {
+                        type: ['cloth', 'metal', 'tech-scrap', 'circuit-board', 'sensor-crystal', 'alchemy-ink'][Math.floor(Math.random() * 6)],
+                        quantity: Math.floor(Math.random() * 5) + 1
+                      };
+                      
+                      // The last items should be the actual rewards
+                      const itemToShow = idx >= 20 - currentRewards.length 
+                        ? currentRewards[idx - (20 - currentRewards.length)] 
+                        : randomItem;
+                        
+                      // Get appropriate pulse animation based on rarity
+                      const itemRarityClass = 
+                        itemToShow.quantity > 10 ? 'bg-legendary-pulse' :
+                        itemToShow.quantity > 7 ? 'bg-epic-pulse' :
+                        itemToShow.quantity > 5 ? 'bg-rare-pulse' :
+                        itemToShow.quantity > 3 ? 'bg-uncommon-pulse' :
+                        'bg-common-pulse';
+                      
+                      return (
+                        <div 
+                          key={idx} 
+                          className={`flex flex-col items-center mx-2 p-5 min-w-[120px] h-32 ${itemRarityClass} rounded-lg border border-space-light/40 shadow-lg`}
+                        >
+                          <span className="text-4xl mb-3">{resourceIcons[itemToShow.type] || '🔮'}</span>
+                          <span className="font-medium capitalize text-white text-center">{itemToShow.type.replace('-', ' ')}</span>
+                          <span className="text-brand-yellow text-lg font-bold">+{itemToShow.quantity}</span>
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
+                </div>
+                
+                {/* Final rewards display after animation */}
+                <div className="grid grid-cols-2 gap-4 my-6">
+                  {currentRewards.map((reward, index) => {
+                    // Determine rarity class based on quantity
+                    const rarityClass = 
+                      reward.quantity > 10 ? 'border-amber-400 bg-amber-900/20' :
+                      reward.quantity > 7 ? 'border-purple-400 bg-purple-900/20' :
+                      reward.quantity > 5 ? 'border-blue-400 bg-blue-900/20' :
+                      reward.quantity > 3 ? 'border-green-400 bg-green-900/20' :
+                      'border-gray-400 bg-gray-900/20';
+                      
+                    return (
+                      <div 
+                        key={index} 
+                        className={`flex flex-col items-center p-4 rounded-lg ${rarityClass} border-2 shadow-lg animate-fade-in-up`}
+                        style={{ animationDelay: `${3 + index * 0.2}s` }}
+                      >
+                        <span className="text-3xl mb-2">{resourceIcons[reward.type] || '🔮'}</span>
+                        <span className="font-medium capitalize text-brand-light">{reward.type.replace('-', ' ')}</span>
+                        <span className="text-brand-yellow text-lg font-bold">+{reward.quantity}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             ) : (
               <div className="py-8 text-center">

@@ -363,3 +363,60 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--brand-yellow));
 }
+
+/* CS:GO-style loot box animations */
+@keyframes slotMachine {
+  0% {
+    transform: translateX(0);
+  }
+  30% {
+    transform: translateX(-1000px);
+  }
+  80% {
+    transform: translateX(-1800px);
+  }
+  100% {
+    transform: translateX(-1920px);
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Add animation for shine effect */
+@keyframes shine {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  20% {
+    opacity: 0.5;
+  }
+  60% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.animate-shine {
+  animation: shine 2s infinite;
+}
+
+.animate-slot-machine {
+  animation: slotMachine 3s cubic-bezier(0.2, 0.6, 0.8, 1) forwards;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
