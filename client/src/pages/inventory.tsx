@@ -55,19 +55,19 @@ export default function Inventory() {
   const [selectedItem, setSelectedItem] = useState<{type: string, quantity: number, isLootBox?: boolean, lootBoxData?: LootBox} | null>(null);
   
   // Get inventory resources
-  const { data: resources, isLoading: isLoadingResources } = useQuery({
+  const { data: resources, isLoading: isLoadingResources, refetch: refetchInventory } = useQuery({
     queryKey: ['/api/inventory'],
     queryFn: () => fetch('/api/inventory').then(res => res.json()),
   });
   
   // Get loot boxes
-  const { data: lootBoxes, isLoading: isLoadingLootBoxes } = useQuery({
+  const { data: lootBoxes, isLoading: isLoadingLootBoxes, refetch: refetchLootBoxes } = useQuery({
     queryKey: ['/api/loot-boxes'],
     queryFn: () => fetch('/api/loot-boxes').then(res => res.json()),
   });
   
   // Get inventory history
-  const { data: history, isLoading: isLoadingHistory } = useQuery({
+  const { data: history, isLoading: isLoadingHistory, refetch: refetchHistory } = useQuery({
     queryKey: ['/api/inventory/history'],
     queryFn: () => fetch('/api/inventory/history').then(res => res.json()),
   });
@@ -88,6 +88,15 @@ export default function Inventory() {
         if (data.success && data.rewards && data.rewards.length > 0) {
           // Use the rewards from the server response
           setCurrentRewards(data.rewards);
+          
+          // Refresh the inventory and loot boxes
+          await Promise.all([
+            refetchInventory(),
+            refetchLootBoxes(),
+            refetchHistory()
+          ]);
+          
+          console.log('Using rewards from server:', data.rewards);
         } else {
           // Use a fallback if no rewards were returned
           setCurrentRewards(rewards);
@@ -99,17 +108,32 @@ export default function Inventory() {
     } else {
       // Use the rewards passed to the function
       setCurrentRewards(rewards);
+      
+      // Refresh the inventory and loot boxes even when opening previously opened box
+      await Promise.all([
+        refetchInventory(),
+        refetchLootBoxes(),
+        refetchHistory()
+      ]);
     }
     
     setIsRewardModalOpen(true);
   };
   
-  const closeRewardModal = () => {
+  const closeRewardModal = async () => {
     try {
       sounds.click();
     } catch (e) {
       console.warn('Could not play sound', e);
     }
+    
+    // Refresh inventory data when closing the reward modal
+    await Promise.all([
+      refetchInventory(),
+      refetchLootBoxes(),
+      refetchHistory()
+    ]);
+    
     setIsRewardModalOpen(false);
   };
 

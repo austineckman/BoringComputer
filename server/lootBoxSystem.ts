@@ -1,6 +1,5 @@
 import { storage } from './storage';
 import { LootBox, User } from '@shared/schema';
-import { itemDatabase } from './itemDatabase';
 
 // Define rarity tiers with chance percentages and quantity ranges
 export interface RarityTier {
