@@ -6,6 +6,7 @@ import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { themeConfig } from "@/lib/themeConfig";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
+import AdventureImage from "@/components/adventure/AdventureImage";
 
 interface QuestReward {
   type: string;
@@ -152,10 +153,10 @@ const QuestCard = ({
   const content = (
     <PixelCard active={status === "active"} interactive={true}>
       {/* Adventure Line Image Banner */}
-      {adventure.image && (
+      {adventure.id && (
         <div className="h-24 w-full overflow-hidden">
-          <img 
-            src={adventure.image}
+          <AdventureImage 
+            adventureId={adventure.id}
             alt={adventure.name}
             className="w-full h-full object-cover"
           />
