@@ -369,7 +369,7 @@ export default function Inventory() {
                                       <img 
                                         src={getResourceDisplay(item.type).value} 
                                         alt={getResourceDisplay(item.type).alt || item.type}
-                                        className="w-full h-full object-contain" 
+                                        className="w-full h-full object-contain p-0" 
                                       />
                                     ) : (
                                       <span className="text-5xl">{resourceIcons[item.type] || '🔮'}</span>
