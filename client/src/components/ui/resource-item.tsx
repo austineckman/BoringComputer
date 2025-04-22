@@ -1,6 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { themeConfig } from "@/lib/themeConfig";
+import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 type ResourceType = "cloth" | "metal" | "tech-scrap" | "sensor-crystal" | "circuit-board" | "alchemy-ink";
 
@@ -9,15 +10,61 @@ interface ResourceItemProps {
   quantity: number;
   size?: "sm" | "md" | "lg";
   className?: string;
+  interactive?: boolean;
+  onClick?: () => void;
 }
 
-const ResourceItem = ({ type, quantity, size = "md", className }: ResourceItemProps) => {
+const ResourceItem = ({ 
+  type, 
+  quantity, 
+  size = "md", 
+  className, 
+  interactive = false, 
+  onClick 
+}: ResourceItemProps) => {
+  const { sounds } = useSoundEffects();
+  
   // Get resource configuration
   const resourceConfig = themeConfig.resourceTypes.find(r => r.id === type);
   
   if (!resourceConfig) {
     return null;
   }
+
+  // Play resource-specific sound when interacted with
+  const handleClick = () => {
+    if (interactive) {
+      // Map resource types to specific sounds
+      switch(type) {
+        case "metal":
+          sounds.boostEngine();
+          break;
+        case "tech-scrap":
+          sounds.powerUp();
+          break;
+        case "sensor-crystal":
+          sounds.spaceDoor();
+          break;
+        case "circuit-board":
+          sounds.craftSuccess();
+          break;
+        case "alchemy-ink":
+          sounds.success();
+          break;
+        default:
+          sounds.click();
+      }
+      
+      // Execute any additional click handler passed as prop
+      if (onClick) onClick();
+    }
+  };
+  
+  const handleHover = () => {
+    if (interactive) {
+      sounds.hover();
+    }
+  };
 
   const sizeClasses = {
     sm: {
@@ -43,9 +90,22 @@ const ResourceItem = ({ type, quantity, size = "md", className }: ResourceItemPr
   const styles = sizeClasses[size];
 
   return (
-    <div className={cn("resource-item bg-space-dark rounded flex flex-col items-center", styles.container, className)}>
+    <div 
+      className={cn(
+        "resource-item bg-space-dark rounded flex flex-col items-center", 
+        styles.container, 
+        interactive && "hover:scale-105 transition-transform cursor-pointer", 
+        className
+      )}
+      onClick={handleClick}
+      onMouseEnter={handleHover}
+    >
       <div 
-        className={cn("rounded-lg flex items-center justify-center", styles.iconContainer)}
+        className={cn(
+          "rounded-lg flex items-center justify-center", 
+          styles.iconContainer,
+          interactive && "resource-icon-pulse"
+        )}
         style={{ backgroundColor: resourceConfig.color }}
       >
         <i className={`fas fa-${resourceConfig.icon} text-white ${styles.icon}`}></i>
