@@ -1,88 +1,94 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useState } from 'react';
 import { playSound, SoundName } from '@/lib/sound';
 
-/**
- * Hook for managing sound effects in the application
- * Provides methods for playing sounds and toggling mute state
- */
-export const useSoundEffects = () => {
-  // Get initial muted state from localStorage or default to false
-  const [muted, setMuted] = useState<boolean>(() => {
-    const savedMute = localStorage.getItem('quest-giver-muted');
-    return savedMute ? JSON.parse(savedMute) : false;
-  });
-
-  // Save muted state to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('quest-giver-muted', JSON.stringify(muted));
-  }, [muted]);
-
-  // Toggle muted state
+// Hook for playing sound effects throughout the application
+export function useSoundEffects() {
+  const [isMuted, setIsMuted] = useState(false);
+  
+  // Toggle mute state
   const toggleMute = useCallback(() => {
-    setMuted(prev => !prev);
+    setIsMuted(prev => !prev);
   }, []);
-
-  // Play a sound unless muted
+  
+  // Function to play a sound by name (respects mute state)
   const playSoundEffect = useCallback((name: SoundName) => {
-    if (!muted) {
+    if (!isMuted) {
       playSound(name);
     }
-  }, [muted]);
+  }, [isMuted]);
 
-  // Play a sequence of sounds with delay
-  const playSoundSequence = useCallback((names: SoundName[], delay = 400) => {
-    if (muted) return;
+  // Predefined sound effects
+  const sounds = {
+    // UI sounds
+    click: () => playSoundEffect('click'),
+    hover: () => playSoundEffect('hover'),
+    error: () => playSoundEffect('error'),
+    success: () => playSoundEffect('success'),
     
-    names.forEach((name, index) => {
-      setTimeout(() => {
-        playSound(name);
-      }, index * delay);
-    });
-  }, [muted]);
+    // Quest-related sounds
+    questComplete: () => playSoundEffect('questComplete'),
+    questAccept: () => playSoundEffect('questAccept'),
+    questStart: () => playSoundEffect('questStart'),
+    
+    // Achievement sounds
+    achievement: () => playSoundEffect('achievement'),
+    reward: () => playSoundEffect('reward'),
+    
+    // Crafting sounds
+    craftSuccess: () => playSoundEffect('craftSuccess'),
+    craftFail: () => playSoundEffect('craftFail'),
+    
+    // Adventure-specific sounds
+    spaceDoor: () => playSoundEffect('spaceDoor'),
+    boostEngine: () => playSoundEffect('boostEngine'),
+    powerUp: () => playSoundEffect('powerUp'),
+    
+    // Level up and fanfare
+    levelUp: () => playSoundEffect('levelUp'),
+    fanfare: () => playSoundEffect('fanfare'),
+    
+    // Login sounds
+    loginSuccess: () => playSoundEffect('loginSuccess'),
+    loginFail: () => playSoundEffect('loginFail'),
+  };
 
-  // Special sound effects for common events
-  const playLevelUpSound = useCallback(() => {
-    if (muted) return;
-    playSoundSequence(['levelUp', 'fanfare'], 300);
-  }, [muted, playSoundSequence]);
-
-  const playQuestCompleteSound = useCallback(() => {
-    if (muted) return;
-    playSoundSequence(['questComplete', 'reward'], 500);
-  }, [muted, playSoundSequence]);
-
-  // Play adventure-specific sound based on which adventure line the user is interacting with
+  // Play adventure-specific sounds
   const playAdventureSound = useCallback((adventureLine: string) => {
-    if (muted) return;
-    
-    switch(adventureLine) {
+    switch(adventureLine.toLowerCase()) {
       case 'lost-in-space':
-        playSound("spaceDoor");
+        playSoundEffect('spaceDoor');
         break;
       case 'cogsworth-city':
-        playSound("craftSuccess");
+        playSoundEffect('boostEngine');
         break;
       case 'pandoras-box':
-        playSound("achievement");
+        playSoundEffect('powerUp');
         break;
       case 'neon-realm':
-        playSound("powerUp");
+        playSoundEffect('fanfare');
         break;
       case 'nebula-raiders':
-        playSound("boostEngine");
+        playSoundEffect('spaceDoor');
         break;
       default:
-        playSound("click");
+        playSoundEffect('click');
     }
-  }, [muted]);
+  }, [playSoundEffect]);
 
   return {
     playSound: playSoundEffect,
-    playSoundSequence,
-    playLevelUpSound,
-    playQuestCompleteSound,
     playAdventureSound,
-    muted,
-    toggleMute
+    sounds,
+    isMuted,
+    toggleMute,
+    
+    // Event handlers for direct binding to React components
+    handlers: {
+      onClick: sounds.click,
+      onMouseEnter: sounds.hover,
+    }
   };
-};
+}
+
+// Export interface for sound names
+export type { SoundName } from '@/lib/sound';
