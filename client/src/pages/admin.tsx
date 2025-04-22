@@ -301,20 +301,33 @@ export default function AdminPage() {
 
   const handleItemFormSubmit = async (data: ItemFormValues) => {
     try {
+      if (!data || !data.id) {
+        console.error('Invalid item data:', data);
+        toast({
+          title: 'Error',
+          description: 'Item data is invalid. Please try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Create a copy of the data to prevent mutation issues
+      const itemToUpdate = { ...data };
+      
       // If there's a file selected for upload
       if (fileInputRef.current?.files?.length) {
         const file = fileInputRef.current.files[0];
-        const imagePath = await handleImageUpload(file, data.id);
+        const imagePath = await handleImageUpload(file, itemToUpdate.id);
         
         if (imagePath) {
-          data.imagePath = imagePath;
+          itemToUpdate.imagePath = imagePath;
         }
       }
       
-      console.log('Updating item with data:', data);
+      console.log('Updating item with data:', itemToUpdate);
       
       // Update the item
-      updateItemMutation.mutate(data);
+      updateItemMutation.mutate(itemToUpdate);
     } catch (error) {
       console.error('Error submitting form:', error);
       toast({

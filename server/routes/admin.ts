@@ -502,8 +502,11 @@ router.post('/upload-image', upload.single('image'), async (req, res) => {
     const filePath = `/uploads/${path.basename(req.file.path)}`;
     
     // Update the item with the new image path
+    // Strip out properties that might cause serialization issues
+    const { createdAt, updatedAt, ...restOfItem } = existingItem;
+    
     const updatedItem = await storage.updateItem(itemId, { 
-      ...existingItem,
+      ...restOfItem,
       imagePath: filePath 
     });
 
