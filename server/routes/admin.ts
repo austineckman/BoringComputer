@@ -131,8 +131,7 @@ router.delete('/quests/:id', async (req, res) => {
 // Get all items
 router.get('/items', async (req, res) => {
   try {
-    // Use the in-memory itemDatabase instead of the database
-    const { itemDatabase } = require('../itemDatabase');
+    // Use the in-memory itemDatabase that was imported at the top of the file
     const allItems = Object.values(itemDatabase);
     res.json(allItems);
   } catch (error) {
@@ -145,7 +144,6 @@ router.get('/items', async (req, res) => {
 router.get('/items/:id', async (req, res) => {
   try {
     const id = req.params.id;
-    const { getItemDetails } = require('../itemDatabase');
     const item = getItemDetails(id);
     
     if (!item) {
@@ -192,7 +190,6 @@ router.put('/items/:id', async (req, res) => {
     // we can't actually modify it at runtime in this implementation.
     
     // Check if the item exists
-    const { getItemDetails } = require('../itemDatabase');
     const existingItem = getItemDetails(id);
     
     if (existingItem.id !== id) {
@@ -226,7 +223,6 @@ router.delete('/items/:id', async (req, res) => {
     // we can't actually delete items at runtime in this implementation.
     
     // Check if the item exists
-    const { itemDatabase, getItemDetails } = require('../itemDatabase');
     const existingItem = getItemDetails(id);
     
     if (existingItem.id !== id) {
