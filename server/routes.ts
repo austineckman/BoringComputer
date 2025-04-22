@@ -1064,17 +1064,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Loot box routes
-  app.get('/api/loot-boxes', authenticate, async (req, res) => {
-    try {
-      const user = (req as any).user;
-      const lootBoxes = await storage.getLootBoxes(user.id);
-      
-      return res.json(lootBoxes);
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: "Failed to fetch loot boxes" });
-    }
-  });
+  // Note: Main /api/loot-boxes route is defined earlier in the file
   
   // User endpoint to generate test loot crates for demo purposes
   app.post('/api/loot-boxes/generate-test', authenticate, async (req, res) => {

@@ -155,9 +155,7 @@ export class MemStorage implements IStorage {
       opened: false,
       rewards: null, // Will be generated when opened
       source: 'New Account Welcome Gift',
-      sourceId: null,
-      acquiredAt: new Date(),
-      openedAt: null
+      sourceId: null
     });
     
     // Admin user
