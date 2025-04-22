@@ -13,7 +13,27 @@ import { useSoundEffects } from "@/hooks/useSoundEffects";
 const Quests = () => {
   const { quests, activeQuest, loading, startQuest, completeQuest, isStarting, isCompleting } = useQuests();
   const { toast } = useToast();
-  const { playSound } = useSoundEffects();
+  const { sounds } = useSoundEffects();
+  
+  const playSound = (type: string) => {
+    try {
+      if (type === "click" && sounds.click) {
+        sounds.click();
+      } else if (type === "error" && sounds.error) {
+        sounds.error();
+      } else if (type === "success" && sounds.success) {
+        sounds.success();
+      } else if (type === "questStart" && sounds.questStart) {
+        sounds.questStart();
+      } else if (type === "questComplete" && sounds.questComplete) {
+        sounds.questComplete();
+      } else if (type === "reward" && sounds.reward) {
+        sounds.reward();
+      }
+    } catch (e) {
+      console.warn(`Could not play ${type} sound`, e);
+    }
+  };
   
   const [filter, setFilter] = useState("all");
   const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
