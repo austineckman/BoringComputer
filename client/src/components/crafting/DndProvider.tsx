@@ -2,23 +2,31 @@ import React from 'react';
 import { DndProvider as ReactDndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { TouchBackend } from 'react-dnd-touch-backend';
-import { isTouchDevice } from '@/lib/utils';
 
 interface DndProviderProps {
   children: React.ReactNode;
 }
 
-// This component provides drag and drop functionality with automatic detection
-// for touch devices to use the appropriate backend
-const DndProvider: React.FC<DndProviderProps> = ({ children }) => {
-  // Use TouchBackend for mobile devices, HTML5Backend for desktop
+/**
+ * DndProvider that detects device capabilities and selects the appropriate backend
+ */
+export const DndProvider: React.FC<DndProviderProps> = ({ children }) => {
+  // Helper function to detect touch devices
+  const isTouchDevice = () => {
+    if (typeof window === 'undefined') return false;
+    return (
+      'ontouchstart' in window ||
+      navigator.maxTouchPoints > 0 
+    );
+  };
+
+  // Select the appropriate backend based on device capabilities
   const backend = isTouchDevice() ? TouchBackend : HTML5Backend;
   
-  // TouchBackend options
+  // Options for touch backend
   const touchOptions = {
-    enableMouseEvents: true, // Allow mouse events on touch devices for testing
-    enableTouchEvents: true, // Make sure touch events are enabled
-    delayTouchStart: 100, // Small delay to distinguish between tap and drag (in ms)
+    enableMouseEvents: true, // Allow mouse events for testing on desktop
+    delayTouchStart: 100,    // Delay to distinguish between scroll and drag
   };
   
   return (

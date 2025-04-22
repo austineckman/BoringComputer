@@ -1,8 +1,10 @@
 import React from 'react';
 import { useDrop } from 'react-dnd';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { getItemDetails } from '@/lib/itemDatabase';
-import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { cn } from '@/lib/utils';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
 
 interface CraftingCellProps {
   row: number;
@@ -25,60 +27,108 @@ const CraftingCell: React.FC<CraftingCellProps> = ({
 }) => {
   const { sounds } = useSoundEffects();
   
-  // Set up drop target
+  // Setup drop target
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
     accept: 'inventory-item',
     drop: (item: { id: string }) => {
-      sounds.craftDrop();
-      onDropItem(row, col, item.id);
-      return { dropped: true };
+      if (!pattern) {
+        onDropItem(row, col, item.id);
+        sounds.craftPlace();
+      }
+      return { row, col };
     },
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),
       canDrop: !!monitor.canDrop(),
     }),
-    // Disable dropping for pattern display
-    canDrop: () => !pattern,
-  }), [row, col, onDropItem, pattern, sounds]);
+    canDrop: () => !pattern && !itemId, // Can only drop on empty cells that aren't pattern cells
+  }), [row, col, itemId, onDropItem, pattern, sounds]);
   
   // Handle cell click to remove item
-  const handleClick = () => {
+  const handleCellClick = () => {
     if (itemId && !pattern) {
-      sounds.click();
       onRemoveItem(row, col);
+      sounds.craftDrop();
     }
   };
   
-  // Get item details if there's an item in the cell
+  // Handle remove button click
+  const handleRemoveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onRemoveItem(row, col);
+    sounds.craftDrop();
+  };
+  
+  // Get item details if there is an item in this cell
   const itemDetails = itemId ? getItemDetails(itemId) : null;
+  
+  // Determine cell styling based on state (empty, has item, is highlighted)
+  const getCellClasses = () => {
+    const baseClasses = 'w-full h-16 rounded-md transition-all duration-200 flex items-center justify-center relative';
+    
+    if (pattern) {
+      // Pattern cell styling
+      if (itemId) {
+        return cn(
+          baseClasses,
+          'bg-gray-50 dark:bg-gray-900 border border-dashed border-gray-400 dark:border-gray-600',
+          'opacity-70'
+        );
+      } else {
+        return cn(
+          baseClasses,
+          'bg-gray-50 dark:bg-gray-900 border border-dashed border-gray-400 dark:border-gray-600',
+          'opacity-30'
+        );
+      }
+    }
+    
+    if (itemId) {
+      // Cell with an item
+      return cn(
+        baseClasses,
+        'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
+        'hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer',
+        highlighted ? 'ring-2 ring-green-400 dark:ring-green-600' : ''
+      );
+    }
+    
+    // Empty cell
+    return cn(
+      baseClasses,
+      'bg-gray-100 dark:bg-gray-800/50 border border-dashed border-gray-300 dark:border-gray-700',
+      isOver && canDrop ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700' : '',
+      isOver && !canDrop ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700' : '',
+      !pattern ? 'hover:bg-gray-50 dark:hover:bg-gray-700/50' : ''
+    );
+  };
   
   return (
     <div
-      ref={pattern ? null : drop}
-      className={cn(
-        'w-12 h-12 border rounded flex items-center justify-center transition-all',
-        {
-          'bg-gray-50 dark:bg-gray-800': !itemId && !isOver && !highlighted && !pattern,
-          'bg-gray-100 dark:bg-gray-700': !itemId && isOver && !pattern,
-          'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700': highlighted,
-          'border-dashed': !itemId && !pattern,
-          'border-solid border-amber-300 dark:border-amber-700': isOver && canDrop,
-          'cursor-pointer': itemId && !pattern,
-          'bg-gray-200 dark:bg-gray-900 border-dashed border-gray-400': pattern && !itemId,
-          'opacity-60': pattern
-        }
-      )}
-      onClick={handleClick}
+      ref={drop}
+      className={getCellClasses()}
+      onClick={handleCellClick}
     >
       {itemId && itemDetails && (
-        <img
-          src={itemDetails.imagePath}
-          alt={itemDetails.name}
-          className={cn(
-            'max-w-9 max-h-9 object-contain',
-            { 'cursor-pointer hover:scale-105 transition-transform': !pattern }
+        <>
+          <img 
+            src={itemDetails.imagePath}
+            alt={itemDetails.name}
+            className="max-w-full max-h-full object-contain p-1"
+            draggable={false}
+          />
+          
+          {!pattern && (
+            <Button 
+              size="sm"
+              variant="ghost"
+              className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-800/50"
+              onClick={handleRemoveClick}
+            >
+              <X className="h-3 w-3 text-red-600 dark:text-red-400" />
+            </Button>
           )}
-        />
+        </>
       )}
     </div>
   );
