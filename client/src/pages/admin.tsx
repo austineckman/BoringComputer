@@ -247,8 +247,10 @@ export default function AdminPage() {
       // Close the dialog
       setEditDialogOpen(false);
       setSelectedItem(null);
-      // Invalidate the query to refresh the data
+      
+      // Invalidate both admin items and regular inventory queries to ensure both views are updated
       queryClient.invalidateQueries({ queryKey: ['/api/admin/items'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
     },
     onError: (error: Error) => {
       sounds.error();
