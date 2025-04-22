@@ -309,6 +309,8 @@ export default function AdminPage() {
         }
       }
       
+      console.log('Updating item with data:', data);
+      
       // Update the item
       updateItemMutation.mutate(data);
     } catch (error) {
