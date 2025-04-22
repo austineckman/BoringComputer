@@ -129,7 +129,7 @@ export class MemStorage implements IStorage {
   private initializeData() {
     // Create default users
     // Demo user
-    this.createUser({
+    const demoUser = this.createUser({
       username: 'demo',
       email: 'demo@questgiver.com',
       password: 'demo123', // In a real app, this would be hashed
@@ -145,8 +145,20 @@ export class MemStorage implements IStorage {
       }
     });
     
+    // Add a welcome loot crate for demo user
+    this.createLootBox({
+      userId: demoUser.id,
+      type: 'rare',
+      opened: false,
+      rewards: null, // Will be generated when opened
+      source: 'New Account Welcome Gift',
+      sourceId: null,
+      acquiredAt: new Date(),
+      openedAt: null
+    });
+    
     // Admin user
-    this.createUser({
+    const adminUser = this.createUser({
       username: 'admin',
       email: 'admin@questgiver.com',
       password: 'admin123', // In a real app, this would be hashed
@@ -160,6 +172,18 @@ export class MemStorage implements IStorage {
         'circuit-board': 100,
         'alchemy-ink': 100
       }
+    });
+    
+    // Add a welcome loot crate for admin user
+    this.createLootBox({
+      userId: adminUser.id,
+      type: 'legendary',
+      opened: false,
+      rewards: null, // Will be generated when opened
+      source: 'Admin Account Welcome Gift',
+      sourceId: null,
+      acquiredAt: new Date(),
+      openedAt: null
     });
     
     // Initialize with adventure kits and sample quests

@@ -224,6 +224,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           });
           
+          // Add a welcome loot crate for Discord users
+          await storage.createLootBox({
+            userId: user.id,
+            type: 'rare', // Give them a rare crate as a welcome gift
+            opened: false,
+            rewards: null, // Will be generated when opened
+            source: 'Discord Account Link Bonus',
+            sourceId: null,
+            acquiredAt: new Date(),
+            openedAt: null
+          });
+          
           // Set up achievements for the user
           const achievements = await storage.getAchievements();
           for (const achievement of achievements) {
