@@ -1,4 +1,4 @@
-import React, { useState, useContext, useRef } from 'react';
+import React, { useState, useContext } from 'react';
 import { Container } from '@/components/ui/container';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -72,7 +72,6 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('quests');
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Queries for each resource type
   const { 
@@ -260,36 +259,7 @@ export default function AdminPage() {
     }
   });
 
-  // Handle image upload
-  const handleImageUpload = async (file: File, itemId: string) => {
-    try {
-      // Create a FormData object
-      const formData = new FormData();
-      formData.append('image', file);
-      formData.append('itemId', itemId);
-      
-      // Make a fetch request to upload the image
-      const response = await fetch('/api/admin/upload-image', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to upload image');
-      }
-      
-      const data = await response.json();
-      return data.imagePath;
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to upload image. Please try again.',
-        variant: 'destructive',
-      });
-      return null;
-    }
-  };
+  // No longer need to handle image upload as we're using a dropdown selector
 
   const handleOpenEditDialog = (item: any) => {
     sounds.click();
@@ -299,17 +269,7 @@ export default function AdminPage() {
 
   const handleItemFormSubmit = async (data: ItemFormValues) => {
     try {
-      // If there's a file selected for upload
-      if (fileInputRef.current?.files?.length) {
-        const file = fileInputRef.current.files[0];
-        const imagePath = await handleImageUpload(file, data.id);
-        
-        if (imagePath) {
-          data.imagePath = imagePath;
-        }
-      }
-      
-      // Update the item
+      // Simply update the item with the selected image path
       updateItemMutation.mutate(data);
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -494,13 +454,22 @@ export default function AdminPage() {
                   <Label htmlFor="image">Item Image</Label>
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
-                      <Input
-                        id="image"
-                        type="file"
-                        accept="image/*"
-                        ref={fileInputRef}
-                        className="col-span-3"
-                      />
+                      <Select 
+                        defaultValue={selectedItem.imagePath || "/assets/placeholder.png"}
+                        onValueChange={(value) => setSelectedItem({...selectedItem, imagePath: value})}
+                      >
+                        <SelectTrigger className="col-span-3">
+                          <SelectValue placeholder="Select an image" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="/assets/cloth.png">Cloth</SelectItem>
+                          <SelectItem value="/assets/copper.png">Copper</SelectItem>
+                          <SelectItem value="/assets/crystal.png">Crystal</SelectItem>
+                          <SelectItem value="/assets/techscrap.png">Tech Scrap</SelectItem>
+                          <SelectItem value="/assets/circuit board.png">Circuit Board</SelectItem>
+                          <SelectItem value="/assets/loot crate.png">Loot Crate</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     {selectedItem.imagePath && (
                       <div className="flex-shrink-0 h-16 w-16 bg-muted rounded-md overflow-hidden">
