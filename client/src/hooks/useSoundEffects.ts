@@ -1,16 +1,24 @@
 import { useCallback } from 'react';
-import { playSound } from '@/lib/sound';
+import { playSound, SoundName } from '@/lib/sound';
 
 export function useSoundEffects() {
+  const playSoundSafely = useCallback((name: SoundName) => {
+    try {
+      playSound(name);
+    } catch (error) {
+      console.warn(`Failed to play sound ${name}:`, error);
+    }
+  }, []);
+
   const sounds = {
-    click: useCallback(() => playSound('click'), []),
-    hover: useCallback(() => playSound('hover'), []),
-    success: useCallback(() => playSound('success'), []),
-    error: useCallback(() => playSound('error'), []),
-    questComplete: useCallback(() => playSound('questComplete'), []),
-    reward: useCallback(() => playSound('reward'), []),
-    levelUp: useCallback(() => playSound('levelUp'), []),
-    open: useCallback(() => playSound('open'), []),
+    click: useCallback(() => playSoundSafely('click'), [playSoundSafely]),
+    hover: useCallback(() => playSoundSafely('hover'), [playSoundSafely]),
+    success: useCallback(() => playSoundSafely('success'), [playSoundSafely]),
+    error: useCallback(() => playSoundSafely('error'), [playSoundSafely]),
+    questComplete: useCallback(() => playSoundSafely('questComplete'), [playSoundSafely]),
+    reward: useCallback(() => playSoundSafely('reward'), [playSoundSafely]),
+    levelUp: useCallback(() => playSoundSafely('levelUp'), [playSoundSafely]),
+    open: useCallback(() => playSoundSafely('open'), [playSoundSafely]),
   };
 
   return { sounds };
