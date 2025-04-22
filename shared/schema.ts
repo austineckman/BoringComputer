@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, json, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, json, boolean, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -134,6 +134,27 @@ export const inventoryHistory = pgTable("inventory_history", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Crafting Recipes for Minecraft-style 5x5 grid
+export const craftingRecipes = pgTable("crafting_recipes", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  flavorText: text("flavor_text"),
+  resultItem: text("result_item").notNull(),
+  resultQuantity: integer("result_quantity").notNull().default(1),
+  gridSize: integer("grid_size").notNull().default(5),
+  // Pattern is a 2D array representing required items in each position (e.g., [["cloth", null, "cloth"], [null, "metal", null]])
+  pattern: jsonb("pattern").$type<(string | null)[][]>().notNull(),
+  // Dictionary of items required with quantities (e.g., { "cloth": 2, "metal": 1 })
+  requiredItems: jsonb("required_items").$type<Record<string, number>>().notNull(),
+  difficulty: text("difficulty").notNull().default("easy"), // easy, medium, hard
+  category: text("category").notNull().default("general"), // general, electronics, mechanical, etc.
+  unlocked: boolean("unlocked").notNull().default(true),
+  image: text("image").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -234,6 +255,21 @@ export const insertInventoryHistorySchema = createInsertSchema(inventoryHistory)
   source: true,
 });
 
+export const insertCraftingRecipeSchema = createInsertSchema(craftingRecipes).pick({
+  name: true,
+  description: true,
+  flavorText: true,
+  resultItem: true,
+  resultQuantity: true,
+  gridSize: true,
+  pattern: true,
+  requiredItems: true,
+  difficulty: true,
+  category: true,
+  unlocked: true,
+  image: true
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -264,3 +300,6 @@ export type InsertLootBox = z.infer<typeof insertLootBoxSchema>;
 
 export type InventoryHistory = typeof inventoryHistory.$inferSelect;
 export type InsertInventoryHistory = z.infer<typeof insertInventoryHistorySchema>;
+
+export type CraftingRecipe = typeof craftingRecipes.$inferSelect;
+export type InsertCraftingRecipe = z.infer<typeof insertCraftingRecipeSchema>;
