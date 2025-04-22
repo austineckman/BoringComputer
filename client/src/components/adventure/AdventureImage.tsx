@@ -1,11 +1,11 @@
 import React from 'react';
 
 // Import the adventure images
-import lostInSpaceImg from '/public/images/adventure-lines/30-days-pixelart.png';
-import cogsworthCityImg from '/public/images/adventure-lines/cogsworth-pixelart.png';
-import pandorasBoxImg from '/public/images/adventure-lines/pandora-pixelart.png';
-import neonRealmImg from '/public/images/adventure-lines/neon-realm-pixelart.png';
-import nebulaRaidersImg from '/public/images/adventure-lines/nebula-pixelart.png';
+import lostInSpaceImg from '../../assets/30-days-pixelart.png';
+import cogsworthCityImg from '../../assets/cogsworth-pixelart.png';
+import pandorasBoxImg from '../../assets/pandora-pixelart.png';
+import neonRealmImg from '../../assets/neon-realm-pixelart.png';
+import nebulaRaidersImg from '../../assets/nebula-pixelart.png';
 
 // Create a mapping for the adventure IDs to their images
 const adventureImages: Record<string, string> = {
