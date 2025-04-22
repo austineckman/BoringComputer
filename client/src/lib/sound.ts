@@ -37,6 +37,9 @@ export const sounds = {
   // Crafting sounds
   craftSuccess: createSound('/sounds/craft-success.mp3', 0.7),
   craftFail: createSound('/sounds/craft-fail.mp3', 0.6),
+  craft: createSound('/sounds/craft-success.mp3', 0.7), // Alias for craft-success
+  drop: createSound('/sounds/click.mp3', 0.4), // Using click sound for drop effect
+  remove: createSound('/sounds/hover.mp3', 0.3), // Using hover sound for remove effect
   
   // Login sounds
   loginSuccess: createSound('/sounds/login-success.mp3', 0.6),
