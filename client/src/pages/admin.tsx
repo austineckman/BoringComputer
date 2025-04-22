@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { themeConfig } from "@/lib/themeConfig";
 import LootBoxGenerator from "@/components/admin/LootBoxGenerator";
+import LootBoxList from "@/components/admin/LootBoxList";
 
 // Form schema for creating a quest
 const createQuestSchema = z.object({
@@ -447,6 +448,31 @@ const Admin = () => {
                 <p className="text-brand-light/70">Craftable item management will be available in a future update.</p>
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="lootboxes" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <LootBoxGenerator 
+                onLootBoxesCreated={() => {
+                  queryClient.invalidateQueries({ queryKey: ['/api/loot-boxes'] });
+                  toast({
+                    title: "Loot Boxes Created",
+                    description: "Loot boxes created successfully!",
+                  });
+                  playSound("complete");
+                }}
+              />
+              
+              <Card className="bg-space-mid border-brand-orange/30">
+                <CardHeader>
+                  <CardTitle>Your Loot Boxes</CardTitle>
+                  <CardDescription>Currently available loot boxes</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <LootBoxList />
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </section>
