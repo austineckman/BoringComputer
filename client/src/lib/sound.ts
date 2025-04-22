@@ -1,12 +1,13 @@
 import { Howl } from 'howler';
 
 // Create base sound configuration
-const createSound = (path: string, volume: number = 0.6) => {
+const createSound = (path: string, volume: number = 0.6, loop: boolean = false) => {
   // Create a standard Howl object
   const soundObj = new Howl({
     src: [path],
     volume: volume,
     html5: true, // This helps with mobile devices
+    loop: loop, // Enable looping for background music
     onloaderror: function() {
       console.warn(`Could not load sound: ${path}`);
     }
@@ -51,6 +52,9 @@ export const sounds = {
   
   // Loot box sounds
   open: createSound('/sounds/open.mp3', 0.7),
+  
+  // Background music
+  backgroundMusic: createSound('/sounds/pixel-dreams.mp3', 0.3, true),
 };
 
 // Export the type with all possible sound names for type checking

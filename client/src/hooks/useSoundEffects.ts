@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { playSound, SoundName, sounds as soundLibrary } from '@/lib/sound';
 import { Howler } from 'howler';
 
@@ -14,17 +14,55 @@ export function useSoundEffects() {
     const savedMute = localStorage.getItem('sound_muted');
     return savedMute === 'true';
   });
+  
+  // Track if background music is playing
+  const [isBgMusicPlaying, setIsBgMusicPlaying] = useState<boolean>(() => {
+    const savedBgMusic = localStorage.getItem('bg_music_playing');
+    return savedBgMusic === 'true';
+  });
+  
+  // Keep track of the background music ID
+  const bgMusicId = useRef<number | null>(null);
 
   // Effect to save mute preference to localStorage
   useEffect(() => {
     localStorage.setItem('sound_muted', isMuted.toString());
-  }, [isMuted]);
+    
+    // If muted, pause background music; otherwise resume if it was playing
+    if (isMuted) {
+      if (bgMusicId.current !== null) {
+        soundLibrary.backgroundMusic.pause(bgMusicId.current);
+      }
+    } else if (isBgMusicPlaying && bgMusicId.current !== null) {
+      soundLibrary.backgroundMusic.play(bgMusicId.current);
+    }
+  }, [isMuted, isBgMusicPlaying]);
+  
+  // Effect to save background music preference
+  useEffect(() => {
+    localStorage.setItem('bg_music_playing', isBgMusicPlaying.toString());
+  }, [isBgMusicPlaying]);
   
   // Effect to save volume preference to localStorage and update global Howler volume
   useEffect(() => {
     localStorage.setItem('sound_volume', volume.toString());
     Howler.volume(volume);
   }, [volume]);
+  
+  // Effect to play background music on mount if enabled
+  useEffect(() => {
+    // Start playing background music if it should be playing and not muted
+    if (isBgMusicPlaying && !isMuted) {
+      bgMusicId.current = soundLibrary.backgroundMusic.play();
+    }
+    
+    // Cleanup function to stop background music when component unmounts
+    return () => {
+      if (bgMusicId.current !== null) {
+        soundLibrary.backgroundMusic.stop(bgMusicId.current);
+      }
+    };
+  }, []);
 
   const toggleMute = useCallback(() => {
     setIsMuted(prev => !prev);
@@ -33,6 +71,23 @@ export function useSoundEffects() {
   const changeVolume = useCallback((newVolume: number) => {
     setVolume(newVolume);
   }, []);
+  
+  const toggleBackgroundMusic = useCallback(() => {
+    setIsBgMusicPlaying(prev => {
+      const newState = !prev;
+      
+      if (newState && !isMuted) {
+        // Start playing background music
+        bgMusicId.current = soundLibrary.backgroundMusic.play();
+      } else if (!newState && bgMusicId.current !== null) {
+        // Stop background music
+        soundLibrary.backgroundMusic.stop(bgMusicId.current);
+        bgMusicId.current = null;
+      }
+      
+      return newState;
+    });
+  }, [isMuted]);
 
   const playSoundSafely = useCallback(
     (name: SoundName) => {
@@ -76,6 +131,8 @@ export function useSoundEffects() {
     isMuted, 
     toggleMute,
     volume,
-    changeVolume
+    changeVolume,
+    isBgMusicPlaying,
+    toggleBackgroundMusic
   };
 }
