@@ -40,23 +40,9 @@ const Forge = () => {
   const [gizboQuote, setGizboQuote] = useState("");
   const [showQuote, setShowQuote] = useState(false);
   
-  const playSound = (type: string) => {
-    try {
-      if (type === "click" && sounds.click) {
-        sounds.click();
-      } else if (type === "forge" && sounds.success) {
-        sounds.success();
-      } else if (type === "success" && sounds.fanfare) {
-        sounds.fanfare();
-      }
-    } catch (e) {
-      console.warn(`Could not play ${type} sound`, e);
-    }
-  };
-  
   const handleTabClick = (tab: string) => {
     setActiveTab(tab);
-    playSound("click");
+    sounds.click?.();
   };
   
   const filteredCraftables = craftableItems.filter(item => {
@@ -75,7 +61,7 @@ const Forge = () => {
     setShowQuote(true);
     
     // Play forge sound
-    playSound("forge");
+    sounds.success?.();
     
     // Start crafting
     craftItem(itemId);
@@ -83,7 +69,7 @@ const Forge = () => {
     // Hide quote after 4 seconds
     setTimeout(() => {
       setShowQuote(false);
-      playSound("success");
+      sounds.fanfare?.();
     }, 4000);
   };
   
@@ -109,7 +95,7 @@ const Forge = () => {
               <Button 
                 onClick={() => {
                   setShowCraftedItems(true);
-                  playSound("click");
+                  sounds.click?.();
                 }}
                 variant="outline"
                 className="text-brand-light border-brand-orange/30 hover:bg-brand-orange/10"
@@ -326,7 +312,7 @@ const Forge = () => {
             <Button 
               onClick={() => {
                 setShowCraftedItems(false);
-                playSound("click");
+                sounds.click?.();
               }}
               className="bg-brand-orange hover:bg-brand-yellow text-space-darkest"
             >
