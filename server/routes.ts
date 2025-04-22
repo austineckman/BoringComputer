@@ -53,16 +53,8 @@ const authenticate = async (req: Request, res: Response, next: Function) => {
   }
 };
 
-// Admin-only middleware
-const adminOnly = async (req: Request, res: Response, next: Function) => {
-  const user = (req as any).user;
-  
-  if (!user || !user.roles.includes('admin')) {
-    return res.status(403).json({ message: "Admin access required" });
-  }
-  
-  next();
-};
+// Admin-only middleware is now imported from ./middleware/adminAuth
+// No need to redefine it here
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -878,7 +870,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Admin endpoint to update crafted item status (e.g., mark as shipped, delivered)
-  app.post('/api/admin/crafted-items/:id/status', authenticate, adminOnly, async (req, res) => {
+  app.post('/api/admin/crafted-items/:id/status', authenticate, adminAuth, async (req, res) => {
     try {
       const craftedItemId = parseInt(req.params.id);
       const { status, tracking } = req.body;

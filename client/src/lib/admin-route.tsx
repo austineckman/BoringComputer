@@ -1,20 +1,21 @@
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { Redirect, Route } from "wouter";
 
 interface AdminRouteProps {
   path: string;
-  component: React.ComponentType;
+  children: React.ReactNode;
 }
 
-export function AdminRoute({ path, component: Component }: AdminRouteProps) {
+export function AdminRoute({ path, children }: AdminRouteProps) {
   const { user, isLoading } = useAuth();
 
+  // If still loading auth state, show loader
   if (isLoading) {
     return (
       <Route path={path}>
         <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-8 w-8 animate-spin text-border" />
+          <Loader2 className="h-8 w-8 animate-spin text-brand-orange" />
         </div>
       </Route>
     );
@@ -23,17 +24,9 @@ export function AdminRoute({ path, component: Component }: AdminRouteProps) {
   // Check if user exists and has admin role
   const isAdmin = user && Array.isArray(user.roles) && user.roles.includes('admin');
 
-  if (!isAdmin) {
-    return (
-      <Route path={path}>
-        <Redirect to="/" />
-      </Route>
-    );
-  }
-
   return (
     <Route path={path}>
-      <Component />
+      {isAdmin ? children : <Redirect to="/" />}
     </Route>
   );
 }
