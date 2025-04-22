@@ -10,6 +10,11 @@ import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { useAdventureNavigation } from "@/hooks/useAdventureNavigation";
 import AdventureImage from "@/components/adventure/AdventureImage";
 
+// Import banner images
+import currentQuestBanner from "../assets/current_quest_banner.png";
+import inventoryBanner from "../assets/inventory_banner.png";
+import forgeBanner from "../assets/forgehero.png";
+
 const Home = () => {
   const { user } = useAuth();
   const { quests, activeQuest, loading: loadingQuests } = useQuests();
@@ -122,7 +127,9 @@ const Home = () => {
       <section className="mb-16 grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Current Quest Preview */}
         <div className="bg-space-mid rounded-lg p-5 pixel-border">
-          <h2 className="font-pixel text-lg text-brand-light mb-4">CURRENT QUEST</h2>
+          <div className="mb-4">
+            <img src={currentQuestBanner} alt="Current Quest" className="w-full" />
+          </div>
           {loadingQuests ? (
             <div className="flex justify-center py-10">
               <div className="animate-spin w-10 h-10 border-4 border-brand-orange border-t-transparent rounded-full"></div>
@@ -157,7 +164,9 @@ const Home = () => {
         
         {/* Inventory Preview */}
         <div className="bg-space-mid rounded-lg p-5 pixel-border">
-          <h2 className="font-pixel text-lg text-brand-light mb-4">INVENTORY</h2>
+          <div className="mb-4">
+            <img src={inventoryBanner} alt="Inventory" className="w-full" />
+          </div>
           {loadingInventory ? (
             <div className="flex justify-center py-10">
               <div className="animate-spin w-10 h-10 border-4 border-brand-orange border-t-transparent rounded-full"></div>
@@ -187,7 +196,9 @@ const Home = () => {
         
         {/* Workshop Preview */}
         <div className="bg-space-mid rounded-lg p-5 pixel-border">
-          <h2 className="font-pixel text-lg text-brand-light mb-4">WORKSHOP</h2>
+          <div className="mb-4">
+            <img src={forgeBanner} alt="Gizbo's Forge" className="w-full" />
+          </div>
           <p className="text-sm text-brand-light/70 mb-4">Craft items using resources you've earned on your missions.</p>
           <Link href="/workshop">
             <PixelButton 
