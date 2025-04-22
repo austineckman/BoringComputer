@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
-import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { useState } from "react";
+import { useSoundEffects } from "@/hooks/useSoundEffects";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +14,7 @@ import { ChevronDown, LogOut, User, Volume2, VolumeX } from "lucide-react";
 const NavigationBar = () => {
   const [location] = useLocation();
   const { user, logout } = useAuth();
-  const { playSound, muted, toggleMute } = useSoundEffects();
+  const { playSound, sounds, isMuted, toggleMute } = useSoundEffects();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
@@ -25,11 +25,11 @@ const NavigationBar = () => {
   ];
 
   const handleNavClick = () => {
-    playSound("click");
+    sounds.click();
   };
 
   const handleNavHover = () => {
-    playSound("hover");
+    sounds.hover();
   };
 
   const userLevel = user?.level || 1;
@@ -78,11 +78,11 @@ const NavigationBar = () => {
               className="p-2 text-brand-light/70 hover:text-brand-orange transition-colors"
               onClick={() => {
                 toggleMute();
-                if (!muted) playSound("click");
+                if (!isMuted) sounds.click();
               }}
-              title={muted ? "Unmute Sound Effects" : "Mute Sound Effects"}
+              title={isMuted ? "Unmute Sound Effects" : "Mute Sound Effects"}
             >
-              {muted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+              {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
             </button>
             
             <div className="flex items-center bg-space-mid rounded-full px-3 py-1">
@@ -109,7 +109,7 @@ const NavigationBar = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-space-mid border border-brand-orange/30">
                 <DropdownMenuItem 
-                  onClick={() => { playSound("click"); logout(); }}
+                  onClick={() => { sounds.click(); logout(); }}
                   className="text-brand-light hover:text-brand-orange cursor-pointer"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
@@ -136,7 +136,7 @@ const NavigationBar = () => {
           className="md:hidden text-brand-light"
           onClick={() => {
             setMobileMenuOpen(!mobileMenuOpen);
-            playSound("click");
+            sounds.click();
           }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
