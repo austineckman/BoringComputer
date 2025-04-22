@@ -1,91 +1,93 @@
-import React, { useState } from 'react';
-import ResourceItem from '@/components/ui/resource-item';
-import { cn } from '@/lib/utils';
-import { useSoundEffects } from '@/hooks/useSoundEffects';
+import React, { useRef } from 'react';
+import { useDrag } from 'react-dnd';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { itemDatabase } from '@/lib/itemDatabase';
 
 interface InventoryItemProps {
   itemId: string;
+  name: string;
+  imagePath: string;
   quantity: number;
-  disabled?: boolean;
-  requiredQuantity?: number;
+  isRequired?: boolean;
+  requiredAmount?: number;
+  hasSufficientAmount?: boolean;
 }
 
 const InventoryItem: React.FC<InventoryItemProps> = ({
   itemId,
+  name,
+  imagePath,
   quantity,
-  disabled = false,
-  requiredQuantity,
+  isRequired = false,
+  requiredAmount = 0,
+  hasSufficientAmount = true,
 }) => {
-  const [isDragging, setIsDragging] = useState(false);
-  const { sounds } = useSoundEffects();
-  const itemDetails = itemDatabase[itemId];
-  
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
-    if (disabled || quantity <= 0) {
-      e.preventDefault();
-      return;
-    }
-    
-    e.dataTransfer.setData('itemId', itemId);
-    setIsDragging(true);
-    sounds.hover();
-  };
-  
-  const handleDragEnd = () => {
-    setIsDragging(false);
-  };
+  const itemRef = useRef<HTMLDivElement>(null);
 
-  const isRequired = requiredQuantity !== undefined && requiredQuantity > 0;
-  const hasEnough = isRequired && quantity >= requiredQuantity;
-  const notEnough = isRequired && quantity < requiredQuantity;
-  
+  // Set up drag and drop functionality
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: 'inventory-item',
+    item: { id: itemId },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  }));
+
+  // Apply the drag ref to our element
+  drag(itemRef);
+
   return (
     <TooltipProvider>
-      <Tooltip delayDuration={300}>
+      <Tooltip>
         <TooltipTrigger asChild>
           <div
-            className={cn(
-              'inventory-item transition-all duration-200 p-1 rounded-lg',
-              isDragging ? 'opacity-50' : 'opacity-100',
-              disabled || quantity <= 0 ? 'cursor-not-allowed opacity-40' : 'cursor-grab hover:scale-105 hover:shadow-md',
-              isRequired && 'border-2',
-              hasEnough ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 
-              notEnough ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : 
-              isRequired ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' : ''
-            )}
-            draggable={!disabled && quantity > 0}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
+            ref={itemRef}
+            className={`
+              relative p-1 rounded-md cursor-grab border
+              ${isDragging ? 'opacity-50' : 'opacity-100'}
+              ${isRequired 
+                ? hasSufficientAmount 
+                  ? 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
+                  : 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20'
+                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'}
+            `}
           >
-            <div className="relative">
-              <ResourceItem
-                type={itemId as any}
-                quantity={quantity}
-                size="md"
-                interactive={!disabled && quantity > 0}
+            <div className="aspect-square w-full flex items-center justify-center p-1">
+              <img
+                src={imagePath}
+                alt={name}
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  // Fallback to a placeholder if image fails to load
+                  (e.target as HTMLImageElement).src = '/placeholder-item.png';
+                }}
               />
-              
-              {isRequired && (
-                <div className="absolute -top-2 -right-2 bg-yellow-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {requiredQuantity}
-                </div>
-              )}
             </div>
+            <div className="absolute top-0 right-0 min-w-[1.5rem] h-[1.5rem] flex items-center justify-center bg-gray-800 rounded-bl-md rounded-tr-md text-white text-xs font-medium">
+              {quantity}
+            </div>
+            {isRequired && (
+              <div 
+                className={`
+                  absolute bottom-0 left-0 px-1 rounded-tr-md text-xs font-semibold
+                  ${hasSufficientAmount
+                    ? 'bg-green-600 text-white'
+                    : 'bg-red-600 text-white'}
+                `}
+              >
+                {requiredAmount}
+              </div>
+            )}
           </div>
         </TooltipTrigger>
         <TooltipContent side="top">
-          <p className="font-semibold">{itemDetails?.name || itemId}</p>
+          <div className="text-sm font-medium">{name}</div>
+          <div className="text-xs opacity-80">Quantity: {quantity}</div>
           {isRequired && (
-            <p className="text-xs">
-              {hasEnough 
-                ? `✓ Have ${quantity}/${requiredQuantity} required` 
-                : `⚠ Need ${requiredQuantity - quantity} more`}
-            </p>
+            <div className={`text-xs ${hasSufficientAmount ? 'text-green-500' : 'text-red-500'}`}>
+              Required: {requiredAmount}
+            </div>
           )}
-          <p className="text-xs italic">{itemDetails?.flavorText || ''}</p>
-          {!disabled && quantity > 0 && <p className="text-xs mt-1">Drag to crafting grid</p>}
+          <div className="text-xs opacity-80 mt-1">Drag to crafting grid</div>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
