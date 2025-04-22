@@ -19,9 +19,10 @@ import logoImage from "@/assets/logo.png";
 const NavigationBar = () => {
   const [location] = useLocation();
   const { user, logout, playSoundSafely } = useAuth();
-  const { sounds, isMuted, toggleMute } = useSoundEffects();
+  const { sounds, isMuted, toggleMute, volume, changeVolume } = useSoundEffects();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
   // Handle scroll event to change navbar background
   useEffect(() => {
@@ -116,23 +117,70 @@ const NavigationBar = () => {
         {/* User Section */}
         {user ? (
           <div className="flex items-center space-x-4">
-            {/* Sound Toggle Button */}
-            <button 
-              className="p-2 text-brand-light/70 hover:text-brand-orange transition-colors"
-              onClick={() => {
-                toggleMute();
-                if (!isMuted) {
-                  try {
-                    sounds.click?.();
-                  } catch (e) {
-                    console.warn('Could not play click sound', e);
-                  }
-                }
-              }}
-              title={isMuted ? "Unmute Sound Effects" : "Mute Sound Effects"}
-            >
-              {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-            </button>
+            {/* Sound Volume Control */}
+            <Popover open={showVolumeSlider} onOpenChange={setShowVolumeSlider}>
+              <PopoverTrigger asChild>
+                <button 
+                  className="p-2 text-brand-light/70 hover:text-brand-orange transition-colors"
+                  onClick={() => {
+                    if (!isMuted) {
+                      try {
+                        sounds.click?.();
+                      } catch (e) {
+                        console.warn('Could not play click sound', e);
+                      }
+                    }
+                  }}
+                  title="Sound Volume Control"
+                >
+                  {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent 
+                className="w-60 p-4 bg-space-mid border border-brand-orange/30"
+                side="bottom"
+                align="end"
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium text-brand-orange">Sound Volume</h4>
+                    <button 
+                      onClick={toggleMute}
+                      className="text-brand-light/70 hover:text-brand-orange"
+                    >
+                      {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                    </button>
+                  </div>
+                  
+                  <div className="grid gap-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-brand-light opacity-70">0%</span>
+                      <Slider
+                        defaultValue={[volume * 100]}
+                        max={100}
+                        step={5}
+                        disabled={isMuted}
+                        onValueChange={(val) => {
+                          changeVolume(val[0] / 100);
+                          try {
+                            sounds.click?.();
+                          } catch (e) {
+                            console.warn('Could not play sound', e);
+                          }
+                        }}
+                        className={`${isMuted ? 'opacity-50' : ''}`}
+                      />
+                      <span className="text-xs text-brand-light opacity-70">100%</span>
+                    </div>
+                    <div className="text-center">
+                      <span className="text-xs text-brand-light/70">
+                        {isMuted ? 'Muted' : `${Math.round(volume * 100)}%`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
             
             <div className="flex items-center bg-space-mid rounded-full px-3 py-1">
               <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
@@ -291,6 +339,43 @@ const NavigationBar = () => {
                   <span>Settings</span>
                 </div>
               </Link>
+              
+              {/* Mobile Sound Volume Control */}
+              <div className="py-3">
+                <div className="py-2 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <button 
+                      onClick={toggleMute}
+                      className="mr-2 text-brand-light hover:text-brand-orange"
+                    >
+                      {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                    </button>
+                    <span className="text-brand-light text-sm">Sound Volume</span>
+                  </div>
+                  <span className="text-xs text-brand-orange ml-2">
+                    {isMuted ? 'Muted' : `${Math.round(volume * 100)}%`}
+                  </span>
+                </div>
+                <div className="px-2 flex items-center space-x-2">
+                  <span className="text-xs text-brand-light opacity-70">0%</span>
+                  <Slider
+                    defaultValue={[volume * 100]}
+                    max={100}
+                    step={5}
+                    disabled={isMuted}
+                    onValueChange={(val) => {
+                      changeVolume(val[0] / 100);
+                      try {
+                        sounds.click?.();
+                      } catch (e) {
+                        console.warn('Could not play sound', e);
+                      }
+                    }}
+                    className={`flex-1 ${isMuted ? 'opacity-50' : ''}`}
+                  />
+                  <span className="text-xs text-brand-light opacity-70">100%</span>
+                </div>
+              </div>
             </>
           )}
         </div>
