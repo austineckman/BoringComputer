@@ -1,811 +1,170 @@
-import React, { useState, useEffect } from "react";
-import { useCrafting } from "@/hooks/useCrafting";
-import { useInventory } from "@/hooks/useInventory";
-import CraftingRecipe from "@/components/crafting/CraftingRecipe";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useSoundEffects } from "@/hooks/useSoundEffects";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Sparkles, Flame, Wrench, Gift, Truck, Download, Home, UserRound, MapPin, Globe, Ship, Package } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { apiRequest } from "@/lib/queryClient";
+import React, { useState } from 'react';
+import MainLayout from '@/components/layout/MainLayout';
+import { Container } from '@/components/ui/container';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useInventory } from '@/hooks/useInventory';
+import { useCrafting } from '@/hooks/useCrafting';
+import { Loader2 } from 'lucide-react';
+import RecipeList from '@/components/crafting/RecipeList';
+import CraftingGrid from '@/components/crafting/CraftingGrid';
+import InventoryGrid from '@/components/crafting/InventoryGrid';
+import forgeHeroPath from '@assets/forgehero.png';
 
-// Import Gizbo's image
-import gizboImg from '../assets/gizbo.png';
-// Import forge hero image
-import forgeHeroImg from '../assets/forgehero.png';
-
-// Define interface for a crafted item with the expanded properties
-interface CraftedItemType {
-  id: string;
-  itemId: string;
+// Temporary interface until we can import from schema.ts
+interface CraftingRecipe {
+  id: number;
   name: string;
   description: string;
-  image: string;
-  type: 'physical' | 'digital';
-  dateCrafted: string;
-  status: 'pending' | 'shipping' | 'shipped' | 'delivered' | 'unlocked' | 'redeemed';
-  tracking?: string;
-  redemptionData?: {
-    code?: string;
-    redeemedOn?: string;
-    [key: string]: any;
-  };
-  redeemedAt?: string;
-  shippingInfo?: {
-    name?: string;
-    address?: string;
-    [key: string]: any;
-  };
+  difficulty: string;
+  createdAt: string;
+  image?: string;
+  pattern: (string | null)[][];
+  requiredItems: Record<string, number>;
+  resultItem: string;
+  resultQuantity: number;
+  unlocked: boolean;
 }
 
-const ForgeQuotes = [
-  "Oho! I haven't seen that combo since the Great Servo Fry of '93!",
-  "More scrap! MORE SCRAP! The forge hungers!",
-  "Don't mind the raccoon, it's my QA department!",
-  "If you smell smoke, you're doing it right!",
-  "Hmm, needs more heat and a dash of... KABOOM!",
-  "Assistant! Stop chewing on the customer's materials!",
-  "That's a fine choice! Or terrible. We'll find out when it explodes!",
-  "Only the curious walk out with treasure!",
-  "Where the broken becomes brilliant!",
-  "I'll forge this with my special technique - controlled chaos!",
-  "Every item tells a story... this one's a comedy!",
-  "Fine crafting requires three things: heat, hammers, and haphazard hope!",
-  "Ah, that component? Found it in a crashed pod from the Neon Realm!"
-];
-
-// Define shipping form schema
-const shippingFormSchema = z.object({
-  name: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }),
-  address: z.string().min(5, {
-    message: "Please enter a valid address.",
-  }),
-  city: z.string().min(2, {
-    message: "Please enter a valid city.",
-  }),
-  state: z.string().min(2, {
-    message: "Please enter a valid state/province.",
-  }),
-  postalCode: z.string().min(3, {
-    message: "Please enter a valid postal code.",
-  }),
-  country: z.string().min(2, {
-    message: "Please enter a valid country.",
-  }),
-});
-
-// Infer shipping form type
-type ShippingFormValues = z.infer<typeof shippingFormSchema>;
-
-const Forge = () => {
-  const { 
-    craftableItems, 
-    craftedItems: rawCraftedItems, 
-    loading, 
-    craftItem, 
-    redeemItem,
-    submitShipping,
-    isRedeeming,
-    isSubmittingShipping,
-    canCraftItem, 
-    fetchCraftedItems 
+const ForgePage = () => {
+  const { inventory, loading: isLoadingInventory } = useInventory();
+  const {
+    recipes: rawRecipes = [],
+    selectedRecipe: rawSelectedRecipe,
+    isLoadingRecipes,
+    selectRecipe,
+    craftItem,
+    isCrafting,
   } = useCrafting();
-  const { totalItems } = useInventory();
-  const { sounds } = useSoundEffects();
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("all");
-  const [showCraftedItems, setShowCraftedItems] = useState(false);
-  const [gizboQuote, setGizboQuote] = useState("");
-  const [showQuote, setShowQuote] = useState(false);
-  const [showShippingForm, setShowShippingForm] = useState(false);
-  const [selectedItemForShipping, setSelectedItemForShipping] = useState<string | null>(null);
   
-  // Cast craftedItems to our interface that includes the extended properties
-  const craftedItems = rawCraftedItems as CraftedItemType[];
-  
-  const handleTabClick = (tab: string) => {
-    setActiveTab(tab);
-    sounds.click?.();
+  // Cast the recipes to the correct type
+  const recipes = rawRecipes as unknown as CraftingRecipe[];
+  const selectedRecipe = rawSelectedRecipe as unknown as CraftingRecipe | null;
+  const [activeTab, setActiveTab] = useState('crafting');
+
+  // Convert inventory array to record format for easier lookup
+  const inventoryRecord: Record<string, number> = {};
+  if (Array.isArray(inventory)) {
+    inventory.forEach((item: any) => {
+      inventoryRecord[item.type] = item.quantity;
+    });
+  }
+
+  const handleSelectRecipe = (recipe: any) => {
+    selectRecipe(recipe.id);
   };
-  
-  const filteredCraftables = craftableItems.filter(item => {
-    if (activeTab === "all") return true;
-    return item.type === activeTab;
-  });
-  
-  const getRandomQuote = () => {
-    const randomIndex = Math.floor(Math.random() * ForgeQuotes.length);
-    return ForgeQuotes[randomIndex];
+
+  const handleCraft = async (gridPattern: (string | null)[][], recipeId: number) => {
+    await craftItem(gridPattern, recipeId);
   };
-  
-  const handleCraft = (itemId: string) => {
-    // Display a Gizbo quote
-    setGizboQuote(getRandomQuote());
-    setShowQuote(true);
-    
-    // Play forge sound
-    sounds.success?.();
-    
-    // Start crafting
-    craftItem(itemId);
-    
-    // Hide quote after 4 seconds
-    setTimeout(() => {
-      setShowQuote(false);
-      sounds.fanfare?.();
-    }, 4000);
-  };
-  
-  // Function to handle digital item redemption
-  const redeemDigitalItem = (itemId: string) => {
-    // Display a quote from Gizbo
-    setGizboQuote("Aha! Let me divine the arcane codes from this digital contraption...");
-    setShowQuote(true);
-    
-    // Call the redeem function from the hook
-    redeemItem(itemId);
-    
-    // After successful redemption, we'll display a message
-    setTimeout(() => {
-      setGizboQuote("The digital enchantment is complete! Guard that code like it's the key to my secret stash!");
-      
-      // Hide quote after 4 seconds
-      setTimeout(() => {
-        setShowQuote(false);
-      }, 4000);
-    }, 2000);
-  };
-  
-  // Function to open shipping form
-  const openShippingForm = (itemId: string) => {
-    setSelectedItemForShipping(itemId);
-    setShowShippingForm(true);
-    sounds.click?.();
-  };
-  
-  // Initialize form for shipping information
-  const form = useForm<ShippingFormValues>({
-    resolver: zodResolver(shippingFormSchema),
-    defaultValues: {
-      name: "",
-      address: "",
-      city: "",
-      state: "",
-      postalCode: "",
-      country: "",
-    },
-  });
-  
-  // Function to handle shipping form submission
-  const onSubmitShippingInfo = (values: ShippingFormValues) => {
-    if (selectedItemForShipping) {
-      // Set a quote from Gizbo
-      setGizboQuote("Excellent! I'll make sure my assistant doesn't drop it this time... probably.");
-      setShowQuote(true);
-      
-      // Call the submitShipping function from the hook
-      submitShipping({
-        itemId: selectedItemForShipping,
-        shippingInfo: values
-      });
-      
-      // Close the shipping form dialog
-      setShowShippingForm(false);
-      setSelectedItemForShipping(null);
-      form.reset();
-      
-      // Hide quote after 4 seconds
-      setTimeout(() => {
-        setShowQuote(false);
-      }, 4000);
-    }
-  };
-  
+
+  const isLoading = isLoadingInventory || isLoadingRecipes;
+
   return (
-    <div>
-      {/* Gizbo's Forge Hero Banner */}
-      <section className="mb-8">
-        <div className="bg-space-dark rounded-lg overflow-hidden pixel-border relative">
-          {/* Hero Image */}
-          <div className="w-full h-64 md:h-80 lg:h-96 relative">
-            <img 
-              src={forgeHeroImg} 
-              alt="Gizbo's Forge" 
-              className="w-full h-full object-cover"
-            />
-          </div>
-          
-          {/* Content Overlay */}
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-              <div className="md:order-1 order-2">
-                <h1 className="font-pixel text-2xl md:text-3xl text-brand-orange mb-3">GIZBO'S FORGE</h1>
-                <p className="text-brand-light/80 text-lg">
-                  <span className="text-brand-yellow font-semibold">"Where the broken becomes brilliant!"</span>
-                </p>
-                <p className="text-brand-light/80 mt-3">
-                  Welcome to the cluttered wonder-cave of master engineer Gizbo, the ogre craftsman.
-                </p>
-              </div>
-              <div className="md:order-2 order-1 flex justify-center md:justify-end">
-                <div className="bg-space-darkest p-4 rounded-lg border-2 border-brand-orange/30 shadow-lg">
-                  <img 
-                    src={gizboImg} 
-                    alt="Gizbo the Ogre Craftsman" 
-                    className="h-auto w-full max-w-xs rounded-lg"
-                    style={{ maxHeight: "240px", objectFit: "contain" }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mt-6">
-            <div className="flex items-center">
-              <div className="w-16 h-16 rounded-full bg-brand-orange/30 flex items-center justify-center mr-4 border-2 border-brand-orange/50">
-                <Flame className="w-8 h-8 text-brand-orange" />
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4 mt-4 md:mt-0">
-              <Button 
-                onClick={() => {
-                  setShowCraftedItems(true);
-                  sounds.click?.();
-                }}
-                variant="outline"
-                className="text-brand-light border-brand-orange/30 hover:bg-brand-orange/10"
-              >
-                Crafting History
-              </Button>
-            </div>
-          </div>
-          
-          {/* Decorative Elements */}
-          <div className="absolute -bottom-8 -right-8 w-32 h-32 rounded-full bg-brand-orange/10 blur-3xl"></div>
-          <div className="absolute -top-4 -left-4 w-24 h-24 rounded-full bg-brand-yellow/10 blur-3xl"></div>
-        </div>
-      </section>
-      
-      {/* Gizbo's Character Section */}
-      <section className="mb-8">
-        <div className="bg-space-mid rounded-lg p-6 pixel-border relative overflow-hidden">
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-            <div className="relative">
-              <div className="w-48 h-48 rounded-full bg-brand-orange/20 border-3 border-brand-orange/50 overflow-hidden flex items-center justify-center shadow-lg">
-                <img 
-                  src={gizboImg} 
-                  alt="Gizbo the Master Craftsman" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="absolute -bottom-2 -right-2 bg-brand-orange text-space-darkest rounded-full w-12 h-12 flex items-center justify-center border-2 border-space-darkest shadow-md">
-                <Wrench className="w-6 h-6" />
-              </div>
-            </div>
-            
-            <div className="flex-1">
-              <h3 className="font-pixel text-xl text-brand-yellow">Gizbo the Master Craftsman</h3>
-              <p className="text-brand-light/80 mt-3">
-                A wide-bellied, oil-stained ogre with soot on his sleeves and a monocle made from a magnifying 
-                lens and an old servo mount. Once a master engineer in the Clockwork Wars, Gizbo now runs the 
-                Forge — a place where sparks fly, cogs grind, and steam hisses from copper pipes.
-              </p>
-              
-              {/* Gizbo's current quote - shown when crafting */}
-              {showQuote && (
-                <div className="mt-4 bg-space-dark p-4 rounded-lg border border-brand-orange/30 relative">
-                  <div className="absolute -top-2 left-4 w-4 h-4 bg-space-dark border-t border-l border-brand-orange/30 transform rotate-45"></div>
-                  <p className="text-brand-orange italic text-lg">"{gizboQuote}"</p>
-                  <div className="mt-1 text-xs text-brand-light/50">- Gizbo</div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-      
-      {/* Forge Crafting Section */}
-      <section>
-        <div className="bg-space-mid rounded-lg p-6 pixel-border mb-8">
-          <div className="flex items-center mb-6">
-            <Sparkles className="text-brand-yellow mr-2" />
-            <p className="text-sm text-brand-light/80">
-              Combine your hard-earned materials to forge wonders both digital and physical. But beware - as Gizbo says, "If you smell smoke, you're doing it right!"
+    <MainLayout>
+      <Container>
+        <div className="pt-6 pb-8">
+          <div className="text-center mb-6">
+            <h1 className="text-3xl font-bold tracking-tight text-amber-600">
+              Gizbo's Forge
+            </h1>
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mt-2">
+              Craft valuable items using resources from your adventures. Gizbo the ogre offers mysterious recipes with powerful rewards!
             </p>
           </div>
-          
-          <Tabs defaultValue="all" className="w-full">
-            <TabsList className="bg-space-dark mb-6">
-              <TabsTrigger 
-                value="all" 
-                className="data-[state=active]:bg-brand-orange/20 data-[state=active]:text-brand-orange"
-                onClick={() => handleTabClick("all")}
-              >
-                All Blueprints
-              </TabsTrigger>
-              <TabsTrigger 
-                value="physical" 
-                className="data-[state=active]:bg-brand-orange/20 data-[state=active]:text-brand-orange"
-                onClick={() => handleTabClick("physical")}
-              >
-                Physical Marvels
-              </TabsTrigger>
-              <TabsTrigger 
-                value="digital" 
-                className="data-[state=active]:bg-brand-orange/20 data-[state=active]:text-brand-orange"
-                onClick={() => handleTabClick("digital")}
-              >
-                Digital Wonders
-              </TabsTrigger>
+
+          <div className="relative w-full h-64 mb-8 overflow-hidden rounded-lg bg-gray-800">
+            <img
+              src={forgeHeroPath}
+              alt="Gizbo's Forge"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+            <div className="absolute bottom-4 left-4 text-white text-xl font-bold">
+              <span className="text-xs block text-amber-400">Welcome to</span>
+              Gizbo's Crafting Station
+            </div>
+          </div>
+
+          <Tabs defaultValue="crafting" value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="crafting">Crafting Workshop</TabsTrigger>
+              <TabsTrigger value="schematics">Recipe Collection</TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="all" className="mt-0">
-              {loading ? (
-                <div className="flex justify-center py-10">
-                  <div className="animate-spin w-10 h-10 border-4 border-brand-orange border-t-transparent rounded-full"></div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredCraftables.map((item) => (
-                    <CraftingRecipe
-                      key={item.id}
-                      id={item.id}
-                      name={item.name}
-                      description={item.description}
-                      imageUrl={item.image}
-                      requirements={item.recipe}
-                      type={item.type}
-                      onCraft={() => handleCraft(item.id)}
-                      canCraft={canCraftItem(item.id)}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="physical" className="mt-0">
-              {loading ? (
-                <div className="flex justify-center py-10">
-                  <div className="animate-spin w-10 h-10 border-4 border-brand-orange border-t-transparent rounded-full"></div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredCraftables.filter(item => item.type === "physical").map((item) => (
-                    <CraftingRecipe
-                      key={item.id}
-                      id={item.id}
-                      name={item.name}
-                      description={item.description}
-                      imageUrl={item.image}
-                      requirements={item.recipe}
-                      type={item.type}
-                      onCraft={() => handleCraft(item.id)}
-                      canCraft={canCraftItem(item.id)}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="digital" className="mt-0">
-              {loading ? (
-                <div className="flex justify-center py-10">
-                  <div className="animate-spin w-10 h-10 border-4 border-brand-orange border-t-transparent rounded-full"></div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredCraftables.filter(item => item.type === "digital").map((item) => (
-                    <CraftingRecipe
-                      key={item.id}
-                      id={item.id}
-                      name={item.name}
-                      description={item.description}
-                      imageUrl={item.image}
-                      requirements={item.recipe}
-                      type={item.type}
-                      onCraft={() => handleCraft(item.id)}
-                      canCraft={canCraftItem(item.id)}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
-      </section>
-      
-      {/* Crafted Items Dialog */}
-      <Dialog open={showCraftedItems} onOpenChange={setShowCraftedItems}>
-        <DialogContent className="bg-space-dark border-brand-orange/30">
-          <DialogHeader>
-            <DialogTitle className="font-pixel text-brand-orange">GIZBO'S CREATIONS</DialogTitle>
-            <DialogDescription>
-              Marvels you've forged with Gizbo and their current status
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4 max-h-[400px] overflow-y-auto">
-            {craftedItems.length === 0 ? (
-              <div className="text-center py-6 text-brand-light/50">
-                <p>You haven't forged any items with Gizbo yet</p>
-                <p className="text-xs mt-2 italic">"Even the mightiest forges start with a single spark!" - Gizbo</p>
+
+            {isLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
+                <span className="ml-2 text-gray-600 dark:text-gray-400">Loading forge...</span>
               </div>
             ) : (
-              <div className="space-y-4">
-                {craftedItems.map((item) => (
-                  <div key={item.id} className="bg-space-mid p-4 rounded-lg">
-                    <div className="flex items-center gap-4 mb-2">
-                      <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded" />
-                      <div>
-                        <h3 className="font-bold">{item.name}</h3>
-                        <p className="text-xs text-brand-light/70">
-                          Forged on {new Date(item.dateCrafted).toLocaleDateString()}
-                        </p>
-                      </div>
+              <>
+                <TabsContent value="crafting" className="space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
+                    <div className="lg:col-span-3">
+                      <RecipeList
+                        recipes={recipes}
+                        selectedRecipe={selectedRecipe}
+                        onSelectRecipe={handleSelectRecipe}
+                        inventory={inventoryRecord}
+                      />
                     </div>
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="text-sm">{item.type === 'physical' ? 'Being delivered by Gizbo\'s assistant' : 'Digital enhancement'}</span>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        item.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
-                        item.status === 'shipping' ? 'bg-purple-500/20 text-purple-300' :
-                        item.status === 'shipped' ? 'bg-blue-500/20 text-blue-300' :
-                        item.status === 'delivered' || item.status === 'unlocked' ? 'bg-green-500/20 text-green-300' :
-                        item.status === 'redeemed' ? 'bg-brand-orange/20 text-brand-orange' :
-                        'bg-gray-500/20 text-gray-300'
-                      }`}>
-                        {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-                      </span>
-                    </div>
-                    
-                    {/* Display tracking information for physical items */}
-                    {item.type === 'physical' && item.tracking && (
-                      <div className="mt-2 text-xs text-brand-light/70">
-                        Tracking: {item.tracking}
+                    <div className="lg:col-span-4">
+                      <div className="space-y-4">
+                        <CraftingGrid
+                          selectedRecipe={selectedRecipe}
+                          inventory={inventoryRecord}
+                          onCraft={handleCraft}
+                          isCrafting={isCrafting}
+                        />
+                        <InventoryGrid
+                          inventory={inventoryRecord}
+                          selectedRecipeRequirements={selectedRecipe?.requiredItems}
+                        />
                       </div>
-                    )}
-                    
-                    {/* Shipping status for physical items */}
-                    {item.type === 'physical' && item.status === 'shipping' && (
-                      <div className="mt-3 p-3 bg-space-darkest rounded-lg border border-brand-yellow/30 text-xs">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center">
-                            <Truck className="h-4 w-4 text-brand-yellow mr-2" />
-                            <p className="text-brand-yellow font-semibold">Shipping In Progress</p>
-                          </div>
-                          <span className="px-2 py-1 rounded-full bg-brand-yellow/20 text-brand-yellow text-[10px] font-medium">PREPARING</span>
-                        </div>
-                        <p className="text-brand-light/80">
-                          Gizbo is packing your craftwork with utmost care. You'll receive tracking information soon!
-                        </p>
-                      </div>
-                    )}
-                    
-                    {/* Shipped status for physical items */}
-                    {item.type === 'physical' && item.status === 'shipped' && (
-                      <div className="mt-3 p-3 bg-space-darkest rounded-lg border border-brand-orange/30 text-xs">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center">
-                            <Ship className="h-4 w-4 text-brand-orange mr-2" />
-                            <p className="text-brand-orange font-semibold">Item Shipped</p>
-                          </div>
-                          <span className="px-2 py-1 rounded-full bg-brand-orange/20 text-brand-orange text-[10px] font-medium">ON THE WAY</span>
-                        </div>
-                        {item.tracking ? (
-                          <>
-                            <p className="text-brand-yellow font-semibold mb-1">Tracking Number:</p>
-                            <div className="bg-space-mid p-2 rounded-md border border-brand-orange/30 flex items-center justify-between mb-2">
-                              <code className="font-mono text-brand-light overflow-x-auto">
-                                {item.tracking}
-                              </code>
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                className="h-6 w-6 p-0 hover:bg-brand-orange/10"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(item.tracking || '');
-                                  toast({
-                                    title: "Tracking copied!",
-                                    description: "The tracking number has been copied to your clipboard.",
-                                    variant: "default"
-                                  });
-                                  sounds.click?.();
-                                }}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brand-light">
-                                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-                                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-                                </svg>
-                              </Button>
-                            </div>
-                          </>
-                        ) : (
-                          <p className="text-brand-light/80 mb-2">
-                            Tracking information will be available soon.
-                          </p>
-                        )}
-                        {item.shippingInfo && (
-                          <div className="text-xs text-brand-light/70">
-                            <p>Shipping to: {item.shippingInfo.name}</p>
-                            <p>{item.shippingInfo.address}, {item.shippingInfo.city}</p>
-                            <p>{item.shippingInfo.postalCode}, {item.shippingInfo.country}</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    
-                    {/* Delivered status for physical items */}
-                    {item.type === 'physical' && item.status === 'delivered' && (
-                      <div className="mt-3 p-3 bg-space-darkest rounded-lg border border-green-500/30 text-xs">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center">
-                            <Package className="h-4 w-4 text-green-500 mr-2" />
-                            <p className="text-green-500 font-semibold">Item Delivered</p>
-                          </div>
-                          <span className="px-2 py-1 rounded-full bg-green-500/20 text-green-500 text-[10px] font-medium">DELIVERED</span>
-                        </div>
-                        <p className="text-brand-light/80">
-                          Your item has been delivered. Enjoy your crafted marvel!
-                        </p>
-                      </div>
-                    )}
-                    
-                    {/* Redemption data for digital items */}
-                    {item.type === 'digital' && item.status === 'redeemed' && item.redemptionData && (
-                      <div className="mt-3 p-3 bg-space-darkest rounded-lg border border-brand-orange/30 text-xs">
-                        <div className="flex items-center mb-2">
-                          <Download className="h-4 w-4 text-brand-orange mr-2" />
-                          <p className="text-brand-orange font-semibold">Digital Item Redeemed</p>
-                        </div>
-                        <p className="text-brand-yellow font-semibold mb-1">Your Redemption Code:</p>
-                        <div className="bg-space-mid p-2 rounded-md border border-brand-orange/30 flex items-center justify-between">
-                          <code className="font-mono text-brand-orange overflow-x-auto">
-                            {item.redemptionData.code}
-                          </code>
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="h-6 w-6 p-0 hover:bg-brand-orange/10"
-                            onClick={() => {
-                              navigator.clipboard.writeText(item.redemptionData?.code || '');
-                              toast({
-                                title: "Code copied!",
-                                description: "The redemption code has been copied to your clipboard.",
-                                variant: "default"
-                              });
-                              sounds.click?.();
-                            }}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brand-light">
-                              <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-                              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-                            </svg>
-                          </Button>
-                        </div>
-                        <p className="text-xs mt-2 text-brand-light/50 flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                            <circle cx="12" cy="12" r="10" />
-                            <polyline points="12 6 12 12 16 14" />
-                          </svg>
-                          Redeemed on {new Date(item.redeemedAt || '').toLocaleDateString()}
-                        </p>
-                      </div>
-                    )}
-                    
-                    {/* Action buttons based on item status */}
-                    <div className="mt-3 flex justify-end">
-                      {/* For physical items in pending state, show ship button */}
-                      {item.type === 'physical' && item.status === 'pending' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-xs border-brand-yellow text-brand-yellow hover:bg-brand-yellow/10"
-                          onClick={() => openShippingForm(item.id)}
-                        >
-                          <Truck className="mr-1 h-3 w-3" />
-                          Add shipping info
-                        </Button>
-                      )}
-                      
-                      {/* For digital items in unlocked state, show redeem button */}
-                      {item.type === 'digital' && item.status === 'unlocked' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-xs border-brand-orange text-brand-orange hover:bg-brand-orange/10"
-                          onClick={() => redeemDigitalItem(item.id)}
-                          disabled={isRedeeming}
-                        >
-                          <Download className="mr-1 h-3 w-3" />
-                          {isRedeeming ? 'Processing...' : 'Redeem Code'}
-                        </Button>
-                      )}
                     </div>
                   </div>
-                ))}
-              </div>
+                </TabsContent>
+
+                <TabsContent value="schematics">
+                  <div className="p-6 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                    <h2 className="text-xl font-bold mb-4">Recipe Collection</h2>
+                    <p className="mb-4">
+                      The library of Gizbo's ancient recipes. Complete quests and adventures to unlock more powerful crafting schematics!
+                    </p>
+                    <Separator className="my-4" />
+                    
+                    {recipes.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {recipes.map((recipe) => (
+                          <div
+                            key={recipe.id}
+                            className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900"
+                          >
+                            <h3 className="font-bold">{recipe.name}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                              {recipe.description}
+                            </p>
+                            <div className="text-xs text-gray-500 dark:text-gray-500">
+                              <span className="capitalize">{recipe.difficulty}</span> • Discovered {new Date(recipe.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        No recipes discovered yet. Complete quests to unlock recipes!
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </>
             )}
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              onClick={() => {
-                setShowCraftedItems(false);
-                sounds.click?.();
-              }}
-              className="bg-brand-orange hover:bg-brand-yellow text-space-darkest"
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Shipping Information Dialog */}
-      <Dialog open={showShippingForm} onOpenChange={setShowShippingForm}>
-        <DialogContent className="bg-space-dark border-brand-orange/30">
-          <DialogHeader>
-            <DialogTitle className="font-pixel text-brand-orange">SHIPPING INFORMATION</DialogTitle>
-            <DialogDescription>
-              Tell Gizbo's assistants where to deliver your physical marvel
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmitShippingInfo)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <UserRound className="h-4 w-4 inline mr-2" />
-                      Full Name
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder="Who shall receive this marvel?" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <Home className="h-4 w-4 inline mr-2" />
-                      Street Address
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder="Where Gizbo's assistant should go" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        <MapPin className="h-4 w-4 inline mr-2" />
-                        City
-                      </FormLabel>
-                      <FormControl>
-                        <Input placeholder="City" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>State/Province</FormLabel>
-                      <FormControl>
-                        <Input placeholder="State/Province" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="postalCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Postal Code</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Postal/ZIP Code" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="country"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        <Globe className="h-4 w-4 inline mr-2" />
-                        Country
-                      </FormLabel>
-                      <FormControl>
-                        <Input placeholder="Country" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="pt-4 border-t border-brand-orange/20 text-xs text-brand-light/50 italic">
-                <p className="mb-2">
-                  "Don't worry about my assistant getting lost. He's got a built-in compass! 
-                  ...Though I do occasionally have to recalibrate it when he ends up in another dimension." - Gizbo
-                </p>
-              </div>
-              
-              <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setShowShippingForm(false)}
-                  className="border-brand-orange/30 hover:bg-brand-orange/10"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  className="bg-brand-orange hover:bg-brand-orange/90 text-space-darkest"
-                  disabled={isSubmittingShipping}
-                >
-                  {isSubmittingShipping ? (
-                    <>
-                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-space-darkest border-t-transparent"></div>
-                      Processing...
-                    </>
-                  ) : (
-                    <>Submit Shipping Info</>
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </div>
+          </Tabs>
+        </div>
+      </Container>
+    </MainLayout>
   );
 };
 
-export default Forge;
+export default ForgePage;

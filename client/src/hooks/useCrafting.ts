@@ -1,159 +1,90 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { useSoundEffects } from "@/hooks/useSoundEffects";
-import { useInventory } from "@/hooks/useInventory";
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
-export interface CraftableItem {
-  id: string;
-  name: string;
-  description: string;
-  image: string;
-  recipe: {
-    type: string;
-    quantity: number;
-  }[];
-  type: "physical" | "digital";
-}
-
-export interface CraftedItem {
-  id: string;
-  itemId: string;
-  name: string;
-  description: string;
-  image: string;
-  type: "physical" | "digital";
-  dateCrafted: string;
-  status: "pending" | "shipping" | "shipped" | "delivered" | "unlocked" | "redeemed";
-  tracking?: string;
-  address?: string;
-  redemptionData?: {
-    code?: string;
-    redeemedOn?: string;
-    [key: string]: any;
-  };
-  redeemedAt?: string;
-  shippingInfo?: {
-    name?: string;
-    address?: string;
-    city?: string;
-    state?: string;
-    postalCode?: string;
-    country?: string;
-    [key: string]: any;
-  };
-}
-
-export const useCrafting = () => {
+export function useCrafting() {
+  const [selectedRecipeId, setSelectedRecipeId] = useState<number | null>(null);
+  const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { sounds } = useSoundEffects();
-  const { hasEnoughResources } = useInventory();
 
-  // Get all craftable items
-  const { data: craftableItems = [], isLoading: loadingCraftableItems } = useQuery<CraftableItem[]>({
-    queryKey: ['/api/craftables'],
-    retry: false
+  // Fetch all crafting recipes
+  const {
+    data: recipes = [],
+    isLoading: isLoadingRecipes,
+    error: recipesError,
+  } = useQuery({
+    queryKey: ['/api/crafting/recipes'],
+    refetchOnWindowFocus: false,
   });
 
-  // Get user's crafted items
-  const { data: craftedItems = [], isLoading: loadingCraftedItems } = useQuery<CraftedItem[]>({
-    queryKey: ['/api/crafted-items'],
-    retry: false
+  // Fetch a specific recipe
+  const {
+    data: selectedRecipe,
+    isLoading: isLoadingRecipe,
+  } = useQuery({
+    queryKey: ['/api/crafting/recipes', selectedRecipeId],
+    enabled: selectedRecipeId !== null,
+    refetchOnWindowFocus: false,
   });
 
   // Craft an item
-  const craftItemMutation = useMutation({
-    mutationFn: async (itemId: string) => {
-      const response = await apiRequest('POST', `/api/craftables/${itemId}/craft`, {});
-      return response.json();
+  const craftMutation = useMutation({
+    mutationFn: async ({ 
+      gridPattern, 
+      recipeId 
+    }: { 
+      gridPattern: (string | null)[][], 
+      recipeId: number 
+    }) => {
+      const res = await apiRequest('POST', '/api/crafting/craft', {
+        gridPattern,
+        recipeId,
+      });
+      return await res.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/crafted-items'] });
-      
-      sounds.success?.();
+      // Show a success toast
       toast({
         title: "Item Crafted!",
-        description: data.type === "physical"
-          ? "Your item will be shipped to you soon!"
-          : "Digital unlock is now available in your account!",
+        description: `You have successfully crafted ${data.craftedItem.quantity}x ${data.craftedItem.type}`,
+        variant: "success",
       });
+      
+      // Update the inventory cache
+      queryClient.setQueryData(['/api/inventory'], data.updatedInventory);
+      
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory/history'] });
     },
-    onError: (error) => {
-      sounds.error?.();
+    onError: (error: Error) => {
       toast({
-        title: "Failed to Craft Item",
-        description: error instanceof Error ? error.message : "An error occurred",
+        title: "Crafting Failed",
+        description: error.message || "There was a problem crafting your item.",
         variant: "destructive",
       });
-    }
+    },
   });
 
-  // Function to manually refetch crafted items
-  const fetchCraftedItems = () => {
-    return queryClient.invalidateQueries({ queryKey: ['/api/crafted-items'] });
+  // Handle recipe selection
+  const selectRecipe = (recipeId: number | null) => {
+    setSelectedRecipeId(recipeId);
   };
 
-  // Redeem a digital item
-  const redeemItemMutation = useMutation({
-    mutationFn: async (itemId: string) => {
-      const response = await apiRequest('POST', `/api/crafted-items/${itemId}/redeem`, {});
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/crafted-items'] });
-      sounds.success?.();
-    },
-    onError: (error) => {
-      sounds.error?.();
-      toast({
-        title: "Failed to Redeem Item",
-        description: error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Submit shipping information for a physical item
-  const submitShippingMutation = useMutation({
-    mutationFn: async ({ itemId, shippingInfo }: { itemId: string, shippingInfo: any }) => {
-      const response = await apiRequest('POST', `/api/crafted-items/${itemId}/ship`, shippingInfo);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/crafted-items'] });
-      sounds.success?.();
-      toast({
-        title: "Shipping Information Submitted",
-        description: "Your item will be shipped soon!",
-        variant: "default",
-      });
-    },
-    onError: (error) => {
-      sounds.error?.();
-      toast({
-        title: "Failed to Submit Shipping Information",
-        description: error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive",
-      });
-    }
-  });
+  // Handle crafting
+  const craftItem = async (gridPattern: (string | null)[][], recipeId: number) => {
+    return craftMutation.mutateAsync({ gridPattern, recipeId });
+  };
 
   return {
-    craftableItems,
-    craftedItems,
-    loading: loadingCraftableItems || loadingCraftedItems,
-    craftItem: craftItemMutation.mutate,
-    redeemItem: redeemItemMutation.mutate,
-    submitShipping: submitShippingMutation.mutate,
-    isRedeeming: redeemItemMutation.isPending,
-    isSubmittingShipping: submitShippingMutation.isPending,
-    isCrafting: craftItemMutation.isPending,
-    fetchCraftedItems,
-    canCraftItem: (itemId: string) => {
-      const item = craftableItems.find(i => i.id === itemId);
-      return item ? hasEnoughResources(item.recipe) : false;
-    }
+    recipes,
+    selectedRecipe,
+    isLoadingRecipes,
+    isLoadingRecipe,
+    recipesError,
+    selectRecipe,
+    craftItem,
+    isCrafting: craftMutation.isPending,
   };
-};
+}
