@@ -26,7 +26,7 @@ import { apiRequest } from "@/lib/queryClient";
 // Import Gizbo's image
 import gizboImg from '../assets/gizbo.png';
 // Import forge hero image
-import forgeHeroImg from '@assets/forgehero.png';
+import forgeHeroImg from '../assets/forgehero.png';
 
 // Define interface for a crafted item with the expanded properties
 interface CraftedItemType {
