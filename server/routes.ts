@@ -1157,8 +1157,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!rewards || rewards.length === 0) {
         console.log('Warning: No rewards were generated, using fallback rewards');
-        rewards.push({ type: 'cloth', quantity: 3 });
-        rewards.push({ type: 'metal', quantity: 2 });
+        // Make sure we have an array to work with
+        const fallbackRewards = [];
+        
+        // Generate random amount of cloth (1-5)
+        fallbackRewards.push({ 
+          type: 'cloth', 
+          quantity: Math.floor(Math.random() * 5) + 1 
+        });
+        
+        // Generate random amount of metal (1-3)
+        fallbackRewards.push({ 
+          type: 'metal', 
+          quantity: Math.floor(Math.random() * 3) + 1 
+        });
+        
+        // 50% chance to add tech-scrap (1-2)
+        if (Math.random() > 0.5) {
+          fallbackRewards.push({ 
+            type: 'tech-scrap', 
+            quantity: Math.floor(Math.random() * 2) + 1 
+          });
+        }
+        
+        // Replace the empty rewards with our fallback ones
+        rewards.push(...fallbackRewards);
       }
       
       // Update the loot box as opened with rewards
