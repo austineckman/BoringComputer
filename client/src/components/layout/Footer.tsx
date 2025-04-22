@@ -28,47 +28,46 @@ const Footer = () => {
           </div>
           
           <div className="flex flex-wrap justify-center gap-6 mb-4 md:mb-0">
-            <Link href="/">
-              <a 
-                className="text-sm text-brand-light/70 hover:text-brand-orange transition"
-                onClick={handleClick}
-                onMouseEnter={handleHover}
-              >
-                Home
-              </a>
+            <Link 
+              href="/"
+              onClick={handleClick}
+              onMouseEnter={handleHover}
+              className="text-sm text-brand-light/70 hover:text-brand-orange transition"
+            >
+              Home
             </Link>
-            <a 
-              href="#"
+            <Link
+              href="/quests"
               className="text-sm text-brand-light/70 hover:text-brand-orange transition"
               onClick={handleClick}
               onMouseEnter={handleHover}
             >
-              Shop
-            </a>
-            <a 
-              href="#"
+              Quests
+            </Link>
+            <Link
+              href="/forge"
               className="text-sm text-brand-light/70 hover:text-brand-orange transition"
               onClick={handleClick}
               onMouseEnter={handleHover}
             >
-              Courses
-            </a>
-            <a 
-              href="#"
+              Forge
+            </Link>
+            <Link
+              href="/inventory"
               className="text-sm text-brand-light/70 hover:text-brand-orange transition"
               onClick={handleClick}
               onMouseEnter={handleHover}
             >
-              Support
-            </a>
-            <a 
-              href="#"
+              Inventory
+            </Link>
+            <Link
+              href="/settings"
               className="text-sm text-brand-light/70 hover:text-brand-orange transition"
               onClick={handleClick}
               onMouseEnter={handleHover}
             >
-              Contact
-            </a>
+              Settings
+            </Link>
           </div>
           
           <div className="flex space-x-4">
