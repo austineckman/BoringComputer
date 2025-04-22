@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { adminOnly } from '../middleware/adminAuth';
+import { adminAuth } from '../middleware/adminAuth';
 import { db } from '../db';
 import { 
   quests, 
@@ -17,7 +17,7 @@ import { z } from 'zod';
 const router = Router();
 
 // Apply admin authentication to all routes in this router
-router.use(adminOnly);
+router.use(adminAuth);
 
 // =================
 // QUESTS

@@ -6,6 +6,7 @@ import { z } from "zod";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { createHash } from "crypto";
+import { adminAuth } from "./middleware/adminAuth";
 import path from 'path';
 import { openLootBox, generateLootBoxRewards, LootBoxType } from './lootBoxSystem';
 import { getItemDetails } from './itemDatabase';
@@ -1044,7 +1045,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Admin route to create test loot boxes
-  app.post('/api/admin/loot-boxes', authenticate, adminOnly, async (req, res) => {
+  app.post('/api/admin/loot-boxes', authenticate, adminAuth, async (req, res) => {
     try {
       const user = (req as any).user;
       if (!user) {
@@ -1104,7 +1105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin routes
-  app.post('/api/admin/quests', authenticate, adminOnly, async (req, res) => {
+  app.post('/api/admin/quests', authenticate, adminAuth, async (req, res) => {
     try {
       const questData = req.body;
       const schema = z.object({
@@ -1285,9 +1286,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Crafting Recipe routes
   app.get('/api/crafting/recipes', authenticate, craftingRecipeRoutes.getCraftingRecipes);
   app.get('/api/crafting/recipes/:id', authenticate, craftingRecipeRoutes.getCraftingRecipeById);
-  app.post('/api/crafting/recipes', authenticate, adminOnly, craftingRecipeRoutes.createCraftingRecipe);
-  app.put('/api/crafting/recipes/:id', authenticate, adminOnly, craftingRecipeRoutes.updateCraftingRecipe);
-  app.delete('/api/crafting/recipes/:id', authenticate, adminOnly, craftingRecipeRoutes.deleteCraftingRecipe);
+  app.post('/api/crafting/recipes', authenticate, adminAuth, craftingRecipeRoutes.createCraftingRecipe);
+  app.put('/api/crafting/recipes/:id', authenticate, adminAuth, craftingRecipeRoutes.updateCraftingRecipe);
+  app.delete('/api/crafting/recipes/:id', authenticate, adminAuth, craftingRecipeRoutes.deleteCraftingRecipe);
   app.post('/api/crafting/craft', authenticate, craftingRecipeRoutes.craftItem);
   
   // Admin routes
