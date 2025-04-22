@@ -705,6 +705,142 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Loot Box Routes
+  app.get('/api/loot-boxes', authenticate, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (!user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const lootBoxes = await storage.getLootBoxes(user.id);
+      res.json(lootBoxes);
+    } catch (error) {
+      console.error('Error fetching loot boxes:', error);
+      res.status(500).json({ message: "Failed to fetch loot boxes" });
+    }
+  });
+  
+  app.get('/api/loot-boxes/:id', authenticate, async (req, res) => {
+    try {
+      const lootBoxId = parseInt(req.params.id);
+      const lootBox = await storage.getLootBox(lootBoxId);
+      
+      if (!lootBox) {
+        return res.status(404).json({ message: "Loot box not found" });
+      }
+      
+      // Check if the loot box belongs to the user
+      if (lootBox.userId !== (req as any).user.id) {
+        return res.status(403).json({ message: "Not authorized to view this loot box" });
+      }
+      
+      res.json(lootBox);
+    } catch (error) {
+      console.error('Error fetching loot box:', error);
+      res.status(500).json({ message: "Failed to fetch loot box" });
+    }
+  });
+  
+  app.post('/api/loot-boxes/:id/open', authenticate, async (req, res) => {
+    try {
+      const lootBoxId = parseInt(req.params.id);
+      const user = (req as any).user;
+      const lootBox = await storage.getLootBox(lootBoxId);
+      
+      if (!lootBox) {
+        return res.status(404).json({ message: "Loot box not found" });
+      }
+      
+      // Check if the loot box belongs to the user
+      if (lootBox.userId !== user.id) {
+        return res.status(403).json({ message: "Not authorized to open this loot box" });
+      }
+      
+      // Check if the loot box is already opened
+      if (lootBox.opened) {
+        return res.status(400).json({ 
+          message: "Loot box already opened", 
+          rewards: lootBox.rewards 
+        });
+      }
+      
+      // Mark as opened
+      const updatedLootBox = await storage.updateLootBox(lootBoxId, { 
+        opened: true,
+        openedAt: new Date()
+      });
+      
+      // Add items to user's inventory
+      if (lootBox.rewards) {
+        for (const reward of lootBox.rewards) {
+          // Update user's inventory
+          const inventory = user.inventory || {};
+          inventory[reward.type] = (inventory[reward.type] || 0) + reward.quantity;
+          
+          await storage.updateUser(user.id, { inventory });
+          
+          // Record in inventory history
+          await storage.createInventoryHistory({
+            userId: user.id,
+            type: reward.type,
+            quantity: reward.quantity,
+            action: 'gained',
+            source: 'loot box'
+          });
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        message: 'Loot box opened successfully', 
+        rewards: lootBox.rewards 
+      });
+    } catch (error) {
+      console.error('Error opening loot box:', error);
+      res.status(500).json({ message: "Failed to open loot box" });
+    }
+  });
+  
+  // Inventory Routes
+  app.get('/api/inventory', authenticate, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (!user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      // Transform inventory from object to array with additional metadata
+      const inventory = user.inventory || {};
+      const resources = Object.entries(inventory).map(([type, quantity]) => ({
+        type,
+        quantity,
+        // Most recent time this resource was acquired
+        lastAcquired: new Date().toISOString() // Simplified for now
+      }));
+      
+      res.json(resources);
+    } catch (error) {
+      console.error('Error fetching inventory:', error);
+      res.status(500).json({ message: "Failed to fetch inventory" });
+    }
+  });
+  
+  app.get('/api/inventory/history', authenticate, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (!user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const history = await storage.getInventoryHistory(user.id);
+      res.json(history);
+    } catch (error) {
+      console.error('Error fetching inventory history:', error);
+      res.status(500).json({ message: "Failed to fetch inventory history" });
+    }
+  });
+  
   // Achievements routes
   app.get('/api/achievements', authenticate, async (req, res) => {
     try {
