@@ -15,6 +15,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sparkles, Flame, Wrench } from "lucide-react";
 
+// Import Gizbo's image
+import gizboImg from '../assets/gizbo.png';
+
 const ForgeQuotes = [
   "Oho! I haven't seen that combo since the Great Servo Fry of '93!",
   "More scrap! MORE SCRAP! The forge hungers!",
@@ -75,19 +78,32 @@ const Forge = () => {
   
   return (
     <div>
+      {/* Gizbo Welcome Banner */}
       <section className="mb-8">
         <div className="bg-space-dark rounded-lg p-6 pixel-border relative overflow-hidden">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+            <div className="md:order-1 order-2">
+              <h1 className="font-pixel text-2xl md:text-3xl text-brand-orange mb-3">GIZBO'S FORGE</h1>
+              <p className="text-brand-light/80 text-lg">
+                <span className="text-brand-yellow font-semibold">"Where the broken becomes brilliant!"</span>
+              </p>
+              <p className="text-brand-light/80 mt-3">
+                Welcome to the cluttered wonder-cave of master engineer Gizbo, the ogre craftsman.
+              </p>
+            </div>
+            <div className="md:order-2 order-1 flex justify-center md:justify-end">
+              <img 
+                src={gizboImg} 
+                alt="Gizbo the Ogre Craftsman" 
+                className="h-auto w-full max-w-xs rounded-lg shadow-lg border-2 border-brand-orange/30"
+              />
+            </div>
+          </div>
+          
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mt-6">
             <div className="flex items-center">
               <div className="w-16 h-16 rounded-full bg-brand-orange/30 flex items-center justify-center mr-4 border-2 border-brand-orange/50">
                 <Flame className="w-8 h-8 text-brand-orange" />
-              </div>
-              <div>
-                <h1 className="font-pixel text-xl md:text-2xl text-brand-orange mb-1">GIZBO'S FORGE</h1>
-                <p className="text-brand-light/80 max-w-xl">
-                  <span className="text-brand-yellow">"Where the broken becomes brilliant!"</span> Welcome to the cluttered 
-                  wonder-cave of master engineer Gizbo, the ogre craftsman.
-                </p>
               </div>
             </div>
             
@@ -117,8 +133,11 @@ const Forge = () => {
           <div className="flex items-start">
             <div className="relative">
               <div className="w-24 h-24 rounded-full bg-brand-orange/20 border-2 border-brand-orange/50 overflow-hidden flex items-center justify-center">
-                {/* Placeholder for Gizbo character art - using an emoji for now */}
-                <span className="text-5xl">🧌</span>
+                <img 
+                  src={gizboImg} 
+                  alt="Gizbo the Master Craftsman" 
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div className="absolute -bottom-1 -right-1 bg-brand-orange text-space-darkest rounded-full w-8 h-8 flex items-center justify-center border-2 border-space-darkest">
                 <Wrench className="w-4 h-4" />
