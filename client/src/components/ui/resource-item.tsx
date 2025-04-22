@@ -3,7 +3,27 @@ import { cn } from "@/lib/utils";
 import { themeConfig } from "@/lib/themeConfig";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 
+// Import resource images
+import clothImage from "@/assets/resources/cloth.png";
+import metalImage from "@/assets/resources/metal.png";
+import techScrapImage from "@/assets/resources/tech-scrap.png";
+import sensorCrystalImage from "@/assets/resources/sensor-crystal.png";
+import circuitBoardImage from "@/assets/resources/circuit-board.png";
+import alchemyInkImage from "@/assets/resources/alchemy-ink.png";
+import lootCrateImage from "@/assets/resources/loot-crate.png";
+
 type ResourceType = "cloth" | "metal" | "tech-scrap" | "sensor-crystal" | "circuit-board" | "alchemy-ink" | "loot-crate";
+
+// Resource image mapping
+const resourceImages: Record<ResourceType, string> = {
+  "cloth": clothImage,
+  "metal": metalImage,
+  "tech-scrap": techScrapImage,
+  "sensor-crystal": sensorCrystalImage,
+  "circuit-board": circuitBoardImage,
+  "alchemy-ink": alchemyInkImage,
+  "loot-crate": lootCrateImage
+};
 
 interface ResourceItemProps {
   type: ResourceType;
@@ -109,7 +129,7 @@ const ResourceItem = ({
         style={{ backgroundColor: 'transparent' }}
       >
         <img 
-          src={`/images/resources/${type}.png`} 
+          src={resourceImages[type]} 
           alt={resourceConfig.name} 
           className="w-full h-full object-contain"
         />
