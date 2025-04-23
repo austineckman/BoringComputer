@@ -111,13 +111,26 @@ const CharacterPage = () => {
   // Fetch character equipment data
   const { data: equipment, isLoading: equipmentLoading } = useQuery({
     queryKey: ['/api/character/equipment'],
-    select: (data) => data || {}
+    select: (data) => data || {},
+    // Refresh every 5 seconds to catch new items from admin panel
+    refetchInterval: 5000
   });
   
   // Fetch inventory items
   const { data: inventoryItems, isLoading: inventoryLoading } = useQuery({
     queryKey: ['/api/inventory'],
-    select: (data) => data || []
+    select: (data) => data || [],
+    // Refresh every 5 seconds to catch new items from admin panel
+    refetchInterval: 5000
+  });
+  
+  // Fetch admin items to ensure we have the most up-to-date item data
+  // for properly detecting equippable items
+  const { data: adminItems } = useQuery({
+    queryKey: ['/api/admin/items'],
+    select: (data) => data || [],
+    // Refresh every 5 seconds to catch new items from admin panel
+    refetchInterval: 5000
   });
   
   // Query client for cache updates
@@ -187,31 +200,106 @@ const CharacterPage = () => {
   const filteredItems = React.useMemo(() => {
     if (!inventoryItems) return [];
     
-    // Look for items with ID 'gizbos' for the head slot
-    const gizboItemHeadMatch = inventoryItems.some(item => 
-      item.id === 'gizbos' && selectedSlot === 'head'
+    // Debug log for inventory items
+    console.log("Processing inventory items for filtering:", 
+      inventoryItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        isEquippable: item.isEquippable,
+        equipSlot: item.equipSlot
+      }))
     );
     
-    if (gizboItemHeadMatch) {
-      console.log("Found Gizbo Glasses for head slot");
+    // Create a map of all admin items by ID for quick lookup
+    const adminItemsMap: Record<string, any> = {};
+    if (adminItems) {
+      adminItems.forEach((item: any) => {
+        adminItemsMap[item.id] = item;
+      });
     }
     
     return inventoryItems.filter((item: any) => {
-      // Special case for Gizbo Glasses (specific handling as per database)
-      if (item.id === 'gizbos' && selectedSlot === 'head') {
+      // Look up corresponding admin item data - this gives us definitive equipment data
+      const adminItem = adminItemsMap[item.id];
+      
+      // Enhanced equipment detection - handle all possible database representations
+      
+      // 1. Check if the item is equippable - check both inventory and admin data
+      const isEquippable = 
+        // Check inventory item first
+        item.isEquippable === true || 
+        item.isEquippable === 't' || 
+        item.isEquippable === 'true' ||
+        item.isEquippable === 'T' ||
+        item.isEquippable === 1 ||
+        // Check admin data if available (has authoritative equippable info)
+        (adminItem && (
+          adminItem.isEquippable === true || 
+          adminItem.isEquippable === 't' || 
+          adminItem.isEquippable === 'true' ||
+          adminItem.isEquippable === 'T' ||
+          adminItem.isEquippable === 1
+        ));
+      
+      // 2. Check if the item's equipment slot matches the selected slot
+      // Handle multiple possible formats from different endpoints
+      const matchesSelectedSlot = 
+        // Direct match on item
+        item.equipSlot === selectedSlot ||
+        // String match on item
+        (item.equipSlot && item.equipSlot.toLowerCase() === selectedSlot.toLowerCase()) ||
+        // Check admin data if available
+        (adminItem && (
+          adminItem.equipSlot === selectedSlot ||
+          (adminItem.equipSlot && adminItem.equipSlot.toLowerCase() === selectedSlot.toLowerCase())
+        )) ||
+        // Special cases by item ID for smart detection
+        (selectedSlot === 'head' && ['gizbos', 'gizbo', 'glasses', 'crown', 'helmet', 'hat', 'goggles', 'mask'].some(id => 
+          item.id.toLowerCase().includes(id.toLowerCase()) || item.name.toLowerCase().includes(id.toLowerCase())
+        )) ||
+        (selectedSlot === 'torso' && ['chest', 'shirt', 'armor', 'robe', 'vest', 'coat'].some(id => 
+          item.id.toLowerCase().includes(id.toLowerCase()) || item.name.toLowerCase().includes(id.toLowerCase())
+        )) ||
+        (selectedSlot === 'legs' && ['pants', 'shorts', 'greaves', 'leggings', 'skirt', 'trousers'].some(id => 
+          item.id.toLowerCase().includes(id.toLowerCase()) || item.name.toLowerCase().includes(id.toLowerCase())
+        )) ||
+        (selectedSlot === 'hands' && ['gloves', 'gauntlet', 'weapon', 'sword', 'wand', 'staff', 'gun'].some(id => 
+          item.id.toLowerCase().includes(id.toLowerCase()) || item.name.toLowerCase().includes(id.toLowerCase())
+        )) ||
+        (selectedSlot === 'accessory' && ['ring', 'amulet', 'necklace', 'cape', 'pendant', 'trinket', 'charm'].some(id => 
+          item.id.toLowerCase().includes(id.toLowerCase()) || item.name.toLowerCase().includes(id.toLowerCase())
+        ));
+      
+      // 3. Always include explicitly matching items with explicit slot data
+      const explicitMatch = item.slot === selectedSlot || (item.slot && item.slot.toLowerCase() === selectedSlot.toLowerCase());
+      
+      // When an admin item exists, always take its equippable status as definitive
+      // Otherwise, use our own detection
+      const displayInSlot = adminItem 
+        ? (adminItem.isEquippable && adminItem.equipSlot === selectedSlot) 
+        : (isEquippable && (matchesSelectedSlot || explicitMatch));
+      
+      // Special case for Gizbo Glasses or crown - always show in head slot regardless
+      if ((item.id === 'gizbos' || item.id === 'RareCrown') && selectedSlot === 'head') {
         return true;
       }
       
-      // Check if the item is equippable and matches the selected slot
-      // Convert boolean values that might come as strings from PostgreSQL
-      const isEquippable = 
-        item.isEquippable === true || 
-        item.isEquippable === 't' || 
-        item.isEquippable === 'true';
+      // Log equipment detection for debugging
+      if (isEquippable || matchesSelectedSlot || explicitMatch) {
+        console.log(`Item ${item.name} (${item.id}) filtered:`, { 
+          isEquippable, 
+          matchesSelectedSlot,
+          explicitMatch,
+          adminItemExists: !!adminItem,
+          adminItemEquippable: adminItem?.isEquippable,
+          adminItemSlot: adminItem?.equipSlot,
+          selected: displayInSlot
+        });
+      }
       
-      return isEquippable && item.equipSlot === selectedSlot;
+      return displayInSlot;
     });
-  }, [inventoryItems, selectedSlot]);
+  }, [inventoryItems, adminItems, selectedSlot]);
   
   // Handle equipping an item
   const handleEquipItem = (itemId: string) => {
