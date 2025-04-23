@@ -219,7 +219,7 @@ const AdminRecipesPage: React.FC = () => {
       toast({
         title: 'Recipe created',
         description: 'The recipe has been created successfully.',
-        variant: 'success',
+        variant: 'default',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/recipes'] });
       handleCloseDialog();
