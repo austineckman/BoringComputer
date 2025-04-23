@@ -147,9 +147,10 @@ export function DraggableInventoryItem({
         {item.isLootBox ? (
           <div className="w-full h-full flex items-center justify-center rounded-md overflow-hidden bg-space-mid">
             <img 
-              src="/images/loot-crate.png" 
-              alt="Loot Crate"
+              src={item.lootBoxData?.image || "/images/loot-crate.png"} 
+              alt={item.lootBoxData?.name || "Loot Crate"}
               className="w-full h-full object-contain" 
+              title={item.lootBoxData?.name || "Loot Crate"}
             />
           </div>
         ) : (
