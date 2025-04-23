@@ -53,16 +53,16 @@ const getRarityColorClass = (itemType: string): string => {
   const itemDetails = getItemDetails(itemType);
   switch (itemDetails.rarity) {
     case 'legendary':
-      return 'bg-amber-900/20 border-amber-400/40';
+      return 'border-amber-500 bg-amber-500/10 border-2';
     case 'epic':
-      return 'bg-purple-900/20 border-purple-400/40';
+      return 'border-purple-500 bg-purple-500/10 border-2';
     case 'rare':
-      return 'bg-blue-900/20 border-blue-400/40';
+      return 'border-blue-500 bg-blue-500/10 border-2';
     case 'uncommon':
-      return 'bg-green-900/20 border-green-400/40';
+      return 'border-green-500 bg-green-500/10 border-2';
     case 'common':
     default:
-      return 'bg-space-dark border-space-light/40';
+      return 'bg-space-dark border-space-light/40 border';
   }
 };
 
@@ -496,7 +496,7 @@ export default function Inventory() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div 
-                          className={`aspect-square ${item ? `${getRarityColorClass(item.type)} hover:border-brand-orange/60` : 'bg-space-dark border-space-light/10'} rounded-md p-1 relative cursor-pointer transition-colors`}
+                          className={`aspect-square ${item ? `${getRarityColorClass(item.type)} hover:border-brand-orange/60 hover:shadow-md` : 'bg-space-dark border-space-light/10'} rounded-md p-1 relative cursor-pointer transition-all duration-200`}
                           onMouseEnter={() => item && handleItemHover(item.type)}
                           onClick={() => item && handleItemClick(item)}
                         >
