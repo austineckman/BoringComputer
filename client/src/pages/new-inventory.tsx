@@ -602,7 +602,7 @@ export default function Inventory() {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div 
-                            className={`aspect-square ${getRarityColorClass(item.type)} hover:border-brand-orange/60 rounded-md p-1 relative cursor-pointer transition-colors`}
+                            className={`aspect-square ${getRarityColorClass(item.type)} hover:border-brand-orange/60 hover:shadow-md rounded-md p-1 relative cursor-pointer transition-all duration-200`}
                             onMouseEnter={() => handleItemHover(item.type)}
                             onClick={() => handleItemClick(item)}
                           >
@@ -615,6 +615,18 @@ export default function Inventory() {
                                        title={`Equippable: ${getItemDetails(item.type).equipSlot}`}>
                                   </div>
                                 )}
+                                {/* Glow effect for rare items */}
+                                {getItemDetails(item.type).rarity !== 'common' && (
+                                  <div className="absolute inset-0 rounded-lg animate-pulse-slow opacity-50" 
+                                       style={{
+                                         boxShadow: `0 0 8px 1px ${
+                                           getItemDetails(item.type).rarity === 'legendary' ? 'rgba(245, 158, 11, 0.5)' :
+                                           getItemDetails(item.type).rarity === 'epic' ? 'rgba(168, 85, 247, 0.5)' :
+                                           getItemDetails(item.type).rarity === 'rare' ? 'rgba(59, 130, 246, 0.5)' :
+                                           'rgba(34, 197, 94, 0.5)'
+                                         }`
+                                       }}></div>
+                                )}
                               </div>
                             </div>
                             <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
@@ -624,9 +636,20 @@ export default function Inventory() {
                         </TooltipTrigger>
                         <TooltipContent side="top" className="bg-space-dark border-brand-orange/30 text-brand-light p-3">
                           <div className="space-y-1">
-                            <p className="font-bold capitalize text-brand-orange">
-                              {getItemDetails(item.type).name}
-                            </p>
+                            <div className="flex items-center justify-between">
+                              <p className="font-bold capitalize text-brand-orange">
+                                {getItemDetails(item.type).name}
+                              </p>
+                              <div className={`px-1.5 py-0.5 rounded-md text-xs font-bold uppercase ${
+                                getItemDetails(item.type).rarity === 'legendary' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50' :
+                                getItemDetails(item.type).rarity === 'epic' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/50' :
+                                getItemDetails(item.type).rarity === 'rare' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/50' :
+                                getItemDetails(item.type).rarity === 'uncommon' ? 'bg-green-500/20 text-green-300 border border-green-500/50' :
+                                'bg-gray-500/20 text-gray-300 border border-gray-500/50'
+                              }`}>
+                                {getItemDetails(item.type).rarity}
+                              </div>
+                            </div>
                             <p className="text-xs text-brand-light/70">
                               {getItemDetails(item.type).flavorText.substring(0, 60)}...
                             </p>
@@ -661,17 +684,30 @@ export default function Inventory() {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div 
-                            className={`aspect-square ${getRarityColorClass(item.type)} hover:border-brand-orange/60 rounded-md p-1 relative cursor-pointer transition-colors`}
+                            className={`aspect-square ${getRarityColorClass(item.type)} hover:border-brand-orange/60 hover:shadow-md rounded-md p-1 relative cursor-pointer transition-all duration-200`}
                             onMouseEnter={() => handleItemHover(item.type)}
                             onClick={() => handleItemClick(item)}
                           >
                             <div className="flex items-center justify-center h-full">
-                              <div className={`w-full h-full flex items-center justify-center rounded-md overflow-hidden bg-space-mid`}>
+                              <div className={`w-full h-full flex items-center justify-center rounded-md overflow-hidden bg-space-mid relative`}>
                                 <img 
                                   src={getLootCrateImage().src} 
                                   alt={getLootCrateImage().alt}
                                   className="w-full h-full object-contain" 
                                 />
+                                
+                                {/* Glow effect for rare items */}
+                                {getItemDetails(item.type).rarity !== 'common' && (
+                                  <div className="absolute inset-0 rounded-lg animate-pulse-slow opacity-50" 
+                                       style={{
+                                         boxShadow: `0 0 8px 1px ${
+                                           getItemDetails(item.type).rarity === 'legendary' ? 'rgba(245, 158, 11, 0.5)' :
+                                           getItemDetails(item.type).rarity === 'epic' ? 'rgba(168, 85, 247, 0.5)' :
+                                           getItemDetails(item.type).rarity === 'rare' ? 'rgba(59, 130, 246, 0.5)' :
+                                           'rgba(34, 197, 94, 0.5)'
+                                         }`
+                                       }}></div>
+                                )}
                               </div>
                             </div>
                             <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
@@ -681,9 +717,20 @@ export default function Inventory() {
                         </TooltipTrigger>
                         <TooltipContent side="top" className="bg-space-dark border-brand-orange/30 text-brand-light p-3">
                           <div className="space-y-1">
-                            <p className="font-bold capitalize text-brand-orange">
-                              {getItemDetails(item.type).name}
-                            </p>
+                            <div className="flex items-center justify-between">
+                              <p className="font-bold capitalize text-brand-orange">
+                                {getItemDetails(item.type).name}
+                              </p>
+                              <div className={`px-1.5 py-0.5 rounded-md text-xs font-bold uppercase ${
+                                getItemDetails(item.type).rarity === 'legendary' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50' :
+                                getItemDetails(item.type).rarity === 'epic' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/50' :
+                                getItemDetails(item.type).rarity === 'rare' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/50' :
+                                getItemDetails(item.type).rarity === 'uncommon' ? 'bg-green-500/20 text-green-300 border border-green-500/50' :
+                                'bg-gray-500/20 text-gray-300 border border-gray-500/50'
+                              }`}>
+                                {getItemDetails(item.type).rarity}
+                              </div>
+                            </div>
                             <p className="text-xs text-brand-light/70">
                               {getItemDetails(item.type).flavorText.substring(0, 60)}...
                             </p>
