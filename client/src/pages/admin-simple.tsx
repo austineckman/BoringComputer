@@ -1,4 +1,4 @@
-import React, { useState, useContext, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Container } from '@/components/ui/container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { SoundContext } from '@/context/SoundContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import MainLayout from '@/components/layout/MainLayout';
@@ -24,8 +23,6 @@ import { Textarea } from "@/components/ui/textarea";
 
 export default function AdminItemsPage() {
   const { toast } = useToast();
-  const soundContext = useContext(SoundContext);
-  const sounds = soundContext ? soundContext.sounds : { click: () => {}, hover: () => {}, success: () => {}, error: () => {} };
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -43,7 +40,7 @@ export default function AdminItemsPage() {
 
   // Query to fetch items
   const { 
-    data: items = [],
+    data: items = [] as any[],
     isLoading: isItemsLoading,
     error: itemsError
   } = useQuery({
@@ -205,10 +202,7 @@ export default function AdminItemsPage() {
             <h1 className="text-3xl font-bold">Item Management</h1>
             <Button 
               className="bg-primary hover:bg-primary/90" 
-              onClick={() => {
-                if (sounds.click) sounds.click();
-                setNewItemDialogOpen(true);
-              }}
+              onClick={() => setNewItemDialogOpen(true)}
             >
               <Plus className="h-4 w-4 mr-2" /> Add Item
             </Button>
