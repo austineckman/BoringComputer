@@ -10,8 +10,10 @@ import {
   LootBox, InsertLootBox,
   InventoryHistory, InsertInventoryHistory,
   Item, InsertItem,
+  CraftingRecipe, InsertCraftingRecipe,
+  CharacterEquipment, InsertCharacterEquipment,
   users, quests, userQuests, submissions, craftables, craftedItems,
-  achievements, userAchievements, lootBoxes, inventoryHistory, craftingRecipes, items, lootBoxConfigs
+  achievements, userAchievements, lootBoxes, inventoryHistory, craftingRecipes, items, lootBoxConfigs, characterEquipment
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
@@ -1304,6 +1306,61 @@ export class DatabaseStorage implements IStorage {
       .delete(items)
       .where(eq(items.id, id));
     return true; // PostgreSQL doesn't return deleted rows count directly in drizzle
+  }
+
+  // Crafting Recipe methods
+  async getCraftingRecipes(): Promise<CraftingRecipe[]> {
+    return await db.select().from(craftingRecipes);
+  }
+
+  async getCraftingRecipe(id: number): Promise<CraftingRecipe | undefined> {
+    const [recipe] = await db
+      .select()
+      .from(craftingRecipes)
+      .where(eq(craftingRecipes.id, id));
+    return recipe;
+  }
+
+  async createCraftingRecipe(insertRecipe: InsertCraftingRecipe): Promise<CraftingRecipe> {
+    const [recipe] = await db
+      .insert(craftingRecipes)
+      .values(insertRecipe)
+      .returning();
+    return recipe;
+  }
+
+  async updateCraftingRecipe(id: number, recipeData: Partial<CraftingRecipe>): Promise<CraftingRecipe | undefined> {
+    const [updatedRecipe] = await db
+      .update(craftingRecipes)
+      .set({
+        ...recipeData,
+        updatedAt: new Date()
+      })
+      .where(eq(craftingRecipes.id, id))
+      .returning();
+    return updatedRecipe;
+  }
+
+  async deleteCraftingRecipe(id: number): Promise<boolean> {
+    const result = await db
+      .delete(craftingRecipes)
+      .where(eq(craftingRecipes.id, id));
+    return true; // PostgreSQL doesn't return deleted rows count directly in drizzle
+  }
+
+  async getAvailableCraftingRecipes(userId: number): Promise<CraftingRecipe[]> {
+    // Get the user to check their level
+    const user = await this.getUser(userId);
+    if (!user) {
+      return [];
+    }
+    
+    // For now, just return all unlocked recipes
+    // In the future, this could filter based on player level or other criteria
+    return await db
+      .select()
+      .from(craftingRecipes)
+      .where(eq(craftingRecipes.unlocked, true));
   }
   
   async resetDatabase(): Promise<void> {
