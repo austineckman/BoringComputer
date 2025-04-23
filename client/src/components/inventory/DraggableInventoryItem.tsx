@@ -18,6 +18,12 @@ interface DraggableInventoryItemProps {
   onLootBoxOpen: (lootBox: LootBox) => void;
 }
 
+interface DragItem {
+  index: number;
+  id: string;
+  type: string;
+}
+
 export function DraggableInventoryItem({
   item,
   index,
@@ -33,21 +39,26 @@ export function DraggableInventoryItem({
   // Set up drag source
   const [{ isDragging }, drag] = useDrag({
     type: INVENTORY_ITEM,
-    item: { index },
+    item: () => {
+      return { index, id: `item-${index}`, type: INVENTORY_ITEM }
+    },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
+    end: (item, monitor) => {
+      const didDrop = monitor.didDrop();
+      if (!didDrop) {
+        // Reset if not dropped on a valid target
+        // No action needed, React will maintain the original state
+      }
+    }
   });
   
   // Set up drop target
-  const [{ isOver }, drop] = useDrop({
+  const [{ isOver, canDrop }, drop] = useDrop({
     accept: INVENTORY_ITEM,
-    drop(dragItem: { index: number }, monitor) {
-      if (!ref.current) {
-        return;
-      }
-      
-      const dragIndex = dragItem.index;
+    drop: (draggedItem: DragItem) => {
+      const dragIndex = draggedItem.index;
       const hoverIndex = index;
       
       // Don't replace items with themselves
@@ -55,38 +66,20 @@ export function DraggableInventoryItem({
         return;
       }
       
-      // Time to actually perform the action
+      // Call the moveItem function to handle the swap logic
       moveItem(dragIndex, hoverIndex);
-    },
-    hover(dragItem: { index: number }, monitor) {
-      if (!ref.current) {
-        return;
-      }
       
-      const dragIndex = dragItem.index;
-      const hoverIndex = index;
-      
-      // Don't replace items with themselves
-      if (dragIndex === hoverIndex) {
-        return;
-      }
-      
-      // Note: we're mutating the monitor item here!
-      // Generally it's better to avoid mutations,
-      // but it's good here for the sake of performance
-      // to avoid expensive index searches.
-      dragItem.index = hoverIndex;
+      // Update the index of the dragged item
+      draggedItem.index = hoverIndex;
     },
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),
+      canDrop: !!monitor.canDrop(),
     }),
   });
   
   // Initialize drag and drop refs using reference merging
-  const dragDropRef = (node: HTMLDivElement | null) => {
-    ref.current = node;
-    drag(drop(node));
-  };
+  drag(drop(ref));
   
   if (!item) return null;
   
@@ -94,7 +87,7 @@ export function DraggableInventoryItem({
   
   return (
     <div 
-      ref={dragDropRef}
+      ref={ref}
       className={`aspect-square ${getRarityColorClass(item.type)} hover:border-brand-orange/60 hover:shadow-md rounded-md p-1 relative cursor-pointer transition-all duration-200`}
       style={{ opacity }}
       onMouseEnter={() => handleItemHover(item.type)}
@@ -136,7 +129,9 @@ export function DraggableInventoryItem({
       <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
         {item.quantity}
       </div>
-      {isOver && (
+      
+      {/* Visual indicator for drop target */}
+      {isOver && canDrop && (
         <div className="absolute inset-0 bg-brand-orange/20 border-2 border-brand-orange/40 rounded-md z-10"></div>
       )}
       
