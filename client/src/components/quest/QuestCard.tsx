@@ -80,6 +80,12 @@ const QuestCard = ({
     refetchOnWindowFocus: false,
   });
   
+  // Fetch item database for resource item details
+  const { data: itemsData, isLoading: isLoadingItems } = useQuery({
+    queryKey: ['/api/admin/items'],
+    refetchOnWindowFocus: false,
+  });
+  
   // Truncate description for card view
   const maxLength = 100;
   const isTruncated = description.length > maxLength && !isExpanded;
@@ -166,9 +172,9 @@ const QuestCard = ({
     }
   };
 
-  // Get color for loot box tier
-  const getLootBoxColor = (type: string) => {
-    switch (type) {
+  // Get color for loot box or item tier
+  const getRarityColor = (rarity: string) => {
+    switch (rarity) {
       case "common":
         return "border-gray-400 bg-gray-400/10 text-gray-300";
       case "uncommon":
@@ -182,6 +188,23 @@ const QuestCard = ({
       default:
         return "border-gray-500 bg-gray-500/10 text-gray-400";
     }
+  };
+  
+  // Helper function to find item data by id
+  const getItemData = (id: string) => {
+    return itemsData?.find(item => item.id === id);
+  }
+  
+  // Helper function to find loot box data by id or type
+  const getLootBoxData = (id: string, type: string) => {
+    return lootBoxConfigs?.find(config => 
+      config.id === id || config.id === type
+    );
+  };
+  
+  // Helper function to format item name
+  const formatItemName = (name: string) => {
+    return name.charAt(0).toUpperCase() + name.slice(1).replace(/-/g, ' ');
   };
 
   const statusDisplay = getStatusDisplay();
@@ -270,12 +293,18 @@ const QuestCard = ({
                   className={`flex flex-col items-center ${status === "upcoming" || status === "locked" ? "opacity-50" : ""}`}
                 >
                   {/* Show loot box icon and include rarity coloring */}
-                  <div className={`relative p-1 rounded-md ${getLootBoxColor(lootBox.type)}`}>
-                    <img 
-                      src={`/images/loot-crate.png`} // Use dynamic loot box image in future
-                      alt={`${lootBox.type} Loot Box`}
-                      className="w-8 h-8 object-contain"
-                    />
+                  <div className={`relative p-1 rounded-md ${
+                    getRarityColor(getLootBoxData(lootBox.id || '', lootBox.type)?.rarity || 'common')
+                  }`}>
+                    {isLoadingLootBoxes ? (
+                      <div className="w-8 h-8 animate-pulse rounded bg-space-light/20" />
+                    ) : (
+                      <img 
+                        src={getLootBoxData(lootBox.id || '', lootBox.type)?.image || '/images/loot-crate.png'}
+                        alt={`${getLootBoxData(lootBox.id || '', lootBox.type)?.name || lootBox.type} Loot Box`}
+                        className="w-8 h-8 object-contain"
+                      />
+                    )}
                     {lootBox.quantity > 1 && (
                       <span className="absolute bottom-0 right-0 bg-brand-orange/80 text-white text-xs rounded px-1">
                         x{lootBox.quantity}
@@ -283,7 +312,12 @@ const QuestCard = ({
                     )}
                   </div>
                   <span className="text-xs mt-1 text-center">
-                    {lootBox.type.charAt(0).toUpperCase() + lootBox.type.slice(1)}
+                    {/* Use the name from config if available */}
+                    {isLoadingLootBoxes 
+                      ? lootBox.type.charAt(0).toUpperCase() + lootBox.type.slice(1)
+                      : getLootBoxData(lootBox.id || '', lootBox.type)?.name || 
+                        (lootBox.type.charAt(0).toUpperCase() + lootBox.type.slice(1))
+                    }
                   </span>
                 </div>
               ))}
@@ -299,7 +333,30 @@ const QuestCard = ({
                   key={index} 
                   className={`flex flex-col items-center ${status === "upcoming" || status === "locked" ? "opacity-50" : ""}`}
                 >
-                  <ResourceItem type={reward.type as any} quantity={reward.quantity} size="sm" />
+                  {isLoadingItems ? (
+                    <div className="w-8 h-8 animate-pulse rounded bg-space-light/20" />
+                  ) : (
+                    <div className={`relative p-1 rounded-md ${
+                      getRarityColor(getItemData(reward.type)?.rarity || 'common')
+                    }`}>
+                      <img 
+                        src={getItemData(reward.type)?.imagePath || `/images/resources/${reward.type}.png`}
+                        alt={getItemData(reward.type)?.name || reward.type}
+                        className="w-8 h-8 object-contain"
+                      />
+                      {reward.quantity > 1 && (
+                        <span className="absolute bottom-0 right-0 bg-brand-orange/80 text-white text-xs rounded px-1">
+                          x{reward.quantity}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  <span className="text-xs mt-1 text-center">
+                    {isLoadingItems 
+                      ? formatItemName(reward.type)
+                      : getItemData(reward.type)?.name || formatItemName(reward.type)
+                    }
+                  </span>
                 </div>
               ))}
             </div>
