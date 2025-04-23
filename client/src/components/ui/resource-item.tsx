@@ -130,13 +130,22 @@ const ResourceItem = ({
       >
         <img 
           src={imagePath || resourceImages[type] || '/placeholder.png'} 
-          alt={resourceConfig.name} 
+          alt={resourceConfig.name || type} 
           className="w-full h-full object-contain"
+          onError={(e) => {
+            // If the image fails to load, fall back to type-based image or placeholder
+            const target = e.target as HTMLImageElement;
+            if (target.src !== resourceImages[type] && resourceImages[type]) {
+              target.src = resourceImages[type];
+            } else if (target.src !== '/placeholder.png') {
+              target.src = '/placeholder.png';
+            }
+          }}
         />
       </div>
       <div className="text-center">
-        <div className="text-xs font-semibold">{resourceConfig.name}</div>
-        <div className={cn("font-bold", styles.quantity)} style={{ color: resourceConfig.color }}>
+        <div className="text-xs font-semibold">{resourceConfig?.name || type}</div>
+        <div className={cn("font-bold", styles.quantity)} style={{ color: resourceConfig?.color || '#fff' }}>
           {quantity}
         </div>
       </div>
