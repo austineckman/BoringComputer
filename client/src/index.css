@@ -7,32 +7,55 @@
 /* CSGO-style unboxing animations */
 @keyframes scrollItems {
   0% {
-    transform: translateX(100%);
+    transform: translateX(400px);
+  }
+  5% {
+    transform: translateX(350px);
   }
   10% {
-    transform: translateX(70%);
+    transform: translateX(300px);
+  }
+  20% {
+    transform: translateX(200px);
   }
   30% {
-    transform: translateX(20%);
+    transform: translateX(100px);
+  }
+  40% {
+    transform: translateX(0px);
+  }
+  50% {
+    transform: translateX(-150px);
   }
   60% {
-    transform: translateX(-70%);
+    transform: translateX(-300px);
+  }
+  70% {
+    transform: translateX(-450px);
+  }
+  80% {
+    transform: translateX(-600px);
   }
   85% {
-    transform: translateX(-90%);
-  }
-  /* Ensure the animation only slows down and never backtracks */
+    transform: translateX(-700px);
+  } 
   90% {
-    transform: translateX(-47%);
+    transform: translateX(-800px);
   }
   95% {
-    transform: translateX(-48.5%);
+    transform: translateX(-850px);
+  }
+  97% {
+    transform: translateX(-890px);
   }
   98% {
-    transform: translateX(-49.5%);
+    transform: translateX(-895px);
+  }
+  99% {
+    transform: translateX(-898px);
   }
   100% {
-    transform: translateX(-50%);
+    transform: translateX(-900px);
   }
 }
 
