@@ -87,6 +87,19 @@ export interface IStorage {
   updateItem(id: string, itemData: Partial<Item>): Promise<Item | undefined>;
   deleteItem(id: string): Promise<boolean>;
   
+  // Crafting Recipe methods
+  getCraftingRecipes(): Promise<CraftingRecipe[]>;
+  getCraftingRecipe(id: number): Promise<CraftingRecipe | undefined>;
+  createCraftingRecipe(recipe: InsertCraftingRecipe): Promise<CraftingRecipe>;
+  updateCraftingRecipe(id: number, recipeData: Partial<CraftingRecipe>): Promise<CraftingRecipe | undefined>;
+  deleteCraftingRecipe(id: number): Promise<boolean>;
+  getAvailableCraftingRecipes(userId: number): Promise<CraftingRecipe[]>;
+  
+  // Character Equipment methods
+  getCharacterEquipment(userId: number): Promise<Record<string, any>>;
+  equipItem(userId: number, itemId: string, slot: string): Promise<CharacterEquipment>;
+  unequipItem(userId: number, slot: string): Promise<boolean>;
+  
   // Database management methods
   resetDatabase(): Promise<void>;
 }
