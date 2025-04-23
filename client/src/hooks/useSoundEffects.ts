@@ -44,14 +44,11 @@ export function useSoundEffects() {
     
     // Pass through the rest of the context
     volume: context.volume,
-    setVolume: context.setVolume,
+    changeVolume: context.changeVolume, // Add the missing changeVolume function
     isMuted: context.isMuted,
     toggleMute: context.toggleMute,
     playSound: context.playSound,
-    stopAllSounds: context.stopAllSounds,
-    backgroundMusic: context.backgroundMusic,
-    playBackgroundMusic: context.playBackgroundMusic,
-    stopBackgroundMusic: context.stopBackgroundMusic,
-    isBackgroundMusicPlaying: context.isBackgroundMusicPlaying
+    isBgMusicPlaying: context.isBgMusicPlaying,
+    toggleBackgroundMusic: context.toggleBackgroundMusic
   };
 }
