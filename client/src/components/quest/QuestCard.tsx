@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import PixelCard, { PixelCardContent, PixelCardHeader } from "@/components/ui/pixel-card";
 import PixelButton from "@/components/ui/pixel-button";
 import ResourceItem from "@/components/ui/resource-item";
@@ -7,6 +7,7 @@ import { themeConfig } from "@/lib/themeConfig";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import AdventureImage from "@/components/adventure/AdventureImage";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface QuestReward {
   type: string;
@@ -30,6 +31,12 @@ interface QuestCardProps {
   orderInLine?: number; 
   xpReward?: number;
   lootBoxRewards?: LootBoxReward[]; // New field for loot box rewards
+  heroImage?: string; // Hero image field
+  content?: {
+    images: string[];
+    videos: string[];
+    codeBlocks: {language: string, code: string}[];
+  };
   onStart?: () => void;
   onContinue?: () => void;
 }
@@ -45,10 +52,20 @@ const QuestCard = ({
   orderInLine,
   xpReward,
   lootBoxRewards,
+  heroImage,
+  content,
   onStart,
   onContinue
 }: QuestCardProps) => {
   const { sounds } = useSoundEffects();
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Truncate description for card view
+  const maxLength = 100;
+  const isTruncated = description.length > maxLength && !isExpanded;
+  const displayDescription = isTruncated
+    ? description.slice(0, maxLength) + '...'
+    : description;
   
   // Get adventure line info from config
   const adventure = adventureLine ? 
@@ -150,10 +167,18 @@ const QuestCard = ({
   const statusDisplay = getStatusDisplay();
 
   // Wrap the content
-  const content = (
+  const cardContent = (
     <PixelCard active={status === "active"} interactive={true}>
-      {/* Adventure Line Image Banner */}
-      {adventure.id && (
+      {/* Hero Image or Adventure Line Banner */}
+      {heroImage ? (
+        <div className="h-40 w-full overflow-hidden">
+          <img 
+            src={heroImage} 
+            alt={title}
+            className="w-full h-full object-cover object-center"
+          />
+        </div>
+      ) : adventure.id && (
         <div className="h-24 w-full overflow-hidden">
           <AdventureImage 
             adventureId={adventure.id}
@@ -179,7 +204,33 @@ const QuestCard = ({
       {/* Quest Content */}
       <PixelCardContent>
         <h3 className="font-bold text-lg mb-2">{title}</h3>
-        <p className="text-sm text-brand-light/70 mb-4">{description}</p>
+        <div className="relative">
+          <p className="text-sm text-brand-light/70 mb-4">{displayDescription}</p>
+          {isTruncated && (
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsExpanded(true);
+              }}
+              className="flex items-center text-xs text-brand-orange hover:text-brand-yellow"
+            >
+              View more <ChevronDown className="ml-1 w-3 h-3" />
+            </button>
+          )}
+          {isExpanded && (
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsExpanded(false);
+              }}
+              className="flex items-center text-xs text-brand-orange hover:text-brand-yellow"
+            >
+              Show less <ChevronUp className="ml-1 w-3 h-3" />
+            </button>
+          )}
+        </div>
         
         {/* XP Reward */}
         {xpReward && (
@@ -252,7 +303,7 @@ const QuestCard = ({
   return (
     <div onMouseEnter={handleHover} className={status === "active" || status === "available" ? "cursor-pointer" : ""}>
       <Link href={`/quests/${id}`}>
-        {content}
+        {cardContent}
       </Link>
     </div>
   );
