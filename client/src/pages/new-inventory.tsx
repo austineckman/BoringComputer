@@ -116,7 +116,7 @@ export default function Inventory() {
       // Always try to open the loot box server-side to get fresh rewards
       if (lootBox.id) {
         console.log('Opening loot box with ID:', lootBox.id);
-        const response = await apiRequest('POST', `/api/loot-boxes/${lootBox.id}/open`);
+        const response = await apiRequest(`/api/loot-boxes/${lootBox.id}/open`, 'POST');
         const data = await response.json();
         console.log('Loot box open response:', data);
         
@@ -226,7 +226,7 @@ export default function Inventory() {
     
     const generateCratesMutation = useMutation({
       mutationFn: async () => {
-        const response = await apiRequest('POST', '/api/loot-boxes/generate-test', {
+        const response = await apiRequest('/api/loot-boxes/generate-test', 'POST', {
           cleanUp // Send cleanup option to the server
         });
         return await response.json();
