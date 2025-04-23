@@ -1223,15 +1223,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = (req as any).user;
       if (!user) return res.status(401).json({ message: "User not found" });
       
-      // Create one of each loot box type
-      const types = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+      // Get all loot box configs from the database
+      const lootBoxConfigs = await storage.getLootBoxConfigs();
+      if (lootBoxConfigs.length === 0) {
+        return res.status(400).json({ 
+          message: "No loot box configurations found. Create some in the admin panel first." 
+        });
+      }
+      
+      console.log(`Found ${lootBoxConfigs.length} loot box configurations`);
+      
       const createdBoxes = [];
       
-      for (const type of types) {
-        // Create loot box without pre-generating rewards (they'll be generated on open)
+      // Create one of each loot box config type
+      for (const config of lootBoxConfigs) {
+        console.log(`Creating test loot box of type: ${config.id}`);
+        
+        // Create loot box without pre-generating rewards (they'll be generated when opened)
         const lootBox = await storage.createLootBox({
           userId: user.id,
-          type,
+          type: config.id,
           opened: false,
           rewards: null, // Will be generated when opened
           source: 'Test Crate Generator',
@@ -1242,7 +1253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       return res.status(201).json({
-        message: "Test loot crates generated successfully",
+        message: `Generated ${createdBoxes.length} test loot crates successfully`,
         lootBoxes: createdBoxes
       });
     } catch (error) {
