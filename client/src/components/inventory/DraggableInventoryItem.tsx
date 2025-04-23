@@ -5,8 +5,58 @@ import { getItemDetails } from '@/lib/itemDatabase';
 import { getRarityColorClass } from '@/lib/styleUtils';
 import { LootBox } from '@/pages/new-inventory';
 
-// Define drag item type
+// Define drag item types
 export const INVENTORY_ITEM = 'inventoryItem';
+export const EMPTY_SLOT = 'emptySlot';
+
+// Props for empty slots
+interface EmptySlotProps {
+  index: number;
+  moveItem: (fromIndex: number, toIndex: number) => void;
+}
+
+// Component for empty inventory slots that can be drop targets
+export function DraggableEmptySlot({ index, moveItem }: EmptySlotProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  
+  // Set up drop target for empty slots
+  const [{ isOver, canDrop }, drop] = useDrop({
+    accept: INVENTORY_ITEM,
+    drop: (draggedItem: { index: number, type: string }) => {
+      const dragIndex = draggedItem.index;
+      const hoverIndex = index;
+      
+      // Don't replace items with themselves
+      if (dragIndex === hoverIndex) {
+        return;
+      }
+      
+      // Move the item to this empty slot
+      moveItem(dragIndex, hoverIndex);
+      
+      // Update the index of the dragged item
+      draggedItem.index = hoverIndex;
+    },
+    collect: (monitor) => ({
+      isOver: !!monitor.isOver(),
+      canDrop: !!monitor.canDrop(),
+    }),
+  });
+  
+  // Initialize the drop ref
+  drop(ref);
+  
+  return (
+    <div 
+      ref={ref}
+      className="w-full h-full rounded-md border border-space-light/5 bg-brand-orange/5 hover:bg-brand-orange/10 hover:border-brand-orange/20 transition-all duration-200"
+    >
+      {isOver && canDrop && (
+        <div className="absolute inset-0 bg-brand-orange/20 border-2 border-brand-orange/40 rounded-md z-10"></div>
+      )}
+    </div>
+  );
+}
 
 interface DraggableInventoryItemProps {
   item: {type: string, quantity: number, isLootBox?: boolean, lootBoxData?: LootBox} | null;
