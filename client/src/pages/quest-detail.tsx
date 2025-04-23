@@ -216,6 +216,17 @@ export default function QuestDetailPage() {
 
   return (
       <div className="container mx-auto px-4 py-8">
+        {/* Hero Image Display */}
+        {images.length > 0 && (
+          <div className="w-full mb-8 rounded-lg overflow-hidden shadow-lg">
+            <img 
+              src={images[0]} 
+              alt={quest.title}
+              className="w-full h-auto max-h-[300px] object-cover object-center"
+            />
+          </div>
+        )}
+        
         <div className="flex flex-col md:flex-row justify-between items-start gap-6">
           {/* Main content */}
           <div className="w-full md:w-2/3">
