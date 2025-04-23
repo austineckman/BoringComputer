@@ -48,7 +48,8 @@ interface Item {
   name: string;
   description: string;
   rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
-  image: string;
+  image?: string;
+  imagePath?: string; // Added to match the schema
   category?: string;
   isEquippable?: boolean;
   equipSlot?: 'head' | 'torso' | 'legs' | 'hands' | 'accessory' | null;
@@ -384,9 +385,16 @@ const AdminItems: React.FC = () => {
               <Card key={item.id} className="overflow-hidden">
                 <div className="relative aspect-video overflow-hidden bg-muted">
                   {/* Display the item image when available, trying different possible image path formats */}
-                  {item.image ? (
+                  {item.imagePath || item.image ? (
                     <img
-                      src={item.image.startsWith('http') ? item.image : `/uploads/items/${item.image}`}
+                      src={
+                        // Handle various image path formats
+                        item.imagePath ? 
+                          (item.imagePath.startsWith('http') ? item.imagePath : `/uploads/items/${item.imagePath}`) :
+                        item.image ? 
+                          (item.image.startsWith('http') ? item.image : `/uploads/items/${item.image}`) :
+                        '/images/item-placeholder.png'
+                      }
                       alt={item.name}
                       className="h-full w-full object-cover object-center"
                       onError={(e) => {
@@ -729,10 +737,17 @@ const AdminItems: React.FC = () => {
                   <Label htmlFor="edit-image" className="mb-1.5 block">
                     Image 
                   </Label>
-                  {currentItem.image && (
+                  {(currentItem.imagePath || currentItem.image) && (
                     <div className="mb-2">
                       <img
-                        src={currentItem.image.startsWith('http') ? currentItem.image : `/uploads/items/${currentItem.image}`}
+                        src={
+                          // Handle various image path formats
+                          currentItem.imagePath ? 
+                            (currentItem.imagePath.startsWith('http') ? currentItem.imagePath : `/uploads/items/${currentItem.imagePath}`) :
+                          currentItem.image ? 
+                            (currentItem.image.startsWith('http') ? currentItem.image : `/uploads/items/${currentItem.image}`) :
+                          '/images/item-placeholder.png'
+                        }
                         alt={currentItem.name}
                         className="h-24 w-auto rounded border object-cover"
                         onError={(e) => {
@@ -791,9 +806,16 @@ const AdminItems: React.FC = () => {
             {currentItem && (
               <div className="rounded-lg border p-4">
                 <div className="flex items-center gap-4">
-                  {currentItem.image ? (
+                  {(currentItem.imagePath || currentItem.image) ? (
                     <img
-                      src={currentItem.image.startsWith('http') ? currentItem.image : `/uploads/items/${currentItem.image}`}
+                      src={
+                        // Handle various image path formats
+                        currentItem.imagePath ? 
+                          (currentItem.imagePath.startsWith('http') ? currentItem.imagePath : `/uploads/items/${currentItem.imagePath}`) :
+                        currentItem.image ? 
+                          (currentItem.image.startsWith('http') ? currentItem.image : `/uploads/items/${currentItem.image}`) :
+                        '/images/item-placeholder.png'
+                      }
                       alt={currentItem.name}
                       className="h-16 w-16 rounded object-cover"
                       onError={(e) => {
