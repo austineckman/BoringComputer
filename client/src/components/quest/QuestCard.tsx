@@ -237,38 +237,35 @@ const QuestCard = ({
           </div>
         )}
         
-        {/* Sequence Info */}
-        {typeof orderInLine === 'number' && (
-          <div className="flex items-center space-x-2 mb-4">
-            <span className="text-xs text-brand-light/60">Quest:</span>
-            <span className="text-xs bg-space-dark px-2 py-1 rounded">#{orderInLine + 1}</span>
-          </div>
-        )}
+        {/* Removing quest number and difficulty level as requested */}
         
-        {/* Difficulty Level */}
-        <div className="flex items-center space-x-1 mb-4">
-          <span className="text-xs text-brand-light/60 mr-2">Difficulty:</span>
-          {[1, 2, 3, 4, 5].map((level) => (
-            <div 
-              key={level}
-              className={`w-3 h-3 rounded-full ${level <= difficulty ? "bg-brand-orange" : "bg-space-dark"}`}
-            ></div>
-          ))}
-        </div>
-        
-        {/* Loot Box Rewards (prioritize this) */}
+        {/* Rewards Section - Unified display for both loot box and resource rewards */}
         {lootBoxRewards && lootBoxRewards.length > 0 ? (
           <div className="mb-4">
-            <span className="text-xs text-brand-light/60 block mb-2">Loot Box Rewards:</span>
+            <span className="text-xs text-brand-light/60 block mb-2">Rewards:</span>
             <div className="flex flex-wrap gap-2">
               {lootBoxRewards.map((lootBox, index) => (
-                <Badge 
+                <div 
                   key={index} 
-                  variant="outline" 
-                  className={`${getLootBoxColor(lootBox.type)} ${status === "upcoming" || status === "locked" ? "opacity-50" : ""}`}
+                  className={`flex flex-col items-center ${status === "upcoming" || status === "locked" ? "opacity-50" : ""}`}
                 >
-                  {lootBox.quantity}x {lootBox.type.charAt(0).toUpperCase() + lootBox.type.slice(1)} Box
-                </Badge>
+                  {/* Show loot box icon and include rarity coloring */}
+                  <div className={`relative p-1 rounded-md ${getLootBoxColor(lootBox.type)}`}>
+                    <img 
+                      src={`/images/loot-crate.png`} // Use dynamic loot box image in future
+                      alt={`${lootBox.type} Loot Box`}
+                      className="w-8 h-8 object-contain"
+                    />
+                    {lootBox.quantity > 1 && (
+                      <span className="absolute bottom-0 right-0 bg-brand-orange/80 text-white text-xs rounded px-1">
+                        x{lootBox.quantity}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs mt-1 text-center">
+                    {lootBox.type.charAt(0).toUpperCase() + lootBox.type.slice(1)}
+                  </span>
+                </div>
               ))}
             </div>
           </div>
@@ -276,7 +273,7 @@ const QuestCard = ({
           /* Legacy Resource Rewards */
           <div className="mb-4">
             <span className="text-xs text-brand-light/60 block mb-2">Rewards:</span>
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap gap-2">
               {rewards.map((reward, index) => (
                 <div 
                   key={index} 
