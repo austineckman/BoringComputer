@@ -162,25 +162,61 @@ export default function QuestDetailPage() {
       });
       
       if (res.ok) {
+        const responseData = await res.json();
+        
+        // Extract reward information
+        const { rewards, lootBoxRewards, xpGained, newLevel } = responseData;
+        
+        let rewardMessage = `You've earned ${xpGained} XP`;
+        
+        // Check if user leveled up
+        if (newLevel) {
+          rewardMessage += ` and reached level ${newLevel}!`;
+        } else {
+          rewardMessage += "!";
+        }
+        
+        // Add reward info to message
+        const hasRewards = (rewards && rewards.length > 0) || 
+                          (lootBoxRewards && lootBoxRewards.length > 0);
+        
+        if (hasRewards) {
+          rewardMessage += " Rewards have been added to your inventory.";
+        }
+        
         toast({
           title: "Quest Completed!",
-          description: "You've earned XP and loot boxes!",
+          description: rewardMessage,
           variant: "default",
         });
         
+        // Invalidate inventory queries to refresh with new rewards
+        queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/loot-boxes'] });
+        
         // Navigate back to quests page
-        setTimeout(() => navigate('/quests'), 1500);
+        setTimeout(() => navigate('/quests'), 2000);
       } else {
-        toast({
-          title: "Error",
-          description: "Could not complete the quest.",
-          variant: "destructive",
-        });
+        // Try to parse error message
+        try {
+          const errorData = await res.json();
+          toast({
+            title: "Error",
+            description: errorData.message || "Could not complete the quest.",
+            variant: "destructive",
+          });
+        } catch {
+          toast({
+            title: "Error",
+            description: "Could not complete the quest.",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "An error occurred.",
+        description: error instanceof Error ? error.message : "An error occurred.",
         variant: "destructive",
       });
     }
@@ -897,19 +933,42 @@ export default function QuestDetailPage() {
                       <p className="mb-2">Rewards:</p>
                       <div className="grid grid-cols-3 gap-2">
                         {quest.rewards.map((reward, index) => {
-                          // Find item details
-                          const item = reward.type === 'lootbox' 
-                            ? { name: `${reward.id.charAt(0).toUpperCase() + reward.id.slice(1)} Loot Box`, imagePath: '/images/loot-crate.png' }
-                            : itemsQuery.data?.find((i: any) => i.id === reward.id);
+                          // Determine item details based on reward type
+                          let itemDetails;
                           
-                          if (!item) return null;
+                          if (reward.type === 'lootbox') {
+                            // For lootboxes, create a display name and use the loot box image
+                            const rarityName = reward.id.charAt(0).toUpperCase() + reward.id.slice(1);
+                            itemDetails = { 
+                              name: `${rarityName} Loot Box`, 
+                              imagePath: '/images/loot-crate.png',
+                              rarity: reward.id
+                            };
+                          } else if (reward.type === 'item' || reward.type === 'equipment') {
+                            // For items and equipment, find the item in the items database
+                            itemDetails = itemsQuery.data?.find((i: any) => i.id === reward.id);
+                          }
+                          
+                          // Skip if no item details could be found
+                          if (!itemDetails) return null;
+                          
+                          // Determine background color based on rarity
+                          const rarityColors: Record<string, string> = {
+                            common: 'bg-gray-700',
+                            uncommon: 'bg-green-800/50',
+                            rare: 'bg-blue-800/50',
+                            epic: 'bg-purple-800/50',
+                            legendary: 'bg-orange-800/50'
+                          };
+                          
+                          const bgColor = itemDetails.rarity ? rarityColors[itemDetails.rarity] || 'bg-space-dark' : 'bg-space-dark';
                           
                           return (
-                            <div key={index} className="bg-space-dark p-2 rounded-md text-center">
+                            <div key={index} className={`${bgColor} p-2 rounded-md text-center`}>
                               <div className="relative w-12 h-12 mx-auto mb-1">
                                 <img 
-                                  src={item.imagePath} 
-                                  alt={item.name}
+                                  src={itemDetails.imagePath} 
+                                  alt={itemDetails.name}
                                   className="w-full h-full object-contain"
                                 />
                                 {reward.quantity > 1 && (
@@ -918,7 +977,7 @@ export default function QuestDetailPage() {
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs truncate">{item.name}</p>
+                              <p className="text-xs truncate">{itemDetails.name}</p>
                             </div>
                           );
                         })}
