@@ -29,9 +29,22 @@ export function useCrafting() {
   });
   
   // Fetch user's inventory from API
-  const { data: inventory = {}, isLoading: isInventoryLoading } = useQuery<Record<string, number>>({
+  const { data: inventoryItems = [], isLoading: isInventoryLoading } = useQuery({
     queryKey: ['/api/inventory'],
   });
+  
+  // Convert array of inventory items to Record<itemId, quantity> format for crafting
+  const inventory = React.useMemo(() => {
+    const inventoryMap: Record<string, number> = {};
+    if (Array.isArray(inventoryItems)) {
+      inventoryItems.forEach(item => {
+        if (item && item.id) {
+          inventoryMap[item.id] = item.quantity || 0;
+        }
+      });
+    }
+    return inventoryMap;
+  }, [inventoryItems]);
   
   // Mutation for crafting an item
   const craftMutation = useMutation({
