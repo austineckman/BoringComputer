@@ -110,16 +110,54 @@ const AdminItems: React.FC = () => {
   // Create item mutation
   const createItemMutation = useMutation({
     mutationFn: async (formData: FormData) => {
+      // First create the item with basic data
+      const itemId = newItem.name?.toLowerCase().replace(/\s+/g, '-') || '';
+      
+      const itemData = {
+        id: itemId,
+        name: formData.get('name') as string,
+        description: formData.get('description') as string,
+        flavorText: '',
+        rarity: formData.get('rarity') as string,
+        craftingUses: [],
+        imagePath: '',
+        category: formData.get('category') as string || 'resource',
+        isEquippable: formData.get('isEquippable') === 'true',
+        equipSlot: formData.get('equipSlot') as string || undefined,
+      };
+      
       const response = await fetch('/api/admin/items', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(itemData),
       });
       
       if (!response.ok) {
-        throw new Error('Failed to create item');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create item');
       }
       
-      return response.json();
+      const createdItem = await response.json();
+      
+      // If there's an image, upload it separately
+      const imageFile = formData.get('image') as File;
+      if (imageFile && imageFile.size > 0) {
+        const imageFormData = new FormData();
+        imageFormData.append('image', imageFile);
+        
+        const imageResponse = await fetch(`/api/admin/items/${itemId}/image`, {
+          method: 'POST',
+          body: imageFormData,
+        });
+        
+        if (!imageResponse.ok) {
+          throw new Error('Item created but failed to upload image');
+        }
+      }
+      
+      return createdItem;
     },
     onSuccess: () => {
       setIsCreateDialogOpen(false);
