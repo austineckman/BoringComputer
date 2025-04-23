@@ -73,6 +73,13 @@ export interface IStorage {
   createLootBox(lootBox: InsertLootBox): Promise<LootBox>;
   updateLootBox(id: number, lootBoxData: Partial<LootBox>): Promise<LootBox | undefined>;
   
+  // Loot Box Config methods
+  getLootBoxConfigs(): Promise<LootBoxConfig[]>;
+  getLootBoxConfig(id: string): Promise<LootBoxConfig | undefined>;
+  createLootBoxConfig(config: InsertLootBoxConfig): Promise<LootBoxConfig>;
+  updateLootBoxConfig(id: string, configData: Partial<LootBoxConfig>): Promise<LootBoxConfig | undefined>;
+  deleteLootBoxConfig(id: string): Promise<boolean>;
+  
   // Inventory History methods
   getInventoryHistory(userId: number): Promise<InventoryHistory[]>;
   createInventoryHistory(inventoryHistory: InsertInventoryHistory): Promise<InventoryHistory>;
