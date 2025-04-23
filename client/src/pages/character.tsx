@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { apiRequest } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';
 
-// Placeholder for character base image
+// Character base image
 const CHARACTER_BASE_IMAGE = '/images/character-base.png';
 
 // Types for our equipment slots
@@ -18,41 +18,77 @@ type EquipmentSlot = 'head' | 'torso' | 'legs' | 'accessory' | 'hands';
 interface EquipmentSlotInfo {
   id: EquipmentSlot;
   name: string;
-  icon: string;
   description: string;
+  position: {
+    top: string;
+    left: string;
+    width: string;
+    height: string;
+    zIndex: number;
+  };
 }
 
-// Equipment slot definitions
+// Equipment slot definitions with positioning info for overlay items
 const EQUIPMENT_SLOTS: EquipmentSlotInfo[] = [
   { 
     id: 'head', 
     name: 'Head', 
-    icon: '👑', 
-    description: 'Helmets, goggles, and headwear'
+    description: 'Helmets, goggles, and headwear',
+    position: {
+      top: '15%',
+      left: '50%',
+      width: '80px',
+      height: '80px',
+      zIndex: 20
+    }
   },
   { 
     id: 'torso', 
     name: 'Torso', 
-    icon: '👕', 
-    description: 'Chest armor, shirts, and robes'
+    description: 'Chest armor, shirts, and robes',
+    position: {
+      top: '38%',
+      left: '50%',
+      width: '100px',
+      height: '100px',
+      zIndex: 10
+    }
   },
   { 
     id: 'legs', 
     name: 'Legs', 
-    icon: '👖', 
-    description: 'Pants, greaves, and leg protectors'
+    description: 'Pants, greaves, and leg protectors',
+    position: {
+      top: '65%',
+      left: '50%',
+      width: '90px',
+      height: '110px',
+      zIndex: 5
+    }
   },
   { 
     id: 'accessory', 
     name: 'Accessory', 
-    icon: '🔮', 
-    description: 'Capes, wings, and jewelry'
+    description: 'Capes, wings, and jewelry',
+    position: {
+      top: '35%',
+      left: '85%',
+      width: '70px',
+      height: '90px',
+      zIndex: 15
+    }
   },
   { 
     id: 'hands', 
     name: 'Hands', 
-    icon: '🧤', 
-    description: 'Weapons, tools, and gloves'
+    description: 'Weapons, tools, and gloves',
+    position: {
+      top: '45%',
+      left: '23%',
+      width: '50px',
+      height: '80px',
+      zIndex: 25
+    }
   }
 ];
 
@@ -112,22 +148,38 @@ const CharacterPage = () => {
                 <div className="relative w-3/4 h-full flex items-center justify-center">
                   {/* Base character image */}
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="h-[300px] w-[150px] bg-gray-200 rounded-md flex items-center justify-center">
-                      <span className="text-gray-400">Character Preview</span>
-                    </div>
+                    <img 
+                      src={CHARACTER_BASE_IMAGE}
+                      alt="Character Base"
+                      className="h-[300px] object-contain"
+                    />
                   </div>
                   
-                  {/* Equipped items would layer on top as absolute positioned elements */}
-                  {/* Example of how an equipped item might look: */}
-                  {equipment?.head && (
-                    <div className="absolute top-[50px] left-1/2 transform -translate-x-1/2">
-                      <img 
-                        src={equipment.head.imagePath} 
-                        alt={equipment.head.name} 
-                        className="w-20 h-20 object-contain"
-                      />
-                    </div>
-                  )}
+                  {/* Equipped items overlay with proper positioning */}
+                  {EQUIPMENT_SLOTS.map((slot) => {
+                    const equippedItem = equipment?.[slot.id];
+                    if (!equippedItem) return null;
+                    
+                    return (
+                      <div 
+                        key={`equipped-${slot.id}`}
+                        className="absolute transform -translate-x-1/2"
+                        style={{
+                          top: slot.position.top,
+                          left: slot.position.left,
+                          zIndex: slot.position.zIndex,
+                          width: slot.position.width,
+                          height: slot.position.height
+                        }}
+                      >
+                        <img 
+                          src={equippedItem.imagePath} 
+                          alt={equippedItem.name} 
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
@@ -151,7 +203,6 @@ const CharacterPage = () => {
                     onClick={() => setSelectedSlot(slot.id)}
                   >
                     <CardContent className="p-3 flex items-center space-x-3">
-                      <div className="text-2xl">{slot.icon}</div>
                       <div className="flex-1">
                         <h3 className="font-medium">{slot.name}</h3>
                         <p className="text-sm text-gray-500">{slot.description}</p>
