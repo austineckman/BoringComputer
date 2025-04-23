@@ -1,30 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-interface GridProps {
-  className?: string;
-  children: React.ReactNode;
-  cols?: number;
-}
-
-export const Grid: React.FC<GridProps> = ({ 
-  className,
-  children,
-  cols = 5
-}) => {
-  return (
-    <div 
-      className={cn(
-        'grid gap-2', 
-        `grid-cols-${cols}`,
-        className
-      )}
-    >
-      {children}
-    </div>
-  );
-};
-
 interface GridCellProps {
   className?: string;
   children?: React.ReactNode;
@@ -34,7 +10,7 @@ interface GridCellProps {
   isPlaceholder?: boolean;
 }
 
-export const GridCell: React.FC<GridCellProps> = ({
+const GridCell: React.FC<GridCellProps> = ({
   className,
   children,
   onClick,

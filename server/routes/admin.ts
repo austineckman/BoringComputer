@@ -11,7 +11,7 @@ import {
   insertCraftingRecipeSchema,
   insertLootBoxConfigSchema,
 } from '../../shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, count } from 'drizzle-orm';
 import { z } from 'zod';
 import { storage } from '../storage';
 import path from 'path';
@@ -532,6 +532,28 @@ router.post('/items/:itemId/image', upload.single('image'), async (req, res) => 
   } catch (error) {
     console.error('Error uploading image:', error);
     res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
+// Get admin dashboard stats
+router.get('/stats', async (req, res) => {
+  try {
+    // Gather comprehensive stats for admin dashboard
+    const userCount = await storage.getUserCount();
+    const itemCount = await db.select({ count: count() }).from(items).then(result => result[0].count || 0);
+    const recipeCount = await db.select({ count: count() }).from(craftingRecipes).then(result => result[0].count || 0);
+    const questCount = await db.select({ count: count() }).from(quests).then(result => result[0].count || 0);
+    
+    res.status(200).json({
+      userCount,
+      itemCount,
+      recipeCount,
+      questCount,
+      // Add more stats as needed
+    });
+  } catch (error: any) {
+    console.error('Error getting stats:', error);
+    res.status(500).json({ error: error.message || 'Failed to retrieve stats' });
   }
 });
 

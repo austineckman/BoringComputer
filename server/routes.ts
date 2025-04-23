@@ -1370,5 +1370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin routes
   app.use('/api/admin', authenticate, adminRoutes);
   
+  // Routes for admin recipes and crafting were already registered above
+  
   return httpServer;
 }
