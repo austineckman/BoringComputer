@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { RefreshCw, Package, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -14,6 +14,9 @@ interface LootBoxModalProps {
 }
 
 export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: LootBoxModalProps) {
+  // Get React Query client for cache invalidation
+  const queryClient = useQueryClient();
+  
   // Animation state
   const [isAnimating, setIsAnimating] = useState(false);
   const [hasTransitionStarted, setHasTransitionStarted] = useState(false);
@@ -604,6 +607,11 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
                   // Make sure we're no longer in animation states
                   setIsAnimating(false);
                   setShowFinalReward(false);
+                  
+                  // Important: Invalidate cache to refresh loot box and inventory data
+                  queryClient.invalidateQueries({ queryKey: ['/api/loot-boxes'] });
+                  queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+                  
                   onLootBoxOpened(); // Notify parent component
                 }}
                 className="px-8"
@@ -720,6 +728,10 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
           <DialogFooter>
             <Button
               onClick={() => {
+                // Important: Invalidate cache to refresh loot box and inventory data
+                queryClient.invalidateQueries({ queryKey: ['/api/loot-boxes'] });
+                queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+                
                 onClose();
                 // Reset all states
                 setIsOpening(false);
