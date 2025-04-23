@@ -71,9 +71,6 @@
 
 body {
   background-color: hsl(var(--space-darkest));
-  background-image: url('/images/wallbg.png');
-  background-repeat: repeat;
-  background-size: 400px;
   min-height: 100vh;
   font-family: 'Poppins', sans-serif;
   color: hsl(var(--brand-light));
