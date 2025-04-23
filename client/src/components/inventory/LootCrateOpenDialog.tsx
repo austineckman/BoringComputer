@@ -1,14 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { getItemDetails } from '@/lib/itemDatabase';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
+import { Sparkles } from 'lucide-react';
 import { getLootCrateImage } from '@/lib/assetUtils';
 
 interface LootCrateOpenDialogProps {
@@ -21,150 +15,136 @@ interface LootCrateOpenDialogProps {
 export default function LootCrateOpenDialog({ 
   isOpen, 
   onOpenChange, 
-  lootBoxType,
+  lootBoxType, 
   onConfirm 
 }: LootCrateOpenDialogProps) {
-  const [isAnimating, setIsAnimating] = useState(false);
-  const itemDetails = getItemDetails(lootBoxType);
-  const crateImage = getLootCrateImage();
+  const { sounds } = useSoundEffects();
+  const [isHovered, setIsHovered] = useState(false);
   
-  // Reset animation state when dialog opens
-  useEffect(() => {
-    if (isOpen) {
-      setIsAnimating(true);
-      const timer = setTimeout(() => {
-        setIsAnimating(false);
-      }, 1500);
-      return () => clearTimeout(timer);
+  const handleConfirm = () => {
+    try {
+      sounds.click();
+    } catch (e) {
+      console.warn('Could not play sound', e);
     }
-  }, [isOpen]);
+    onConfirm();
+  };
   
-  // Determine styles based on rarity
-  const getBorderColor = () => {
-    switch(itemDetails.rarity) {
-      case 'legendary': return 'border-amber-500';
-      case 'epic': return 'border-purple-500';
-      case 'rare': return 'border-blue-500';
-      case 'uncommon': return 'border-green-500';
-      default: return 'border-gray-500';
+  const handleCancel = () => {
+    try {
+      sounds.click();
+    } catch (e) {
+      console.warn('Could not play sound', e);
+    }
+    onOpenChange(false);
+  };
+  
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    try {
+      sounds.hover();
+    } catch (e) {
+      console.warn('Could not play sound', e);
     }
   };
   
-  const getGlowColor = () => {
-    switch(itemDetails.rarity) {
-      case 'legendary': return 'amber';
-      case 'epic': return 'purple';
-      case 'rare': return 'blue';
-      case 'uncommon': return 'green';
-      default: return 'gray';
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+  };
+  
+  // Get the appropriate border color based on loot box type
+  const getBorderColorClass = () => {
+    switch (lootBoxType) {
+      case 'legendary':
+        return 'border-amber-500 bg-amber-500/10';
+      case 'epic':
+        return 'border-purple-500 bg-purple-500/10';
+      case 'rare':
+        return 'border-blue-500 bg-blue-500/10';
+      case 'uncommon':
+        return 'border-green-500 bg-green-500/10';
+      case 'common':
+      default:
+        return 'border-gray-400 bg-gray-400/10';
     }
   };
   
+  // Get animation class based on loot box type
   const getAnimationClass = () => {
-    switch(itemDetails.rarity) {
-      case 'legendary': return 'animate-pulse-legendary';
-      case 'epic': return 'animate-pulse-epic';
-      case 'rare': return 'animate-pulse-rare';
-      case 'uncommon': return 'animate-pulse-uncommon';
-      default: return 'animate-pulse-slow';
-    }
-  };
-  
-  const getTextColor = () => {
-    switch(itemDetails.rarity) {
-      case 'legendary': return 'text-amber-400';
-      case 'epic': return 'text-purple-400';
-      case 'rare': return 'text-blue-400';
-      case 'uncommon': return 'text-green-400';
-      default: return 'text-gray-400';
+    switch (lootBoxType) {
+      case 'legendary':
+        return 'bg-legendary-pulse';
+      case 'epic':
+        return 'bg-epic-pulse';
+      case 'rare':
+        return 'bg-rare-pulse';
+      case 'uncommon':
+        return 'bg-uncommon-pulse';
+      case 'common':
+      default:
+        return 'bg-common-pulse';
     }
   };
   
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className={`bg-space-dark ${getBorderColor()} max-w-md w-[95%] overflow-visible p-0`}>
-        <div className="relative">
-          {/* Outer glow effect */}
-          <div className={`absolute -inset-1 rounded-lg opacity-75 ${getAnimationClass()}`} 
-               style={{
-                 boxShadow: `0 0 15px 2px rgba(var(--${getGlowColor()}-rgb), 0.5)`,
-                 zIndex: -1
-               }}></div>
-               
-          <div className="bg-space-dark rounded-lg p-6">
-            <DialogHeader className="text-center mb-6">
-              <DialogTitle className={`text-2xl font-bold ${getTextColor()} uppercase tracking-wider`}>
-                {itemDetails.rarity} Loot Crate
-              </DialogTitle>
-              <DialogDescription className="text-brand-light/80 mt-2">
-                Do you want to open this {itemDetails.rarity} loot crate?
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="flex flex-col items-center justify-center my-4">
-              {/* Animated crate image */}
-              <div className={`w-32 h-32 relative ${isAnimating ? 'animate-float' : ''}`}>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <img 
-                    src={crateImage.src} 
-                    alt={crateImage.alt} 
-                    className="w-full h-full object-contain transform transition-transform hover:scale-110" 
-                  />
-                </div>
-                
-                {/* Particle effects */}
-                {isAnimating && (
-                  <>
-                    <div className="absolute inset-0 scale-110 animate-ping-slow opacity-30 rounded-full" 
-                      style={{
-                        background: `radial-gradient(circle, rgba(var(--${getGlowColor()}-rgb), 0.8) 0%, transparent 70%)`
-                      }}></div>
-                    <div className="absolute inset-0 scale-125 animate-ping-slow opacity-20 rounded-full" 
-                      style={{
-                        background: `radial-gradient(circle, rgba(var(--${getGlowColor()}-rgb), 0.6) 0%, transparent 70%)`,
-                        animationDelay: '0.3s'
-                      }}></div>
-                  </>
-                )}
-              </div>
-              
-              <div className="mt-4 text-center">
-                <p className="text-lg font-medium text-brand-light">{itemDetails.name}</p>
-                <p className="text-sm text-brand-light/70 mt-1">{itemDetails.flavorText}</p>
-                
-                {/* Rarity badge */}
-                <div className="mt-3 inline-block px-3 py-1.5 rounded-md text-sm font-bold uppercase"
-                     style={{
-                       backgroundColor: `rgba(var(--${getGlowColor()}-rgb), 0.15)`,
-                       border: `1px solid rgba(var(--${getGlowColor()}-rgb), 0.3)`,
-                       color: `rgb(var(--${getGlowColor()}-rgb))`
-                     }}>
-                  {itemDetails.rarity}
-                </div>
-              </div>
-            </div>
-            
-            <DialogFooter className="mt-6 flex gap-3 flex-col sm:flex-row">
-              <Button 
-                variant="outline" 
-                className="w-full border-brand-light/20 text-brand-light/90 hover:bg-brand-light/5 hover:text-brand-light"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                className={`w-full ${isAnimating ? 'animate-pulse-slow' : ''}`}
-                style={{
-                  backgroundColor: `rgba(var(--${getGlowColor()}-rgb), 0.3)`,
-                  borderColor: `rgba(var(--${getGlowColor()}-rgb), 0.5)`,
-                  color: `rgb(var(--${getGlowColor()}-rgb))`,
-                }}
-                onClick={onConfirm}
-              >
-                Open Crate
-              </Button>
-            </DialogFooter>
+      <DialogContent className="bg-space-dark border-0 overflow-hidden">
+        <div className={`absolute inset-0 -z-10 opacity-50 ${getAnimationClass()}`}></div>
+        
+        <DialogHeader className="relative">
+          <DialogTitle className="text-2xl font-bold text-brand-orange text-center font-pixel">
+            OPEN LOOT CRATE
+          </DialogTitle>
+          <DialogDescription className="text-center text-brand-light/80">
+            Are you sure you want to open this {lootBoxType} loot crate?
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="flex flex-col items-center mb-4">
+          <div className={`w-32 h-32 ${getBorderColorClass()} border-2 rounded-lg p-4 flex items-center justify-center animate-ping-slow`}>
+            <img 
+              src={getLootCrateImage().src} 
+              alt={getLootCrateImage().alt}
+              className="w-full h-full object-contain pixelated" 
+            />
           </div>
+          
+          <div className="mt-6 text-center">
+            <h3 className={`text-xl font-bold capitalize ${
+              lootBoxType === 'legendary' ? 'text-amber-400' :
+              lootBoxType === 'epic' ? 'text-purple-400' :
+              lootBoxType === 'rare' ? 'text-blue-400' :
+              lootBoxType === 'uncommon' ? 'text-green-400' :
+              'text-gray-300'
+            }`}>
+              {lootBoxType} Loot Crate
+            </h3>
+            <p className="text-sm text-brand-light/70 mt-1">
+              This crate contains items of {lootBoxType} rarity or below
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex gap-3 justify-center">
+          <Button 
+            variant="outline" 
+            onClick={handleCancel}
+            className="border-space-light/30 hover:bg-space-light/10"
+          >
+            Cancel
+          </Button>
+          
+          <Button 
+            className={`relative overflow-hidden bg-brand-orange hover:bg-brand-orange/80 text-white
+                      ${isHovered ? 'button-glow' : ''}`}
+            onClick={handleConfirm}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            Open Crate
+            <span className="sr-only">Open loot crate</span>
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

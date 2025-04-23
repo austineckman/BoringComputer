@@ -94,6 +94,8 @@ export default function Inventory() {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<{type: string, quantity: number, isLootBox?: boolean, lootBoxData?: LootBox} | null>(null);
   const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [currentLootBox, setCurrentLootBox] = useState<LootBox | null>(null);
   const [currentRewards, setCurrentRewards] = useState<{type: string, quantity: number}[]>([]);
   const { sounds } = useSoundEffects();
   
@@ -201,14 +203,23 @@ export default function Inventory() {
       console.warn('Could not play sound', e);
     }
     
-    // If it's a loot box, open it
+    // If it's a loot box, show confirmation dialog
     if (item.isLootBox && item.lootBoxData) {
-      handleLootBoxOpen(item.lootBoxData, item.lootBoxData?.rewards || []);
+      setCurrentLootBox(item.lootBoxData);
+      setIsConfirmDialogOpen(true);
       return;
     }
     
     // Otherwise select the item to show details
     setSelectedItem(item);
+  };
+  
+  // Function to handle confirmation from dialog
+  const handleConfirmLootBoxOpen = () => {
+    if (currentLootBox) {
+      setIsConfirmDialogOpen(false);
+      handleLootBoxOpen(currentLootBox, currentLootBox?.rewards || []);
+    }
   };
   
   const handleTabChange = (value: string) => {
@@ -476,7 +487,13 @@ export default function Inventory() {
                     variant="outline" 
                     size="sm" 
                     className="mt-4 w-full bg-brand-orange/20 hover:bg-brand-orange/30 border-brand-orange/30"
-                    onClick={() => selectedItem.lootBoxData && handleLootBoxOpen(selectedItem.lootBoxData, selectedItem.lootBoxData?.rewards || [])}
+                    onClick={() => {
+                      if (selectedItem.lootBoxData) {
+                        setCurrentLootBox(selectedItem.lootBoxData);
+                        setIsConfirmDialogOpen(true);
+                        setSelectedItem(null); // Close details when opening dialog
+                      }
+                    }}
                   >
                     Open Crate
                   </Button>
@@ -934,6 +951,16 @@ export default function Inventory() {
             </div>
           </DialogContent>
         </Dialog>
+        
+        {/* Confirmation dialog for opening loot boxes */}
+        {currentLootBox && (
+          <LootCrateOpenDialog
+            isOpen={isConfirmDialogOpen}
+            onOpenChange={setIsConfirmDialogOpen}
+            lootBoxType={currentLootBox.type}
+            onConfirm={handleConfirmLootBoxOpen}
+          />
+        )}
       </div>
   );
 }
