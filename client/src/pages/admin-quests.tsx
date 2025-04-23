@@ -814,26 +814,11 @@ const AdminQuests: React.FC = () => {
                             </p>
                           </div>
                           
-                          {/* URL Input Option */}
+                          {/* Image preview area */}
                           <div className="flex flex-col space-y-2">
-                            <label htmlFor="image-url" className="text-sm font-medium">
-                              Or Add Image URL
+                            <label className="text-sm font-medium">
+                              Uploaded Images
                             </label>
-                            <div className="flex space-x-2">
-                              <Input
-                                id="image-url"
-                                placeholder="Image URL (https://...)"
-                                value={newImageUrl}
-                                onChange={(e) => setNewImageUrl(e.target.value)}
-                              />
-                              <Button 
-                                type="button" 
-                                onClick={addImageUrl}
-                                disabled={!newImageUrl.trim()}
-                              >
-                                Add
-                              </Button>
-                            </div>
                           </div>
                         </div>
                         
