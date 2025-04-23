@@ -13,6 +13,7 @@ import { getItemDetails } from './itemDatabase';
 import * as craftingRecipeRoutes from './routes/craftingRecipes';
 import adminRoutes from './routes/admin';
 import characterRoutes from './routes/character';
+import adminUploadRoutes from './routes/admin/upload';
 
 // Setup authentication middleware
 const authenticate = async (req: Request, res: Response, next: Function) => {
