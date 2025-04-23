@@ -165,7 +165,7 @@ export default function LootBoxPreview() {
     // Ensure we have enough items for the animation (at least 30)
     const itemsArray = [];
     while (itemsArray.length < 30) {
-      itemsArray.push(...sortedItems);
+      itemsArray.push(...itemsSorted);
     }
     
     // We'll show just the first reward at the position that will stop in the center
