@@ -573,9 +573,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/inventory', authenticate, async (req, res) => {
     try {
       const user = (req as any).user;
+      if (!user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
       
       // Get items from admin panel (items database)
       const adminItems = await storage.getItems();
+      
+      // Get the user's current inventory
+      const userInventory = user.inventory || {};
       
       // Get inventory history for last acquired info
       const history = await storage.getInventoryHistory(user.id);
@@ -583,10 +589,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Format the inventory with complete item details
       const formattedInventory = [];
       
+      // First, check if we need to initialize the admin items in the user's inventory
+      const newInventory = { ...userInventory };
+      let inventoryChanged = false;
+      
       // ONLY include items that have been created in the admin panel
       for (const item of adminItems) {
-        // Give each admin-created item a default quantity of 10 for testing
-        const quantity = 10;
+        // If item doesn't exist in user inventory, initialize it with quantity 10
+        if (newInventory[item.id] === undefined) {
+          newInventory[item.id] = 10; // Default quantity for new items
+          inventoryChanged = true;
+          
+          // Add to history to track when it was first added
+          await storage.createInventoryHistory({
+            userId: user.id,
+            type: item.id,
+            quantity: 10,
+            action: 'gained',
+            source: 'admin_initialization'
+          });
+        }
+        
+        // Get actual quantity from the user's inventory
+        const quantity = newInventory[item.id] || 0;
         const lastHistoryItem = history.find(h => h.type === item.id && h.action === 'gained');
         
         formattedInventory.push({
@@ -602,6 +627,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           quantity: quantity,
           lastAcquired: lastHistoryItem ? lastHistoryItem.createdAt.toISOString() : null
         });
+      }
+      
+      // If inventory was updated, save it back to the user record
+      if (inventoryChanged) {
+        await storage.updateUser(user.id, { inventory: newInventory });
       }
       
       return res.json(formattedInventory);
