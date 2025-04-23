@@ -79,7 +79,6 @@ import { getItemDetails } from '@/lib/itemDatabase';
 import { getRarityColorClass } from '@/lib/styleUtils';
 
 export default function Inventory() {
-  const [activeTab, setActiveTab] = useState('all');
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<{type: string, quantity: number, isLootBox?: boolean, lootBoxData?: LootBox} | null>(null);
   const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
@@ -214,12 +213,16 @@ export default function Inventory() {
     setSelectedItem(item);
   };
   
-  // Already defined earlier in the component
-  
   const handleTabChange = (value: string) => {
-    setActiveTab(value);
+    // Handle tab change without setting state
     try {
       sounds.click();
+      
+      // If the history tab is selected, navigate to the history page
+      if (value === 'history') {
+        // We don't need to set activeTab anymore, this just handles navigation
+        window.location.href = '/history';
+      }
     } catch (e) {
       console.warn('Could not play sound', e);
     }
@@ -343,25 +346,16 @@ export default function Inventory() {
   const totalSlots = 42; // 7x6 grid
   const [inventoryGrid, setInventoryGrid] = useState<Array<{type: string, quantity: number, isLootBox?: boolean, lootBoxData?: LootBox} | null>>(Array(totalSlots).fill(null));
   
-  // Filter items based on active tab and update grid only when dependencies change
+  // Simply load all items into the grid when inventory changes
   useEffect(() => {
-    const filteredItems = allInventoryItems.filter(item => {
-      if (activeTab === 'materials') {
-        return !item.isLootBox;
-      } else if (activeTab === 'loot-boxes') {
-        return item.isLootBox;
-      }
-      return true; // 'all' tab
-    });
-    
     const newGrid = Array(totalSlots).fill(null);
-    filteredItems.forEach((item, index) => {
+    allInventoryItems.forEach((item, index) => {
       if (index < totalSlots) {
         newGrid[index] = item;
       }
     });
     setInventoryGrid(newGrid);
-  }, [activeTab, allInventoryItems, totalSlots]);
+  }, [allInventoryItems, totalSlots]);
   
   // Function to move an item from one position to another
   const moveItem = useCallback((fromIndex: number, toIndex: number) => {
