@@ -717,36 +717,110 @@ const AdminQuests: React.FC = () => {
                           Add images for the quest (hero images, diagrams, etc.)
                         </p>
                         
-                        <div className="flex space-x-2">
-                          <Input
-                            placeholder="Image URL"
-                            value={newImageUrl}
-                            onChange={(e) => setNewImageUrl(e.target.value)}
-                          />
-                          <Button type="button" onClick={addImageUrl}>Add</Button>
+                        <div className="grid grid-cols-1 gap-4">
+                          {/* File Upload Button */}
+                          <div className="flex flex-col space-y-2">
+                            <label htmlFor="image-upload" className="text-sm font-medium">
+                              Upload Image
+                            </label>
+                            <div className="flex gap-2">
+                              <Input
+                                id="image-upload"
+                                type="file"
+                                accept="image/*"
+                                className="flex-1"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    try {
+                                      // Create FormData for upload
+                                      const formData = new FormData();
+                                      formData.append('image', file);
+                                      
+                                      // Upload the image
+                                      const response = await apiRequest('POST', '/api/admin/upload-image', formData, {
+                                        'Content-Type': 'multipart/form-data'
+                                      });
+                                      
+                                      if (response.ok) {
+                                        const data = await response.json();
+                                        // Add the returned image URL to our list
+                                        setImageUrls([...imageUrls, data.url]);
+                                        toast({
+                                          title: "Image uploaded",
+                                          description: "The image has been uploaded successfully.",
+                                        });
+                                      } else {
+                                        throw new Error("Failed to upload image");
+                                      }
+                                    } catch (error) {
+                                      console.error('Error uploading image:', error);
+                                      toast({
+                                        title: "Upload failed",
+                                        description: "There was a problem uploading your image. Please try again.",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                    
+                                    // Reset the file input
+                                    e.target.value = '';
+                                  }
+                                }}
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Supported formats: JPEG, PNG, GIF, WebP (max 5MB)
+                            </p>
+                          </div>
+                          
+                          {/* URL Input Option */}
+                          <div className="flex flex-col space-y-2">
+                            <label htmlFor="image-url" className="text-sm font-medium">
+                              Or Add Image URL
+                            </label>
+                            <div className="flex space-x-2">
+                              <Input
+                                id="image-url"
+                                placeholder="Image URL (https://...)"
+                                value={newImageUrl}
+                                onChange={(e) => setNewImageUrl(e.target.value)}
+                              />
+                              <Button 
+                                type="button" 
+                                onClick={addImageUrl}
+                                disabled={!newImageUrl.trim()}
+                              >
+                                Add
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                         
+                        {/* Image Preview List */}
                         {imageUrls.length > 0 && (
-                          <div className="space-y-2">
-                            {imageUrls.map((url, index) => (
-                              <div key={index} className="flex items-center justify-between rounded-md border p-2">
-                                <div className="flex items-center">
-                                  <div className="h-10 w-10 rounded bg-muted mr-2 overflow-hidden">
-                                    <img src={url} alt="" className="h-full w-full object-cover" />
+                          <div className="space-y-2 mt-4">
+                            <h4 className="text-sm font-medium">Added Images</h4>
+                            <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
+                              {imageUrls.map((url, index) => (
+                                <div key={index} className="flex items-center justify-between rounded-md border p-2">
+                                  <div className="flex items-center">
+                                    <div className="h-12 w-12 rounded bg-muted mr-2 overflow-hidden">
+                                      <img src={url} alt="" className="h-full w-full object-cover" />
+                                    </div>
+                                    <div className="truncate max-w-[180px]">
+                                      <span className="text-xs">{url.split('/').pop() || url}</span>
+                                    </div>
                                   </div>
-                                  <div className="truncate max-w-[400px]">
-                                    <span className="text-sm">{url}</span>
-                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => removeImageUrl(index)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => removeImageUrl(index)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
