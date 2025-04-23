@@ -341,11 +341,11 @@ const QuestCard = ({
                     <div className="w-8 h-8 animate-pulse rounded bg-space-light/20" />
                   ) : (
                     <div className={`relative p-1 rounded-md ${
-                      getRarityColor(getItemData(reward.type)?.rarity || 'common')
+                      getRarityColor(getItemData(reward.id || reward.type)?.rarity || 'common')
                     }`}>
                       <img 
-                        src={getItemData(reward.type)?.imagePath || `/assets/${reward.type}.png`}
-                        alt={getItemData(reward.type)?.name || reward.type}
+                        src={getItemData(reward.id || reward.type)?.imagePath || `/assets/${reward.id || reward.type}.png`}
+                        alt={getItemData(reward.id || reward.type)?.name || formatItemName(reward.type)}
                         className="w-8 h-8 object-contain"
                       />
                       {reward.quantity > 1 && (
@@ -358,7 +358,7 @@ const QuestCard = ({
                   <span className="text-xs mt-1 text-center">
                     {isLoadingItems 
                       ? formatItemName(reward.type)
-                      : getItemData(reward.type)?.name || formatItemName(reward.type)
+                      : getItemData(reward.id || reward.type)?.name || formatItemName(reward.type)
                     }
                   </span>
                 </div>
