@@ -17,6 +17,7 @@ import AdminQuests from "@/pages/admin-quests";
 import AdminLootboxes from "@/pages/admin-lootboxes";
 import AdminSimple from "@/pages/admin-simple";
 import AdminBasic from "@/pages/admin-basic";
+import LootBoxPreview from "@/pages/loot-box-preview";
 import NotFound from "@/pages/not-found";
 import MainLayout from "@/components/layout/MainLayout";
 import { useQuery } from "@tanstack/react-query";
@@ -112,6 +113,12 @@ function App() {
         <ProtectedRoute path="/unified-inventory">
           <MainLayout>
             <UnifiedInventory />
+          </MainLayout>
+        </ProtectedRoute>
+        
+        <ProtectedRoute path="/loot-box-preview/:id">
+          <MainLayout>
+            <LootBoxPreview />
           </MainLayout>
         </ProtectedRoute>
         

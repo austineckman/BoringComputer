@@ -1258,6 +1258,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Loot box routes
   // Note: Main /api/loot-boxes route is defined earlier in the file
   
+
+  
   // User endpoint to generate test loot crates for demo purposes
   app.post('/api/loot-boxes/generate-test', authenticate, async (req, res) => {
     try {
