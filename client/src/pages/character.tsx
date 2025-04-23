@@ -181,11 +181,14 @@ const CharacterPage = () => {
   });
   
   // Filter inventory items by the selected slot type
-  // In a real implementation, this would filter based on item properties
-  // For now, we show all items as available for any slot
+  // Only show items that are equippable and match the selected slot
   const filteredItems = React.useMemo(() => {
     if (!inventoryItems) return [];
-    return inventoryItems;
+    
+    return inventoryItems.filter((item: any) => {
+      // Check if the item is equippable and matches the selected slot
+      return item.isEquippable === true && item.equipSlot === selectedSlot;
+    });
   }, [inventoryItems, selectedSlot]);
   
   // Handle equipping an item
@@ -368,9 +371,16 @@ const CharacterPage = () => {
                         <p className="font-medium">{item.name}</p>
                         <p className="text-xs">{item.description}</p>
                         <p className="text-xs italic">{item.flavorText}</p>
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {item.rarity}
-                        </Badge>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {item.rarity}
+                          </Badge>
+                          {item.isEquippable && (
+                            <Badge variant="secondary" className="text-xs capitalize">
+                              {item.equipSlot} slot
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </TooltipContent>
                   </Tooltip>
