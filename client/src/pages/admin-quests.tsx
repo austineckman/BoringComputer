@@ -315,18 +315,12 @@ const AdminQuests: React.FC = () => {
     try {
       setUploadingImage(true);
       
+      // Create FormData for upload
       const formData = new FormData();
       formData.append('image', selectedImageFile);
       
-      const response = await fetch('/api/admin/upload-image', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to upload image');
-      }
+      // Upload the image using the apiRequest function
+      const response = await apiRequest('POST', '/api/admin/upload-image', formData);
       
       const data = await response.json();
       
@@ -770,38 +764,11 @@ const AdminQuests: React.FC = () => {
                                 type="file"
                                 accept="image/*"
                                 className="flex-1"
-                                onChange={async (e) => {
+                                onChange={(e) => {
                                   const file = e.target.files?.[0];
                                   if (file) {
-                                    try {
-                                      // Create FormData for upload
-                                      const formData = new FormData();
-                                      formData.append('image', file);
-                                      
-                                      // Upload the image
-                                      const response = await apiRequest('POST', '/api/admin/upload-image', formData, {
-                                        'Content-Type': 'multipart/form-data'
-                                      });
-                                      
-                                      if (response.ok) {
-                                        const data = await response.json();
-                                        // Add the returned image URL to our list
-                                        setImageUrls([...imageUrls, data.url]);
-                                        toast({
-                                          title: "Image uploaded",
-                                          description: "The image has been uploaded successfully.",
-                                        });
-                                      } else {
-                                        throw new Error("Failed to upload image");
-                                      }
-                                    } catch (error) {
-                                      console.error('Error uploading image:', error);
-                                      toast({
-                                        title: "Upload failed",
-                                        description: "There was a problem uploading your image. Please try again.",
-                                        variant: "destructive",
-                                      });
-                                    }
+                                    // Store the selected file
+                                    setSelectedImageFile(file);
                                     
                                     // Reset the file input
                                     e.target.value = '';
@@ -814,12 +781,34 @@ const AdminQuests: React.FC = () => {
                             </p>
                           </div>
                           
-                          {/* Image preview area */}
-                          <div className="flex flex-col space-y-2">
-                            <label className="text-sm font-medium">
-                              Uploaded Images
-                            </label>
-                          </div>
+                          {/* Upload button */}
+                          {selectedImageFile && (
+                            <div className="flex flex-col space-y-2">
+                              <div className="flex items-center justify-between">
+                                <label className="text-sm font-medium">
+                                  Selected Image: {selectedImageFile.name}
+                                </label>
+                                <Button 
+                                  type="button" 
+                                  size="sm"
+                                  onClick={handleImageUpload}
+                                  disabled={uploadingImage}
+                                >
+                                  {uploadingImage ? (
+                                    <>
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      Uploading...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Upload className="mr-2 h-4 w-4" />
+                                      Upload Image
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                         
                         {/* Image Preview List */}
