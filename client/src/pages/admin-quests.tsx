@@ -181,37 +181,24 @@ const AdminQuests: React.FC = () => {
   // Fetch quests
   const { data: quests = [], isLoading: loadingQuests } = useQuery({
     queryKey: ['/api/admin/quests'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/admin/quests');
-      return await response.json() || [];
-    }
+    // Use the default queryFn
   });
 
   // Fetch loot box configurations for rewards
   const { data: lootBoxConfigs = [], isLoading: loadingLootBoxes } = useQuery({
     queryKey: ['/api/admin/loot-box-configs'],
-    queryFn: async () => {
-      try {
-        const response = await apiRequest('GET', '/api/admin/loot-box-configs');
-        return await response.json() || [];
-      } catch (error) {
-        console.error('Error fetching loot box configs:', error);
-        return [];
-      }
+    // Use the default queryFn
+    onError: (error) => {
+      console.error('Error fetching loot box configs:', error);
     }
   });
 
   // Fetch items for content references
   const { data: items = [], isLoading: loadingItems } = useQuery({
     queryKey: ['/api/admin/items'],
-    queryFn: async () => {
-      try {
-        const response = await apiRequest('GET', '/api/admin/items');
-        return await response.json() || [];
-      } catch (error) {
-        console.error('Error fetching items:', error);
-        return [];
-      }
+    // Use the default queryFn
+    onError: (error) => {
+      console.error('Error fetching items:', error);
     }
   });
 

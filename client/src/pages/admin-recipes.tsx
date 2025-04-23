@@ -199,19 +199,13 @@ const AdminRecipesPage: React.FC = () => {
   // Fetch recipes
   const { data: recipes = [], isLoading: loadingRecipes } = useQuery({
     queryKey: ['/api/admin/recipes'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/admin/recipes');
-      return await response.json() || [];
-    }
+    // Use the default queryFn since we've configured queryClient with getQueryFn
   });
 
   // Fetch all items for the dropdown
   const { data: items = [] } = useQuery({
     queryKey: ['/api/admin/items'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/admin/items');
-      return await response.json() || [];
-    }
+    // Use the default queryFn since we've configured queryClient with getQueryFn
   });
 
   // Create recipe mutation
