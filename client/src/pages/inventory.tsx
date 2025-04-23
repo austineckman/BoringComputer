@@ -410,14 +410,22 @@ export default function Inventory() {
                         <TooltipContent side="top" className="bg-space-dark border-brand-orange/30 text-brand-light p-3">
                           <div className="space-y-1">
                             <p className="font-bold capitalize text-brand-orange">
-                              {item.isLootBox ? `${item.lootBoxData?.type} Loot Crate` : item.type.replace('-', ' ')}
+                              {item.isLootBox 
+                                ? `${item.lootBoxData?.type} Loot Crate` 
+                                : getItemDetails(item.type).name || item.type.replace('-', ' ')
+                              }
                             </p>
                             <p className="text-xs text-brand-light/70">
                               {item.isLootBox 
                                 ? "A sealed container with valuable materials. Free to open."
-                                : `Used for crafting in Gizbo's Forge.`
+                                : getItemDetails(item.type).description || `Used for crafting in Gizbo's Forge.`
                               }
                             </p>
+                            {!item.isLootBox && getItemDetails(item.type).flavorText && (
+                              <p className="text-xs italic text-brand-light/50">
+                                "{getItemDetails(item.type).flavorText}"
+                              </p>
+                            )}
                             <p className="text-xs text-brand-yellow">
                               Quantity: {item.quantity}
                             </p>
