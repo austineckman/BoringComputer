@@ -312,6 +312,7 @@ const AdminRecipesPage: React.FC = () => {
     });
     setPatternGrid(Array(5).fill(null).map(() => Array(5).fill(null)));
     setRequiredItems({});
+    setSelectedMaterial("");
     setIsAddingRecipe(true);
     setEditingRecipe(null);
   };
@@ -330,6 +331,7 @@ const AdminRecipesPage: React.FC = () => {
     });
     setPatternGrid(recipe.pattern || Array(5).fill(null).map(() => Array(5).fill(null)));
     setRequiredItems(recipe.requiredItems || {});
+    setSelectedMaterial(""); // Reset selected material when editing a recipe
     setEditingRecipe(recipe);
     setIsAddingRecipe(false);
   };
@@ -341,6 +343,7 @@ const AdminRecipesPage: React.FC = () => {
     form.reset();
     setPatternGrid(Array(5).fill(null).map(() => Array(5).fill(null)));
     setRequiredItems({});
+    setSelectedMaterial("");
   };
 
   // Handle form submission
