@@ -387,10 +387,10 @@ export default function Inventory() {
         <div className="bg-space-mid rounded-lg border-2 border-space-light/20 p-4 mb-8">
           {/* Item Details Panel - Shown when an item is selected */}
           {selectedItem && (
-            <div className="mb-6 bg-space-dark rounded-lg border border-space-light/20 p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className={`mb-6 rounded-lg p-4 grid grid-cols-1 md:grid-cols-3 gap-6 ${getRarityColorClass(selectedItem.type)}`}>
               {/* Left Column - Large Image */}
               <div className="flex items-center justify-center">
-                <div className="w-32 h-32 md:w-40 md:h-40 bg-space-mid rounded-lg border-2 border-brand-orange/30 p-4 flex items-center justify-center">
+                <div className="w-32 h-32 md:w-40 md:h-40 bg-space-mid rounded-lg border-2 border-brand-orange/30 p-4 flex items-center justify-center relative">
                   {selectedItem.isLootBox ? (
                     <img 
                       src={getLootCrateImage().src} 
@@ -400,14 +400,38 @@ export default function Inventory() {
                   ) : (
                     renderResourceIcon(selectedItem.type, 'lg')
                   )}
+                  
+                  {/* Glow effect for rare items */}
+                  {getItemDetails(selectedItem.type).rarity !== 'common' && (
+                    <div className="absolute inset-0 rounded-lg animate-pulse-slow opacity-50" 
+                         style={{
+                           boxShadow: `0 0 15px 2px ${
+                             getItemDetails(selectedItem.type).rarity === 'legendary' ? 'rgba(245, 158, 11, 0.6)' :
+                             getItemDetails(selectedItem.type).rarity === 'epic' ? 'rgba(168, 85, 247, 0.6)' :
+                             getItemDetails(selectedItem.type).rarity === 'rare' ? 'rgba(59, 130, 246, 0.6)' :
+                             'rgba(34, 197, 94, 0.6)'
+                           }`
+                         }}></div>
+                  )}
                 </div>
               </div>
               
               {/* Center Column - Name and description */}
               <div className="flex flex-col">
-                <h3 className="text-xl font-bold text-brand-orange mb-2">
-                  {getItemDetails(selectedItem.type).name}
-                </h3>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xl font-bold text-brand-orange">
+                    {getItemDetails(selectedItem.type).name}
+                  </h3>
+                  <div className={`px-2 py-1 rounded-md text-xs font-bold uppercase ${
+                    getItemDetails(selectedItem.type).rarity === 'legendary' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50' :
+                    getItemDetails(selectedItem.type).rarity === 'epic' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/50' :
+                    getItemDetails(selectedItem.type).rarity === 'rare' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/50' :
+                    getItemDetails(selectedItem.type).rarity === 'uncommon' ? 'bg-green-500/20 text-green-300 border border-green-500/50' :
+                    'bg-gray-500/20 text-gray-300 border border-gray-500/50'
+                  }`}>
+                    {getItemDetails(selectedItem.type).rarity}
+                  </div>
+                </div>
                 <div className="mb-3 flex items-center">
                   <span className="text-brand-yellow font-medium mr-2">Quantity: {selectedItem.quantity}</span>
                   {!selectedItem.isLootBox && (
