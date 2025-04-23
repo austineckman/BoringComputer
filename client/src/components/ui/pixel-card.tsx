@@ -32,20 +32,34 @@ export const PixelCardHeader = ({
   className,
   children,
   color = "bg-space-light",
+  heroImage,
 }: {
   className?: string;
   children: React.ReactNode;
   color?: string;
+  heroImage?: string;
 }) => {
   return (
-    <div
-      className={cn(
-        `${color} px-4 py-2 flex justify-between items-center`,
-        className
+    <>
+      {heroImage && (
+        <div className="w-full h-48 relative">
+          <img 
+            src={heroImage} 
+            alt="Quest hero image" 
+            className="w-full h-full object-cover" 
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-space-dark/90 to-transparent"></div>
+        </div>
       )}
-    >
-      {children}
-    </div>
+      <div
+        className={cn(
+          `${color} px-4 py-2 flex justify-between items-center`,
+          className
+        )}
+      >
+        {children}
+      </div>
+    </>
   );
 };
 

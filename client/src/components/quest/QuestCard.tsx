@@ -189,7 +189,10 @@ const QuestCard = ({
       )}
       
       {/* Quest Header with Adventure Line Label */}
-      <PixelCardHeader color={status === "active" ? adventure.color : "bg-space-light"}>
+      <PixelCardHeader 
+        color={status === "active" ? adventure.color : "bg-space-light"}
+        heroImage={heroImage}
+      >
         <div className="flex items-center">
           <i className={`fas fa-${adventure.icon} text-xs mr-2`}></i>
           <span className={`text-xs font-bold ${status === "active" ? "text-space-darkest" : ""}`}>
