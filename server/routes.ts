@@ -574,41 +574,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       
-      // Use both sources for now for backwards compatibility
-      // 1. Get inventory from user.inventory for quantities
-      const userInventory = user.inventory || {};
+      // Get items from admin panel (items database)
+      const adminItems = await storage.getItems();
       
-      // 2. Get items from storage for item details
-      const allItems = await storage.getItems();
-      
-      // 3. Get inventory history for last acquired info
+      // Get inventory history for last acquired info
       const history = await storage.getInventoryHistory(user.id);
       
-      // 4. Format the inventory with complete item details
+      // Format the inventory with complete item details
       const formattedInventory = [];
       
-      // First add all items that exist in the user's inventory
-      for (const [type, quantity] of Object.entries(userInventory)) {
-        if (quantity > 0) {
-          // Find item details in the storage
-          const itemDetails = allItems.find(item => item.id === type);
-          const lastHistoryItem = history.find(h => h.type === type && h.action === 'gained');
-          
-          // Combine data from both sources
-          formattedInventory.push({
-            id: type,
-            type: type,
-            name: itemDetails ? itemDetails.name : type,
-            description: itemDetails ? itemDetails.description : '',
-            flavorText: itemDetails ? itemDetails.flavorText : '',
-            rarity: itemDetails ? itemDetails.rarity : 'common',
-            craftingUses: itemDetails ? itemDetails.craftingUses : [],
-            imagePath: itemDetails ? itemDetails.imagePath : '',
-            category: itemDetails ? itemDetails.category : 'resource',
-            quantity: quantity as number,
-            lastAcquired: lastHistoryItem ? lastHistoryItem.createdAt.toISOString() : null
-          });
-        }
+      // ONLY include items that have been created in the admin panel
+      for (const item of adminItems) {
+        // Give each admin-created item a default quantity of 10 for testing
+        const quantity = 10;
+        const lastHistoryItem = history.find(h => h.type === item.id && h.action === 'gained');
+        
+        formattedInventory.push({
+          id: item.id,
+          type: item.id,
+          name: item.name,
+          description: item.description || '',
+          flavorText: item.flavorText || '',
+          rarity: item.rarity,
+          craftingUses: item.craftingUses || [],
+          imagePath: item.imagePath || '',
+          category: item.category || 'resource',
+          quantity: quantity,
+          lastAcquired: lastHistoryItem ? lastHistoryItem.createdAt.toISOString() : null
+        });
       }
       
       return res.json(formattedInventory);
