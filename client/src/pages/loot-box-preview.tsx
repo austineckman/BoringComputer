@@ -45,23 +45,13 @@ export default function LootBoxPreview() {
 
   // Fetch loot box details
   const { data: lootBox, isLoading: isLoadingLootBox } = useQuery({
-    queryKey: ['/api/loot-boxes', lootBoxId],
-    queryFn: async () => {
-      const response = await apiRequest(`/api/loot-boxes/${lootBoxId}`);
-      return await response.json();
-    },
+    queryKey: [`/api/loot-boxes/${lootBoxId}`],
     enabled: !!lootBoxId,
-    onSuccess: (data) => console.log("Successfully loaded loot box data:", data),
-    onError: (error) => console.error("Error loading loot box data:", error)
   });
 
   // Fetch all items for displaying names
-  const { data: items } = useQuery({
+  const { data: items, isLoading: isLoadingItems } = useQuery({
     queryKey: ['/api/admin/items'],
-    queryFn: async () => {
-      const response = await apiRequest('/api/admin/items');
-      return await response.json();
-    }
   });
 
   // Calculate drop chances based on weights
@@ -167,21 +157,78 @@ export default function LootBoxPreview() {
           <Package size={64} className="text-brand-orange mb-4" />
           <p className="text-xl mb-4">You received the following items:</p>
           
-          <div className="w-full max-w-md">
+          <div className="w-full">
             <Card className="p-6 bg-black/30 border border-brand-orange/30">
-              <ul className="space-y-4">
-                {openedRewards.map((reward, index) => (
-                  <li 
-                    key={index} 
-                    className="flex items-center justify-between p-3 rounded-md bg-black/20 border border-brand-orange/20"
-                  >
-                    <span className="font-medium">{getItemName(reward.type)}</span>
-                    <span className="px-2 py-1 rounded-full bg-brand-orange/20 text-brand-orange">
-                      x{reward.quantity}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {openedRewards.map((reward, index) => {
+                  // Get item details
+                  const itemDetails = items?.find((i: any) => i.id === reward.type);
+                  const itemRarity = itemDetails?.rarity || 'common';
+                  
+                  // Get rarity color class
+                  const rarityColorClass = (() => {
+                    switch(itemRarity) {
+                      case 'common': return 'text-gray-300';
+                      case 'uncommon': return 'text-green-400';
+                      case 'rare': return 'text-blue-400';
+                      case 'epic': return 'text-purple-400';
+                      case 'legendary': return 'text-amber-400';
+                      default: return 'text-gray-300';
+                    }
+                  })();
+                  
+                  // Get rarity border class
+                  const rarityBorderClass = (() => {
+                    switch(itemRarity) {
+                      case 'common': return 'border-gray-600';
+                      case 'uncommon': return 'border-green-600';
+                      case 'rare': return 'border-blue-600';
+                      case 'epic': return 'border-purple-600';
+                      case 'legendary': return 'border-amber-500';
+                      default: return 'border-gray-600';
+                    }
+                  })();
+                  
+                  // Get animation class
+                  const animationClass = (() => {
+                    switch(itemRarity) {
+                      case 'common': return '';
+                      case 'uncommon': return '';
+                      case 'rare': return 'animate-pulse';
+                      case 'epic': return 'animate-pulse';
+                      case 'legendary': return 'animate-pulse';
+                      default: return '';
+                    }
+                  })();
+                  
+                  return (
+                    <div 
+                      key={index} 
+                      className={`flex flex-col items-center bg-black/30 rounded-md p-3 border-2 ${rarityBorderClass} transition-transform hover:scale-105 ${animationClass}`}
+                    >
+                      <div className="w-16 h-16 flex items-center justify-center mb-2">
+                        <img 
+                          src={itemDetails?.imagePath || '/images/items/default.png'} 
+                          alt={getItemName(reward.type)}
+                          className="max-w-full max-h-full object-contain"
+                        />
+                      </div>
+                      
+                      <div className="text-center mt-1">
+                        <p className={`font-medium text-sm ${rarityColorClass} truncate max-w-full`}>
+                          {getItemName(reward.type)}
+                        </p>
+                        
+                        <div className="flex justify-center items-center mt-1 text-xs">
+                          <span className="bg-brand-orange/20 px-2 py-0.5 rounded-full text-brand-orange">
+                            ×{reward.quantity}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </Card>
           </div>
         </div>
@@ -274,42 +321,81 @@ export default function LootBoxPreview() {
         </div>
       </div>
       
-      {/* Potential Rewards Table */}
+      {/* Potential Rewards Grid */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold mb-4">Potential Rewards</h2>
         
-        <Card className="overflow-hidden border-brand-orange/20">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Item</TableHead>
-                <TableHead className="text-right">Quantity</TableHead>
-                <TableHead className="text-right">Drop Chance</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Array.isArray(itemDropTable) && itemDropTable.map((item, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{getItemName(item.itemId)}</TableCell>
-                  <TableCell className="text-right">
-                    {item.minQuantity === item.maxQuantity 
-                      ? item.minQuantity 
-                      : `${item.minQuantity}-${item.maxQuantity}`}
-                  </TableCell>
-                  <TableCell className="text-right">{calculateDropChance(item.weight, totalWeight)}%</TableCell>
-                </TableRow>
-              ))}
+        {(!itemDropTable || !itemDropTable.length) ? (
+          <Card className="p-6 text-center border-brand-orange/20">
+            <p>No item data available for this loot box.</p>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {Array.isArray(itemDropTable) && itemDropTable.map((item, index) => {
+              // Get item details
+              const itemDetails = items?.find((i: any) => i.id === item.itemId);
+              const itemRarity = itemDetails?.rarity || 'common';
               
-              {(!itemDropTable || !itemDropTable.length) && (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center py-6">
-                    No item data available for this loot box.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </Card>
+              // Get rarity color class
+              const rarityColorClass = (() => {
+                switch(itemRarity) {
+                  case 'common': return 'text-gray-300';
+                  case 'uncommon': return 'text-green-400';
+                  case 'rare': return 'text-blue-400';
+                  case 'epic': return 'text-purple-400';
+                  case 'legendary': return 'text-amber-400';
+                  default: return 'text-gray-300';
+                }
+              })();
+              
+              // Get rarity border class
+              const rarityBorderClass = (() => {
+                switch(itemRarity) {
+                  case 'common': return 'border-gray-600';
+                  case 'uncommon': return 'border-green-600';
+                  case 'rare': return 'border-blue-600';
+                  case 'epic': return 'border-purple-600';
+                  case 'legendary': return 'border-amber-500';
+                  default: return 'border-gray-600';
+                }
+              })();
+              
+              // Get quantity text
+              const quantityText = item.minQuantity === item.maxQuantity 
+                ? `×${item.minQuantity}` 
+                : `×${item.minQuantity}-${item.maxQuantity}`;
+                
+              // Get drop chance
+              const dropChance = calculateDropChance(item.weight, totalWeight);
+              
+              return (
+                <div 
+                  key={index} 
+                  className={`flex flex-col items-center bg-black/30 rounded-md p-3 border-2 ${rarityBorderClass} transition-transform hover:scale-105`}
+                >
+                  <div className="w-16 h-16 flex items-center justify-center mb-2">
+                    <img 
+                      src={itemDetails?.imagePath || '/images/items/default.png'} 
+                      alt={getItemName(item.itemId)}
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                  
+                  <div className="text-center mt-1">
+                    <p className={`font-medium text-sm ${rarityColorClass} truncate max-w-full`}>
+                      {getItemName(item.itemId)}
+                    </p>
+                    
+                    <div className="flex justify-between items-center mt-1 text-xs text-gray-400 w-full">
+                      <span>{quantityText}</span>
+                      <span className="bg-brand-orange/20 px-2 py-0.5 rounded-full text-brand-orange">{dropChance}%</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
       
       {/* Action Buttons */}
