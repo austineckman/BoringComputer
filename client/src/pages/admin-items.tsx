@@ -179,7 +179,11 @@ const AdminItems: React.FC = () => {
     onSuccess: () => {
       setIsEditDialogOpen(false);
       setCurrentItem(null);
+      // Clear image file to prevent reuse
+      setImageFile(null);
+      // Invalidate both admin items and inventory caches
       queryClient.invalidateQueries({ queryKey: ['/api/admin/items'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
       toast({
         title: 'Item updated',
         description: 'The item has been successfully updated.',
@@ -210,7 +214,9 @@ const AdminItems: React.FC = () => {
     onSuccess: () => {
       setIsDeleteDialogOpen(false);
       setCurrentItem(null);
+      // Invalidate both admin items and inventory caches
       queryClient.invalidateQueries({ queryKey: ['/api/admin/items'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
       toast({
         title: 'Item deleted',
         description: 'The item has been successfully deleted.',
@@ -424,7 +430,7 @@ const AdminItems: React.FC = () => {
                     {/* Overlay actual image when available */}
                     {item.imagePath && (
                       <img
-                        key={`item-${item.id}-image`}
+                        key={`item-${item.id}-image-${Date.now()}`}
                         src={
                           // Handle various image path formats
                           item.imagePath.startsWith('http') ? 
