@@ -306,6 +306,8 @@ const Home = () => {
                   status={quest.status}
                   orderInLine={quest.orderInLine}
                   xpReward={quest.xpReward}
+                  heroImage={quest.heroImage}
+                  content={quest.content}
                 />
               ))
             ) : (
