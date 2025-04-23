@@ -384,29 +384,35 @@ const AdminItems: React.FC = () => {
             {filteredItems.map((item: Item) => (
               <Card key={item.id} className="overflow-hidden">
                 <div className="relative aspect-video overflow-hidden bg-muted">
-                  {/* Display the item image when available, trying different possible image path formats */}
-                  {item.imagePath || item.image ? (
-                    <img
-                      src={
-                        // Handle various image path formats
-                        item.imagePath ? 
-                          (item.imagePath.startsWith('http') ? item.imagePath : `/uploads/items/${item.imagePath}`) :
-                        item.image ? 
-                          (item.image.startsWith('http') ? item.image : `/uploads/items/${item.image}`) :
-                        '/images/item-placeholder.png'
-                      }
-                      alt={item.name}
-                      className="h-full w-full object-cover object-center"
-                      onError={(e) => {
-                        // Fallback for broken images
-                        (e.target as HTMLImageElement).src = '/images/item-placeholder.png';
-                      }}
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center">
+                  {/* Display the item image when available, with better loading handling */}
+                  <div className="relative h-full w-full">
+                    {/* Always show placeholder/icon as background */}
+                    <div className="absolute inset-0 flex items-center justify-center">
                       <Package className="h-12 w-12 text-muted-foreground" />
                     </div>
-                  )}
+                    
+                    {/* Overlay actual image when available */}
+                    {(item.imagePath || item.image) && (
+                      <img
+                        key={`item-${item.id}-image`}
+                        src={
+                          // Handle various image path formats
+                          item.imagePath ? 
+                            (item.imagePath.startsWith('http') ? item.imagePath : `/uploads/items/${item.imagePath}`) :
+                          item.image ? 
+                            (item.image.startsWith('http') ? item.image : `/uploads/items/${item.image}`) :
+                          '/images/item-placeholder.png'
+                        }
+                        alt={item.name}
+                        className="absolute inset-0 h-full w-full object-cover object-center"
+                        loading="eager"
+                        onError={(e) => {
+                          // Fallback for broken images - hide the image instead of showing placeholder
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    )}
+                  </div>
                   <div className="absolute right-2 top-2">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -737,9 +743,17 @@ const AdminItems: React.FC = () => {
                   <Label htmlFor="edit-image" className="mb-1.5 block">
                     Image 
                   </Label>
-                  {(currentItem.imagePath || currentItem.image) && (
-                    <div className="mb-2">
+                  {/* Image preview with improved loading */}
+                  <div className="mb-2 relative h-24 rounded border bg-muted">
+                    {/* Default placeholder */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Package className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    
+                    {/* Actual image when available */}
+                    {(currentItem.imagePath || currentItem.image) && (
                       <img
+                        key={`edit-${currentItem.id}-image`}
                         src={
                           // Handle various image path formats
                           currentItem.imagePath ? 
@@ -749,14 +763,15 @@ const AdminItems: React.FC = () => {
                           '/images/item-placeholder.png'
                         }
                         alt={currentItem.name}
-                        className="h-24 w-auto rounded border object-cover"
+                        className="absolute inset-0 h-24 w-auto rounded object-cover"
+                        loading="eager"
                         onError={(e) => {
-                          // Fallback for broken images
-                          (e.target as HTMLImageElement).src = '/images/item-placeholder.png';
+                          // Hide broken images
+                          (e.target as HTMLImageElement).style.display = 'none';
                         }}
                       />
-                    </div>
-                  )}
+                    )}
+                  </div>
                   <Input
                     id="edit-image"
                     type="file"
@@ -806,28 +821,35 @@ const AdminItems: React.FC = () => {
             {currentItem && (
               <div className="rounded-lg border p-4">
                 <div className="flex items-center gap-4">
-                  {(currentItem.imagePath || currentItem.image) ? (
-                    <img
-                      src={
-                        // Handle various image path formats
-                        currentItem.imagePath ? 
-                          (currentItem.imagePath.startsWith('http') ? currentItem.imagePath : `/uploads/items/${currentItem.imagePath}`) :
-                        currentItem.image ? 
-                          (currentItem.image.startsWith('http') ? currentItem.image : `/uploads/items/${currentItem.image}`) :
-                        '/images/item-placeholder.png'
-                      }
-                      alt={currentItem.name}
-                      className="h-16 w-16 rounded object-cover"
-                      onError={(e) => {
-                        // Fallback for broken images
-                        (e.target as HTMLImageElement).src = '/images/item-placeholder.png';
-                      }}
-                    />
-                  ) : (
-                    <div className="flex h-16 w-16 items-center justify-center rounded bg-muted">
+                  {/* More robust image display with placeholder fallback */}
+                  <div className="relative h-16 w-16 rounded overflow-hidden bg-muted">
+                    {/* Default placeholder always visible in background */}
+                    <div className="absolute inset-0 flex items-center justify-center">
                       <Package className="h-8 w-8 text-muted-foreground" />
                     </div>
-                  )}
+                    
+                    {/* Only show image when available */}
+                    {(currentItem.imagePath || currentItem.image) && (
+                      <img
+                        key={`delete-${currentItem.id}-image`}
+                        src={
+                          // Handle various image path formats
+                          currentItem.imagePath ? 
+                            (currentItem.imagePath.startsWith('http') ? currentItem.imagePath : `/uploads/items/${currentItem.imagePath}`) :
+                          currentItem.image ? 
+                            (currentItem.image.startsWith('http') ? currentItem.image : `/uploads/items/${currentItem.image}`) :
+                          '/images/item-placeholder.png'
+                        }
+                        alt={currentItem.name}
+                        className="absolute inset-0 h-full w-full object-cover"
+                        loading="eager"
+                        onError={(e) => {
+                          // Hide broken images
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    )}
+                  </div>
                   <div>
                     <p className="font-medium">{currentItem.name}</p>
                     <p className="text-sm text-muted-foreground">ID: {currentItem.id}</p>
