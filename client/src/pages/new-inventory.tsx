@@ -338,17 +338,73 @@ export default function Inventory() {
   const totalSlots = 42; // 7x6 grid
   const [inventoryGrid, setInventoryGrid] = useState<Array<{type: string, quantity: number, isLootBox?: boolean, lootBoxData?: LootBox} | null>>(Array(totalSlots).fill(null));
   
-  // Simply load all items into the grid when inventory items change
+  // Save inventory grid layout to localStorage
+  const saveInventoryLayout = useCallback((grid: Array<{type: string, quantity: number, isLootBox?: boolean, lootBoxData?: LootBox} | null>) => {
+    try {
+      // Save only the item types and their positions, not the full data
+      const layoutData = grid.map(item => item ? { type: item.type, position: grid.indexOf(item) } : null);
+      localStorage.setItem('inventoryLayout', JSON.stringify(layoutData));
+    } catch (error) {
+      console.warn('Failed to save inventory layout:', error);
+    }
+  }, []);
+  
+  // Load inventory grid layout when component mounts and when new items arrive
   useEffect(() => {
-    const newGrid = Array(totalSlots).fill(null);
-    allInventoryItems.forEach((item, index) => {
-      if (index < totalSlots) {
-        newGrid[index] = item;
+    try {
+      // Create a copy of the current inventoryGrid
+      let newGrid = [...inventoryGrid];
+      
+      // Attempt to load saved layout
+      const savedLayoutStr = localStorage.getItem('inventoryLayout');
+      const savedLayout = savedLayoutStr ? JSON.parse(savedLayoutStr) : null;
+      
+      // Set of item types that already exist in the grid
+      const existingItemTypes = new Set(
+        newGrid.filter(item => item !== null).map(item => item!.type)
+      );
+      
+      // Process all inventory items
+      for (const item of allInventoryItems) {
+        // If this item type is already in the grid, skip it
+        if (existingItemTypes.has(item.type)) {
+          continue;
+        }
+        
+        // Check if we have position information for this item type from saved layout
+        const savedPosition = savedLayout ? 
+          savedLayout.findIndex((saved: any) => saved !== null && saved.type === item.type) : -1;
+        
+        if (savedPosition >= 0 && savedPosition < totalSlots && newGrid[savedPosition] === null) {
+          // If we have a saved position and it's empty, use it
+          newGrid[savedPosition] = item;
+        } else {
+          // Otherwise, find first empty slot
+          const emptySlotIndex = newGrid.findIndex(slot => slot === null);
+          if (emptySlotIndex >= 0) {
+            newGrid[emptySlotIndex] = item;
+          } else {
+            // No empty slots, append to the end if there's room
+            if (newGrid.length < totalSlots) {
+              newGrid.push(item);
+            }
+            // If no room, item is ignored (inventory full)
+          }
+        }
+        
+        // Mark this item type as processed
+        existingItemTypes.add(item.type);
       }
-    });
-    setInventoryGrid(newGrid);
-  // Now we can use allInventoryItems directly since it's memoized
-  }, [allInventoryItems, totalSlots]);
+      
+      // Only update the grid if changes were made
+      if (JSON.stringify(newGrid) !== JSON.stringify(inventoryGrid)) {
+        setInventoryGrid(newGrid);
+        saveInventoryLayout(newGrid);
+      }
+    } catch (error) {
+      console.error('Error processing inventory layout:', error);
+    }
+  }, [allInventoryItems, totalSlots, inventoryGrid, saveInventoryLayout]);
   
   // Function to move an item from one position to another
   const moveItem = useCallback((fromIndex: number, toIndex: number) => {
@@ -358,6 +414,14 @@ export default function Inventory() {
       const temp = newGrid[fromIndex];
       newGrid[fromIndex] = newGrid[toIndex];
       newGrid[toIndex] = temp;
+      
+      // Save the updated layout to localStorage
+      try {
+        saveInventoryLayout(newGrid);
+      } catch (error) {
+        console.warn('Failed to save inventory layout after move:', error);
+      }
+      
       return newGrid;
     });
     
@@ -366,7 +430,7 @@ export default function Inventory() {
     } catch (e) {
       console.warn('Could not play sound', e);
     }
-  }, [sounds]);
+  }, [sounds, saveInventoryLayout]);
   
   if (isLoadingResources || isLoadingLootBoxes || isLoadingHistory) {
     return (
