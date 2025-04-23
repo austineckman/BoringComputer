@@ -25,6 +25,7 @@ import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { getLootCrateImage, getResourceDisplay } from '@/lib/resourceImages';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
+import LootCrateOpenDialog from '@/components/inventory/LootCrateOpenDialog';
 
 // Resource images are already imported above
 
