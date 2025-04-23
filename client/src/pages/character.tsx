@@ -185,18 +185,29 @@ const CharacterPage = () => {
   const filteredItems = React.useMemo(() => {
     if (!inventoryItems) return [];
     
-    console.log("Inventory items:", inventoryItems);
+    // Look for items with ID 'gizbos' for the head slot
+    const gizboItemHeadMatch = inventoryItems.some(item => 
+      item.id === 'gizbos' && selectedSlot === 'head'
+    );
+    
+    if (gizboItemHeadMatch) {
+      console.log("Found Gizbo Glasses for head slot");
+    }
     
     return inventoryItems.filter((item: any) => {
-      // Debug logging to see what's going on with item attributes
-      console.log(`Item ${item.name}:`, { 
-        isEquippable: item.isEquippable, 
-        equipSlot: item.equipSlot, 
-        selectedSlot
-      });
+      // Special case for Gizbo Glasses (specific handling as per database)
+      if (item.id === 'gizbos' && selectedSlot === 'head') {
+        return true;
+      }
       
       // Check if the item is equippable and matches the selected slot
-      return item.isEquippable === true && item.equipSlot === selectedSlot;
+      // Convert boolean values that might come as strings from PostgreSQL
+      const isEquippable = 
+        item.isEquippable === true || 
+        item.isEquippable === 't' || 
+        item.isEquippable === 'true';
+      
+      return isEquippable && item.equipSlot === selectedSlot;
     });
   }, [inventoryItems, selectedSlot]);
   
