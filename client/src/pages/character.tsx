@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { apiRequest } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
 // Character base image
 const CHARACTER_BASE_IMAGE = '/images/character-base.png';
@@ -118,19 +119,82 @@ const CharacterPage = () => {
     select: (data) => data || []
   });
   
+  // Query client for cache updates
+  const queryClient = useQueryClient();
+  
+  // Equip mutation
+  const equipMutation = useMutation({
+    mutationFn: (itemId: string) => {
+      return apiRequest('/api/character/equip', {
+        method: 'POST',
+        data: {
+          itemId,
+          slot: selectedSlot
+        }
+      });
+    },
+    onSuccess: () => {
+      // Invalidate the equipment cache to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/character/equipment'] });
+      toast({
+        title: 'Item equipped',
+        description: 'The item has been equipped successfully',
+        variant: 'default'
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to equip item',
+        description: error.message || 'There was an error equipping the item',
+        variant: 'destructive'
+      });
+    }
+  });
+  
+  // Unequip mutation
+  const unequipMutation = useMutation({
+    mutationFn: (slot: EquipmentSlot) => {
+      return apiRequest('/api/character/unequip', {
+        method: 'POST',
+        data: {
+          slot
+        }
+      });
+    },
+    onSuccess: () => {
+      // Invalidate the equipment cache to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/character/equipment'] });
+      toast({
+        title: 'Item unequipped',
+        description: 'The item has been removed successfully',
+        variant: 'default'
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to unequip item',
+        description: error.message || 'There was an error removing the item',
+        variant: 'destructive'
+      });
+    }
+  });
+  
   // Filter inventory items by the selected slot type
+  // In a real implementation, this would filter based on item properties
+  // For now, we show all items as available for any slot
   const filteredItems = React.useMemo(() => {
     if (!inventoryItems) return [];
-    
-    // This is where we would filter items by their slot type
-    // For now, we'll just return all items as a placeholder
     return inventoryItems;
   }, [inventoryItems, selectedSlot]);
   
   // Handle equipping an item
   const handleEquipItem = (itemId: string) => {
-    // In the future, this will call an API to equip the item
-    console.log(`Equipping item ${itemId} to ${selectedSlot} slot`);
+    equipMutation.mutate(itemId);
+  };
+  
+  // Handle unequipping an item
+  const handleUnequipItem = (slot: EquipmentSlot) => {
+    unequipMutation.mutate(slot);
   };
   
   return (
@@ -207,15 +271,30 @@ const CharacterPage = () => {
                         <h3 className="font-medium">{slot.name}</h3>
                         <p className="text-sm text-gray-500">{slot.description}</p>
                       </div>
-                      <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center">
-                        {equipment?.[slot.id] ? (
-                          <img 
-                            src={equipment[slot.id].imagePath} 
-                            alt={equipment[slot.id].name}
-                            className="w-10 h-10 object-contain"
-                          />
-                        ) : (
-                          <span className="text-xs text-gray-400">Empty</span>
+                      <div className="flex flex-col items-center">
+                        <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center">
+                          {equipment?.[slot.id] ? (
+                            <img 
+                              src={equipment[slot.id].imagePath} 
+                              alt={equipment[slot.id].name}
+                              className="w-10 h-10 object-contain"
+                            />
+                          ) : (
+                            <span className="text-xs text-gray-400">Empty</span>
+                          )}
+                        </div>
+                        {equipment?.[slot.id] && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-xs mt-1 h-6 px-2 text-red-500 hover:text-red-700" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUnequipItem(slot.id);
+                            }}
+                          >
+                            Remove
+                          </Button>
                         )}
                       </div>
                     </CardContent>
