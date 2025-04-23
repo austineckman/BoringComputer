@@ -27,11 +27,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen" style={{
-      backgroundImage: 'url(/images/wallbg.png)',
-      backgroundRepeat: 'repeat',
-      backgroundSize: '400px'
-    }}>
+    <div className="flex flex-col min-h-screen app-background">
       <StarBackground />
       <NavigationBar />
       <main className="container mx-auto px-4 py-6 flex-grow">

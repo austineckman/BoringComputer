@@ -69,6 +69,12 @@
   --sidebar-ring: var(--ring);
 }
 
+.app-background {
+  background-image: url('/images/wallbg.png');
+  background-repeat: repeat;
+  background-size: 400px;
+}
+
 body {
   background-color: hsl(var(--space-darkest));
   min-height: 100vh;
