@@ -1,357 +1,451 @@
-import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'wouter';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  ArrowLeft, 
-  ShieldX, 
-  Loader2,
-  RotateCcw
-} from 'lucide-react';
-import { queryClient, apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
+import { getResourceIconProps } from '@/lib/resourceImages';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
-import { getResourceDisplay } from '@/lib/resourceImages';
-import { getItemDetails } from '@/lib/itemDatabase';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import wallBgImage from '@assets/wallbg.png';
+import baseCharacterImage from '@assets/basecharacter.png';
 import { getRarityColorClass } from '@/lib/styleUtils';
 
-// Character equipment screen inspired by Terraria
+// Types
+interface Equipment {
+  id: string;
+  name: string;
+  description: string;
+  flavorText: string | null;
+  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  imagePath: string;
+  equippedAt: string;
+}
+
+interface EquipmentState {
+  head?: Equipment;
+  chest?: Equipment;
+  legs?: Equipment;
+  feet?: Equipment;
+  leftHand?: Equipment;
+  rightHand?: Equipment;
+  accessory1?: Equipment;
+  accessory2?: Equipment;
+}
+
+interface InventoryItem {
+  type: string;
+  quantity: number;
+  isEquippable?: boolean;
+  equipSlot?: string;
+  rarity?: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  name?: string;
+}
+
+// Component for displaying a single equipment slot
+const EquipmentSlot = ({
+  slot,
+  item,
+  onUnequip,
+  onItemHover,
+}: {
+  slot: string;
+  item?: Equipment;
+  onUnequip: (slot: string) => void;
+  onItemHover: (item?: Equipment) => void;
+}) => {
+  const slotDisplayNames: Record<string, string> = {
+    head: 'Head',
+    chest: 'Chest',
+    legs: 'Legs',
+    feet: 'Feet',
+    leftHand: 'Left Hand',
+    rightHand: 'Right Hand',
+    accessory1: 'Accessory 1',
+    accessory2: 'Accessory 2',
+  };
+
+  return (
+    <div
+      className="relative flex flex-col items-center"
+      onMouseEnter={() => onItemHover(item)}
+      onMouseLeave={() => onItemHover(undefined)}
+    >
+      <div 
+        className={`
+          w-16 h-16 border-2 rounded-md flex items-center justify-center
+          ${item ? getRarityColorClass(item.rarity) : 'bg-gray-800 border-gray-600'}
+          hover:border-brand-orange transition-all duration-200
+        `}
+      >
+        {item ? (
+          <div className="relative w-full h-full flex items-center justify-center">
+            <img
+              src={item.imagePath}
+              alt={item.name}
+              className="max-w-full max-h-full object-contain"
+            />
+            <button
+              onClick={() => onUnequip(slot)}
+              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+            >
+              ×
+            </button>
+          </div>
+        ) : (
+          <span className="text-gray-400 text-xs">{slotDisplayNames[slot]}</span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Main component
 export default function CharacterEquipment() {
-  const { toast } = useToast();
-  const { sounds } = useSoundEffects();
+  const [equipmentState, setEquipmentState] = useState<EquipmentState>({});
+  const [hoveredItem, setHoveredItem] = useState<Equipment | undefined>();
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const soundEffects = useSoundEffects();
+  const queryClient = useQueryClient();
 
   // Fetch character equipment
-  const { data: equipment, isLoading: isLoadingEquipment } = useQuery({
+  const { data: equipment, isLoading: equipmentLoading } = useQuery({
     queryKey: ['/api/character/equipment'],
-    queryFn: () => fetch('/api/character/equipment').then(res => res.json()),
+    enabled: true,
   });
 
-  // Fetch inventory items - we'll filter for equippable items
-  const { data: inventory, isLoading: isLoadingInventory } = useQuery({
+  // Fetch inventory items
+  const { data: inventory, isLoading: inventoryLoading } = useQuery({
     queryKey: ['/api/inventory'],
-    queryFn: () => fetch('/api/inventory').then(res => res.json()),
+    enabled: true,
   });
 
-  // Mutation for equipping an item
-  const equipItemMutation = useMutation({
-    mutationFn: async ({ itemId, slot }: { itemId: string, slot: string }) => {
-      const response = await apiRequest('POST', '/api/character/equipment/equip', {
-        itemId,
-        slot
-      });
-      return await response.json();
+  // Equip item mutation
+  const equipMutation = useMutation({
+    mutationFn: (data: { itemId: string; slot: string }) => {
+      return apiRequest('/api/character/equip', 'POST', data);
     },
     onSuccess: () => {
-      try {
-        sounds.success();
-      } catch (e) {
-        console.warn('Could not play sound', e);
-      }
-      
-      toast({
-        title: "Item Equipped!",
-        description: "The item has been equipped to your character.",
-        variant: "default",
-      });
-      
-      // Invalidate queries to refresh data
+      soundEffects.sounds.success();
       queryClient.invalidateQueries({ queryKey: ['/api/character/equipment'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
-      
-      // Clear selected slot after equipping
+      setSelectedItem(null);
       setSelectedSlot(null);
     },
     onError: (error) => {
-      try {
-        sounds.error();
-      } catch (e) {
-        console.warn('Could not play sound', e);
-      }
-      
       console.error('Error equipping item:', error);
-      toast({
-        title: "Failed to Equip Item",
-        description: "There was an error equipping the item. Please try again.",
-        variant: "destructive",
-      });
-    }
+      soundEffects.sounds.error();
+    },
   });
 
-  // Mutation for unequipping an item
-  const unequipItemMutation = useMutation({
-    mutationFn: async (slot: string) => {
-      const response = await apiRequest('POST', '/api/character/equipment/unequip', {
-        slot
-      });
-      return await response.json();
+  // Unequip item mutation
+  const unequipMutation = useMutation({
+    mutationFn: (data: { slot: string }) => {
+      return apiRequest('/api/character/unequip', 'POST', data);
     },
     onSuccess: () => {
-      try {
-        sounds.craftDrop();
-      } catch (e) {
-        console.warn('Could not play sound', e);
-      }
-      
-      toast({
-        title: "Item Unequipped",
-        description: "The item has been returned to your inventory.",
-        variant: "default",
-      });
-      
-      // Invalidate queries to refresh data
+      soundEffects.sounds.success();
       queryClient.invalidateQueries({ queryKey: ['/api/character/equipment'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
-      
-      // Clear selected slot after unequipping
-      setSelectedSlot(null);
     },
     onError: (error) => {
-      try {
-        sounds.error();
-      } catch (e) {
-        console.warn('Could not play sound', e);
-      }
-      
       console.error('Error unequipping item:', error);
-      toast({
-        title: "Failed to Unequip Item",
-        description: "There was an error unequipping the item. Please try again.",
-        variant: "destructive",
-      });
-    }
+      soundEffects.sounds.error();
+    },
   });
+
+  // Update equipment state when data is loaded
+  useEffect(() => {
+    if (equipment) {
+      setEquipmentState(equipment);
+    }
+  }, [equipment]);
 
   // Handle equipping an item
-  const handleEquipItem = (itemId: string) => {
-    if (!selectedSlot) return;
-    
-    try {
-      sounds.click();
-    } catch (e) {
-      console.warn('Could not play sound', e);
-    }
-    
-    equipItemMutation.mutate({ itemId, slot: selectedSlot });
+  const handleEquipItem = (itemId: string, slot: string) => {
+    equipMutation.mutate({ itemId, slot });
   };
 
   // Handle unequipping an item
   const handleUnequipItem = (slot: string) => {
-    try {
-      sounds.click();
-    } catch (e) {
-      console.warn('Could not play sound', e);
-    }
-    
-    unequipItemMutation.mutate(slot);
+    unequipMutation.mutate({ slot });
   };
 
-  // Filter for equippable items that match the selected slot
-  const availableItemsForSlot = selectedSlot && inventory 
-    ? inventory.filter((item: any) => {
-        const itemDetails = getItemDetails(item.type);
-        return itemDetails.isEquippable && itemDetails.equipSlot === selectedSlot;
-      })
-    : [];
+  // Filter inventory to only show equippable items
+  const equippableItems = inventory?.filter((item: InventoryItem) => 
+    item.isEquippable && item.quantity > 0
+  ) || [];
 
-  // Loading state
-  if (isLoadingEquipment || isLoadingInventory) {
-    return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
+  const getEquippableItemsForSlot = (slot: string) => {
+    return equippableItems.filter((item: InventoryItem) => 
+      item.equipSlot === slot
     );
-  }
+  };
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="flex items-center mb-6">
-        <Button 
-          variant="outline" 
-          className="gap-2 border-brand-orange/30 hover:bg-brand-orange/10 mr-3"
-          onClick={() => window.location.href = "/unified-inventory"}
-        >
-          <ArrowLeft size={16} />
-          <span>Back to Inventory</span>
-        </Button>
-        <h1 className="text-3xl font-bold text-brand-orange">CHARACTER EQUIPMENT</h1>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column - Character preview */}
-        <div className="bg-space-mid rounded-lg p-4 border-2 border-space-light/20 flex flex-col items-center">
-          <h2 className="text-xl font-bold text-brand-orange mb-4">Character Preview</h2>
-          <div className="relative w-full h-96 bg-space-dark/30 rounded-lg border border-space-light/20 overflow-hidden">
-            {/* Background Wall */}
-            <img 
-              src="/images/wallbg.png" 
-              alt="Background" 
-              className="absolute inset-0 w-full h-full object-cover opacity-40"
-            />
+    <DndProvider backend={HTML5Backend}>
+      <div className="container mx-auto p-4">
+        <h2 className="text-2xl font-bold mb-6 text-center text-brand-orange">Character Equipment</h2>
+        
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Character preview */}
+          <Card className="flex-1 h-[600px] overflow-hidden relative">
+            <CardContent className="p-0 h-full">
+              <div 
+                className="h-full w-full flex items-center justify-center relative"
+                style={{ 
+                  backgroundImage: `url(${wallBgImage})`,
+                  backgroundSize: 'cover', 
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat'
+                }}
+              >
+                {/* Base character image */}
+                <div className="relative w-80 h-96">
+                  <img 
+                    src={baseCharacterImage} 
+                    alt="Character" 
+                    className="absolute top-0 left-0 w-full h-full object-contain"
+                  />
+                  
+                  {/* Equipment overlays would go here in a more advanced implementation */}
+                  {equipmentState.head && (
+                    <img 
+                      src={equipmentState.head.imagePath} 
+                      alt={equipmentState.head.name} 
+                      className="absolute top-0 left-0 w-full h-full object-contain"
+                    />
+                  )}
+                  
+                  {equipmentState.chest && (
+                    <img 
+                      src={equipmentState.chest.imagePath} 
+                      alt={equipmentState.chest.name} 
+                      className="absolute top-0 left-0 w-full h-full object-contain"
+                    />
+                  )}
+                  
+                  {equipmentState.legs && (
+                    <img 
+                      src={equipmentState.legs.imagePath} 
+                      alt={equipmentState.legs.name} 
+                      className="absolute top-0 left-0 w-full h-full object-contain"
+                    />
+                  )}
+                  
+                  {equipmentState.feet && (
+                    <img 
+                      src={equipmentState.feet.imagePath} 
+                      alt={equipmentState.feet.name} 
+                      className="absolute top-0 left-0 w-full h-full object-contain"
+                    />
+                  )}
+                  
+                  {equipmentState.leftHand && (
+                    <img 
+                      src={equipmentState.leftHand.imagePath} 
+                      alt={equipmentState.leftHand.name} 
+                      className="absolute top-0 left-0 w-full h-full object-contain"
+                    />
+                  )}
+                  
+                  {equipmentState.rightHand && (
+                    <img 
+                      src={equipmentState.rightHand.imagePath} 
+                      alt={equipmentState.rightHand.name} 
+                      className="absolute top-0 left-0 w-full h-full object-contain"
+                    />
+                  )}
+                  
+                  {equipmentState.accessory1 && (
+                    <img 
+                      src={equipmentState.accessory1.imagePath} 
+                      alt={equipmentState.accessory1.name} 
+                      className="absolute top-0 left-0 w-full h-full object-contain"
+                    />
+                  )}
+                  
+                  {equipmentState.accessory2 && (
+                    <img 
+                      src={equipmentState.accessory2.imagePath} 
+                      alt={equipmentState.accessory2.name} 
+                      className="absolute top-0 left-0 w-full h-full object-contain"
+                    />
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Equipment slots and item details */}
+          <div className="flex-1">
+            <Card className="mb-6">
+              <CardContent className="p-6">
+                <h3 className="text-xl font-semibold mb-4">Equipment Slots</h3>
+                
+                <div className="grid grid-cols-4 gap-4">
+                  <EquipmentSlot 
+                    slot="head" 
+                    item={equipmentState.head} 
+                    onUnequip={handleUnequipItem}
+                    onItemHover={setHoveredItem}
+                  />
+                  <EquipmentSlot 
+                    slot="chest" 
+                    item={equipmentState.chest} 
+                    onUnequip={handleUnequipItem}
+                    onItemHover={setHoveredItem}
+                  />
+                  <EquipmentSlot 
+                    slot="legs" 
+                    item={equipmentState.legs} 
+                    onUnequip={handleUnequipItem}
+                    onItemHover={setHoveredItem}
+                  />
+                  <EquipmentSlot 
+                    slot="feet" 
+                    item={equipmentState.feet} 
+                    onUnequip={handleUnequipItem}
+                    onItemHover={setHoveredItem}
+                  />
+                  <EquipmentSlot 
+                    slot="leftHand" 
+                    item={equipmentState.leftHand} 
+                    onUnequip={handleUnequipItem}
+                    onItemHover={setHoveredItem}
+                  />
+                  <EquipmentSlot 
+                    slot="rightHand" 
+                    item={equipmentState.rightHand} 
+                    onUnequip={handleUnequipItem}
+                    onItemHover={setHoveredItem}
+                  />
+                  <EquipmentSlot 
+                    slot="accessory1" 
+                    item={equipmentState.accessory1} 
+                    onUnequip={handleUnequipItem}
+                    onItemHover={setHoveredItem}
+                  />
+                  <EquipmentSlot 
+                    slot="accessory2" 
+                    item={equipmentState.accessory2} 
+                    onUnequip={handleUnequipItem}
+                    onItemHover={setHoveredItem}
+                  />
+                </div>
+              </CardContent>
+            </Card>
             
-            {/* Base Character */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <img 
-                src="/images/basecharacter.png" 
-                alt="Character" 
-                className="h-4/5 object-contain pixelated"
-              />
-            </div>
-            
-            {/* Equipped Items - will be overlaid on the character */}
-            {equipment && Object.keys(equipment).map(slot => {
-              if (!equipment[slot]) return null;
-              const item = equipment[slot];
-              return (
-                <div key={slot} className="absolute inset-0 flex items-center justify-center">
-                  {/* If we had specific equipment sprites, we would display them here */}
-                  {/* For now, just show a small icon indicator */}
-                  <div className={`absolute ${
-                    slot === 'head' ? 'top-20 right-1/2 translate-x-1/2' : 
-                    slot === 'chest' ? 'top-1/3 right-1/2 translate-x-1/2' : 
-                    slot === 'legs' ? 'top-1/2 right-1/2 translate-x-1/2' : 
-                    slot === 'feet' ? 'bottom-20 right-1/2 translate-x-1/2' : 
-                    slot === 'leftHand' ? 'top-1/3 left-20' : 
-                    slot === 'rightHand' ? 'top-1/3 right-20' : 
-                    'top-1/4 right-1/4'
-                  }`}>
-                    <div className={`w-10 h-10 rounded-full ${getRarityColorClass(item.id)} p-1 flex items-center justify-center`}>
-                      {getResourceDisplay(item.id).isImage && (
-                        <img 
-                          src={getResourceDisplay(item.id).value} 
-                          alt={getResourceDisplay(item.id).alt} 
-                          className="w-full h-full object-contain pixelated"
-                        />
+            {/* Item Detail Card */}
+            <Card className="mb-6 bg-gray-850 border-gray-700">
+              <CardContent className="p-6 min-h-[150px]">
+                {hoveredItem ? (
+                  <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 flex-shrink-0">
+                      <img 
+                        src={hoveredItem.imagePath} 
+                        alt={hoveredItem.name} 
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <div>
+                      <h3 className={`text-xl font-bold ${getRarityColorClass(hoveredItem.rarity, 'text')}`}>
+                        {hoveredItem.name}
+                      </h3>
+                      <p className="text-gray-300 text-sm mb-2">{hoveredItem.description}</p>
+                      {hoveredItem.flavorText && (
+                        <p className="text-gray-400 text-xs italic">"{hoveredItem.flavorText}"</p>
                       )}
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        
-        {/* Center column - Equipment slots */}
-        <div className="bg-space-mid rounded-lg p-4 border-2 border-space-light/20">
-          <h2 className="text-xl font-bold text-brand-orange mb-4">Equipment Slots</h2>
-          <div className="grid grid-cols-2 gap-4">
-            {['head', 'chest', 'legs', 'feet', 'leftHand', 'rightHand', 'accessory1', 'accessory2'].map(slot => {
-              const isEquipped = equipment && equipment[slot];
-              const item = isEquipped ? equipment[slot] : null;
-              
-              return (
-                <div 
-                  key={slot}
-                  className={`
-                    aspect-square rounded-lg p-2 relative cursor-pointer transition-all duration-200
-                    ${selectedSlot === slot ? 'border-2 border-brand-orange' : 'border border-space-light/20'}
-                    ${isEquipped ? getRarityColorClass(item.id) : 'bg-space-dark/50'}
-                  `}
-                  onClick={() => {
-                    try {
-                      sounds.hover();
-                    } catch (e) {
-                      console.warn('Could not play sound', e);
-                    }
-                    setSelectedSlot(slot);
-                  }}
-                >
-                  <div className="text-xs text-brand-light/70 mb-1 capitalize">
-                    {slot.replace(/([A-Z])/g, ' $1').trim()}
-                  </div>
-                  
-                  {isEquipped ? (
-                    <>
-                      <div className="flex flex-col items-center justify-center h-[calc(100%-20px)]">
-                        <div className="w-12 h-12 bg-space-mid rounded-lg flex items-center justify-center">
-                          {getResourceDisplay(item.id).isImage && (
-                            <img 
-                              src={getResourceDisplay(item.id).value} 
-                              alt={getResourceDisplay(item.id).alt} 
-                              className="w-full h-full object-contain pixelated"
-                            />
-                          )}
-                        </div>
-                        <div className="mt-2 text-center">
-                          <p className="text-xs font-medium text-brand-orange">
-                            {getItemDetails(item.id).name}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-1 right-1 w-6 h-6 text-brand-light/40 hover:text-brand-light/80 hover:bg-brand-orange/10"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleUnequipItem(slot);
-                        }}
+                ) : (
+                  <p className="text-gray-400 text-center">Hover over an equipped item to see details</p>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* Equippable Inventory Items */}
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="text-xl font-semibold mb-4">Equippable Items</h3>
+                
+                {selectedSlot ? (
+                  <>
+                    <div className="flex justify-between items-center mb-4">
+                      <h4 className="text-md font-medium">
+                        Select an item for: <span className="text-brand-orange">{selectedSlot}</span>
+                      </h4>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setSelectedSlot(null)}
                       >
-                        <RotateCcw size={12} />
+                        Cancel
                       </Button>
-                    </>
-                  ) : (
-                    <div className="flex items-center justify-center h-[calc(100%-20px)]">
-                      <div className="w-12 h-12 bg-space-dark/50 rounded-lg border border-space-light/10 flex items-center justify-center">
-                        <ShieldX size={20} className="text-space-light/30" />
-                      </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                    
+                    <div className="grid grid-cols-5 gap-3">
+                      {getEquippableItemsForSlot(selectedSlot)
+                        .map((item: InventoryItem) => (
+                          <TooltipProvider key={item.type}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div 
+                                  className={`
+                                    w-12 h-12 border-2 rounded-md flex items-center justify-center cursor-pointer
+                                    ${getRarityColorClass(item.rarity || 'common')}
+                                  `}
+                                  onClick={() => handleEquipItem(item.type, selectedSlot)}
+                                >
+                                  <div className="relative w-full h-full flex items-center justify-center">
+                                    <img {...getResourceIconProps(item.type, "md")} />
+                                    <div className="absolute bottom-0 right-0 bg-gray-800 bg-opacity-70 rounded-sm px-1 text-xs">
+                                      {item.quantity}
+                                    </div>
+                                  </div>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{item.name || item.type}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-gray-400 mb-4">Click on an empty slot to equip an item</p>
+                    
+                    <div className="grid grid-cols-4 gap-4">
+                      {['head', 'chest', 'legs', 'feet', 'leftHand', 'rightHand', 'accessory1', 'accessory2'].map((slot) => (
+                        <Button 
+                          key={slot} 
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => setSelectedSlot(slot)}
+                          disabled={!!equipmentState[slot as keyof EquipmentState]}
+                        >
+                          {slot.charAt(0).toUpperCase() + slot.slice(1)}
+                        </Button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+            
+            <div className="mt-6 flex justify-center">
+              <Link href="/character">
+                <Button variant="outline">
+                  Back to Character
+                </Button>
+              </Link>
+            </div>
           </div>
-        </div>
-        
-        {/* Right column - Available items for selected slot */}
-        <div className="bg-space-mid rounded-lg p-4 border-2 border-space-light/20">
-          <h2 className="text-xl font-bold text-brand-orange mb-4">
-            {selectedSlot ? `Available ${selectedSlot.replace(/([A-Z])/g, ' $1').trim()} Items` : 'Select a Slot'}
-          </h2>
-          
-          {selectedSlot ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {availableItemsForSlot.length > 0 ? (
-                availableItemsForSlot.map((item: any) => (
-                  <div 
-                    key={item.type}
-                    className={`${getRarityColorClass(item.type)} p-2 rounded-lg cursor-pointer transition-all hover:border-brand-orange/60`}
-                    onClick={() => handleEquipItem(item.type)}
-                  >
-                    <div className="flex flex-col items-center">
-                      <div className="w-12 h-12 bg-space-mid rounded-lg flex items-center justify-center">
-                        {getResourceDisplay(item.type).isImage && (
-                          <img 
-                            src={getResourceDisplay(item.type).value} 
-                            alt={getResourceDisplay(item.type).alt} 
-                            className="w-full h-full object-contain pixelated"
-                          />
-                        )}
-                      </div>
-                      <div className="mt-2 text-center">
-                        <p className="text-xs font-medium text-brand-orange">
-                          {getItemDetails(item.type).name}
-                        </p>
-                        <p className="text-xs text-brand-light/70">
-                          Quantity: {item.quantity}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-3 text-center py-8 text-brand-light/50">
-                  No equippable items found for this slot.
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-brand-light/50">
-              Select an equipment slot to see available items.
-            </div>
-          )}
         </div>
       </div>
-    </div>
+    </DndProvider>
   );
 }
