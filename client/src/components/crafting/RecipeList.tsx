@@ -88,47 +88,58 @@ const RecipeList: React.FC<RecipeListProps> = ({
     return (
       <Card 
         key={recipe.id}
-        className={`cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected ? 'border-primary ring-1 ring-primary' : ''}`}
-        onClick={() => handleSelectRecipe(recipe)}
+        className={`transition-all duration-200 ${isSelected ? 'border-primary ring-1 ring-primary' : ''}`}
       >
         <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            {/* Result item image */}
-            <div className="w-14 h-14 rounded overflow-hidden bg-muted border flex-shrink-0">
+          <div className="space-y-4">
+            {/* Recipe image (Grid pattern) - Now 4x larger */}
+            <div className="w-full aspect-square rounded overflow-hidden bg-background/50 border flex-shrink-0 mb-2">
               <img 
-                src={resultItem.imagePath} 
-                alt={resultItem.name}
-                className="w-full h-full object-contain"
-              />
-            </div>
-            
-            {/* Recipe image */}
-            <div className="w-14 h-14 rounded overflow-hidden bg-background/50 border flex-shrink-0">
-              <img 
-                src={recipe.image || '/images/recipe-placeholder.png'} 
-                alt={recipe.name}
+                src={recipe.heroImage || '/images/recipe-placeholder.png'} 
+                alt={`${recipe.name} pattern`}
                 className="w-full h-full object-contain"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = resultItem.imagePath; // Fallback to result item image
+                  target.src = '/images/recipe-placeholder.png';
                 }}
               />
             </div>
             
-            <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-sm truncate">{recipe.name}</h4>
-              <div className="flex items-center gap-2 flex-wrap mt-1">
-                <Badge 
-                  variant="outline" 
-                  className={getDifficultyBadge(recipe.difficulty)}
-                >
-                  {recipe.difficulty}
-                </Badge>
-                <span className="text-xs text-muted-foreground">
-                  {recipe.resultQuantity}x {resultItem.name}
-                </span>
+            <div className="flex items-center gap-3">
+              {/* Result item image */}
+              <div className="w-14 h-14 rounded overflow-hidden bg-muted border flex-shrink-0">
+                <img 
+                  src={resultItem.imagePath} 
+                  alt={resultItem.name}
+                  className="w-full h-full object-contain"
+                />
               </div>
-              <p className="text-xs text-muted-foreground mt-1 truncate">{recipe.description}</p>
+              
+              <div className="flex-1 min-w-0">
+                <h4 className="font-medium text-sm truncate">{recipe.name}</h4>
+                <div className="flex items-center gap-2 flex-wrap mt-1">
+                  <Badge 
+                    variant="outline" 
+                    className={getDifficultyBadge(recipe.difficulty)}
+                  >
+                    {recipe.difficulty}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {recipe.resultQuantity}x {resultItem.name}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 truncate">{recipe.description}</p>
+                
+                {/* Select button - safer than making the whole card clickable */}
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="mt-2 w-full"
+                  onClick={() => handleSelectRecipe(recipe)}
+                >
+                  Select Recipe
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>

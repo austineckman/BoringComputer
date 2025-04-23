@@ -21,7 +21,6 @@ const mockRecipes: Recipe[] = [
     name: 'Simple Circuit',
     description: 'A basic electronic circuit that can power small devices.',
     unlocked: true,
-    unlockedAt: 1,
     difficulty: 'beginner',
     materials: {
       'copper': 2,
@@ -52,7 +51,6 @@ const mockRecipes: Recipe[] = [
     name: 'Reinforced Fabric',
     description: 'A stronger fabric material woven with special techniques.',
     unlocked: true,
-    unlockedAt: 2,
     difficulty: 'intermediate',
     materials: {
       'cloth': 3,
@@ -224,7 +222,7 @@ const ForgePage: React.FC = () => {
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium">Rewards:</h4>
                   <div className="flex flex-wrap gap-2">
-                    {selectedRecipe.rewards.map((reward: RecipeReward, index: number) => (
+                    {selectedRecipe.rewards?.map((reward: RecipeReward, index: number) => (
                       <Badge 
                         key={index} 
                         variant="outline"
@@ -235,6 +233,13 @@ const ForgePage: React.FC = () => {
                         {reward.type === 'xp' && <span className="text-green-500">XP</span>}
                       </Badge>
                     ))}
+                    {/* Fallback in case no rewards available */}
+                    {!selectedRecipe.rewards?.length && (
+                      <Badge variant="outline" className="flex items-center gap-1 p-2">
+                        <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                        {selectedRecipe.resultItem} x{selectedRecipe.resultQuantity || 1}
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </div>

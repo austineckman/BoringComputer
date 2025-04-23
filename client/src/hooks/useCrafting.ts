@@ -13,10 +13,21 @@ interface CellPos {
 export function useCrafting() {
   const { sounds } = useSoundEffects();
   
-  // Initialize grid (5x5 empty grid)
-  const [grid, setGrid] = useState<string[][]>(
-    Array(5).fill('').map(() => Array(5).fill(''))
-  );
+  // Initialize grid from localStorage or create a new empty 5x5 grid
+  const [grid, setGrid] = useState<string[][]>(() => {
+    // Try to get grid from localStorage
+    try {
+      const savedGrid = localStorage.getItem('craftingGrid');
+      if (savedGrid) {
+        return JSON.parse(savedGrid);
+      }
+    } catch (error) {
+      console.error('Error loading grid from localStorage:', error);
+    }
+    
+    // Return empty grid if nothing in localStorage
+    return Array(5).fill('').map(() => Array(5).fill(''));
+  });
   
   // User's inventory state
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
@@ -74,7 +85,14 @@ export function useCrafting() {
   
   // Reset the crafting grid to empty
   const resetGrid = useCallback(() => {
-    setGrid(Array(5).fill('').map(() => Array(5).fill('')));
+    const emptyGrid = Array(5).fill('').map(() => Array(5).fill(''));
+    setGrid(emptyGrid);
+    // Also clear from localStorage
+    try {
+      localStorage.removeItem('craftingGrid');
+    } catch (error) {
+      console.error('Error clearing grid from localStorage:', error);
+    }
   }, []);
   
   // Handle dropping an item onto the grid
@@ -166,6 +184,15 @@ export function useCrafting() {
   useEffect(() => {
     checkGridPattern();
   }, [grid, selectedRecipe, checkGridPattern]);
+  
+  // Save grid to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('craftingGrid', JSON.stringify(grid));
+    } catch (error) {
+      console.error('Error saving grid to localStorage:', error);
+    }
+  }, [grid]);
   
   // Determine if any data is still loading
   const isLoading = isRecipesLoading || isInventoryLoading || craftMutation.isPending;
