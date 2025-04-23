@@ -47,6 +47,7 @@ interface Item {
   id: string;
   name: string;
   description: string;
+  flavorText?: string | null;
   rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
   image?: string;
   imagePath?: string; // Added to match the schema
@@ -83,6 +84,7 @@ const AdminItems: React.FC = () => {
   const [newItem, setNewItem] = useState<Partial<Item>>({
     name: '',
     description: '',
+    flavorText: '',
     rarity: 'common',
     image: '',
     isEquippable: false,
@@ -117,7 +119,7 @@ const AdminItems: React.FC = () => {
         id: itemId,
         name: formData.get('name') as string,
         description: formData.get('description') as string,
-        flavorText: '',
+        flavorText: formData.get('flavorText') as string || '',
         rarity: formData.get('rarity') as string,
         craftingUses: [],
         imagePath: '',
@@ -164,6 +166,7 @@ const AdminItems: React.FC = () => {
       setNewItem({
         name: '',
         description: '',
+        flavorText: '',
         rarity: 'common',
         image: '',
         isEquippable: false,
@@ -197,6 +200,7 @@ const AdminItems: React.FC = () => {
         body: JSON.stringify({
           name: formData.get('name'),
           description: formData.get('description'),
+          flavorText: formData.get('flavorText'),
           rarity: formData.get('rarity'),
           category: formData.get('category'),
           isEquippable: formData.get('isEquippable') === 'true',
@@ -291,6 +295,7 @@ const AdminItems: React.FC = () => {
     const formData = new FormData();
     formData.append('name', newItem.name || '');
     formData.append('description', newItem.description || '');
+    formData.append('flavorText', newItem.flavorText || '');
     formData.append('rarity', newItem.rarity || 'common');
     if (newItem.category) formData.append('category', newItem.category);
     formData.append('isEquippable', String(!!newItem.isEquippable));
@@ -311,6 +316,7 @@ const AdminItems: React.FC = () => {
     const formData = new FormData();
     formData.append('name', currentItem.name || '');
     formData.append('description', currentItem.description || '');
+    formData.append('flavorText', currentItem.flavorText || '');
     formData.append('rarity', currentItem.rarity || 'common');
     if (currentItem.category) formData.append('category', currentItem.category);
     formData.append('isEquippable', String(!!currentItem.isEquippable));
@@ -601,6 +607,22 @@ const AdminItems: React.FC = () => {
                 />
               </div>
               
+              <div>
+                <Label htmlFor="flavorText" className="mb-1.5 block">
+                  Flavor Text
+                </Label>
+                <Textarea
+                  id="flavorText"
+                  value={newItem.flavorText || ''}
+                  onChange={(e) => setNewItem({ ...newItem, flavorText: e.target.value })}
+                  placeholder="Short, creative description shown when item is selected"
+                  className="h-20"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  This text is shown when an item is clicked in the inventory.
+                </p>
+              </div>
+              
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="rarity" className="mb-1.5 block">
@@ -751,6 +773,22 @@ const AdminItems: React.FC = () => {
                     placeholder="Item description"
                     required
                   />
+                </div>
+                
+                <div>
+                  <Label htmlFor="edit-flavorText" className="mb-1.5 block">
+                    Flavor Text
+                  </Label>
+                  <Textarea
+                    id="edit-flavorText"
+                    value={currentItem.flavorText || ''}
+                    onChange={(e) => setCurrentItem({ ...currentItem, flavorText: e.target.value })}
+                    placeholder="Short, creative description shown when item is selected"
+                    className="h-20"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    This text is shown when an item is clicked in the inventory.
+                  </p>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
