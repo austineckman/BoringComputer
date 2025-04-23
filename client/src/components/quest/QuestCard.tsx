@@ -298,7 +298,85 @@ const QuestCard = ({
         {/* Removing quest number and difficulty level as requested */}
         
         {/* Rewards Section - Unified display for both loot box and resource rewards */}
-        {lootBoxRewards && lootBoxRewards.length > 0 ? (
+        {rewards && rewards.length > 0 ? (
+          /* Unified rewards display showing both items and lootboxes */
+          <div className="mb-4">
+            <span className="text-xs text-brand-light/60 block mb-2">Rewards:</span>
+            <div className="flex flex-wrap gap-2">
+              {rewards.map((reward, index) => (
+                <div 
+                  key={index} 
+                  className={`flex flex-col items-center ${status === "upcoming" || status === "locked" ? "opacity-50" : ""}`}
+                >
+                  {/* Show different display based on reward type */}
+                  {reward.type === 'lootbox' ? (
+                    /* Lootbox display */
+                    <div className={`relative p-1 rounded-md ${
+                      getRarityColor(getLootBoxData(reward.id || '', reward.type)?.rarity || 'common')
+                    }`}>
+                      {isLoadingLootBoxes ? (
+                        <div className="w-8 h-8 animate-pulse rounded bg-space-light/20" />
+                      ) : (
+                        <img 
+                          src={getLootBoxData(reward.id || '', reward.type)?.image || '/assets/loot crate.png'}
+                          alt={`${getLootBoxData(reward.id || '', reward.type)?.name || formatItemName(reward.type)} Loot Box`}
+                          className="w-8 h-8 object-contain"
+                          onError={(e) => {
+                            // Fallback to default image if the database image fails to load
+                            e.currentTarget.src = '/assets/loot crate.png';
+                          }}
+                        />
+                      )}
+                      {reward.quantity > 1 && (
+                        <span className="absolute bottom-0 right-0 bg-brand-orange/80 text-white text-xs rounded px-1">
+                          x{reward.quantity}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    /* Item or equipment display */
+                    <div className={`relative p-1 rounded-md ${
+                      getRarityColor(getItemData(reward.id || reward.type)?.rarity || 'common')
+                    }`}>
+                      {isLoadingItems ? (
+                        <div className="w-8 h-8 animate-pulse rounded bg-space-light/20" />
+                      ) : (
+                        <img 
+                          src={getItemData(reward.id || reward.type)?.imagePath || `/assets/${reward.id || reward.type}.png`}
+                          alt={getItemData(reward.id || reward.type)?.name || formatItemName(reward.type)}
+                          className="w-8 h-8 object-contain"
+                          onError={(e) => {
+                            // Fallback to a generic item image if the database image fails to load
+                            e.currentTarget.src = '/assets/tech-scrap.png';
+                          }}
+                        />
+                      )}
+                      {reward.quantity > 1 && (
+                        <span className="absolute bottom-0 right-0 bg-brand-orange/80 text-white text-xs rounded px-1">
+                          x{reward.quantity}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  <span className="text-xs mt-1 text-center">
+                    {reward.type === 'lootbox' ? (
+                      /* Lootbox name display */
+                      isLoadingLootBoxes 
+                        ? formatItemName(reward.id || reward.type)
+                        : getLootBoxData(reward.id || '', reward.type)?.name || formatItemName(reward.id || reward.type)
+                    ) : (
+                      /* Item name display */
+                      isLoadingItems 
+                        ? formatItemName(reward.id || reward.type)
+                        : getItemData(reward.id || reward.type)?.name || formatItemName(reward.id || reward.type)
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : lootBoxRewards && lootBoxRewards.length > 0 ? (
+          /* Legacy lootbox rewards display - kept for backward compatibility */
           <div className="mb-4">
             <span className="text-xs text-brand-light/60 block mb-2">Rewards:</span>
             <div className="flex flex-wrap gap-2">
@@ -307,7 +385,6 @@ const QuestCard = ({
                   key={index} 
                   className={`flex flex-col items-center ${status === "upcoming" || status === "locked" ? "opacity-50" : ""}`}
                 >
-                  {/* Show loot box icon and include rarity coloring */}
                   <div className={`relative p-1 rounded-md ${
                     getRarityColor(getLootBoxData(lootBox.id || '', lootBox.type)?.rarity || 'common')
                   }`}>
@@ -319,7 +396,6 @@ const QuestCard = ({
                         alt={`${getLootBoxData(lootBox.id || '', lootBox.type)?.name || formatItemName(lootBox.type)} Loot Box`}
                         className="w-8 h-8 object-contain"
                         onError={(e) => {
-                          // Fallback to default image if the database image fails to load
                           e.currentTarget.src = '/assets/loot crate.png';
                         }}
                       />
@@ -331,53 +407,9 @@ const QuestCard = ({
                     )}
                   </div>
                   <span className="text-xs mt-1 text-center">
-                    {/* Use the name from config if available */}
                     {isLoadingLootBoxes 
                       ? formatItemName(lootBox.type)
-                      : getLootBoxData(lootBox.id || '', lootBox.type)?.name || 
-                        formatItemName(lootBox.type)
-                    }
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : rewards && rewards.length > 0 ? (
-          /* Legacy Resource Rewards */
-          <div className="mb-4">
-            <span className="text-xs text-brand-light/60 block mb-2">Rewards:</span>
-            <div className="flex flex-wrap gap-2">
-              {rewards.map((reward, index) => (
-                <div 
-                  key={index} 
-                  className={`flex flex-col items-center ${status === "upcoming" || status === "locked" ? "opacity-50" : ""}`}
-                >
-                  {isLoadingItems ? (
-                    <div className="w-8 h-8 animate-pulse rounded bg-space-light/20" />
-                  ) : (
-                    <div className={`relative p-1 rounded-md ${
-                      getRarityColor(getItemData(reward.id || reward.type)?.rarity || 'common')
-                    }`}>
-                      <img 
-                        src={getItemData(reward.id || reward.type)?.imagePath || `/assets/${reward.id || reward.type}.png`}
-                        alt={getItemData(reward.id || reward.type)?.name || formatItemName(reward.type)}
-                        className="w-8 h-8 object-contain"
-                        onError={(e) => {
-                          // Fallback to a generic item image if the database image fails to load
-                          e.currentTarget.src = '/assets/tech-scrap.png';
-                        }}
-                      />
-                      {reward.quantity > 1 && (
-                        <span className="absolute bottom-0 right-0 bg-brand-orange/80 text-white text-xs rounded px-1">
-                          x{reward.quantity}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  <span className="text-xs mt-1 text-center">
-                    {isLoadingItems 
-                      ? formatItemName(reward.type)
-                      : getItemData(reward.id || reward.type)?.name || formatItemName(reward.type)
+                      : getLootBoxData(lootBox.id || '', lootBox.type)?.name || formatItemName(lootBox.type)
                     }
                   </span>
                 </div>
