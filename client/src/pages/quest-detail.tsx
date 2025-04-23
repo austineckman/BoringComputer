@@ -88,6 +88,12 @@ export default function QuestDetailPage() {
     enabled: !!questId, // Only fetch when we have a quest ID
   });
   
+  // Fetch loot boxes for reward display
+  const lootBoxesQuery = useQuery({
+    queryKey: ['/api/admin/lootboxes'],
+    enabled: !!questId, // Only fetch when we have a quest ID
+  });
+  
   // Start editing mode
   const handleStartEdit = () => {
     // Initialize content fields if not present
