@@ -12,6 +12,7 @@ import { openLootBox, generateLootBoxRewards, LootBoxType } from './lootBoxSyste
 import { getItemDetails } from './itemDatabase';
 import * as craftingRecipeRoutes from './routes/craftingRecipes';
 import adminRoutes from './routes/admin';
+import characterRoutes from './routes/character';
 
 // Setup authentication middleware
 const authenticate = async (req: Request, res: Response, next: Function) => {
@@ -1363,6 +1364,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/crafting/recipes/:id', authenticate, adminAuth, craftingRecipeRoutes.deleteCraftingRecipe);
   app.post('/api/crafting/craft', authenticate, craftingRecipeRoutes.craftItem);
   
+  // Character equipment routes
+  app.use('/api/character', authenticate, characterRoutes);
+
   // Admin routes
   app.use('/api/admin', authenticate, adminRoutes);
   
