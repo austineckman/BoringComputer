@@ -10,6 +10,8 @@ import Forge from "@/pages/forge";
 import Achievements from "@/pages/achievements";
 import Settings from "@/pages/settings";
 import Admin from "@/pages/admin";
+import AdminItems from "@/pages/admin-items";
+import AdminRecipes from "@/pages/admin-recipes";
 import AdminSimple from "@/pages/admin-simple";
 import AdminBasic from "@/pages/admin-basic";
 import NotFound from "@/pages/not-found";
@@ -131,6 +133,14 @@ function App() {
         
         <AdminRoute path="/admin">
           <Admin />
+        </AdminRoute>
+        
+        <AdminRoute path="/admin-items">
+          <AdminItems />
+        </AdminRoute>
+        
+        <AdminRoute path="/admin-recipes">
+          <AdminRecipes />
         </AdminRoute>
         
         <AdminRoute path="/admin-basic">
