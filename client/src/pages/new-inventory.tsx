@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Clock, Gift, Loader2, ArrowUpDown } from 'lucide-react';
+import { Clock, Gift, Loader2 } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -292,49 +292,53 @@ export default function Inventory() {
     );
   };
   
-  // Combine resources with loot boxes to display in grid
-  const allInventoryItems: {type: string, quantity: number, isLootBox?: boolean, lootBoxData?: LootBox}[] = [];
-  
-  if (resources) {
-    resources.forEach((resource: Resource) => {
-      allInventoryItems.push({
-        type: resource.type,
-        quantity: resource.quantity
-      });
-    });
-  }
-  
-  // Add loot boxes to inventory items
-  if (lootBoxes) {
-    const unopenedLootBoxes = lootBoxes.filter((box: LootBox) => !box.opened);
+  // Memoize inventory items to prevent infinite updates
+  const allInventoryItems = useMemo(() => {
+    const items: {type: string, quantity: number, isLootBox?: boolean, lootBoxData?: LootBox}[] = [];
     
-    // Group unopened loot boxes by type
-    const groupedBoxes: Record<string, {count: number, boxes: LootBox[]}> = {};
-    unopenedLootBoxes.forEach((box: LootBox) => {
-      const boxType = `${box.type}-loot-box`;
-      if (!groupedBoxes[boxType]) {
-        groupedBoxes[boxType] = { count: 0, boxes: [] };
-      }
-      groupedBoxes[boxType].count += 1;
-      groupedBoxes[boxType].boxes.push(box);
-    });
-    
-    // Add grouped loot boxes to inventory
-    Object.keys(groupedBoxes).forEach(boxType => {
-      allInventoryItems.push({
-        type: boxType,
-        quantity: groupedBoxes[boxType].count,
-        isLootBox: true,
-        lootBoxData: groupedBoxes[boxType].boxes[0] // Use first box for display
+    if (resources) {
+      resources.forEach((resource: Resource) => {
+        items.push({
+          type: resource.type,
+          quantity: resource.quantity
+        });
       });
-    });
-  }
+    }
+    
+    // Add loot boxes to inventory items
+    if (lootBoxes) {
+      const unopenedLootBoxes = lootBoxes.filter((box: LootBox) => !box.opened);
+      
+      // Group unopened loot boxes by type
+      const groupedBoxes: Record<string, {count: number, boxes: LootBox[]}> = {};
+      unopenedLootBoxes.forEach((box: LootBox) => {
+        const boxType = `${box.type}-loot-box`;
+        if (!groupedBoxes[boxType]) {
+          groupedBoxes[boxType] = { count: 0, boxes: [] };
+        }
+        groupedBoxes[boxType].count += 1;
+        groupedBoxes[boxType].boxes.push(box);
+      });
+      
+      // Add grouped loot boxes to inventory
+      Object.keys(groupedBoxes).forEach(boxType => {
+        items.push({
+          type: boxType,
+          quantity: groupedBoxes[boxType].count,
+          isLootBox: true,
+          lootBoxData: groupedBoxes[boxType].boxes[0] // Use first box for display
+        });
+      });
+    }
+    
+    return items;
+  }, [resources, lootBoxes]);
   
   // Create a grid with empty slots for WoW-style guild bank
   const totalSlots = 42; // 7x6 grid
   const [inventoryGrid, setInventoryGrid] = useState<Array<{type: string, quantity: number, isLootBox?: boolean, lootBoxData?: LootBox} | null>>(Array(totalSlots).fill(null));
   
-  // Simply load all items into the grid when inventory changes
+  // Simply load all items into the grid when inventory items change
   useEffect(() => {
     const newGrid = Array(totalSlots).fill(null);
     allInventoryItems.forEach((item, index) => {
@@ -343,6 +347,7 @@ export default function Inventory() {
       }
     });
     setInventoryGrid(newGrid);
+  // Now we can use allInventoryItems directly since it's memoized
   }, [allInventoryItems, totalSlots]);
   
   // Function to move an item from one position to another
@@ -503,48 +508,10 @@ export default function Inventory() {
             <div className="flex items-center justify-between border-b border-space-light/20 pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-semibold text-brand-orange">Inventory</h3>
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  className="gap-1 text-xs border-brand-orange/30 hover:bg-brand-orange/10"
-                  onClick={() => {
-                    // Sort items by rarity
-                    setInventoryGrid(prevGrid => {
-                      const newGrid = [...prevGrid];
-                      return newGrid.sort((a, b) => {
-                        if (!a && !b) return 0;
-                        if (!a) return 1;
-                        if (!b) return -1;
-                        
-                        const rarityOrder = {
-                          'legendary': 0,
-                          'epic': 1,
-                          'rare': 2,
-                          'uncommon': 3,
-                          'common': 4
-                        };
-                        
-                        const rarityA = getItemDetails(a.type).rarity;
-                        const rarityB = getItemDetails(b.type).rarity;
-                        
-                        return rarityOrder[rarityA] - rarityOrder[rarityB];
-                      });
-                    });
-                    
-                    try {
-                      sounds.click();
-                    } catch (e) {
-                      console.warn('Could not play sound', e);
-                    }
-                  }}
-                >
-                  <ArrowUpDown size={14} />
-                  <span>Sort by Rarity</span>
-                </Button>
               </div>
               
-              <div className="text-xs text-brand-light/60 hidden md:block">
-                <span className="mr-4">Total Items: {allInventoryItems.length}/{totalSlots}</span>
+              <div className="text-xs text-brand-light/60">
+                <span>Total Items: {allInventoryItems.length}/{totalSlots}</span>
               </div>
             </div>
             
