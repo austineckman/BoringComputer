@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { apiRequest } from '@/lib/queryClient';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import { toast } from '@/hooks/use-toast';
 
 // UI Components
@@ -20,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Trash2, Plus, Edit, X, Image, Upload, ChevronDown, ChevronUp } from 'lucide-react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
+import AdminLayout from '@/components/admin/AdminLayout';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Validation schema for loot box configuration
@@ -72,7 +72,7 @@ const AdminLootBoxesPage: React.FC = () => {
   });
 
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
 
   // Form setup
   const form = useForm<LootBoxConfig>({
@@ -94,7 +94,7 @@ const AdminLootBoxesPage: React.FC = () => {
   // Create mutation
   const createMutation = useMutation({
     mutationFn: (data: LootBoxConfig) => 
-      apiRequest('/api/admin/lootboxes', { method: 'POST', data }),
+      apiRequest('/api/admin/lootboxes', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/lootboxes'] });
       toast({ title: "Success", description: "Loot box configuration created successfully" });
@@ -114,7 +114,7 @@ const AdminLootBoxesPage: React.FC = () => {
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: (data: LootBoxConfig) => 
-      apiRequest(`/api/admin/lootboxes/${data.id}`, { method: 'PUT', data }),
+      apiRequest(`/api/admin/lootboxes/${data.id}`, 'PUT', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/lootboxes'] });
       toast({ title: "Success", description: "Loot box configuration updated successfully" });
@@ -134,7 +134,7 @@ const AdminLootBoxesPage: React.FC = () => {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: (id: string) => 
-      apiRequest(`/api/admin/lootboxes/${id}`, { method: 'DELETE' }),
+      apiRequest(`/api/admin/lootboxes/${id}`, 'DELETE'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/lootboxes'] });
       toast({ title: "Success", description: "Loot box configuration deleted successfully" });

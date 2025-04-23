@@ -14,6 +14,7 @@ import Admin from "@/pages/admin";
 import AdminItems from "@/pages/admin-items";
 import AdminRecipes from "@/pages/admin-recipes";
 import AdminQuests from "@/pages/admin-quests";
+import AdminLootboxes from "@/pages/admin-lootboxes";
 import AdminSimple from "@/pages/admin-simple";
 import AdminBasic from "@/pages/admin-basic";
 import NotFound from "@/pages/not-found";
@@ -153,6 +154,10 @@ function App() {
         
         <AdminRoute path="/admin-quests">
           <AdminQuests />
+        </AdminRoute>
+        
+        <AdminRoute path="/admin-lootboxes">
+          <AdminLootboxes />
         </AdminRoute>
         
         <AdminRoute path="/admin-basic">
