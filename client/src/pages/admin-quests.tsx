@@ -164,7 +164,8 @@ const AdminQuests: React.FC = () => {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [codeBlocks, setCodeBlocks] = useState<{language: string, code: string}[]>([]);
   const [newVideoUrl, setNewVideoUrl] = useState('');
-  const [newImageUrl, setNewImageUrl] = useState('');
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [newCodeLanguage, setNewCodeLanguage] = useState('javascript');
   const [newCodeContent, setNewCodeContent] = useState('');
   
@@ -308,10 +309,49 @@ const AdminQuests: React.FC = () => {
     setVideoUrls(videoUrls.filter((_, i) => i !== index));
   };
 
-  const addImageUrl = () => {
-    if (newImageUrl && newImageUrl.trim()) {
-      setImageUrls([...imageUrls, newImageUrl.trim()]);
-      setNewImageUrl('');
+  const handleImageUpload = async () => {
+    if (!selectedImageFile) return;
+    
+    try {
+      setUploadingImage(true);
+      
+      const formData = new FormData();
+      formData.append('image', selectedImageFile);
+      
+      const response = await fetch('/api/admin/upload-image', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+      
+      const data = await response.json();
+      
+      if (data.url) {
+        // Add the image URL to our list of images
+        setImageUrls([...imageUrls, data.url]);
+        
+        // Clear the selected file
+        setSelectedImageFile(null);
+        
+        toast({
+          title: 'Image uploaded',
+          description: 'The image was uploaded successfully.',
+          variant: 'default',
+        });
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to upload image. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -417,7 +457,8 @@ const AdminQuests: React.FC = () => {
     setCodeBlocks([]);
     setLootBoxRewards([]);
     setNewVideoUrl('');
-    setNewImageUrl('');
+    setSelectedImageFile(null);
+    setUploadingImage(false);
     setNewCodeContent('');
     setNewRewardType('');
     setNewRewardQuantity(1);
