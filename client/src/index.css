@@ -9,14 +9,20 @@
   0% {
     transform: translateX(800%);
   }
-  70% {
-    transform: translateX(-800%);
+  60% {
+    transform: translateX(-300%);
   }
-  90% {
+  85% {
+    transform: translateX(-55%);
+  }
+  92% {
     transform: translateX(-51%);
   }
-  95% {
+  96% {
     transform: translateX(-50.5%);
+  }
+  98% {
+    transform: translateX(-50.2%);
   }
   100% {
     transform: translateX(-50%);

@@ -106,9 +106,9 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
     const { itemDropTable } = lootBoxData;
     if (!itemDropTable || !items) return [];
     
-    // Create an array with 50 random items for scrolling (more items make the animation smoother)
+    // Create an array with 150 random items for scrolling (more items make the animation smoother and longer)
     const scrollItems = [];
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 150; i++) {
       // For variety in the animation, we'll use the full item table
       const randomIndex = Math.floor(Math.random() * itemDropTable.length);
       const item = itemDropTable[randomIndex];
@@ -118,12 +118,29 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
           Math.random() * (item.maxQuantity - item.minQuantity + 1) + item.minQuantity
         );
         
-        scrollItems.push({
-          itemId: item.itemId,
-          quantity: randomQuantity
-        });
+        // Add a small percentage of "special" rare items for excitement
+        if (Math.random() < 0.1) {  // 10% chance for a rare item
+          const rareItems = ['RareCrown', 'gizbos', 'circuit-board', 'sensor-crystal'];
+          const randomRareItem = rareItems[Math.floor(Math.random() * rareItems.length)];
+          
+          scrollItems.push({
+            itemId: randomRareItem,
+            quantity: 1
+          });
+        } else {
+          scrollItems.push({
+            itemId: item.itemId,
+            quantity: randomQuantity
+          });
+        }
       }
     }
+    
+    // Make sure the last item is the actual reward, which will be replaced later
+    scrollItems.push({
+      itemId: 'metal', // Placeholder, will be replaced
+      quantity: 1      // Placeholder, will be replaced
+    });
     
     return scrollItems;
   };
@@ -239,7 +256,7 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
             <DialogTitle className="text-2xl">Opening Loot Box</DialogTitle>
           </DialogHeader>
           
-          <div className="relative w-full overflow-hidden bg-black/50 border-2 border-brand-orange/50 rounded-lg p-4 mb-4" style={{ height: '250px' }}>
+          <div className="relative w-full overflow-hidden bg-gradient-to-b from-black/70 via-black/50 to-black/70 border-2 border-brand-orange/70 rounded-lg p-4 mb-4" style={{ height: '280px', boxShadow: 'inset 0 0 15px rgba(255, 140, 0, 0.2)' }}>
             {/* Loot Crate Image */}
             <div className="absolute inset-0 flex items-center justify-center opacity-20">
               <img 
@@ -304,10 +321,39 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
                       }
                     })();
                     
-                    // Middle item (the potential winner) should be larger
+                    const rarityBgClass = (() => {
+                      switch(itemRarity) {
+                        case 'common': return 'bg-gray-800';
+                        case 'uncommon': return 'bg-green-900/40';
+                        case 'rare': return 'bg-blue-900/40';
+                        case 'epic': return 'bg-purple-900/40';
+                        case 'legendary': return 'bg-amber-900/40';
+                        default: return 'bg-gray-800';
+                      }
+                    })();
+                    
+                    const rarityAnimationClass = (() => {
+                      switch(itemRarity) {
+                        case 'common': return '';
+                        case 'uncommon': return '';
+                        case 'rare': return 'animate-pulse-slow';
+                        case 'epic': return 'animate-pulse';
+                        case 'legendary': return 'animate-ping-slow';
+                        default: return '';
+                      }
+                    })();
+                    
+                    // Special styling for the final winning item
                     const isLastItem = index === scrollItems.length - 1;
-                    const itemSize = isLastItem ? 'w-24 h-24' : 'w-16 h-16';
-                    const itemClasses = isLastItem ? 'z-10 scale-125 shadow-lg shadow-brand-orange/50' : '';
+                    const itemSize = isLastItem ? 'w-28 h-28' : 'w-16 h-16';
+                    
+                    // Add some visual excitement - scale items at certain indices
+                    const isSpecialPosition = index % 10 === 0;
+                    const specialScale = isSpecialPosition ? 'scale-110' : '';
+                    
+                    const itemClasses = isLastItem 
+                      ? 'z-10 scale-125 shadow-lg shadow-brand-orange/70' 
+                      : specialScale;
                     
                     return (
                       <div 
@@ -315,19 +361,28 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
                         className={`flex-shrink-0 mx-3 flex flex-col items-center justify-center ${itemClasses}`}
                       >
                         <div 
-                          className={`${itemSize} flex items-center justify-center rounded-md p-2 border-2 ${rarityBorderClass} bg-black/80`}
+                          className={`${itemSize} flex items-center justify-center rounded-md p-2.5 border-2 ${rarityBorderClass} ${rarityBgClass} ${rarityAnimationClass}`}
+                          style={{
+                            boxShadow: isLastItem ? '0 0 10px 3px rgba(255, 140, 0, 0.5)' : '',
+                            transform: isLastItem ? 'scale(1.3)' : '',
+                          }}
                         >
                           <img 
                             src={itemDetails?.imagePath || '/images/items/default.png'} 
                             alt={getItemName(item.itemId)}
                             className="max-w-full max-h-full object-contain"
                           />
+                          
+                          {/* Special shine effect overlay on rare+ items */}
+                          {(itemRarity === 'epic' || itemRarity === 'legendary') && (
+                            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent animate-shine rounded-md"></div>
+                          )}
                         </div>
                         <div className="text-center mt-1">
-                          <p className={`font-medium text-xs ${rarityColorClass} truncate max-w-24`}>
+                          <p className={`font-medium text-xs ${rarityColorClass} truncate max-w-24 ${isLastItem ? 'font-bold text-base' : ''}`}>
                             {getItemName(item.itemId)}
                           </p>
-                          <span className="text-xs bg-brand-orange/20 px-1 py-0.5 rounded-full text-brand-orange">
+                          <span className={`text-xs bg-brand-orange/20 px-1 py-0.5 rounded-full text-brand-orange ${isLastItem ? 'text-sm font-bold' : ''}`}>
                             ×{item.quantity}
                           </span>
                         </div>
@@ -337,7 +392,17 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
                 </div>
                 
                 {/* Fixed indicator line in the center */}
-                <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-brand-orange z-20 animate-pulse"></div>
+                <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-brand-orange z-20 animate-pulse" 
+                  style={{ 
+                    boxShadow: '0 0 8px 2px rgba(255, 140, 0, 0.7)', 
+                    transform: 'translateX(-50%)'
+                  }}
+                ></div>
+                
+                {/* Add "Winner" text above the line */}
+                <div className="absolute left-1/2 top-2 transform -translate-x-1/2 bg-brand-orange px-2 py-0.5 rounded text-xs font-bold text-black z-20">
+                  WINNER
+                </div>
               </div>
             )}
             
