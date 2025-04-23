@@ -83,12 +83,14 @@ const AdminLootBoxesPage: React.FC = () => {
   // Fetch loot box configs
   const { data: lootBoxConfigs, isLoading: isLoadingConfigs } = useQuery({
     queryKey: ['/api/admin/lootboxes'],
-    enabled: selectedTab === "list"
+    enabled: selectedTab === "list",
+    // Use the default queryFn
   });
 
   // Fetch items for dropdown
   const { data: items, isLoading: isLoadingItems } = useQuery({
-    queryKey: ['/api/admin/items']
+    queryKey: ['/api/admin/items'],
+    // Use the default queryFn
   });
 
   // Create mutation
