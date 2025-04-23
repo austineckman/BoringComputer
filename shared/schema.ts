@@ -30,6 +30,13 @@ export const quests = pgTable("quests", {
   difficulty: integer("difficulty").notNull(),
   orderInLine: integer("order_in_line").notNull().default(0), // New field for sequential ordering
   xpReward: integer("xp_reward").notNull().default(100), // New field for XP rewards
+  // Updated rewards structure to support different types of rewards
+  rewards: json("rewards").$type<{
+    type: 'lootbox' | 'item' | 'equipment', // Type of reward
+    id: string,                            // ID of the item or lootbox
+    quantity: number                       // Quantity to give
+  }[]>().default([]),
+  // Keep backward compatibility
   lootBoxRewards: json("loot_box_rewards").$type<{type: string, quantity: number}[]>().default([]),
   active: boolean("active").default(true), // Changed default to true
   // Quest page content
@@ -219,7 +226,8 @@ export const insertQuestSchema = createInsertSchema(quests).pick({
   difficulty: true,
   orderInLine: true,
   xpReward: true,
-  lootBoxRewards: true,
+  rewards: true,          // New field for item-linked rewards
+  lootBoxRewards: true,   // Keep for backward compatibility
   content: true,
   active: true,
 });
