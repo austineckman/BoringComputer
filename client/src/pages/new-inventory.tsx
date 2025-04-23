@@ -398,9 +398,20 @@ export default function Inventory() {
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-brand-light/80 italic mb-4">
+                <p className="text-sm text-brand-light/80 italic mb-2">
                   {getItemDetails(selectedItem.type).flavorText}
                 </p>
+                
+                {/* Equipment slot indicator - only show for equippable items */}
+                {getItemDetails(selectedItem.type).isEquippable && (
+                  <div className="flex items-center gap-2 mb-3 p-2 bg-brand-orange/10 rounded-md border border-brand-orange/20">
+                    <span className="text-sm text-brand-yellow">Equipment Slot:</span>
+                    <span className="text-sm font-semibold text-brand-light px-2 py-0.5 bg-brand-dark rounded-md capitalize">
+                      {getItemDetails(selectedItem.type).equipSlot || 'Unknown'}
+                    </span>
+                  </div>
+                )}
+                
                 <Button 
                   variant="ghost"
                   size="sm"
@@ -483,8 +494,14 @@ export default function Inventory() {
                                     />
                                   </div>
                                 ) : (
-                                  <div className="w-full h-full flex items-center justify-center">
+                                  <div className="w-full h-full flex items-center justify-center relative">
                                     {renderResourceIcon(item.type)}
+                                    {/* Equipment icon badge - only for equippable items */}
+                                    {getItemDetails(item.type).isEquippable && (
+                                      <div className="absolute top-0 left-0 w-3 h-3 rounded-full bg-brand-yellow border border-brand-dark" 
+                                           title={`Equippable: ${getItemDetails(item.type).equipSlot}`}>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -507,6 +524,15 @@ export default function Inventory() {
                             <p className="text-xs text-brand-yellow">
                               Quantity: {item.quantity}
                             </p>
+                            {/* Show equipment slot in tooltip */}
+                            {getItemDetails(item.type).isEquippable && (
+                              <div className="mt-1 flex items-center gap-1.5 text-xs">
+                                <span className="w-2 h-2 rounded-full bg-brand-yellow"></span>
+                                <span className="text-brand-light/80">
+                                  Equips to: <span className="text-brand-light font-medium capitalize">{getItemDetails(item.type).equipSlot}</span>
+                                </span>
+                              </div>
+                            )}
                             {item.isLootBox && (
                               <Button 
                                 variant="outline" 
@@ -539,8 +565,14 @@ export default function Inventory() {
                             onClick={() => handleItemClick(item)}
                           >
                             <div className="flex items-center justify-center h-full">
-                              <div className="w-full h-full flex items-center justify-center">
+                              <div className="w-full h-full flex items-center justify-center relative">
                                 {renderResourceIcon(item.type)}
+                                {/* Equipment icon badge - only for equippable items */}
+                                {getItemDetails(item.type).isEquippable && (
+                                  <div className="absolute top-0 left-0 w-3 h-3 rounded-full bg-brand-yellow border border-brand-dark" 
+                                       title={`Equippable: ${getItemDetails(item.type).equipSlot}`}>
+                                  </div>
+                                )}
                               </div>
                             </div>
                             <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
@@ -559,6 +591,15 @@ export default function Inventory() {
                             <p className="text-xs text-brand-yellow">
                               Quantity: {item.quantity}
                             </p>
+                            {/* Show equipment slot in tooltip */}
+                            {getItemDetails(item.type).isEquippable && (
+                              <div className="mt-1 flex items-center gap-1.5 text-xs">
+                                <span className="w-2 h-2 rounded-full bg-brand-yellow"></span>
+                                <span className="text-brand-light/80">
+                                  Equips to: <span className="text-brand-light font-medium capitalize">{getItemDetails(item.type).equipSlot}</span>
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </TooltipContent>
                       </Tooltip>

@@ -19,6 +19,8 @@ export interface ItemDetails {
   imagePath: string;
   category?: string;
   usageDescription?: string;
+  isEquippable?: boolean;
+  equipSlot?: 'head' | 'torso' | 'legs' | 'hands' | 'accessory';
 }
 
 // Fallback item database with basic items (used only when server items aren't loaded yet)
