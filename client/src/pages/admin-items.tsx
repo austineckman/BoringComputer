@@ -383,6 +383,7 @@ const AdminItems: React.FC = () => {
             {filteredItems.map((item: Item) => (
               <Card key={item.id} className="overflow-hidden">
                 <div className="relative aspect-video overflow-hidden bg-muted">
+                  {/* Display the item image when available, trying different possible image path formats */}
                   {item.image ? (
                     <img
                       src={item.image.startsWith('http') ? item.image : `/uploads/items/${item.image}`}
