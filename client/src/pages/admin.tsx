@@ -70,8 +70,6 @@ export default function AdminPage() {
   const sounds = soundContext?.sounds || { click: () => {}, success: () => {}, error: () => {} };
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('quests');
-  const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Queries for each resource type
@@ -232,37 +230,7 @@ export default function AdminPage() {
     );
   };
   
-  // Mutation for updating an item
-  const updateItemMutation = useMutation({
-    mutationFn: async (item: any) => {
-      const res = await apiRequest('PUT', `/api/admin/items/${item.id}`, item);
-      return await res.json();
-    },
-    onSuccess: () => {
-      sounds.success();
-      toast({
-        title: 'Success',
-        description: 'Item updated successfully.',
-      });
-      // Close the dialog
-      setEditDialogOpen(false);
-      setSelectedItem(null);
-      
-      // Invalidate both admin items and regular inventory queries to ensure both views are updated
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/items'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
-    },
-    onError: (error: Error) => {
-      sounds.error();
-      toast({
-        title: 'Error',
-        description: `Failed to update item: ${error.message}`,
-        variant: 'destructive',
-      });
-    }
-  });
-
-  // Handle image upload
+  // Handle image upload utility function
   const handleImageUpload = async (file: File, itemId: string) => {
     try {
       // Create a FormData object
@@ -293,71 +261,99 @@ export default function AdminPage() {
     }
   };
 
-  const handleOpenEditDialog = (item: any) => {
-    sounds.click();
-    // Create a clean copy of the item to prevent issues with direct manipulation
-    if (item && item.id) {
-      // Only copy the properties we need for the form
-      const itemCopy = {
-        id: item.id,
-        name: item.name || '',
-        description: item.description || '',
-        flavorText: item.flavorText || '',
-        rarity: item.rarity || 'common',
-        category: item.category || '',
-        imagePath: item.imagePath || '',
-        craftingUses: Array.isArray(item.craftingUses) ? [...item.craftingUses] : []
-      };
-      setSelectedItem(itemCopy);
-      setEditDialogOpen(true);
-    } else {
+  // State for new item dialog
+  const [newItemDialogOpen, setNewItemDialogOpen] = useState(false);
+  const [newItem, setNewItem] = useState({
+    id: '',
+    name: '',
+    description: '',
+    flavorText: '',
+    rarity: 'common' as 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary',
+    category: '',
+    craftingUses: []
+  });
+
+  // Create a new mutation for creating items
+  const createItemMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('POST', '/api/admin/items', data);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create item');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/items'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+      
+      // Reset form and close dialog
+      setNewItem({
+        id: '',
+        name: '',
+        description: '',
+        flavorText: '',
+        rarity: 'common',
+        category: '',
+        craftingUses: []
+      });
+      setNewItemDialogOpen(false);
+      
+      // Show success message
       toast({
-        title: "Error",
-        description: "Invalid item data",
-        variant: "destructive"
+        title: 'Success',
+        description: 'Item created successfully',
+      });
+    },
+    onError: (error: Error) => {
+      console.error('Error creating item:', error);
+      toast({
+        title: 'Error',
+        description: `Failed to create item: ${error.message}`,
+        variant: 'destructive',
       });
     }
-  };
-
-  const handleItemFormSubmit = async (data: ItemFormValues) => {
+  });
+  
+  // Function to handle new item form submission
+  const handleNewItemFormSubmit = async () => {
     try {
-      if (!data || !data.id) {
-        console.error('Invalid item data:', data);
+      // Validate required fields
+      if (!newItem.id || !newItem.name || !newItem.description) {
         toast({
           title: 'Error',
-          description: 'Item data is invalid. Please try again.',
+          description: 'ID, Name, and Description are required',
           variant: 'destructive',
         });
         return;
       }
       
-      // Create a copy of the data to prevent mutation issues
-      const itemToUpdate = { ...data };
+      // Create a copy to avoid mutation issues
+      const itemToCreate = { ...newItem };
       
-      // If there's a file selected for upload
-      if (fileInputRef.current?.files?.length) {
+      // Create the item first
+      const createdItem = await createItemMutation.mutateAsync(itemToCreate);
+      
+      // If there's a file selected for upload and item was created successfully
+      if (fileInputRef.current?.files?.length && createdItem) {
         const file = fileInputRef.current.files[0];
-        const imagePath = await handleImageUpload(file, itemToUpdate.id);
+        await handleImageUpload(file, createdItem.id);
         
-        if (imagePath) {
-          itemToUpdate.imagePath = imagePath;
-        }
+        // Refresh the items list
+        queryClient.invalidateQueries({ queryKey: ['/api/admin/items'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
       }
-      
-      console.log('Updating item with data:', itemToUpdate);
-      
-      // Update the item
-      updateItemMutation.mutate(itemToUpdate);
     } catch (error) {
       console.error('Error submitting form:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update item. Please try again.',
+        description: 'Failed to create item. Please try again.',
         variant: 'destructive',
       });
     }
   };
-
+  
   const renderItemsTab = () => {
     if (isItemsLoading) return <p className="text-center py-8">Loading items...</p>;
     if (itemsError) return <p className="text-center text-red-500 py-8">Error loading items</p>;
@@ -387,7 +383,13 @@ export default function AdminPage() {
               </SelectContent>
             </Select>
           </div>
-          <Button className="bg-primary hover:bg-primary/90" onClick={() => sounds.click()}>
+          <Button 
+            className="bg-primary hover:bg-primary/90" 
+            onClick={() => {
+              sounds.click();
+              setNewItemDialogOpen(true);
+            }}
+          >
             <Plus className="h-4 w-4 mr-2" /> Add Item
           </Button>
         </div>
@@ -400,14 +402,6 @@ export default function AdminPage() {
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">{item.name}</CardTitle>
                     <div className="flex gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8" 
-                        onClick={() => handleOpenEditDialog(item)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
                       <Button 
                         variant="ghost" 
                         size="icon" 
@@ -456,121 +450,110 @@ export default function AdminPage() {
           )}
         </div>
 
-        {/* Edit Item Dialog */}
-        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        {/* Create New Item Dialog */}
+        <Dialog open={newItemDialogOpen} onOpenChange={setNewItemDialogOpen}>
           <DialogContent className="sm:max-w-[560px]">
             <DialogHeader>
-              <DialogTitle>Edit Item</DialogTitle>
+              <DialogTitle>Create New Item</DialogTitle>
               <DialogDescription>
-                Make changes to the item details. Click save when you're done.
+                Fill in the details to create a new item.
               </DialogDescription>
             </DialogHeader>
             
-            {selectedItem && (
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    defaultValue={selectedItem.name}
-                    className="col-span-3"
-                    onChange={(e) => setSelectedItem({...selectedItem, name: e.target.value})}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    defaultValue={selectedItem.description}
-                    className="col-span-3"
-                    onChange={(e) => setSelectedItem({...selectedItem, description: e.target.value})}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="flavorText">Flavor Text (Optional)</Label>
-                  <Textarea
-                    id="flavorText"
-                    defaultValue={selectedItem.flavorText}
-                    className="col-span-3"
-                    onChange={(e) => setSelectedItem({...selectedItem, flavorText: e.target.value})}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="rarity">Rarity</Label>
-                  <Select 
-                    defaultValue={selectedItem.rarity}
-                    onValueChange={(value) => setSelectedItem({...selectedItem, rarity: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select rarity" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="common">Common</SelectItem>
-                      <SelectItem value="uncommon">Uncommon</SelectItem>
-                      <SelectItem value="rare">Rare</SelectItem>
-                      <SelectItem value="epic">Epic</SelectItem>
-                      <SelectItem value="legendary">Legendary</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category (Optional)</Label>
-                  <Input
-                    id="category"
-                    defaultValue={selectedItem.category}
-                    className="col-span-3"
-                    onChange={(e) => setSelectedItem({...selectedItem, category: e.target.value})}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="image">Item Image</Label>
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1">
-                      <Input
-                        id="image"
-                        type="file"
-                        accept="image/*"
-                        ref={fileInputRef}
-                        className="col-span-3"
-                      />
-                    </div>
-                    {selectedItem.imagePath && (
-                      <div className="flex-shrink-0 h-16 w-16 bg-muted rounded-md overflow-hidden">
-                        <img 
-                          src={selectedItem.imagePath} 
-                          alt={selectedItem.name} 
-                          className="h-full w-full object-cover" 
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="newId">ID (unique identifier)</Label>
+                <Input
+                  id="newId"
+                  value={newItem.id}
+                  className="col-span-3"
+                  onChange={(e) => setNewItem({...newItem, id: e.target.value})}
+                  placeholder="e.g., copper, techscrap, crystal"
+                />
               </div>
-            )}
+              
+              <div className="space-y-2">
+                <Label htmlFor="newName">Name</Label>
+                <Input
+                  id="newName"
+                  value={newItem.name}
+                  className="col-span-3"
+                  onChange={(e) => setNewItem({...newItem, name: e.target.value})}
+                  placeholder="e.g., Copper, Tech Scrap, Crystal"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="newDescription">Description</Label>
+                <Textarea
+                  id="newDescription"
+                  value={newItem.description}
+                  className="col-span-3"
+                  onChange={(e) => setNewItem({...newItem, description: e.target.value})}
+                  placeholder="Describe the item's purpose and appearance"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="newFlavorText">Flavor Text (Optional)</Label>
+                <Textarea
+                  id="newFlavorText"
+                  value={newItem.flavorText}
+                  className="col-span-3"
+                  onChange={(e) => setNewItem({...newItem, flavorText: e.target.value})}
+                  placeholder="Add some flavor text or lore for the item"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="newRarity">Rarity</Label>
+                <Select 
+                  value={newItem.rarity}
+                  onValueChange={(value: any) => setNewItem({...newItem, rarity: value})}
+                >
+                  <SelectTrigger id="newRarity">
+                    <SelectValue placeholder="Select rarity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="common">Common</SelectItem>
+                    <SelectItem value="uncommon">Uncommon</SelectItem>
+                    <SelectItem value="rare">Rare</SelectItem>
+                    <SelectItem value="epic">Epic</SelectItem>
+                    <SelectItem value="legendary">Legendary</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="newCategory">Category (Optional)</Label>
+                <Input
+                  id="newCategory"
+                  value={newItem.category}
+                  className="col-span-3"
+                  onChange={(e) => setNewItem({...newItem, category: e.target.value})}
+                  placeholder="e.g., Resource, Material, Component"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="newImage">Item Image</Label>
+                <Input
+                  id="newImage"
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  className="col-span-3"
+                />
+              </div>
+            </div>
             
             <DialogFooter>
-              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setNewItemDialogOpen(false)}>Cancel</Button>
               <Button 
-                onClick={() => {
-                  if (selectedItem && selectedItem.id) {
-                    // Handle the form submission carefully
-                    handleItemFormSubmit({...selectedItem});
-                  } else {
-                    toast({
-                      title: "Error",
-                      description: "No item selected or item data is invalid",
-                      variant: "destructive"
-                    });
-                  }
-                }} 
-                disabled={updateItemMutation.isPending || !selectedItem}
+                onClick={handleNewItemFormSubmit} 
+                disabled={createItemMutation.isPending}
               >
-                {updateItemMutation.isPending ? "Saving..." : "Save changes"}
+                {createItemMutation.isPending ? "Creating..." : "Create Item"}
               </Button>
             </DialogFooter>
           </DialogContent>
