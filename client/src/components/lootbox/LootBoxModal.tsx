@@ -216,26 +216,52 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
         setSelectedReward(data.rewards[0]);
         console.log("Selected reward:", data.rewards[0]);
         
-        // Generate scrolling items with the ACTUAL reward at the end
-        const baseScrollItems = generateScrollItems();
-        // Replace the last item with the actual reward
-        baseScrollItems[baseScrollItems.length - 1] = {
-          itemId: data.rewards[0].type,
-          quantity: data.rewards[0].quantity
-        };
-        console.log("Generated scroll items with correct reward at end:", baseScrollItems);
-        setScrollItems(baseScrollItems);
+        // Generate 120 scroll items using actual drop table items
+        const baseItems = lootBoxData?.itemDropTable?.map(item => item.itemId) || [];
+        const fallbackItems = ['metal', 'cloth', 'tech-scrap']; 
+        const itemPool = baseItems.length > 0 ? baseItems : fallbackItems;
+        
+        // Generate a random array of items
+        const generatedItems = Array.from({ length: 120 }, () => {
+          const randomIndex = Math.floor(Math.random() * itemPool.length);
+          const randomItem = itemPool[randomIndex];
+          const randomQuantity = Math.floor(Math.random() * 3) + 1; // 1-3
+          
+          return {
+            itemId: randomItem,
+            quantity: randomQuantity
+          };
+        });
+        
+        // Add 3 copies of the winning item near the end
+        generatedItems.push(
+          {
+            itemId: data.rewards[0].type,
+            quantity: data.rewards[0].quantity
+          },
+          {
+            itemId: data.rewards[0].type,
+            quantity: data.rewards[0].quantity
+          },
+          {
+            itemId: data.rewards[0].type,
+            quantity: data.rewards[0].quantity
+          }
+        );
+        
+        // Set the scroll items
+        console.log("Generated scroll items with winning item:", data.rewards[0].type);
+        setScrollItems(generatedItems);
         
         // Start the animation
-        console.log("Starting animation with known reward");
         setIsAnimating(true);
         
-        // After 20 seconds (longer for a better unboxing experience), show the final reward
+        // Use 7 seconds for animation - matches the CSS transition duration
         setTimeout(() => {
-          console.log("Animation timeout completed, showing final reward");
+          console.log("Animation completed, showing final reward");
           setIsAnimating(false);
           setShowFinalReward(true);
-        }, 20000);
+        }, 7000);
       } else {
         console.error("Error from API:", data);
         // Stop animation if there's an error
@@ -337,12 +363,13 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
                   ref={scrollContainerRef}
                   className="flex items-center justify-center py-6" 
                   style={{ 
-                    transition: 'transform 20s cubic-bezier(.3,.1,.4,1)',
-                    transform: 'translateX(0)',
                     willChange: 'transform',
-                    animation: 'scrollItems 20s cubic-bezier(.3,.1,.4,1) forwards',
-                    padding: '0 400px', // Add padding to ensure items are visible from the start
                     position: 'relative',
+                    transition: 'transform 7s cubic-bezier(0.23, 1, 0.32, 1)',
+                    transform: isAnimating 
+                      ? `translateX(-${(scrollItems.length - 10) * 84}px)` 
+                      : 'translateX(0px)',
+                    padding: '0 450px', // Padding to ensure items are visible at the start
                   }}
                 >
                   {scrollItems.map((item, index) => {
