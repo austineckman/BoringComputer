@@ -1,45 +1,54 @@
-// Utility functions for managing assets like images
+// Helper functions for asset path handling and image resources
 
-// Return the loot crate image path
-export function getLootCrateImage() {
+/**
+ * Get the correct image path and alt text for a loot crate
+ */
+export function getLootCrateImage(rarity: string = 'common') {
+  // In a more advanced implementation, we could have different images for different rarities
   return {
-    src: '/images/loot crate.png',
-    alt: 'Loot Crate'
+    src: '/images/loot-crate.png',
+    alt: `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} Loot Crate`,
   };
 }
 
-// Function to get character image path
-export function getCharacterImage() {
-  return {
-    src: '/images/basecharacter.png',
-    alt: 'Character'
-  };
+/**
+ * Get character image path
+ */
+export function getCharacterImagePath() {
+  // In the future, this could be customized based on equipped items
+  return '/images/basecharacter.png';
 }
 
-// Function to get background image path
-export function getBackgroundImage() {
-  return {
-    src: '/images/wallbg.png',
-    alt: 'Background'
-  };
+/**
+ * Get the background image path
+ */
+export function getBackgroundImagePath() {
+  return '/images/wallbg.png';
 }
 
-// Function to map item types to image paths
-export function getItemImagePath(itemType: string): string {
-  const itemImages: Record<string, string> = {
-    'cloth': '/images/cloth.png',
-    'metal': '/images/copper.png',
-    'tech-scrap': '/images/techscrap.png',
-    'circuit-board': '/images/circuit board.png',
-    'sensor-crystal': '/images/crystal.png',
-    'alchemy-ink': '/images/ink.png',
-    'forgehero-codex': '/images/forgehero.png',
-    'elementium-bar': '/images/neon-realm-pixelart.png',
-    'power-crystal': '/images/pandora-pixelart.png',
-    'cogsworth-gear': '/images/cogsworth-pixelart.png',
-    'nebula-essence': '/images/nebula-pixelart.png',
-    // Add more mappings as needed
-  };
+/**
+ * Format image path for consistent usage across components
+ */
+export function formatImagePath(path: string): string {
+  // Remove leading slash if it exists to ensure consistent paths
+  if (path.startsWith('/')) {
+    path = path.slice(1);
+  }
   
-  return itemImages[itemType] || '/images/loot crate.png'; // Default fallback image
+  // Add public prefix if needed
+  if (!path.startsWith('images/') && !path.startsWith('public/')) {
+    path = `images/${path}`;
+  }
+  
+  return path;
+}
+
+/**
+ * Check if an image path exists and return a fallback if not
+ */
+export function safeImagePath(path: string, fallback: string = '/images/missing.png'): string {
+  // In a browser environment, we can't easily check if an image exists before loading
+  // For now, we'll just return the path as is, but in a more robust implementation,
+  // we might add error handling or checks
+  return path || fallback;
 }

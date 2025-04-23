@@ -351,14 +351,36 @@ export default function Inventory() {
   
   // Create a grid with empty slots for WoW-style guild bank
   const totalSlots = 42; // 7x6 grid
-  const inventoryGrid = Array(totalSlots).fill(null);
+  const [inventoryGrid, setInventoryGrid] = useState<Array<{type: string, quantity: number, isLootBox?: boolean, lootBoxData?: LootBox} | null>>(Array(totalSlots).fill(null));
   
-  // Fill the grid with our items
-  filteredItems.forEach((item, index) => {
-    if (index < totalSlots) {
-      inventoryGrid[index] = item;
+  // Fill the grid with our items when filteredItems changes
+  useEffect(() => {
+    const newGrid = Array(totalSlots).fill(null);
+    filteredItems.forEach((item, index) => {
+      if (index < totalSlots) {
+        newGrid[index] = item;
+      }
+    });
+    setInventoryGrid(newGrid);
+  }, [filteredItems]);
+  
+  // Function to move an item from one position to another
+  const moveItem = useCallback((fromIndex: number, toIndex: number) => {
+    setInventoryGrid(prevGrid => {
+      const newGrid = [...prevGrid];
+      // Swap the items
+      const temp = newGrid[fromIndex];
+      newGrid[fromIndex] = newGrid[toIndex];
+      newGrid[toIndex] = temp;
+      return newGrid;
+    });
+    
+    try {
+      sounds.drop();
+    } catch (e) {
+      console.warn('Could not play sound', e);
     }
-  });
+  }, [sounds]);
   
   if (isLoadingResources || isLoadingLootBoxes || isLoadingHistory) {
     return (
@@ -496,118 +518,93 @@ export default function Inventory() {
             </div>
           )}
           
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+          {/* Inventory Header with item count */}
             <div className="flex items-center justify-between border-b border-space-light/20 pb-3 mb-4">
-              <TabsList className="bg-space-dark">
-                <TabsTrigger 
-                  value="all" 
-                  className="data-[state=active]:text-brand-orange data-[state=active]:bg-brand-orange/20"
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-brand-orange">Inventory</h3>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="gap-1 text-xs border-brand-orange/30 hover:bg-brand-orange/10"
+                  onClick={() => {
+                    // Sort items by rarity
+                    setInventoryGrid(prevGrid => {
+                      const newGrid = [...prevGrid];
+                      return newGrid.sort((a, b) => {
+                        if (!a && !b) return 0;
+                        if (!a) return 1;
+                        if (!b) return -1;
+                        
+                        const rarityOrder = {
+                          'legendary': 0,
+                          'epic': 1,
+                          'rare': 2,
+                          'uncommon': 3,
+                          'common': 4
+                        };
+                        
+                        const rarityA = getItemDetails(a.type).rarity;
+                        const rarityB = getItemDetails(b.type).rarity;
+                        
+                        return rarityOrder[rarityA] - rarityOrder[rarityB];
+                      });
+                    });
+                    
+                    try {
+                      sounds.click();
+                    } catch (e) {
+                      console.warn('Could not play sound', e);
+                    }
+                  }}
                 >
-                  All Items
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="materials" 
-                  className="data-[state=active]:text-brand-orange data-[state=active]:bg-brand-orange/20"
-                >
-                  Materials
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="loot-boxes" 
-                  className="data-[state=active]:text-brand-orange data-[state=active]:bg-brand-orange/20"
-                >
-                  Loot Crates
-                </TabsTrigger>
-              </TabsList>
+                  <ArrowUpDown size={14} />
+                  <span>Sort by Rarity</span>
+                </Button>
+              </div>
               
               <div className="text-xs text-brand-light/60 hidden md:block">
                 <span className="mr-4">Total Items: {allInventoryItems.length}/{totalSlots}</span>
               </div>
             </div>
             
-            {/* Grid Layout View - Applies to all tabs except history */}
-            <TabsContent value="all" className="mt-0">
+            {/* Unified Grid Layout with drag-and-drop functionality */}
+            <DndProvider backend={HTML5Backend}>
               <div className="grid grid-cols-6 sm:grid-cols-7 gap-2 relative">
                 {inventoryGrid.map((item, index) => (
-                  <TooltipProvider key={index}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div 
-                          className={`aspect-square ${item ? `${getRarityColorClass(item.type)} hover:border-brand-orange/60 hover:shadow-md` : 'bg-space-dark border-space-light/10'} rounded-md p-1 relative cursor-pointer transition-all duration-200`}
-                          onMouseEnter={() => item && handleItemHover(item.type)}
-                          onClick={() => item && handleItemClick(item)}
-                        >
-                          {item && (
-                            <>
-                              <div className="flex items-center justify-center h-full">
-                                {item.isLootBox ? (
-                                  <div className={`w-full h-full flex items-center justify-center rounded-md overflow-hidden bg-space-mid`}>
-                                    <img 
-                                      src={getLootCrateImage().src} 
-                                      alt={getLootCrateImage().alt}
-                                      className="w-full h-full object-contain" 
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center relative">
-                                    {renderResourceIcon(item.type)}
-                                    {/* Equipment icon badge - only for equippable items */}
-                                    {getItemDetails(item.type).isEquippable && (
-                                      <div className="absolute top-0 left-0 w-3 h-3 rounded-full bg-brand-yellow border border-brand-dark" 
-                                           title={`Equippable: ${getItemDetails(item.type).equipSlot}`}>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
-                                {item.quantity}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </TooltipTrigger>
-                      {item && (
-                        <TooltipContent side="top" className="bg-space-dark border-brand-orange/30 text-brand-light p-3">
-                          <div className="space-y-1">
-                            <p className="font-bold capitalize text-brand-orange">
-                              {getItemDetails(item.type).name}
-                            </p>
-                            <p className="text-xs text-brand-light/70">
-                              {getItemDetails(item.type).flavorText.substring(0, 60)}...
-                            </p>
-                            <p className="text-xs text-brand-yellow">
-                              Quantity: {item.quantity}
-                            </p>
-                            {/* Show equipment slot in tooltip */}
-                            {getItemDetails(item.type).isEquippable && (
-                              <div className="mt-1 flex items-center gap-1.5 text-xs">
-                                <span className="w-2 h-2 rounded-full bg-brand-yellow"></span>
-                                <span className="text-brand-light/80">
-                                  Equips to: <span className="text-brand-light font-medium capitalize">{getItemDetails(item.type).equipSlot}</span>
-                                </span>
-                              </div>
-                            )}
-                            {item.isLootBox && (
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="mt-2 w-full bg-brand-orange/20 hover:bg-brand-orange/30 border-brand-orange/30"
-                                onClick={() => {
-                                  if (item.lootBoxData) {
-                                    setCurrentLootBox(item.lootBoxData);
-                                    setIsConfirmDialogOpen(true);
-                                  }
-                                }}
-                              >
-                                Open Crate
-                              </Button>
-                            )}
-                          </div>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </TooltipProvider>
+                  <div className="aspect-square bg-space-dark border-space-light/10 rounded-md p-1 relative" key={index}>
+                    {item ? (
+                      <DraggableInventoryItem
+                        item={item}
+                        index={index}
+                        renderResourceIcon={renderResourceIcon}
+                        handleItemHover={handleItemHover}
+                        handleItemClick={handleItemClick}
+                        moveItem={moveItem}
+                        onLootBoxOpen={(lootBox) => {
+                          setCurrentLootBox(lootBox);
+                          setIsConfirmDialogOpen(true);
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-md bg-space-dark border border-space-light/10 opacity-30"></div>
+                    )}
+                  </div>
                 ))}
+              </div>
+            </DndProvider>
+            
+            {/* Start of the tabbed version */}
+            <Tabs defaultValue="all" className="mt-6">
+              <TabsList className="bg-space-mid/30 rounded-lg mb-4 grid w-full grid-cols-4">
+                <TabsTrigger value="all" className="rounded-sm data-[state=active]:bg-space-light/10">All</TabsTrigger>
+                <TabsTrigger value="materials" className="rounded-sm data-[state=active]:bg-space-light/10">Materials</TabsTrigger>
+                <TabsTrigger value="loot-boxes" className="rounded-sm data-[state=active]:bg-space-light/10">Loot Boxes</TabsTrigger>
+                <TabsTrigger value="history" className="rounded-sm data-[state=active]:bg-space-light/10">History</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="all" className="mt-0">
+              <div className="grid grid-cols-6 sm:grid-cols-7 gap-2">
+                {/* Inventory items go here */}
               </div>
             </TabsContent>
             
