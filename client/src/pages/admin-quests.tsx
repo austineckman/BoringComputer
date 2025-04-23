@@ -469,6 +469,7 @@ const AdminQuests: React.FC = () => {
         images: imageUrls,
         codeBlocks: codeBlocks,
       },
+      heroImage: imageUrls.length > 0 ? imageUrls[0] : null, // Set the first uploaded image as hero image
       lootBoxRewards: lootBoxRewards,
       rewards: lootBoxRewards, // Add the rewards field to match server expectations
     };
