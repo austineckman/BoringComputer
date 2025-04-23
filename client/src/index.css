@@ -18,17 +18,18 @@
   60% {
     transform: translateX(-70%);
   }
-  80% {
+  85% {
     transform: translateX(-90%);
   }
+  /* Ensure the animation only slows down and never backtracks */
   90% {
-    transform: translateX(-51%);
+    transform: translateX(-47%);
   }
   95% {
-    transform: translateX(-50.5%);
+    transform: translateX(-48.5%);
   }
   98% {
-    transform: translateX(-50.2%);
+    transform: translateX(-49.5%);
   }
   100% {
     transform: translateX(-50%);
