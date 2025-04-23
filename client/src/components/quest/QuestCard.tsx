@@ -226,7 +226,7 @@ const QuestCard = ({
               ))}
             </div>
           </div>
-        ) : (
+        ) : rewards && rewards.length > 0 ? (
           /* Legacy Resource Rewards */
           <div className="mb-4">
             <span className="text-xs text-brand-light/60 block mb-2">Rewards:</span>
@@ -241,7 +241,7 @@ const QuestCard = ({
               ))}
             </div>
           </div>
-        )}
+        ) : null}
         
         {/* Action Button */}
         {getActionButton()}
