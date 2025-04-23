@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation, useRoute } from 'wouter';
 import { Button } from '@/components/ui/button';
@@ -39,6 +39,11 @@ export default function LootBoxPreview() {
   const [, setLocation] = useLocation();
   const [isOpening, setIsOpening] = useState(false);
   const [openedRewards, setOpenedRewards] = useState<Array<{type: string, quantity: number}> | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [selectedReward, setSelectedReward] = useState<{type: string, quantity: number} | null>(null);
+  const [showFinalReward, setShowFinalReward] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollItems, setScrollItems] = useState<Array<{itemId: string, quantity: number}>>([]);
 
   // Get the loot box ID from the route params
   const lootBoxId = params?.id ? parseInt(params.id) : undefined;
@@ -73,6 +78,119 @@ export default function LootBoxPreview() {
     return item ? item.name : itemId;
   };
 
+  // Generate a set of random items for the scrolling effect
+  const generateScrollItems = () => {
+    if (!itemDropTable || !items) return [];
+    
+    // Create an array with 50 random items for scrolling (more items make the animation smoother)
+    const scrollItems = [];
+    for (let i = 0; i < 50; i++) {
+      // For variety in the animation, we'll use the full item table
+      const randomIndex = Math.floor(Math.random() * itemDropTable.length);
+      const item = itemDropTable[randomIndex];
+      
+      if (item) {
+        const randomQuantity = Math.floor(
+          Math.random() * (item.maxQuantity - item.minQuantity + 1) + item.minQuantity
+        );
+        
+        scrollItems.push({
+          itemId: item.itemId,
+          quantity: randomQuantity
+        });
+      }
+    }
+    
+    return scrollItems;
+  };
+  
+  // Animation effect to scroll the items
+  useEffect(() => {
+    if (isAnimating && scrollContainerRef.current) {
+      // Start the animation
+      const container = scrollContainerRef.current;
+      container.style.transform = 'translateX(800%)';
+      
+      // Force a reflow before adding the animation class
+      void container.offsetWidth;
+      
+      // Trigger the animation
+      setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.style.animation = 'scrollItems 12s cubic-bezier(.2,0,.8,1) forwards';
+        }
+      }, 100);
+    }
+  }, [isAnimating]);
+  
+  // Start the unboxing animation
+  const startUnboxingAnimation = (rewards: Array<{type: string, quantity: number}>) => {
+    // Generate random items for the scrolling animation
+    const items = generateScrollItems();
+    
+    // Add the actual reward at the end (this will be the one that stops on)
+    // Map the rewards to the format expected by the scroll items
+    const mappedRewards = rewards.map(reward => ({
+      itemId: reward.type,
+      quantity: reward.quantity
+    }));
+    
+    // Get item details for rarity-based sorting of the scroll items
+    const sortedItems = [...items];
+    
+    // Add our items to a global variable for access during animation
+    // This is a bit of a hack, but it works well for the animation sorting
+    (window as any).itemsData = items;
+    
+    const itemsSorted = sortedItems.sort((a, b) => {
+      // Use our component's items state
+      const aDetails = items?.find((i: any) => i.id === a.itemId);
+      const bDetails = items?.find((i: any) => i.id === b.itemId);
+      
+      // Get rarity values (numerical - higher is more rare)
+      const rarityValue = (rarity: string) => {
+        switch(rarity) {
+          case 'legendary': return 5;
+          case 'epic': return 4;
+          case 'rare': return 3;
+          case 'uncommon': return 2;
+          case 'common': return 1;
+          default: return 0;
+        }
+      };
+      
+      return rarityValue(bDetails?.rarity || 'common') - rarityValue(aDetails?.rarity || 'common');
+    });
+    
+    // Ensure we have enough items for the animation (at least 30)
+    const itemsArray = [];
+    while (itemsArray.length < 30) {
+      itemsArray.push(...sortedItems);
+    }
+    
+    // We'll show just the first reward at the position that will stop in the center
+    const finalItem = mappedRewards[0];
+    
+    // Place the final item at a strategic position to ensure it lands in the center
+    const finalItems = [...itemsArray.slice(0, 25), finalItem, ...itemsArray.slice(0, 10)];
+    
+    setScrollItems(finalItems);
+    setSelectedReward(rewards[0]);
+    setIsAnimating(true);
+    
+    // After 12 seconds, show the final reward
+    setTimeout(() => {
+      setIsAnimating(false);
+      setShowFinalReward(true);
+      setIsOpening(false);
+      
+      // After a delay, show all rewards
+      setTimeout(() => {
+        setOpenedRewards(rewards);
+      }, 2000);
+    }, 12000);
+  };
+
   // Handle opening the loot box
   const handleOpenLootBox = async () => {
     if (!lootBoxId) return;
@@ -84,10 +202,12 @@ export default function LootBoxPreview() {
       const data = await response.json();
 
       if (data.success) {
-        setOpenedRewards(data.rewards);
+        // Instead of immediately showing the rewards, start the animation
+        startUnboxingAnimation(data.rewards);
+        
         toast({
-          title: "Loot Box Opened!",
-          description: "Check out your new items!",
+          title: "Opening Loot Box...",
+          description: "Get ready to see what's inside!",
           variant: "default"
         });
       } else {
@@ -107,7 +227,7 @@ export default function LootBoxPreview() {
       });
       setLocation('/inventory');
     } finally {
-      setIsOpening(false);
+      // We don't set isOpening to false here, it will be done after the animation
     }
   };
 
@@ -146,6 +266,228 @@ export default function LootBoxPreview() {
   }
 
   // If we've opened the loot box, show the rewards
+  // CSGO-style animation states
+  if (isAnimating || showFinalReward) {
+    // Render the animation UI
+    return (
+      <div className="container max-w-4xl py-8">
+        <h1 className="text-3xl font-bold mb-6 text-center">
+          Opening Loot Box
+        </h1>
+        
+        <div className="flex flex-col items-center justify-center mb-8">
+          <div className="relative w-full overflow-hidden bg-black/50 border-2 border-brand-orange/50 rounded-lg p-4 mb-8" style={{ height: '300px' }}>
+            {/* Loot Crate Image */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-20">
+              <img 
+                src={image || '/images/loot-crate.png'} 
+                alt={name} 
+                className="w-40 h-40 object-contain"
+              />
+            </div>
+            
+            {/* Scrolling Animation Container */}
+            {isAnimating && (
+              <div 
+                className="absolute inset-0 flex items-center" 
+                style={{ 
+                  overflowX: 'hidden',
+                  perspective: '500px'
+                }}
+              >
+                <div 
+                  ref={scrollContainerRef}
+                  className="flex" 
+                  style={{ 
+                    transition: 'transform 12s cubic-bezier(.2,0,.8,1)',
+                    transform: 'translateX(100%)',
+                    willChange: 'transform',
+                    animation: 'scrollItems 12s cubic-bezier(.2,0,.8,1) forwards',
+                  }}
+                >
+                  {scrollItems.map((item, index) => {
+                    // Get item details
+                    const itemDetails = items?.find((i: any) => i.id === item.itemId);
+                    const itemRarity = itemDetails?.rarity || 'common';
+                    
+                    // Get rarity color and border classes
+                    const rarityColorClass = (() => {
+                      switch(itemRarity) {
+                        case 'common': return 'text-gray-300';
+                        case 'uncommon': return 'text-green-400';
+                        case 'rare': return 'text-blue-400';
+                        case 'epic': return 'text-purple-400';
+                        case 'legendary': return 'text-amber-400';
+                        default: return 'text-gray-300';
+                      }
+                    })();
+                    
+                    const rarityBorderClass = (() => {
+                      switch(itemRarity) {
+                        case 'common': return 'border-gray-600';
+                        case 'uncommon': return 'border-green-600';
+                        case 'rare': return 'border-blue-600';
+                        case 'epic': return 'border-purple-600';
+                        case 'legendary': return 'border-amber-500';
+                        default: return 'border-gray-600';
+                      }
+                    })();
+                    
+                    // Middle item (the potential winner) should be larger
+                    const isLastItem = index === scrollItems.length - 1;
+                    const itemSize = isLastItem ? 'w-32 h-32' : 'w-20 h-20';
+                    const itemClasses = isLastItem ? 'z-10 scale-125 shadow-lg shadow-brand-orange/50' : '';
+                    
+                    return (
+                      <div 
+                        key={index} 
+                        className={`flex-shrink-0 mx-4 flex flex-col items-center justify-center ${itemClasses}`}
+                      >
+                        <div 
+                          className={`${itemSize} flex items-center justify-center rounded-md p-3 border-2 ${rarityBorderClass} bg-black/80`}
+                        >
+                          <img 
+                            src={itemDetails?.imagePath || '/images/items/default.png'} 
+                            alt={getItemName(item.itemId)}
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        </div>
+                        <div className="text-center mt-2">
+                          <p className={`font-medium text-sm ${rarityColorClass} truncate max-w-32`}>
+                            {getItemName(item.itemId)}
+                          </p>
+                          <span className="text-xs bg-brand-orange/20 px-2 py-0.5 rounded-full text-brand-orange">
+                            ×{item.quantity}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Fixed indicator line in the center */}
+                <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-brand-orange z-20 animate-pulse"></div>
+              </div>
+            )}
+            
+            {/* Final Reward Display */}
+            {showFinalReward && selectedReward && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center animate-fadeIn">
+                <div className="text-center mb-4">
+                  <h2 className="text-2xl font-bold text-brand-orange mb-2">Congratulations!</h2>
+                  <p className="text-white">You received:</p>
+                </div>
+                
+                {(() => {
+                  // Get item details for the reward
+                  const itemDetails = items?.find((i: any) => i.id === selectedReward.type);
+                  const itemRarity = itemDetails?.rarity || 'common';
+                  
+                  // Get rarity styling
+                  const rarityColorClass = (() => {
+                    switch(itemRarity) {
+                      case 'common': return 'text-gray-300';
+                      case 'uncommon': return 'text-green-400';
+                      case 'rare': return 'text-blue-400';
+                      case 'epic': return 'text-purple-400';
+                      case 'legendary': return 'text-amber-400';
+                      default: return 'text-gray-300';
+                    }
+                  })();
+                  
+                  const rarityBorderClass = (() => {
+                    switch(itemRarity) {
+                      case 'common': return 'border-gray-600';
+                      case 'uncommon': return 'border-green-600';
+                      case 'rare': return 'border-blue-600';
+                      case 'epic': return 'border-purple-600';
+                      case 'legendary': return 'border-amber-500';
+                      default: return 'border-gray-600';
+                    }
+                  })();
+                  
+                  // Animation class for the reward
+                  const animationClass = (() => {
+                    switch(itemRarity) {
+                      case 'common': return '';
+                      case 'uncommon': return 'animate-pulse';
+                      case 'rare': return 'animate-pulse';
+                      case 'epic': return 'animate-bounce';
+                      case 'legendary': return 'animate-ping';
+                      default: return '';
+                    }
+                  })();
+                  
+                  return (
+                    <div 
+                      className={`flex flex-col items-center bg-black/70 rounded-md p-6 border-4 ${rarityBorderClass} animate-scaleIn`}
+                    >
+                      <div className={`w-40 h-40 flex items-center justify-center mb-4 ${animationClass}`}>
+                        <img 
+                          src={itemDetails?.imagePath || '/images/items/default.png'} 
+                          alt={getItemName(selectedReward.type)}
+                          className="max-w-full max-h-full object-contain"
+                        />
+                      </div>
+                      
+                      <div className="text-center">
+                        <p className={`font-bold text-xl ${rarityColorClass}`}>
+                          {getItemName(selectedReward.type)}
+                        </p>
+                        
+                        <div className="flex justify-center items-center mt-2">
+                          <span className="bg-brand-orange/30 px-3 py-1 rounded-full text-brand-orange text-lg font-bold">
+                            ×{selectedReward.quantity}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+          
+          {/* Loading spinner during animation */}
+          {isAnimating && (
+            <div className="flex flex-col items-center">
+              <div className="animate-spin mb-2">
+                <RefreshCw size={24} className="text-brand-orange" />
+              </div>
+              <p>Opening your loot box...</p>
+            </div>
+          )}
+          
+          {/* Skip button during animation */}
+          {isAnimating && (
+            <Button 
+              onClick={() => {
+                setIsAnimating(false);
+                setShowFinalReward(true);
+                setTimeout(() => setOpenedRewards([selectedReward!]), 2000);
+              }}
+              variant="outline"
+              className="mt-4"
+            >
+              Skip Animation
+            </Button>
+          )}
+          
+          {/* Continue button after reveal */}
+          {showFinalReward && !openedRewards && (
+            <Button 
+              onClick={() => setOpenedRewards([selectedReward!])}
+              className="mt-6 px-8"
+            >
+              Continue
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Final reward display (after animation)
   if (openedRewards) {
     return (
       <div className="container max-w-4xl py-8">
