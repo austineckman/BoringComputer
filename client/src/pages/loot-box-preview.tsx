@@ -127,6 +127,15 @@ export default function LootBoxPreview() {
       console.log("Opening loot box ID:", lootBoxId);
       setIsOpening(true);
       
+      // First generate random items for scrolling effect to ensure animation starts immediately
+      const scrollItemsArray = generateScrollItems();
+      console.log("Generated scroll items:", scrollItemsArray);
+      setScrollItems(scrollItemsArray);
+      
+      // Start the animation
+      console.log("Starting animation");
+      setIsAnimating(true);
+      
       // API request to open the loot box
       const response = await fetch(`/api/loot-boxes/${lootBoxId}/open`, {
         method: 'POST',
@@ -140,19 +149,10 @@ export default function LootBoxPreview() {
       
       if (data.success && data.rewards && data.rewards.length > 0) {
         console.log("Received rewards:", data.rewards);
-        // We'll only show the first reward in the animation
-        // (Later we could enhance this to cycle through multiple rewards)
+        // Save all rewards but use the first one for animation
+        setOpenedRewards(data.rewards);
         setSelectedReward(data.rewards[0]);
         console.log("Selected reward:", data.rewards[0]);
-        
-        // Generate random items for scrolling effect
-        const scrollItemsArray = generateScrollItems();
-        console.log("Generated scroll items:", scrollItemsArray);
-        setScrollItems(scrollItemsArray);
-        
-        // Start the animation
-        console.log("Starting animation");
-        setIsAnimating(true);
         
         // After 12 seconds (matching the CSS animation), show the final reward
         setTimeout(() => {
@@ -162,6 +162,8 @@ export default function LootBoxPreview() {
         }, 12000);
       } else {
         console.error("Error from API:", data);
+        // Stop animation if there's an error
+        setIsAnimating(false);
         toast({
           title: "Error",
           description: data.message || "Failed to open loot box",
@@ -171,9 +173,11 @@ export default function LootBoxPreview() {
       }
     } catch (error) {
       console.error("Error opening loot box:", error);
+      // Stop animation if there's an error
+      setIsAnimating(false);
       toast({
         title: "Error",
-        description: "Failed to open loot box",
+        description: "Failed to open loot box. Please try again.",
         variant: "destructive",
       });
       setIsOpening(false);
