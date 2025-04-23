@@ -943,13 +943,25 @@ export default function QuestDetailPage() {
                           let itemDetails;
                           
                           if (reward.type === 'lootbox') {
-                            // For lootboxes, create a display name and use the loot box image
-                            const rarityName = reward.id.charAt(0).toUpperCase() + reward.id.slice(1);
-                            itemDetails = { 
-                              name: `${rarityName} Loot Box`, 
-                              imagePath: '/images/loot-crate.png',
-                              rarity: reward.id
-                            };
+                            // For lootboxes, try to find the actual loot box from our query
+                            const lootBoxData = lootBoxesQuery.data?.find((lb: any) => lb.id === reward.id);
+                            
+                            if (lootBoxData) {
+                              // Use the actual data from the lootbox if available
+                              itemDetails = { 
+                                name: lootBoxData.name || `${reward.id.charAt(0).toUpperCase() + reward.id.slice(1)} Loot Box`, 
+                                imagePath: lootBoxData.image || '/images/loot-crate.png',
+                                rarity: lootBoxData.rarity || reward.id
+                              };
+                            } else {
+                              // Fallback to defaults if the lootbox isn't found
+                              const rarityName = reward.id.charAt(0).toUpperCase() + reward.id.slice(1);
+                              itemDetails = { 
+                                name: `${rarityName} Loot Box`, 
+                                imagePath: '/images/loot-crate.png',
+                                rarity: reward.id
+                              };
+                            }
                           } else if (reward.type === 'item' || reward.type === 'equipment') {
                             // For items and equipment, find the item in the items database
                             itemDetails = itemsQuery.data?.find((i: any) => i.id === reward.id);
@@ -994,23 +1006,46 @@ export default function QuestDetailPage() {
                     <div>
                       <p className="mb-2">Loot Boxes:</p>
                       <div className="grid grid-cols-3 gap-2">
-                        {quest.lootBoxRewards.map((reward, index) => (
-                          <div key={index} className="bg-space-dark p-2 rounded-md text-center">
-                            <div className="relative w-12 h-12 mx-auto mb-1">
-                              <img 
-                                src="/images/loot-crate.png" 
-                                alt={`${reward.type} Loot Box`}
-                                className="w-full h-full object-contain"
-                              />
-                              {reward.quantity > 1 && (
-                                <span className="absolute bottom-0 right-0 bg-brand-orange/80 text-white text-xs rounded px-1">
-                                  x{reward.quantity}
-                                </span>
-                              )}
+                        {quest.lootBoxRewards.map((reward, index) => {
+                          // Try to find the actual loot box image and details
+                          const lootBoxData = lootBoxesQuery.data?.find((lb: any) => lb.id === reward.type);
+                          
+                          // Determine display name and image path
+                          const displayName = lootBoxData?.name || 
+                            `${reward.type.charAt(0).toUpperCase() + reward.type.slice(1)} Loot Box`;
+                          
+                          const imagePath = lootBoxData?.image || '/images/loot-crate.png';
+                          
+                          // Determine background color based on rarity
+                          const rarityColors: Record<string, string> = {
+                            common: 'bg-gray-700',
+                            uncommon: 'bg-green-800/50',
+                            rare: 'bg-blue-800/50',
+                            epic: 'bg-purple-800/50',
+                            legendary: 'bg-orange-800/50'
+                          };
+                          
+                          const rarity = lootBoxData?.rarity || reward.type;
+                          const bgColor = rarityColors[rarity] || 'bg-space-dark';
+                          
+                          return (
+                            <div key={index} className={`${bgColor} p-2 rounded-md text-center`}>
+                              <div className="relative w-12 h-12 mx-auto mb-1">
+                                <img 
+                                  src={imagePath} 
+                                  alt={displayName}
+                                  className="w-full h-full object-contain"
+                                />
+                                {reward.quantity > 1 && (
+                                  <span className="absolute bottom-0 right-0 bg-brand-orange/80 text-white text-xs rounded px-1">
+                                    x{reward.quantity}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs truncate">{displayName}</p>
                             </div>
-                            <p className="text-xs truncate">{reward.type.charAt(0).toUpperCase() + reward.type.slice(1)} Box</p>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   ) : (
