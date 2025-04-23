@@ -677,68 +677,68 @@ const LootBoxConfigForm: React.FC<LootBoxConfigFormProps> = ({
                           />
                         </FormControl>
                         
-                        {/* Image upload section */}
-                        <div className="flex flex-col space-y-2">
-                          <div className="text-sm text-muted-foreground">
-                            Or upload an image
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="file"
-                              accept="image/png, image/jpeg, image/gif, image/webp"
-                              onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (!file) return;
-                                
-                                // Only proceed if we have an ID
-                                const id = form.getValues('id');
-                                if (!id) {
-                                  toast({
-                                    title: 'Error',
-                                    description: 'Please enter a Loot Box ID first',
-                                    variant: 'destructive'
-                                  });
-                                  return;
-                                }
-                                
-                                // Create a FormData object
-                                const formData = new FormData();
-                                formData.append('image', file);
-                                
-                                try {
-                                  // Upload the image
-                                  const response = await fetch(`/api/admin/lootboxes/${id}/upload`, {
-                                    method: 'POST',
-                                    body: formData,
-                                    credentials: 'include'
-                                  });
+                        {/* Image upload section - only show for edit mode */}
+                        {isEditMode && (
+                          <div className="flex flex-col space-y-2">
+                            <div className="text-sm text-muted-foreground">
+                              Or upload an image
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="file"
+                                accept="image/png, image/jpeg, image/gif, image/webp"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
                                   
-                                  if (!response.ok) {
-                                    throw new Error(`Upload failed: ${response.statusText}`);
+                                  // We know we have an ID in edit mode
+                                  const id = form.getValues('id');
+                                  
+                                  // Create a FormData object
+                                  const formData = new FormData();
+                                  formData.append('image', file);
+                                  
+                                  try {
+                                    // Upload the image
+                                    const response = await fetch(`/api/admin/lootboxes/${id}/upload`, {
+                                      method: 'POST',
+                                      body: formData,
+                                      credentials: 'include'
+                                    });
+                                    
+                                    if (!response.ok) {
+                                      throw new Error(`Upload failed: ${response.statusText}`);
+                                    }
+                                    
+                                    const data = await response.json();
+                                    
+                                    // Update the form with the new image path
+                                    field.onChange(data.imagePath);
+                                    setPreviewImage(data.imagePath);
+                                    
+                                    toast({
+                                      title: 'Success',
+                                      description: 'Image uploaded successfully'
+                                    });
+                                  } catch (error: any) {
+                                    toast({
+                                      title: 'Upload Error',
+                                      description: error.message || 'Failed to upload image',
+                                      variant: 'destructive'
+                                    });
                                   }
-                                  
-                                  const data = await response.json();
-                                  
-                                  // Update the form with the new image path
-                                  field.onChange(data.imagePath);
-                                  setPreviewImage(data.imagePath);
-                                  
-                                  toast({
-                                    title: 'Success',
-                                    description: 'Image uploaded successfully'
-                                  });
-                                } catch (error: any) {
-                                  toast({
-                                    title: 'Upload Error',
-                                    description: error.message || 'Failed to upload image',
-                                    variant: 'destructive'
-                                  });
-                                }
-                              }}
-                              className="w-full"
-                            />
+                                }}
+                                className="w-full"
+                              />
+                            </div>
                           </div>
-                        </div>
+                        )}
+                        
+                        {!isEditMode && (
+                          <div className="text-sm text-muted-foreground">
+                            You can upload a custom image after creating the loot box.
+                          </div>
+                        )}
                       </div>
                       <FormMessage />
                     </FormItem>
