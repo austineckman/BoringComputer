@@ -258,10 +258,12 @@ const AdminItems: React.FC = () => {
     }
 
     // Equipment filter
-    if (equipmentFilter === 'equippable' && !item.isEquippable) {
-      return false;
-    } else if (equipmentFilter === 'non-equippable' && item.isEquippable) {
-      return false;
+    if (equipmentFilter !== 'all') {
+      if (equipmentFilter === 'equippable' && !item.isEquippable) {
+        return false;
+      } else if (equipmentFilter === 'non-equippable' && item.isEquippable) {
+        return false;
+      }
     }
     
     return true;
@@ -325,7 +327,7 @@ const AdminItems: React.FC = () => {
               
               <div>
                 <Label htmlFor="category-filter">Category</Label>
-                <Select value={categoryFilter || ''} onValueChange={(value) => setCategoryFilter(value || null)}>
+                <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value)}>
                   <SelectTrigger id="category-filter">
                     <SelectValue placeholder="All categories" />
                   </SelectTrigger>
@@ -342,7 +344,7 @@ const AdminItems: React.FC = () => {
               
               <div>
                 <Label htmlFor="equipment-filter">Equipment</Label>
-                <Select value={equipmentFilter || ''} onValueChange={(value) => setEquipmentFilter(value || null)}>
+                <Select value={equipmentFilter} onValueChange={(value) => setEquipmentFilter(value)}>
                   <SelectTrigger id="equipment-filter">
                     <SelectValue placeholder="All items" />
                   </SelectTrigger>
@@ -551,7 +553,7 @@ const AdminItems: React.FC = () => {
                     Equipment Slot
                   </Label>
                   <Select 
-                    value={newItem.equipSlot || ''} 
+                    value={newItem.equipSlot || 'head'} 
                     onValueChange={(value: 'head' | 'torso' | 'legs' | 'hands' | 'accessory') => 
                       setNewItem({ ...newItem, equipSlot: value })
                     }
