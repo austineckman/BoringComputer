@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { nanoid } from 'nanoid';
-import { authorize } from '../../middleware/auth';
+import { adminAuth } from '../../middleware/adminAuth';
 
 const router = Router();
 
@@ -45,7 +45,7 @@ const upload = multer({
 });
 
 // Image upload endpoint
-router.post('/upload-image', authorize(['admin']), upload.single('image'), (req: Request, res: Response) => {
+router.post('/upload-image', adminAuth, upload.single('image'), (req: Request, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });

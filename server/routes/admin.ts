@@ -16,7 +16,7 @@ import { z } from 'zod';
 import { storage } from '../storage';
 import path from 'path';
 import fs from 'fs';
-import { upload, getPublicImageUrl } from '../middlewares/upload';
+import { upload, questImageUpload, getPublicImageUrl, getPublicQuestImageUrl } from '../middlewares/upload';
 
 const router = Router();
 
@@ -488,6 +488,29 @@ router.delete('/loot-boxes/:id', async (req, res) => {
 // FILE UPLOADS
 // =================
 
+// Handle general image upload
+router.post('/upload-image', questImageUpload.single('image'), async (req, res) => {
+  try {
+    // Check if a file was uploaded
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file was uploaded' });
+    }
+
+    // Get the file path relative to the public directory
+    const filePath = getPublicQuestImageUrl(path.basename(req.file.path));
+    
+    // Return success response with the image path
+    res.json({ 
+      success: true, 
+      message: 'Image uploaded successfully',
+      url: filePath
+    });
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
 // Handle image upload for items
 router.post('/items/:itemId/image', upload.single('image'), async (req, res) => {
   try {
@@ -557,8 +580,9 @@ router.get('/stats', async (req, res) => {
   }
 });
 
-// Legacy endpoint for backward compatibility
-router.post('/upload-image', upload.single('image'), async (req, res) => {
+// Legacy endpoint for backward compatibility for item uploads by their IDs
+// This is kept for compatibility with older code but the specific item upload endpoint is preferred
+router.post('/item-upload', upload.single('image'), async (req, res) => {
   try {
     // Check if a file was uploaded
     if (!req.file) {
