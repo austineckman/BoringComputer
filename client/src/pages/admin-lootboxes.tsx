@@ -149,6 +149,43 @@ const AdminLootBoxesPage: React.FC = () => {
       });
     }
   });
+  
+  // Reset inventory to 1 of each item mutation
+  const resetInventoryMutation = useMutation({
+    mutationFn: () => apiRequest('/api/admin/inventory/reset-to-one', 'POST'),
+    onSuccess: (data) => {
+      toast({ 
+        title: "Success", 
+        description: `Inventory reset successfully. You now have exactly 1 of each item (${data.inventory ? Object.keys(data.inventory).length : 0} items).`
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: `Failed to reset inventory: ${error.message}`,
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Generate test loot crates mutation
+  const generateTestCratesMutation = useMutation({
+    mutationFn: () => apiRequest('/api/loot-boxes/generate-test', 'POST'),
+    onSuccess: (data) => {
+      toast({ 
+        title: "Success", 
+        description: `Generated ${data.lootBoxes?.length || 0} test loot crates successfully!`
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/loot-boxes'] });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: `Failed to generate test loot crates: ${error.message}`,
+        variant: "destructive"
+      });
+    }
+  });
 
   // Handle form submission
   const onSubmit = (data: LootBoxConfig) => {
@@ -325,11 +362,33 @@ const AdminLootBoxesPage: React.FC = () => {
           
           {/* List view */}
           <TabsContent value="list">
-            <div className="flex justify-between mb-4">
-              <h2 className="text-2xl font-semibold">Available Loot Box Configurations</h2>
-              <Button onClick={() => setSelectedTab("create")}>
-                <Plus className="mr-2 h-4 w-4" /> Create New
-              </Button>
+            <div className="flex flex-col gap-4 mb-4">
+              <div className="flex justify-between">
+                <h2 className="text-2xl font-semibold">Available Loot Box Configurations</h2>
+                <Button onClick={() => setSelectedTab("create")}>
+                  <Plus className="mr-2 h-4 w-4" /> Create New
+                </Button>
+              </div>
+              
+              {/* Admin utility buttons */}
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => generateTestCratesMutation.mutate()}
+                  disabled={generateTestCratesMutation.isPending}
+                >
+                  {generateTestCratesMutation.isPending ? "Generating..." : "Generate Test Loot Crates"}
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  onClick={() => resetInventoryMutation.mutate()}
+                  disabled={resetInventoryMutation.isPending}
+                  className="border-amber-500 hover:bg-amber-500/10"
+                >
+                  {resetInventoryMutation.isPending ? "Resetting..." : "Reset Inventory to 1 of Each Item"}
+                </Button>
+              </div>
             </div>
             
             {isLoadingConfigs ? (
