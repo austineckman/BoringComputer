@@ -624,19 +624,25 @@ export default function LootBoxPreview() {
   // For debugging purposes
   console.log('Loot box data:', lootBox);
   
-  // Get data from either the config or fallback to the loot box data
-  const config = lootBox.config;
+  // If we don't have a loot box, return to inventory
+  if (!lootBox) {
+    return null;
+  }
   
-  // If no config exists, we won't show an error anymore, just display with default values
-  // Instead of returning early, we'll use the fallback values below
-
+  // Get data from either the config or fallback to the loot box data
+  const lootBoxConfig = lootBox.config;
+  
   // Extract data with fallbacks in case config is missing
-  const { name, description, image, rarity, type } = lootBox;
+  const lootBoxName = lootBox.name;
+  const lootBoxDescription = lootBox.description;
+  const lootBoxImage = lootBox.image;
+  const lootBoxRarity = lootBox.rarity;
+  const lootBoxType = lootBox.type;
   
   // If no config, provide default values
-  const itemDropTable = config?.itemDropTable || [];
-  const minRewards = config?.minRewards || 1;
-  const maxRewards = config?.maxRewards || 3;
+  const itemDropTable = lootBoxConfig?.itemDropTable || [];
+  const minRewards = lootBoxConfig?.minRewards || 1;
+  const maxRewards = lootBoxConfig?.maxRewards || 3;
   const totalWeight = getTotalWeight(itemDropTable);
 
   return (
@@ -656,10 +662,10 @@ export default function LootBoxPreview() {
       {/* Loot Box Header */}
       <div className="flex flex-col md:flex-row gap-6 mb-8">
         <div className="flex-shrink-0 flex items-center justify-center">
-          <div className={`p-4 rounded-lg border-2 ${rarityStyles[rarity as keyof typeof rarityStyles] || rarityStyles.common}`}>
+          <div className={`p-4 rounded-lg border-2 ${rarityStyles[lootBoxRarity as keyof typeof rarityStyles] || rarityStyles.common}`}>
             <img 
-              src={image || '/images/loot-crate.png'} 
-              alt={name} 
+              src={lootBoxImage || '/images/loot-crate.png'} 
+              alt={lootBoxName} 
               className="w-40 h-40 object-contain"
             />
           </div>
@@ -667,20 +673,20 @@ export default function LootBoxPreview() {
         
         <div className="flex-grow">
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold">{name}</h1>
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${rarityStyles[rarity as keyof typeof rarityStyles] || rarityStyles.common}`}>
-              {rarity?.charAt(0).toUpperCase() + rarity?.slice(1)}
+            <h1 className="text-3xl font-bold">{lootBoxName}</h1>
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${rarityStyles[lootBoxRarity as keyof typeof rarityStyles] || rarityStyles.common}`}>
+              {lootBoxRarity?.charAt(0).toUpperCase() + lootBoxRarity?.slice(1)}
             </span>
           </div>
           
-          <p className="text-gray-300 mb-4">{description}</p>
+          <p className="text-gray-300 mb-4">{lootBoxDescription}</p>
           
           <div className="bg-black/20 rounded-md p-4 border border-brand-orange/20">
             <p className="font-medium">About this loot box:</p>
             <ul className="list-disc list-inside mt-2 space-y-1 text-gray-300">
               <li>You will receive {minRewards === maxRewards ? minRewards : `${minRewards}-${maxRewards}`} items</li>
               <li>Contains {itemDropTable?.length || 0} potential items</li>
-              <li>Rarity: {rarity?.charAt(0).toUpperCase() + rarity?.slice(1)}</li>
+              <li>Rarity: {lootBoxRarity?.charAt(0).toUpperCase() + lootBoxRarity?.slice(1)}</li>
             </ul>
           </div>
         </div>
