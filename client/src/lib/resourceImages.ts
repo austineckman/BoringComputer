@@ -108,6 +108,15 @@ export const getResourceDisplay = (type: string): { isImage: boolean; value: str
   // Get item details from the database
   const itemDetails = getItemDetails(type);
   
+  // If the item has a custom image path from admin panel, use it
+  if (itemDetails.imagePath && itemDetails.imagePath !== 'undefined' && !itemDetails.imagePath.includes('@assets')) {
+    return {
+      isImage: true,
+      value: itemDetails.imagePath, // Use the image path from admin panel
+      alt: itemDetails.name // Use the name from our centralized database
+    };
+  }
+  
   // If the resource type is directly in our map, return it with the proper name
   if (type in resourceImages) {
     return {

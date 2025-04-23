@@ -1,6 +1,7 @@
 import { ItemRarity } from '@/../../shared/types';
+import { useQuery } from '@tanstack/react-query';
 
-// Import item images
+// Import fallback item images (used only if server items aren't loaded yet)
 import copperImage from '@assets/copper.png';
 import clothImage from '@assets/cloth.png';
 import crystalImage from '@assets/crystal.png';
@@ -16,10 +17,11 @@ export interface ItemDetails {
   rarity: ItemRarity;
   craftingUses: string[];
   imagePath: string;
+  category?: string;
 }
 
-// Item database with all available items in the game
-export const itemDatabase: Record<string, ItemDetails> = {
+// Fallback item database with basic items (used only when server items aren't loaded yet)
+const fallbackItemDatabase: Record<string, ItemDetails> = {
   'copper': {
     id: 'copper',
     name: 'Copper',
@@ -76,13 +78,75 @@ export const itemDatabase: Record<string, ItemDetails> = {
   }
 };
 
+// Global itemDatabase that will be populated from server
+let itemDatabase: Record<string, ItemDetails> = { ...fallbackItemDatabase };
+
+// Function to initialize the item database from server
+export async function initializeItemDatabase(): Promise<void> {
+  try {
+    const response = await fetch('/api/admin/items');
+    if (!response.ok) {
+      throw new Error('Failed to fetch items');
+    }
+    
+    const items: ItemDetails[] = await response.json();
+    
+    // Convert array to record for quick lookups
+    const itemMap: Record<string, ItemDetails> = {};
+    items.forEach(item => {
+      itemMap[item.id] = item;
+    });
+    
+    // Update the global item database
+    itemDatabase = itemMap;
+    
+    console.log('Item database loaded from server:', Object.keys(itemDatabase).length, 'items');
+  } catch (error) {
+    console.error('Error loading item database from server:', error);
+    // Keep using the fallback database if there's an error
+  }
+}
+
+// Initialize the database on module load
+initializeItemDatabase();
+
+// Custom hook to work with React components
+export function useItemDatabase() {
+  const { data: items = [] } = useQuery<ItemDetails[]>({
+    queryKey: ['/api/admin/items'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+  
+  // Update the item database when items are fetched
+  if (items.length > 0) {
+    const itemMap: Record<string, ItemDetails> = {};
+    items.forEach(item => {
+      itemMap[item.id] = item;
+    });
+    itemDatabase = itemMap;
+  }
+  
+  return {
+    items,
+    getItemDetails,
+    getAllItems,
+    getItemsByRarity,
+    getItemsByCraftingUse
+  };
+}
+
 // Get item details by ID with fallback
 export function getItemDetails(itemId: string): ItemDetails {
   if (itemDatabase[itemId]) {
     return itemDatabase[itemId];
   }
   
-  // Fallback for items not found in the database
+  // Check fallback database if not in the main database
+  if (fallbackItemDatabase[itemId]) {
+    return fallbackItemDatabase[itemId];
+  }
+  
+  // Fallback for items not found in either database
   return {
     id: itemId,
     name: itemId.replace(/-/g, ' ').replace(/\b\w/g, char => char.toUpperCase()),
