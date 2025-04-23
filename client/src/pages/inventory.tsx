@@ -84,7 +84,7 @@ export default function Inventory() {
     // If rewards are empty and lootbox ID exists, try to open it ourselves here
     if (rewards.length === 0 && lootBox.id) {
       try {
-        const response = await apiRequest('POST', `/api/loot-boxes/${lootBox.id}/open`);
+        const response = await apiRequest(`/api/loot-boxes/${lootBox.id}/open`, 'POST');
         const data = await response.json();
         
         if (data.success && data.rewards && data.rewards.length > 0) {
@@ -180,7 +180,7 @@ export default function Inventory() {
     
     const generateCratesMutation = useMutation({
       mutationFn: async () => {
-        const response = await apiRequest('POST', '/api/loot-boxes/generate-test', {
+        const response = await apiRequest('/api/loot-boxes/generate-test', 'POST', {
           cleanUp // Send cleanup option to the server
         });
         return await response.json();
