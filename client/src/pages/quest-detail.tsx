@@ -217,7 +217,18 @@ export default function QuestDetailPage() {
   return (
       <div className="container mx-auto px-4 py-8">
         {/* Hero Image Display */}
-        {images.length > 0 && (
+        {quest.heroImage && (
+          <div className="w-full mb-8 rounded-lg overflow-hidden shadow-lg">
+            <img 
+              src={quest.heroImage} 
+              alt={quest.title}
+              className="w-full h-auto max-h-[300px] object-cover object-center"
+            />
+          </div>
+        )}
+        
+        {/* Fallback to content images if no hero image */}
+        {!quest.heroImage && images.length > 0 && (
           <div className="w-full mb-8 rounded-lg overflow-hidden shadow-lg">
             <img 
               src={images[0]} 
