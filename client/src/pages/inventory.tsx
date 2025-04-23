@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import ResetDatabaseButton from '@/components/debug/ResetDatabaseButton';
 import { resourceImages, getResourceDisplay, getLootCrateImage } from '@/lib/resourceImages';
+import { getItemDetails, useItemDatabase } from '@/lib/itemDatabase';
 
 interface Resource {
   type: string;
@@ -480,11 +481,16 @@ export default function Inventory() {
                         <TooltipContent side="top" className="bg-space-dark border-brand-orange/30 text-brand-light p-3">
                           <div className="space-y-1">
                             <p className="font-bold capitalize text-brand-orange">
-                              {item.type.replace('-', ' ')}
+                              {getItemDetails(item.type).name || item.type.replace('-', ' ')}
                             </p>
                             <p className="text-xs text-brand-light/70">
-                              Used for crafting in Gizbo's Forge.
+                              {getItemDetails(item.type).description || `Used for crafting in Gizbo's Forge.`}
                             </p>
+                            {getItemDetails(item.type).flavorText && (
+                              <p className="text-xs italic text-brand-light/50">
+                                "{getItemDetails(item.type).flavorText}"
+                              </p>
+                            )}
                             <p className="text-xs text-brand-yellow">
                               Quantity: {item.quantity}
                             </p>
@@ -645,7 +651,7 @@ export default function Inventory() {
                 <h3 className="text-2xl font-bold capitalize text-brand-orange">
                   {selectedItem.isLootBox 
                     ? `${selectedItem.lootBoxData?.type} Loot Crate` 
-                    : selectedItem.type.replace('-', ' ')}
+                    : getItemDetails(selectedItem.type).name || selectedItem.type.replace('-', ' ')}
                 </h3>
                 
                 <div className="flex items-center gap-2 mt-1">
@@ -658,9 +664,15 @@ export default function Inventory() {
                 <p className="text-sm text-brand-light/80 mt-2">
                   {selectedItem.isLootBox 
                     ? "A sealed container with valuable crafting materials. Free to open and received as quest rewards."
-                    : "A crafting material used in Gizbo's Forge to create both digital and physical rewards."
+                    : getItemDetails(selectedItem.type).description || "A crafting material used in Gizbo's Forge to create both digital and physical rewards."
                   }
                 </p>
+                
+                {!selectedItem.isLootBox && getItemDetails(selectedItem.type).flavorText && (
+                  <p className="text-sm italic text-brand-light/50 mt-2">
+                    "{getItemDetails(selectedItem.type).flavorText}"
+                  </p>
+                )}
               </div>
               
               <div className="hidden sm:flex flex-col gap-2">
