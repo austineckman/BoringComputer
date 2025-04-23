@@ -306,7 +306,22 @@ export default function Inventory() {
     
     // Add loot boxes to inventory items
     if (lootBoxes) {
-      const unopenedLootBoxes = lootBoxes.filter((box: LootBox) => !box.opened);
+      console.log("Processing loot boxes for display:", lootBoxes);
+      // Filter out opened loot boxes (checking both opened=true and openedAt not null)
+      const unopenedLootBoxes = lootBoxes.filter((box: LootBox) => {
+        const isOpenedByFlag = !!box.opened; // Convert to boolean
+        const isOpenedByDate = !!box.openedAt; // Convert to boolean
+        const isNotOpened = !isOpenedByFlag && !isOpenedByDate;
+        
+        if (!isNotOpened) {
+          console.log(`Loot box ${box.id} is filtered out - opened status:`, 
+                      { opened: box.opened, openedAt: box.openedAt });
+        }
+        
+        return isNotOpened;
+      });
+      
+      console.log("Unopened loot boxes count:", unopenedLootBoxes.length);
       
       // Group unopened loot boxes by type
       const groupedBoxes: Record<string, {count: number, boxes: LootBox[]}> = {};
