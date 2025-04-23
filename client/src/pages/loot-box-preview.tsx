@@ -207,22 +207,19 @@ export default function LootBoxPreview() {
   // For debugging purposes
   console.log('Loot box data:', lootBox);
   
-  // Check if config exists, if not, try to use the type to get config info
-  if (!lootBox.config) {
-    return (
-      <div className="container max-w-4xl py-8">
-        <div className="text-center">
-          <p>This loot box is missing configuration data. (Type: {lootBox.type})</p>
-          <Button onClick={handleBackToInventory} className="mt-4">
-            Back to Inventory
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  // Get data from either the config or fallback to the loot box data
+  const config = lootBox.config;
+  
+  // If no config exists, we won't show an error anymore, just display with default values
+  // Instead of returning early, we'll use the fallback values below
 
-  const { name, description, image, rarity } = lootBox;
-  const { itemDropTable, minRewards, maxRewards } = lootBox.config;
+  // Extract data with fallbacks in case config is missing
+  const { name, description, image, rarity, type } = lootBox;
+  
+  // If no config, provide default values
+  const itemDropTable = config?.itemDropTable || [];
+  const minRewards = config?.minRewards || 1;
+  const maxRewards = config?.maxRewards || 3;
   const totalWeight = getTotalWeight(itemDropTable);
 
   return (
