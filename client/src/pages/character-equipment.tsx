@@ -50,11 +50,13 @@ const EquipmentSlot = ({
   item,
   onUnequip,
   onItemHover,
+  onSlotClick,
 }: {
   slot: string;
   item?: Equipment;
   onUnequip: (slot: string) => void;
   onItemHover: (item?: Equipment) => void;
+  onSlotClick: (slot: string) => void;
 }) => {
   const slotDisplayNames: Record<string, string> = {
     head: 'Head',
@@ -65,6 +67,22 @@ const EquipmentSlot = ({
     rightHand: 'Right Hand',
     accessory1: 'Accessory 1',
     accessory2: 'Accessory 2',
+  };
+
+  // Determine slot icon based on slot type
+  const getSlotIcon = () => {
+    switch(slot) {
+      case 'head': return '👑';
+      case 'chest': return '👕';
+      case 'legs': return '👖';
+      case 'feet': return '👞';
+      case 'leftHand': return '🛡️';
+      case 'rightHand': return '⚔️';
+      case 'accessory1': 
+      case 'accessory2': 
+        return '💍';
+      default: return '📦';
+    }
   };
 
   return (
@@ -78,7 +96,9 @@ const EquipmentSlot = ({
           w-16 h-16 border-2 rounded-md flex items-center justify-center
           ${item ? getRarityColorClass(item.rarity) : 'bg-gray-800 border-gray-600'}
           hover:border-brand-orange transition-all duration-200
+          ${!item ? 'cursor-pointer' : ''}
         `}
+        onClick={() => !item && onSlotClick(slot)}
       >
         {item ? (
           <div className="relative w-full h-full flex items-center justify-center">
@@ -88,14 +108,21 @@ const EquipmentSlot = ({
               className="max-w-full max-h-full object-contain"
             />
             <button
-              onClick={() => onUnequip(slot)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onUnequip(slot);
+              }}
               className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+              title="Unequip"
             >
               ×
             </button>
           </div>
         ) : (
-          <span className="text-gray-400 text-xs">{slotDisplayNames[slot]}</span>
+          <div className="flex flex-col items-center justify-center space-y-1">
+            <span className="text-lg">{getSlotIcon()}</span>
+            <span className="text-gray-400 text-xs">{slotDisplayNames[slot]}</span>
+          </div>
         )}
       </div>
     </div>
@@ -290,48 +317,56 @@ export default function CharacterEquipment() {
                     item={equipmentState.head} 
                     onUnequip={handleUnequipItem}
                     onItemHover={setHoveredItem}
+                    onSlotClick={setSelectedSlot}
                   />
                   <EquipmentSlot 
                     slot="chest" 
                     item={equipmentState.chest} 
                     onUnequip={handleUnequipItem}
                     onItemHover={setHoveredItem}
+                    onSlotClick={setSelectedSlot}
                   />
                   <EquipmentSlot 
                     slot="legs" 
                     item={equipmentState.legs} 
                     onUnequip={handleUnequipItem}
                     onItemHover={setHoveredItem}
+                    onSlotClick={setSelectedSlot}
                   />
                   <EquipmentSlot 
                     slot="feet" 
                     item={equipmentState.feet} 
                     onUnequip={handleUnequipItem}
                     onItemHover={setHoveredItem}
+                    onSlotClick={setSelectedSlot}
                   />
                   <EquipmentSlot 
                     slot="leftHand" 
                     item={equipmentState.leftHand} 
                     onUnequip={handleUnequipItem}
                     onItemHover={setHoveredItem}
+                    onSlotClick={setSelectedSlot}
                   />
                   <EquipmentSlot 
                     slot="rightHand" 
                     item={equipmentState.rightHand} 
                     onUnequip={handleUnequipItem}
                     onItemHover={setHoveredItem}
+                    onSlotClick={setSelectedSlot}
                   />
                   <EquipmentSlot 
                     slot="accessory1" 
                     item={equipmentState.accessory1} 
                     onUnequip={handleUnequipItem}
                     onItemHover={setHoveredItem}
+                    onSlotClick={setSelectedSlot}
                   />
                   <EquipmentSlot 
                     slot="accessory2" 
                     item={equipmentState.accessory2} 
                     onUnequip={handleUnequipItem}
                     onItemHover={setHoveredItem}
+                    onSlotClick={setSelectedSlot}
                   />
                 </div>
               </CardContent>
@@ -342,25 +377,40 @@ export default function CharacterEquipment() {
               <CardContent className="p-6 min-h-[150px]">
                 {hoveredItem ? (
                   <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 flex-shrink-0">
+                    <div className={`w-16 h-16 flex-shrink-0 border-2 rounded-md p-1 ${getRarityColorClass(hoveredItem.rarity)}`}>
                       <img 
                         src={hoveredItem.imagePath} 
                         alt={hoveredItem.name} 
                         className="w-full h-full object-contain"
                       />
                     </div>
-                    <div>
-                      <h3 className={`text-xl font-bold ${getRarityColorClass(hoveredItem.rarity, 'text')}`}>
-                        {hoveredItem.name}
-                      </h3>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className={`text-xl font-bold ${getRarityColorClass(hoveredItem.rarity, 'text')}`}>
+                          {hoveredItem.name}
+                        </h3>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${getRarityColorClass(hoveredItem.rarity, 'bg')}`}>
+                          {hoveredItem.rarity.charAt(0).toUpperCase() + hoveredItem.rarity.slice(1)}
+                        </span>
+                      </div>
                       <p className="text-gray-300 text-sm mb-2">{hoveredItem.description}</p>
                       {hoveredItem.flavorText && (
-                        <p className="text-gray-400 text-xs italic">"{hoveredItem.flavorText}"</p>
+                        <p className="text-gray-400 text-xs italic border-l-2 border-gray-700 pl-2 mt-2">"{hoveredItem.flavorText}"</p>
                       )}
+                      <div className="mt-2 text-xs text-gray-500">
+                        Equipped at: {new Date(hoveredItem.equippedAt).toLocaleString()}
+                      </div>
                     </div>
                   </div>
+                ) : selectedSlot ? (
+                  <div className="text-center">
+                    <p className="text-gray-400">Select an item for the <span className="text-brand-orange font-medium">{selectedSlot}</span> slot</p>
+                  </div>
                 ) : (
-                  <p className="text-gray-400 text-center">Hover over an equipped item to see details</p>
+                  <div className="text-center space-y-2">
+                    <p className="text-gray-400">Hover over an equipped item to see details</p>
+                    <p className="text-gray-500 text-xs">Or click an empty slot to equip a new item</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
