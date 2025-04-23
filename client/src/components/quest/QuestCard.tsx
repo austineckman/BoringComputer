@@ -169,16 +169,8 @@ const QuestCard = ({
   // Wrap the content
   const cardContent = (
     <PixelCard active={status === "active"} interactive={true}>
-      {/* Hero Image or Adventure Line Banner */}
-      {heroImage ? (
-        <div className="h-40 w-full overflow-hidden">
-          <img 
-            src={heroImage} 
-            alt={title}
-            className="w-full h-full object-cover object-center"
-          />
-        </div>
-      ) : adventure.id && (
+      {/* Adventure Line Banner (only shown when no hero image) */}
+      {!heroImage && adventure.id && (
         <div className="h-24 w-full overflow-hidden">
           <AdventureImage 
             adventureId={adventure.id}
