@@ -151,6 +151,7 @@ export const craftingRecipes = pgTable("crafting_recipes", {
   category: text("category").notNull().default("general"), // general, electronics, mechanical, etc.
   unlocked: boolean("unlocked").notNull().default(true),
   image: text("image").notNull(),
+  heroImage: text("hero_image"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -307,7 +308,8 @@ export const insertCraftingRecipeSchema = createInsertSchema(craftingRecipes).pi
   difficulty: true,
   category: true,
   unlocked: true,
-  image: true
+  image: true,
+  heroImage: true
 });
 
 export const insertItemSchema = createInsertSchema(items).pick({
