@@ -36,10 +36,9 @@ export function useSoundEffects() {
       craftDrop: () => context.playSound('craftDrop'),
       craftSuccess: () => context.playSound('craftSuccess'),
       craftFail: () => context.playSound('craftFail'),
-      craftComplete: () => context.playSound('craftComplete'),
+      craftComplete: () => context.playSound('craftComplete')
       
-      // Direct access to the library
-      library: context.library
+      // Removed library access as it's not in the context type
     },
     
     // Pass through the rest of the context
