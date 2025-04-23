@@ -16,6 +16,8 @@ import {
   ShieldAlert,
   Users,
   Hammer,
+  ArrowLeftCircle,
+  Layout,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -95,6 +97,15 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <Box className="mr-2 h-6 w-6" />
             <span className="text-lg font-bold">Quest Giver Admin</span>
           </Link>
+          
+          {/* Return to Game button */}
+          <Link href="/">
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <Layout className="h-4 w-4" />
+              <span>Return to Game</span>
+            </Button>
+          </Link>
+          
           <div className="ml-auto flex items-center gap-2">
             <div className="text-sm text-muted-foreground">
               Logged in as <span className="font-medium">{user?.username}</span>
