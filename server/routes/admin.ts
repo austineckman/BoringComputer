@@ -20,9 +20,11 @@ import {
   upload, 
   questImageUpload, 
   recipeHeroUpload,
+  lootboxUpload,
   getPublicImageUrl, 
   getPublicQuestImageUrl,
-  getPublicRecipeHeroUrl
+  getPublicRecipeHeroUrl,
+  getPublicLootboxUrl
 } from '../middlewares/upload';
 
 const router = Router();
@@ -790,7 +792,7 @@ router.delete('/lootboxes/:id', async (req, res) => {
 });
 
 // Upload a loot box image
-router.post('/lootboxes/:id/upload', upload.single('image'), async (req, res) => {
+router.post('/lootboxes/:id/upload', lootboxUpload.single('image'), async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -806,7 +808,7 @@ router.post('/lootboxes/:id/upload', upload.single('image'), async (req, res) =>
     }
     
     // Get the file path relative to the public directory
-    const filePath = getPublicImageUrl(path.basename(req.file.path));
+    const filePath = getPublicLootboxUrl(path.basename(req.file.path));
     
     // Update the loot box config with the new image path
     const updatedConfig = await storage.updateLootBoxConfig(id, { 

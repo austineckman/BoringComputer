@@ -22,6 +22,12 @@ if (!fs.existsSync(recipeHeroUploadDir)) {
   fs.mkdirSync(recipeHeroUploadDir, { recursive: true });
 }
 
+// Ensure loot box image uploads directory exists
+const lootboxUploadDir = path.resolve('public/uploads/lootboxes');
+if (!fs.existsSync(lootboxUploadDir)) {
+  fs.mkdirSync(lootboxUploadDir, { recursive: true });
+}
+
 // Configure storage for item images
 const itemStorage = multer.diskStorage({
   destination: (_req, _file, cb) => {
@@ -59,6 +65,20 @@ const recipeHeroStorage = multer.diskStorage({
     const uniqueId = nanoid(8);
     const fileExt = path.extname(file.originalname).toLowerCase();
     cb(null, `recipe-hero-${uniqueId}${fileExt}`);
+  }
+});
+
+// Configure storage for loot box images
+const lootboxStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, lootboxUploadDir);
+  },
+  filename: (req: Request, file, cb) => {
+    // Use the loot box ID from the URL if available
+    const lootboxId = req.params.id || 'lootbox';
+    const uniqueId = nanoid(8);
+    const fileExt = path.extname(file.originalname).toLowerCase();
+    cb(null, `${lootboxId}-${uniqueId}${fileExt}`);
   }
 });
 
@@ -100,6 +120,15 @@ export const recipeHeroUpload = multer({
   }
 });
 
+// Create multer upload instance for loot box images
+export const lootboxUpload = multer({
+  storage: lootboxStorage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB max file size
+  }
+});
+
 // Helper function to get the public URL for an item image
 export function getPublicImageUrl(filename: string): string {
   if (!filename) return '';
@@ -116,6 +145,12 @@ export function getPublicQuestImageUrl(filename: string): string {
 export function getPublicRecipeHeroUrl(filename: string): string {
   if (!filename) return '';
   return `/uploads/recipe-heroes/${filename}`;
+}
+
+// Helper function to get the public URL for a loot box image
+export function getPublicLootboxUrl(filename: string): string {
+  if (!filename) return '';
+  return `/uploads/lootboxes/${filename}`;
 }
 
 // Helper function to extract filename from full path
