@@ -48,6 +48,20 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
     }
   }, [isOpen]);
 
+  // Update the final item in the scrolling animation when the reward is received
+  useEffect(() => {
+    if (selectedReward && scrollItems.length > 0 && isAnimating) {
+      console.log("Updating final scroll item to match actual reward:", selectedReward);
+      const updatedScrollItems = [...scrollItems];
+      // Replace the final item with the actual selected reward
+      updatedScrollItems[updatedScrollItems.length - 1] = {
+        itemId: selectedReward.type,
+        quantity: selectedReward.quantity
+      };
+      setScrollItems(updatedScrollItems);
+    }
+  }, [selectedReward, isAnimating]);
+
   // Fetch loot box details
   const { data: lootBox, isLoading: isLoadingLootBox } = useQuery({
     queryKey: [`/api/loot-boxes/${lootBoxId}`],
