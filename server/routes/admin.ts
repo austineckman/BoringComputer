@@ -540,9 +540,9 @@ router.get('/stats', async (req, res) => {
   try {
     // Gather comprehensive stats for admin dashboard
     const userCount = await storage.getUserCount();
-    const itemCount = await db.select({ count: count() }).from(items).then(result => result[0].count || 0);
-    const recipeCount = await db.select({ count: count() }).from(craftingRecipes).then(result => result[0].count || 0);
-    const questCount = await db.select({ count: count() }).from(quests).then(result => result[0].count || 0);
+    const itemCount = await storage.getItemCount();
+    const recipeCount = await storage.getCraftingRecipeCount();
+    const questCount = await storage.getQuestCount();
     
     res.status(200).json({
       userCount,

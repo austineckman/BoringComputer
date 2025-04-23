@@ -16,7 +16,7 @@ import {
   achievements, userAchievements, lootBoxes, inventoryHistory, craftingRecipes, items, lootBoxConfigs, characterEquipment
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, count } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -1385,6 +1385,27 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(craftingRecipes)
       .where(eq(craftingRecipes.unlocked, true));
+  }
+
+  // Statistics methods
+  async getUserCount(): Promise<number> {
+    const result = await db.select({ count: count() }).from(users);
+    return result[0].count || 0;
+  }
+
+  async getItemCount(): Promise<number> {
+    const result = await db.select({ count: count() }).from(items);
+    return result[0].count || 0;
+  }
+
+  async getCraftingRecipeCount(): Promise<number> {
+    const result = await db.select({ count: count() }).from(craftingRecipes);
+    return result[0].count || 0;
+  }
+
+  async getQuestCount(): Promise<number> {
+    const result = await db.select({ count: count() }).from(quests);
+    return result[0].count || 0;
   }
   
   async resetDatabase(): Promise<void> {
