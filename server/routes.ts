@@ -971,8 +971,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Authentication required" });
       }
       
+      // Get the user's loot boxes
       const lootBoxes = await storage.getLootBoxes(user.id);
-      res.json(lootBoxes);
+      
+      // Get all loot box configurations
+      const lootBoxConfigs = await storage.getLootBoxConfigs();
+      
+      // Create a map of loot box configurations for quick lookup
+      const configMap = lootBoxConfigs.reduce((map, config) => {
+        map[config.id] = config;
+        return map;
+      }, {} as Record<string, any>);
+      
+      // Attach loot box configuration data to each loot box
+      const lootBoxesWithConfig = lootBoxes.map(box => {
+        const config = configMap[box.type];
+        return {
+          ...box,
+          // Add configuration details if available
+          config: config || null,
+          // Add these for backward compatibility
+          name: config?.name || box.type,
+          description: config?.description || `A ${box.type} loot box`,
+          image: config?.image || '/images/loot-crate.png',
+          rarity: config?.rarity || 'common'
+        };
+      });
+      
+      res.json(lootBoxesWithConfig);
     } catch (error) {
       console.error('Error fetching loot boxes:', error);
       res.status(500).json({ message: "Failed to fetch loot boxes" });
@@ -993,7 +1019,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Not authorized to view this loot box" });
       }
       
-      res.json(lootBox);
+      // Get the loot box configuration
+      const config = await storage.getLootBoxConfig(lootBox.type);
+      
+      // Add configuration data to the loot box
+      const lootBoxWithConfig = {
+        ...lootBox,
+        // Add configuration details if available
+        config: config || null,
+        // Add these for backward compatibility
+        name: config?.name || lootBox.type,
+        description: config?.description || `A ${lootBox.type} loot box`,
+        image: config?.image || '/images/loot-crate.png',
+        rarity: config?.rarity || 'common'
+      };
+      
+      res.json(lootBoxWithConfig);
     } catch (error) {
       console.error('Error fetching loot box:', error);
       res.status(500).json({ message: "Failed to fetch loot box" });
