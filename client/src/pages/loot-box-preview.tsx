@@ -160,7 +160,28 @@ export default function LootBoxPreview() {
           <div className="w-full">
             <Card className="p-6 bg-black/30 border border-brand-orange/30">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {openedRewards.map((reward, index) => {
+                {[...openedRewards]
+                  .sort((a, b) => {
+                    // Get item details for both items
+                    const aDetails = items?.find((i: any) => i.id === a.type);
+                    const bDetails = items?.find((i: any) => i.id === b.type);
+                    
+                    // Get rarity values (numerical - higher is more rare)
+                    const rarityValue = (rarity: string) => {
+                      switch(rarity) {
+                        case 'legendary': return 5;
+                        case 'epic': return 4;
+                        case 'rare': return 3;
+                        case 'uncommon': return 2;
+                        case 'common': return 1;
+                        default: return 0;
+                      }
+                    };
+                    
+                    // Sort by rarity (descending)
+                    return rarityValue(bDetails?.rarity || 'common') - rarityValue(aDetails?.rarity || 'common');
+                  })
+                  .map((reward, index) => {
                   // Get item details
                   const itemDetails = items?.find((i: any) => i.id === reward.type);
                   const itemRarity = itemDetails?.rarity || 'common';
@@ -331,7 +352,28 @@ export default function LootBoxPreview() {
           </Card>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {Array.isArray(itemDropTable) && itemDropTable.map((item, index) => {
+            {Array.isArray(itemDropTable) && [...itemDropTable]
+              .sort((a, b) => {
+                // Get item details for both items
+                const aDetails = items?.find((i: any) => i.id === a.itemId);
+                const bDetails = items?.find((i: any) => i.id === b.itemId);
+                
+                // Get rarity values (numerical - higher is more rare)
+                const rarityValue = (rarity: string) => {
+                  switch(rarity) {
+                    case 'legendary': return 5;
+                    case 'epic': return 4;
+                    case 'rare': return 3;
+                    case 'uncommon': return 2;
+                    case 'common': return 1;
+                    default: return 0;
+                  }
+                };
+                
+                // Sort by rarity (descending)
+                return rarityValue(bDetails?.rarity || 'common') - rarityValue(aDetails?.rarity || 'common');
+              })
+              .map((item, index) => {
               // Get item details
               const itemDetails = items?.find((i: any) => i.id === item.itemId);
               const itemRarity = itemDetails?.rarity || 'common';
