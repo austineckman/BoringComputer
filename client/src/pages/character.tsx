@@ -9,9 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { apiRequest } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import baseCharacterImage from '@assets/basecharacter.png';
 
 // Character base image
-const CHARACTER_BASE_IMAGE = '/images/character-base.png';
+const CHARACTER_BASE_IMAGE = baseCharacterImage;
 
 // Types for our equipment slots
 type EquipmentSlot = 'head' | 'torso' | 'legs' | 'accessory' | 'hands';
