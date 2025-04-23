@@ -184,6 +184,15 @@ export const lootBoxConfigs = pgTable("loot_box_configs", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Character equipment table
+export const characterEquipment = pgTable("character_equipment", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  itemId: text("item_id").notNull(),
+  slot: text("slot", { enum: ["head", "torso", "legs", "accessory", "hands"] }).notNull(),
+  equippedAt: timestamp("equipped_at").defaultNow(),
+});
+
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -321,6 +330,12 @@ export const insertLootBoxConfigSchema = createInsertSchema(lootBoxConfigs).pick
   image: true
 });
 
+export const insertCharacterEquipmentSchema = createInsertSchema(characterEquipment).pick({
+  userId: true,
+  itemId: true,
+  slot: true
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -360,3 +375,6 @@ export type InsertItem = z.infer<typeof insertItemSchema>;
 
 export type LootBoxConfig = typeof lootBoxConfigs.$inferSelect;
 export type InsertLootBoxConfig = z.infer<typeof insertLootBoxConfigSchema>;
+
+export type CharacterEquipment = typeof characterEquipment.$inferSelect;
+export type InsertCharacterEquipment = z.infer<typeof insertCharacterEquipmentSchema>;
