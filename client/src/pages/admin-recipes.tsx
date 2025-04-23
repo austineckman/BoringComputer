@@ -64,7 +64,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Grid5x5 } from '@/components/ui/grid';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Check, Plus, Trash2, Edit, ArrowLeft, X, RefreshCw } from 'lucide-react';
+import { Check, Plus, Trash2, Edit, ArrowLeft, X, RefreshCw, UploadCloud } from 'lucide-react';
 
 // Define the form schema for recipe creation/editing
 const recipeFormSchema = z.object({
@@ -74,6 +74,7 @@ const recipeFormSchema = z.object({
   resultItem: z.string().min(1, 'Result item is required'),
   resultQuantity: z.coerce.number().int().positive('Quantity must be a positive number'),
   image: z.string().optional(),
+  heroImage: z.string().optional(),
   unlocked: z.boolean().default(true),
   // These will be handled separately but included for type safety
   pattern: z.array(z.array(z.string().nullable())).optional(),
@@ -91,6 +92,7 @@ interface Recipe {
   pattern: (string | null)[][];
   requiredItems: Record<string, number>;
   image?: string;
+  heroImage?: string;
   unlocked: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -289,6 +291,7 @@ const AdminRecipesPage: React.FC = () => {
       resultItem: '',
       resultQuantity: 1,
       image: '',
+      heroImage: '',
       unlocked: true,
     },
   });
@@ -535,13 +538,97 @@ const AdminRecipesPage: React.FC = () => {
                       
                       <FormField
                         control={form.control}
-                        name="image"
+                        name="heroImage"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Recipe Image URL (Optional)</FormLabel>
-                            <FormControl>
-                              <Input {...field} placeholder="Enter image URL" />
-                            </FormControl>
+                            <FormLabel>Recipe Hero Image</FormLabel>
+                            <div className="space-y-3">
+                              {field.value && (
+                                <div className="mt-2 relative w-full h-40 rounded-md overflow-hidden">
+                                  <img 
+                                    src={field.value} 
+                                    alt="Recipe hero preview" 
+                                    className="object-cover w-full h-full"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    className="absolute top-2 right-2"
+                                    onClick={() => field.onChange('')}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              )}
+                              
+                              {!field.value && (
+                                <div className="border-2 border-dashed border-gray-300 rounded-md p-6">
+                                  <div className="flex justify-center">
+                                    <label 
+                                      htmlFor="hero-image-upload" 
+                                      className="cursor-pointer flex flex-col items-center space-y-2"
+                                    >
+                                      <UploadCloud className="h-8 w-8 text-muted-foreground" />
+                                      <span className="text-muted-foreground">Upload hero image</span>
+                                      <Input
+                                        id="hero-image-upload"
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={async (e) => {
+                                          const file = e.target.files?.[0];
+                                          if (!file) return;
+                                          
+                                          // Upload the file
+                                          const formData = new FormData();
+                                          formData.append('heroImage', file);
+                                          
+                                          try {
+                                            // Show loading state
+                                            toast({
+                                              title: "Uploading...",
+                                              description: "Uploading hero image",
+                                            });
+                                            
+                                            const response = await fetch('/api/admin/recipes/upload-hero', {
+                                              method: 'POST',
+                                              body: formData,
+                                            });
+                                            
+                                            if (!response.ok) {
+                                              throw new Error('Failed to upload image');
+                                            }
+                                            
+                                            const data = await response.json();
+                                            
+                                            if (data.success) {
+                                              field.onChange(data.url);
+                                              toast({
+                                                title: "Success",
+                                                description: "Hero image uploaded successfully",
+                                              });
+                                            } else {
+                                              throw new Error(data.error || 'Failed to upload image');
+                                            }
+                                          } catch (error) {
+                                            console.error('Error uploading image:', error);
+                                            toast({
+                                              title: "Error",
+                                              description: "Failed to upload hero image",
+                                              variant: "destructive",
+                                            });
+                                          } finally {
+                                            // Clear the input
+                                            e.target.value = '';
+                                          }
+                                        }}
+                                      />
+                                    </label>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                             <FormMessage />
                           </FormItem>
                         )}
