@@ -71,9 +71,9 @@
 
 body {
   background-color: hsl(var(--space-darkest));
-  background-image: 
-    radial-gradient(circle at 20% 30%, rgba(255, 91, 0, 0.1) 0%, transparent 20%),
-    radial-gradient(circle at 80% 70%, rgba(255, 147, 0, 0.1) 0%, transparent 20%);
+  background-image: url('/images/wallbg.png');
+  background-repeat: repeat;
+  background-size: 400px;
   min-height: 100vh;
   font-family: 'Poppins', sans-serif;
   color: hsl(var(--brand-light));
