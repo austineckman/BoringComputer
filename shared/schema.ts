@@ -167,7 +167,7 @@ export const items = pgTable("items", {
   imagePath: text("image_path"), // Made optional
   category: text("category").default("resource"), // Made optional with default value - resource, component, tool, etc.
   isEquippable: boolean("is_equippable").default(false),
-  equipSlot: text("equip_slot", { enum: ["head", "chest", "legs", "feet", "leftHand", "rightHand", "accessory1", "accessory2"] }),
+  equipSlot: text("equip_slot", { enum: ["head", "torso", "legs", "accessory", "hands"] }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -192,7 +192,7 @@ export const characterEquipment = pgTable("character_equipment", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   itemId: text("item_id").notNull(),
-  slot: text("slot", { enum: ["head", "chest", "legs", "feet", "leftHand", "rightHand", "accessory1", "accessory2"] }).notNull(),
+  slot: text("slot", { enum: ["head", "torso", "legs", "accessory", "hands"] }).notNull(),
   equippedAt: timestamp("equipped_at").defaultNow(),
 });
 

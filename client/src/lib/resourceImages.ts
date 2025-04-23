@@ -1,13 +1,9 @@
-// Import React for JSX support
-import React from 'react';
-
 // Import the pixel art images
 import clothImg from '../assets/cloth.png';
 import copperImg from '../assets/copper.png';
 import crystalImg from '../assets/crystal.png';
 import techscrapImg from '../assets/techscrap.png';
-// Using direct path instead of import for loot crate image
-const lootCrateImg = '/images/loot-crate.png';
+import lootCrateImg from '../assets/loot-crate.png';
 import circuitBoardImg from '@assets/circuit board.png';
 import inkImg from '@assets/ink.png';
 import gizboImg from '@assets/gizbo.png';  // Optional character image for future use
@@ -153,27 +149,4 @@ export const getResourceDisplay = (type: string): { isImage: boolean; value: str
  */
 export const getLootCrateImage = (): ResourceImage => {
   return resourceImages['loot-crate'];
-};
-
-/**
- * Get resource icon properties for rendering
- * @param type The resource type or item id
- * @param size Optional size (sm, md, lg)
- * @returns Object with props for creating an image element
- */
-export const getResourceIconProps = (type: string, size: 'sm' | 'md' | 'lg' = 'md') => {
-  const resource = getResourceDisplay(type);
-  
-  // Size classes
-  const sizeClasses = {
-    sm: 'w-6 h-6',
-    md: 'w-10 h-10',
-    lg: 'w-14 h-14'
-  };
-  
-  return {
-    src: resource.value,
-    alt: resource.alt || type,
-    className: `${sizeClasses[size]} object-contain`
-  };
 };

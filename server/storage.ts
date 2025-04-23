@@ -454,15 +454,9 @@ export class DatabaseStorage implements IStorage {
       // For each equipped item, get the full item details
       const itemDetails = await this.getItem(item.itemId);
       if (itemDetails) {
-        // Format the response to match what the UI expects
         result[item.slot] = {
-          id: itemDetails.id,
-          name: itemDetails.name,
-          description: itemDetails.description,
-          flavorText: itemDetails.flavorText,
-          rarity: itemDetails.rarity,
-          imagePath: itemDetails.imagePath || `/images/items/${itemDetails.id}.png`,
-          equippedAt: item.equippedAt
+          ...item,
+          itemDetails
         };
       }
     }
@@ -1440,9 +1434,7 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Removed duplicate DatabaseStorage class definition
-// The proper implementation is at the top of the file
-/* REMOVED duplicate class definition - export class DatabaseStorage implements IStorage {
+export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
@@ -1917,7 +1909,4 @@ export class MemStorage implements IStorage {
 }
 
 // Switch to using the DatabaseStorage implementation
-// Close comment
-*/
-
 export const storage = new DatabaseStorage();
