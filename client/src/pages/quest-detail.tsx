@@ -728,17 +728,17 @@ export default function QuestDetailPage() {
                   
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <label className="text-sm font-medium text-gray-400">Loot Box Rewards</label>
+                      <label className="text-sm font-medium text-gray-400">Rewards</label>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => {
-                          const lootBoxRewards = editedQuest.lootBoxRewards || [];
+                          const rewards = editedQuest.rewards || [];
                           setEditedQuest({
                             ...editedQuest, 
-                            lootBoxRewards: [
-                              ...lootBoxRewards, 
-                              { type: 'common', quantity: 1 }
+                            rewards: [
+                              ...rewards, 
+                              { type: 'item', id: 'circuit-board', quantity: 1 }
                             ]
                           });
                         }}
@@ -748,32 +748,71 @@ export default function QuestDetailPage() {
                       </Button>
                     </div>
                     
-                    {editedQuest.lootBoxRewards && editedQuest.lootBoxRewards.length > 0 ? (
+                    {editedQuest.rewards && editedQuest.rewards.length > 0 ? (
                       <div className="space-y-2">
-                        {editedQuest.lootBoxRewards.map((reward: any, index: number) => (
+                        {editedQuest.rewards.map((reward: any, index: number) => (
                           <div key={index} className="flex items-center gap-2 bg-space-dark p-2 rounded-md">
                             <select
                               value={reward.type}
                               onChange={(e) => {
-                                const updatedRewards = [...editedQuest.lootBoxRewards];
-                                updatedRewards[index] = { ...reward, type: e.target.value };
-                                setEditedQuest({...editedQuest, lootBoxRewards: updatedRewards});
+                                const updatedRewards = [...editedQuest.rewards];
+                                updatedRewards[index] = { 
+                                  ...reward, 
+                                  type: e.target.value, 
+                                  // Reset ID when changing type to avoid invalid IDs
+                                  id: e.target.value === 'lootbox' ? 'common' : 
+                                       e.target.value === 'equipment' ? 'chainmail' : 'circuit-board'
+                                };
+                                setEditedQuest({...editedQuest, rewards: updatedRewards});
                               }}
-                              className="flex-1 px-2 py-1 rounded-md bg-space-mid border border-brand-orange/30 text-brand-light text-sm"
+                              className="w-28 px-2 py-1 rounded-md bg-space-mid border border-brand-orange/30 text-brand-light text-sm"
                             >
-                              <option value="common">Common</option>
-                              <option value="uncommon">Uncommon</option>
-                              <option value="rare">Rare</option>
-                              <option value="epic">Epic</option>
-                              <option value="legendary">Legendary</option>
+                              <option value="item">Item</option>
+                              <option value="lootbox">Loot Box</option>
+                              <option value="equipment">Equipment</option>
                             </select>
+                            
+                            {reward.type === 'lootbox' ? (
+                              <select
+                                value={reward.id}
+                                onChange={(e) => {
+                                  const updatedRewards = [...editedQuest.rewards];
+                                  updatedRewards[index] = { ...reward, id: e.target.value };
+                                  setEditedQuest({...editedQuest, rewards: updatedRewards});
+                                }}
+                                className="flex-1 px-2 py-1 rounded-md bg-space-mid border border-brand-orange/30 text-brand-light text-sm"
+                              >
+                                <option value="common">Common</option>
+                                <option value="uncommon">Uncommon</option>
+                                <option value="rare">Rare</option>
+                                <option value="epic">Epic</option>
+                                <option value="legendary">Legendary</option>
+                              </select>
+                            ) : (
+                              <select
+                                value={reward.id}
+                                onChange={(e) => {
+                                  const updatedRewards = [...editedQuest.rewards];
+                                  updatedRewards[index] = { ...reward, id: e.target.value };
+                                  setEditedQuest({...editedQuest, rewards: updatedRewards});
+                                }}
+                                className="flex-1 px-2 py-1 rounded-md bg-space-mid border border-brand-orange/30 text-brand-light text-sm"
+                              >
+                                {itemsQuery.data?.map((item: any) => (
+                                  <option key={item.id} value={item.id}>
+                                    {item.name}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                            
                             <Input 
                               type="number"
                               value={reward.quantity}
                               onChange={(e) => {
-                                const updatedRewards = [...editedQuest.lootBoxRewards];
+                                const updatedRewards = [...editedQuest.rewards];
                                 updatedRewards[index] = { ...reward, quantity: Number(e.target.value) };
-                                setEditedQuest({...editedQuest, lootBoxRewards: updatedRewards});
+                                setEditedQuest({...editedQuest, rewards: updatedRewards});
                               }}
                               className="w-20 bg-space-mid border-brand-orange/30 text-sm h-8 text-brand-light placeholder:text-gray-500"
                               min={1}
@@ -782,9 +821,9 @@ export default function QuestDetailPage() {
                               size="sm"
                               variant="ghost"
                               onClick={() => {
-                                const updatedRewards = [...editedQuest.lootBoxRewards];
+                                const updatedRewards = [...editedQuest.rewards];
                                 updatedRewards.splice(index, 1);
-                                setEditedQuest({...editedQuest, lootBoxRewards: updatedRewards});
+                                setEditedQuest({...editedQuest, rewards: updatedRewards});
                               }}
                               className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-transparent"
                             >
@@ -795,33 +834,116 @@ export default function QuestDetailPage() {
                       </div>
                     ) : (
                       <p className="text-sm text-muted-foreground text-center py-2 bg-space-dark rounded-md">
-                        No loot box rewards added yet
+                        No rewards added yet
                       </p>
                     )}
                   </div>
+                  
+                  {/* Keep backward compatibility with old loot box rewards */}
+                  {editedQuest.lootBoxRewards && editedQuest.lootBoxRewards.length > 0 && (
+                    <div className="border border-dashed border-yellow-500/50 p-3 rounded">
+                      <p className="text-yellow-500 text-xs mb-2">Legacy Loot Box Rewards</p>
+                      <div className="space-y-2">
+                        {editedQuest.lootBoxRewards.map((reward: any, index: number) => (
+                          <div key={index} className="flex items-center gap-2 bg-space-dark p-2 rounded-md opacity-70">
+                            <span className="flex-1 truncate">{reward.type} Loot Box</span>
+                            <span className="text-sm">{reward.quantity}x</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                // Convert to new format
+                                const newRewards = editedQuest.rewards || [];
+                                setEditedQuest({
+                                  ...editedQuest,
+                                  rewards: [
+                                    ...newRewards,
+                                    { type: 'lootbox', id: reward.type, quantity: reward.quantity }
+                                  ]
+                                });
+                                
+                                // Remove from old format
+                                const updatedLootBoxRewards = [...editedQuest.lootBoxRewards];
+                                updatedLootBoxRewards.splice(index, 1);
+                                setEditedQuest(prev => ({...prev, lootBoxRewards: updatedLootBoxRewards}));
+                              }}
+                              className="h-8 px-2 text-xs"
+                            >
+                              Convert
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 /* Regular display reward section */
-                <div className="space-y-2 mb-6">
+                <div className="space-y-4 mb-6">
                   <div className="flex justify-between">
                     <span>XP:</span>
                     <span className="font-medium">{quest.xpReward}</span>
                   </div>
                   
-                  {quest.lootBoxRewards && quest.lootBoxRewards.length > 0 ? (
+                  {/* New rewards display */}
+                  {quest.rewards && quest.rewards.length > 0 ? (
+                    <div className="space-y-2">
+                      <p className="mb-2">Rewards:</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {quest.rewards.map((reward, index) => {
+                          // Find item details
+                          const item = reward.type === 'lootbox' 
+                            ? { name: `${reward.id.charAt(0).toUpperCase() + reward.id.slice(1)} Loot Box`, imagePath: '/images/loot-crate.png' }
+                            : itemsQuery.data?.find((i: any) => i.id === reward.id);
+                          
+                          if (!item) return null;
+                          
+                          return (
+                            <div key={index} className="bg-space-dark p-2 rounded-md text-center">
+                              <div className="relative w-12 h-12 mx-auto mb-1">
+                                <img 
+                                  src={item.imagePath} 
+                                  alt={item.name}
+                                  className="w-full h-full object-contain"
+                                />
+                                {reward.quantity > 1 && (
+                                  <span className="absolute bottom-0 right-0 bg-brand-orange/80 text-white text-xs rounded px-1">
+                                    x{reward.quantity}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs truncate">{item.name}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : quest.lootBoxRewards && quest.lootBoxRewards.length > 0 ? (
+                    // Legacy rewards display
                     <div>
                       <p className="mb-2">Loot Boxes:</p>
-                      <ul className="space-y-1 ml-4">
+                      <div className="grid grid-cols-3 gap-2">
                         {quest.lootBoxRewards.map((reward, index) => (
-                          <li key={index} className="flex justify-between">
-                            <span>{reward.type} Loot Box:</span>
-                            <span>{reward.quantity}x</span>
-                          </li>
+                          <div key={index} className="bg-space-dark p-2 rounded-md text-center">
+                            <div className="relative w-12 h-12 mx-auto mb-1">
+                              <img 
+                                src="/images/loot-crate.png" 
+                                alt={`${reward.type} Loot Box`}
+                                className="w-full h-full object-contain"
+                              />
+                              {reward.quantity > 1 && (
+                                <span className="absolute bottom-0 right-0 bg-brand-orange/80 text-white text-xs rounded px-1">
+                                  x{reward.quantity}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs truncate">{reward.type.charAt(0).toUpperCase() + reward.type.slice(1)} Box</p>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">No loot boxes for this quest.</p>
+                    <p className="text-sm text-muted-foreground">No rewards for this quest.</p>
                   )}
                 </div>
               )}
