@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Recipe } from '@/../../shared/types';
 import { queryClient } from '@/lib/queryClient';
@@ -34,7 +34,7 @@ export function useCrafting() {
   });
   
   // Convert array of inventory items to Record<itemId, quantity> format for crafting
-  const inventory = React.useMemo(() => {
+  const inventory = useMemo(() => {
     const inventoryMap: Record<string, number> = {};
     if (Array.isArray(inventoryItems)) {
       inventoryItems.forEach(item => {
@@ -150,9 +150,9 @@ export function useCrafting() {
     
     // Check if user has enough materials
     let hasMaterials = true;
-    for (const [itemId, requiredAmount] of Object.entries(selectedRecipe.materials)) {
+    for (const [itemId, requiredAmount] of Object.entries(selectedRecipe.requiredItems || {})) {
       const usedAmount = usedMaterials[itemId] || 0;
-      if (usedAmount < requiredAmount) {
+      if (usedAmount < (requiredAmount as number)) {
         hasMaterials = false;
         break;
       }
