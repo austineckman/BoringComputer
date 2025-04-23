@@ -53,6 +53,8 @@ export default function LootBoxPreview() {
     queryKey: [`/api/loot-boxes/${lootBoxId}`],
     enabled: !!lootBoxId,
   });
+  
+  // We'll extract data later once we know the lootBox exists
 
   // Fetch all items for displaying names
   const { data: items, isLoading: isLoadingItems } = useQuery({
