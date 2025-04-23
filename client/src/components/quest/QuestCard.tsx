@@ -197,9 +197,20 @@ const QuestCard = ({
   
   // Helper function to find loot box data by id or type
   const getLootBoxData = (id: string, type: string) => {
-    return lootBoxConfigs?.find(config => 
-      config.id === id || config.id === type
+    if (!lootBoxConfigs) return null;
+    
+    // First try to find by exact id match
+    const exactMatch = lootBoxConfigs.find(config => config.id === id);
+    if (exactMatch) return exactMatch;
+    
+    // Otherwise look for case-insensitive matches
+    const caseInsensitiveMatch = lootBoxConfigs.find(config => 
+      config.id.toLowerCase() === id.toLowerCase() || 
+      config.id.toLowerCase() === type.toLowerCase()
     );
+    
+    // Return any match or null if none found
+    return caseInsensitiveMatch || null;
   };
   
   // Helper function to format item name
@@ -305,8 +316,12 @@ const QuestCard = ({
                     ) : (
                       <img 
                         src={getLootBoxData(lootBox.id || '', lootBox.type)?.image || '/assets/loot crate.png'}
-                        alt={`${getLootBoxData(lootBox.id || '', lootBox.type)?.name || lootBox.type} Loot Box`}
+                        alt={`${getLootBoxData(lootBox.id || '', lootBox.type)?.name || formatItemName(lootBox.type)} Loot Box`}
                         className="w-8 h-8 object-contain"
+                        onError={(e) => {
+                          // Fallback to default image if the database image fails to load
+                          e.currentTarget.src = '/assets/loot crate.png';
+                        }}
                       />
                     )}
                     {lootBox.quantity > 1 && (
@@ -347,6 +362,10 @@ const QuestCard = ({
                         src={getItemData(reward.id || reward.type)?.imagePath || `/assets/${reward.id || reward.type}.png`}
                         alt={getItemData(reward.id || reward.type)?.name || formatItemName(reward.type)}
                         className="w-8 h-8 object-contain"
+                        onError={(e) => {
+                          // Fallback to a generic item image if the database image fails to load
+                          e.currentTarget.src = '/assets/tech-scrap.png';
+                        }}
                       />
                       {reward.quantity > 1 && (
                         <span className="absolute bottom-0 right-0 bg-brand-orange/80 text-white text-xs rounded px-1">
