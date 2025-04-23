@@ -102,6 +102,12 @@ export interface IStorage {
   equipItem(userId: number, itemId: string, slot: string): Promise<CharacterEquipment>;
   unequipItem(userId: number, slot: string): Promise<boolean>;
   
+  // Statistics methods
+  getUserCount(): Promise<number>;
+  getItemCount(): Promise<number>;
+  getCraftingRecipeCount(): Promise<number>;
+  getQuestCount(): Promise<number>;
+  
   // Database management methods
   resetDatabase(): Promise<void>;
 }
