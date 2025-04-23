@@ -7,18 +7,24 @@
 /* CSGO-style unboxing animations */
 @keyframes scrollItems {
   0% {
-    transform: translateX(800%);
+    transform: translateX(100%);
+  }
+  10% {
+    transform: translateX(70%);
+  }
+  30% {
+    transform: translateX(20%);
   }
   60% {
-    transform: translateX(-300%);
+    transform: translateX(-70%);
   }
-  85% {
-    transform: translateX(-55%);
+  80% {
+    transform: translateX(-90%);
   }
-  92% {
+  90% {
     transform: translateX(-51%);
   }
-  96% {
+  95% {
     transform: translateX(-50.5%);
   }
   98% {
