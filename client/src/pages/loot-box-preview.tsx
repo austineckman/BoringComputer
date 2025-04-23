@@ -428,9 +428,9 @@ export default function LootBoxPreview() {
           {isAnimating && (
             <Button 
               onClick={() => {
+                console.log("Skipping animation");
                 setIsAnimating(false);
                 setShowFinalReward(true);
-                setTimeout(() => setOpenedRewards([selectedReward!]), 2000);
               }}
               variant="outline"
               className="mt-4"
@@ -440,12 +440,19 @@ export default function LootBoxPreview() {
           )}
           
           {/* Continue button after reveal */}
-          {showFinalReward && !openedRewards && (
+          {showFinalReward && selectedReward && (
             <Button 
-              onClick={() => setOpenedRewards([selectedReward!])}
+              onClick={() => {
+                console.log("Continue button clicked, selected reward:", selectedReward);
+                // If we haven't already set openedRewards, use the selectedReward
+                setOpenedRewards([selectedReward]);
+                // Make sure we're no longer in animation states
+                setIsAnimating(false);
+                setShowFinalReward(false);
+              }}
               className="mt-6 px-8"
             >
-              Continue
+              Continue to Rewards
             </Button>
           )}
         </div>
@@ -454,7 +461,8 @@ export default function LootBoxPreview() {
   }
 
   // Final reward display (after animation)
-  if (openedRewards) {
+  // This ensures we only show the final reward display if openedRewards exists and has items
+  if (openedRewards && openedRewards.length > 0) {
     return (
       <div className="container max-w-4xl py-8">
         <h1 className="text-3xl font-bold mb-6 text-center">
