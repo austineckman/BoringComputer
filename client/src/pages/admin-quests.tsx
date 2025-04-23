@@ -952,51 +952,235 @@ const AdminQuests: React.FC = () => {
                           <span>Quest Rewards</span>
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          Add loot box rewards for completing the quest
+                          Add rewards for completing the quest (items, equipment, or loot boxes)
                         </p>
                         
-                        <div className="flex space-x-2">
-                          <Select
-                            value={newRewardType}
-                            onValueChange={setNewRewardType}
-                          >
-                            <SelectTrigger className="w-[200px]">
-                              <SelectValue placeholder="Select reward type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {lootBoxConfigs.length > 0 ? (
-                                lootBoxConfigs.map((config: LootBoxConfig) => (
-                                  <SelectItem key={config.id} value={config.id}>
-                                    {config.name}
-                                  </SelectItem>
-                                ))
-                              ) : (
-                                <>
-                                  <SelectItem value="common">Common Loot Box</SelectItem>
-                                  <SelectItem value="uncommon">Uncommon Loot Box</SelectItem>
-                                  <SelectItem value="rare">Rare Loot Box</SelectItem>
-                                  <SelectItem value="epic">Epic Loot Box</SelectItem>
-                                  <SelectItem value="legendary">Legendary Loot Box</SelectItem>
-                                </>
-                              )}
-                            </SelectContent>
-                          </Select>
+                        {/* New reward interface with 3 tabs for different reward types */}
+                        <Tabs defaultValue="lootbox" className="w-full">
+                          <TabsList className="grid grid-cols-3 mb-4">
+                            <TabsTrigger value="lootbox">Loot Boxes</TabsTrigger>
+                            <TabsTrigger value="item">Items</TabsTrigger>
+                            <TabsTrigger value="equipment">Equipment</TabsTrigger>
+                          </TabsList>
                           
-                          <Input
-                            type="number"
-                            min={1}
-                            value={newRewardQuantity}
-                            onChange={(e) => setNewRewardQuantity(parseInt(e.target.value))}
-                            className="w-24"
-                          />
+                          {/* Loot Box Rewards Tab */}
+                          <TabsContent value="lootbox" className="space-y-4">
+                            <div className="flex space-x-2">
+                              <Select
+                                value={newRewardType}
+                                onValueChange={setNewRewardType}
+                              >
+                                <SelectTrigger className="w-[200px]">
+                                  <SelectValue placeholder="Select loot box" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {lootBoxConfigs.length > 0 ? (
+                                    lootBoxConfigs.map((config: LootBoxConfig) => (
+                                      <SelectItem key={config.id} value={config.id}>
+                                        {config.name}
+                                      </SelectItem>
+                                    ))
+                                  ) : (
+                                    <>
+                                      <SelectItem value="common">Common Loot Box</SelectItem>
+                                      <SelectItem value="uncommon">Uncommon Loot Box</SelectItem>
+                                      <SelectItem value="rare">Rare Loot Box</SelectItem>
+                                      <SelectItem value="epic">Epic Loot Box</SelectItem>
+                                      <SelectItem value="legendary">Legendary Loot Box</SelectItem>
+                                    </>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                              
+                              <Input
+                                type="number"
+                                min={1}
+                                value={newRewardQuantity}
+                                onChange={(e) => setNewRewardQuantity(parseInt(e.target.value))}
+                                className="w-24"
+                              />
+                              
+                              <Button 
+                                type="button" 
+                                onClick={() => {
+                                  // Add lootbox reward
+                                  const newReward = {
+                                    id: newRewardType,
+                                    type: 'lootbox',
+                                    quantity: newRewardQuantity
+                                  };
+                                  
+                                  // Use the new quest.rewards format
+                                  const updatedRewards = [...(formData.rewards || []), newReward];
+                                  setFormData({...formData, rewards: updatedRewards});
+                                  
+                                  // Reset input fields
+                                  setNewRewardQuantity(1);
+                                }}
+                              >
+                                Add Loot Box
+                              </Button>
+                            </div>
+                          </TabsContent>
                           
-                          <Button type="button" onClick={addReward}>
-                            Add Reward
-                          </Button>
-                        </div>
+                          {/* Items Rewards Tab */}
+                          <TabsContent value="item" className="space-y-4">
+                            <div className="flex space-x-2">
+                              <Select
+                                value={""}
+                                onValueChange={(value) => setNewRewardType(value)}
+                              >
+                                <SelectTrigger className="w-[200px]">
+                                  <SelectValue placeholder="Select item" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {items.map((item: any) => (
+                                    <SelectItem key={item.id} value={item.id}>
+                                      {item.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              
+                              <Input
+                                type="number"
+                                min={1}
+                                value={newRewardQuantity}
+                                onChange={(e) => setNewRewardQuantity(parseInt(e.target.value))}
+                                className="w-24"
+                              />
+                              
+                              <Button 
+                                type="button" 
+                                onClick={() => {
+                                  // Add item reward
+                                  const newReward = {
+                                    id: newRewardType,
+                                    type: 'item',
+                                    quantity: newRewardQuantity
+                                  };
+                                  
+                                  // Use the new quest.rewards format
+                                  const updatedRewards = [...(formData.rewards || []), newReward];
+                                  setFormData({...formData, rewards: updatedRewards});
+                                  
+                                  // Reset input fields
+                                  setNewRewardQuantity(1);
+                                  setNewRewardType("");
+                                }}
+                              >
+                                Add Item
+                              </Button>
+                            </div>
+                          </TabsContent>
+                          
+                          {/* Equipment Rewards Tab */}
+                          <TabsContent value="equipment" className="space-y-4">
+                            <div className="flex space-x-2">
+                              <Select
+                                value={""}
+                                onValueChange={(value) => setNewRewardType(value)}
+                              >
+                                <SelectTrigger className="w-[200px]">
+                                  <SelectValue placeholder="Select equipment" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {items
+                                    .filter((item: any) => item.category === 'equipment' || item.equipSlot)
+                                    .map((item: any) => (
+                                      <SelectItem key={item.id} value={item.id}>
+                                        {item.name}
+                                      </SelectItem>
+                                    ))
+                                  }
+                                </SelectContent>
+                              </Select>
+                              
+                              <Input
+                                type="number"
+                                min={1}
+                                value={newRewardQuantity}
+                                onChange={(e) => setNewRewardQuantity(parseInt(e.target.value))}
+                                className="w-24"
+                              />
+                              
+                              <Button 
+                                type="button" 
+                                onClick={() => {
+                                  // Add equipment reward
+                                  const newReward = {
+                                    id: newRewardType,
+                                    type: 'equipment',
+                                    quantity: newRewardQuantity
+                                  };
+                                  
+                                  // Use the new quest.rewards format
+                                  const updatedRewards = [...(formData.rewards || []), newReward];
+                                  setFormData({...formData, rewards: updatedRewards});
+                                  
+                                  // Reset input fields
+                                  setNewRewardQuantity(1);
+                                  setNewRewardType("");
+                                }}
+                              >
+                                Add Equipment
+                              </Button>
+                            </div>
+                          </TabsContent>
+                        </Tabs>
                         
-                        {lootBoxRewards.length > 0 && (
+                        {/* Display all rewards */}
+                        {formData.rewards && formData.rewards.length > 0 && (
                           <div className="space-y-2 mt-4">
+                            <h4 className="text-sm font-medium">Selected Rewards:</h4>
+                            {formData.rewards.map((reward, index) => {
+                              // Determine item details based on reward type
+                              let displayName = '';
+                              let icon = <Sparkles className="h-5 w-5 mr-2 text-amber-500" />;
+                              
+                              if (reward.type === 'lootbox') {
+                                const lootBoxName = lootBoxConfigs.find((config: LootBoxConfig) => config.id === reward.id)?.name ||
+                                                   reward.id.charAt(0).toUpperCase() + reward.id.slice(1) + ' Loot Box';
+                                displayName = `${reward.quantity}x ${lootBoxName}`;
+                                icon = <Sparkles className="h-5 w-5 mr-2 text-amber-500" />;
+                              } else if (reward.type === 'item') {
+                                const item = items.find((i: any) => i.id === reward.id);
+                                displayName = `${reward.quantity}x ${item?.name || reward.id}`;
+                                icon = <Package className="h-5 w-5 mr-2 text-blue-500" />;
+                              } else if (reward.type === 'equipment') {
+                                const equipment = items.find((i: any) => i.id === reward.id);
+                                displayName = `${reward.quantity}x ${equipment?.name || reward.id}`;
+                                icon = <Shield className="h-5 w-5 mr-2 text-purple-500" />;
+                              }
+                              
+                              return (
+                                <div key={index} className="flex items-center justify-between rounded-md border p-2">
+                                  <div className="flex items-center">
+                                    {icon}
+                                    <span>{displayName}</span>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      // Remove the reward at this index
+                                      const updatedRewards = [...formData.rewards];
+                                      updatedRewards.splice(index, 1);
+                                      setFormData({...formData, rewards: updatedRewards});
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                        
+                        {/* Legacy loot box rewards display (only if we have them) */}
+                        {lootBoxRewards.length > 0 && (
+                          <div className="space-y-2 mt-4 border-t pt-4">
+                            <h4 className="text-sm font-medium text-amber-500">Legacy Loot Box Rewards:</h4>
                             {lootBoxRewards.map((reward, index) => (
                               <div key={index} className="flex items-center justify-between rounded-md border p-2">
                                 <div className="flex items-center">
