@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { getItemDetails } from '@/lib/itemDatabase';
 import { getRarityColorClass, getRarityBadgeClass } from '@/lib/styleUtils';
-import { LootBox } from '@/pages/new-inventory';
+import { LootBox } from '@/pages/unified-inventory';
 
 // Define drag item type
 export const INVENTORY_ITEM = 'inventoryItem';
