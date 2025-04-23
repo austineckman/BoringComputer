@@ -454,9 +454,15 @@ export class DatabaseStorage implements IStorage {
       // For each equipped item, get the full item details
       const itemDetails = await this.getItem(item.itemId);
       if (itemDetails) {
+        // Format the response to match what the UI expects
         result[item.slot] = {
-          ...item,
-          itemDetails
+          id: itemDetails.id,
+          name: itemDetails.name,
+          description: itemDetails.description,
+          flavorText: itemDetails.flavorText,
+          rarity: itemDetails.rarity,
+          imagePath: itemDetails.imagePath || `/images/items/${itemDetails.id}.png`,
+          equippedAt: item.equippedAt
         };
       }
     }
