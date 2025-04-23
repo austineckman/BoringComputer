@@ -9,8 +9,12 @@ import {
   UserAchievement, InsertUserAchievement,
   LootBox, InsertLootBox,
   InventoryHistory, InsertInventoryHistory,
-  Item, InsertItem
+  Item, InsertItem,
+  users, quests, userQuests, submissions, craftables, craftedItems,
+  achievements, userAchievements, lootBoxes, inventoryHistory, craftingRecipes, items, lootBoxConfigs
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, desc } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
