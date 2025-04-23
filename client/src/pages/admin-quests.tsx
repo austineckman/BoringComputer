@@ -116,7 +116,16 @@ const questFormSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { 
     message: "Date must be in YYYY-MM-DD format" 
   }),
-  adventureLine: z.string().min(1, { message: "Adventure line is required" }),
+  adventureLine: z.enum([
+    "30 Days Lost in Space", 
+    "Cogsworth City", 
+    "Neon Realm", 
+    "Nebula Raider", 
+    "Pandoras Box"
+  ], { 
+    required_error: "Adventure line is required",
+    invalid_type_error: "Please select a valid adventure line"
+  }),
   difficulty: z.coerce.number().min(1).max(5),
   orderInLine: z.coerce.number().min(0),
   xpReward: z.coerce.number().min(1),
@@ -279,7 +288,7 @@ const AdminQuests: React.FC = () => {
       title: '',
       description: '',
       date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
-      adventureLine: '',
+      adventureLine: '30 Days Lost in Space',
       difficulty: 1,
       orderInLine: 0,
       xpReward: 100,
@@ -346,7 +355,7 @@ const AdminQuests: React.FC = () => {
       title: '',
       description: '',
       date: new Date().toISOString().split('T')[0],
-      adventureLine: '',
+      adventureLine: '30 Days Lost in Space',
       difficulty: 1,
       orderInLine: 0,
       xpReward: 100,
@@ -365,11 +374,19 @@ const AdminQuests: React.FC = () => {
 
   // Handle opening the dialog for editing an existing quest
   const handleEditQuest = (quest: Quest) => {
+    // Ensure adventureLine is one of our valid options
+    let validAdventureLine = quest.adventureLine;
+    const validOptions = ["30 Days Lost in Space", "Cogsworth City", "Neon Realm", "Nebula Raider", "Pandoras Box"];
+    
+    if (!validOptions.includes(validAdventureLine)) {
+      validAdventureLine = "30 Days Lost in Space"; // Default if not a valid option
+    }
+    
     form.reset({
       title: quest.title,
       description: quest.description,
       date: quest.date,
-      adventureLine: quest.adventureLine,
+      adventureLine: validAdventureLine as any, // Cast to any to prevent TS error during transition
       difficulty: quest.difficulty,
       orderInLine: quest.orderInLine,
       xpReward: quest.xpReward,
@@ -579,10 +596,21 @@ const AdminQuests: React.FC = () => {
                               <FormItem>
                                 <FormLabel>Adventure Line</FormLabel>
                                 <FormControl>
-                                  <Input 
-                                    {...field} 
-                                    placeholder="e.g., Electronics Basics"
-                                  />
+                                  <Select
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select adventure kit" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="30 Days Lost in Space">30 Days Lost in Space</SelectItem>
+                                      <SelectItem value="Cogsworth City">Cogsworth City</SelectItem>
+                                      <SelectItem value="Neon Realm">Neon Realm</SelectItem>
+                                      <SelectItem value="Nebula Raider">Nebula Raider</SelectItem>
+                                      <SelectItem value="Pandoras Box">Pandoras Box</SelectItem>
+                                    </SelectContent>
+                                  </Select>
                                 </FormControl>
                                 <FormDescription>
                                   The kit or topic this quest belongs to
