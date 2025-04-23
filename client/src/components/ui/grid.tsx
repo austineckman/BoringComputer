@@ -112,5 +112,5 @@ export const Grid5x5: React.FC<{
   );
 };
 
-// Export Grid5x5 for the recipe editor
-export { Grid5x5 };
+// GridCell is also exported for more flexibility
+export { GridCell };
