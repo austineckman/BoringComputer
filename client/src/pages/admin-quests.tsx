@@ -470,6 +470,7 @@ const AdminQuests: React.FC = () => {
         codeBlocks: codeBlocks,
       },
       lootBoxRewards: lootBoxRewards,
+      rewards: lootBoxRewards, // Add the rewards field to match server expectations
     };
 
     if (editingQuest) {
