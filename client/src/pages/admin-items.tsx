@@ -135,16 +135,46 @@ const AdminItems: React.FC = () => {
   // Update item mutation
   const updateItemMutation = useMutation({
     mutationFn: async ({ itemId, formData }: { itemId: string; formData: FormData }) => {
-      const response = await fetch(`/api/admin/items/${itemId}`, {
+      // First update the basic item properties
+      const itemDataResponse = await fetch(`/api/admin/items/${itemId}`, {
         method: 'PUT',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.get('name'),
+          description: formData.get('description'),
+          rarity: formData.get('rarity'),
+          category: formData.get('category'),
+          isEquippable: formData.get('isEquippable') === 'true',
+          equipSlot: formData.get('equipSlot'),
+        }),
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to update item');
+      if (!itemDataResponse.ok) {
+        throw new Error('Failed to update item data');
       }
       
-      return response.json();
+      // If there's an image file, upload it separately
+      const imageFile = formData.get('image') as File;
+      if (imageFile && imageFile.size > 0) {
+        const imageFormData = new FormData();
+        imageFormData.append('image', imageFile);
+        
+        const imageResponse = await fetch(`/api/admin/items/${itemId}/image`, {
+          method: 'POST',
+          body: imageFormData,
+        });
+        
+        if (!imageResponse.ok) {
+          throw new Error('Failed to upload image');
+        }
+        
+        const imageResult = await imageResponse.json();
+        return imageResult.item; // Return the updated item with new image path
+      }
+      
+      return itemDataResponse.json();
     },
     onSuccess: () => {
       setIsEditDialogOpen(false);
