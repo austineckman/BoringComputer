@@ -1251,6 +1251,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Admin route to reset inventory to exactly 1 of each item
+  app.post('/api/admin/inventory/reset-to-one', authenticate, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (!user) return res.status(401).json({ message: "User not found" });
+      
+      // Check if user has admin role (you can replace this with your own admin check)
+      const isAdmin = user.roles?.includes('admin');
+      if (!isAdmin) return res.status(403).json({ message: "Admin privileges required" });
+      
+      // Get all items from the database
+      const adminItems = await storage.getItems();
+      
+      // Create a new inventory with exactly 1 of each item
+      const newInventory: Record<string, number> = {};
+      
+      for (const item of adminItems) {
+        newInventory[item.id] = 1;
+        
+        // Add to history to track reset
+        await storage.createInventoryHistory({
+          userId: user.id,
+          type: item.id,
+          quantity: 1, // Set to 1
+          action: 'reset',
+          source: 'admin_reset'
+        });
+      }
+      
+      // Update user's inventory
+      await storage.updateUser(user.id, { inventory: newInventory });
+      
+      return res.json({ 
+        message: `Reset inventory to exactly 1 of each item (${adminItems.length} items)`,
+        inventory: newInventory
+      });
+    } catch (error) {
+      console.error('Error resetting inventory:', error);
+      return res.status(500).json({ message: "Failed to reset inventory" });
+    }
+  });
+  
   app.post('/api/loot-boxes/:lootBoxId/open', authenticate, async (req, res) => {
     try {
       const lootBoxId = parseInt(req.params.lootBoxId);
