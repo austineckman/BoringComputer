@@ -9,6 +9,7 @@ import Forge from "@/pages/forge";
 import Achievements from "@/pages/achievements";
 import Settings from "@/pages/settings";
 import Admin from "@/pages/admin";
+import AdminSimple from "@/pages/admin-simple";
 import NotFound from "@/pages/not-found";
 import MainLayout from "@/components/layout/MainLayout";
 import { useQuery } from "@tanstack/react-query";
@@ -121,6 +122,10 @@ function App() {
         </ProtectedRoute>
         
         <AdminRoute path="/admin">
+          <AdminSimple />
+        </AdminRoute>
+        
+        <AdminRoute path="/admin-full">
           <Admin />
         </AdminRoute>
         
