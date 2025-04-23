@@ -74,7 +74,10 @@ import {
   Archive,
   ArrowUpDown,
   Upload,
-  Loader2
+  Loader2,
+  Shirt,
+  Cog,
+  X
 } from 'lucide-react';
 
 // Define quest types
@@ -175,6 +178,12 @@ const AdminQuests: React.FC = () => {
   const [lootBoxRewards, setLootBoxRewards] = useState<{type: string, quantity: number}[]>([]);
   const [newRewardType, setNewRewardType] = useState('');
   const [newRewardQuantity, setNewRewardQuantity] = useState(1);
+  
+  // New rewards state for unified system
+  const [rewardTabValue, setRewardTabValue] = useState('lootbox');
+  const [formData, setFormData] = useState<any>({
+    rewards: []
+  });
   
   const { toast } = useToast();
 
@@ -362,7 +371,7 @@ const AdminQuests: React.FC = () => {
     setCodeBlocks(codeBlocks.filter((_, i) => i !== index));
   };
 
-  // Reward management functions
+  // Legacy reward management functions
   const addReward = () => {
     if (newRewardType) {
       setLootBoxRewards([...lootBoxRewards, {
@@ -376,6 +385,21 @@ const AdminQuests: React.FC = () => {
 
   const removeReward = (index: number) => {
     setLootBoxRewards(lootBoxRewards.filter((_, i) => i !== index));
+  };
+  
+  // New unified reward management functions
+  const addUnifiedReward = (rewardData: { type: string, id: string, quantity: number }) => {
+    setFormData(prev => ({
+      ...prev,
+      rewards: [...prev.rewards, rewardData]
+    }));
+  };
+  
+  const removeUnifiedReward = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      rewards: prev.rewards.filter((_, i) => i !== index)
+    }));
   };
 
   // Handle opening the dialog for adding a new quest
@@ -427,8 +451,24 @@ const AdminQuests: React.FC = () => {
     setImageUrls(quest.content?.images || []);
     setCodeBlocks(quest.content?.codeBlocks || []);
     
-    // Load rewards
+    // Load rewards (legacy format)
     setLootBoxRewards(quest.lootBoxRewards || []);
+    
+    // Load rewards (new unified format if available)
+    if (quest.rewards && Array.isArray(quest.rewards) && quest.rewards.length > 0) {
+      setFormData({ rewards: quest.rewards });
+    } else if (quest.lootBoxRewards && quest.lootBoxRewards.length > 0) {
+      // Convert from legacy format
+      setFormData({
+        rewards: quest.lootBoxRewards.map(reward => ({
+          type: 'lootbox',
+          id: reward.type,
+          quantity: reward.quantity
+        }))
+      });
+    } else {
+      setFormData({ rewards: [] });
+    }
     
     setEditingQuest(quest);
     setIsAddingQuest(false);
@@ -451,6 +491,10 @@ const AdminQuests: React.FC = () => {
     setNewCodeContent('');
     setNewRewardType('');
     setNewRewardQuantity(1);
+    
+    // Reset new unified reward system
+    setRewardTabValue('lootbox');
+    setFormData({ rewards: [] });
   };
 
   // Handle form submission
@@ -463,8 +507,12 @@ const AdminQuests: React.FC = () => {
         codeBlocks: codeBlocks,
       },
       heroImage: imageUrls.length > 0 ? imageUrls[0] : null, // Set the first uploaded image as hero image
-      lootBoxRewards: lootBoxRewards,
-      rewards: lootBoxRewards, // Add the rewards field to match server expectations
+      lootBoxRewards: lootBoxRewards, // Keep legacy format for backward compatibility
+      rewards: formData.rewards.length > 0 ? formData.rewards : lootBoxRewards.map(reward => ({
+        type: 'lootbox',
+        id: reward.type,
+        quantity: reward.quantity
+      })), // Use new format if available, otherwise convert legacy format
     };
 
     if (editingQuest) {
