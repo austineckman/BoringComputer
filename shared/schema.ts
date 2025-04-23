@@ -160,11 +160,11 @@ export const items = pgTable("items", {
   id: text("id").primaryKey(), // e.g., "copper", "crystal"
   name: text("name").notNull(),
   description: text("description").notNull(),
-  flavorText: text("flavor_text").notNull(),
+  flavorText: text("flavor_text"), // Made optional
   rarity: text("rarity", { enum: ["common", "uncommon", "rare", "epic", "legendary"] }).notNull(),
-  craftingUses: jsonb("crafting_uses").$type<string[]>().notNull(),
-  imagePath: text("image_path").notNull(),
-  category: text("category").notNull().default("resource"), // resource, component, tool, etc.
+  craftingUses: jsonb("crafting_uses").$type<string[]>().default([]), // Made optional with default empty array
+  imagePath: text("image_path"), // Made optional
+  category: text("category").default("resource"), // Made optional with default value - resource, component, tool, etc.
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
