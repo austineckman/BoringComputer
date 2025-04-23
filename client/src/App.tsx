@@ -5,6 +5,7 @@ import Login from "@/pages/login";
 import Quests from "@/pages/quests";
 import QuestDetail from "@/pages/quest-detail";
 import Inventory from "@/pages/new-inventory";
+import Character from "@/pages/character";
 import Forge from "@/pages/forge";
 import Achievements from "@/pages/achievements";
 import Settings from "@/pages/settings";
@@ -100,6 +101,12 @@ function App() {
         <ProtectedRoute path="/inventory">
           <MainLayout>
             <Inventory />
+          </MainLayout>
+        </ProtectedRoute>
+        
+        <ProtectedRoute path="/character">
+          <MainLayout>
+            <Character />
           </MainLayout>
         </ProtectedRoute>
         

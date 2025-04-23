@@ -1,0 +1,66 @@
+🎯 Goal: Character Equipment Screen (Like Terraria)
+
+🧠 Here’s How to Prep the Agent with Context + Vision
+
+⸻
+
+✍️ Message to Send:
+
+⸻
+
+Hey! Before we jump into implementation, I want to walk through the next major feature:
+We’re adding a character screen where players can equip crafted gear to their profile, similar to how gear works in Terraria.
+
+⸻
+
+🧩 The Feature We’re Building:
+
+We want users to:
+	•	See a pixel art base character in a character panel
+	•	Equip gear to different body slots (head, torso, legs, accessory, etc.)
+	•	Drag/drop gear they’ve crafted from their inventory into those slots
+	•	See gear visually change their character if assets exist
+	•	Store their gear setup persistently — saved to their profile
+	•	(Later: use gear to unlock roles, abilities, Discord perks, or visual badges)
+
+⸻
+
+🧱 Feature Details & Suggestions:
+
+1. Character Base:
+	•	A base pixel avatar (we’ll supply or generate this)
+	•	Different genders/races/skins later — for now, just a neutral base
+
+2. Equipment Slots:
+	•	Head (e.g. Gizbo’s Goggles)
+	•	Torso
+	•	Legs
+	•	Back/Accessory
+	•	Hands (optional for weapons/tools)
+
+3. Drag & Drop UI (Front-End):
+	•	User drags an item from inventory to a gear slot
+	•	Show equipped item visually or via icon
+	•	Optional: tooltips on hover for flavor text or rarity
+
+4. Storage & Sync:
+	•	Save gear loadout to user’s profile (e.g. equipped: { head: "gizbo_goggles" })
+	•	Must persist across sessions
+	•	Should be retrievable when user logs in
+
+5. Display on Public Profile:
+	•	We’ll eventually show equipped gear on their profile page or quest submissions
+	•	Possibly link to their Discord ID or crafting rank
+
+⸻
+
+🧠 Questions for You (Before Coding Begins):
+	1.	What would be your recommended way to structure and store equipment slots? Should we store each slot as a key in a DB row or use a JSON blob?
+	2.	How do you suggest handling item types vs valid slots? E.g., only “head” items should go in the head slot.
+	3.	What frontend tool/library would be best for implementing drag and drop in this setup (given our tech stack)?
+	4.	For the visual preview of the character, should we:
+	•	Render individual gear layers as pixel art overlays?
+	•	Or use icons for now and skip visual rendering?
+	5.	What file/data structure should we use to define gear metadata (slot type, rarity, stats, image URL)?
+	6.	Are there performance concerns with loading this gear screen alongside the inventory?
+	7.	Should we preload gear sprites for equipped items, or lazy-load them?
