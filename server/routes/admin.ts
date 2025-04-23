@@ -658,4 +658,176 @@ router.post('/item-upload', upload.single('image'), async (req, res) => {
   }
 });
 
+// =================
+// LOOT BOX CONFIGS
+// =================
+
+// Get all loot box configurations
+router.get('/lootboxes', async (req, res) => {
+  try {
+    const allConfigs = await storage.getLootBoxConfigs();
+    res.json(allConfigs);
+  } catch (error) {
+    console.error('Error fetching loot box configs:', error);
+    res.status(500).json({ error: 'Failed to fetch loot box configurations' });
+  }
+});
+
+// Get a single loot box configuration
+router.get('/lootboxes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const config = await storage.getLootBoxConfig(id);
+    
+    if (!config) {
+      return res.status(404).json({ error: 'Loot box configuration not found' });
+    }
+    
+    res.json(config);
+  } catch (error) {
+    console.error('Error fetching loot box config:', error);
+    res.status(500).json({ error: 'Failed to fetch loot box configuration' });
+  }
+});
+
+// Create a new loot box configuration
+router.post('/lootboxes', async (req, res) => {
+  try {
+    // Validate request body
+    const validatedData = insertLootBoxConfigSchema.parse(req.body);
+    
+    // Check if config with this ID already exists
+    const existingConfig = await storage.getLootBoxConfig(validatedData.id);
+    if (existingConfig) {
+      return res.status(400).json({ error: 'A loot box configuration with this ID already exists' });
+    }
+    
+    // Validate that weights sum to 100%
+    const totalWeight = validatedData.itemDropTable.reduce((sum, item) => sum + item.weight, 0);
+    if (Math.abs(totalWeight - 100) > 0.01) {
+      return res.status(400).json({ 
+        error: 'Item weights must sum to 100%', 
+        currentSum: totalWeight 
+      });
+    }
+    
+    // Create the loot box configuration
+    const newConfig = await storage.createLootBoxConfig(validatedData);
+    
+    res.status(201).json(newConfig);
+  } catch (error) {
+    console.error('Error creating loot box config:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors });
+    }
+    res.status(500).json({ error: 'Failed to create loot box configuration' });
+  }
+});
+
+// Update a loot box configuration
+router.put('/lootboxes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Check if the config exists
+    const existingConfig = await storage.getLootBoxConfig(id);
+    if (!existingConfig) {
+      return res.status(404).json({ error: 'Loot box configuration not found' });
+    }
+    
+    // Validate request body - skip ID validation since we're using the ID from the URL
+    const validatedData = insertLootBoxConfigSchema.omit({ id: true }).parse(req.body);
+    
+    // Validate that weights sum to 100%
+    const totalWeight = validatedData.itemDropTable.reduce((sum, item) => sum + item.weight, 0);
+    if (Math.abs(totalWeight - 100) > 0.01) {
+      return res.status(400).json({ 
+        error: 'Item weights must sum to 100%', 
+        currentSum: totalWeight 
+      });
+    }
+    
+    // Update the loot box configuration
+    const updatedConfig = await storage.updateLootBoxConfig(id, validatedData);
+    
+    if (!updatedConfig) {
+      return res.status(500).json({ error: 'Failed to update loot box configuration' });
+    }
+    
+    res.json(updatedConfig);
+  } catch (error) {
+    console.error('Error updating loot box config:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors });
+    }
+    res.status(500).json({ error: 'Failed to update loot box configuration' });
+  }
+});
+
+// Delete a loot box configuration
+router.delete('/lootboxes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Check if the config exists
+    const existingConfig = await storage.getLootBoxConfig(id);
+    if (!existingConfig) {
+      return res.status(404).json({ error: 'Loot box configuration not found' });
+    }
+    
+    // Delete the loot box configuration
+    const success = await storage.deleteLootBoxConfig(id);
+    
+    if (!success) {
+      return res.status(500).json({ error: 'Failed to delete loot box configuration' });
+    }
+    
+    res.json({ success: true, message: 'Loot box configuration deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting loot box config:', error);
+    res.status(500).json({ error: 'Failed to delete loot box configuration' });
+  }
+});
+
+// Upload a loot box image
+router.post('/lootboxes/:id/upload', upload.single('image'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Check if a file was uploaded
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file was uploaded' });
+    }
+    
+    // Check if the loot box config exists
+    const existingConfig = await storage.getLootBoxConfig(id);
+    if (!existingConfig) {
+      return res.status(404).json({ error: 'Loot box configuration not found' });
+    }
+    
+    // Get the file path relative to the public directory
+    const filePath = getPublicImageUrl(path.basename(req.file.path));
+    
+    // Update the loot box config with the new image path
+    const updatedConfig = await storage.updateLootBoxConfig(id, { 
+      image: filePath 
+    });
+    
+    if (!updatedConfig) {
+      return res.status(500).json({ error: 'Failed to update loot box configuration with new image' });
+    }
+    
+    // Return success response with the image path
+    res.json({ 
+      success: true, 
+      message: 'Image uploaded successfully',
+      imagePath: filePath,
+      config: updatedConfig
+    });
+  } catch (error) {
+    console.error('Error uploading loot box image:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
 export default router;

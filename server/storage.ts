@@ -1148,6 +1148,59 @@ export class DatabaseStorage implements IStorage {
     return updatedLootBox || undefined;
   }
   
+  // Loot Box Config methods
+  async getLootBoxConfigs(): Promise<LootBoxConfig[]> {
+    return await db.select().from(lootBoxConfigs);
+  }
+
+  async getLootBoxConfig(id: string): Promise<LootBoxConfig | undefined> {
+    const [config] = await db.select().from(lootBoxConfigs).where(eq(lootBoxConfigs.id, id));
+    return config || undefined;
+  }
+
+  async createLootBoxConfig(insertConfig: InsertLootBoxConfig): Promise<LootBoxConfig> {
+    // Add timestamps
+    const now = new Date();
+    const configWithTimestamps = {
+      ...insertConfig,
+      createdAt: now,
+      updatedAt: now
+    };
+    
+    const [config] = await db
+      .insert(lootBoxConfigs)
+      .values(configWithTimestamps)
+      .returning();
+    return config;
+  }
+
+  async updateLootBoxConfig(id: string, configData: Partial<LootBoxConfig>): Promise<LootBoxConfig | undefined> {
+    // Always update the timestamp
+    const dataWithTimestamp = {
+      ...configData,
+      updatedAt: new Date()
+    };
+    
+    const [updatedConfig] = await db
+      .update(lootBoxConfigs)
+      .set(dataWithTimestamp)
+      .where(eq(lootBoxConfigs.id, id))
+      .returning();
+    return updatedConfig || undefined;
+  }
+
+  async deleteLootBoxConfig(id: string): Promise<boolean> {
+    try {
+      await db
+        .delete(lootBoxConfigs)
+        .where(eq(lootBoxConfigs.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting loot box config:", error);
+      return false;
+    }
+  }
+  
   // Inventory History methods
   async getInventoryHistory(userId: number): Promise<InventoryHistory[]> {
     return await db
