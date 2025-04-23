@@ -909,6 +909,24 @@ export class MemStorage implements IStorage {
     });
   }
 
+  // Statistics methods
+  async getUserCount(): Promise<number> {
+    return this.users.size;
+  }
+
+  async getItemCount(): Promise<number> {
+    return this.items.size;
+  }
+
+  async getCraftingRecipeCount(): Promise<number> {
+    // Just return 0 for now as this would be implemented with proper crafting recipes
+    return 0;
+  }
+
+  async getQuestCount(): Promise<number> {
+    return this.quests.size;
+  }
+
   async resetDatabase(): Promise<void> {
     // Clear all data
     this.users = new Map();
