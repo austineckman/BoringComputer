@@ -15,6 +15,7 @@ import {
   Settings,
   ShieldAlert,
   Users,
+  Hammer,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -39,9 +40,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   // Navigation items
   const navItems = [
     { name: 'Dashboard', href: '/admin', icon: <Home className="h-5 w-5" /> },
-    { name: 'Quests', href: '/admin-quests', icon: <ScrollText className="h-5 w-5" /> },
     { name: 'Items', href: '/admin-items', icon: <Package className="h-5 w-5" /> },
-    { name: 'Recipes', href: '/admin-recipes', icon: <ListPlus className="h-5 w-5" /> },
+    { name: 'Recipes', href: '/admin-recipes', icon: <Hammer className="h-5 w-5" /> },
+    { name: 'Quests', href: '/admin-quests', icon: <ScrollText className="h-5 w-5" /> },
     { name: 'Users', href: '/admin-users', icon: <Users className="h-5 w-5" /> },
     { name: 'Stats', href: '/admin-stats', icon: <BarChart2 className="h-5 w-5" /> },
     { name: 'Settings', href: '/admin-settings', icon: <Settings className="h-5 w-5" /> },
@@ -122,7 +123,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 p-6">{children}</main>
       </div>
     </div>
   );
