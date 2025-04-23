@@ -363,20 +363,31 @@ export default function Inventory() {
     }
   }, []);
   
+  // Track loot box data changes to rebuild the grid if loot boxes change
+  const [lootBoxesData, setLootBoxesData] = useState<LootBox[] | null>(null);
+  
+  // Update lootBoxesData when lootBoxes changes
+  useEffect(() => {
+    if (lootBoxes) {
+      setLootBoxesData(lootBoxes);
+    }
+  }, [lootBoxes]);
+  
   // Load inventory grid layout when component mounts and when new items arrive
   useEffect(() => {
     try {
-      // Create a copy of the current inventoryGrid
-      let newGrid = [...inventoryGrid];
+      console.log("Rebuilding inventory grid...");
+      
+      // Clear the grid completely to ensure it's rebuilt with current data
+      // This is necessary to remove opened loot boxes
+      const freshGrid = Array(totalSlots).fill(null);
       
       // Attempt to load saved layout
       const savedLayoutStr = localStorage.getItem('inventoryLayout');
       const savedLayout = savedLayoutStr ? JSON.parse(savedLayoutStr) : null;
       
       // Set of item types that already exist in the grid
-      const existingItemTypes = new Set(
-        newGrid.filter(item => item !== null).map(item => item!.type)
-      );
+      const existingItemTypes = new Set();
       
       // Process all inventory items
       for (const item of allInventoryItems) {
@@ -389,18 +400,18 @@ export default function Inventory() {
         const savedPosition = savedLayout ? 
           savedLayout.findIndex((saved: any) => saved !== null && saved.type === item.type) : -1;
         
-        if (savedPosition >= 0 && savedPosition < totalSlots && newGrid[savedPosition] === null) {
+        if (savedPosition >= 0 && savedPosition < totalSlots && freshGrid[savedPosition] === null) {
           // If we have a saved position and it's empty, use it
-          newGrid[savedPosition] = item;
+          freshGrid[savedPosition] = item;
         } else {
           // Otherwise, find first empty slot
-          const emptySlotIndex = newGrid.findIndex(slot => slot === null);
+          const emptySlotIndex = freshGrid.findIndex(slot => slot === null);
           if (emptySlotIndex >= 0) {
-            newGrid[emptySlotIndex] = item;
+            freshGrid[emptySlotIndex] = item;
           } else {
             // No empty slots, append to the end if there's room
-            if (newGrid.length < totalSlots) {
-              newGrid.push(item);
+            if (freshGrid.length < totalSlots) {
+              freshGrid.push(item);
             }
             // If no room, item is ignored (inventory full)
           }
@@ -410,15 +421,13 @@ export default function Inventory() {
         existingItemTypes.add(item.type);
       }
       
-      // Only update the grid if changes were made
-      if (JSON.stringify(newGrid) !== JSON.stringify(inventoryGrid)) {
-        setInventoryGrid(newGrid);
-        saveInventoryLayout(newGrid);
-      }
+      // Always update the grid, since we're completely rebuilding it
+      setInventoryGrid(freshGrid);
+      saveInventoryLayout(freshGrid);
     } catch (error) {
       console.error('Error processing inventory layout:', error);
     }
-  }, [allInventoryItems, totalSlots, inventoryGrid, saveInventoryLayout]);
+  }, [allInventoryItems, totalSlots, saveInventoryLayout, lootBoxesData]);
   
   // Function to move an item from one position to another
   const moveItem = useCallback((fromIndex: number, toIndex: number) => {
@@ -772,6 +781,27 @@ export default function Inventory() {
             queryClient.invalidateQueries({ queryKey: ['/api/loot-boxes'] });
             queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
             queryClient.invalidateQueries({ queryKey: ['/api/inventory/history'] });
+            
+            // Force an update of the lootBoxesData state to trigger inventory grid rebuild
+            if (lootBoxes) {
+              // Make a deep copy of the current loot boxes data with the current box marked as opened
+              const updatedLootBoxes = lootBoxes.map(box => {
+                if (box.id === currentLootBox?.id) {
+                  // Create a new object with the opened status set to true
+                  return {
+                    ...box, 
+                    opened: true,
+                    openedAt: new Date()
+                  };
+                }
+                return box;
+              });
+              
+              // Update the state which will trigger the inventory grid rebuild
+              setLootBoxesData(updatedLootBoxes);
+              
+              console.log("Updated loot boxes with opened status:", updatedLootBoxes);
+            }
             
             // Play success sound
             try {
