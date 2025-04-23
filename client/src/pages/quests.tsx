@@ -43,10 +43,22 @@ const Quests = () => {
   const [submission, setSubmission] = useState("");
   const [image, setImage] = useState<string | null>(null);
   
-  // Filter quests by adventure line and status
+  // Find the adventure name from ID if needed
+  const getAdventureNameFromId = (id: string): string | undefined => {
+    const adventure = themeConfig.adventureLines.find(adv => adv.id === id);
+    return adventure?.name;
+  };
+  
+  // Filter quests by adventure line and status, matching by both ID and name
   const filteredQuests = quests.filter(quest => {
     if (filter === "all") return true;
-    return quest.adventureLine === filter;
+    
+    // Check if quest matches by adventure ID directly
+    if (quest.adventureLine === filter) return true;
+    
+    // Check if quest matches by adventure name (when filter is an ID but quest has a name)
+    const adventureName = getAdventureNameFromId(filter);
+    return quest.adventureLine === adventureName;
   });
   
   // Group by status
