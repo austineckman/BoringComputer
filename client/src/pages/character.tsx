@@ -185,7 +185,16 @@ const CharacterPage = () => {
   const filteredItems = React.useMemo(() => {
     if (!inventoryItems) return [];
     
+    console.log("Inventory items:", inventoryItems);
+    
     return inventoryItems.filter((item: any) => {
+      // Debug logging to see what's going on with item attributes
+      console.log(`Item ${item.name}:`, { 
+        isEquippable: item.isEquippable, 
+        equipSlot: item.equipSlot, 
+        selectedSlot
+      });
+      
       // Check if the item is equippable and matches the selected slot
       return item.isEquippable === true && item.equipSlot === selectedSlot;
     });
