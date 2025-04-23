@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useAuth } from '@/hooks/useAuth';
 import { themeConfig } from '@/lib/themeConfig';
 import MainLayout from '@/components/layout/MainLayout';
+import { queryClient } from '@/lib/queryClient';
 
 // YouTube embed component
 const YouTubeEmbed = ({ videoId }: { videoId: string }) => {
@@ -665,9 +666,19 @@ export default function QuestDetailPage() {
               {showImages && images.length > 0 && (
                 <div className="mt-4 space-y-4">
                   <h3 className="text-xl font-semibold">Images</h3>
-                  {images.map((image, index) => (
-                    <ImageDisplay key={index} src={image} alt={`Quest image ${index + 1}`} />
-                  ))}
+                  {/* Filter out the hero image from the images list to avoid duplication */}
+                  {images
+                    .filter(image => image !== quest.heroImage)
+                    .map((image, index) => (
+                      <ImageDisplay key={index} src={image} alt={`Quest image ${index + 1}`} />
+                    ))
+                  }
+                  {/* Show a message if no additional images after filtering */}
+                  {images.filter(image => image !== quest.heroImage).length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      No additional images to display.
+                    </p>
+                  )}
                 </div>
               )}
 
