@@ -31,22 +31,23 @@ export function DraggableInventoryItem({
   const ref = useRef<HTMLDivElement>(null);
   
   // Set up drag source
-  const [{ isDragging }, drag] = useDrag(() => ({
+  const [{ isDragging }, drag] = useDrag({
     type: INVENTORY_ITEM,
     item: { index },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
-  }));
+  });
   
   // Set up drop target
-  const [{ isOver }, drop] = useDrop(() => ({
+  const [{ isOver }, drop] = useDrop({
     accept: INVENTORY_ITEM,
-    hover(item: { index: number }, monitor) {
+    drop(dragItem: { index: number }, monitor) {
       if (!ref.current) {
         return;
       }
-      const dragIndex = item.index;
+      
+      const dragIndex = dragItem.index;
       const hoverIndex = index;
       
       // Don't replace items with themselves
@@ -56,24 +57,35 @@ export function DraggableInventoryItem({
       
       // Time to actually perform the action
       moveItem(dragIndex, hoverIndex);
+    },
+    hover(dragItem: { index: number }, monitor) {
+      if (!ref.current) {
+        return;
+      }
+      
+      const dragIndex = dragItem.index;
+      const hoverIndex = index;
+      
+      // Don't replace items with themselves
+      if (dragIndex === hoverIndex) {
+        return;
+      }
       
       // Note: we're mutating the monitor item here!
       // Generally it's better to avoid mutations,
       // but it's good here for the sake of performance
       // to avoid expensive index searches.
-      item.index = hoverIndex;
+      dragItem.index = hoverIndex;
     },
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),
     }),
-  }));
+  });
   
   // Initialize drag and drop refs using reference merging
   const dragDropRef = (node: HTMLDivElement | null) => {
-    if (node) {
-      drag(node);
-      drop(node);
-    }
+    ref.current = node;
+    drag(drop(node));
   };
   
   if (!item) return null;
