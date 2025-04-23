@@ -16,7 +16,14 @@ import { z } from 'zod';
 import { storage } from '../storage';
 import path from 'path';
 import fs from 'fs';
-import { upload, questImageUpload, getPublicImageUrl, getPublicQuestImageUrl } from '../middlewares/upload';
+import { 
+  upload, 
+  questImageUpload, 
+  recipeHeroUpload,
+  getPublicImageUrl, 
+  getPublicQuestImageUrl,
+  getPublicRecipeHeroUrl
+} from '../middlewares/upload';
 
 const router = Router();
 
@@ -508,6 +515,29 @@ router.post('/upload-image', questImageUpload.single('image'), async (req, res) 
   } catch (error) {
     console.error('Error uploading image:', error);
     res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
+// Handle recipe hero image upload
+router.post('/recipes/upload-hero', recipeHeroUpload.single('heroImage'), async (req, res) => {
+  try {
+    // Check if a file was uploaded
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file was uploaded' });
+    }
+
+    // Get the file path relative to the public directory
+    const filePath = getPublicRecipeHeroUrl(path.basename(req.file.path));
+    
+    // Return success response with the image path
+    res.json({ 
+      success: true, 
+      message: 'Recipe hero image uploaded successfully',
+      url: filePath
+    });
+  } catch (error) {
+    console.error('Error uploading recipe hero image:', error);
+    res.status(500).json({ error: 'Failed to upload recipe hero image' });
   }
 });
 
