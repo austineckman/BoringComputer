@@ -422,16 +422,16 @@ const AdminItems: React.FC = () => {
                     </div>
                     
                     {/* Overlay actual image when available */}
-                    {(item.imagePath || item.image) && (
+                    {item.imagePath && (
                       <img
                         key={`item-${item.id}-image`}
                         src={
                           // Handle various image path formats
-                          item.imagePath ? 
-                            (item.imagePath.startsWith('http') ? item.imagePath : `/uploads/items/${item.imagePath}`) :
-                          item.image ? 
-                            (item.image.startsWith('http') ? item.image : `/uploads/items/${item.image}`) :
-                          '/images/item-placeholder.png'
+                          item.imagePath.startsWith('http') ? 
+                            item.imagePath : 
+                          item.imagePath.startsWith('/uploads/') ?
+                            item.imagePath :
+                            `/uploads/items/${item.imagePath}`
                         }
                         alt={item.name}
                         className="absolute inset-0 h-full w-full object-cover object-center"
