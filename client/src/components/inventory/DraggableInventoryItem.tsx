@@ -145,8 +145,10 @@ export function DraggableInventoryItem({
       onMouseEnter={() => handleItemHover(item.type)}
       onClick={() => {
         if (item.isLootBox && item.lootBoxData && item.lootBoxData.id) {
-          // Navigate to the loot box preview page
-          setLocation(`/loot-box-preview/${item.lootBoxData.id}`);
+          // Use the loot box modal instead of navigation
+          if (onLootBoxOpen) {
+            onLootBoxOpen(item.lootBoxData);
+          }
         } else {
           // Regular item click handling
           handleItemClick(item);
@@ -206,12 +208,14 @@ export function DraggableInventoryItem({
             onClick={(e) => {
               e.stopPropagation();
               if (item.lootBoxData && item.lootBoxData.id) {
-                // Navigate to the loot box preview page
-                setLocation(`/loot-box-preview/${item.lootBoxData.id}`);
+                // Use the loot box modal instead of navigation
+                if (onLootBoxOpen) {
+                  onLootBoxOpen(item.lootBoxData);
+                }
               }
             }}
           >
-            Preview
+            Open
           </Button>
         </div>
       )}
