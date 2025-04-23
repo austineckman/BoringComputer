@@ -124,6 +124,7 @@ export default function LootBoxPreview() {
     if (isOpening || !lootBoxId) return;
     
     try {
+      console.log("Opening loot box ID:", lootBoxId);
       setIsOpening(true);
       
       // API request to open the loot box
@@ -135,24 +136,32 @@ export default function LootBoxPreview() {
       });
       
       const data = await response.json();
+      console.log("Loot box open response:", data);
       
       if (data.success && data.rewards && data.rewards.length > 0) {
+        console.log("Received rewards:", data.rewards);
         // We'll only show the first reward in the animation
         // (Later we could enhance this to cycle through multiple rewards)
         setSelectedReward(data.rewards[0]);
+        console.log("Selected reward:", data.rewards[0]);
         
         // Generate random items for scrolling effect
-        setScrollItems(generateScrollItems());
+        const scrollItemsArray = generateScrollItems();
+        console.log("Generated scroll items:", scrollItemsArray);
+        setScrollItems(scrollItemsArray);
         
         // Start the animation
+        console.log("Starting animation");
         setIsAnimating(true);
         
         // After 12 seconds (matching the CSS animation), show the final reward
         setTimeout(() => {
+          console.log("Animation timeout completed, showing final reward");
           setIsAnimating(false);
           setShowFinalReward(true);
         }, 12000);
       } else {
+        console.error("Error from API:", data);
         toast({
           title: "Error",
           description: data.message || "Failed to open loot box",
