@@ -593,7 +593,7 @@ const AdminRecipesPage: React.FC = () => {
                                               description: "Uploading hero image",
                                             });
                                             
-                                            const response = await fetch('/api/admin/recipes/upload-hero', {
+                                            const response = await fetch('/api/admin/upload/upload-recipe-hero', {
                                               method: 'POST',
                                               body: formData,
                                             });
@@ -604,15 +604,12 @@ const AdminRecipesPage: React.FC = () => {
                                             
                                             const data = await response.json();
                                             
-                                            if (data.success) {
-                                              field.onChange(data.url);
-                                              toast({
-                                                title: "Success",
-                                                description: "Hero image uploaded successfully",
-                                              });
-                                            } else {
-                                              throw new Error(data.error || 'Failed to upload image');
-                                            }
+                                            // Our endpoint returns { url: "path/to/image" } directly
+                                            field.onChange(data.url);
+                                            toast({
+                                              title: "Success",
+                                              description: "Hero image uploaded successfully",
+                                            });
                                           } catch (error) {
                                             console.error('Error uploading image:', error);
                                             toast({
