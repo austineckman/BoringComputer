@@ -72,7 +72,6 @@ export interface IStorage {
   getLootBox(id: number): Promise<LootBox | undefined>;
   createLootBox(lootBox: InsertLootBox): Promise<LootBox>;
   updateLootBox(id: number, lootBoxData: Partial<LootBox>): Promise<LootBox | undefined>;
-  deleteUnusedLootBoxes(userId: number): Promise<void>;
   
   // Loot Box Config methods
   getLootBoxConfigs(): Promise<LootBoxConfig[]>;
@@ -659,22 +658,6 @@ export class MemStorage implements IStorage {
       (lootBox) => lootBox.userId === userId
     );
   }
-  
-  async deleteUnusedLootBoxes(userId: number): Promise<void> {
-    // Find all unused loot boxes for this user
-    const lootBoxIdsToDelete: number[] = [];
-    
-    Array.from(this.lootBoxes.values()).forEach((lootBox) => {
-      if (lootBox.userId === userId && !lootBox.opened) {
-        lootBoxIdsToDelete.push(lootBox.id);
-      }
-    });
-    
-    // Delete each one
-    lootBoxIdsToDelete.forEach((id) => {
-      this.lootBoxes.delete(id);
-    });
-  }
 
   async getLootBox(id: number): Promise<LootBox | undefined> {
     return this.lootBoxes.get(id);
@@ -1141,15 +1124,6 @@ export class DatabaseStorage implements IStorage {
   // LootBox methods
   async getLootBoxes(userId: number): Promise<LootBox[]> {
     return await db.select().from(lootBoxes).where(eq(lootBoxes.userId, userId));
-  }
-  
-  async deleteUnusedLootBoxes(userId: number): Promise<void> {
-    // Delete all loot boxes that haven't been opened yet for this user
-    await db.delete(lootBoxes)
-      .where(and(
-        eq(lootBoxes.userId, userId),
-        eq(lootBoxes.opened, false)
-      ));
   }
 
   async getLootBox(id: number): Promise<LootBox | undefined> {

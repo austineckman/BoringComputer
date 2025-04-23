@@ -7,7 +7,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Clock, Gift, Loader2 } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
@@ -116,7 +115,7 @@ export default function Inventory() {
       // Always try to open the loot box server-side to get fresh rewards
       if (lootBox.id) {
         console.log('Opening loot box with ID:', lootBox.id);
-        const response = await apiRequest(`/api/loot-boxes/${lootBox.id}/open`, 'POST');
+        const response = await apiRequest('POST', `/api/loot-boxes/${lootBox.id}/open`);
         const data = await response.json();
         console.log('Loot box open response:', data);
         
@@ -222,13 +221,10 @@ export default function Inventory() {
     const { toast } = useToast();
     const { sounds } = useSoundEffects();
     const [isGenerating, setIsGenerating] = useState(false);
-    const [cleanUp, setCleanUp] = useState(true);
     
     const generateCratesMutation = useMutation({
       mutationFn: async () => {
-        const response = await apiRequest('/api/loot-boxes/generate-test', 'POST', {
-          cleanUp // Send cleanup option to the server
-        });
+        const response = await apiRequest('POST', '/api/loot-boxes/generate-test');
         return await response.json();
       },
       onSuccess: (data) => {
@@ -238,11 +234,9 @@ export default function Inventory() {
           console.warn('Could not play sound', e);
         }
         
-        const cleanupMessage = cleanUp ? ' Old crates were removed.' : '';
-        
         toast({
           title: "Test Crates Generated!",
-          description: `${data.lootBoxes.length} new loot crates have been added to your inventory.${cleanupMessage}`,
+          description: `${data.lootBoxes.length} new loot crates have been added to your inventory.`,
           variant: "default",
         });
         
@@ -274,43 +268,27 @@ export default function Inventory() {
     };
     
     return (
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center space-x-2 mb-1">
-          <Checkbox 
-            id="clean-up-crates" 
-            checked={cleanUp}
-            onCheckedChange={(checked) => setCleanUp(!!checked)}
-          />
-          <label
-            htmlFor="clean-up-crates"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-brand-light/80"
-          >
-            Remove old crates first
-          </label>
-        </div>
+      <Button 
+        variant="default" 
+        className="gap-2 bg-brand-orange hover:bg-brand-orange/80 text-white font-medium border-2 border-brand-orange/40 shadow-lg shadow-brand-orange/20 relative overflow-hidden"
+        disabled={isGenerating}
+        onClick={handleGenerateCrates}
+      >
+        {/* Animated glow effect */}
+        <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 animate-shine -translate-x-full"></span>
         
-        <Button 
-          variant="default" 
-          className="gap-2 bg-brand-orange hover:bg-brand-orange/80 text-white font-medium border-2 border-brand-orange/40 shadow-lg shadow-brand-orange/20 relative overflow-hidden"
-          disabled={isGenerating}
-          onClick={handleGenerateCrates}
-        >
-          {/* Animated glow effect */}
-          <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 animate-shine -translate-x-full"></span>
-          
-          {isGenerating ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Generating...</span>
-            </>
-          ) : (
-            <>
-              <Gift size={16} />
-              <span>Generate Test Crates</span>
-            </>
-          )}
-        </Button>
-      </div>
+        {isGenerating ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Generating...</span>
+          </>
+        ) : (
+          <>
+            <Gift size={16} />
+            <span>Generate Test Crates</span>
+          </>
+        )}
+      </Button>
     );
   };
   
