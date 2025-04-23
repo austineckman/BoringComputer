@@ -624,20 +624,29 @@ export default function LootBoxPreview() {
   // For debugging purposes
   console.log('Loot box data:', lootBox);
   
+  // Initialize variables with defaults to prevent "accessed before initialization" errors
+  // These will be overwritten if lootBox is defined
+  let lootBoxConfig: any = {};
+  let lootBoxName = '';
+  let lootBoxDescription = '';
+  let lootBoxImage = '';
+  let lootBoxRarity = 'common';
+  let lootBoxType = '';
+
   // If we don't have a loot box, return to inventory
   if (!lootBox) {
     return null;
   }
   
   // Get data from either the config or fallback to the loot box data
-  const lootBoxConfig = lootBox.config;
+  lootBoxConfig = lootBox.config;
   
   // Extract data with fallbacks in case config is missing
-  const lootBoxName = lootBox.name;
-  const lootBoxDescription = lootBox.description;
-  const lootBoxImage = lootBox.image;
-  const lootBoxRarity = lootBox.rarity;
-  const lootBoxType = lootBox.type;
+  lootBoxName = lootBox.name;
+  lootBoxDescription = lootBox.description;
+  lootBoxImage = lootBox.image;
+  lootBoxRarity = lootBox.rarity;
+  lootBoxType = lootBox.type;
   
   // If no config, provide default values
   const itemDropTable = lootBoxConfig?.itemDropTable || [];
