@@ -22,7 +22,10 @@ const mockRecipes: Recipe[] = [
     description: 'A basic electronic circuit that can power small devices.',
     unlocked: true,
     difficulty: 'beginner',
-    materials: {
+    category: 'electronics',
+    resultItem: 'circuit-board',
+    resultQuantity: 1,
+    requiredItems: {
       'copper': 2,
       'techscrap': 1
     },
@@ -52,7 +55,10 @@ const mockRecipes: Recipe[] = [
     description: 'A stronger fabric material woven with special techniques.',
     unlocked: true,
     difficulty: 'intermediate',
-    materials: {
+    category: 'textiles',
+    resultItem: 'reinforced-fabric',
+    resultQuantity: 1,
+    requiredItems: {
       'cloth': 3,
       'crystal': 1
     },
@@ -81,9 +87,11 @@ const mockRecipes: Recipe[] = [
     name: 'Advanced Power Core',
     description: 'A high-energy power core that can run advanced machinery.',
     unlocked: true,
-    unlockedAt: 5,
     difficulty: 'advanced',
-    materials: {
+    category: 'power',
+    resultItem: 'power-core',
+    resultQuantity: 1,
+    requiredItems: {
       'copper': 4,
       'crystal': 2,
       'techscrap': 3
