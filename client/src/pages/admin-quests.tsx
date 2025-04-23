@@ -1037,166 +1037,210 @@ const AdminQuests: React.FC = () => {
                           
                           {/* Loot Box Rewards Tab */}
                           <TabsContent value="lootbox" className="space-y-4">
-                            <div className="flex space-x-2">
-                              <Select
-                                value={newRewardType}
-                                onValueChange={setNewRewardType}
-                              >
-                                <SelectTrigger className="w-[200px]">
-                                  <SelectValue placeholder="Select loot box" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {lootBoxConfigs.length > 0 ? (
-                                    lootBoxConfigs.map((config: LootBoxConfig) => (
-                                      <SelectItem key={config.id} value={config.id}>
-                                        {config.name}
-                                      </SelectItem>
-                                    ))
-                                  ) : (
-                                    <>
-                                      <SelectItem value="common">Common Loot Box</SelectItem>
-                                      <SelectItem value="uncommon">Uncommon Loot Box</SelectItem>
-                                      <SelectItem value="rare">Rare Loot Box</SelectItem>
-                                      <SelectItem value="epic">Epic Loot Box</SelectItem>
-                                      <SelectItem value="legendary">Legendary Loot Box</SelectItem>
-                                    </>
-                                  )}
-                                </SelectContent>
-                              </Select>
-                              
-                              <Input
-                                type="number"
-                                min={1}
-                                value={newRewardQuantity}
-                                onChange={(e) => setNewRewardQuantity(parseInt(e.target.value))}
-                                className="w-24"
-                              />
-                              
-                              <Button 
-                                type="button" 
-                                onClick={() => {
-                                  // Add lootbox reward
-                                  const newReward = {
-                                    id: newRewardType,
-                                    type: 'lootbox',
-                                    quantity: newRewardQuantity
-                                  };
+                            <div className="flex flex-col space-y-2">
+                              {loadingLootBoxes ? (
+                                <div className="flex items-center space-x-2 py-2">
+                                  <span className="animate-spin">⟳</span>
+                                  <span>Loading loot boxes...</span>
+                                </div>
+                              ) : lootBoxConfigs.length === 0 ? (
+                                <div className="text-muted-foreground py-2">
+                                  No loot boxes found. You need to create loot boxes in the Admin Loot Boxes section first.
+                                </div>
+                              ) : (
+                                <div className="flex space-x-2">
+                                  <Select
+                                    value={newRewardType}
+                                    onValueChange={setNewRewardType}
+                                  >
+                                    <SelectTrigger className="w-[200px]">
+                                      <SelectValue placeholder="Select loot box" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {lootBoxConfigs.map((config: LootBoxConfig) => (
+                                        <SelectItem key={config.id} value={config.id}>
+                                          {config.name || config.id}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
                                   
-                                  // Use the new quest.rewards format
-                                  const updatedRewards = [...(formData.rewards || []), newReward];
-                                  setFormData({...formData, rewards: updatedRewards});
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    value={newRewardQuantity}
+                                    onChange={(e) => setNewRewardQuantity(parseInt(e.target.value) || 1)}
+                                    className="w-24"
+                                  />
                                   
-                                  // Reset input fields
-                                  setNewRewardQuantity(1);
-                                }}
-                              >
-                                Add Loot Box
-                              </Button>
+                                  <Button 
+                                    type="button"
+                                    disabled={!newRewardType}
+                                    onClick={() => {
+                                      if (!newRewardType) return;
+                                      
+                                      // Add lootbox reward
+                                      const newReward = {
+                                        id: newRewardType,
+                                        type: 'lootbox',
+                                        quantity: newRewardQuantity
+                                      };
+                                      
+                                      // Use the new quest.rewards format
+                                      const updatedRewards = [...(formData.rewards || []), newReward];
+                                      setFormData({...formData, rewards: updatedRewards});
+                                      
+                                      // Reset input fields
+                                      setNewRewardQuantity(1);
+                                      setNewRewardType('');
+                                    }}
+                                  >
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Loot Box
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           </TabsContent>
                           
                           {/* Items Rewards Tab */}
                           <TabsContent value="item" className="space-y-4">
-                            <div className="flex space-x-2">
-                              <Select
-                                value={""}
-                                onValueChange={(value) => setNewRewardType(value)}
-                              >
-                                <SelectTrigger className="w-[200px]">
-                                  <SelectValue placeholder="Select item" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {items.map((item: any) => (
-                                    <SelectItem key={item.id} value={item.id}>
-                                      {item.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              
-                              <Input
-                                type="number"
-                                min={1}
-                                value={newRewardQuantity}
-                                onChange={(e) => setNewRewardQuantity(parseInt(e.target.value))}
-                                className="w-24"
-                              />
-                              
-                              <Button 
-                                type="button" 
-                                onClick={() => {
-                                  // Add item reward
-                                  const newReward = {
-                                    id: newRewardType,
-                                    type: 'item',
-                                    quantity: newRewardQuantity
-                                  };
+                            <div className="flex flex-col space-y-2">
+                              {loadingItems ? (
+                                <div className="flex items-center space-x-2 py-2">
+                                  <span className="animate-spin">⟳</span>
+                                  <span>Loading items...</span>
+                                </div>
+                              ) : items.length === 0 ? (
+                                <div className="text-muted-foreground py-2">
+                                  No items found. You need to create items in the Admin Items section first.
+                                </div>
+                              ) : (
+                                <div className="flex space-x-2">
+                                  <Select
+                                    value={newRewardType}
+                                    onValueChange={setNewRewardType}
+                                  >
+                                    <SelectTrigger className="w-[200px]">
+                                      <SelectValue placeholder="Select item" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {items
+                                        .filter((item: any) => !item.equipSlot) // Exclude equipment items
+                                        .map((item: any) => (
+                                          <SelectItem key={item.id} value={item.id}>
+                                            {item.name || item.id}
+                                          </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
                                   
-                                  // Use the new quest.rewards format
-                                  const updatedRewards = [...(formData.rewards || []), newReward];
-                                  setFormData({...formData, rewards: updatedRewards});
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    value={newRewardQuantity}
+                                    onChange={(e) => setNewRewardQuantity(parseInt(e.target.value) || 1)}
+                                    className="w-24"
+                                  />
                                   
-                                  // Reset input fields
-                                  setNewRewardQuantity(1);
-                                  setNewRewardType("");
-                                }}
-                              >
-                                Add Item
-                              </Button>
+                                  <Button 
+                                    type="button"
+                                    disabled={!newRewardType}
+                                    onClick={() => {
+                                      if (!newRewardType) return;
+                                      
+                                      // Add item reward
+                                      const newReward = {
+                                        id: newRewardType,
+                                        type: 'item',
+                                        quantity: newRewardQuantity
+                                      };
+                                      
+                                      // Use the new quest.rewards format
+                                      const updatedRewards = [...(formData.rewards || []), newReward];
+                                      setFormData({...formData, rewards: updatedRewards});
+                                      
+                                      // Reset input fields
+                                      setNewRewardQuantity(1);
+                                      setNewRewardType("");
+                                    }}
+                                  >
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Item
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           </TabsContent>
                           
                           {/* Equipment Rewards Tab */}
                           <TabsContent value="equipment" className="space-y-4">
-                            <div className="flex space-x-2">
-                              <Select
-                                value={""}
-                                onValueChange={(value) => setNewRewardType(value)}
-                              >
-                                <SelectTrigger className="w-[200px]">
-                                  <SelectValue placeholder="Select equipment" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {items
-                                    .filter((item: any) => item.category === 'equipment' || item.equipSlot)
-                                    .map((item: any) => (
-                                      <SelectItem key={item.id} value={item.id}>
-                                        {item.name}
-                                      </SelectItem>
-                                    ))
-                                  }
-                                </SelectContent>
-                              </Select>
-                              
-                              <Input
-                                type="number"
-                                min={1}
-                                value={newRewardQuantity}
-                                onChange={(e) => setNewRewardQuantity(parseInt(e.target.value))}
-                                className="w-24"
-                              />
-                              
-                              <Button 
-                                type="button" 
-                                onClick={() => {
-                                  // Add equipment reward
-                                  const newReward = {
-                                    id: newRewardType,
-                                    type: 'equipment',
-                                    quantity: newRewardQuantity
-                                  };
+                            <div className="flex flex-col space-y-2">
+                              {loadingItems ? (
+                                <div className="flex items-center space-x-2 py-2">
+                                  <span className="animate-spin">⟳</span>
+                                  <span>Loading equipment...</span>
+                                </div>
+                              ) : items.filter((item: any) => item.category === 'equipment' || item.equipSlot).length === 0 ? (
+                                <div className="text-muted-foreground py-2">
+                                  No equipment found. You need to create equipment items in the Admin Items section first.
+                                </div>
+                              ) : (
+                                <div className="flex space-x-2">
+                                  <Select
+                                    value={newRewardType}
+                                    onValueChange={setNewRewardType}
+                                  >
+                                    <SelectTrigger className="w-[200px]">
+                                      <SelectValue placeholder="Select equipment" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {items
+                                        .filter((item: any) => item.category === 'equipment' || item.equipSlot)
+                                        .map((item: any) => (
+                                          <SelectItem key={item.id} value={item.id}>
+                                            {item.name || item.id}
+                                          </SelectItem>
+                                        ))
+                                      }
+                                    </SelectContent>
+                                  </Select>
                                   
-                                  // Use the new quest.rewards format
-                                  const updatedRewards = [...(formData.rewards || []), newReward];
-                                  setFormData({...formData, rewards: updatedRewards});
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    value={newRewardQuantity}
+                                    onChange={(e) => setNewRewardQuantity(parseInt(e.target.value) || 1)}
+                                    className="w-24"
+                                  />
                                   
-                                  // Reset input fields
-                                  setNewRewardQuantity(1);
-                                  setNewRewardType("");
-                                }}
-                              >
-                                Add Equipment
-                              </Button>
+                                  <Button 
+                                    type="button"
+                                    disabled={!newRewardType}
+                                    onClick={() => {
+                                      if (!newRewardType) return;
+                                      
+                                      // Add equipment reward
+                                      const newReward = {
+                                        id: newRewardType,
+                                        type: 'equipment',
+                                        quantity: newRewardQuantity
+                                      };
+                                      
+                                      // Use the new quest.rewards format
+                                      const updatedRewards = [...(formData.rewards || []), newReward];
+                                      setFormData({...formData, rewards: updatedRewards});
+                                      
+                                      // Reset input fields
+                                      setNewRewardQuantity(1);
+                                      setNewRewardType("");
+                                    }}
+                                  >
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Equipment
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           </TabsContent>
                         </Tabs>
