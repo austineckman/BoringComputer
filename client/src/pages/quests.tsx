@@ -56,13 +56,18 @@ const Quests = () => {
   const upcomingQuests = filteredQuests.filter(q => q.status === "upcoming" || q.status === "locked");
   
   // Group quests by adventure line
+  console.log("All quests:", quests);
+  
   const questsByAdventureLine = new Map<string, typeof quests>();
   quests.forEach(quest => {
+    console.log(`Quest: ${quest.title} has adventureLine: "${quest.adventureLine}"`);
     if (!questsByAdventureLine.has(quest.adventureLine)) {
       questsByAdventureLine.set(quest.adventureLine, []);
     }
     questsByAdventureLine.get(quest.adventureLine)?.push(quest);
   });
+  
+  console.log("Quest map:", Object.fromEntries(questsByAdventureLine));
   
   // Get adventure lines from theme config
   const adventureLines = themeConfig.adventureLines;
