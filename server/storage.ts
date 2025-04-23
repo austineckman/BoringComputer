@@ -112,6 +112,482 @@ export interface IStorage {
   resetDatabase(): Promise<void>;
 }
 
+// DatabaseStorage class that interacts with the database
+export class DatabaseStorage implements IStorage {
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+  
+  async getUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async getUserByDiscordId(discordId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.discordId, discordId));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser || undefined;
+  }
+  
+  // Quest methods
+  async getQuests(): Promise<Quest[]> {
+    return await db.select().from(quests);
+  }
+
+  async getQuest(id: number): Promise<Quest | undefined> {
+    const [quest] = await db.select().from(quests).where(eq(quests.id, id));
+    return quest || undefined;
+  }
+
+  async getQuestByDate(date: string): Promise<Quest | undefined> {
+    const [quest] = await db.select().from(quests).where(eq(quests.date, date));
+    return quest || undefined;
+  }
+
+  async createQuest(insertQuest: InsertQuest): Promise<Quest> {
+    const [quest] = await db
+      .insert(quests)
+      .values(insertQuest)
+      .returning();
+    return quest;
+  }
+
+  async updateQuest(id: number, questData: Partial<Quest>): Promise<Quest | undefined> {
+    const [updatedQuest] = await db
+      .update(quests)
+      .set(questData)
+      .where(eq(quests.id, id))
+      .returning();
+    return updatedQuest || undefined;
+  }
+  
+  // UserQuest methods
+  async getUserQuests(userId: number): Promise<UserQuest[]> {
+    return await db.select().from(userQuests).where(eq(userQuests.userId, userId));
+  }
+
+  async getUserQuest(userId: number, questId: number): Promise<UserQuest | undefined> {
+    const [userQuest] = await db
+      .select()
+      .from(userQuests)
+      .where(and(eq(userQuests.userId, userId), eq(userQuests.questId, questId)));
+    return userQuest || undefined;
+  }
+
+  async createUserQuest(insertUserQuest: InsertUserQuest): Promise<UserQuest> {
+    const [userQuest] = await db
+      .insert(userQuests)
+      .values(insertUserQuest)
+      .returning();
+    return userQuest;
+  }
+
+  async updateUserQuest(id: number, userQuestData: Partial<UserQuest>): Promise<UserQuest | undefined> {
+    const [updatedUserQuest] = await db
+      .update(userQuests)
+      .set(userQuestData)
+      .where(eq(userQuests.id, id))
+      .returning();
+    return updatedUserQuest || undefined;
+  }
+  
+  // Submission methods
+  async getSubmissions(userId: number): Promise<Submission[]> {
+    return await db.select().from(submissions).where(eq(submissions.userId, userId));
+  }
+
+  async getSubmission(id: number): Promise<Submission | undefined> {
+    const [submission] = await db.select().from(submissions).where(eq(submissions.id, id));
+    return submission || undefined;
+  }
+
+  async createSubmission(insertSubmission: InsertSubmission): Promise<Submission> {
+    const [submission] = await db
+      .insert(submissions)
+      .values(insertSubmission)
+      .returning();
+    return submission;
+  }
+  
+  // Craftable methods
+  async getCraftables(): Promise<Craftable[]> {
+    return await db.select().from(craftables);
+  }
+
+  async getCraftable(id: number): Promise<Craftable | undefined> {
+    const [craftable] = await db.select().from(craftables).where(eq(craftables.id, id));
+    return craftable || undefined;
+  }
+
+  async createCraftable(insertCraftable: InsertCraftable): Promise<Craftable> {
+    const [craftable] = await db
+      .insert(craftables)
+      .values(insertCraftable)
+      .returning();
+    return craftable;
+  }
+
+  // Implementing all the remaining methods systematically...
+  
+  // CraftedItem methods
+  async getCraftedItems(userId: number): Promise<CraftedItem[]> {
+    return await db.select().from(craftedItems).where(eq(craftedItems.userId, userId));
+  }
+
+  async getCraftedItem(id: number): Promise<CraftedItem | undefined> {
+    const [craftedItem] = await db.select().from(craftedItems).where(eq(craftedItems.id, id));
+    return craftedItem || undefined;
+  }
+
+  async createCraftedItem(insertCraftedItem: InsertCraftedItem): Promise<CraftedItem> {
+    const [craftedItem] = await db
+      .insert(craftedItems)
+      .values(insertCraftedItem)
+      .returning();
+    return craftedItem;
+  }
+
+  async updateCraftedItem(id: number, craftedItemData: Partial<CraftedItem>): Promise<CraftedItem | undefined> {
+    const [updatedCraftedItem] = await db
+      .update(craftedItems)
+      .set(craftedItemData)
+      .where(eq(craftedItems.id, id))
+      .returning();
+    return updatedCraftedItem || undefined;
+  }
+  
+  // Achievement methods
+  async getAchievements(): Promise<Achievement[]> {
+    return await db.select().from(achievements);
+  }
+
+  async getAchievement(id: number): Promise<Achievement | undefined> {
+    const [achievement] = await db.select().from(achievements).where(eq(achievements.id, id));
+    return achievement || undefined;
+  }
+
+  async createAchievement(insertAchievement: InsertAchievement): Promise<Achievement> {
+    const [achievement] = await db
+      .insert(achievements)
+      .values(insertAchievement)
+      .returning();
+    return achievement;
+  }
+  
+  // UserAchievement methods
+  async getUserAchievements(userId: number): Promise<UserAchievement[]> {
+    return await db.select().from(userAchievements).where(eq(userAchievements.userId, userId));
+  }
+
+  async getUserAchievement(userId: number, achievementId: number): Promise<UserAchievement | undefined> {
+    const [userAchievement] = await db
+      .select()
+      .from(userAchievements)
+      .where(and(eq(userAchievements.userId, userId), eq(userAchievements.achievementId, achievementId)));
+    return userAchievement || undefined;
+  }
+
+  async createUserAchievement(insertUserAchievement: InsertUserAchievement): Promise<UserAchievement> {
+    const [userAchievement] = await db
+      .insert(userAchievements)
+      .values(insertUserAchievement)
+      .returning();
+    return userAchievement;
+  }
+
+  async updateUserAchievement(id: number, userAchievementData: Partial<UserAchievement>): Promise<UserAchievement | undefined> {
+    const [updatedUserAchievement] = await db
+      .update(userAchievements)
+      .set(userAchievementData)
+      .where(eq(userAchievements.id, id))
+      .returning();
+    return updatedUserAchievement || undefined;
+  }
+  
+  // LootBox methods
+  async getLootBoxes(userId: number): Promise<LootBox[]> {
+    return await db.select().from(lootBoxes).where(eq(lootBoxes.userId, userId));
+  }
+
+  async getLootBox(id: number): Promise<LootBox | undefined> {
+    const [lootBox] = await db.select().from(lootBoxes).where(eq(lootBoxes.id, id));
+    return lootBox || undefined;
+  }
+
+  async createLootBox(insertLootBox: InsertLootBox): Promise<LootBox> {
+    const [lootBox] = await db
+      .insert(lootBoxes)
+      .values(insertLootBox)
+      .returning();
+    return lootBox;
+  }
+
+  async updateLootBox(id: number, lootBoxData: Partial<LootBox>): Promise<LootBox | undefined> {
+    const [updatedLootBox] = await db
+      .update(lootBoxes)
+      .set(lootBoxData)
+      .where(eq(lootBoxes.id, id))
+      .returning();
+    return updatedLootBox || undefined;
+  }
+  
+  // Inventory History methods
+  async getInventoryHistory(userId: number): Promise<InventoryHistory[]> {
+    return await db
+      .select()
+      .from(inventoryHistory)
+      .where(eq(inventoryHistory.userId, userId))
+      .orderBy(desc(inventoryHistory.createdAt));
+  }
+
+  async createInventoryHistory(insertInventoryHistory: InsertInventoryHistory): Promise<InventoryHistory> {
+    const [historyItem] = await db
+      .insert(inventoryHistory)
+      .values(insertInventoryHistory)
+      .returning();
+    return historyItem;
+  }
+  
+  // Item methods
+  async getItems(): Promise<Item[]> {
+    return await db.select().from(items);
+  }
+
+  async getItem(id: string): Promise<Item | undefined> {
+    const [item] = await db.select().from(items).where(eq(items.id, id));
+    return item || undefined;
+  }
+
+  async createItem(insertItem: InsertItem): Promise<Item> {
+    const [item] = await db
+      .insert(items)
+      .values(insertItem)
+      .returning();
+    return item;
+  }
+
+  async updateItem(id: string, itemData: Partial<Item>): Promise<Item | undefined> {
+    const [updatedItem] = await db
+      .update(items)
+      .set(itemData)
+      .where(eq(items.id, id))
+      .returning();
+    return updatedItem || undefined;
+  }
+
+  async deleteItem(id: string): Promise<boolean> {
+    const result = await db.delete(items).where(eq(items.id, id));
+    return !!result;
+  }
+  
+  // Crafting Recipe methods
+  async getCraftingRecipes(): Promise<CraftingRecipe[]> {
+    return await db.select().from(craftingRecipes);
+  }
+
+  async getCraftingRecipe(id: number): Promise<CraftingRecipe | undefined> {
+    const [craftingRecipe] = await db.select().from(craftingRecipes).where(eq(craftingRecipes.id, id));
+    return craftingRecipe || undefined;
+  }
+
+  async createCraftingRecipe(insertCraftingRecipe: InsertCraftingRecipe): Promise<CraftingRecipe> {
+    const [craftingRecipe] = await db
+      .insert(craftingRecipes)
+      .values(insertCraftingRecipe)
+      .returning();
+    return craftingRecipe;
+  }
+
+  async updateCraftingRecipe(id: number, craftingRecipeData: Partial<CraftingRecipe>): Promise<CraftingRecipe | undefined> {
+    const [updatedCraftingRecipe] = await db
+      .update(craftingRecipes)
+      .set(craftingRecipeData)
+      .where(eq(craftingRecipes.id, id))
+      .returning();
+    return updatedCraftingRecipe || undefined;
+  }
+
+  async deleteCraftingRecipe(id: number): Promise<boolean> {
+    const result = await db.delete(craftingRecipes).where(eq(craftingRecipes.id, id));
+    return !!result;
+  }
+
+  async getAvailableCraftingRecipes(userId: number): Promise<CraftingRecipe[]> {
+    // Get all unlocked recipes
+    return await db.select().from(craftingRecipes).where(eq(craftingRecipes.unlocked, true));
+  }
+  
+  // Character Equipment methods
+  async getCharacterEquipment(userId: number): Promise<Record<string, any>> {
+    // Get all equipment for the user, organized by slot
+    const equipmentItems = await db
+      .select()
+      .from(characterEquipment)
+      .where(eq(characterEquipment.userId, userId));
+    
+    // Turn the list into a record with slot as key
+    const result: Record<string, any> = {};
+    
+    for (const item of equipmentItems) {
+      // For each equipped item, get the full item details
+      const itemDetails = await this.getItem(item.itemId);
+      if (itemDetails) {
+        result[item.slot] = {
+          ...item,
+          itemDetails
+        };
+      }
+    }
+    
+    return result;
+  }
+
+  async equipItem(userId: number, itemId: string, slot: string): Promise<CharacterEquipment> {
+    // First, unequip any item in that slot
+    await this.unequipItem(userId, slot);
+    
+    // Then equip the new item
+    const [equipment] = await db
+      .insert(characterEquipment)
+      .values({
+        userId,
+        itemId,
+        slot
+      })
+      .returning();
+    
+    return equipment;
+  }
+
+  async unequipItem(userId: number, slot: string): Promise<boolean> {
+    const result = await db
+      .delete(characterEquipment)
+      .where(and(eq(characterEquipment.userId, userId), eq(characterEquipment.slot, slot)));
+    
+    return !!result;
+  }
+  
+  // XP and Level methods
+  async addUserXP(userId: number, xpAmount: number): Promise<User> {
+    // Get the current user
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    // Calculate new XP
+    const newXP = user.xp + xpAmount;
+    let newLevel = user.level;
+    let newXPToNextLevel = user.xpToNextLevel;
+    
+    // Check if user levels up
+    if (newXP >= user.xpToNextLevel) {
+      newLevel += 1;
+      // Formula for next level: current level requirement * 1.5
+      newXPToNextLevel = Math.floor(user.xpToNextLevel * 1.5);
+    }
+    
+    // Update the user
+    const updatedUser = await this.updateUser(userId, {
+      xp: newXP,
+      level: newLevel,
+      xpToNextLevel: newXPToNextLevel
+    });
+    
+    if (!updatedUser) {
+      throw new Error(`Failed to update user with ID ${userId}`);
+    }
+    
+    return updatedUser;
+  }
+  
+  async getAvailableQuestsForUser(userId: number): Promise<Quest[]> {
+    // Get the user to check their completed quests
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    // Get all quests that are active
+    let availableQuests = await db
+      .select()
+      .from(quests)
+      .where(eq(quests.active, true));
+    
+    // Filter out completed quests
+    availableQuests = availableQuests.filter(
+      quest => !user.completedQuests.includes(quest.id)
+    );
+    
+    return availableQuests;
+  }
+  
+  async getQuestsByAdventureLine(adventureLine: string): Promise<Quest[]> {
+    return await db
+      .select()
+      .from(quests)
+      .where(eq(quests.adventureLine, adventureLine))
+      .orderBy(quests.orderInLine);
+  }
+  
+  // Statistics methods
+  async getUserCount(): Promise<number> {
+    const result = await db.select({ count: count() }).from(users);
+    return result[0].count;
+  }
+  
+  async getItemCount(): Promise<number> {
+    const result = await db.select({ count: count() }).from(items);
+    return result[0].count;
+  }
+  
+  async getCraftingRecipeCount(): Promise<number> {
+    const result = await db.select({ count: count() }).from(craftingRecipes);
+    return result[0].count;
+  }
+  
+  async getQuestCount(): Promise<number> {
+    const result = await db.select({ count: count() }).from(quests);
+    return result[0].count;
+  }
+  
+  // Database management methods
+  async resetDatabase(): Promise<void> {
+    // This would require careful implementation in a production environment
+    // For now, just a placeholder that does nothing
+    console.log("Database reset is not implemented for safety reasons");
+  }
+  
+  // Additional helper methods for specific game functionality
+  async initializeItems(): Promise<void> {
+    // This would be implemented to initialize the database with default items
+    // Implementation will depend on game-specific requirements
+  }
+}
+
+// Keeping the MemStorage for now until DatabaseStorage is fully implemented
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private quests: Map<number, Quest>;
