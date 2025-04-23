@@ -46,7 +46,10 @@ export default function LootBoxPreview() {
   // Fetch loot box details
   const { data: lootBox, isLoading: isLoadingLootBox } = useQuery({
     queryKey: ['/api/loot-boxes', lootBoxId],
-    queryFn: () => apiRequest(`/api/loot-boxes/${lootBoxId}`),
+    queryFn: async () => {
+      const response = await apiRequest(`/api/loot-boxes/${lootBoxId}`);
+      return await response.json();
+    },
     enabled: !!lootBoxId,
     onSuccess: (data) => console.log("Successfully loaded loot box data:", data),
     onError: (error) => console.error("Error loading loot box data:", error)
@@ -55,7 +58,10 @@ export default function LootBoxPreview() {
   // Fetch all items for displaying names
   const { data: items } = useQuery({
     queryKey: ['/api/admin/items'],
-    queryFn: () => apiRequest('/api/admin/items')
+    queryFn: async () => {
+      const response = await apiRequest('/api/admin/items');
+      return await response.json();
+    }
   });
 
   // Calculate drop chances based on weights
@@ -84,12 +90,11 @@ export default function LootBoxPreview() {
     setIsOpening(true);
     
     try {
-      const response = await apiRequest(`/api/loot-boxes/${lootBoxId}/open`, {
-        method: 'POST'
-      });
+      const response = await apiRequest(`/api/loot-boxes/${lootBoxId}/open`, 'POST');
+      const data = await response.json();
 
-      if (response.success) {
-        setOpenedRewards(response.rewards);
+      if (data.success) {
+        setOpenedRewards(data.rewards);
         toast({
           title: "Loot Box Opened!",
           description: "Check out your new items!",
@@ -98,7 +103,7 @@ export default function LootBoxPreview() {
       } else {
         toast({
           title: "Error",
-          description: response.message || "Failed to open loot box",
+          description: data.message || "Failed to open loot box",
           variant: "destructive"
         });
         setLocation('/inventory');
