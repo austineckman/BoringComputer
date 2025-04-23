@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Container } from '@/components/ui/container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { Trash2, ImageIcon, Upload, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,15 +13,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import MainLayout from '@/components/layout/MainLayout';
 
-export default function AdminBasicPage() {
+export default function AdminBasic() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Form state
   const [id, setId] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [rarity, setRarity] = useState<string>('common');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   
   // Query to fetch items
   const { 
@@ -42,17 +45,22 @@ export default function AdminBasicPage() {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (newItem) => {
       toast({
         title: 'Success',
         description: 'Item created successfully'
       });
       
-      // Reset form
-      setId('');
-      setName('');
-      setDescription('');
-      setRarity('common');
+      // If we have a file selected, upload it for the new item
+      if (selectedFile) {
+        uploadImageMutation.mutate({
+          itemId: newItem.id,
+          file: selectedFile
+        });
+      } else {
+        // Reset form if no image to upload
+        resetForm();
+      }
       
       // Refresh items list
       queryClient.invalidateQueries({ queryKey: ['/api/admin/items'] });
@@ -61,6 +69,83 @@ export default function AdminBasicPage() {
       toast({
         title: 'Error',
         description: `Failed to create item: ${error.message}`,
+        variant: 'destructive'
+      });
+    }
+  });
+  
+  // Upload image mutation
+  const uploadImageMutation = useMutation({
+    mutationFn: async ({ itemId, file }: { itemId: string, file: File }) => {
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const response = await fetch(`/api/admin/items/${itemId}/image`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload image');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Image uploaded successfully'
+      });
+      
+      // Reset form
+      resetForm();
+      
+      // Refresh items list
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/items'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: `Failed to upload image: ${error.message}`,
+        variant: 'destructive'
+      });
+    }
+  });
+  
+  // Upload image for existing item
+  const uploadExistingItemImageMutation = useMutation({
+    mutationFn: async ({ itemId, file }: { itemId: string, file: File }) => {
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const response = await fetch(`/api/admin/items/${itemId}/image`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload image');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Image updated successfully'
+      });
+      
+      // Refresh items list
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/items'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: `Failed to update image: ${error.message}`,
         variant: 'destructive'
       });
     }
@@ -93,6 +178,55 @@ export default function AdminBasicPage() {
       });
     }
   });
+  
+  // Reset the form
+  const resetForm = () => {
+    setId('');
+    setName('');
+    setDescription('');
+    setRarity('common');
+    setSelectedFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+  
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: 'Error',
+          description: 'Image size exceeds the maximum allowed (5MB)',
+          variant: 'destructive'
+        });
+        return;
+      }
+      
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        toast({
+          title: 'Error',
+          description: 'Only image files are allowed (JPEG, PNG, GIF, WebP)',
+          variant: 'destructive'
+        });
+        return;
+      }
+      
+      setSelectedFile(file);
+      
+      // Generate preview
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setImagePreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
@@ -127,11 +261,19 @@ export default function AdminBasicPage() {
     }
   };
   
+  // Handle image upload for existing item
+  const handleExistingItemImageUpload = (itemId: string, file: File) => {
+    uploadExistingItemImageMutation.mutate({
+      itemId,
+      file
+    });
+  };
+  
   return (
     <MainLayout>
       <Container>
         <div className="py-8">
-          <h1 className="text-3xl font-bold mb-6">Item Management (Basic)</h1>
+          <h1 className="text-3xl font-bold mb-6">Item Management</h1>
           
           {/* Create item form */}
           <Card className="mb-8">
@@ -190,12 +332,40 @@ export default function AdminBasicPage() {
                     </Select>
                   </div>
                   
+                  <div className="grid gap-2">
+                    <Label htmlFor="image">Item Image</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        ref={fileInputRef}
+                        id="image"
+                        type="file"
+                        accept="image/jpeg,image/png,image/gif,image/webp"
+                        className="flex-1"
+                        onChange={handleFileChange}
+                      />
+                    </div>
+                    {imagePreview && (
+                      <div className="mt-2 relative overflow-hidden rounded-md" style={{ height: '120px' }}>
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-full h-full object-contain bg-black/5 rounded-md"
+                        />
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Upload an image for the item (max 5MB). This will appear in the inventory.
+                    </p>
+                  </div>
+                  
                   <Button 
                     type="submit" 
                     className="mt-2"
-                    disabled={createItemMutation.isPending}
+                    disabled={createItemMutation.isPending || uploadImageMutation.isPending}
                   >
-                    {createItemMutation.isPending ? 'Creating...' : 'Create Item'}
+                    {(createItemMutation.isPending || uploadImageMutation.isPending) 
+                      ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</> 
+                      : 'Create Item'}
                   </Button>
                 </div>
               </form>
@@ -240,6 +410,45 @@ export default function AdminBasicPage() {
                         </Badge>
                       </CardHeader>
                       <CardContent className="p-4 pt-0">
+                        <div className="mb-3 relative overflow-hidden rounded-md" style={{ height: '120px' }}>
+                          {item.imagePath ? (
+                            <img 
+                              src={item.imagePath} 
+                              alt={item.name}
+                              className="w-full h-full object-contain bg-black/5 rounded-md"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-black/5 rounded-md">
+                              <ImageIcon className="w-12 h-12 text-muted-foreground/40" />
+                            </div>
+                          )}
+                          
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity">
+                            <label 
+                              htmlFor={`upload-${item.id}`}
+                              className="cursor-pointer flex flex-col items-center justify-center text-sm text-white hover:text-primary transition-colors"
+                            >
+                              {uploadExistingItemImageMutation.isPending && uploadExistingItemImageMutation.variables?.itemId === item.id ? (
+                                <Loader2 className="w-6 h-6 mb-1 animate-spin" />
+                              ) : (
+                                <Upload className="w-6 h-6 mb-1" />
+                              )}
+                              <span>{item.imagePath ? 'Change Image' : 'Add Image'}</span>
+                              <input
+                                id={`upload-${item.id}`}
+                                type="file"
+                                accept="image/jpeg,image/png,image/gif,image/webp"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    handleExistingItemImageUpload(item.id, file);
+                                  }
+                                }}
+                              />
+                            </label>
+                          </div>
+                        </div>
                         <p className="text-sm text-muted-foreground">{item.description}</p>
                       </CardContent>
                     </Card>
