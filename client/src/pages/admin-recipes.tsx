@@ -196,8 +196,8 @@ const AdminRecipesPage: React.FC = () => {
   const { data: recipes = [], isLoading: loadingRecipes } = useQuery({
     queryKey: ['/api/admin/recipes'],
     queryFn: async () => {
-      const response = await apiRequest<Recipe[]>('/api/admin/recipes');
-      return response || [];
+      const response = await apiRequest('GET', '/api/admin/recipes');
+      return await response.json() || [];
     }
   });
 
@@ -205,18 +205,15 @@ const AdminRecipesPage: React.FC = () => {
   const { data: items = [] } = useQuery({
     queryKey: ['/api/admin/items'],
     queryFn: async () => {
-      const response = await apiRequest<any[]>('/api/admin/items');
-      return response || [];
+      const response = await apiRequest('GET', '/api/admin/items');
+      return await response.json() || [];
     }
   });
 
   // Create recipe mutation
   const createRecipeMutation = useMutation({
     mutationFn: async (recipe: any) => {
-      return await apiRequest('/api/admin/recipes', {
-        method: 'POST',
-        data: recipe,
-      });
+      return await apiRequest('POST', '/api/admin/recipes', recipe);
     },
     onSuccess: () => {
       toast({
@@ -239,10 +236,7 @@ const AdminRecipesPage: React.FC = () => {
   // Update recipe mutation
   const updateRecipeMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      return await apiRequest(`/api/admin/recipes/${id}`, {
-        method: 'PATCH',
-        data,
-      });
+      return await apiRequest('PATCH', `/api/admin/recipes/${id}`, data);
     },
     onSuccess: () => {
       toast({
@@ -265,9 +259,7 @@ const AdminRecipesPage: React.FC = () => {
   // Delete recipe mutation
   const deleteRecipeMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/admin/recipes/${id}`, {
-        method: 'DELETE',
-      });
+      return await apiRequest('DELETE', `/api/admin/recipes/${id}`);
     },
     onSuccess: () => {
       toast({
