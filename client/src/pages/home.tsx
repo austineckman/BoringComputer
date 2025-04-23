@@ -173,12 +173,28 @@ const Home = () => {
             </div>
           ) : (
             <div>
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                {inventory.slice(0, 6).map((item, index) => (
-                  <div key={index} className="flex flex-col items-center">
-                    <ResourceItem type={item.type as any} quantity={item.quantity} size="sm" />
-                  </div>
-                ))}
+              <div className="flex flex-col items-center mb-4 bg-space-dark rounded-lg p-3">
+                <p className="text-brand-light mb-2 text-center">You have <span className="font-bold text-brand-orange">{inventory.length}</span> items in your inventory</p>
+                <div className="flex gap-2 justify-center">
+                  {themeConfig.resourceTypes.slice(0, 4).map((resource) => (
+                    <div 
+                      key={resource.id}
+                      className="w-8 h-8 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: `${resource.color}22`, color: resource.color }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={
+                          resource.icon === 'scroll' ? 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' :
+                          resource.icon === 'cog' ? 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' :
+                          resource.icon === 'microchip' ? 'M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z' :
+                          resource.icon === 'gem' ? 'M20.42 4.58a5.4 5.4 0 00-7.65 0l-.77.78-.77-.78a5.4 5.4 0 00-7.65 0C1.46 6.7 1.33 10.28 4 13l8 8 8-8c2.67-2.72 2.54-6.3.42-8.42z' :
+                          resource.icon === 'memory' ? 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' :
+                          'M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4'
+                        } />
+                      </svg>
+                    </div>
+                  ))}
+                </div>
               </div>
               <Link href="/inventory">
                 <PixelButton 
@@ -187,7 +203,7 @@ const Home = () => {
                   onClick={handleButtonClick}
                   onMouseEnter={handleButtonHover}
                 >
-                  VIEW ALL
+                  VIEW INVENTORY
                 </PixelButton>
               </Link>
             </div>
