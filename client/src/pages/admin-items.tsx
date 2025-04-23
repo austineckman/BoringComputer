@@ -658,7 +658,7 @@ const AdminItems: React.FC = () => {
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => setIsCreateDialogOpen(false)}
+                onClick={() => handleCreateDialogOpen(false)}
               >
                 Cancel
               </Button>
@@ -839,7 +839,7 @@ const AdminItems: React.FC = () => {
                 <Button 
                   type="button" 
                   variant="outline" 
-                  onClick={() => setIsEditDialogOpen(false)}
+                  onClick={() => handleEditDialogOpen(false)}
                 >
                   Cancel
                 </Button>
