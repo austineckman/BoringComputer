@@ -16,6 +16,7 @@ interface LootBoxModalProps {
 export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: LootBoxModalProps) {
   // Animation state
   const [isAnimating, setIsAnimating] = useState(false);
+  const [hasTransitionStarted, setHasTransitionStarted] = useState(false);
   const [showFinalReward, setShowFinalReward] = useState(false);
   const [selectedReward, setSelectedReward] = useState<{ type: string, quantity: number } | null>(null);
   const [scrollItems, setScrollItems] = useState<Array<{ itemId: string, quantity: number }>>([]);
@@ -40,6 +41,7 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
   useEffect(() => {
     if (!isOpen) {
       setIsAnimating(false);
+      setHasTransitionStarted(false);
       setShowFinalReward(false);
       setSelectedReward(null);
       setScrollItems([]);
@@ -256,10 +258,16 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
         // Start the animation
         setIsAnimating(true);
         
+        // Delay adding the transition class slightly to ensure DOM is ready
+        setTimeout(() => {
+          setHasTransitionStarted(true);
+        }, 50);
+        
         // Use 7 seconds for animation - matches the CSS transition duration
         setTimeout(() => {
           console.log("Animation completed, showing final reward");
           setIsAnimating(false);
+          setHasTransitionStarted(false);
           setShowFinalReward(true);
         }, 7000);
       } else {
@@ -366,7 +374,7 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
                     willChange: 'transform',
                     position: 'relative',
                     transition: 'transform 7s cubic-bezier(0.23, 1, 0.32, 1)',
-                    transform: isAnimating 
+                    transform: hasTransitionStarted 
                       ? `translateX(-${(scrollItems.length - 10) * 84}px)` 
                       : 'translateX(0px)',
                     padding: '0 450px', // Padding to ensure items are visible at the start
@@ -570,6 +578,7 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
                 onClick={() => {
                   console.log("Skipping animation");
                   setIsAnimating(false);
+                  setHasTransitionStarted(false);
                   setShowFinalReward(true);
                 }}
                 variant="outline"
@@ -714,6 +723,7 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
                 setSelectedReward(null);
                 setShowFinalReward(false);
                 setIsAnimating(false);
+                setHasTransitionStarted(false);
               }}
               className="w-full"
             >
