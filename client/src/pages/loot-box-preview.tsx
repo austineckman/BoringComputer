@@ -282,8 +282,8 @@ export default function LootBoxPreview() {
             {/* Loot Crate Image */}
             <div className="absolute inset-0 flex items-center justify-center opacity-20">
               <img 
-                src={image || '/images/loot-crate.png'} 
-                alt={name} 
+                src={lootBoxImage || '/images/loot-crate.png'} 
+                alt={lootBoxName} 
                 className="w-40 h-40 object-contain"
               />
             </div>
