@@ -547,8 +547,21 @@ export async function openLootBox(lootBoxId: number, userId: number): Promise<{ 
       return { success: false, message: "Loot box already opened", rewards: null };
     }
     
-    // Generate rewards based on the loot box type
-    const rewards = generateLootBoxRewards(lootBox.type as LootBoxType);
+    // Generate rewards based on the loot box config
+    // First, check if there's a loot box configuration for this type
+    const lootBoxConfig = await storage.getLootBoxConfig(lootBox.type);
+    
+    let rewards: Reward[] = [];
+    
+    if (lootBoxConfig) {
+      // Use the loot box configuration's item drop table
+      console.log(`Using loot box config for ${lootBox.type}: ${lootBoxConfig.name}`);
+      rewards = await generateConfiguredLootBoxRewards(lootBoxConfig);
+    } else {
+      // Fall back to the old system for backward compatibility
+      console.log(`No loot box config found for ${lootBox.type}, using legacy system`);
+      rewards = generateLootBoxRewards(lootBox.type as LootBoxType);
+    }
     
     // Update the loot box to mark it as opened
     await storage.updateLootBox(lootBoxId, {
@@ -607,12 +620,13 @@ export async function openLootBox(lootBoxId: number, userId: number): Promise<{ 
       });
       
       // 3. Add entry to inventory history
+      const lootBoxDisplayName = lootBoxConfig ? lootBoxConfig.name : `${lootBox.type} Loot Crate`;
       await storage.createInventoryHistory({
         userId,
         type: reward.type,
         quantity: reward.quantity,
         action: 'gained',
-        source: `${lootBox.type} Loot Crate`
+        source: lootBoxDisplayName
       });
     }
     
@@ -623,9 +637,72 @@ export async function openLootBox(lootBoxId: number, userId: number): Promise<{ 
   }
 }
 
+/**
+ * Generate rewards from a loot box configuration
+ * @param config The loot box configuration object
+ * @returns Array of rewards
+ */
+async function generateConfiguredLootBoxRewards(config: any): Promise<Reward[]> {
+  // Determine number of rewards to give based on min/max settings
+  const numberOfRewards = getRandomInt(
+    config.minRewards || 1, 
+    config.maxRewards || 3
+  );
+  
+  console.log(`Generating ${numberOfRewards} rewards from loot box config: ${config.name}`);
+  
+  const rewards: Reward[] = [];
+  const itemDropTable = Array.isArray(config.itemDropTable) ? config.itemDropTable : [];
+  
+  if (itemDropTable.length === 0) {
+    console.warn(`No item drop table found for loot box config: ${config.id}`);
+    return rewards;
+  }
+  
+  // Calculate total weight across all items
+  const totalWeight = itemDropTable.reduce((sum, item) => sum + (item.weight || 0), 0);
+  
+  // Generate the specified number of rewards
+  for (let i = 0; i < numberOfRewards; i++) {
+    // Select a random item based on weights
+    const randomValue = Math.random() * totalWeight;
+    let currentWeight = 0;
+    let selectedItem = null;
+    
+    for (const item of itemDropTable) {
+      currentWeight += item.weight || 0;
+      if (randomValue <= currentWeight) {
+        selectedItem = item;
+        break;
+      }
+    }
+    
+    if (!selectedItem) {
+      console.warn(`Failed to select an item from loot box config: ${config.id}`);
+      continue;
+    }
+    
+    // Generate a quantity based on min/max settings for this item
+    const quantity = getRandomInt(
+      selectedItem.minQuantity || 1,
+      selectedItem.maxQuantity || 1
+    );
+    
+    rewards.push({
+      type: selectedItem.itemId,
+      quantity
+    });
+    
+    console.log(`Selected item ${selectedItem.itemId} with quantity ${quantity}`);
+  }
+  
+  return rewards;
+}
+
 // Export also individual selectors for testing or custom implementations
 export const lootBoxSelectors = {
   selectRarityTier,
   selectItem,
-  generateQuantity
+  generateQuantity,
+  generateConfiguredLootBoxRewards
 };
