@@ -60,6 +60,21 @@ const AdminItems: React.FC = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  
+  // Handle dialog open/close with cleanup
+  const handleCreateDialogOpen = (open: boolean) => {
+    setIsCreateDialogOpen(open);
+    if (!open) {
+      setImageFile(null);
+    }
+  };
+  
+  const handleEditDialogOpen = (open: boolean) => {
+    setIsEditDialogOpen(open);
+    if (!open) {
+      setImageFile(null);
+    }
+  };
   const [currentItem, setCurrentItem] = useState<Item | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [rarityFilter, setRarityFilter] = useState<string>("all");
@@ -512,7 +527,7 @@ const AdminItems: React.FC = () => {
       </div>
 
       {/* Create Item Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+      <Dialog open={isCreateDialogOpen} onOpenChange={handleCreateDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Add New Item</DialogTitle>
@@ -663,7 +678,7 @@ const AdminItems: React.FC = () => {
       </Dialog>
 
       {/* Edit Item Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog open={isEditDialogOpen} onOpenChange={handleEditDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Item</DialogTitle>
@@ -789,7 +804,7 @@ const AdminItems: React.FC = () => {
                     {/* Actual image when available */}
                     {(currentItem.imagePath || currentItem.image) && (
                       <img
-                        key={`edit-${currentItem.id}-image`}
+                        key={`edit-${currentItem.id}-image-${Date.now()}`}
                         src={
                           // Handle various image path formats
                           currentItem.imagePath ? 
@@ -867,7 +882,7 @@ const AdminItems: React.FC = () => {
                     {/* Only show image when available */}
                     {(currentItem.imagePath || currentItem.image) && (
                       <img
-                        key={`delete-${currentItem.id}-image`}
+                        key={`delete-${currentItem.id}-image-${Date.now()}`}
                         src={
                           // Handle various image path formats
                           currentItem.imagePath ? 
