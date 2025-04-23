@@ -1,250 +1,270 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage';
-import { db } from '../db';
-import { craftingRecipes } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { z } from 'zod';
+import { insertCraftingRecipeSchema } from '@shared/schema';
 
-// Get all crafting recipes
+// Get all recipes for a user
 export const getCraftingRecipes = async (req: Request, res: Response) => {
   try {
-    const recipes = await db.select().from(craftingRecipes).where(eq(craftingRecipes.unlocked, true));
+    const user = (req as any).user;
+    const recipes = await storage.getAvailableCraftingRecipes(user.id);
     res.status(200).json(recipes);
-  } catch (error) {
-    console.error('Error fetching crafting recipes:', error);
-    res.status(500).json({ message: 'Failed to fetch crafting recipes' });
+  } catch (error: any) {
+    console.error('Error fetching recipes:', error);
+    res.status(500).json({ message: error.message || 'Failed to fetch recipes' });
   }
 };
 
-// Get a specific crafting recipe by ID
+// Get a specific recipe by ID
 export const getCraftingRecipeById = async (req: Request, res: Response) => {
-  const id = Number(req.params.id);
-  
-  if (isNaN(id)) {
-    return res.status(400).json({ message: 'Invalid recipe ID' });
-  }
-  
   try {
-    const [recipe] = await db.select().from(craftingRecipes).where(eq(craftingRecipes.id, id));
-    
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: 'Invalid recipe ID' });
+    }
+
+    const recipe = await storage.getCraftingRecipe(id);
     if (!recipe) {
       return res.status(404).json({ message: 'Recipe not found' });
     }
-    
+
+    // Check if the recipe is unlocked for this user
+    if (!recipe.unlocked) {
+      return res.status(403).json({ message: 'Recipe is locked' });
+    }
+
     res.status(200).json(recipe);
-  } catch (error) {
-    console.error('Error fetching crafting recipe:', error);
-    res.status(500).json({ message: 'Failed to fetch crafting recipe' });
+  } catch (error: any) {
+    console.error('Error fetching recipe:', error);
+    res.status(500).json({ message: error.message || 'Failed to fetch recipe' });
   }
 };
 
-// Create a new crafting recipe (admin only)
+// Create a new recipe (admin only)
 export const createCraftingRecipe = async (req: Request, res: Response) => {
   try {
-    const newRecipe = req.body;
+    const recipeSchema = insertCraftingRecipeSchema.extend({
+      // Pattern is a 2D array representing required items in each position
+      pattern: z.array(z.array(z.string().nullable())),
+      // Dictionary of items required with quantities
+      requiredItems: z.record(z.string(), z.number().positive()),
+    });
+
+    const recipeData = recipeSchema.parse(req.body);
+    const newRecipe = await storage.createCraftingRecipe(recipeData);
     
-    // Validate that pattern is a 2D array
-    if (!Array.isArray(newRecipe.pattern) || !newRecipe.pattern.every((row: any) => Array.isArray(row))) {
-      return res.status(400).json({ message: 'Pattern must be a 2D array' });
+    res.status(201).json(newRecipe);
+  } catch (error: any) {
+    console.error('Error creating recipe:', error);
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ message: 'Invalid recipe data', errors: error.errors });
     }
-    
-    // Validate that requiredItems is an object
-    if (typeof newRecipe.requiredItems !== 'object' || Array.isArray(newRecipe.requiredItems)) {
-      return res.status(400).json({ message: 'requiredItems must be an object' });
-    }
-    
-    const [recipe] = await db.insert(craftingRecipes).values(newRecipe).returning();
-    res.status(201).json(recipe);
-  } catch (error) {
-    console.error('Error creating crafting recipe:', error);
-    res.status(500).json({ message: 'Failed to create crafting recipe' });
+    res.status(500).json({ message: error.message || 'Failed to create recipe' });
   }
 };
 
-// Update a crafting recipe (admin only)
+// Update an existing recipe (admin only)
 export const updateCraftingRecipe = async (req: Request, res: Response) => {
-  const id = Number(req.params.id);
-  
-  if (isNaN(id)) {
-    return res.status(400).json({ message: 'Invalid recipe ID' });
-  }
-  
   try {
-    const updateData = req.body;
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: 'Invalid recipe ID' });
+    }
+
+    const recipeSchema = insertCraftingRecipeSchema.extend({
+      // Pattern is a 2D array representing required items in each position
+      pattern: z.array(z.array(z.string().nullable())),
+      // Dictionary of items required with quantities
+      requiredItems: z.record(z.string(), z.number().positive()),
+    }).partial();
+
+    const recipeData = recipeSchema.parse(req.body);
     
-    // Check if the recipe exists
-    const [existingRecipe] = await db.select().from(craftingRecipes).where(eq(craftingRecipes.id, id));
-    
-    if (!existingRecipe) {
+    const updatedRecipe = await storage.updateCraftingRecipe(id, recipeData);
+    if (!updatedRecipe) {
       return res.status(404).json({ message: 'Recipe not found' });
     }
-    
-    // Update the recipe
-    const [updatedRecipe] = await db
-      .update(craftingRecipes)
-      .set({
-        ...updateData,
-        updatedAt: new Date(),
-      })
-      .where(eq(craftingRecipes.id, id))
-      .returning();
     
     res.status(200).json(updatedRecipe);
-  } catch (error) {
-    console.error('Error updating crafting recipe:', error);
-    res.status(500).json({ message: 'Failed to update crafting recipe' });
+  } catch (error: any) {
+    console.error('Error updating recipe:', error);
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ message: 'Invalid recipe data', errors: error.errors });
+    }
+    res.status(500).json({ message: error.message || 'Failed to update recipe' });
   }
 };
 
-// Delete a crafting recipe (admin only)
+// Delete a recipe (admin only)
 export const deleteCraftingRecipe = async (req: Request, res: Response) => {
-  const id = Number(req.params.id);
-  
-  if (isNaN(id)) {
-    return res.status(400).json({ message: 'Invalid recipe ID' });
-  }
-  
   try {
-    // Check if the recipe exists
-    const [existingRecipe] = await db.select().from(craftingRecipes).where(eq(craftingRecipes.id, id));
-    
-    if (!existingRecipe) {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: 'Invalid recipe ID' });
+    }
+
+    const deleted = await storage.deleteCraftingRecipe(id);
+    if (!deleted) {
       return res.status(404).json({ message: 'Recipe not found' });
     }
     
-    // Delete the recipe
-    await db.delete(craftingRecipes).where(eq(craftingRecipes.id, id));
-    
     res.status(200).json({ message: 'Recipe deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting crafting recipe:', error);
-    res.status(500).json({ message: 'Failed to delete crafting recipe' });
+  } catch (error: any) {
+    console.error('Error deleting recipe:', error);
+    res.status(500).json({ message: error.message || 'Failed to delete recipe' });
   }
 };
 
-// Attempt to craft an item
+// Craft an item using a recipe
 export const craftItem = async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ message: 'Authentication required' });
-  }
-  
-  const userId = req.user.id;
-  const { recipeId, gridPattern } = req.body;
-  
-  if (!recipeId || !gridPattern) {
-    return res.status(400).json({ message: 'Recipe ID and grid pattern are required' });
-  }
-  
   try {
-    // Get the recipe
-    const [recipe] = await db.select().from(craftingRecipes).where(eq(craftingRecipes.id, recipeId));
+    // Validate request body
+    const craftSchema = z.object({
+      recipeId: z.number(),
+      gridPattern: z.array(z.array(z.string().nullable()))
+    });
+
+    const { recipeId, gridPattern } = craftSchema.parse(req.body);
     
+    // Get the recipe
+    const recipe = await storage.getCraftingRecipe(recipeId);
     if (!recipe) {
       return res.status(404).json({ message: 'Recipe not found' });
     }
-    
-    // Get user's inventory
-    const user = await storage.getUser(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+
+    // Check if the recipe is unlocked for this user
+    if (!recipe.unlocked) {
+      return res.status(403).json({ message: 'Recipe is locked' });
     }
-    
+
+    // Get user's inventory
+    const user = (req as any).user;
     const inventory = user.inventory || {};
-    
-    // Validate that the user has all required items
-    const requiredItems = recipe.requiredItems as Record<string, number>;
-    const missingItems: { itemId: string, required: number, available: number }[] = [];
-    
-    for (const [itemId, requiredQuantity] of Object.entries(requiredItems)) {
-      const availableQuantity = inventory[itemId] || 0;
-      if (availableQuantity < requiredQuantity) {
-        missingItems.push({
-          itemId,
-          required: requiredQuantity,
-          available: availableQuantity
+
+    // Validate user has required items
+    for (const [itemId, requiredAmount] of Object.entries(recipe.requiredItems)) {
+      const userAmount = inventory[itemId] || 0;
+      if (userAmount < requiredAmount) {
+        return res.status(400).json({ 
+          message: 'Missing required items',
+          missing: { [itemId]: requiredAmount - userAmount }
         });
       }
     }
-    
-    if (missingItems.length > 0) {
-      return res.status(400).json({
-        message: 'You don\'t have all required items',
-        missingItems
-      });
+
+    // Check if the grid pattern matches the recipe
+    const isValidPattern = validateGridPattern(gridPattern, recipe.pattern);
+    if (!isValidPattern) {
+      return res.status(400).json({ message: 'Invalid crafting pattern' });
     }
-    
-    // Validate that the pattern matches
-    const patternValid = validatePattern(gridPattern, recipe.pattern as (string | null)[][]);
-    if (!patternValid) {
-      return res.status(400).json({ message: 'Grid pattern does not match the recipe' });
-    }
-    
-    // Update inventory (remove used items)
+
+    // Remove required items from inventory
     const updatedInventory = { ...inventory };
-    for (const [itemId, requiredQuantity] of Object.entries(requiredItems)) {
-      updatedInventory[itemId] = (updatedInventory[itemId] || 0) - requiredQuantity;
+    for (const [itemId, requiredAmount] of Object.entries(recipe.requiredItems)) {
+      updatedInventory[itemId] = (updatedInventory[itemId] || 0) - requiredAmount;
       
-      // Create inventory history for used materials
+      // Log inventory history
       await storage.createInventoryHistory({
-        userId,
+        userId: user.id,
         type: itemId,
-        quantity: requiredQuantity,
+        quantity: requiredAmount,
         action: 'used',
         source: 'crafting'
       });
     }
+
+    // Add result item to inventory
+    updatedInventory[recipe.resultItem] = (updatedInventory[recipe.resultItem] || 0) + recipe.resultQuantity;
     
-    // Add crafted item to inventory
-    const craftedItemId = recipe.resultItem;
-    const craftedQuantity = recipe.resultQuantity;
-    updatedInventory[craftedItemId] = (updatedInventory[craftedItemId] || 0) + craftedQuantity;
-    
-    // Create inventory history for crafted item
+    // Log inventory history for crafted item
     await storage.createInventoryHistory({
-      userId,
-      type: craftedItemId,
-      quantity: craftedQuantity,
+      userId: user.id,
+      type: recipe.resultItem,
+      quantity: recipe.resultQuantity,
       action: 'gained',
       source: 'crafting'
     });
-    
+
     // Update user inventory
-    await storage.updateUser(userId, { inventory: updatedInventory });
-    
-    // Return success
+    await storage.updateUser(user.id, { inventory: updatedInventory });
+
+    // Award XP if applicable
+    const xpReward = calculateXpReward(recipe);
+    if (xpReward > 0) {
+      await storage.addUserXP(user.id, xpReward);
+    }
+
     res.status(200).json({
       message: 'Item crafted successfully',
-      craftedItem: {
-        type: craftedItemId,
-        quantity: craftedQuantity
-      },
-      updatedInventory
+      resultItem: recipe.resultItem,
+      resultQuantity: recipe.resultQuantity,
+      xpGained: xpReward
     });
-    
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error crafting item:', error);
-    res.status(500).json({ message: 'Failed to craft item' });
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ message: 'Invalid request data', errors: error.errors });
+    }
+    res.status(500).json({ message: error.message || 'Failed to craft item' });
   }
 };
 
-// Helper function to validate the crafting pattern
-function validatePattern(gridPattern: (string | null)[][], recipePattern: (string | null)[][]): boolean {
-  // Check each cell in the recipe pattern
-  for (let row = 0; row < recipePattern.length; row++) {
-    for (let col = 0; col < recipePattern[row].length; col++) {
-      const recipeItem = recipePattern[row][col];
-      const gridItem = gridPattern[row][col];
-      
-      // If recipe expects an item but grid doesn't have it (or has wrong item)
-      if (recipeItem && recipeItem !== gridItem) {
-        return false;
-      }
-      
-      // If recipe expects empty but grid has an item
-      if (recipeItem === null && gridItem !== null) {
+// Helper function to validate that the grid pattern matches the recipe pattern
+function validateGridPattern(
+  gridPattern: (string | null)[][],
+  recipePattern: (string | null)[][]
+): boolean {
+  // Both patterns should be 5x5
+  if (gridPattern.length !== 5 || recipePattern.length !== 5) {
+    return false;
+  }
+
+  for (let i = 0; i < 5; i++) {
+    if (gridPattern[i].length !== 5 || recipePattern[i].length !== 5) {
+      return false;
+    }
+  }
+
+  // Check if each cell in the grid matches the required pattern
+  for (let row = 0; row < 5; row++) {
+    for (let col = 0; col < 5; col++) {
+      const requiredItem = recipePattern[row][col];
+      const providedItem = gridPattern[row][col];
+
+      // If recipe requires an item in this cell
+      if (requiredItem) {
+        // Grid must have the same item in this cell
+        if (providedItem !== requiredItem) {
+          return false;
+        }
+      } 
+      // If recipe doesn't require an item in this cell
+      else if (!requiredItem && providedItem) {
+        // Grid shouldn't have any item in this cell
         return false;
       }
     }
   }
-  
+
   return true;
+}
+
+// Helper function to calculate XP reward based on recipe difficulty
+function calculateXpReward(recipe: any): number {
+  // Base XP rewards
+  const baseXp = {
+    easy: 25,
+    medium: 50,
+    hard: 100
+  };
+
+  // Calculate XP based on difficulty and number of required items
+  const difficultyXp = baseXp[recipe.difficulty as keyof typeof baseXp] || 25;
+  const requiredItems = recipe.requiredItems || {};
+  const itemCountMultiplier = Math.min(
+    2.0, // Cap at 2x multiplier
+    1.0 + (Object.values(requiredItems).reduce((sum: number, val: number) => sum + val, 0) * 0.05)
+  );
+
+  return Math.round(difficultyXp * itemCountMultiplier);
 }
