@@ -36,17 +36,10 @@ const RecipeList: React.FC<RecipeListProps> = ({
   // Filter recipes based on search query and category
   const filteredRecipes = recipes.filter(recipe => {
     const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         recipe.description.toLowerCase().includes(searchQuery.toLowerCase());
+                          recipe.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = activeCategory === 'all' || recipe.category === activeCategory;
     return matchesSearch && matchesCategory;
   });
-  
-  // Group recipes by difficulty
-  const recipesByDifficulty = {
-    easy: filteredRecipes.filter(recipe => recipe.difficulty === 'easy'),
-    medium: filteredRecipes.filter(recipe => recipe.difficulty === 'medium'),
-    hard: filteredRecipes.filter(recipe => recipe.difficulty === 'hard')
-  };
   
   // Handle selecting a recipe
   const handleSelectRecipe = (recipe: Recipe) => {
@@ -71,16 +64,19 @@ const RecipeList: React.FC<RecipeListProps> = ({
   };
   
   // Get difficulty badge variant
-  const getDifficultyBadge = (difficulty: 'easy' | 'medium' | 'hard') => {
+  const getDifficultyBadge = (difficulty: string) => {
     switch (difficulty) {
       case 'easy':
+      case 'beginner':
         return 'bg-green-500/10 text-green-500 border-green-500/50';
       case 'medium':
+      case 'intermediate':
         return 'bg-amber-500/10 text-amber-500 border-amber-500/50';
       case 'hard':
+      case 'advanced':
         return 'bg-red-500/10 text-red-500 border-red-500/50';
       default:
-        return '';
+        return 'bg-blue-500/10 text-blue-500 border-blue-500/50';
     }
   };
   
@@ -96,28 +92,44 @@ const RecipeList: React.FC<RecipeListProps> = ({
         onClick={() => handleSelectRecipe(recipe)}
       >
         <CardContent className="p-4">
-          <div className="flex items-center space-x-3 mb-2">
-            <div className="w-12 h-12 rounded overflow-hidden bg-muted">
+          <div className="flex items-center gap-3">
+            {/* Result item image */}
+            <div className="w-14 h-14 rounded overflow-hidden bg-muted border flex-shrink-0">
               <img 
                 src={resultItem.imagePath} 
                 alt={resultItem.name}
                 className="w-full h-full object-contain"
               />
             </div>
-            <div className="flex-1">
-              <h4 className="font-medium">{recipe.name}</h4>
-              <Badge 
-                variant="outline" 
-                className={getDifficultyBadge(recipe.difficulty)}
-              >
-                {recipe.difficulty}
-              </Badge>
+            
+            {/* Recipe image */}
+            <div className="w-14 h-14 rounded overflow-hidden bg-background/50 border flex-shrink-0">
+              <img 
+                src={recipe.image || '/images/recipe-placeholder.png'} 
+                alt={recipe.name}
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = resultItem.imagePath; // Fallback to result item image
+                }}
+              />
             </div>
-          </div>
-          <p className="text-xs text-muted-foreground mb-2">{recipe.description}</p>
-          <div className="text-xs">
-            <span className="font-medium">Creates: </span>
-            {recipe.resultQuantity}x {resultItem.name}
+            
+            <div className="flex-1 min-w-0">
+              <h4 className="font-medium text-sm truncate">{recipe.name}</h4>
+              <div className="flex items-center gap-2 flex-wrap mt-1">
+                <Badge 
+                  variant="outline" 
+                  className={getDifficultyBadge(recipe.difficulty)}
+                >
+                  {recipe.difficulty}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  {recipe.resultQuantity}x {resultItem.name}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1 truncate">{recipe.description}</p>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -164,50 +176,18 @@ const RecipeList: React.FC<RecipeListProps> = ({
             </Tabs>
           </div>
           
-          {/* Recipe lists by difficulty */}
-          <Tabs defaultValue="easy" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="easy">Easy</TabsTrigger>
-              <TabsTrigger value="medium">Medium</TabsTrigger>
-              <TabsTrigger value="hard">Hard</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="easy" className="space-y-3">
-              {isLoading ? (
-                <div className="text-center py-8">Loading recipes...</div>
-              ) : recipesByDifficulty.easy.length > 0 ? (
-                recipesByDifficulty.easy.map(recipe => renderRecipeCard(recipe))
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No easy recipes found
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="medium" className="space-y-3">
-              {isLoading ? (
-                <div className="text-center py-8">Loading recipes...</div>
-              ) : recipesByDifficulty.medium.length > 0 ? (
-                recipesByDifficulty.medium.map(recipe => renderRecipeCard(recipe))
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No medium recipes found
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="hard" className="space-y-3">
-              {isLoading ? (
-                <div className="text-center py-8">Loading recipes...</div>
-              ) : recipesByDifficulty.hard.length > 0 ? (
-                recipesByDifficulty.hard.map(recipe => renderRecipeCard(recipe))
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No hard recipes found
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+          {/* Recipe list */}
+          <div className="space-y-3">
+            {isLoading ? (
+              <div className="text-center py-8">Loading recipes...</div>
+            ) : filteredRecipes.length > 0 ? (
+              filteredRecipes.map(recipe => renderRecipeCard(recipe))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No recipes found
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
