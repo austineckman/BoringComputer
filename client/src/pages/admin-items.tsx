@@ -61,9 +61,9 @@ const AdminItems: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<Item | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [rarityFilter, setRarityFilter] = useState<string | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-  const [equipmentFilter, setEquipmentFilter] = useState<string | null>(null);
+  const [rarityFilter, setRarityFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [equipmentFilter, setEquipmentFilter] = useState<string>("all");
   const [newItem, setNewItem] = useState<Partial<Item>>({
     name: '',
     description: '',
@@ -248,12 +248,12 @@ const AdminItems: React.FC = () => {
     }
     
     // Rarity filter
-    if (rarityFilter && item.rarity !== rarityFilter) {
+    if (rarityFilter !== "all" && item.rarity !== rarityFilter) {
       return false;
     }
     
     // Category filter
-    if (categoryFilter && item.category !== categoryFilter) {
+    if (categoryFilter !== "all" && item.category !== categoryFilter) {
       return false;
     }
 
@@ -308,12 +308,12 @@ const AdminItems: React.FC = () => {
               
               <div>
                 <Label htmlFor="rarity-filter">Rarity</Label>
-                <Select value={rarityFilter || ''} onValueChange={(value) => setRarityFilter(value || null)}>
+                <Select value={rarityFilter} onValueChange={(value) => setRarityFilter(value)}>
                   <SelectTrigger id="rarity-filter">
                     <SelectValue placeholder="All rarities" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All rarities</SelectItem>
+                    <SelectItem value="all">All rarities</SelectItem>
                     <SelectItem value="common">Common</SelectItem>
                     <SelectItem value="uncommon">Uncommon</SelectItem>
                     <SelectItem value="rare">Rare</SelectItem>
@@ -330,7 +330,7 @@ const AdminItems: React.FC = () => {
                     <SelectValue placeholder="All categories" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All categories</SelectItem>
+                    <SelectItem value="all">All categories</SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category} value={category}>
                         {category}
@@ -347,7 +347,7 @@ const AdminItems: React.FC = () => {
                     <SelectValue placeholder="All items" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All items</SelectItem>
+                    <SelectItem value="all">All items</SelectItem>
                     <SelectItem value="equippable">Equippable</SelectItem>
                     <SelectItem value="non-equippable">Non-equippable</SelectItem>
                   </SelectContent>
@@ -703,7 +703,7 @@ const AdminItems: React.FC = () => {
                       Equipment Slot
                     </Label>
                     <Select 
-                      value={currentItem.equipSlot || ''} 
+                      value={currentItem.equipSlot || 'head'} 
                       onValueChange={(value: 'head' | 'torso' | 'legs' | 'hands' | 'accessory') => 
                         setCurrentItem({ ...currentItem, equipSlot: value })
                       }
