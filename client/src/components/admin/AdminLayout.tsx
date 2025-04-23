@@ -1,24 +1,20 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  HomeIcon, 
-  Settings, 
-  Users, 
+import {
+  BarChart2,
+  Box,
+  ChevronRight,
+  Home,
+  ListPlus,
+  LogOut,
   Package,
-  Award, 
-  Calendar, 
-  FileText,
-  Database, 
-  Box, 
-  Gift, 
-  PanelLeft, 
-  UploadCloud,
-  Hammer,
-  AlertCircle
+  ScrollText,
+  Settings,
+  ShieldAlert,
+  Users,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -27,148 +23,106 @@ interface AdminLayoutProps {
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [location] = useLocation();
-  
-  // Check if the user is an admin
-  const { data: authData, isLoading } = useQuery({
+
+  // Get current user
+  const { data: user, isLoading } = useQuery({
     queryKey: ['/api/auth/me'],
+    queryFn: async () => {
+      const response = await apiRequest('/api/auth/me');
+      return response || {};
+    },
   });
-  
-  const isAdmin = authData && authData.roles?.includes('admin');
-  
+
+  // Check if user is admin
+  const isAdmin = user?.roles?.includes('admin');
+
+  // Navigation items
+  const navItems = [
+    { name: 'Dashboard', href: '/admin', icon: <Home className="h-5 w-5" /> },
+    { name: 'Quests', href: '/admin-quests', icon: <ScrollText className="h-5 w-5" /> },
+    { name: 'Items', href: '/admin-items', icon: <Package className="h-5 w-5" /> },
+    { name: 'Recipes', href: '/admin-recipes', icon: <ListPlus className="h-5 w-5" /> },
+    { name: 'Users', href: '/admin-users', icon: <Users className="h-5 w-5" /> },
+    { name: 'Stats', href: '/admin-stats', icon: <BarChart2 className="h-5 w-5" /> },
+    { name: 'Settings', href: '/admin-settings', icon: <Settings className="h-5 w-5" /> },
+  ];
+
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 h-10 w-10 animate-spin rounded-full border-t-2 border-primary"></div>
+          <p className="text-lg text-muted-foreground">Loading admin panel...</p>
+        </div>
+      </div>
+    );
   }
-  
+
   if (!isAdmin) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
-        <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
-        <p className="text-gray-500 mb-4">You don't have admin privileges</p>
+      <div className="flex min-h-screen flex-col items-center justify-center">
+        <ShieldAlert className="mb-4 h-16 w-16 text-destructive" />
+        <h1 className="mb-2 text-2xl font-bold">Access Denied</h1>
+        <p className="mb-6 text-muted-foreground">
+          You don't have permission to access the admin panel.
+        </p>
         <Link href="/">
-          <Button>Back to Home</Button>
+          <Button>Return to Home</Button>
         </Link>
       </div>
     );
   }
 
-  // Admin navigation items
-  const navItems = [
-    { 
-      label: 'Dashboard', 
-      href: '/admin', 
-      icon: <HomeIcon className="h-4 w-4 mr-2" />
-    },
-    { 
-      label: 'Users', 
-      href: '/admin/users', 
-      icon: <Users className="h-4 w-4 mr-2" /> 
-    },
-    { 
-      label: 'Items', 
-      href: '/admin-basic', 
-      icon: <Package className="h-4 w-4 mr-2" /> 
-    },
-    { 
-      label: 'Recipes', 
-      href: '/admin-recipes', 
-      icon: <Hammer className="h-4 w-4 mr-2" /> 
-    },
-    { 
-      label: 'Quests', 
-      href: '/admin/quests', 
-      icon: <FileText className="h-4 w-4 mr-2" /> 
-    },
-    { 
-      label: 'Calendar', 
-      href: '/admin/calendar', 
-      icon: <Calendar className="h-4 w-4 mr-2" /> 
-    },
-    { 
-      label: 'Achievements', 
-      href: '/admin/achievements', 
-      icon: <Award className="h-4 w-4 mr-2" /> 
-    },
-    { 
-      label: 'Loot Boxes', 
-      href: '/admin/loot-boxes', 
-      icon: <Gift className="h-4 w-4 mr-2" /> 
-    },
-    { 
-      label: 'Craftables', 
-      href: '/admin/craftables', 
-      icon: <Box className="h-4 w-4 mr-2" /> 
-    },
-    { 
-      label: 'Media Library', 
-      href: '/admin/media', 
-      icon: <UploadCloud className="h-4 w-4 mr-2" /> 
-    },
-    { 
-      label: 'Data Explorer', 
-      href: '/admin/data', 
-      icon: <Database className="h-4 w-4 mr-2" /> 
-    },
-    { 
-      label: 'Settings', 
-      href: '/admin/settings', 
-      icon: <Settings className="h-4 w-4 mr-2" /> 
-    },
-  ];
-
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
-      <div className="hidden md:flex w-64 flex-col fixed inset-y-0 bg-card border-r">
-        <div className="flex h-16 items-center px-4 border-b">
-          <Link href="/admin">
-            <h2 className="text-lg font-bold flex items-center">
-              <PanelLeft className="h-5 w-5 mr-2" />
-              Admin Panel
-            </h2>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b bg-card">
+        <div className="flex h-16 items-center px-4 md:px-6">
+          <Link href="/admin" className="mr-6 flex items-center">
+            <Box className="mr-2 h-6 w-6" />
+            <span className="text-lg font-bold">Quest Giver Admin</span>
           </Link>
-        </div>
-        <ScrollArea className="flex-1 px-2 py-4">
-          <nav className="space-y-1">
-            {navItems.map((item) => (
-              <Link key={item.href} href={item.href}>
-                <div
-                  className={cn(
-                    "flex items-center px-3 py-2 text-sm rounded-md hover:bg-accent cursor-pointer",
-                    location === item.href ? "bg-accent text-accent-foreground font-medium" : "text-muted-foreground"
-                  )}
-                >
-                  {item.icon}
-                  {item.label}
-                </div>
-              </Link>
-            ))}
-          </nav>
-        </ScrollArea>
-        <div className="p-4 border-t">
-          <div className="flex items-center">
-            <div className="ml-2">
-              <Link href="/">
-                <Button variant="outline" size="sm" className="w-full">
-                  Exit Admin
-                </Button>
-              </Link>
+          <div className="ml-auto flex items-center gap-2">
+            <div className="text-sm text-muted-foreground">
+              Logged in as <span className="font-medium">{user?.username}</span>
             </div>
+            <Link href="/logout">
+              <Button variant="ghost" size="icon">
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </Link>
           </div>
         </div>
-      </div>
-      
-      {/* Mobile header */}
-      <div className="md:hidden flex items-center justify-between h-16 px-4 border-b bg-card fixed top-0 left-0 right-0 z-30">
-        <h2 className="text-lg font-bold">Admin Panel</h2>
-        {/* Mobile menu button would go here */}
-      </div>
-      
-      {/* Main content */}
-      <div className="flex flex-col flex-1 md:pl-64">
-        <main className="flex-1 pt-16 md:pt-0 overflow-y-auto">
-          {children}
-        </main>
+      </header>
+
+      <div className="flex">
+        {/* Sidebar */}
+        <aside className="w-64 border-r bg-card/50 pb-12">
+          <div className="py-4">
+            <div className="px-3 py-2">
+              <h2 className="mb-2 px-4 text-lg font-semibold">Admin Panel</h2>
+              <div className="space-y-1">
+                {navItems.map((item) => (
+                  <Link key={item.href} href={item.href}>
+                    <Button
+                      variant={location === item.href ? 'secondary' : 'ghost'}
+                      className="w-full justify-start"
+                    >
+                      {item.icon}
+                      <span className="ml-2">{item.name}</span>
+                      {location === item.href && (
+                        <ChevronRight className="ml-auto h-4 w-4" />
+                      )}
+                    </Button>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main content */}
+        <main className="flex-1">{children}</main>
       </div>
     </div>
   );

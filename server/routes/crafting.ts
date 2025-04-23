@@ -192,7 +192,7 @@ function calculateXpReward(recipe: any): number {
   const difficultyXp = baseXp[recipe.difficulty as keyof typeof baseXp] || 25;
   const itemCountMultiplier = Math.min(
     2.0, // Cap at 2x multiplier
-    1.0 + (Object.values(recipe.requiredItems).reduce((sum: any, val: any) => sum + val, 0) * 0.05)
+    1.0 + (Object.values(recipe.requiredItems as Record<string, number>).reduce((sum: number, val: number) => sum + val, 0) * 0.05)
   );
 
   return Math.round(difficultyXp * itemCountMultiplier);

@@ -2,23 +2,12 @@ import express, { Request, Response } from 'express';
 import { storage } from '../storage';
 import { z } from 'zod';
 import { insertCraftingRecipeSchema } from '@shared/schema';
-import { db } from '../db';
-import { craftingRecipes } from '@shared/schema';
-import { eq } from 'drizzle-orm';
 import { isAdmin } from '../middleware/auth';
 
 const router = express.Router();
 
-// Create a zod validation schema for recipe creation
-const recipeSchema = insertCraftingRecipeSchema.extend({
-  // Pattern is a 2D array representing required items in each position
-  pattern: z.array(z.array(z.string().nullable())),
-  // Dictionary of items required with quantities
-  requiredItems: z.record(z.string(), z.number().positive()),
-});
-
-// Get all recipes (admin only)
-router.get('/', isAdmin, async (_req: Request, res: Response) => {
+// Get all recipes (admin version - shows all, even locked ones)
+router.get('/', isAdmin, async (req: Request, res: Response) => {
   try {
     const recipes = await storage.getCraftingRecipes();
     res.status(200).json(recipes);
@@ -28,7 +17,7 @@ router.get('/', isAdmin, async (_req: Request, res: Response) => {
   }
 });
 
-// Get a recipe by ID (admin only)
+// Get a specific recipe by ID (admin version - no unlock check)
 router.get('/:id', isAdmin, async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
@@ -48,12 +37,18 @@ router.get('/:id', isAdmin, async (req: Request, res: Response) => {
   }
 });
 
-// Create a new recipe (admin only)
+// Create a new recipe
 router.post('/', isAdmin, async (req: Request, res: Response) => {
   try {
-    const validatedData = recipeSchema.parse(req.body);
-    
-    const newRecipe = await storage.createCraftingRecipe(validatedData);
+    const recipeSchema = insertCraftingRecipeSchema.extend({
+      // Pattern is a 2D array representing required items in each position
+      pattern: z.array(z.array(z.string().nullable())),
+      // Dictionary of items required with quantities
+      requiredItems: z.record(z.string(), z.number().positive()),
+    });
+
+    const recipeData = recipeSchema.parse(req.body);
+    const newRecipe = await storage.createCraftingRecipe(recipeData);
     
     res.status(201).json(newRecipe);
   } catch (error: any) {
@@ -65,7 +60,7 @@ router.post('/', isAdmin, async (req: Request, res: Response) => {
   }
 });
 
-// Update a recipe (admin only)
+// Update an existing recipe
 router.patch('/:id', isAdmin, async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
@@ -73,9 +68,16 @@ router.patch('/:id', isAdmin, async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Invalid recipe ID' });
     }
 
-    const validatedData = recipeSchema.partial().parse(req.body);
+    const recipeSchema = insertCraftingRecipeSchema.extend({
+      // Pattern is a 2D array representing required items in each position
+      pattern: z.array(z.array(z.string().nullable())),
+      // Dictionary of items required with quantities
+      requiredItems: z.record(z.string(), z.number().positive()),
+    }).partial();
+
+    const recipeData = recipeSchema.parse(req.body);
     
-    const updatedRecipe = await storage.updateCraftingRecipe(id, validatedData);
+    const updatedRecipe = await storage.updateCraftingRecipe(id, recipeData);
     if (!updatedRecipe) {
       return res.status(404).json({ message: 'Recipe not found' });
     }
@@ -90,7 +92,7 @@ router.patch('/:id', isAdmin, async (req: Request, res: Response) => {
   }
 });
 
-// Delete a recipe (admin only)
+// Delete a recipe
 router.delete('/:id', isAdmin, async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
@@ -98,16 +100,12 @@ router.delete('/:id', isAdmin, async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Invalid recipe ID' });
     }
 
-    // Check if recipe exists
-    const recipe = await storage.getCraftingRecipe(id);
-    if (!recipe) {
+    const deleted = await storage.deleteCraftingRecipe(id);
+    if (!deleted) {
       return res.status(404).json({ message: 'Recipe not found' });
     }
-
-    // Delete the recipe
-    const deleted = await db.delete(craftingRecipes).where(eq(craftingRecipes.id, id)).returning();
     
-    res.status(200).json({ message: 'Recipe deleted successfully', id });
+    res.status(200).json({ message: 'Recipe deleted successfully' });
   } catch (error: any) {
     console.error('Error deleting recipe:', error);
     res.status(500).json({ message: error.message || 'Failed to delete recipe' });
