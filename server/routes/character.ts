@@ -59,7 +59,7 @@ router.post('/equip', async (req, res) => {
     
     const equipSchema = z.object({
       itemId: z.string().min(1),
-      slot: z.enum(['head', 'torso', 'legs', 'accessory', 'hands'])
+      slot: z.enum(['head', 'chest', 'legs', 'feet', 'leftHand', 'rightHand', 'accessory1', 'accessory2'])
     });
     
     const result = equipSchema.safeParse(req.body);
@@ -132,7 +132,7 @@ router.post('/unequip', async (req, res) => {
     const userId = req.user.id;
     
     const unequipSchema = z.object({
-      slot: z.enum(['head', 'torso', 'legs', 'accessory', 'hands'])
+      slot: z.enum(['head', 'chest', 'legs', 'feet', 'leftHand', 'rightHand', 'accessory1', 'accessory2'])
     });
     
     const result = unequipSchema.safeParse(req.body);
