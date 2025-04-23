@@ -16,7 +16,7 @@ import { useSoundEffects } from '@/hooks/useSoundEffects';
 import LootCrateOpenDialog from '@/components/inventory/LootCrateOpenDialog';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { DraggableInventoryItem } from '@/components/inventory/DraggableInventoryItem';
+import { DraggableInventoryItem, DraggableEmptySlot } from '@/components/inventory/DraggableInventoryItem';
 
 // Resource images are already imported above
 
@@ -534,7 +534,10 @@ export default function Inventory() {
                         }}
                       />
                     ) : (
-                      <div className="w-full h-full rounded-md bg-space-dark border border-space-light/10 opacity-30"></div>
+                      <DraggableEmptySlot 
+                        index={index}
+                        moveItem={moveItem}
+                      />
                     )}
                   </div>
                 ))}
