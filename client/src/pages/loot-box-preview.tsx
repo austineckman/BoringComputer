@@ -47,7 +47,9 @@ export default function LootBoxPreview() {
   const { data: lootBox, isLoading: isLoadingLootBox } = useQuery({
     queryKey: ['/api/loot-boxes', lootBoxId],
     queryFn: () => apiRequest(`/api/loot-boxes/${lootBoxId}`),
-    enabled: !!lootBoxId
+    enabled: !!lootBoxId,
+    onSuccess: (data) => console.log("Successfully loaded loot box data:", data),
+    onError: (error) => console.error("Error loading loot box data:", error)
   });
 
   // Fetch all items for displaying names
