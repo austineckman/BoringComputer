@@ -126,12 +126,9 @@ const CharacterPage = () => {
   // Equip mutation
   const equipMutation = useMutation({
     mutationFn: (itemId: string) => {
-      return apiRequest('/api/character/equip', {
-        method: 'POST',
-        data: {
-          itemId,
-          slot: selectedSlot
-        }
+      return apiRequest('POST', '/api/character/equip', {
+        itemId,
+        slot: selectedSlot
       });
     },
     onSuccess: () => {
@@ -142,8 +139,12 @@ const CharacterPage = () => {
         description: 'The item has been equipped successfully',
         variant: 'default'
       });
+      
+      // Also refresh inventory data in case quantities change
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
     },
     onError: (error: any) => {
+      console.error('Error equipping item:', error);
       toast({
         title: 'Failed to equip item',
         description: error.message || 'There was an error equipping the item',
@@ -155,11 +156,8 @@ const CharacterPage = () => {
   // Unequip mutation
   const unequipMutation = useMutation({
     mutationFn: (slot: EquipmentSlot) => {
-      return apiRequest('/api/character/unequip', {
-        method: 'POST',
-        data: {
-          slot
-        }
+      return apiRequest('POST', '/api/character/unequip', {
+        slot
       });
     },
     onSuccess: () => {
@@ -170,8 +168,12 @@ const CharacterPage = () => {
         description: 'The item has been removed successfully',
         variant: 'default'
       });
+      
+      // Also refresh inventory data in case quantities change
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
     },
     onError: (error: any) => {
+      console.error('Error unequipping item:', error);
       toast({
         title: 'Failed to unequip item',
         description: error.message || 'There was an error removing the item',
