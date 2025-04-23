@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
-  Tabs, 
-  TabsList, 
-  TabsTrigger, 
-  TabsContent 
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent
 } from '@/components/ui/tabs';
 import { 
   Tooltip,
@@ -19,13 +19,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Clock, Gift, Loader2 } from 'lucide-react';
+import { Clock, Gift, Loader2, ArrowUpDown } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { getLootCrateImage, getResourceDisplay } from '@/lib/resourceImages';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import LootCrateOpenDialog from '@/components/inventory/LootCrateOpenDialog';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { DraggableInventoryItem } from '@/components/inventory/DraggableInventoryItem';
 
 // Resource images are already imported above
 
@@ -49,23 +52,8 @@ const renderResourceIcon = (type: string, size: 'sm' | 'md' | 'lg' = 'md') => {
   );
 };
 
-// Function to get a color class based on item rarity
-const getRarityColorClass = (itemType: string): string => {
-  const itemDetails = getItemDetails(itemType);
-  switch (itemDetails.rarity) {
-    case 'legendary':
-      return 'border-amber-500 bg-amber-500/10 border-2';
-    case 'epic':
-      return 'border-purple-500 bg-purple-500/10 border-2';
-    case 'rare':
-      return 'border-blue-500 bg-blue-500/10 border-2';
-    case 'uncommon':
-      return 'border-green-500 bg-green-500/10 border-2';
-    case 'common':
-    default:
-      return 'bg-space-dark border-space-light/40 border';
-  }
-};
+// Using the imported getRarityColorClass function instead
+// of defining it here to avoid duplication
 
 interface Resource {
   type: string;
@@ -73,7 +61,7 @@ interface Resource {
   lastAcquired?: string;
 }
 
-interface LootBox {
+export interface LootBox {
   id: number;
   userId: number;
   type: string;
@@ -86,8 +74,9 @@ interface LootBox {
   createdAt?: string; // Optional for backward compatibility with our current UI
 }
 
-// Import the centralized item database instead of duplicating data
+// Import the centralized item database and utility functions
 import { getItemDetails } from '@/lib/itemDatabase';
+import { getRarityColorClass } from '@/lib/styleUtils';
 
 export default function Inventory() {
   const [activeTab, setActiveTab] = useState('all');
