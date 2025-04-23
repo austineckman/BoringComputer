@@ -1303,7 +1303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/admin', authenticate, adminRoutes);
   
   // Admin upload routes
-  app.use('/api/admin', authenticate, adminUploadRoutes);
+  app.use('/api/admin/upload', authenticate, adminUploadRoutes);
   
   // Routes for admin recipes and crafting were already registered above
   
