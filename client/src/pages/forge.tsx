@@ -181,6 +181,8 @@ const ForgePage: React.FC = () => {
                 onResetGrid={onResetGrid}
                 highlightedCells={highlightedCells}
                 selectedRecipe={selectedRecipe}
+                canCraft={canCraft}
+                onCraft={handleCraft}
               />
               
               {/* Inventory */}
