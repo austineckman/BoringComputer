@@ -18,6 +18,7 @@ export interface ItemDetails {
   craftingUses: string[];
   imagePath: string;
   category?: string;
+  usageDescription?: string;
 }
 
 // Fallback item database with basic items (used only when server items aren't loaded yet)
@@ -29,7 +30,8 @@ const fallbackItemDatabase: Record<string, ItemDetails> = {
     flavorText: 'The foundation of all electronics. Shiny and malleable.',
     rarity: 'common',
     craftingUses: ['circuits', 'wiring', 'conductors'],
-    imagePath: copperImage
+    imagePath: copperImage,
+    usageDescription: 'Used to craft electronic components and conductive wiring for advanced technology.'
   },
   'cloth': {
     id: 'cloth',
@@ -38,7 +40,8 @@ const fallbackItemDatabase: Record<string, ItemDetails> = {
     flavorText: 'Carefully woven threads create a versatile material.',
     rarity: 'common',
     craftingUses: ['insulation', 'wrapping', 'padding'],
-    imagePath: clothImage
+    imagePath: clothImage,
+    usageDescription: 'Essential for crafting armor padding, insulation, and protective gear against extreme environments.'
   },
   'crystal': {
     id: 'crystal',
@@ -47,7 +50,8 @@ const fallbackItemDatabase: Record<string, ItemDetails> = {
     flavorText: 'It hums with an inner energy when held up to the light.',
     rarity: 'rare',
     craftingUses: ['energy', 'focusing', 'amplification'],
-    imagePath: crystalImage
+    imagePath: crystalImage,
+    usageDescription: 'High-value material used in advanced energy weapons and magical artifacts requiring energy amplification.'
   },
   'techscrap': {
     id: 'techscrap',
@@ -56,7 +60,8 @@ const fallbackItemDatabase: Record<string, ItemDetails> = {
     flavorText: 'One machine\'s trash is an inventor\'s treasure.',
     rarity: 'uncommon',
     craftingUses: ['recycling', 'components', 'rare materials'],
-    imagePath: techscrapImage
+    imagePath: techscrapImage,
+    usageDescription: 'Can be broken down to extract rare components or used directly in crafting improvised devices.'
   },
   'circuit-board': {
     id: 'circuit-board',
@@ -65,7 +70,8 @@ const fallbackItemDatabase: Record<string, ItemDetails> = {
     flavorText: 'A maze of pathways for electricity to travel.',
     rarity: 'uncommon',
     craftingUses: ['electronics', 'computers', 'devices'],
-    imagePath: circuitBoardImage
+    imagePath: circuitBoardImage,
+    usageDescription: 'Essential component for all advanced technological crafting recipes and equipment upgrades.'
   },
   'loot-crate': {
     id: 'loot-crate',
@@ -74,7 +80,8 @@ const fallbackItemDatabase: Record<string, ItemDetails> = {
     flavorText: 'What treasures await inside?',
     rarity: 'common',
     craftingUses: [],
-    imagePath: lootCrateImage
+    imagePath: lootCrateImage,
+    usageDescription: 'Open this crate to receive random resources and materials based on its rarity level.'
   }
 };
 
@@ -151,10 +158,11 @@ export function getItemDetails(itemId: string): ItemDetails {
     id: itemId,
     name: itemId.replace(/-/g, ' ').replace(/\b\w/g, char => char.toUpperCase()),
     description: 'Unknown item',
-    flavorText: '',
+    flavorText: 'A mysterious item with unknown properties.',
     rarity: 'common',
     craftingUses: [],
-    imagePath: '/images/items/placeholder.png'
+    imagePath: '/images/items/placeholder.png',
+    usageDescription: 'This item can be used in crafting recipes or traded with other players.'
   };
 }
 

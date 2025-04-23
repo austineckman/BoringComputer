@@ -415,7 +415,7 @@ export default function Inventory() {
               <div className="bg-space-mid/30 rounded-lg p-4">
                 <h4 className="text-sm font-medium text-brand-yellow mb-2">Usage Information</h4>
                 <p className="text-sm text-brand-light/90">
-                  {getItemDetails(selectedItem.type).usageDescription}
+                  {getItemDetails(selectedItem.type).usageDescription || getItemDetails(selectedItem.type).description}
                 </p>
                 {selectedItem.isLootBox && (
                   <Button 
