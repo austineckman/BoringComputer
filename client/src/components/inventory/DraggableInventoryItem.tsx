@@ -143,7 +143,15 @@ export function DraggableInventoryItem({
       className={`aspect-square ${getRarityColorClass(item.type)} hover:border-brand-orange/60 hover:shadow-md rounded-md p-1 relative cursor-pointer transition-all duration-200`}
       style={{ opacity }}
       onMouseEnter={() => handleItemHover(item.type)}
-      onClick={() => handleItemClick(item)}
+      onClick={() => {
+        if (item.isLootBox && item.lootBoxData && item.lootBoxData.id) {
+          // Navigate to the loot box preview page
+          setLocation(`/loot-box-preview/${item.lootBoxData.id}`);
+        } else {
+          // Regular item click handling
+          handleItemClick(item);
+        }
+      }}
     >
       <div className="flex items-center justify-center h-full">
         {item.isLootBox ? (

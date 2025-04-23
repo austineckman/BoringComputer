@@ -190,10 +190,8 @@ export default function Inventory() {
       console.warn('Could not play sound', e);
     }
     
-    // If it's a loot box, show confirmation dialog
+    // We'll let the DraggableInventoryItem component handle navigation for loot boxes
     if (item.isLootBox && item.lootBoxData) {
-      setCurrentLootBox(item.lootBoxData);
-      setIsConfirmDialogOpen(true);
       return;
     }
     
@@ -745,15 +743,7 @@ export default function Inventory() {
           </DialogContent>
         </Dialog>
         
-        {/* Confirmation dialog for opening loot boxes */}
-        {currentLootBox && (
-          <LootCrateOpenDialog
-            isOpen={isConfirmDialogOpen}
-            onOpenChange={setIsConfirmDialogOpen}
-            lootBoxType={currentLootBox.type}
-            onConfirm={handleConfirmLootBoxOpen}
-          />
-        )}
+        {/* We now navigate to the loot-box-preview page instead of showing a confirmation dialog */}
       </div>
   );
 }
