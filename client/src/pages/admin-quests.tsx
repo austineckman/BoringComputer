@@ -1014,14 +1014,14 @@ const AdminQuests: React.FC = () => {
               </div>
               
               <Select
-                value={filterDifficulty || ''}
-                onValueChange={(value) => setFilterDifficulty(value || null)}
+                value={filterDifficulty || 'all'}
+                onValueChange={(value) => setFilterDifficulty(value === 'all' ? null : value)}
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Filter by difficulty" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Difficulties</SelectItem>
+                  <SelectItem value="all">All Difficulties</SelectItem>
                   <SelectItem value="1">Level 1 (Easiest)</SelectItem>
                   <SelectItem value="2">Level 2</SelectItem>
                   <SelectItem value="3">Level 3</SelectItem>
@@ -1031,14 +1031,14 @@ const AdminQuests: React.FC = () => {
               </Select>
               
               <Select
-                value={adventureLines.length > 0 ? adventureLines[0] : ''}
-                onValueChange={(value) => setSearchQuery(value)}
+                value={adventureLines.length > 0 ? adventureLines[0] : 'all'}
+                onValueChange={(value) => value === 'all' ? setSearchQuery('') : setSearchQuery(value)}
               >
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Filter by adventure line" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Adventure Lines</SelectItem>
+                  <SelectItem value="all">All Adventure Lines</SelectItem>
                   {adventureLines.map((line) => (
                     <SelectItem key={line} value={line}>{line}</SelectItem>
                   ))}
