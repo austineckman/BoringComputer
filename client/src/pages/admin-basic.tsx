@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Container } from '@/components/ui/container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, ImageIcon } from 'lucide-react';
+import { Plus, Trash2, ImageIcon, Upload } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,12 +16,14 @@ import MainLayout from '@/components/layout/MainLayout';
 export default function AdminBasicPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Form state
   const [id, setId] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [rarity, setRarity] = useState<string>('common');
+  const [isUploading, setIsUploading] = useState(false);
   
   // Query to fetch items
   const { 
@@ -94,8 +96,56 @@ export default function AdminBasicPage() {
     }
   });
   
+  // Image upload mutation
+  const uploadImageMutation = useMutation({
+    mutationFn: async ({ file, itemId }: { file: File, itemId: string }) => {
+      setIsUploading(true);
+      try {
+        // Create a FormData to send the file
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('itemId', itemId);
+        
+        // Make the request
+        const response = await fetch('/api/admin/upload-image', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to upload image');
+        }
+        
+        return response.json();
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Image uploaded successfully'
+      });
+      
+      // Refresh items list
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/items'] });
+      
+      // Clear file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: `Failed to upload image: ${error.message}`,
+        variant: 'destructive'
+      });
+    }
+  });
+  
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate required fields
@@ -108,17 +158,36 @@ export default function AdminBasicPage() {
       return;
     }
     
-    // Create the item
-    createItemMutation.mutate({
-      id,
-      name,
-      description,
-      rarity,
-      // These are optional but we need to include them in the schema
-      flavorText: '', 
-      category: '',
-      craftingUses: []
-    });
+    try {
+      // First create the item
+      const createdItem = await createItemMutation.mutateAsync({
+        id,
+        name,
+        description,
+        rarity,
+        // These are optional but we need to include them in the schema
+        flavorText: '', 
+        category: '',
+        craftingUses: []
+      });
+      
+      // If a file is selected, upload it
+      if (fileInputRef.current?.files?.length) {
+        const file = fileInputRef.current.files[0];
+        await uploadImageMutation.mutateAsync({ file, itemId: id });
+      }
+      
+      // Reset form fields
+      setId('');
+      setName('');
+      setDescription('');
+      setRarity('common');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Error in form submission:', error);
+    }
   };
   
   // Handle delete
@@ -191,12 +260,30 @@ export default function AdminBasicPage() {
                     </Select>
                   </div>
                   
+                  <div className="grid gap-2">
+                    <Label htmlFor="image">Item Image</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        ref={fileInputRef}
+                        id="image"
+                        type="file"
+                        accept="image/*"
+                        className="flex-1"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Upload an image for the item (max 5MB). This will appear in the inventory.
+                    </p>
+                  </div>
+                  
                   <Button 
                     type="submit" 
                     className="mt-2"
-                    disabled={createItemMutation.isPending}
+                    disabled={createItemMutation.isPending || uploadImageMutation.isPending || isUploading}
                   >
-                    {createItemMutation.isPending ? 'Creating...' : 'Create Item'}
+                    {(createItemMutation.isPending || uploadImageMutation.isPending || isUploading) 
+                      ? 'Creating...' 
+                      : 'Create Item'}
                   </Button>
                 </div>
               </form>
@@ -241,7 +328,44 @@ export default function AdminBasicPage() {
                         </Badge>
                       </CardHeader>
                       <CardContent className="p-4 pt-0">
-                        <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
+                        <div className="mb-3 relative overflow-hidden rounded-md" style={{ height: '120px' }}>
+                          {item.imagePath ? (
+                            <img 
+                              src={item.imagePath} 
+                              alt={item.name}
+                              className="w-full h-full object-contain bg-black/5 rounded-md"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-black/5 rounded-md">
+                              <ImageIcon className="w-12 h-12 text-muted-foreground/40" />
+                            </div>
+                          )}
+                          
+                          {!item.imagePath && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <label 
+                                htmlFor={`upload-${item.id}`}
+                                className="cursor-pointer flex flex-col items-center justify-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                <Upload className="w-6 h-6 mb-1" />
+                                <span>Add Image</span>
+                                <input
+                                  id={`upload-${item.id}`}
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      uploadImageMutation.mutate({ file, itemId: item.id });
+                                    }
+                                  }}
+                                />
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{item.description}</p>
                       </CardContent>
                     </Card>
                   ))
