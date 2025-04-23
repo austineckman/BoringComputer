@@ -198,16 +198,7 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
       console.log("Opening loot box ID:", lootBoxId);
       setIsOpening(true);
       
-      // First generate random items for scrolling effect to ensure animation starts immediately
-      const scrollItemsArray = generateScrollItems();
-      console.log("Generated scroll items:", scrollItemsArray);
-      setScrollItems(scrollItemsArray);
-      
-      // Start the animation
-      console.log("Starting animation");
-      setIsAnimating(true);
-      
-      // API request to open the loot box
+      // API request to open the loot box immediately to get the real reward
       const response = await fetch(`/api/loot-boxes/${lootBoxId}/open`, {
         method: 'POST',
         headers: {
@@ -225,20 +216,23 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
         setSelectedReward(data.rewards[0]);
         console.log("Selected reward:", data.rewards[0]);
         
+        // Generate scrolling items with the ACTUAL reward at the end
+        const baseScrollItems = generateScrollItems();
+        // Replace the last item with the actual reward
+        baseScrollItems[baseScrollItems.length - 1] = {
+          itemId: data.rewards[0].type,
+          quantity: data.rewards[0].quantity
+        };
+        console.log("Generated scroll items with correct reward at end:", baseScrollItems);
+        setScrollItems(baseScrollItems);
+        
+        // Start the animation
+        console.log("Starting animation with known reward");
+        setIsAnimating(true);
+        
         // After 20 seconds (longer for a better unboxing experience), show the final reward
         setTimeout(() => {
           console.log("Animation timeout completed, showing final reward");
-          
-          // Last check to ensure the correct item is at the end of the scrollItems array
-          if (scrollItems.length > 0 && data.rewards && data.rewards.length > 0) {
-            const updatedScrollItems = [...scrollItems];
-            updatedScrollItems[updatedScrollItems.length - 1] = {
-              itemId: data.rewards[0].type,
-              quantity: data.rewards[0].quantity
-            };
-            setScrollItems(updatedScrollItems);
-          }
-          
           setIsAnimating(false);
           setShowFinalReward(true);
         }, 20000);
@@ -348,6 +342,7 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
                     willChange: 'transform',
                     animation: 'scrollItems 20s cubic-bezier(.3,.1,.4,1) forwards',
                     padding: '0 400px', // Add padding to ensure items are visible from the start
+                    position: 'relative',
                   }}
                 >
                   {scrollItems.map((item, index) => {
