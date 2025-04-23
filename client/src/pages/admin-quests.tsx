@@ -72,7 +72,9 @@ import {
   Gift,
   Sparkles,
   Archive,
-  ArrowUpDown
+  ArrowUpDown,
+  Upload,
+  Loader2
 } from 'lucide-react';
 
 // Define quest types
