@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
+import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { getItemDetails } from '@/lib/itemDatabase';
 import { getRarityColorClass } from '@/lib/styleUtils';
@@ -85,6 +86,7 @@ export function DraggableInventoryItem({
 }: DraggableInventoryItemProps) {
   
   const ref = useRef<HTMLDivElement>(null);
+  const [, setLocation] = useLocation();
   
   // Set up drag source
   const [{ isDragging }, drag] = useDrag({
