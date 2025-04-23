@@ -118,7 +118,15 @@ export default function QuestDetailPage() {
       return response.json();
     },
     onSuccess: () => {
+      // Force refetch the quest data to get the latest updates including images
       refetch();
+      
+      // Invalidate the quest in the cache to ensure it's fresh everywhere
+      queryClient.invalidateQueries({ queryKey: ['/api/quests', questId] });
+      
+      // Also invalidate the quest list to update any cards on the home page
+      queryClient.invalidateQueries({ queryKey: ['/api/quests'] });
+      
       setIsEditing(false);
       setEditedQuest(null);
       toast({

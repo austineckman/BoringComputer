@@ -243,13 +243,19 @@ const AdminQuests: React.FC = () => {
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
       return await apiRequest('PUT', `/api/admin/quests/${id}`, data);
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       toast({
         title: 'Quest updated',
         description: 'The quest has been updated successfully.',
         variant: 'default',
       });
+      
+      // Invalidate the admin quests list
       queryClient.invalidateQueries({ queryKey: ['/api/admin/quests'] });
+      
+      // Also invalidate the individual quest query to update the quest detail page
+      queryClient.invalidateQueries({ queryKey: ['/api/quests', variables.id.toString()] });
+      
       handleCloseDialog();
     },
     onError: (error: any) => {
