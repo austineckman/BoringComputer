@@ -197,12 +197,13 @@ export function DraggableInventoryItem({
             className="px-2 py-0.5 text-xs bg-brand-orange/20 hover:bg-brand-orange/30 border-brand-orange/30"
             onClick={(e) => {
               e.stopPropagation();
-              if (item.lootBoxData) {
-                onLootBoxOpen(item.lootBoxData);
+              if (item.lootBoxData && item.lootBoxData.id) {
+                // Navigate to the loot box preview page
+                setLocation(`/loot-box-preview/${item.lootBoxData.id}`);
               }
             }}
           >
-            Open
+            Preview
           </Button>
         </div>
       )}
