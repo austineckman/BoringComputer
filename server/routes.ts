@@ -501,17 +501,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add rewards to user's inventory
       const inventory = { ...user.inventory };
-      for (const reward of quest.rewards) {
-        inventory[reward.type] = (inventory[reward.type] || 0) + reward.quantity;
-        
-        // Create inventory history
-        await storage.createInventoryHistory({
-          userId: user.id,
-          type: reward.type,
-          quantity: reward.quantity,
-          action: 'gained',
-          source: 'quest'
-        });
+      
+      // Process new rewards format
+      if (quest.rewards && quest.rewards.length > 0) {
+        for (const reward of quest.rewards) {
+          // For items and equipment, add directly to inventory
+          if (reward.type === 'item' || reward.type === 'equipment') {
+            inventory[reward.id] = (inventory[reward.id] || 0) + reward.quantity;
+            
+            // Create inventory history
+            await storage.createInventoryHistory({
+              userId: user.id,
+              type: reward.id,
+              quantity: reward.quantity,
+              action: 'gained',
+              source: 'quest'
+            });
+          } 
+          // For lootboxes, create lootbox entries
+          else if (reward.type === 'lootbox') {
+            // Create loot boxes
+            for (let i = 0; i < reward.quantity; i++) {
+              await storage.createLootBox({
+                userId: user.id,
+                type: reward.id, // lootbox type (common, rare, etc.)
+                opened: false,
+                rewards: [],
+                source: 'quest',
+                sourceId: questId
+              });
+            }
+            
+            // Add entry to inventory history
+            await storage.createInventoryHistory({
+              userId: user.id,
+              type: `lootbox-${reward.id}`,
+              quantity: reward.quantity,
+              action: 'gained',
+              source: 'quest'
+            });
+          }
+        }
+      }
+      
+      // Process legacy lootbox rewards for backward compatibility
+      if (quest.lootBoxRewards && quest.lootBoxRewards.length > 0) {
+        for (const reward of quest.lootBoxRewards) {
+          // Create loot boxes
+          for (let i = 0; i < reward.quantity; i++) {
+            await storage.createLootBox({
+              userId: user.id,
+              type: reward.type,
+              opened: false,
+              rewards: [],
+              source: 'quest',
+              sourceId: questId
+            });
+          }
+          
+          // Add entry to inventory history
+          await storage.createInventoryHistory({
+            userId: user.id,
+            type: `lootbox-${reward.type}`,
+            quantity: reward.quantity,
+            action: 'gained',
+            source: 'quest'
+          });
+        }
       }
       
       // Award XP for completing the quest
@@ -559,7 +615,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Return rewards and XP info
       return res.json({ 
-        rewards: quest.rewards,
+        rewards: quest.rewards || [],
+        lootBoxRewards: quest.lootBoxRewards || [],
         xpGained: xpReward,
         newLevel: updatedUser.level,
         xp: updatedUser.xp,

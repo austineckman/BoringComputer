@@ -82,6 +82,12 @@ export default function QuestDetailPage() {
     enabled: !!questId,
   });
   
+  // Fetch items for reward selection and display
+  const itemsQuery = useQuery({
+    queryKey: ['/api/admin/items'],
+    enabled: !!questId, // Only fetch when we have a quest ID
+  });
+  
   // Start editing mode
   const handleStartEdit = () => {
     // Initialize content fields if not present
