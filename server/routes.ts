@@ -62,6 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve static files from the public directory
   const publicPath = path.join(process.cwd(), 'public');
   app.use('/sounds', express.static(path.join(publicPath, 'sounds')));
+  app.use('/uploads', express.static(path.join(publicPath, 'uploads')));
   
   // Set up sessions for users with improved cookie parsing
   app.use((req, res, next) => {
