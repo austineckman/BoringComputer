@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -246,6 +247,16 @@ export default function AdminBasic() {
       return;
     }
     
+    // Validate equipment slot if item is equippable
+    if (isEquippable && !equipSlot) {
+      toast({
+        title: 'Error',
+        description: 'Equipment slot is required for equippable items',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     // Create the item
     createItemMutation.mutate({
       id,
@@ -254,7 +265,9 @@ export default function AdminBasic() {
       rarity,
       flavorText: '', 
       category: '',
-      craftingUses: []
+      craftingUses: [],
+      isEquippable,
+      equipSlot: isEquippable ? equipSlot : null
     });
   };
   
@@ -337,6 +350,43 @@ export default function AdminBasic() {
                   </div>
                   
                   <div className="grid gap-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="is-equippable" 
+                        checked={isEquippable}
+                        onCheckedChange={(checked) => {
+                          setIsEquippable(checked === true);
+                          if (checked !== true) {
+                            setEquipSlot(undefined);
+                          }
+                        }}
+                      />
+                      <Label htmlFor="is-equippable">Item is equippable</Label>
+                    </div>
+                  </div>
+                  
+                  {isEquippable && (
+                    <div className="grid gap-2">
+                      <Label htmlFor="equip-slot">Equipment Slot</Label>
+                      <Select
+                        value={equipSlot}
+                        onValueChange={(value) => setEquipSlot(value)}
+                      >
+                        <SelectTrigger id="equip-slot">
+                          <SelectValue placeholder="Select equipment slot" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="head">Head</SelectItem>
+                          <SelectItem value="torso">Torso</SelectItem>
+                          <SelectItem value="legs">Legs</SelectItem>
+                          <SelectItem value="accessory">Accessory</SelectItem>
+                          <SelectItem value="hands">Hands</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
+                  <div className="grid gap-2">
                     <Label htmlFor="image">Item Image</Label>
                     <div className="flex items-center gap-2">
                       <Input
@@ -401,17 +451,25 @@ export default function AdminBasic() {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                        <Badge 
-                          className={`mt-1 ${
-                            item.rarity === 'legendary' ? 'bg-amber-500' :
-                            item.rarity === 'epic' ? 'bg-purple-500' :
-                            item.rarity === 'rare' ? 'bg-blue-500' :
-                            item.rarity === 'uncommon' ? 'bg-green-500' :
-                            'bg-gray-500'
-                          }`}
-                        >
-                          {item.rarity}
-                        </Badge>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          <Badge 
+                            className={`${
+                              item.rarity === 'legendary' ? 'bg-amber-500' :
+                              item.rarity === 'epic' ? 'bg-purple-500' :
+                              item.rarity === 'rare' ? 'bg-blue-500' :
+                              item.rarity === 'uncommon' ? 'bg-green-500' :
+                              'bg-gray-500'
+                            }`}
+                          >
+                            {item.rarity}
+                          </Badge>
+                          
+                          {item.isEquippable && (
+                            <Badge variant="outline" className="border-blue-400 text-blue-500">
+                              {item.equipSlot && `${item.equipSlot.charAt(0).toUpperCase() + item.equipSlot.slice(1)} Slot`}
+                            </Badge>
+                          )}
+                        </div>
                       </CardHeader>
                       <CardContent className="p-4 pt-0">
                         <div className="mb-3 relative overflow-hidden rounded-md" style={{ height: '120px' }}>
