@@ -104,41 +104,72 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
   // Generate a set of random items for the scrolling effect
   const generateScrollItems = () => {
     const { itemDropTable } = lootBoxData;
-    if (!itemDropTable || !items) return [];
+    if (!itemDropTable || !items || items.length === 0) {
+      console.error("No item data available for scrolling animation");
+      return [
+        { itemId: 'metal', quantity: 1 },
+        { itemId: 'cloth', quantity: 1 },
+        { itemId: 'tech-scrap', quantity: 1 }
+      ];
+    }
     
-    // Create an array with 150 random items for scrolling (more items make the animation smoother and longer)
+    // Create an array with items for scrolling
     const scrollItems = [];
-    for (let i = 0; i < 150; i++) {
-      // For variety in the animation, we'll use the full item table
-      const randomIndex = Math.floor(Math.random() * itemDropTable.length);
-      const item = itemDropTable[randomIndex];
-      
-      if (item) {
-        const randomQuantity = Math.floor(
-          Math.random() * (item.maxQuantity - item.minQuantity + 1) + item.minQuantity
-        );
+    
+    // First add 30 common items to ensure the animation starts smoothly
+    const commonItems = ['metal', 'cloth', 'tech-scrap'];
+    
+    // Start with guaranteed common items to ensure animation begins correctly
+    for (let i = 0; i < 30; i++) {
+      const commonItem = commonItems[i % commonItems.length];
+      scrollItems.push({
+        itemId: commonItem,
+        quantity: Math.floor(Math.random() * 3) + 1
+      });
+    }
+    
+    // Then add randomized items from the drop table
+    for (let i = 0; i < 80; i++) {
+      if (itemDropTable.length > 0) {
+        const randomIndex = Math.floor(Math.random() * itemDropTable.length);
+        const item = itemDropTable[randomIndex];
         
-        // Add a small percentage of "special" rare items for excitement
-        if (Math.random() < 0.1) {  // 10% chance for a rare item
-          const rareItems = ['RareCrown', 'gizbos', 'circuit-board', 'sensor-crystal'];
-          const randomRareItem = rareItems[Math.floor(Math.random() * rareItems.length)];
+        if (item) {
+          // Calculate a random quantity between min and max
+          const minQt = item.minQuantity || 1;
+          const maxQt = item.maxQuantity || minQt;
+          const randomQuantity = Math.floor(Math.random() * (maxQt - minQt + 1)) + minQt;
           
-          scrollItems.push({
-            itemId: randomRareItem,
-            quantity: 1
-          });
-        } else {
-          scrollItems.push({
-            itemId: item.itemId,
-            quantity: randomQuantity
-          });
+          // Add some rare items to make the scroll more exciting
+          if (i % 10 === 0) {  // Every 10 items add a special item
+            const rareItems = ['RareCrown', 'gizbos', 'circuit-board', 'sensor-crystal'];
+            const randomRareItem = rareItems[Math.floor(Math.random() * rareItems.length)];
+            
+            scrollItems.push({
+              itemId: randomRareItem,
+              quantity: 1
+            });
+          } else {
+            scrollItems.push({
+              itemId: item.itemId,
+              quantity: randomQuantity
+            });
+          }
         }
       }
     }
     
-    // Make sure the last item is the actual reward, which will be replaced later
+    // Make sure there are at least 50 items (for minimum animation length)
+    if (scrollItems.length < 50) {
+      const filler = { itemId: 'metal', quantity: 1 };
+      while (scrollItems.length < 50) {
+        scrollItems.push(filler);
+      }
+    }
+    
+    // Make sure the last item is a placeholder for the actual reward
     scrollItems.push({
-      itemId: 'metal', // Placeholder, will be replaced
+      itemId: 'metal', // Placeholder, will be replaced with the actual reward
       quantity: 1      // Placeholder, will be replaced
     });
     
@@ -183,6 +214,17 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
         // After 20 seconds (longer for a better unboxing experience), show the final reward
         setTimeout(() => {
           console.log("Animation timeout completed, showing final reward");
+          
+          // Last check to ensure the correct item is at the end of the scrollItems array
+          if (scrollItems.length > 0 && data.rewards && data.rewards.length > 0) {
+            const updatedScrollItems = [...scrollItems];
+            updatedScrollItems[updatedScrollItems.length - 1] = {
+              itemId: data.rewards[0].type,
+              quantity: data.rewards[0].quantity
+            };
+            setScrollItems(updatedScrollItems);
+          }
+          
           setIsAnimating(false);
           setShowFinalReward(true);
         }, 20000);
@@ -285,12 +327,13 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
               >
                 <div 
                   ref={scrollContainerRef}
-                  className="flex" 
+                  className="flex items-center justify-center py-6" 
                   style={{ 
-                    transition: 'transform 20s cubic-bezier(.2,0,.8,1)',
-                    transform: 'translateX(100%)',
+                    transition: 'transform 20s cubic-bezier(.3,.1,.4,1)',
+                    transform: 'translateX(0)',
                     willChange: 'transform',
-                    animation: 'scrollItems 20s cubic-bezier(.2,0,.8,1) forwards',
+                    animation: 'scrollItems 20s cubic-bezier(.3,.1,.4,1) forwards',
+                    padding: '0 400px', // Add padding to ensure items are visible from the start
                   }}
                 >
                   {scrollItems.map((item, index) => {
