@@ -1223,22 +1223,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = (req as any).user;
       if (!user) return res.status(401).json({ message: "User not found" });
       
-      // Create one of each loot box type
-      const types = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+      // Option to clean up old loot boxes
+      const { cleanUp } = req.body;
+      
+      if (cleanUp) {
+        // Delete all existing unopened loot boxes for this user
+        await storage.deleteUnusedLootBoxes(user.id);
+      }
+      
+      // Get loot box configurations from admin settings
+      const lootBoxConfigs = await storage.getLootBoxConfigs();
       const createdBoxes = [];
       
-      for (const type of types) {
-        // Create loot box without pre-generating rewards (they'll be generated on open)
-        const lootBox = await storage.createLootBox({
-          userId: user.id,
-          type,
-          opened: false,
-          rewards: null, // Will be generated when opened
-          source: 'Test Crate Generator',
-          sourceId: null
-        });
-        
-        createdBoxes.push(lootBox);
+      if (lootBoxConfigs && lootBoxConfigs.length > 0) {
+        // Create one of each configured loot box
+        for (const config of lootBoxConfigs) {
+          const lootBox = await storage.createLootBox({
+            userId: user.id,
+            type: config.id, // Use the ID from admin config
+            opened: false,
+            rewards: null, // Will be generated when opened
+            source: 'Admin Loot Box',
+            sourceId: config.id
+          });
+          
+          createdBoxes.push(lootBox);
+        }
+      } else {
+        // Fallback to default types if no admin configurations exist
+        const types = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+        for (const type of types) {
+          const lootBox = await storage.createLootBox({
+            userId: user.id,
+            type,
+            opened: false,
+            rewards: null, // Will be generated when opened
+            source: 'Test Crate Generator',
+            sourceId: null
+          });
+          
+          createdBoxes.push(lootBox);
+        }
       }
       
       return res.status(201).json({
