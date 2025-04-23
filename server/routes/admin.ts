@@ -168,6 +168,10 @@ router.post('/items', async (req, res) => {
     
     // Add the item to our storage
     const newItem = await storage.createItem(itemData);
+    
+    // Add the new item to all users' inventories with a default quantity
+    await addNewItemToAllUsersInventory(newItem.id);
+    
     res.status(201).json(newItem);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -177,6 +181,48 @@ router.post('/items', async (req, res) => {
     res.status(500).json({ error: 'Failed to create item' });
   }
 });
+
+// Helper function to add a new item to all users' inventories
+async function addNewItemToAllUsersInventory(itemId: string) {
+  try {
+    // Get all users
+    const allUsers = await storage.getUsers();
+    
+    // Default quantity to add when a new item is created
+    const DEFAULT_QUANTITY = 10;
+    
+    // Update each user's inventory with the new item
+    for (const user of allUsers) {
+      // Get current inventory
+      const currentInventory = { ...user.inventory } || {};
+      
+      // Only add the item if it doesn't already exist
+      if (currentInventory[itemId] === undefined) {
+        // Add the new item with default quantity
+        currentInventory[itemId] = DEFAULT_QUANTITY;
+        
+        // Update the user's inventory
+        await storage.updateUser(user.id, { inventory: currentInventory });
+        
+        // Add to inventory history
+        await storage.createInventoryHistory({
+          userId: user.id,
+          type: itemId,
+          quantity: DEFAULT_QUANTITY,
+          action: 'gained',
+          source: 'admin_create_item'
+        });
+        
+        console.log(`Added item ${itemId} to user ${user.username}'s inventory`);
+      }
+    }
+    
+    console.log(`Successfully added item ${itemId} to all users' inventories`);
+  } catch (error) {
+    console.error('Error adding item to users inventories:', error);
+    // Don't throw, just log the error - we don't want to fail item creation if this fails
+  }
+}
 
 // Update an item
 router.put('/items/:id', async (req, res) => {
