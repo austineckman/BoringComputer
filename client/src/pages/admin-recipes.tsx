@@ -305,6 +305,7 @@ const AdminRecipesPage: React.FC = () => {
       resultItem: '',
       resultQuantity: 1,
       image: '',
+      heroImage: '',
       unlocked: true,
     });
     setPatternGrid(Array(5).fill(null).map(() => Array(5).fill(null)));
@@ -322,6 +323,7 @@ const AdminRecipesPage: React.FC = () => {
       resultItem: recipe.resultItem,
       resultQuantity: recipe.resultQuantity,
       image: recipe.image || '',
+      heroImage: recipe.heroImage || '',
       unlocked: recipe.unlocked,
     });
     setPatternGrid(recipe.pattern || Array(5).fill(null).map(() => Array(5).fill(null)));
