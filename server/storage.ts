@@ -915,4 +915,403 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+  
+  async getUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+  
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+  
+  async getUserByDiscordId(discordId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.discordId, discordId));
+    return user;
+  }
+  
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+  
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
+  }
+  
+  async getQuests(): Promise<Quest[]> {
+    return await db.select().from(quests);
+  }
+  
+  async getQuest(id: number): Promise<Quest | undefined> {
+    const [quest] = await db.select().from(quests).where(eq(quests.id, id));
+    return quest;
+  }
+  
+  async getQuestByDate(date: string): Promise<Quest | undefined> {
+    const [quest] = await db.select().from(quests).where(eq(quests.date, date));
+    return quest;
+  }
+  
+  async createQuest(insertQuest: InsertQuest): Promise<Quest> {
+    const [quest] = await db.insert(quests).values(insertQuest).returning();
+    return quest;
+  }
+  
+  async updateQuest(id: number, questData: Partial<Quest>): Promise<Quest | undefined> {
+    const [updatedQuest] = await db
+      .update(quests)
+      .set(questData)
+      .where(eq(quests.id, id))
+      .returning();
+    return updatedQuest;
+  }
+  
+  async getUserQuests(userId: number): Promise<UserQuest[]> {
+    return await db
+      .select()
+      .from(userQuests)
+      .where(eq(userQuests.userId, userId));
+  }
+  
+  async getUserQuest(userId: number, questId: number): Promise<UserQuest | undefined> {
+    const [userQuest] = await db
+      .select()
+      .from(userQuests)
+      .where(and(eq(userQuests.userId, userId), eq(userQuests.questId, questId)));
+    return userQuest;
+  }
+  
+  async createUserQuest(insertUserQuest: InsertUserQuest): Promise<UserQuest> {
+    const [userQuest] = await db
+      .insert(userQuests)
+      .values(insertUserQuest)
+      .returning();
+    return userQuest;
+  }
+  
+  async updateUserQuest(id: number, userQuestData: Partial<UserQuest>): Promise<UserQuest | undefined> {
+    const [updatedUserQuest] = await db
+      .update(userQuests)
+      .set(userQuestData)
+      .where(eq(userQuests.id, id))
+      .returning();
+    return updatedUserQuest;
+  }
+  
+  async getSubmissions(userId: number): Promise<Submission[]> {
+    return await db
+      .select()
+      .from(submissions)
+      .where(eq(submissions.userId, userId));
+  }
+  
+  async getSubmission(id: number): Promise<Submission | undefined> {
+    const [submission] = await db
+      .select()
+      .from(submissions)
+      .where(eq(submissions.id, id));
+    return submission;
+  }
+  
+  async createSubmission(insertSubmission: InsertSubmission): Promise<Submission> {
+    const [submission] = await db
+      .insert(submissions)
+      .values(insertSubmission)
+      .returning();
+    return submission;
+  }
+  
+  async getCraftables(): Promise<Craftable[]> {
+    return await db.select().from(craftables);
+  }
+  
+  async getCraftable(id: number): Promise<Craftable | undefined> {
+    const [craftable] = await db
+      .select()
+      .from(craftables)
+      .where(eq(craftables.id, id));
+    return craftable;
+  }
+  
+  async createCraftable(insertCraftable: InsertCraftable): Promise<Craftable> {
+    const [craftable] = await db
+      .insert(craftables)
+      .values(insertCraftable)
+      .returning();
+    return craftable;
+  }
+  
+  async getCraftedItems(userId: number): Promise<CraftedItem[]> {
+    return await db
+      .select()
+      .from(craftedItems)
+      .where(eq(craftedItems.userId, userId));
+  }
+  
+  async getCraftedItem(id: number): Promise<CraftedItem | undefined> {
+    const [craftedItem] = await db
+      .select()
+      .from(craftedItems)
+      .where(eq(craftedItems.id, id));
+    return craftedItem;
+  }
+  
+  async createCraftedItem(insertCraftedItem: InsertCraftedItem): Promise<CraftedItem> {
+    const [craftedItem] = await db
+      .insert(craftedItems)
+      .values(insertCraftedItem)
+      .returning();
+    return craftedItem;
+  }
+  
+  async updateCraftedItem(id: number, craftedItemData: Partial<CraftedItem>): Promise<CraftedItem | undefined> {
+    const [updatedCraftedItem] = await db
+      .update(craftedItems)
+      .set(craftedItemData)
+      .where(eq(craftedItems.id, id))
+      .returning();
+    return updatedCraftedItem;
+  }
+  
+  async getAchievements(): Promise<Achievement[]> {
+    return await db.select().from(achievements);
+  }
+  
+  async getAchievement(id: number): Promise<Achievement | undefined> {
+    const [achievement] = await db
+      .select()
+      .from(achievements)
+      .where(eq(achievements.id, id));
+    return achievement;
+  }
+  
+  async createAchievement(insertAchievement: InsertAchievement): Promise<Achievement> {
+    const [achievement] = await db
+      .insert(achievements)
+      .values(insertAchievement)
+      .returning();
+    return achievement;
+  }
+  
+  async getUserAchievements(userId: number): Promise<UserAchievement[]> {
+    return await db
+      .select()
+      .from(userAchievements)
+      .where(eq(userAchievements.userId, userId));
+  }
+  
+  async getUserAchievement(userId: number, achievementId: number): Promise<UserAchievement | undefined> {
+    const [userAchievement] = await db
+      .select()
+      .from(userAchievements)
+      .where(
+        and(
+          eq(userAchievements.userId, userId),
+          eq(userAchievements.achievementId, achievementId)
+        )
+      );
+    return userAchievement;
+  }
+  
+  async createUserAchievement(insertUserAchievement: InsertUserAchievement): Promise<UserAchievement> {
+    const [userAchievement] = await db
+      .insert(userAchievements)
+      .values(insertUserAchievement)
+      .returning();
+    return userAchievement;
+  }
+  
+  async updateUserAchievement(id: number, userAchievementData: Partial<UserAchievement>): Promise<UserAchievement | undefined> {
+    const [updatedUserAchievement] = await db
+      .update(userAchievements)
+      .set(userAchievementData)
+      .where(eq(userAchievements.id, id))
+      .returning();
+    return updatedUserAchievement;
+  }
+  
+  async getLootBoxes(userId: number): Promise<LootBox[]> {
+    return await db
+      .select()
+      .from(lootBoxes)
+      .where(eq(lootBoxes.userId, userId));
+  }
+  
+  async getLootBox(id: number): Promise<LootBox | undefined> {
+    const [lootBox] = await db
+      .select()
+      .from(lootBoxes)
+      .where(eq(lootBoxes.id, id));
+    return lootBox;
+  }
+  
+  async createLootBox(insertLootBox: InsertLootBox): Promise<LootBox> {
+    const [lootBox] = await db
+      .insert(lootBoxes)
+      .values(insertLootBox)
+      .returning();
+    return lootBox;
+  }
+  
+  async updateLootBox(id: number, lootBoxData: Partial<LootBox>): Promise<LootBox | undefined> {
+    const [updatedLootBox] = await db
+      .update(lootBoxes)
+      .set(lootBoxData)
+      .where(eq(lootBoxes.id, id))
+      .returning();
+    return updatedLootBox;
+  }
+  
+  async getInventoryHistory(userId: number): Promise<InventoryHistory[]> {
+    return await db
+      .select()
+      .from(inventoryHistory)
+      .where(eq(inventoryHistory.userId, userId))
+      .orderBy(desc(inventoryHistory.createdAt));
+  }
+  
+  async createInventoryHistory(insertInventoryHistory: InsertInventoryHistory): Promise<InventoryHistory> {
+    const [history] = await db
+      .insert(inventoryHistory)
+      .values(insertInventoryHistory)
+      .returning();
+    return history;
+  }
+  
+  async addUserXP(userId: number, xpAmount: number): Promise<User> {
+    // Get the current user to calculate new XP and level
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    // Calculate the new XP value
+    const newXP = user.xp + xpAmount;
+    
+    // Check if user levels up
+    let newLevel = user.level;
+    let newXPToNextLevel = user.xpToNextLevel;
+    
+    while (newXP >= newXPToNextLevel) {
+      newLevel += 1;
+      // New XP threshold is 10% higher than the previous one
+      newXPToNextLevel = Math.floor(newXPToNextLevel * 1.1);
+    }
+    
+    // Update the user
+    const updatedUser = await this.updateUser(userId, {
+      xp: newXP,
+      level: newLevel,
+      xpToNextLevel: newXPToNextLevel
+    });
+    
+    if (!updatedUser) {
+      throw new Error(`Failed to update user with ID ${userId}`);
+    }
+    
+    return updatedUser;
+  }
+  
+  async getQuestsByAdventureLine(adventureLine: string): Promise<Quest[]> {
+    return await db
+      .select()
+      .from(quests)
+      .where(eq(quests.adventureLine, adventureLine))
+      .orderBy(quests.orderInLine);
+  }
+  
+  async getAvailableQuestsForUser(userId: number): Promise<Quest[]> {
+    // Get the user to check their completed quests
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    // Get all quests
+    const allQuests = await this.getQuests();
+    
+    // Filter quests based on completion status
+    const completedQuestIds = user.completedQuests || [];
+    const availableQuests = allQuests.filter(
+      (quest) => !completedQuestIds.includes(quest.id) && quest.active
+    );
+    
+    return availableQuests;
+  }
+  
+  async getItems(): Promise<Item[]> {
+    return await db.select().from(items);
+  }
+  
+  async getItem(id: string): Promise<Item | undefined> {
+    const [item] = await db
+      .select()
+      .from(items)
+      .where(eq(items.id, id));
+    return item;
+  }
+  
+  async createItem(insertItem: InsertItem): Promise<Item> {
+    const [item] = await db
+      .insert(items)
+      .values(insertItem)
+      .returning();
+    return item;
+  }
+  
+  async updateItem(id: string, itemData: Partial<Item>): Promise<Item | undefined> {
+    const [updatedItem] = await db
+      .update(items)
+      .set({
+        ...itemData,
+        updatedAt: new Date()
+      })
+      .where(eq(items.id, id))
+      .returning();
+    return updatedItem;
+  }
+  
+  async deleteItem(id: string): Promise<boolean> {
+    const result = await db
+      .delete(items)
+      .where(eq(items.id, id));
+    return true; // PostgreSQL doesn't return deleted rows count directly in drizzle
+  }
+  
+  async resetDatabase(): Promise<void> {
+    // In a production environment, this method would have additional safeguards
+    // For development, we'll provide a basic implementation
+    
+    // Delete data from all tables - order matters for foreign key constraints
+    await db.delete(inventoryHistory);
+    await db.delete(userAchievements);
+    await db.delete(lootBoxes);
+    await db.delete(craftedItems);
+    await db.delete(submissions);
+    await db.delete(userQuests);
+    await db.delete(users);
+    await db.delete(craftables);
+    await db.delete(achievements);
+    await db.delete(quests);
+    await db.delete(items);
+    await db.delete(lootBoxConfigs);
+    await db.delete(craftingRecipes);
+    
+    // You could add initialization of default data here if needed
+    console.log("Database reset completed");
+  }
+}
+
+// Switch to using the DatabaseStorage implementation
+export const storage = new DatabaseStorage();
