@@ -23,6 +23,8 @@ export default function AdminBasic() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [rarity, setRarity] = useState<string>('common');
+  const [isEquippable, setIsEquippable] = useState(false);
+  const [equipSlot, setEquipSlot] = useState<string | undefined>(undefined);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   
@@ -185,6 +187,8 @@ export default function AdminBasic() {
     setName('');
     setDescription('');
     setRarity('common');
+    setIsEquippable(false);
+    setEquipSlot(undefined);
     setSelectedFile(null);
     setImagePreview(null);
     if (fileInputRef.current) {

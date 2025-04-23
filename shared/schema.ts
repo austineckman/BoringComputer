@@ -165,6 +165,8 @@ export const items = pgTable("items", {
   craftingUses: jsonb("crafting_uses").$type<string[]>().default([]), // Made optional with default empty array
   imagePath: text("image_path"), // Made optional
   category: text("category").default("resource"), // Made optional with default value - resource, component, tool, etc.
+  isEquippable: boolean("is_equippable").default(false),
+  equipSlot: text("equip_slot", { enum: ["head", "torso", "legs", "accessory", "hands"] }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -316,7 +318,9 @@ export const insertItemSchema = createInsertSchema(items).pick({
   rarity: true,
   craftingUses: true,
   imagePath: true,
-  category: true
+  category: true,
+  isEquippable: true,
+  equipSlot: true
 });
 
 export const insertLootBoxConfigSchema = createInsertSchema(lootBoxConfigs).pick({
