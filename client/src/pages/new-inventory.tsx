@@ -339,22 +339,21 @@ export default function Inventory() {
     });
   }
   
-  // Filter items based on active tab
-  const filteredItems = allInventoryItems.filter(item => {
-    if (activeTab === 'materials') {
-      return !item.isLootBox;
-    } else if (activeTab === 'loot-boxes') {
-      return item.isLootBox;
-    }
-    return true; // 'all' tab
-  });
-  
   // Create a grid with empty slots for WoW-style guild bank
   const totalSlots = 42; // 7x6 grid
   const [inventoryGrid, setInventoryGrid] = useState<Array<{type: string, quantity: number, isLootBox?: boolean, lootBoxData?: LootBox} | null>>(Array(totalSlots).fill(null));
   
-  // Fill the grid with our items when filteredItems changes
+  // Filter items based on active tab and update grid only when dependencies change
   useEffect(() => {
+    const filteredItems = allInventoryItems.filter(item => {
+      if (activeTab === 'materials') {
+        return !item.isLootBox;
+      } else if (activeTab === 'loot-boxes') {
+        return item.isLootBox;
+      }
+      return true; // 'all' tab
+    });
+    
     const newGrid = Array(totalSlots).fill(null);
     filteredItems.forEach((item, index) => {
       if (index < totalSlots) {
@@ -362,7 +361,7 @@ export default function Inventory() {
       }
     });
     setInventoryGrid(newGrid);
-  }, [filteredItems]);
+  }, [activeTab, allInventoryItems, totalSlots]);
   
   // Function to move an item from one position to another
   const moveItem = useCallback((fromIndex: number, toIndex: number) => {
