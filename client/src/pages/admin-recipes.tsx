@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { apiRequest } from '@/lib/queryClient';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
@@ -193,6 +194,7 @@ const AdminRecipesPage: React.FC = () => {
     Array(5).fill(null).map(() => Array(5).fill(null))
   );
   const [requiredItems, setRequiredItems] = useState<Record<string, number>>({});
+  const [selectedMaterial, setSelectedMaterial] = useState<string>("");
   
   // Fetch recipes
   const { data: recipes = [], isLoading: loadingRecipes } = useQuery({
@@ -362,10 +364,19 @@ const AdminRecipesPage: React.FC = () => {
   // Handle pattern cell click for the recipe grid
   const handlePatternCellClick = (row: number, col: number) => {
     const newPattern = [...patternGrid.map(r => [...r])];
-    // If we have a selected item, set it, otherwise clear the cell
-    const selectedItem = form.getValues('resultItem');
-    newPattern[row][col] = newPattern[row][col] ? null : selectedItem;
-    setPatternGrid(newPattern);
+    
+    // If we have a selected material, toggle it in the cell
+    if (selectedMaterial) {
+      newPattern[row][col] = newPattern[row][col] ? null : selectedMaterial;
+      setPatternGrid(newPattern);
+    } else {
+      // Show a toast if no material is selected
+      toast({
+        title: "No material selected",
+        description: "Please select a material first",
+        variant: "destructive",
+      });
+    }
   };
 
   // Cell renderer for the pattern grid
@@ -488,16 +499,9 @@ const AdminRecipesPage: React.FC = () => {
                             <Select 
                               onValueChange={(value) => {
                                 field.onChange(value);
-                                // Update pattern cells with this item
-                                const newPattern = [...patternGrid.map(r => [...r])];
-                                for (let row = 0; row < 5; row++) {
-                                  for (let col = 0; col < 5; col++) {
-                                    if (newPattern[row][col]) {
-                                      newPattern[row][col] = value;
-                                    }
-                                  }
-                                }
-                                setPatternGrid(newPattern);
+                                // Don't modify the pattern grid when selecting the result item
+                                // The pattern grid should contain items that users will consume
+                                // not the result item
                               }} 
                               defaultValue={field.value}
                             >
@@ -663,11 +667,38 @@ const AdminRecipesPage: React.FC = () => {
                         />
                       </div>
                       
-                      <div className="space-y-2">
+                      <div className="space-y-4">
                         <FormLabel>Recipe Pattern</FormLabel>
                         <CardDescription>
-                          Click cells to toggle where items are required in the crafting grid
+                          Select an item below, then click cells to place that item in the crafting grid
                         </CardDescription>
+                        
+                        <div className="mb-4">
+                          <Label>Selected Material</Label>
+                          <Select 
+                            onValueChange={(value) => setSelectedMaterial(value)}
+                            value={selectedMaterial}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select material for pattern" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {items.map((item) => (
+                                <SelectItem key={item.id} value={item.id}>
+                                  <div className="flex items-center">
+                                    <img 
+                                      src={item.imagePath || '/placeholder-item.png'} 
+                                      alt={item.name}
+                                      className="w-6 h-6 mr-2 object-contain"
+                                    />
+                                    {item.name}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
                         <div className="mt-2">
                           <Grid5x5
                             value={patternGrid}
