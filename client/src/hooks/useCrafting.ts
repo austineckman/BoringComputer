@@ -95,15 +95,53 @@ export function useCrafting() {
     }
   }, []);
   
+  // Track used items in the grid
+  const usedItems = useMemo(() => {
+    const itemCounts: Record<string, number> = {};
+    grid.forEach(row => {
+      row.forEach(cell => {
+        if (cell) {
+          itemCounts[cell] = (itemCounts[cell] || 0) + 1;
+        }
+      });
+    });
+    return itemCounts;
+  }, [grid]);
+  
+  // Calculate remaining inventory after grid usage
+  const remainingInventory = useMemo(() => {
+    if (!inventory) return {};
+    
+    const result: Record<string, number> = {...inventory};
+    
+    // Subtract used items
+    Object.entries(usedItems).forEach(([itemId, count]) => {
+      const available = inventory[itemId] || 0;
+      result[itemId] = Math.max(0, available - count);
+    });
+    
+    return result;
+  }, [inventory, usedItems]);
+  
   // Handle dropping an item onto the grid
   const handleDropItem = useCallback((row: number, col: number, itemId: string) => {
+    // Check if there's enough inventory left for this item
+    const currentlyUsed = usedItems[itemId] || 0;
+    const available = (inventory?.[itemId] || 0);
+    
+    // If there's not enough inventory, don't allow the drop
+    if (currentlyUsed >= available) {
+      sounds.error();
+      return;
+    }
+    
     setGrid(prevGrid => {
       const newGrid = [...prevGrid];
       newGrid[row] = [...newGrid[row]];
       newGrid[row][col] = itemId;
       return newGrid;
     });
-  }, []);
+  }, [inventory, usedItems, sounds]);
   
   // Handle removing an item from the grid
   const handleRemoveItem = useCallback((row: number, col: number) => {
@@ -201,6 +239,8 @@ export function useCrafting() {
     grid,
     recipes,
     inventory,
+    remainingInventory,
+    usedItems,
     selectedRecipe,
     highlightedCells,
     canCraft,
