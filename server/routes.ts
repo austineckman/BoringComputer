@@ -1022,6 +1022,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the loot box configuration
       const config = await storage.getLootBoxConfig(lootBox.type);
       
+      console.log('Loot box:', lootBox);
+      console.log('Loot box config:', config);
+      
       // Add configuration data to the loot box
       const lootBoxWithConfig = {
         ...lootBox,

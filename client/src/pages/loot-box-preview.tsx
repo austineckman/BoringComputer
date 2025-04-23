@@ -189,11 +189,28 @@ export default function LootBoxPreview() {
   }
 
   // Regular display for loot box preview
-  if (!lootBox || !lootBox.config) {
+  if (!lootBox) {
     return (
       <div className="container max-w-4xl py-8">
         <div className="text-center">
-          <p>This loot box is missing configuration data.</p>
+          <p>Loot box not found.</p>
+          <Button onClick={handleBackToInventory} className="mt-4">
+            Back to Inventory
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  // For debugging purposes
+  console.log('Loot box data:', lootBox);
+  
+  // Check if config exists, if not, try to use the type to get config info
+  if (!lootBox.config) {
+    return (
+      <div className="container max-w-4xl py-8">
+        <div className="text-center">
+          <p>This loot box is missing configuration data. (Type: {lootBox.type})</p>
           <Button onClick={handleBackToInventory} className="mt-4">
             Back to Inventory
           </Button>
