@@ -987,12 +987,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Transform inventory from object to array with additional metadata
       const inventory = user.inventory || {};
-      const resources = Object.entries(inventory).map(([type, quantity]) => ({
-        type,
-        quantity,
-        // Most recent time this resource was acquired
-        lastAcquired: new Date().toISOString() // Simplified for now
-      }));
+      
+      // Get all items from the admin database
+      const allItems = await storage.getItems();
+      
+      // Create a lookup map for quick item access by ID
+      const itemDetailsMap = allItems.reduce((map, item) => {
+        map[item.id] = item;
+        return map;
+      }, {} as Record<string, any>);
+      
+      // Combine user inventory quantities with item details from admin database
+      const resources = Object.entries(inventory)
+        .map(([itemId, quantity]) => {
+          // Get full item details from the items database
+          const itemDetails = itemDetailsMap[itemId] || null;
+          
+          if (!itemDetails) {
+            // Skip items that no longer exist in the admin database
+            console.warn(`Item ${itemId} not found in admin database but exists in user inventory`);
+            return null;
+          }
+          
+          // Return full item details along with quantity
+          return {
+            id: itemId,
+            type: itemId, // Keep type for backward compatibility
+            quantity: quantity as number,
+            name: itemDetails.name,
+            description: itemDetails.description,
+            flavorText: itemDetails.flavorText || '',
+            rarity: itemDetails.rarity || 'common',
+            craftingUses: itemDetails.craftingUses || [],
+            imagePath: itemDetails.imagePath || '',
+            category: itemDetails.category || '',
+            // Most recent time this resource was acquired
+            lastAcquired: new Date().toISOString() // Simplified for now
+          };
+        })
+        .filter(item => item !== null); // Filter out any missing items
       
       res.json(resources);
     } catch (error) {
