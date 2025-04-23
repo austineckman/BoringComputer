@@ -163,12 +163,12 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
         setSelectedReward(data.rewards[0]);
         console.log("Selected reward:", data.rewards[0]);
         
-        // After 5 seconds (shortened for better UX), show the final reward
+        // After 20 seconds (longer for a better unboxing experience), show the final reward
         setTimeout(() => {
           console.log("Animation timeout completed, showing final reward");
           setIsAnimating(false);
           setShowFinalReward(true);
-        }, 5000);
+        }, 20000);
       } else {
         console.error("Error from API:", data);
         // Stop animation if there's an error
@@ -270,10 +270,10 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
                   ref={scrollContainerRef}
                   className="flex" 
                   style={{ 
-                    transition: 'transform 5s cubic-bezier(.2,0,.8,1)',
+                    transition: 'transform 20s cubic-bezier(.2,0,.8,1)',
                     transform: 'translateX(100%)',
                     willChange: 'transform',
-                    animation: 'scrollItems 5s cubic-bezier(.2,0,.8,1) forwards',
+                    animation: 'scrollItems 20s cubic-bezier(.2,0,.8,1) forwards',
                   }}
                 >
                   {scrollItems.map((item, index) => {
