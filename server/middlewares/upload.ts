@@ -16,6 +16,12 @@ if (!fs.existsSync(questImageUploadDir)) {
   fs.mkdirSync(questImageUploadDir, { recursive: true });
 }
 
+// Ensure recipe hero image uploads directory exists
+const recipeHeroUploadDir = path.resolve('public/uploads/recipe-heroes');
+if (!fs.existsSync(recipeHeroUploadDir)) {
+  fs.mkdirSync(recipeHeroUploadDir, { recursive: true });
+}
+
 // Configure storage for item images
 const itemStorage = multer.diskStorage({
   destination: (_req, _file, cb) => {
@@ -40,6 +46,19 @@ const questImageStorage = multer.diskStorage({
     const uniqueId = nanoid(8);
     const fileExt = path.extname(file.originalname).toLowerCase();
     cb(null, `${uniqueId}${fileExt}`);
+  }
+});
+
+// Configure storage for recipe hero images
+const recipeHeroStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, recipeHeroUploadDir);
+  },
+  filename: (_req: Request, file, cb) => {
+    // Generate a unique filename
+    const uniqueId = nanoid(8);
+    const fileExt = path.extname(file.originalname).toLowerCase();
+    cb(null, `recipe-hero-${uniqueId}${fileExt}`);
   }
 });
 
@@ -72,6 +91,15 @@ export const questImageUpload = multer({
   }
 });
 
+// Create multer upload instance for recipe hero images
+export const recipeHeroUpload = multer({
+  storage: recipeHeroStorage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB max file size
+  }
+});
+
 // Helper function to get the public URL for an item image
 export function getPublicImageUrl(filename: string): string {
   if (!filename) return '';
@@ -82,6 +110,12 @@ export function getPublicImageUrl(filename: string): string {
 export function getPublicQuestImageUrl(filename: string): string {
   if (!filename) return '';
   return `/uploads/quest-images/${filename}`;
+}
+
+// Helper function to get the public URL for a recipe hero image
+export function getPublicRecipeHeroUrl(filename: string): string {
+  if (!filename) return '';
+  return `/uploads/recipe-heroes/${filename}`;
 }
 
 // Helper function to extract filename from full path

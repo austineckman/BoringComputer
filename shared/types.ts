@@ -9,6 +9,7 @@ export interface Recipe {
   difficulty: 'easy' | 'medium' | 'hard';
   category: string;
   unlocked: boolean;
+  heroImage?: string; // URL to the hero image
 }
 
 export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
