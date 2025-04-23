@@ -1434,7 +1434,9 @@ export class MemStorage implements IStorage {
   }
 }
 
-export class DatabaseStorage implements IStorage {
+// Removed duplicate DatabaseStorage class definition
+// The proper implementation is at the top of the file
+/* REMOVED duplicate class definition - export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
@@ -1909,4 +1911,7 @@ export class DatabaseStorage implements IStorage {
 }
 
 // Switch to using the DatabaseStorage implementation
+// Close comment
+*/
+
 export const storage = new DatabaseStorage();

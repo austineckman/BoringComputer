@@ -3,7 +3,8 @@ import clothImg from '../assets/cloth.png';
 import copperImg from '../assets/copper.png';
 import crystalImg from '../assets/crystal.png';
 import techscrapImg from '../assets/techscrap.png';
-import lootCrateImg from '../assets/loot-crate.png';
+// Using direct path instead of import for loot crate image
+const lootCrateImg = '/images/loot-crate.png';
 import circuitBoardImg from '@assets/circuit board.png';
 import inkImg from '@assets/ink.png';
 import gizboImg from '@assets/gizbo.png';  // Optional character image for future use
