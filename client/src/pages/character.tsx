@@ -169,6 +169,7 @@ const CharacterPage = () => {
   // Unequip mutation
   const unequipMutation = useMutation({
     mutationFn: (slot: EquipmentSlot) => {
+      // Use POST method since we're sending data in the body
       return apiRequest('POST', '/api/character/unequip', {
         slot
       });
