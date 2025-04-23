@@ -204,7 +204,11 @@ const QuestCard = ({
   
   // Helper function to format item name
   const formatItemName = (name: string) => {
-    return name.charAt(0).toUpperCase() + name.slice(1).replace(/-/g, ' ');
+    // Handle both hyphenated names (e.g., "circuit-board") and regular names (e.g., "copper")
+    return name
+      .split('-')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
   };
 
   const statusDisplay = getStatusDisplay();
@@ -300,7 +304,7 @@ const QuestCard = ({
                       <div className="w-8 h-8 animate-pulse rounded bg-space-light/20" />
                     ) : (
                       <img 
-                        src={getLootBoxData(lootBox.id || '', lootBox.type)?.image || '/images/loot-crate.png'}
+                        src={getLootBoxData(lootBox.id || '', lootBox.type)?.image || '/assets/loot crate.png'}
                         alt={`${getLootBoxData(lootBox.id || '', lootBox.type)?.name || lootBox.type} Loot Box`}
                         className="w-8 h-8 object-contain"
                       />
@@ -314,9 +318,9 @@ const QuestCard = ({
                   <span className="text-xs mt-1 text-center">
                     {/* Use the name from config if available */}
                     {isLoadingLootBoxes 
-                      ? lootBox.type.charAt(0).toUpperCase() + lootBox.type.slice(1)
+                      ? formatItemName(lootBox.type)
                       : getLootBoxData(lootBox.id || '', lootBox.type)?.name || 
-                        (lootBox.type.charAt(0).toUpperCase() + lootBox.type.slice(1))
+                        formatItemName(lootBox.type)
                     }
                   </span>
                 </div>
@@ -340,7 +344,7 @@ const QuestCard = ({
                       getRarityColor(getItemData(reward.type)?.rarity || 'common')
                     }`}>
                       <img 
-                        src={getItemData(reward.type)?.imagePath || `/images/resources/${reward.type}.png`}
+                        src={getItemData(reward.type)?.imagePath || `/assets/${reward.type}.png`}
                         alt={getItemData(reward.type)?.name || reward.type}
                         className="w-8 h-8 object-contain"
                       />
