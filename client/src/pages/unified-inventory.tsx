@@ -337,8 +337,11 @@ export default function UnifiedInventory() {
     });
     
     try {
-      // Use craftDrop sound since we don't have a dedicated drop sound
-      sounds.craftDrop();
+      // Assume drop sound is implemented in the sounds object
+      // If not, we'll just catch the error
+      if (sounds.drop) {
+        sounds.drop();
+      }
     } catch (e) {
       console.warn('Could not play sound', e);
     }

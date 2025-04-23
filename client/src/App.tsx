@@ -7,7 +7,6 @@ import QuestDetail from "@/pages/quest-detail";
 import Inventory from "@/pages/new-inventory";
 import UnifiedInventory from "@/pages/unified-inventory";
 import Character from "@/pages/character";
-import CharacterEquipment from "@/pages/character-equipment";
 import Forge from "@/pages/forge";
 import Achievements from "@/pages/achievements";
 import Settings from "@/pages/settings";
@@ -118,12 +117,6 @@ function App() {
         <ProtectedRoute path="/character">
           <MainLayout>
             <Character />
-          </MainLayout>
-        </ProtectedRoute>
-        
-        <ProtectedRoute path="/character-equipment">
-          <MainLayout>
-            <CharacterEquipment />
           </MainLayout>
         </ProtectedRoute>
         
