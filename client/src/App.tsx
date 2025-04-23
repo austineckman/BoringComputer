@@ -109,12 +109,6 @@ function App() {
           </MainLayout>
         </ProtectedRoute>
         
-        <ProtectedRoute path="/new-inventory">
-          <MainLayout>
-            <Inventory />
-          </MainLayout>
-        </ProtectedRoute>
-        
         <ProtectedRoute path="/unified-inventory">
           <MainLayout>
             <UnifiedInventory />
