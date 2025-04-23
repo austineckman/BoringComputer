@@ -117,6 +117,17 @@ export default function Inventory() {
     queryFn: () => fetch('/api/inventory/history').then(res => res.json()),
   });
   
+  // Handler for confirming loot box opening from the dialog
+  const handleConfirmLootBoxOpen = () => {
+    if (currentLootBox) {
+      // Close the confirmation dialog
+      setIsConfirmDialogOpen(false);
+      
+      // Open the loot box with the existing function
+      handleLootBoxOpen(currentLootBox, currentLootBox.rewards || []);
+    }
+  };
+  
   const handleLootBoxOpen = async (lootBox: LootBox, rewards: {type: string, quantity: number}[]) => {
     try {
       sounds.questComplete();
@@ -214,13 +225,7 @@ export default function Inventory() {
     setSelectedItem(item);
   };
   
-  // Function to handle confirmation from dialog
-  const handleConfirmLootBoxOpen = () => {
-    if (currentLootBox) {
-      setIsConfirmDialogOpen(false);
-      handleLootBoxOpen(currentLootBox, currentLootBox?.rewards || []);
-    }
-  };
+  // Already defined earlier in the component
   
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -598,7 +603,12 @@ export default function Inventory() {
                                 variant="outline" 
                                 size="sm" 
                                 className="mt-2 w-full bg-brand-orange/20 hover:bg-brand-orange/30 border-brand-orange/30"
-                                onClick={() => item.lootBoxData && handleLootBoxOpen(item.lootBoxData, item.lootBoxData?.rewards || [])}
+                                onClick={() => {
+                                  if (item.lootBoxData) {
+                                    setCurrentLootBox(item.lootBoxData);
+                                    setIsConfirmDialogOpen(true);
+                                  }
+                                }}
                               >
                                 Open Crate
                               </Button>
@@ -759,7 +769,12 @@ export default function Inventory() {
                               variant="outline" 
                               size="sm" 
                               className="mt-2 w-full bg-brand-orange/20 hover:bg-brand-orange/30 border-brand-orange/30"
-                              onClick={() => item.lootBoxData && handleLootBoxOpen(item.lootBoxData, item.lootBoxData?.rewards || [])}
+                              onClick={() => {
+                                if (item.lootBoxData) {
+                                  setCurrentLootBox(item.lootBoxData);
+                                  setIsConfirmDialogOpen(true);
+                                }
+                              }}
                             >
                               Open Crate
                             </Button>
