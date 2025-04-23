@@ -48,6 +48,24 @@ const renderResourceIcon = (type: string, size: 'sm' | 'md' | 'lg' = 'md') => {
   );
 };
 
+// Function to get a color class based on item rarity
+const getRarityColorClass = (itemType: string): string => {
+  const itemDetails = getItemDetails(itemType);
+  switch (itemDetails.rarity) {
+    case 'legendary':
+      return 'bg-amber-900/20 border-amber-400/40';
+    case 'epic':
+      return 'bg-purple-900/20 border-purple-400/40';
+    case 'rare':
+      return 'bg-blue-900/20 border-blue-400/40';
+    case 'uncommon':
+      return 'bg-green-900/20 border-green-400/40';
+    case 'common':
+    default:
+      return 'bg-space-dark border-space-light/40';
+  }
+};
+
 interface Resource {
   type: string;
   quantity: number;
@@ -68,7 +86,7 @@ interface LootBox {
 }
 
 // Import the centralized item database instead of duplicating data
-import { getItemDetails, getRarityClasses } from '@/lib/itemDatabase';
+import { getItemDetails } from '@/lib/itemDatabase';
 
 export default function Inventory() {
   const [activeTab, setActiveTab] = useState('all');
@@ -478,7 +496,7 @@ export default function Inventory() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div 
-                          className={`aspect-square bg-space-dark border ${item ? 'border-space-light/40 hover:border-brand-orange/60' : 'border-space-light/10'} rounded-md p-1 relative cursor-pointer transition-colors`}
+                          className={`aspect-square ${item ? `${getRarityColorClass(item.type)} hover:border-brand-orange/60` : 'bg-space-dark border-space-light/10'} rounded-md p-1 relative cursor-pointer transition-colors`}
                           onMouseEnter={() => item && handleItemHover(item.type)}
                           onClick={() => item && handleItemClick(item)}
                         >
@@ -560,7 +578,7 @@ export default function Inventory() {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div 
-                            className="aspect-square bg-space-dark border border-space-light/40 hover:border-brand-orange/60 rounded-md p-1 relative cursor-pointer transition-colors"
+                            className={`aspect-square ${getRarityColorClass(item.type)} hover:border-brand-orange/60 rounded-md p-1 relative cursor-pointer transition-colors`}
                             onMouseEnter={() => handleItemHover(item.type)}
                             onClick={() => handleItemClick(item)}
                           >
@@ -619,7 +637,7 @@ export default function Inventory() {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div 
-                            className="aspect-square bg-space-dark border border-space-light/40 hover:border-brand-orange/60 rounded-md p-1 relative cursor-pointer transition-colors"
+                            className={`aspect-square ${getRarityColorClass(item.type)} hover:border-brand-orange/60 rounded-md p-1 relative cursor-pointer transition-colors`}
                             onMouseEnter={() => handleItemHover(item.type)}
                             onClick={() => handleItemClick(item)}
                           >
