@@ -127,6 +127,8 @@ const ForgePage: React.FC = () => {
     grid,
     recipes = mockRecipes, // Use mock recipes until API is available
     inventory,
+    remainingInventory,
+    usedItems,
     selectedRecipe,
     highlightedCells,
     canCraft,
@@ -193,7 +195,7 @@ const ForgePage: React.FC = () => {
               
               {/* Inventory */}
               <InventoryGrid
-                inventory={inventory as Record<string, number>}
+                inventory={remainingInventory as Record<string, number>}
                 selectedRecipe={selectedRecipe}
               />
             </div>
@@ -206,7 +208,7 @@ const ForgePage: React.FC = () => {
               selectedRecipe={selectedRecipe}
               onSelectRecipe={onSelectRecipe}
               isLoading={isLoading}
-              inventory={inventory as Record<string, number>}
+              inventory={remainingInventory as Record<string, number>}
               canCraft={canCraft}
               onCraft={handleCraft}
             />
