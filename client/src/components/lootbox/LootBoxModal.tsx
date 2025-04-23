@@ -235,16 +235,19 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
           };
         });
         
-        // Add 3 copies of the winning item near the end
+        // Add a winner item at the very end 
+        // Add a buffer item right before to ensure good spacing
         generatedItems.push(
+          // Add some filler items before the winner (these will be visible but not the winner)
           {
-            itemId: data.rewards[0].type,
-            quantity: data.rewards[0].quantity
+            itemId: itemPool[Math.floor(Math.random() * itemPool.length)],
+            quantity: Math.floor(Math.random() * 3) + 1
           },
           {
-            itemId: data.rewards[0].type,
-            quantity: data.rewards[0].quantity
+            itemId: itemPool[Math.floor(Math.random() * itemPool.length)],
+            quantity: Math.floor(Math.random() * 3) + 1
           },
+          // Then add the actual winning item
           {
             itemId: data.rewards[0].type,
             quantity: data.rewards[0].quantity
@@ -373,9 +376,10 @@ export function LootBoxModal({ isOpen, onClose, lootBoxId, onLootBoxOpened }: Lo
                   style={{ 
                     willChange: 'transform',
                     position: 'relative',
-                    transition: 'transform 7s cubic-bezier(0.23, 1, 0.32, 1)',
+                    transition: 'transform 7s cubic-bezier(0.34, 1.56, 0.64, 1)',
                     transform: hasTransitionStarted 
-                      ? `translateX(-${(scrollItems.length - 10) * 84}px)` 
+                      // Calculate exact position to center the last item (winner) under the indicator
+                      ? `translateX(calc(-${(scrollItems.length - 1) * 84}px + 50% - 42px))` 
                       : 'translateX(0px)',
                     padding: '0 450px', // Padding to ensure items are visible at the start
                   }}
