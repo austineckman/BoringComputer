@@ -130,11 +130,11 @@ function App() {
         </ProtectedRoute>
         
         <AdminRoute path="/admin">
-          <AdminBasic />
+          <Admin />
         </AdminRoute>
         
-        <AdminRoute path="/admin-full">
-          <Admin />
+        <AdminRoute path="/admin-basic">
+          <AdminBasic />
         </AdminRoute>
         
         <AdminRoute path="/admin-simple">

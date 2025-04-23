@@ -28,8 +28,16 @@ const AdminDashboard: React.FC = () => {
     queryKey: ['/api/admin/stats'],
     queryFn: async () => {
       try {
-        const response = await apiRequest('/api/admin/stats');
-        return response || { 
+        const response = await fetch('/api/admin/stats', {
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Error fetching stats: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data || { 
           userCount: 0, 
           itemCount: 0, 
           recipeCount: 0, 
