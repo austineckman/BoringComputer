@@ -77,7 +77,8 @@ import {
   Loader2,
   Shirt,
   Cog,
-  X
+  X,
+  Shield
 } from 'lucide-react';
 
 // Define quest types
@@ -111,7 +112,14 @@ interface LootBoxConfig {
   id: string;
   name: string;
   rarity: string;
-  image: string;
+  image?: string;
+  description?: string;
+  itemDropTable?: {
+    itemId: string;
+    weight: number;
+    minQuantity: number;
+    maxQuantity: number;
+  }[];
 }
 
 // Define form validation schema
@@ -195,10 +203,13 @@ const AdminQuests: React.FC = () => {
 
   // Fetch loot box configurations for rewards
   const { data: lootBoxConfigs = [], isLoading: loadingLootBoxes } = useQuery({
-    queryKey: ['/api/admin/loot-box-configs'],
+    queryKey: ['/api/admin/lootboxes'],
     // Use the default queryFn
     onError: (error) => {
       console.error('Error fetching loot box configs:', error);
+    },
+    onSuccess: (data) => {
+      console.log("Fetched loot boxes:", data);
     }
   });
 
@@ -1004,11 +1015,24 @@ const AdminQuests: React.FC = () => {
                         </p>
                         
                         {/* New reward interface with 3 tabs for different reward types */}
-                        <Tabs defaultValue="lootbox" className="w-full">
+                        <Tabs 
+                          value={rewardTabValue} 
+                          onValueChange={setRewardTabValue}
+                          className="w-full"
+                        >
                           <TabsList className="grid grid-cols-3 mb-4">
-                            <TabsTrigger value="lootbox">Loot Boxes</TabsTrigger>
-                            <TabsTrigger value="item">Items</TabsTrigger>
-                            <TabsTrigger value="equipment">Equipment</TabsTrigger>
+                            <TabsTrigger value="lootbox">
+                              <Package className="h-4 w-4 mr-2" />
+                              Loot Boxes
+                            </TabsTrigger>
+                            <TabsTrigger value="item">
+                              <Cog className="h-4 w-4 mr-2" />
+                              Items
+                            </TabsTrigger>
+                            <TabsTrigger value="equipment">
+                              <Shirt className="h-4 w-4 mr-2" />
+                              Equipment
+                            </TabsTrigger>
                           </TabsList>
                           
                           {/* Loot Box Rewards Tab */}
