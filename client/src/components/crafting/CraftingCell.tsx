@@ -28,7 +28,7 @@ const CraftingCell: React.FC<CraftingCellProps> = ({
     accept: 'item',
     drop: (item: { itemId: string }) => {
       onDropItem(row, col, item.itemId);
-      sounds.craftPlace();
+      sounds.craftDrop(); // Using craftDrop instead of craftPlace
       return { dropped: true };
     },
     collect: (monitor) => ({
