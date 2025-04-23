@@ -1106,6 +1106,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // This section was removed as it was a duplicate of the inventory endpoint
   // defined earlier in the file at line ~574.
   
+  // Get all loot box configs (for displaying in QuestCard and other components)
+  app.get('/api/admin/lootboxes', authenticate, async (req, res) => {
+    try {
+      // Get all loot box configurations
+      const lootBoxConfigs = await storage.getLootBoxConfigs();
+      return res.json(lootBoxConfigs);
+    } catch (error) {
+      console.error("Error getting loot box configs:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
   // Achievements routes
   app.get('/api/achievements', authenticate, async (req, res) => {
     try {

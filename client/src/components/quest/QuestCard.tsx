@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PixelCard, { PixelCardContent, PixelCardHeader } from "@/components/ui/pixel-card";
 import PixelButton from "@/components/ui/pixel-button";
 import ResourceItem from "@/components/ui/resource-item";
@@ -8,16 +8,30 @@ import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import AdventureImage from "@/components/adventure/AdventureImage";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
+// Legacy reward interface for backward compatibility
 interface QuestReward {
   type: string;
   quantity: number;
 }
 
-// Loot box types interface
+// Enhanced Loot box reward interface
 interface LootBoxReward {
-  type: "common" | "uncommon" | "rare" | "epic" | "legendary";
+  type: string; // Updated to string to support custom loot box types from database
+  id?: string;  // Optional id field for referencing database loot boxes
   quantity: number;
+}
+
+// Loot box config from database
+interface LootBoxConfig {
+  id: string;
+  name: string;
+  description: string;
+  rarity: "common" | "uncommon" | "rare" | "epic" | "legendary";
+  image: string;
+  minRewards: number;
+  maxRewards: number;
 }
 
 interface QuestCardProps {
@@ -59,6 +73,12 @@ const QuestCard = ({
 }: QuestCardProps) => {
   const { sounds } = useSoundEffects();
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Fetch loot box configs for images and metadata
+  const { data: lootBoxConfigs, isLoading: isLoadingLootBoxes } = useQuery({
+    queryKey: ['/api/admin/lootboxes'],
+    refetchOnWindowFocus: false,
+  });
   
   // Truncate description for card view
   const maxLength = 100;
