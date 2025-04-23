@@ -1293,6 +1293,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Admin route to clear loot crates from inventory
+  app.post('/api/admin/inventory/clear-loot-crates', authenticate, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (!user) return res.status(401).json({ message: "User not found" });
+      
+      // Check if user has admin role
+      const isAdmin = user.roles?.includes('admin');
+      if (!isAdmin) return res.status(403).json({ message: "Admin privileges required" });
+      
+      // Get current user's loot boxes
+      const lootBoxes = await storage.getLootBoxes(user.id);
+      
+      // Delete each loot box
+      for (const lootBox of lootBoxes) {
+        // We don't need to update inventory since loot boxes aren't stored there
+        // Just mark them as deleted in the database by setting opened=true
+        await storage.updateLootBox(lootBox.id, { opened: true });
+      }
+      
+      return res.json({ 
+        message: `Cleared ${lootBoxes.length} loot crates from your inventory`,
+        cleared: lootBoxes.length
+      });
+    } catch (error) {
+      console.error('Error clearing loot crates:', error);
+      return res.status(500).json({ message: "Failed to clear loot crates" });
+    }
+  });
+  
   app.post('/api/loot-boxes/:lootBoxId/open', authenticate, async (req, res) => {
     try {
       const lootBoxId = parseInt(req.params.lootBoxId);
