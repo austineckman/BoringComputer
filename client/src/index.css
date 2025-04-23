@@ -54,6 +54,23 @@
   animation: scaleIn 0.8s ease-out forwards;
 }
 
+@keyframes ping-slow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.8;
+  }
+}
+
+.animate-ping-slow {
+  animation: ping-slow 2s ease-in-out infinite;
+}
+
+/* This is the main shine animation we'll use */
+
 :root {
   --background: 220 31% 4%;
   --foreground: 0 0% 94%;

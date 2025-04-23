@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getLootCrateImage, getResourceDisplay } from '@/lib/resourceImages';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import LootCrateOpenDialog from '@/components/inventory/LootCrateOpenDialog';
+import { LootBoxModal } from '@/components/lootbox/LootBoxModal';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { DraggableInventoryItem, DraggableEmptySlot } from '@/components/inventory/DraggableInventoryItem';
@@ -743,7 +744,28 @@ export default function Inventory() {
           </DialogContent>
         </Dialog>
         
-        {/* We now navigate to the loot-box-preview page instead of showing a confirmation dialog */}
+        {/* New secure modal-based loot box preview and opening */}
+        <LootBoxModal
+          isOpen={isConfirmDialogOpen}
+          onClose={() => setIsConfirmDialogOpen(false)}
+          lootBoxId={currentLootBox?.id || null}
+          onLootBoxOpened={() => {
+            // After a successful loot box opening:
+            setIsConfirmDialogOpen(false);
+            
+            // Refresh all relevant data
+            queryClient.invalidateQueries({ queryKey: ['/api/loot-boxes'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/inventory/history'] });
+            
+            // Play success sound
+            try {
+              sounds.questComplete();
+            } catch (e) {
+              console.warn('Could not play sound', e);
+            }
+          }}
+        />
       </div>
   );
 }
