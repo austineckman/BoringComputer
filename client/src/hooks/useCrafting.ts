@@ -34,9 +34,12 @@ export function useCrafting() {
   const [highlightedCells, setHighlightedCells] = useState<CellPos[]>([]);
   const [canCraft, setCanCraft] = useState(false);
   
-  // Fetch recipes from API
+  // Fetch recipes from API with shorter stale time to refresh more frequently
   const { data: recipes = [], isLoading: isRecipesLoading } = useQuery<Recipe[]>({
     queryKey: ['/api/crafting/recipes'],
+    staleTime: 10000, // 10 seconds (much shorter than default)
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
   
   // Fetch user's inventory from API

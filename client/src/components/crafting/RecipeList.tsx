@@ -4,10 +4,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, RefreshCw } from 'lucide-react';
 import { Recipe } from '@/../../shared/types';
 import { getItemDetails } from '@/lib/itemDatabase';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
+import { queryClient } from '@/lib/queryClient';
 import InventoryItem from './InventoryItem';
 import DndProvider from './DndProvider';
 
@@ -31,6 +32,17 @@ const RecipeList: React.FC<RecipeListProps> = ({
   const { sounds } = useSoundEffects();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Function to manually refresh recipes
+  const refreshRecipes = () => {
+    setIsRefreshing(true);
+    sounds.click();
+    // Invalidate the recipes query to force a refetch
+    queryClient.invalidateQueries({ queryKey: ['/api/crafting/recipes'] });
+    // Reset refreshing state after a delay for visual feedback
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
   
   // Get unique categories from recipes
   const uniqueCategories = Array.from(new Set(recipes.map(recipe => recipe.category || 'uncategorized')));
@@ -152,8 +164,17 @@ const RecipeList: React.FC<RecipeListProps> = ({
   
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-xl">Available Recipes</CardTitle>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={refreshRecipes}
+          className={`${isRefreshing ? 'animate-spin' : ''}`}
+          title="Refresh recipes"
+        >
+          <RefreshCw className="h-4 w-4" />
+        </Button>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
