@@ -22,14 +22,14 @@ import {
 import { db } from "./db";
 import { eq, and, desc, count, sql } from "drizzle-orm";
 
-import * as session from "express-session";
+import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import createMemoryStore from "memorystore";
 
 export interface IStorage {
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
   
   // User methods
   getUser(id: number): Promise<User | undefined>;
@@ -155,7 +155,7 @@ export interface IStorage {
 
 // Memory storage implementation
 export class MemStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
   
   private users: Map<number, User>;
   private quests: Map<number, Quest>;
@@ -1612,6 +1612,15 @@ export class DatabaseStorage implements IStorage {
   async deleteQuestComponentsByQuestId(questId: number): Promise<boolean> {
     const result = await db.delete(questComponents).where(eq(questComponents.questId, questId));
     return true;
+  }
+  // Constructor for DatabaseStorage
+  constructor() {
+    const PostgresStore = connectPg(session);
+    this.sessionStore = new PostgresStore({
+      pool,
+      tableName: 'sessions',
+      createTableIfMissing: true
+    });
   }
 }
 
