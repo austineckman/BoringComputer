@@ -48,7 +48,7 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
           <img 
             src={goldBagIcon} 
             alt="Inventory Bag" 
-            className="w-5 h-5 mr-2 object-contain pixelated"
+            className="w-20 h-20 mr-2 object-contain pixelated"
             style={{ imageRendering: 'pixelated' }}
           />
           Inventory
