@@ -53,7 +53,7 @@ export function DraggableEmptySlot({ index, moveItem }: EmptySlotProps) {
       className="w-full h-full rounded-md pixel-empty-slot"
     >
       <div className="w-full h-full flex items-center justify-center">
-        <div className="text-space-light/30 text-lg">+</div>
+        {/* Empty slot - no + sign */}
       </div>
       {isOver && canDrop && (
         <div className="absolute inset-0 bg-brand-orange/20 border-2 border-brand-orange/40 rounded-md z-10"></div>
