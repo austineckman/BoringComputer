@@ -245,13 +245,23 @@ const AdminKits = () => {
 
   const addComponentMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      return fetch(`/api/admin/kits/${selectedKit?.id}/components`, {
+      console.log("Submitting component to kit:", selectedKit?.id);
+      const response = await fetch(`/api/admin/kits/${selectedKit?.id}/components`, {
         method: 'POST',
         body: data,
         credentials: 'include',
-      }).then(res => res.json());
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error adding component:", errorData);
+        throw new Error(errorData.message || "Failed to add component");
+      }
+      
+      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Component added successfully:", data);
       if (selectedKit) {
         queryClient.invalidateQueries({ queryKey: ['/api/admin/kits', selectedKit.id, 'components'] });
       }
@@ -275,13 +285,23 @@ const AdminKits = () => {
 
   const updateComponentMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      return fetch(`/api/admin/components/${selectedComponent?.id}`, {
+      console.log("Updating component with ID:", selectedComponent?.id);
+      const response = await fetch(`/api/admin/components/${selectedComponent?.id}`, {
         method: 'PUT',
         body: data,
         credentials: 'include',
-      }).then(res => res.json());
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error updating component:", errorData);
+        throw new Error(errorData.message || "Failed to update component");
+      }
+      
+      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Component updated successfully:", data);
       if (selectedKit) {
         queryClient.invalidateQueries({ queryKey: ['/api/admin/kits', selectedKit.id, 'components'] });
       }
@@ -306,12 +326,22 @@ const AdminKits = () => {
 
   const deleteComponentMutation = useMutation({
     mutationFn: async (componentId: number) => {
-      return fetch(`/api/admin/components/${componentId}`, {
+      console.log("Deleting component with ID:", componentId);
+      const response = await fetch(`/api/admin/components/${componentId}`, {
         method: 'DELETE',
         credentials: 'include',
-      }).then(res => res.json());
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error deleting component:", errorData);
+        throw new Error(errorData.message || "Failed to delete component");
+      }
+      
+      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Component deleted successfully:", data);
       if (selectedKit) {
         queryClient.invalidateQueries({ queryKey: ['/api/admin/kits', selectedKit.id, 'components'] });
       }
