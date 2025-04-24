@@ -336,13 +336,7 @@ export default function QuestDetailPage() {
                       </Button>
                     </div>
                   ) : (
-                    <Button 
-                      variant="outline" 
-                      onClick={handleStartEdit}
-                      onMouseEnter={() => sounds.hover?.()}
-                    >
-                      <Edit className="h-4 w-4 mr-1" /> Edit Quest
-                    </Button>
+                    <></>
                   )}
                 </div>
               )}
