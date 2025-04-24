@@ -3,6 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { Recipe } from '@/../../shared/types';
 import { queryClient } from '@/lib/queryClient';
 import { useSoundEffects } from './useSoundEffects';
+import { useToast } from '@/hooks/use-toast';
 
 // Cell position interface
 interface CellPos {
@@ -12,6 +13,7 @@ interface CellPos {
 
 export function useCrafting() {
   const { sounds } = useSoundEffects();
+  const { toast } = useToast();
   
   // Initialize grid from localStorage or create a new empty 3x3 grid
   const [grid, setGrid] = useState<string[][]>(() => {
@@ -94,11 +96,68 @@ export function useCrafting() {
       
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Clear grid after successful crafting
       resetGrid();
-      // Invalidate inventory to update counts
+      
+      // Update inventory data immediately without requiring a refresh
+      const currentInventoryData = queryClient.getQueryData<any[]>(['/api/inventory']);
+      
+      if (currentInventoryData) {
+        console.log('Before inventory update:', currentInventoryData);
+        
+        // Find and update the crafted item in the inventory
+        const updatedInventory = [...currentInventoryData];
+        const resultItemId = String(data.resultItem);
+        const resultQuantity = data.resultQuantity || 1;
+        
+        // Find the item in inventory or add it if it doesn't exist
+        const existingItemIndex = updatedInventory.findIndex(item => item.type === resultItemId);
+        
+        if (existingItemIndex >= 0) {
+          // Update existing item quantity
+          updatedInventory[existingItemIndex] = {
+            ...updatedInventory[existingItemIndex],
+            quantity: updatedInventory[existingItemIndex].quantity + resultQuantity
+          };
+        } else {
+          // Add new item to inventory
+          updatedInventory.push({
+            id: resultItemId,
+            type: resultItemId,
+            quantity: resultQuantity
+          });
+        }
+        
+        // Update materials quantities (decrease used materials)
+        if (selectedRecipe && selectedRecipe.requiredItems) {
+          for (const [itemId, quantity] of Object.entries(selectedRecipe.requiredItems)) {
+            const materialIndex = updatedInventory.findIndex(item => item.type === itemId);
+            if (materialIndex >= 0) {
+              updatedInventory[materialIndex] = {
+                ...updatedInventory[materialIndex],
+                quantity: updatedInventory[materialIndex].quantity - quantity
+              };
+            }
+          }
+        }
+        
+        console.log('After inventory update:', updatedInventory);
+        
+        // Update the query cache with the new inventory
+        queryClient.setQueryData(['/api/inventory'], updatedInventory);
+      }
+      
+      // Also invalidate the query to refetch in the background
       queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+      
+      // Show a notification about the crafted item
+      toast({
+        title: "Item Crafted!",
+        description: `You crafted ${data.resultQuantity} ${selectedRecipe?.name || 'item'}`,
+        variant: "success",
+      });
+      
       // Play success sound
       sounds.craftComplete();
     },
