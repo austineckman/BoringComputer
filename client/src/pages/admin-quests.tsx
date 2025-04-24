@@ -353,6 +353,7 @@ const AdminQuests: React.FC = () => {
     defaultValues: {
       title: '',
       description: '',
+      missionBrief: '',
       date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
       adventureLine: '30 Days Lost in Space',
       difficulty: 1,
@@ -469,6 +470,7 @@ const AdminQuests: React.FC = () => {
     form.reset({
       title: '',
       description: '',
+      missionBrief: '',
       date: new Date().toISOString().split('T')[0],
       adventureLine: '30 Days Lost in Space',
       difficulty: 1,
@@ -501,6 +503,7 @@ const AdminQuests: React.FC = () => {
     form.reset({
       title: quest.title,
       description: quest.description,
+      missionBrief: quest.missionBrief || '',
       date: quest.date,
       adventureLine: validAdventureLine as any, // Cast to any to prevent TS error during transition
       difficulty: quest.difficulty,
