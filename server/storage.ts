@@ -1522,19 +1522,21 @@ export class DatabaseStorage implements IStorage {
 
   async getQuestComponentsWithDetails(questId: number): Promise<any[]> {
     try {
-      // Using SQL for this complex join
-      const { sql } = db.dialect;
-      const result = await db.execute(sql`
-        SELECT qc.*, kc.name, kc.description, kc.image_path as "imagePath", 
+      // Using raw SQL with pg.query for this complex join
+      const query = `
+        SELECT qc.id, qc.quest_id as "questId", qc.component_id as "componentId", 
+               qc.quantity, qc.is_optional as "isOptional", 
+               kc.name, kc.description, kc.image_path as "imagePath", 
                kc.part_number as "partNumber", ck.name as "kitName"
         FROM quest_components qc
         JOIN kit_components kc ON qc.component_id = kc.id
         JOIN component_kits ck ON kc.kit_id = ck.id
-        WHERE qc.quest_id = ${questId}
+        WHERE qc.quest_id = $1
         ORDER BY qc.is_optional ASC, kc.name ASC
-      `);
+      `;
       
-      return result as any[];
+      const result = await pool.query(query, [questId]);
+      return result.rows;
     } catch (error) {
       console.error("Error fetching quest components with details:", error);
       return [];
