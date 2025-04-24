@@ -297,7 +297,22 @@ const AdminQuests: React.FC = () => {
   // Update quest mutation
   const updateQuestMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      return await apiRequest('PUT', `/api/admin/quests/${id}`, data);
+      // Add logging before sending the request
+      console.log("Sending update with components:", data.components);
+      
+      // Create a deep copy of the data to ensure we don't modify the original
+      const dataToSend = JSON.parse(JSON.stringify(data));
+      
+      // Ensure components are properly structured for the API
+      if (dataToSend.components) {
+        dataToSend.components = dataToSend.components.map((component: any) => ({
+          id: component.id,
+          required: component.required,
+          quantity: component.quantity || 1
+        }));
+      }
+      
+      return await apiRequest('PUT', `/api/admin/quests/${id}`, dataToSend);
     },
     onSuccess: (data, variables) => {
       toast({
@@ -315,6 +330,7 @@ const AdminQuests: React.FC = () => {
       handleCloseDialog();
     },
     onError: (error: any) => {
+      console.error("Failed to update quest:", error);
       toast({
         title: 'Error',
         description: error?.message || 'Failed to update quest',
@@ -892,7 +908,33 @@ const AdminQuests: React.FC = () => {
                               <FormLabel>Required Component Kit</FormLabel>
                               <FormControl>
                                 <Select
-                                  onValueChange={field.onChange}
+                                  onValueChange={(value) => {
+                                    console.log("Kit changed to:", value);
+                                    
+                                    // Set the form field value
+                                    field.onChange(value);
+                                    
+                                    // Reset components when changing kits
+                                    if (value === "none") {
+                                      setQuestComponents([]);
+                                      return;
+                                    }
+                                    
+                                    // Find the selected kit
+                                    const kit = componentKits.find((k: any) => k.id === value);
+                                    if (kit && kit.components) {
+                                      // Initialize component state with default values
+                                      const initialComponents = kit.components.map((component: any) => ({
+                                        id: component.id,
+                                        name: component.name,
+                                        quantity: component.quantity || 1,
+                                        required: component.isRequired === true // Set default to true if isRequired is true
+                                      }));
+                                      
+                                      console.log("Setting initial components:", initialComponents);
+                                      setQuestComponents(initialComponents);
+                                    }
+                                  }}
                                   defaultValue={field.value}
                                 >
                                   <SelectTrigger className="w-full">
@@ -926,14 +968,25 @@ const AdminQuests: React.FC = () => {
                             const selectedKit = componentKits.find((kit: ComponentKit) => kit.id === form.watch('kitId'));
                             if (selectedKit) {
                               // Initialize questComponents state if it's not already set
-                              const initialQuestComponents = selectedKit.components?.map(component => ({
-                                id: component.id,
-                                name: component.name,
-                                required: component.isRequired,
-                                quantity: component.quantity
-                              })) || [];
-                              
-                              if (!questComponents || questComponents.length === 0) {
+                              // We'll let the kit selection handler manage this instead
+                              // Only initialize if we haven't set components yet and we're in edit mode
+                              if ((!questComponents || questComponents.length === 0) && editingQuest) {
+                                console.log("Setting components from editingQuest:", editingQuest.components);
+                                
+                                const initialQuestComponents = selectedKit.components?.map(component => {
+                                  // Find if this component exists in the quest.components array
+                                  const savedComponent = editingQuest.components?.find((c: any) => c.id === component.id);
+                                  
+                                  return {
+                                    id: component.id,
+                                    name: component.name,
+                                    quantity: component.quantity || 1,
+                                    // If a saved component exists, use its required value, otherwise use the default
+                                    required: savedComponent ? savedComponent.required : component.isRequired
+                                  };
+                                }) || [];
+                                
+                                console.log("Initializing components for edit:", initialQuestComponents);
                                 setQuestComponents(initialQuestComponents);
                               }
                               
