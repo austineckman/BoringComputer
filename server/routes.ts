@@ -18,6 +18,7 @@ import characterRoutes from './routes/character';
 import adminUploadRoutes from './routes/admin/upload';
 import adminKitsRoutes from './routes/admin-kits';
 import { authenticate } from './auth';
+import { componentKits } from '@shared/schema';
 
 // Legacy authentication middleware (now deprecated in favor of the one in auth.ts)
 const legacyAuthenticate = async (req: Request, res: Response, next: Function) => {
@@ -1630,6 +1631,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Character equipment routes
   app.use('/api/character', authenticate, characterRoutes);
+  
+  // Public component kits endpoint - available to all users without authentication
+  app.get('/api/kits', async (req, res) => {
+    try {
+      const allKits = await db.select().from(componentKits);
+      res.json(allKits);
+    } catch (error) {
+      console.error('Error fetching component kits:', error);
+      res.status(500).json({ message: 'Failed to fetch component kits' });
+    }
+  });
 
   // Admin routes
   app.use('/api/admin', authenticate, adminRoutes);
