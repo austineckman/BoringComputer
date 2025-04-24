@@ -16,6 +16,7 @@ import { themeConfig } from "@/lib/themeConfig";
 import currentQuestBanner from "../assets/current_quest_banner.png";
 import inventoryBanner from "../assets/inventory_banner.png";
 import forgeBanner from "../assets/forgehero.png";
+import goldBagIcon from "../assets/506_Gold_Bag_Leather_B.png";
 
 const Home = () => {
   const { user } = useAuth();
