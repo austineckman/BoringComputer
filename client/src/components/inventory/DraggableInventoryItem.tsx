@@ -164,15 +164,14 @@ export function DraggableInventoryItem({
     >
       <div className="flex items-center justify-center h-full relative">
         {item.isLootBox ? (
-          <div className="flex items-center justify-center">
-            <div className="p-3 rounded-lg border-2 border-blue-600">
-              <img 
-                src={item.lootBoxData?.image || "/images/loot-crate.png"} 
-                alt={item.lootBoxData?.name || "Loot Crate"}
-                className="w-24 h-24 object-contain" 
-                title={item.lootBoxData?.name || "Loot Crate"}
-              />
-            </div>
+          <div className="w-full h-full flex items-center justify-center rounded-md overflow-hidden">
+            <img 
+              src={item.lootBoxData?.image || "/images/loot-crate.png"} 
+              alt={item.lootBoxData?.name || "Loot Crate"}
+              className="w-[64px] h-[64px] pixelated transform scale-[2] origin-center" 
+              title={item.lootBoxData?.name || "Loot Crate"}
+              style={{ imageRendering: 'pixelated' }}
+            />
           </div>
         ) : (
           <div className="pixel-scale-4 relative">

@@ -399,31 +399,6 @@ body {
   animation: legendary-pulse 1.5s infinite;
 }
 
-/* Special styling for loot box images */
-.loot-box-image {
-  image-rendering: pixelated;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: crisp-edges;
-  width: 64px; 
-  height: 64px;
-  object-fit: contain;
-  object-position: center;
-  display: block;
-  transform: scale(1.5);
-  margin: 10px;
-}
-
-/* Loot box container styling */
-.loot-box-container {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  position: relative;
-}
-
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 10px;
