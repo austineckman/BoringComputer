@@ -74,13 +74,13 @@ const QuestCard = ({
   const { sounds } = useSoundEffects();
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Fetch loot box configs for images and metadata
+  // Fetch loot box configs for images and metadata - using the non-admin public endpoint
   const { data: lootBoxConfigs, isLoading: isLoadingLootBoxes } = useQuery({
     queryKey: ['/api/loot-boxes'],
     refetchOnWindowFocus: false,
   });
   
-  // Fetch item database for resource item details - use the public API endpoint
+  // Fetch item database for resource item details - using the non-admin public endpoint
   const { data: itemsData, isLoading: isLoadingItems } = useQuery({
     queryKey: ['/api/items'],
     refetchOnWindowFocus: false,
