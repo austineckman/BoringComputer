@@ -1238,13 +1238,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         xpReward: z.number().positive(),
         rewards: z.array(z.object({
           type: z.string(),
+          id: z.string(),
           quantity: z.number().positive()
         })),
-        active: z.boolean().optional()
+        active: z.boolean().optional(),
+        components: z.array(z.object({
+          id: z.number(),
+          required: z.boolean(),
+          quantity: z.number().positive().default(1)
+        })).optional(),
+        content: z.object({
+          videos: z.array(z.string()).optional(),
+          images: z.array(z.string()).optional(),
+          codeBlocks: z.array(z.object({
+            language: z.string(),
+            code: z.string()
+          })).optional()
+        }).optional()
       });
       
       const validatedData = schema.parse(questData);
+      
+      // Create the quest first
       const quest = await storage.createQuest(validatedData);
+      
+      // Add components if provided
+      if (questData.components && questData.components.length > 0) {
+        console.log(`Adding ${questData.components.length} components to quest ${quest.id}`);
+        
+        for (const component of questData.components) {
+          await storage.createQuestComponent({
+            questId: quest.id,
+            componentId: component.id,
+            quantity: component.quantity || 1,
+            isOptional: !component.required
+          });
+        }
+      }
       
       // Get all users
       const users = Array.from(await storage.getUsers());
