@@ -564,7 +564,12 @@ const AdminQuests: React.FC = () => {
               id: kitComponent.id,
               name: kitComponent.name,
               quantity: kitComponent.quantity,
-              // Explicitly handle null value for "not used" components
+              // Use the new status field if available, otherwise derive from required
+              status: savedComponent?.status || 
+                     (savedComponent?.required === true ? "required" : 
+                      savedComponent?.required === false ? "optional" : 
+                      kitComponent.isRequired ? "required" : "optional"),
+              // Keep required for backward compatibility
               required: savedComponent ? savedComponent.required : kitComponent.isRequired
             };
           });
@@ -1006,7 +1011,7 @@ const AdminQuests: React.FC = () => {
                                               <p className="text-xs text-muted-foreground">Quantity: {component.quantity}x</p>
                                             </div>
                                             <Select
-                                              value={component.required === true ? "required" : component.required === false ? "optional" : "not-used"}
+                                              value={component.status || (component.required === true ? "required" : component.required === false ? "optional" : "not-used")}
                                               onValueChange={(value) => {
                                                 // Log the selection change
                                                 console.log(`Changing component ${component.id} to ${value}`);
@@ -1014,6 +1019,8 @@ const AdminQuests: React.FC = () => {
                                                 const updatedComponents = [...questComponents];
                                                 updatedComponents[index] = {
                                                   ...updatedComponents[index],
+                                                  status: value,
+                                                  // Keep required for backward compatibility
                                                   required: value === "required" ? true : value === "optional" ? false : null
                                                 };
                                                 
