@@ -96,7 +96,7 @@ const AdminLootBoxesPage: React.FC = () => {
   // Create mutation
   const createMutation = useMutation({
     mutationFn: (data: LootBoxConfig) => 
-      apiRequest('POST', '/api/admin/lootboxes', data),
+      apiRequest('/api/admin/lootboxes', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/lootboxes'] });
       toast({ title: "Success", description: "Loot box configuration created successfully" });
@@ -116,7 +116,7 @@ const AdminLootBoxesPage: React.FC = () => {
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: (data: LootBoxConfig) => 
-      apiRequest('PUT', `/api/admin/lootboxes/${data.id}`, data),
+      apiRequest(`/api/admin/lootboxes/${data.id}`, 'PUT', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/lootboxes'] });
       toast({ title: "Success", description: "Loot box configuration updated successfully" });
@@ -136,7 +136,7 @@ const AdminLootBoxesPage: React.FC = () => {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: (id: string) => 
-      apiRequest('DELETE', `/api/admin/lootboxes/${id}`),
+      apiRequest(`/api/admin/lootboxes/${id}`, 'DELETE'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/lootboxes'] });
       toast({ title: "Success", description: "Loot box configuration deleted successfully" });
@@ -154,7 +154,7 @@ const AdminLootBoxesPage: React.FC = () => {
   
   // Reset inventory to 1 of each item mutation
   const resetInventoryMutation = useMutation({
-    mutationFn: () => apiRequest('POST', '/api/admin/inventory/reset-to-one'),
+    mutationFn: () => apiRequest('/api/admin/inventory/reset-to-one', 'POST'),
     onSuccess: (data) => {
       toast({ 
         title: "Success", 
@@ -172,7 +172,7 @@ const AdminLootBoxesPage: React.FC = () => {
   
   // Generate test loot crates mutation
   const generateTestCratesMutation = useMutation({
-    mutationFn: () => apiRequest('POST', '/api/loot-boxes/generate-test'),
+    mutationFn: () => apiRequest('/api/loot-boxes/generate-test', 'POST'),
     onSuccess: (data) => {
       toast({ 
         title: "Success", 
@@ -350,35 +350,8 @@ const AdminLootBoxesPage: React.FC = () => {
     }
   };
 
-  // Header buttons for admin utility actions
-  const headerButtons = (
-    <>
-      <Button 
-        variant="outline" 
-        size="sm"
-        onClick={() => generateTestCratesMutation.mutate()}
-        disabled={generateTestCratesMutation.isPending}
-        className="flex items-center gap-1 bg-gray-100"
-      >
-        <Package className="h-4 w-4 mr-1" />
-        {generateTestCratesMutation.isPending ? "Generating..." : "Gen Test Crates"}
-      </Button>
-      
-      <Button 
-        variant="outline" 
-        size="sm"
-        onClick={() => resetInventoryMutation.mutate()}
-        disabled={resetInventoryMutation.isPending}
-        className="border-amber-500 hover:bg-amber-500/10 flex items-center gap-1 bg-gray-100"
-      >
-        <ListPlus className="h-4 w-4 mr-1" />
-        {resetInventoryMutation.isPending ? "Resetting..." : "Reset Inventory"}
-      </Button>
-    </>
-  );
-
   return (
-    <AdminLayout headerButtons={headerButtons}>
+    <AdminLayout>
       <div className="container mx-auto py-6">
         <h1 className="text-3xl font-bold mb-6">Loot Box Configuration</h1>
         
@@ -396,6 +369,26 @@ const AdminLootBoxesPage: React.FC = () => {
                 <h2 className="text-2xl font-semibold">Available Loot Box Configurations</h2>
                 <Button onClick={() => setSelectedTab("create")}>
                   <Plus className="mr-2 h-4 w-4" /> Create New
+                </Button>
+              </div>
+              
+              {/* Admin utility buttons */}
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => generateTestCratesMutation.mutate()}
+                  disabled={generateTestCratesMutation.isPending}
+                >
+                  {generateTestCratesMutation.isPending ? "Generating..." : "Generate Test Loot Crates"}
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  onClick={() => resetInventoryMutation.mutate()}
+                  disabled={resetInventoryMutation.isPending}
+                  className="border-amber-500 hover:bg-amber-500/10"
+                >
+                  {resetInventoryMutation.isPending ? "Resetting..." : "Reset Inventory to 1 of Each Item"}
                 </Button>
               </div>
             </div>
