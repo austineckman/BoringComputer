@@ -22,7 +22,15 @@ import {
 import { db } from "./db";
 import { eq, and, desc, count, sql } from "drizzle-orm";
 
+import * as session from "express-session";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
+import createMemoryStore from "memorystore";
+
 export interface IStorage {
+  // Session store
+  sessionStore: session.SessionStore;
+  
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUsers(): Promise<User[]>;
@@ -147,6 +155,8 @@ export interface IStorage {
 
 // Memory storage implementation
 export class MemStorage implements IStorage {
+  sessionStore: session.SessionStore;
+  
   private users: Map<number, User>;
   private quests: Map<number, Quest>;
   private userQuests: Map<number, UserQuest>;
