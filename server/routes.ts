@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import express from 'express';
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
 import { z } from "zod";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
@@ -1299,6 +1300,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userQuests = await storage.getUserQuests(user.id);
       const userQuest = userQuests.find(uq => uq.questId === questId);
       
+      // Fetch any required components for this quest
+      let components = [];
+      try {
+        // Using raw query since we don't have a specific storage method yet
+        const result = await db.query(`
+          SELECT qc.*, kc.name, kc.description, kc.image_path as imagePath, kc.part_number as partNumber, ck.name as kitName
+          FROM quest_components qc
+          JOIN kit_components kc ON qc.component_id = kc.id
+          JOIN component_kits ck ON kc.kit_id = ck.id
+          WHERE qc.quest_id = $1
+          ORDER BY qc.is_optional ASC, kc.name ASC
+        `, [questId]);
+        
+        if (result.rows && result.rows.length > 0) {
+          components = result.rows;
+        }
+      } catch (err) {
+        console.error("Error fetching quest components:", err);
+        // Continue even if component fetch fails
+      }
+      
       // Format response with additional content details
       const response = {
         id: quest.id.toString(),
@@ -1318,7 +1340,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lootBoxRewards: [
           { type: 'common', quantity: 1 },
           { type: quest.difficulty > 3 ? 'rare' : 'uncommon', quantity: 1 }
-        ]
+        ],
+        // Add component requirements to the response
+        componentRequirements: components
       };
       
       return res.json(response);
