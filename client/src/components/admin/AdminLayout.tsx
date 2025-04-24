@@ -18,6 +18,7 @@ import {
   Hammer,
   ArrowLeftCircle,
   Layout,
+  Grid,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -58,6 +59,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { name: 'Recipes', href: '/admin-recipes', icon: <Hammer className="h-5 w-5" /> },
     { name: 'Quests', href: '/admin-quests', icon: <ScrollText className="h-5 w-5" /> },
     { name: 'Loot Boxes', href: '/admin-lootboxes', icon: <ListPlus className="h-5 w-5" /> },
+    { name: 'Component Kits', href: '/admin-kits', icon: <Grid className="h-5 w-5" /> },
     { name: 'Users', href: '/admin-users', icon: <Users className="h-5 w-5" /> },
     { name: 'Stats', href: '/admin-stats', icon: <BarChart2 className="h-5 w-5" /> },
     { name: 'Settings', href: '/admin-settings', icon: <Settings className="h-5 w-5" /> },

@@ -17,6 +17,7 @@ import AdminQuests from "@/pages/admin-quests";
 import AdminLootboxes from "@/pages/admin-lootboxes";
 import AdminSimple from "@/pages/admin-simple";
 import AdminBasic from "@/pages/admin-basic";
+import AdminKits from "@/pages/admin-kits";
 import LootBoxPreview from "@/pages/loot-box-preview";
 import NotFound from "@/pages/not-found";
 import MainLayout from "@/components/layout/MainLayout";
@@ -173,6 +174,10 @@ function App() {
         
         <AdminRoute path="/admin-simple">
           <AdminSimple />
+        </AdminRoute>
+        
+        <AdminRoute path="/admin-kits">
+          <AdminKits />
         </AdminRoute>
         
         <ProtectedRoute path="/settings">
