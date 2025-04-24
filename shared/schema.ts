@@ -440,7 +440,8 @@ export const insertComponentKitSchema = createInsertSchema(componentKits).pick({
   difficulty: true,
 });
 
-export const insertKitComponentSchema = createInsertSchema(kitComponents).pick({
+// Create a base schema that will be modified to handle type conversions
+const baseKitComponentSchema = createInsertSchema(kitComponents).pick({
   kitId: true,
   name: true,
   description: true,
@@ -449,6 +450,21 @@ export const insertKitComponentSchema = createInsertSchema(kitComponents).pick({
   isRequired: true,
   quantity: true,
   category: true,
+});
+
+// Enhanced schema with type coercion
+export const insertKitComponentSchema = baseKitComponentSchema.extend({
+  isRequired: z.union([
+    z.boolean(),
+    z.string().transform(val => val === 'true')
+  ]),
+  quantity: z.union([
+    z.number(),
+    z.string().transform(val => parseInt(val, 10))
+  ]),
+  partNumber: z.union([z.string(), z.null()]).optional(),
+  imagePath: z.string().optional(),
+  category: z.string().default('hardware'),
 });
 
 export const insertQuestComponentSchema = createInsertSchema(questComponents).pick({
