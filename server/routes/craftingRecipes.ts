@@ -173,13 +173,21 @@ export const craftItem = async (req: Request, res: Response) => {
       });
     }
 
-    // Add result item to inventory
-    updatedInventory[recipe.resultItem] = (updatedInventory[recipe.resultItem] || 0) + recipe.resultQuantity;
+    // Add result item to inventory, making sure to use the correct item ID
+    const resultItemId = recipe.resultItem;
+    console.log(`Adding crafted item to inventory: ${resultItemId} (${recipe.resultQuantity})`);
+    console.log('Current inventory:', JSON.stringify(updatedInventory));
+    
+    // Make sure the item ID is properly stored as a string
+    const stringResultItemId = String(resultItemId);
+    updatedInventory[stringResultItemId] = (updatedInventory[stringResultItemId] || 0) + recipe.resultQuantity;
+    
+    console.log('Updated inventory:', JSON.stringify(updatedInventory));
     
     // Log inventory history for crafted item
     await storage.createInventoryHistory({
       userId: user.id,
-      type: recipe.resultItem,
+      type: stringResultItemId,
       quantity: recipe.resultQuantity,
       action: 'gained',
       source: 'crafting'
