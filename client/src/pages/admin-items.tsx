@@ -499,7 +499,8 @@ const AdminItems: React.FC = () => {
                             `/uploads/items/${item.imagePath}`
                         }
                         alt={item.name}
-                        className="absolute inset-0 h-full w-full object-cover object-center"
+                        className="absolute inset-0 h-full w-full object-contain object-center pixelated"
+                        style={{ imageRendering: 'pixelated' }}
                         loading="eager"
                         onError={(e) => {
                           // Fallback for broken images - hide the image instead of showing placeholder
@@ -890,7 +891,8 @@ const AdminItems: React.FC = () => {
                           '/images/item-placeholder.png'
                         }
                         alt={currentItem.name}
-                        className="absolute inset-0 h-24 w-auto rounded object-cover"
+                        className="absolute inset-0 h-24 w-auto rounded object-contain pixelated"
+                        style={{ imageRendering: 'pixelated' }}
                         loading="eager"
                         onError={(e) => {
                           // Hide broken images
@@ -968,7 +970,8 @@ const AdminItems: React.FC = () => {
                           '/images/item-placeholder.png'
                         }
                         alt={currentItem.name}
-                        className="absolute inset-0 h-full w-full object-cover"
+                        className="absolute inset-0 h-full w-full object-contain pixelated"
+                        style={{ imageRendering: 'pixelated' }}
                         loading="eager"
                         onError={(e) => {
                           // Hide broken images
