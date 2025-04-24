@@ -948,12 +948,12 @@ const AdminQuests: React.FC = () => {
                                               <p className="text-xs text-muted-foreground">Quantity: {component.quantity}x</p>
                                             </div>
                                             <Select
-                                              value={component.required ? "required" : "optional"}
+                                              value={component.required === true ? "required" : component.required === false ? "optional" : "not-used"}
                                               onValueChange={(value) => {
                                                 const updatedComponents = [...questComponents];
                                                 updatedComponents[index] = {
                                                   ...updatedComponents[index],
-                                                  required: value === "required"
+                                                  required: value === "required" ? true : value === "optional" ? false : null
                                                 };
                                                 setQuestComponents(updatedComponents);
                                               }}
@@ -964,6 +964,7 @@ const AdminQuests: React.FC = () => {
                                               <SelectContent>
                                                 <SelectItem value="required">Required</SelectItem>
                                                 <SelectItem value="optional">Optional</SelectItem>
+                                                <SelectItem value="not-used">Not Used</SelectItem>
                                               </SelectContent>
                                             </Select>
                                           </div>
