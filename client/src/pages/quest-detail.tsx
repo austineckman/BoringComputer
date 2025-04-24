@@ -679,17 +679,20 @@ export default function QuestDetailPage() {
                   <div className="prose dark:prose-invert max-w-none mb-6">
                     {/* Flavor text - italicized and lighter color */}
                     {quest.description && (
-                      <p className="text-gray-300 italic mb-4">{quest.description}</p>
+                      <p className="text-gray-300 italic mb-6 text-sm md:text-base leading-relaxed">{quest.description}</p>
                     )}
                     
-                    {/* Mission brief - normal text, more prominent */}
+                    {/* Mission brief - normal text, more prominent with added styling */}
                     {quest.missionBrief && (
-                      <p className="text-white">{quest.missionBrief}</p>
+                      <div className="mb-4">
+                        <h4 className="text-brand-orange text-sm mb-2 uppercase tracking-wider font-semibold">Mission Objectives</h4>
+                        <p className="text-white font-medium">{quest.missionBrief}</p>
+                      </div>
                     )}
 
-                    {/* If no mission brief is available, use the description as the main content */}
+                    {/* If no mission brief or description is available, show a fallback message */}
                     {!quest.missionBrief && !quest.description && (
-                      <p className="text-white">{quest.description}</p>
+                      <p className="text-white">No mission details available.</p>
                     )}
                   </div>
                   
