@@ -212,7 +212,17 @@ const Home = () => {
           ) : (
             <div>
               <div className="flex flex-col items-center mb-4 bg-space-dark rounded-lg p-3">
-                <p className="text-brand-light mb-2 text-center">You have <span className="font-bold text-brand-orange">{inventory.length}</span> items in your inventory</p>
+                <p className="text-brand-light mb-2 text-center">
+                  <span className="inline-flex items-center">
+                    <img 
+                      src="/assets/506_Gold_Bag_Leather_B.png" 
+                      alt="Inventory Bag" 
+                      className="w-5 h-5 mr-2 object-contain pixelated"
+                      style={{ imageRendering: 'pixelated' }}
+                    />
+                    You have <span className="font-bold text-brand-orange">{inventory.length}</span> items in your inventory
+                  </span>
+                </p>
                 <div className="flex gap-2 justify-center">
                   {/* Simple resource type icons */}
                   <div className="w-8 h-8 rounded-full flex items-center justify-center bg-purple-500/20 text-purple-400">
