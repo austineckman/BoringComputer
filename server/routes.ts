@@ -1314,6 +1314,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Update Quest route
+  app.put('/api/admin/quests/:questId', authenticate, adminAuth, async (req, res) => {
+    try {
+      const questId = parseInt(req.params.questId);
+      const questData = req.body;
+      
+      // Validate the incoming data
+      const schema = z.object({
+        date: z.string(),
+        title: z.string(),
+        description: z.string(),
+        adventureLine: z.string(),
+        difficulty: z.number().min(1).max(5),
+        orderInLine: z.number().min(0),
+        xpReward: z.number().positive(),
+        rewards: z.array(z.object({
+          type: z.string(),
+          id: z.string(),
+          quantity: z.number().positive()
+        })),
+        active: z.boolean().optional(),
+        components: z.array(z.object({
+          id: z.number(),
+          required: z.boolean(),
+          quantity: z.number().positive().default(1)
+        })).optional(),
+        content: z.object({
+          videos: z.array(z.string()).optional(),
+          images: z.array(z.string()).optional(),
+          codeBlocks: z.array(z.object({
+            language: z.string(),
+            code: z.string()
+          })).optional()
+        }).optional()
+      });
+      
+      const validatedData = schema.parse(questData);
+      
+      // Update the quest
+      const updatedQuest = await storage.updateQuest(questId, validatedData);
+      
+      // Handle component updates if provided
+      if (questData.components && questData.components.length > 0) {
+        console.log(`Updating components for quest ${questId}`);
+        
+        // First, remove all existing component relationships for this quest
+        await storage.deleteQuestComponents(questId);
+        
+        // Then add the new component relationships
+        for (const component of questData.components) {
+          await storage.createQuestComponent({
+            questId: questId,
+            componentId: component.id,
+            quantity: component.quantity || 1,
+            isOptional: !component.required
+          });
+        }
+      }
+      
+      return res.json(updatedQuest);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Failed to update quest" });
+    }
+  });
+  
   // Quest detail route
   app.get('/api/quests/:questId', authenticate, async (req, res) => {
     try {
