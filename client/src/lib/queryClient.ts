@@ -8,17 +8,39 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest(
-  method: string = 'GET',
-  url: string,
-  data?: unknown | undefined,
+  urlOrMethod: string,
+  urlOrData?: string | unknown,
+  dataOrHeaders?: unknown | Record<string, string>,
   headers?: Record<string, string>,
 ): Promise<Response> {
+  // Detect if the first parameter is a URL (starts with /) or a method
+  let method: string;
+  let url: string;
+  let data: unknown | undefined;
+  let finalHeaders: Record<string, string> | undefined;
+  
+  // First parameter is the URL (backward compatibility mode)
+  if (urlOrMethod.startsWith('/')) {
+    console.warn('Deprecated apiRequest usage: URL should be the second parameter, not the first');
+    method = 'GET';
+    url = urlOrMethod;
+    data = urlOrData;
+    finalHeaders = dataOrHeaders as Record<string, string> | undefined;
+  } 
+  // Normal usage: first parameter is the method
+  else {
+    method = urlOrMethod;
+    url = urlOrData as string;
+    data = dataOrHeaders;
+    finalHeaders = headers;
+  }
+  
   // Default headers if not provided
   const defaultHeaders = data instanceof FormData 
     ? {} // Don't set Content-Type for FormData (browser will set it with boundary)
     : data ? { "Content-Type": "application/json" } : {};
   
-  const requestHeaders = { ...defaultHeaders, ...headers };
+  const requestHeaders = { ...defaultHeaders, ...finalHeaders };
   
   const res = await fetch(url, {
     method,
