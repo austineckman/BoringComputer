@@ -255,7 +255,10 @@ const QuestCard = ({
       </PixelCardHeader>
       
       {/* Quest Content */}
-      <PixelCardContent>
+      <PixelCardContent
+        questImage={content?.images?.length > 0 ? content.images[0] : undefined}
+        imageAlt={`${title} quest image`}
+      >
         <h3 className="font-bold text-lg mb-2">{title}</h3>
         <div className="relative">
           <p className="text-sm text-brand-light/70 mb-4">{displayDescription}</p>

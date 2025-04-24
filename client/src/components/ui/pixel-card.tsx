@@ -66,11 +66,28 @@ export const PixelCardHeader = ({
 export const PixelCardContent = ({
   className,
   children,
+  questImage,
+  imageAlt,
 }: {
   className?: string;
   children: React.ReactNode;
+  questImage?: string;
+  imageAlt?: string;
 }) => {
-  return <div className={cn("p-5", className)}>{children}</div>;
+  return (
+    <div className={cn("p-5", className)}>
+      {questImage && (
+        <div className="mb-4 w-full overflow-hidden rounded-md">
+          <img 
+            src={questImage} 
+            alt={imageAlt || "Quest image"} 
+            className="w-full h-auto object-cover" 
+          />
+        </div>
+      )}
+      {children}
+    </div>
+  );
 };
 
 export default PixelCard;
