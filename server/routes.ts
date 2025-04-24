@@ -663,26 +663,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Format the inventory with complete item details
       const formattedInventory = [];
       
-      // First, check if we need to initialize the admin items in the user's inventory
+      // Use the user's inventory as is, don't initialize with default values
       const newInventory = { ...userInventory };
       let inventoryChanged = false;
       
       // ONLY include items that have been created in the admin panel
       for (const item of adminItems) {
-        // If item doesn't exist in user inventory, initialize it with quantity 10
-        if (newInventory[item.id] === undefined) {
-          newInventory[item.id] = 10; // Default quantity for new items
-          inventoryChanged = true;
-          
-          // Add to history to track when it was first added
-          await storage.createInventoryHistory({
-            userId: user.id,
-            type: item.id,
-            quantity: 10,
-            action: 'gained',
-            source: 'admin_initialization'
-          });
-        }
+        // Don't automatically add items to inventory anymore
+        // This allows new users to start with empty inventories
         
         // Get actual quantity from the user's inventory
         const quantity = newInventory[item.id] || 0;
