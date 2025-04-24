@@ -35,18 +35,32 @@ const Home = () => {
   // Filter quests by selected kit if one is selected
   const filteredQuests = selectedKit 
     ? availableQuests.filter(quest => {
+        // Debug logging
+        console.log('Checking quest for kit match:', quest.title);
+        console.log('Quest component requirements:', quest.componentRequirements);
+        
         // Check if this quest has component requirements with the selected kit
         if (quest.componentRequirements && Array.isArray(quest.componentRequirements) && quest.componentRequirements.length > 0) {
           // Find the matching kit by matching the selected kit ID with the kit info in our kits array
           const selectedKitObj = kits.find(kit => kit.id === selectedKit);
-          if (!selectedKitObj) return false;
+          if (!selectedKitObj) {
+            console.log('Selected kit not found in kits array');
+            return false;
+          }
+          
+          console.log('Selected kit:', selectedKitObj.name, 'with ID:', selectedKit);
           
           // Check if any component requirement matches the selected kit name
-          return quest.componentRequirements.some(comp => 
-            comp.kitName === selectedKitObj.name || 
-            comp.kitId === selectedKit
-          );
+          const doesMatch = quest.componentRequirements.some(comp => {
+            console.log('Comparing comp.kitName:', comp.kitName, 'with selectedKit name:', selectedKitObj.name);
+            return comp.kitName === selectedKitObj.name || comp.kitId === selectedKit;
+          });
+          
+          console.log('Does this quest match the selected kit?', doesMatch);
+          return doesMatch;
         }
+        
+        console.log('Quest has no component requirements');
         return false;
       })
     : availableQuests;
