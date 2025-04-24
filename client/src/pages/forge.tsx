@@ -145,7 +145,7 @@ const ForgePage: React.FC = () => {
     if (canCraft) {
       onCraft();
       setShowResults(true);
-      sounds.craftComplete();
+      // Sound effect is now played in the craftMutation onSuccess callback
     }
   };
   
