@@ -381,11 +381,22 @@ export default function QuestDetailPage() {
                   </div>
                   
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Description</label>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Flavor Text <span className="text-xs text-gray-500">(Italicized background story)</span></label>
                     <Textarea 
                       value={editedQuest.description}
                       onChange={(e) => setEditedQuest({...editedQuest, description: e.target.value})}
                       className="bg-space-dark border-brand-orange/30 min-h-[100px] text-white font-medium placeholder:text-gray-500"
+                      placeholder="Add a flavor text to set the mood or provide background story (will be displayed in italics)"
+                    />
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Mission Brief <span className="text-xs text-gray-500">(Direct instructions)</span></label>
+                    <Textarea 
+                      value={editedQuest.missionBrief || ""}
+                      onChange={(e) => setEditedQuest({...editedQuest, missionBrief: e.target.value})}
+                      className="bg-space-dark border-brand-orange/30 min-h-[150px] text-white font-medium placeholder:text-gray-500"
+                      placeholder="Provide clear instructions for the mission objectives"
                     />
                   </div>
                   
@@ -665,8 +676,21 @@ export default function QuestDetailPage() {
                     Adventure Line: <span className="font-medium">{quest.adventureLine}</span> • 
                     Difficulty: <span className="font-medium">{quest.difficulty}/5</span>
                   </div>
-                  <div className="prose dark:prose-invert max-w-none mb-6 text-white">
-                    <p>{quest.description}</p>
+                  <div className="prose dark:prose-invert max-w-none mb-6">
+                    {/* Flavor text - italicized and lighter color */}
+                    {quest.description && (
+                      <p className="text-gray-300 italic mb-4">{quest.description}</p>
+                    )}
+                    
+                    {/* Mission brief - normal text, more prominent */}
+                    {quest.missionBrief && (
+                      <p className="text-white">{quest.missionBrief}</p>
+                    )}
+
+                    {/* If no mission brief is available, use the description as the main content */}
+                    {!quest.missionBrief && !quest.description && (
+                      <p className="text-white">{quest.description}</p>
+                    )}
                   </div>
                   
                   {/* Component Requirements Section - Moved right after description */}
