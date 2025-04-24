@@ -306,9 +306,10 @@ const AdminKits = () => {
 
   const deleteComponentMutation = useMutation({
     mutationFn: async (componentId: number) => {
-      return apiRequest(`/api/admin/components/${componentId}`, {
+      return fetch(`/api/admin/components/${componentId}`, {
         method: 'DELETE',
-      });
+        credentials: 'include',
+      }).then(res => res.json());
     },
     onSuccess: () => {
       if (selectedKit) {
