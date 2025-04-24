@@ -214,20 +214,20 @@ function validateGridPattern(
   gridPattern: (string | null)[][],
   recipePattern: (string | null)[][]
 ): boolean {
-  // Both patterns should be 5x5
-  if (gridPattern.length !== 5 || recipePattern.length !== 5) {
+  // Both patterns should be 3x3
+  if (gridPattern.length !== 3 || recipePattern.length !== 3) {
     return false;
   }
 
-  for (let i = 0; i < 5; i++) {
-    if (gridPattern[i].length !== 5 || recipePattern[i].length !== 5) {
+  for (let i = 0; i < 3; i++) {
+    if (gridPattern[i].length !== 3 || recipePattern[i].length !== 3) {
       return false;
     }
   }
 
   // Check if each cell in the grid matches the required pattern
-  for (let row = 0; row < 5; row++) {
-    for (let col = 0; col < 5; col++) {
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 3; col++) {
       const requiredItem = recipePattern[row][col];
       const providedItem = gridPattern[row][col];
 

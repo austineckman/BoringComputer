@@ -70,14 +70,40 @@ export function useCrafting() {
   // Mutation for crafting an item
   const craftMutation = useMutation({
     mutationFn: async (recipeId: string) => {
-      // Convert 3x3 grid to 5x5 grid format for the server
-      const grid5x5 = Array(5).fill('').map(() => Array(5).fill(''));
+      if (!selectedRecipe) {
+        throw new Error('No recipe selected');
+      }
       
-      // Place the 3x3 grid in the center of the 5x5 grid
+      // Get the recipe's pattern from the selected recipe
+      const recipePattern = selectedRecipe.pattern || [];
+      
+      // Instead of just placing our grid into a 5x5, we're going to use the actual recipe pattern
+      // and replace the items in the pattern with our grid items
+      
+      // Create grid5x5 based on recipe pattern size
+      let grid5x5;
+      
+      // If the recipe pattern is already 3x3, convert it to 5x5
+      if (recipePattern.length === 3) {
+        // Convert 3x3 to 5x5
+        grid5x5 = Array(5).fill('').map(() => Array(5).fill(''));
+        for (let row = 0; row < 3; row++) {
+          for (let col = 0; col < 3; col++) {
+            grid5x5[row + 1][col + 1] = recipePattern[row][col];
+          }
+        }
+      } else {
+        // Make a deep copy of the 5x5 recipe pattern
+        grid5x5 = JSON.parse(JSON.stringify(recipePattern));
+      }
+      
+      // Now map our 3x3 grid onto the pattern's 5x5 where items are expected
       for (let row = 0; row < 3; row++) {
         for (let col = 0; col < 3; col++) {
-          // Place in positions [1,1] to [3,3] of the 5x5 grid
-          grid5x5[row + 1][col + 1] = grid[row][col];
+          // Only set the grid item if it's not empty and there's something in the pattern
+          if (grid[row][col]) {
+            grid5x5[row + 1][col + 1] = grid[row][col];
+          }
         }
       }
       
@@ -86,7 +112,9 @@ export function useCrafting() {
       
       console.log('Sending crafting request:', {
         recipeId: recipeIdNum,
-        gridPattern: grid5x5
+        gridPattern: grid5x5,
+        originalRecipePattern: recipePattern,
+        our3x3Grid: grid
       });
       
       const response = await fetch('/api/crafting/craft', {
