@@ -15,6 +15,7 @@ export function useSystemSettings() {
     refetch
   } = useQuery<SystemSettings[]>({
     queryKey: ['/api/admin/settings'],
+    initialData: [],
   });
 
   // Get settings by category

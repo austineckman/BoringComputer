@@ -230,6 +230,11 @@ function App() {
           component={AdminStats} 
         />
         
+        <AdminRoute 
+          path="/admin-settings" 
+          component={AdminSettings} 
+        />
+        
         <ProtectedRoute 
           path="/settings" 
           component={() => (
