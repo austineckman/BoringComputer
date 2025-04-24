@@ -520,6 +520,42 @@ router.delete('/loot-boxes/:id', async (req, res) => {
 });
 
 // =================
+// USERS
+// =================
+
+// Get all users (with sensitive info like passwords removed)
+router.get('/users', async (req, res) => {
+  try {
+    const allUsers = await storage.getUsers();
+    
+    // Transform users to remove sensitive information and calculate total items
+    const safeUsers = allUsers.map(user => {
+      // Calculate total items in inventory
+      const totalItems = user.inventory 
+        ? Object.values(user.inventory).reduce((sum: number, quantity: number) => sum + quantity, 0)
+        : 0;
+        
+      // Return user with only the fields we want to expose
+      return {
+        id: user.id,
+        username: user.username,
+        roles: user.roles,
+        level: user.level || 1,
+        xp: user.xp || 0,
+        totalItems,
+        createdAt: user.createdAt,
+        lastLogin: user.lastLogin
+      };
+    });
+    
+    res.json(safeUsers);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// =================
 // FILE UPLOADS
 // =================
 
