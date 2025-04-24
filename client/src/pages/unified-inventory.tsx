@@ -23,7 +23,9 @@ import { getRarityColorClass } from '@/lib/styleUtils';
 // Resource images are already imported above
 
 // Function to render a resource icon or image
-const renderResourceIcon = (type: string, size: 'sm' | 'md' | 'lg' = 'md') => {
+const renderResourceIcon = (type: string, size?: 'sm' | 'md' | 'lg') => {
+  // Default to medium size if not specified
+  const finalSize = size || 'md';
   const resource = getResourceDisplay(type);
   
   // All resources are now images
@@ -37,7 +39,7 @@ const renderResourceIcon = (type: string, size: 'sm' | 'md' | 'lg' = 'md') => {
     <img 
       src={resource.value} 
       alt={resource.alt || type} 
-      className={`pixelated ${sizeClasses[size]} object-contain`} 
+      className={`pixelated ${sizeClasses[finalSize]} object-contain`} 
     />
   );
 };
