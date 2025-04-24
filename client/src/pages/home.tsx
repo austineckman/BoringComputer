@@ -216,7 +216,7 @@ const Home = () => {
                 <p className="text-brand-light mb-2 text-center">
                   <span className="inline-flex items-center">
                     <img 
-                      src="/assets/506_Gold_Bag_Leather_B.png" 
+                      src={goldBagIcon} 
                       alt="Inventory Bag" 
                       className="w-5 h-5 mr-2 object-contain pixelated"
                       style={{ imageRendering: 'pixelated' }}
