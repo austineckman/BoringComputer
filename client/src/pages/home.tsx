@@ -90,74 +90,125 @@ const Home = () => {
     <div>
       {/* Header Section with Status */}
       <section className="mb-12">
-        <div className="bg-space-mid rounded-lg p-6 pixel-border relative overflow-hidden">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
-            <div className="mb-4 md:mb-0">
-              <h1 className="font-pixel text-xl md:text-2xl text-brand-orange mb-2">MISSION CONTROL</h1>
-              <p className="text-brand-light/80 mb-4">
-                {activeQuest ? `Day ${activeQuests.length}: ${activeQuest.title}` : "Ready for your next mission, cadet?"}
-              </p>
-              
-              {/* Mission Status */}
-              <div className="flex items-center space-x-2">
-                <div className="px-3 py-1 bg-brand-orange/20 text-brand-orange rounded-full text-xs flex items-center">
-                  <div className="w-2 h-2 rounded-full bg-brand-orange animate-pulse mr-2"></div>
-                  Mission {activeQuest ? "Active" : "Ready"}
-                </div>
-                <div className="px-3 py-1 bg-space-dark text-brand-light/70 rounded-full text-xs">
-                  {activeQuest ? "13 days remaining" : "30 days of adventure awaits"}
-                </div>
+        <div className="bg-space-dark rounded-lg p-0 pixel-border relative overflow-hidden">
+          {/* SparklesCore effect for space theme */}
+          <div className="absolute inset-0 w-full h-full">
+            <div className="relative w-full h-full bg-black">
+              <div className="absolute inset-0 w-full h-full">
+                <SparklesCore
+                  id="mission-sparkles"
+                  background="transparent"
+                  minSize={0.4}
+                  maxSize={1.5}
+                  particleDensity={25}
+                  className="w-full h-full"
+                  particleColor="#FFAA00"
+                />
               </div>
-            </div>
-            
-            <div>
-              {/* Ship Status Container */}
-              <div className="bg-space-dark p-4 rounded-lg w-full md:w-64">
-                <h3 className="text-xs uppercase text-brand-light/60 mb-2">Ship Status</h3>
-                
-                <div className="space-y-2">
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span>Power Systems</span>
-                      <span className="text-green-400">Operational</span>
-                    </div>
-                    <div className="h-2 bg-space-mid rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-green-500 to-green-400" style={{ width: `${powerLevel}%` }}></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span>Security Systems</span>
-                      <span className={securityLevel < 50 ? "text-brand-orange" : "text-yellow-400"}>
-                        {securityLevel < 50 ? "Compromised" : "Partial"}
-                      </span>
-                    </div>
-                    <div className="h-2 bg-space-mid rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full bg-gradient-to-r ${securityLevel < 50 ? "from-brand-orange to-brand-yellow" : "from-yellow-500 to-yellow-400"}`} 
-                        style={{ width: `${securityLevel}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span>Communications</span>
-                      <span className="text-yellow-400">Partial</span>
-                    </div>
-                    <div className="h-2 bg-space-mid rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-yellow-500 to-yellow-400" style={{ width: `${communicationsLevel}%` }}></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <div className="absolute inset-0 bg-space-dark opacity-90"></div>
             </div>
           </div>
           
-          {/* Decorative Elements */}
-          <div className="absolute -bottom-8 -right-8 w-32 h-32 rounded-full bg-brand-orange/10 blur-3xl"></div>
-          <div className="absolute -top-4 -left-4 w-24 h-24 rounded-full bg-brand-yellow/10 blur-3xl"></div>
+          <Spotlight
+            className="-top-28 -left-20"
+            fill="rgba(255,170,0,0.2)"
+          />
+
+          {/* Main content */}
+          <div className="relative z-10 p-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
+              <div className="mb-6 md:mb-0">
+                {/* TextReveal for title */}
+                <div className="mb-2">
+                  <TextReveal
+                    text="MISSION CONTROL"
+                    className="font-pixel text-2xl md:text-3xl text-brand-orange font-bold"
+                    revealText
+                    revealOpacity={0.1}
+                  />
+                </div>
+                <p className="text-brand-light/90 mb-4 font-medium">
+                  {activeQuest 
+                    ? `Day ${activeQuests.length}: ${activeQuest.title}` 
+                    : "Ready for your next mission, cadet?"}
+                </p>
+                
+                {/* Mission Status */}
+                <div className="flex items-center flex-wrap gap-3">
+                  <HoverBorderGradient
+                    className="px-4 py-2 bg-space-mid/80 rounded-lg text-sm"
+                    fromColor="rgba(255, 170, 0, 0.4)"
+                    toColor="rgba(255, 220, 170, 0.7)"
+                    animateProps={{
+                      y: [-1, 1, -1],
+                      transition: { duration: 2, repeat: Infinity }
+                    }}
+                  >
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 rounded-full bg-brand-orange animate-pulse mr-2"></div>
+                      <span className="text-brand-orange">
+                        Mission {activeQuest ? "Active" : "Ready"}
+                      </span>
+                    </div>
+                  </HoverBorderGradient>
+                  
+                  <div className="px-4 py-2 bg-space-mid/80 text-brand-light/80 rounded-lg text-sm">
+                    {activeQuest ? "13 days remaining" : "30 days of adventure awaits"}
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                {/* Ship Status Container */}
+                <EvervaultCard
+                  className="md:w-72 bg-space-mid/30 p-4 backdrop-blur-lg rounded-lg border border-space-light/10 relative overflow-hidden"
+                  rotateDegrees={1.5}
+                >
+                  <h3 className="text-xs uppercase text-brand-light/70 mb-3 tracking-widest">Ship Status</h3>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span>Power Systems</span>
+                        <span className="text-green-400 font-medium">Operational</span>
+                      </div>
+                      <div className="h-2 bg-black/40 rounded-full overflow-hidden backdrop-blur-sm border border-space-light/5">
+                        <div className="h-full bg-gradient-to-r from-green-500 to-green-400" style={{ width: `${powerLevel}%` }}></div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span>Security Systems</span>
+                        <span className={securityLevel < 50 ? "text-brand-orange font-medium" : "text-yellow-400 font-medium"}>
+                          {securityLevel < 50 ? "Compromised" : "Partial"}
+                        </span>
+                      </div>
+                      <div className="h-2 bg-black/40 rounded-full overflow-hidden backdrop-blur-sm border border-space-light/5">
+                        <div 
+                          className={`h-full bg-gradient-to-r ${securityLevel < 50 ? "from-brand-orange to-brand-yellow" : "from-yellow-500 to-yellow-400"}`} 
+                          style={{ width: `${securityLevel}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span>Communications</span>
+                        <span className="text-yellow-400 font-medium">Partial</span>
+                      </div>
+                      <div className="h-2 bg-black/40 rounded-full overflow-hidden backdrop-blur-sm border border-space-light/5">
+                        <div className="h-full bg-gradient-to-r from-yellow-500 to-yellow-400" style={{ width: `${communicationsLevel}%` }}></div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Overlay for card effect */}
+                  <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-transparent via-space-light/5 to-transparent opacity-30 pointer-events-none"></div>
+                </EvervaultCard>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
       
