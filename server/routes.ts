@@ -19,7 +19,7 @@ import adminUploadRoutes from './routes/admin/upload';
 import adminKitsRoutes from './routes/admin-kits';
 import { authenticate } from './auth';
 import { componentKits, items } from '@shared/schema';
-import { itemDatabase as fallbackItemDatabase } from './itemDatabase';
+import { itemDatabase } from './itemDatabase';
 
 // Legacy authentication middleware (now deprecated in favor of the one in auth.ts)
 const legacyAuthenticate = async (req: Request, res: Response, next: Function) => {
@@ -1648,7 +1648,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/items', async (req, res) => {
     try {
       // Get the basic items from the item database
-      const allItems = Object.values(fallbackItemDatabase);
+      const allItems = Object.values(itemDatabase);
       
       // Add custom items from the database if available
       try {
