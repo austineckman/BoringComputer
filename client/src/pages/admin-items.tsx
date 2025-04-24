@@ -573,7 +573,7 @@ const AdminItems: React.FC = () => {
 
       {/* Create Item Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={handleCreateDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Item</DialogTitle>
             <DialogDescription>
@@ -740,7 +740,7 @@ const AdminItems: React.FC = () => {
 
       {/* Edit Item Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={handleEditDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Item</DialogTitle>
             <DialogDescription>
@@ -939,7 +939,7 @@ const AdminItems: React.FC = () => {
 
       {/* Delete Item Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Delete Item</DialogTitle>
             <DialogDescription>
