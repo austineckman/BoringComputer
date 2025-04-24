@@ -94,6 +94,8 @@ interface Quest {
   lootBoxRewards: {type: string, quantity: number}[];
   active: boolean;
   kitId?: string;
+  components?: {id: number, required: boolean, quantity: number}[];
+  rewards?: {type: string, id: string, quantity: number}[];
   content: {
     videos: string[];
     images: string[];
@@ -216,6 +218,14 @@ const AdminQuests: React.FC = () => {
   const [formData, setFormData] = useState<any>({
     rewards: []
   });
+  
+  // Component selection state
+  const [questComponents, setQuestComponents] = useState<{
+    id: number;
+    name: string;
+    required: boolean;
+    quantity: number;
+  }[]>([]);
   
   const { toast } = useToast();
 
@@ -523,6 +533,30 @@ const AdminQuests: React.FC = () => {
       setFormData({ rewards: [] });
     }
     
+    // Load component requirements if quest has any
+    if (quest.components && Array.isArray(quest.components) && quest.components.length > 0) {
+      // If we have a kit selected and components data
+      if (quest.kitId) {
+        // Find the kit
+        const selectedKit = componentKits.find((kit: any) => kit.id === quest.kitId);
+        if (selectedKit && selectedKit.components) {
+          // Merge the saved quest components with the kit components 
+          const mergedComponents = selectedKit.components.map((kitComponent: any) => {
+            // Find if this component exists in the quest.components array
+            const savedComponent = quest.components.find((c: any) => c.id === kitComponent.id);
+            return {
+              id: kitComponent.id,
+              name: kitComponent.name,
+              quantity: kitComponent.quantity,
+              required: savedComponent ? savedComponent.required : kitComponent.isRequired
+            };
+          });
+          
+          setQuestComponents(mergedComponents);
+        }
+      }
+    }
+    
     setEditingQuest(quest);
     setIsAddingQuest(false);
   };
@@ -548,6 +582,9 @@ const AdminQuests: React.FC = () => {
     // Reset new unified reward system
     setRewardTabValue('lootbox');
     setFormData({ rewards: [] });
+    
+    // Reset component selection
+    setQuestComponents([]);
   };
 
   // Handle form submission
@@ -566,6 +603,11 @@ const AdminQuests: React.FC = () => {
         id: reward.type,
         quantity: reward.quantity
       })), // Use new format if available, otherwise convert legacy format
+      components: questComponents.map(component => ({
+        id: component.id,
+        required: component.required,
+        quantity: component.quantity
+      })),
     };
 
     if (editingQuest) {
@@ -874,26 +916,59 @@ const AdminQuests: React.FC = () => {
                       </div>
                       
                       {/* Component Kit Details (if selected) */}
-                      {form.watch('kitId') && (
+                      {form.watch('kitId') && form.watch('kitId') !== 'none' && (
                         <div className="mt-4 p-4 border rounded-md bg-muted/20">
                           <h4 className="font-medium mb-2">Component Kit Details</h4>
                           {!loadingKits && componentKits && Array.isArray(componentKits) && (() => {
                             const selectedKit = componentKits.find((kit: ComponentKit) => kit.id === form.watch('kitId'));
                             if (selectedKit) {
+                              // Initialize questComponents state if it's not already set
+                              const initialQuestComponents = selectedKit.components?.map(component => ({
+                                id: component.id,
+                                name: component.name,
+                                required: component.isRequired,
+                                quantity: component.quantity
+                              })) || [];
+                              
+                              if (!questComponents || questComponents.length === 0) {
+                                setQuestComponents(initialQuestComponents);
+                              }
+                              
                               return (
                                 <div>
                                   <p className="mb-2 text-sm">{selectedKit.description}</p>
                                   {selectedKit.components && selectedKit.components.length > 0 ? (
                                     <div>
-                                      <h5 className="text-sm font-medium mb-2">Components Required:</h5>
-                                      <ul className="space-y-1 text-sm list-disc list-inside">
-                                        {selectedKit.components.map((component: KitComponent) => (
-                                          <li key={component.id}>
-                                            {component.name} ({component.quantity}x) 
-                                            {component.isRequired ? ' - Required' : ' - Optional'}
-                                          </li>
+                                      <h5 className="text-sm font-medium mb-2">Select Required Components:</h5>
+                                      <div className="space-y-3">
+                                        {questComponents.map((component, index) => (
+                                          <div key={component.id} className="flex items-center space-x-3 border p-2 rounded-md">
+                                            <div className="flex-1">
+                                              <p className="font-medium">{component.name}</p>
+                                              <p className="text-xs text-muted-foreground">Quantity: {component.quantity}x</p>
+                                            </div>
+                                            <Select
+                                              value={component.required ? "required" : "optional"}
+                                              onValueChange={(value) => {
+                                                const updatedComponents = [...questComponents];
+                                                updatedComponents[index] = {
+                                                  ...updatedComponents[index],
+                                                  required: value === "required"
+                                                };
+                                                setQuestComponents(updatedComponents);
+                                              }}
+                                            >
+                                              <SelectTrigger className="w-32">
+                                                <SelectValue />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                <SelectItem value="required">Required</SelectItem>
+                                                <SelectItem value="optional">Optional</SelectItem>
+                                              </SelectContent>
+                                            </Select>
+                                          </div>
                                         ))}
-                                      </ul>
+                                      </div>
                                     </div>
                                   ) : (
                                     <p className="text-sm text-muted-foreground">No components added to this kit yet.</p>
