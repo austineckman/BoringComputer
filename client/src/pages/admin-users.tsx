@@ -1,6 +1,6 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Loader2, Shield, User, Package, Star, Calendar, Users } from 'lucide-react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { Loader2, Shield, ShieldCheck, ShieldX, User, Package, Star, Calendar, Users } from 'lucide-react';
 import { format } from 'date-fns';
 // Import admin layout component
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -23,6 +23,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 
 // User type for this specific view
 interface UserData {
@@ -37,10 +40,40 @@ interface UserData {
 }
 
 export default function AdminUsersPage() {
+  const { toast } = useToast();
+  
   // Fetch users data from the admin API endpoint
-  const { data: users, isLoading, error } = useQuery<UserData[]>({
+  const { data: users, isLoading, error, refetch } = useQuery<UserData[]>({
     queryKey: ['/api/admin/users'],
     retry: 1,
+  });
+  
+  // Toggle admin access mutation
+  const toggleAdminMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const response = await apiRequest('PUT', `/api/admin/users/${userId}/toggle-admin`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update user role');
+      }
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: 'Role Updated',
+        description: data.message,
+        variant: 'default',
+      });
+      // Refresh the users list
+      refetch();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Update Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
   });
 
   if (isLoading) {
@@ -147,6 +180,7 @@ export default function AdminUsersPage() {
                   <TableHead>Items</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Last Login</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -183,11 +217,35 @@ export default function AdminUsersPage() {
                         ? format(new Date(user.lastLogin), 'PP') 
                         : 'Never'}
                     </TableCell>
+                    <TableCell>
+                      {/* Don't show toggle button for own account */}
+                      {user.username !== "admin" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleAdminMutation.mutate(user.id)}
+                          disabled={toggleAdminMutation.isPending}
+                          className={`flex items-center gap-1 ${user.roles?.includes('admin') ? 'text-red-500 hover:text-red-600' : 'text-green-600 hover:text-green-700'}`}
+                        >
+                          {user.roles?.includes('admin') ? (
+                            <>
+                              <ShieldX className="h-4 w-4" />
+                              <span>Revoke Admin</span>
+                            </>
+                          ) : (
+                            <>
+                              <ShieldCheck className="h-4 w-4" />
+                              <span>Grant Admin</span>
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
                 {(!users || users.length === 0) && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center h-32 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center h-32 text-muted-foreground">
                       No users found
                     </TableCell>
                   </TableRow>
