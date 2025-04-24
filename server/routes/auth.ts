@@ -63,18 +63,13 @@ router.post("/register", async (req, res, next) => {
     // Hash password
     const hashedPassword = await hashPassword(req.body.password);
     
-    // Create new user
+    // Create new user with empty inventory
     const newUser = await storage.createUser({
       username: req.body.username,
       password: hashedPassword,
       roles: ["user"],
       level: 1,
-      inventory: {
-        "cloth": 0,
-        "copper": 0,
-        "techscrap": 0,
-        "crystal": 0
-      },
+      inventory: {}, // Empty inventory for new users
       xp: 0,
       xpToNextLevel: 300,
       completedQuests: [],
