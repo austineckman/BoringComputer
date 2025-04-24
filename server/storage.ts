@@ -1523,7 +1523,7 @@ export class DatabaseStorage implements IStorage {
   async getQuestComponentsWithDetails(questId: number): Promise<any[]> {
     try {
       // Use Drizzle ORM to get quest components with details
-      const questComponentsWithDetails = await db.execute(sql`
+      const result = await db.execute(sql`
         SELECT 
           qc.id, 
           qc.quest_id as "questId", 
@@ -1542,8 +1542,20 @@ export class DatabaseStorage implements IStorage {
         ORDER BY qc.is_optional ASC, kc.name ASC
       `);
       
+      // Debug the result type
+      console.log('Query result type:', typeof result);
+      console.log('Query result:', JSON.stringify(result).substring(0, 200));
+      
+      // Make sure we have an array to work with
+      const components = Array.isArray(result) ? result : result.rows || [];
+      
+      if (components.length === 0) {
+        console.log(`No components found for quest ID ${questId} after query`);
+        return [];
+      }
+      
       // Format the results to match what the client expects
-      const formattedComponents = (questComponentsWithDetails as any[]).map(component => ({
+      const formattedComponents = components.map(component => ({
         id: component.componentId,
         name: component.name,
         description: component.description,
@@ -1553,6 +1565,8 @@ export class DatabaseStorage implements IStorage {
         partNumber: component.partNumber,
         kitName: component.kitName
       }));
+      
+      console.log(`Found ${formattedComponents.length} formatted components`);
       
       return formattedComponents;
     } catch (error) {
