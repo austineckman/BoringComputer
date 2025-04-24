@@ -40,7 +40,33 @@ router.use(adminAuth);
 router.get('/quests', async (req, res) => {
   try {
     const allQuests = await db.select().from(quests);
-    res.json(allQuests);
+    
+    // For each quest, load its components from the database
+    const questsWithComponents = await Promise.all(
+      allQuests.map(async (quest) => {
+        try {
+          // Get the components for this quest
+          const questComponents = await storage.getQuestComponents(quest.id);
+          console.log(`Found ${questComponents.length} components for quest ID ${quest.id}`);
+          
+          // Return the quest with its components
+          return {
+            ...quest,
+            components: questComponents.map(comp => ({
+              id: comp.componentId,
+              required: !comp.isOptional,  // Convert isOptional to required for frontend
+              quantity: comp.quantity
+            }))
+          };
+        } catch (error) {
+          console.error(`Error loading components for quest ${quest.id}:`, error);
+          // If there's an error, just return the quest without components
+          return quest;
+        }
+      })
+    );
+    
+    res.json(questsWithComponents);
   } catch (error) {
     console.error('Error fetching quests:', error);
     res.status(500).json({ error: 'Failed to fetch quests' });
