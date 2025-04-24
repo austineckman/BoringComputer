@@ -1250,7 +1250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         active: z.boolean().optional(),
         components: z.array(z.object({
           id: z.number(),
-          required: z.boolean(),
+          required: z.boolean().nullable(),
           quantity: z.number().positive().default(1)
         })).optional(),
         content: z.object({
@@ -1273,6 +1273,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Adding ${questData.components.length} components to quest ${quest.id}`);
         
         for (const component of questData.components) {
+          // Skip components marked as "not used" (required is null)
+          if (component.required === null) {
+            continue;
+          }
+          
           await storage.createQuestComponent({
             questId: quest.id,
             componentId: component.id,
@@ -1343,7 +1348,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         active: z.boolean().optional(),
         components: z.array(z.object({
           id: z.number(),
-          required: z.boolean(),
+          required: z.boolean().nullable(),
           quantity: z.number().positive().default(1)
         })).optional(),
         content: z.object({
@@ -1370,6 +1375,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Then add the new component relationships
         for (const component of questData.components) {
+          // Skip components marked as "not used" (required is null)
+          if (component.required === null) {
+            continue;
+          }
+          
           await storage.createQuestComponent({
             questId: questId,
             componentId: component.id,
