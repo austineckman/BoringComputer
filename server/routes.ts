@@ -65,6 +65,8 @@ const legacyAuthenticate = async (req: Request, res: Response, next: Function) =
 // No need to redefine it here
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Serve uploaded quest images explicitly with correct ESM path
+  app.use('/uploads/quest-images', express.static(path.join(process.cwd(), "public/uploads/quest-images")));
   const httpServer = createServer(app);
   
   // Serve static files from the public directory
