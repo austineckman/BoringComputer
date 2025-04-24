@@ -86,33 +86,46 @@ const ResourceItem = ({
     }
   };
 
+  // Pixel art optimized size classes based on exact 32px scaling
   const sizeClasses = {
     sm: {
       container: "p-1",
-      icon: "w-4 h-4",
-      iconContainer: "w-6 h-6 mb-1",
-      quantity: "text-xs"
+      spriteSize: "w-[32px] h-[32px]",
+      scaleMultiplier: 1,
+      containerClass: "pixel-scale-1",
+      quantityClass: "text-xs",
+      nameVisible: false
     },
     md: {
       container: "p-2",
-      icon: "w-5 h-5",
-      iconContainer: "w-10 h-10 mb-1",
-      quantity: "text-base"
+      spriteSize: "w-[32px] h-[32px]",
+      scaleMultiplier: 2,
+      containerClass: "pixel-scale-2",
+      quantityClass: "text-sm",
+      nameVisible: true
     },
     lg: {
-      container: "p-3",
-      icon: "w-6 h-6", 
-      iconContainer: "w-12 h-12 mb-2",
-      quantity: "text-2xl"
+      container: "p-2",
+      spriteSize: "w-[32px] h-[32px]",
+      scaleMultiplier: 3,
+      containerClass: "pixel-scale-3",
+      quantityClass: "text-base",
+      nameVisible: true
     }
   };
 
   const styles = sizeClasses[size];
 
+  // Get the item rarity from the item database if it exists
+  const itemDetails = getItemDetails(type);
+  const rarity = itemDetails?.rarity || 'common';
+
   return (
     <div 
       className={cn(
-        "resource-item bg-space-dark rounded flex flex-col items-center", 
+        "resource-item rounded flex flex-col items-center", 
+        `rarity-${rarity}`,
+        "pixel-item-container",
         styles.container, 
         interactive && "hover:scale-105 transition-transform cursor-pointer", 
         className
@@ -120,35 +133,51 @@ const ResourceItem = ({
       onClick={handleClick}
       onMouseEnter={handleHover}
     >
-      <div 
-        className={cn(
-          "rounded-lg flex items-center justify-center overflow-hidden", 
-          styles.iconContainer,
-          interactive && "resource-icon-pulse"
-        )}
-        style={{ backgroundColor: 'transparent' }}
-      >
-        <img 
-          src={imagePath || resourceImages[type] || '/placeholder.png'} 
-          alt={resourceConfig.name || type} 
-          className="w-full h-full object-contain"
-          onError={(e) => {
-            // If the image fails to load, fall back to type-based image or placeholder
-            const target = e.target as HTMLImageElement;
-            if (target.src !== resourceImages[type] && resourceImages[type]) {
-              target.src = resourceImages[type];
-            } else if (target.src !== '/placeholder.png') {
-              target.src = '/placeholder.png';
-            }
-          }}
-        />
-      </div>
-      <div className="text-center">
-        <div className="text-xs font-semibold">{resourceConfig?.name || type}</div>
-        <div className={cn("font-bold", styles.quantity)} style={{ color: resourceConfig?.color || '#fff' }}>
-          {quantity}
+      {/* Item container */}
+      <div className="relative w-full flex-1 flex items-center justify-center">
+        <div className={cn(
+          "relative flex items-center justify-center", 
+          styles.containerClass
+        )}>
+          {/* Pixel art sprite with exact scaling */}
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <img 
+              src={imagePath || resourceImages[type] || '/placeholder.png'} 
+              alt={resourceConfig.name || type} 
+              className={cn(
+                styles.spriteSize,
+                "pixelated"
+              )}
+              style={{ 
+                imageRendering: 'pixelated',
+                transform: `scale(${styles.scaleMultiplier})`,
+                transformOrigin: 'center',
+              }}
+              onError={(e) => {
+                // If the image fails to load, fall back to type-based image or placeholder
+                const target = e.target as HTMLImageElement;
+                if (target.src !== resourceImages[type] && resourceImages[type]) {
+                  target.src = resourceImages[type];
+                } else if (target.src !== '/placeholder.png') {
+                  target.src = '/placeholder.png';
+                }
+              }}
+            />
+          </div>
+          
+          {/* Quantity badge */}
+          <div className="absolute bottom-0 right-0 pixel-quantity-badge">
+            {quantity}
+          </div>
         </div>
       </div>
+      
+      {/* Item name - only shown for medium and large sizes */}
+      {styles.nameVisible && (
+        <div className="text-center mt-1 w-full truncate px-1">
+          <div className="text-xs font-semibold truncate">{resourceConfig?.name || type}</div>
+        </div>
+      )}
     </div>
   );
 };

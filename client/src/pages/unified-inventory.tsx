@@ -16,7 +16,7 @@ import { useSoundEffects } from '@/hooks/useSoundEffects';
 import LootCrateOpenDialog from '@/components/inventory/LootCrateOpenDialog';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { DraggableInventoryItem } from '@/components/inventory/DraggableInventoryItem';
+import { DraggableInventoryItem, DraggableEmptySlot } from '@/components/inventory/DraggableInventoryItem';
 import { getItemDetails } from '@/lib/itemDatabase';
 import { getRarityColorClass } from '@/lib/styleUtils';
 
@@ -456,11 +456,11 @@ export default function UnifiedInventory() {
           </div>
         </div>
         
-        {/* Unified Grid Layout with drag-and-drop functionality */}
+        {/* Pixel Art Optimized Grid Layout with drag-and-drop functionality */}
         <DndProvider backend={HTML5Backend}>
-          <div className="grid grid-cols-6 sm:grid-cols-7 gap-2 relative">
+          <div className="pixel-inventory-grid">
             {inventoryGrid.map((item, index) => (
-              <div className="aspect-square bg-space-dark border-space-light/10 rounded-md p-1 relative" key={index}>
+              <div className="aspect-square relative" key={index}>
                 {item ? (
                   <DraggableInventoryItem
                     item={item}
@@ -475,7 +475,10 @@ export default function UnifiedInventory() {
                     }}
                   />
                 ) : (
-                  <div className="w-full h-full rounded-md bg-space-dark border border-space-light/10 opacity-30"></div>
+                  <DraggableEmptySlot 
+                    index={index} 
+                    moveItem={moveItem} 
+                  />
                 )}
               </div>
             ))}
