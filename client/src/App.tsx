@@ -19,6 +19,7 @@ import AdminSimple from "@/pages/admin-simple";
 import AdminBasic from "@/pages/admin-basic";
 import AdminKits from "@/pages/admin-kits";
 import AdminUsers from "@/pages/admin-users";
+import AdminStats from "@/pages/admin-stats";
 import LootBoxPreview from "@/pages/loot-box-preview";
 import NotFound from "@/pages/not-found";
 import MainLayout from "@/components/layout/MainLayout";
@@ -221,6 +222,11 @@ function App() {
         <AdminRoute 
           path="/admin-users" 
           component={AdminUsers} 
+        />
+
+        <AdminRoute 
+          path="/admin-stats" 
+          component={AdminStats} 
         />
         
         <ProtectedRoute 
