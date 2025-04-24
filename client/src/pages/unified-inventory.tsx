@@ -196,81 +196,7 @@ export default function UnifiedInventory() {
     setSelectedItem(item);
   };
   
-  // Component for generating test loot crates
-  const GenerateTestCrates = () => {
-    const { toast } = useToast();
-    const { sounds } = useSoundEffects();
-    const [isGenerating, setIsGenerating] = useState(false);
-    
-    const generateCratesMutation = useMutation({
-      mutationFn: async () => {
-        const response = await apiRequest('POST', '/api/loot-boxes/generate-test');
-        return await response.json();
-      },
-      onSuccess: (data) => {
-        try {
-          sounds.questComplete();
-        } catch (e) {
-          console.warn('Could not play sound', e);
-        }
-        
-        toast({
-          title: "Test Crates Generated!",
-          description: `${data.lootBoxes.length} new loot crates have been added to your inventory.`,
-          variant: "default",
-        });
-        
-        // Invalidate the loot boxes query to refresh the list
-        queryClient.invalidateQueries({ queryKey: ['/api/loot-boxes'] });
-        setIsGenerating(false);
-      },
-      onError: (error) => {
-        console.error('Error generating test crates:', error);
-        toast({
-          title: "Failed to Generate Crates",
-          description: "There was an error generating test crates. Please try again.",
-          variant: "destructive",
-        });
-        setIsGenerating(false);
-      }
-    });
-    
-    // Function to handle generating test crates
-    const handleGenerateCrates = () => {
-      try {
-        sounds.click();
-      } catch (e) {
-        console.warn('Could not play sound', e);
-      }
-      
-      setIsGenerating(true);
-      generateCratesMutation.mutate();
-    };
-    
-    return (
-      <Button 
-        variant="default" 
-        className="gap-2 bg-brand-orange hover:bg-brand-orange/80 text-white font-medium border-2 border-brand-orange/40 shadow-lg shadow-brand-orange/20 relative overflow-hidden"
-        disabled={isGenerating}
-        onClick={handleGenerateCrates}
-      >
-        {/* Animated glow effect */}
-        <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 animate-shine -translate-x-full"></span>
-        
-        {isGenerating ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Generating...</span>
-          </>
-        ) : (
-          <>
-            <Gift size={16} />
-            <span>Generate Test Crates</span>
-          </>
-        )}
-      </Button>
-    );
-  };
+
   
   // Combine resources with loot boxes to display in grid
   const allInventoryItems: {type: string, quantity: number, isLootBox?: boolean, lootBoxData?: LootBox}[] = [];
@@ -372,8 +298,6 @@ export default function UnifiedInventory() {
             <Clock size={16} />
             <span>View History</span>
           </Button>
-          
-          <GenerateTestCrates />
         </div>
       </div>
       
