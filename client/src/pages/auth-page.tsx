@@ -121,7 +121,7 @@ export default function AuthPage() {
       <div className="w-full md:w-1/2 flex items-center justify-center p-8">
         <Card className="w-full max-w-md border-2 border-primary/20 bg-background/95 backdrop-blur">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-3xl font-bold tracking-tight">Welcome to Quest Giver</CardTitle>
+            <CardTitle className="text-3xl font-bold tracking-tight">Welcome!</CardTitle>
             <CardDescription>
               Begin your adventure with us!
             </CardDescription>
