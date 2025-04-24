@@ -15,9 +15,10 @@ import {
   QuestComponent, InsertQuestComponent,
   ComponentKit, InsertComponentKit,
   KitComponent, InsertKitComponent,
+  SystemSettings, InsertSystemSettings,
   users, quests, userQuests, submissions, craftables, craftedItems,
   achievements, userAchievements, lootBoxes, inventoryHistory, craftingRecipes, items, lootBoxConfigs, characterEquipment,
-  componentKits, kitComponents, questComponents
+  componentKits, kitComponents, questComponents, systemSettings
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count, sql } from "drizzle-orm";
@@ -148,6 +149,14 @@ export interface IStorage {
   getItemCount(): Promise<number>;
   getCraftingRecipeCount(): Promise<number>;
   getQuestCount(): Promise<number>;
+  
+  // System Settings methods
+  getSystemSettings(): Promise<SystemSettings[]>;
+  getSystemSettingsByCategory(category: string): Promise<SystemSettings[]>;
+  getSystemSetting(key: string): Promise<SystemSettings | undefined>;
+  createSystemSetting(setting: InsertSystemSettings): Promise<SystemSettings>;
+  updateSystemSetting(key: string, value: any, category?: string): Promise<SystemSettings | undefined>;
+  deleteSystemSetting(key: string): Promise<boolean>;
   
   // Database management methods
   resetDatabase(): Promise<void>;
