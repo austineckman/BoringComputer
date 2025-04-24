@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   BarChart,
@@ -28,13 +28,17 @@ import {
   BarChart2,
   Database,
   Activity,
-  Settings
+  Settings,
+  RefreshCw,
+  Clock
 } from 'lucide-react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 // Colors for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
@@ -78,11 +82,36 @@ interface AdminStats {
 }
 
 export default function AdminStatsPage() {
+  const { toast } = useToast();
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
   // Fetch stats data from API
-  const { data: stats, isLoading, error } = useQuery<AdminStats>({
+  const { data: stats, isLoading, error, refetch } = useQuery<AdminStats>({
     queryKey: ['/api/admin/stats'],
     retry: 1,
   });
+  
+  // Function to refresh stats
+  const refreshStats = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+      setLastUpdated(new Date());
+      toast({
+        title: "Statistics Updated",
+        description: "Dashboard data has been refreshed successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: "Could not refresh statistics. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Prepare data for charts
   const prepareContentTypeData = () => {
@@ -127,11 +156,18 @@ export default function AdminStatsPage() {
     return (
       <AdminLayout>
         <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard Statistics</h1>
-            <p className="text-muted-foreground mt-2">
-              Overview of key metrics and analytics
-            </p>
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Dashboard Statistics</h1>
+              <p className="text-muted-foreground mt-2">
+                Overview of key metrics and analytics
+              </p>
+            </div>
+            
+            <div className="flex flex-col items-end">
+              <Skeleton className="h-10 w-32 mb-2" />
+              <Skeleton className="h-4 w-40" />
+            </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -203,11 +239,38 @@ export default function AdminStatsPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard Statistics</h1>
-          <p className="text-muted-foreground mt-2">
-            Overview of key metrics and analytics for The Quest Giver platform
-          </p>
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Dashboard Statistics</h1>
+            <p className="text-muted-foreground mt-2">
+              Overview of key metrics and analytics for The Quest Giver platform
+            </p>
+          </div>
+          
+          <div className="flex flex-col items-end">
+            <Button 
+              onClick={refreshStats} 
+              disabled={isRefreshing} 
+              className="mb-2"
+            >
+              {isRefreshing ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Refreshing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Refresh Stats
+                </>
+              )}
+            </Button>
+            
+            <div className="text-sm text-muted-foreground flex items-center">
+              <Clock className="h-3 w-3 mr-1" />
+              Last updated: {lastUpdated.toLocaleString()}
+            </div>
+          </div>
         </div>
 
         {/* Summary Cards */}
