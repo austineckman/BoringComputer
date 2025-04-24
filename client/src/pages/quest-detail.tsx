@@ -660,12 +660,12 @@ export default function QuestDetailPage() {
               ) : (
                 /* Display Mode */
                 <>
-                  <h1 className="text-3xl font-bold mb-2">{quest.title}</h1>
-                  <div className="text-sm text-muted-foreground mb-4">
+                  <h1 className="text-3xl font-bold mb-2 text-brand-orange">{quest.title}</h1>
+                  <div className="text-sm text-white mb-4 font-bold">
                     Adventure Line: <span className="font-medium">{quest.adventureLine}</span> • 
                     Difficulty: <span className="font-medium">{quest.difficulty}/5</span>
                   </div>
-                  <div className="prose dark:prose-invert max-w-none mb-6">
+                  <div className="prose dark:prose-invert max-w-none mb-6 text-white">
                     <p>{quest.description}</p>
                   </div>
                 </>
