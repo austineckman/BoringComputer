@@ -660,7 +660,7 @@ const AdminKits = () => {
 
         {/* Add Kit Dialog */}
         <Dialog open={isAddingKit} onOpenChange={setIsAddingKit}>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Component Kit</DialogTitle>
               <DialogDescription>
@@ -825,7 +825,7 @@ const AdminKits = () => {
 
         {/* Edit Kit Dialog */}
         <Dialog open={isEditingKit} onOpenChange={setIsEditingKit}>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Component Kit</DialogTitle>
               <DialogDescription>
@@ -982,7 +982,7 @@ const AdminKits = () => {
 
         {/* Add Component Dialog */}
         <Dialog open={isAddingComponent} onOpenChange={setIsAddingComponent}>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add Component to {selectedKit?.name}</DialogTitle>
               <DialogDescription>
@@ -1161,7 +1161,7 @@ const AdminKits = () => {
 
         {/* Edit Component Dialog */}
         <Dialog open={isEditingComponent} onOpenChange={setIsEditingComponent}>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Component</DialogTitle>
               <DialogDescription>
