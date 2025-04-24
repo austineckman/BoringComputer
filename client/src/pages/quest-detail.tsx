@@ -759,6 +759,18 @@ export default function QuestDetailPage() {
           {/* Sidebar */}
           <div className="w-full md:w-1/3">
             <Card className="p-6">
+              {/* Check if there are any components to determine kit requirement */}
+              {quest.componentRequirements && quest.componentRequirements.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-xl font-semibold mb-2">Kit Required</h3>
+                  <div className="bg-gray-800 p-3 rounded-md">
+                    <p className="font-medium text-brand-accent">
+                      {quest.componentRequirements[0].kitName}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
               <h3 className="text-xl font-semibold mb-4">Quest Rewards</h3>
               
               {isEditing && isAdmin ? (
@@ -1090,7 +1102,6 @@ export default function QuestDetailPage() {
                           {component.quantity > 1 && (
                             <p className="text-xs text-gray-300 mt-1">Quantity: {component.quantity}</p>
                           )}
-                          <p className="text-xs text-brand-green mt-1">Kit: {component.kitName}</p>
                         </div>
                       </div>
                     ))}
