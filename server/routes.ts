@@ -1250,7 +1250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         active: z.boolean().optional(),
         components: z.array(z.object({
           id: z.number(),
-          required: z.boolean().nullable(),
+          required: z.boolean(),
           quantity: z.number().positive().default(1)
         })).optional(),
         content: z.object({
@@ -1273,16 +1273,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Adding ${questData.components.length} components to quest ${quest.id}`);
         
         for (const component of questData.components) {
-          // Skip components marked as "not used" (required is null)
-          if (component.required === null) {
-            continue;
-          }
-          
           await storage.createQuestComponent({
             questId: quest.id,
             componentId: component.id,
             quantity: component.quantity || 1,
-            status: component.required === true ? "required" : component.required === false ? "optional" : "not-used"
+            isOptional: !component.required
           });
         }
       }
@@ -1348,7 +1343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         active: z.boolean().optional(),
         components: z.array(z.object({
           id: z.number(),
-          required: z.boolean().nullable(),
+          required: z.boolean(),
           quantity: z.number().positive().default(1)
         })).optional(),
         content: z.object({
@@ -1373,19 +1368,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // First, remove all existing component relationships for this quest
         await storage.deleteQuestComponentsByQuestId(questId);
         
-        // Then add the new component relationships - only for required and optional components
-        // We'll now store "not-used" components as well with a special flag
+        // Then add the new component relationships
         for (const component of questData.components) {
-          // For debugging
-          console.log(`Saving component ${component.id} with required=${component.required}`);
-          
-          // Store all components, including "not used" ones
-          // Use status="not-used" to represent components that aren't used
           await storage.createQuestComponent({
             questId: questId,
             componentId: component.id,
             quantity: component.quantity || 1,
-            status: component.required === true ? "required" : component.required === false ? "optional" : "not-used"
+            isOptional: !component.required
           });
         }
       }

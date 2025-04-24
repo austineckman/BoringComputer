@@ -1529,7 +1529,7 @@ export class DatabaseStorage implements IStorage {
           qc.quest_id as "questId", 
           qc.component_id as "componentId",
           qc.quantity, 
-          qc.status, 
+          qc.is_optional, 
           kc.name, 
           kc.description, 
           kc.image_path as "imagePath", 
@@ -1539,15 +1539,7 @@ export class DatabaseStorage implements IStorage {
         JOIN kit_components kc ON qc.component_id = kc.id
         JOIN component_kits ck ON kc.kit_id = ck.id
         WHERE qc.quest_id = ${questId}
-        -- Filter out "not-used" components when displaying to end-users
-        -- No filtering here in admin context - show all components
-        ORDER BY 
-          CASE 
-            WHEN qc.status = 'required' THEN 1
-            WHEN qc.status = 'optional' THEN 2
-            ELSE 3
-          END, 
-          kc.name ASC
+        ORDER BY qc.is_optional ASC, kc.name ASC
       `);
       
       // Debug the result type
@@ -1567,7 +1559,7 @@ export class DatabaseStorage implements IStorage {
         id: component.componentId,
         name: component.name,
         description: component.description,
-        status: component.status,
+        is_optional: component.is_optional,
         quantity: component.quantity,
         imagePath: component.imagePath,
         partNumber: component.partNumber,
