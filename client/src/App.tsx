@@ -95,7 +95,7 @@ function App() {
         
         <ProtectedRoute path="/quests">
           <MainLayout>
-            <Quests />
+            <Home />
           </MainLayout>
         </ProtectedRoute>
 
