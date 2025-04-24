@@ -11,7 +11,6 @@ import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { useAdventureNavigation } from "@/hooks/useAdventureNavigation";
 import AdventureImage from "@/components/adventure/AdventureImage";
 import { themeConfig } from "@/lib/themeConfig";
-import RetroGrid from "@/components/ui/retro-grid";
 
 // Import banner images
 import currentQuestBanner from "../assets/current_quest_banner.png";
@@ -89,14 +88,6 @@ const Home = () => {
 
   return (
     <div>
-      {/* Retro Grid Header with "Ready Player One" */}
-      <section className="mb-12">
-        <RetroGrid 
-          title="Ready Player One"
-          className="h-64 rounded-lg pixel-border overflow-hidden"
-        />
-      </section>
-      
       {/* Header Section with Status */}
       <section className="mb-12">
         <div className="bg-space-mid rounded-lg p-6 pixel-border relative overflow-hidden">
