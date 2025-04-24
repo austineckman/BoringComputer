@@ -614,25 +614,25 @@ const AdminKits = () => {
                     <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
                   </div>
                 ) : components && components.length > 0 ? (
-                  <div className="bg-white rounded-md border shadow-sm">
+                  <div className="bg-space-mid rounded-md border shadow-sm">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Image</TableHead>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Quantity</TableHead>
-                          <TableHead>Required</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                        <TableRow className="hover:bg-space-light">
+                          <TableHead className="text-brand-light">Image</TableHead>
+                          <TableHead className="text-brand-light">Name</TableHead>
+                          <TableHead className="text-brand-light">Description</TableHead>
+                          <TableHead className="text-brand-light">Category</TableHead>
+                          <TableHead className="text-brand-light">Quantity</TableHead>
+                          <TableHead className="text-brand-light">Required</TableHead>
+                          <TableHead className="text-brand-light text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {components.map((component: Component) => (
-                          <TableRow key={component.id}>
+                          <TableRow key={component.id} className="hover:bg-space-dark">
                             <TableCell>
                               {component.imagePath ? (
-                                <div className="relative w-12 h-12 bg-gray-100 rounded-md overflow-hidden">
+                                <div className="relative w-12 h-12 bg-space-dark rounded-md overflow-hidden">
                                   <img 
                                     src={component.imagePath} 
                                     alt={component.name}
@@ -640,15 +640,15 @@ const AdminKits = () => {
                                   />
                                 </div>
                               ) : (
-                                <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-md">
+                                <div className="flex items-center justify-center w-12 h-12 bg-space-dark rounded-md">
                                   <Settings className="h-6 w-6 text-gray-300" />
                                 </div>
                               )}
                             </TableCell>
-                            <TableCell className="font-medium">{component.name}</TableCell>
-                            <TableCell className="max-w-xs truncate">{component.description}</TableCell>
-                            <TableCell>{component.category}</TableCell>
-                            <TableCell>{component.quantity}</TableCell>
+                            <TableCell className="font-medium text-brand-light">{component.name}</TableCell>
+                            <TableCell className="max-w-xs truncate text-brand-light">{component.description}</TableCell>
+                            <TableCell className="text-brand-light">{component.category}</TableCell>
+                            <TableCell className="text-brand-light">{component.quantity}</TableCell>
                             <TableCell>
                               <Badge variant={component.isRequired ? "default" : "outline"}>
                                 {component.isRequired ? "Required" : "Optional"}
@@ -670,11 +670,11 @@ const AdminKits = () => {
                     </Table>
                   </div>
                 ) : (
-                  <Card>
+                  <Card className="bg-space-mid border-space-light">
                     <CardContent className="flex flex-col items-center justify-center py-8">
-                      <Grid className="h-16 w-16 text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">No Components Found</h3>
-                      <p className="text-muted-foreground text-center mb-4">
+                      <Grid className="h-16 w-16 text-brand-light/60 mb-4" />
+                      <h3 className="text-lg font-semibold mb-2 text-brand-light">No Components Found</h3>
+                      <p className="text-brand-light/70 text-center mb-4">
                         Add components to this kit to get started
                       </p>
                       <Button onClick={handleAddComponent}>
