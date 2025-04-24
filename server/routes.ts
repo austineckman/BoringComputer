@@ -1666,8 +1666,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin kits routes
   app.use('/api/admin', authenticate, adminKitsRoutes);
   
-  // Admin recipes routes
-  app.use('/api/admin/recipes', authenticate, adminRecipesRoutes);
+  // Admin recipes routes - ensure we also apply admin authorization
+  app.use('/api/admin/recipes', authenticate, adminAuth, adminRecipesRoutes);
   
   // Routes for admin recipes and crafting were already registered above
   
