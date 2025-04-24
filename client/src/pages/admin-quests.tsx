@@ -589,6 +589,9 @@ const AdminQuests: React.FC = () => {
 
   // Handle form submission
   const onSubmit = (values: z.infer<typeof questFormSchema>) => {
+    // Log the component state before submission
+    console.log("Submitting quest components:", questComponents);
+    
     const questData = {
       ...values,
       content: {
@@ -606,7 +609,7 @@ const AdminQuests: React.FC = () => {
       components: questComponents.map(component => ({
         id: component.id,
         required: component.required,
-        quantity: component.quantity
+        quantity: component.quantity || 1
       })),
     };
 
@@ -950,11 +953,18 @@ const AdminQuests: React.FC = () => {
                                             <Select
                                               value={component.required === true ? "required" : component.required === false ? "optional" : "not-used"}
                                               onValueChange={(value) => {
+                                                // Log the selection change
+                                                console.log(`Changing component ${component.id} to ${value}`);
+                                                
                                                 const updatedComponents = [...questComponents];
                                                 updatedComponents[index] = {
                                                   ...updatedComponents[index],
                                                   required: value === "required" ? true : value === "optional" ? false : null
                                                 };
+                                                
+                                                // Log the updated component
+                                                console.log("Updated component:", updatedComponents[index]);
+                                                
                                                 setQuestComponents(updatedComponents);
                                               }}
                                             >
