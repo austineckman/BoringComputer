@@ -223,10 +223,13 @@ export default function Inventory() {
     
     if (resources) {
       resources.forEach((resource: Resource) => {
-        items.push({
-          type: resource.type,
-          quantity: resource.quantity
-        });
+        // Only add items with quantity > 0 to the inventory
+        if (resource.quantity > 0) {
+          items.push({
+            type: resource.type,
+            quantity: resource.quantity
+          });
+        }
       });
     }
     
