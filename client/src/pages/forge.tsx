@@ -125,7 +125,7 @@ const ForgePage: React.FC = () => {
   // Use the crafting hook
   const {
     grid,
-    recipes = mockRecipes, // Use mock recipes until API is available
+    recipes,
     inventory,
     remainingInventory,
     usedItems,

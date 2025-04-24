@@ -44,12 +44,12 @@ const RecipeList: React.FC<RecipeListProps> = ({
     setTimeout(() => setIsRefreshing(false), 500);
   };
   
-  // Get unique categories from recipes
-  const uniqueCategories = Array.from(new Set(recipes.map(recipe => recipe.category || 'uncategorized')));
+  // Get unique categories from recipes, with defensive programming for undefined recipes
+  const uniqueCategories = Array.from(new Set((recipes || []).map(recipe => recipe.category || 'uncategorized')));
   const categories = ['all', ...uniqueCategories];
   
   // Filter recipes based on search query and category
-  const filteredRecipes = recipes.filter(recipe => {
+  const filteredRecipes = (recipes || []).filter(recipe => {
     const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           recipe.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = activeCategory === 'all' || recipe.category === activeCategory;
