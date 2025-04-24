@@ -113,6 +113,81 @@ const AdminDashboard: React.FC = () => {
   return (
     <AdminLayout>
       <div className="container mx-auto p-6">
+        <Card className="mb-6">
+          <CardHeader className="pb-2 pt-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Testing Utilities</CardTitle>
+              <Package className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </CardHeader>
+          <CardContent className="pb-4 pt-0">
+            <p className="text-sm text-muted-foreground">
+              Generate test loot crates and reset inventory for testing purposes.
+            </p>
+            <div className="mt-4 flex gap-2">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => {
+                  const mutation = {
+                    mutate: async () => {
+                      try {
+                        const response = await fetch('/api/loot-boxes/generate-test', {
+                          method: 'POST',
+                          credentials: 'include',
+                          headers: { 'Content-Type': 'application/json' }
+                        });
+                        
+                        if (!response.ok) throw new Error('Failed to generate test crates');
+                        
+                        const data = await response.json();
+                        
+                        window.alert(`Generated ${data.lootBoxes?.length || 0} test loot crates successfully!`);
+                      } catch (error) {
+                        console.error(error);
+                        window.alert('Failed to generate test loot crates');
+                      }
+                    }
+                  };
+                  mutation.mutate();
+                }}
+              >
+                Generate Test Crates
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="flex-1 border-amber-500 hover:bg-amber-500/10"
+                onClick={() => {
+                  const mutation = {
+                    mutate: async () => {
+                      try {
+                        const response = await fetch('/api/admin/inventory/reset-to-one', {
+                          method: 'POST',
+                          credentials: 'include',
+                          headers: { 'Content-Type': 'application/json' }
+                        });
+                        
+                        if (!response.ok) throw new Error('Failed to reset inventory');
+                        
+                        const data = await response.json();
+                        
+                        window.alert(`Inventory reset successfully. You now have exactly 1 of each item (${data.inventory ? Object.keys(data.inventory).length : 0} items).`);
+                      } catch (error) {
+                        console.error(error);
+                        window.alert('Failed to reset inventory');
+                      }
+                    }
+                  };
+                  mutation.mutate();
+                }}
+              >
+                Reset Inventory
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        
         <div className="mb-6">
           <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
           <p className="text-muted-foreground">
@@ -149,80 +224,6 @@ const AdminDashboard: React.FC = () => {
         <div className="mt-8">
           <h2 className="mb-4 text-xl font-semibold">Quick Actions</h2>
           <div className="space-y-2">
-            <Card>
-              <CardHeader className="pb-2 pt-4">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">Testing Utilities</CardTitle>
-                  <Package className="h-5 w-5 text-muted-foreground" />
-                </div>
-              </CardHeader>
-              <CardContent className="pb-4 pt-0">
-                <p className="text-sm text-muted-foreground">
-                  Generate test loot crates and reset inventory for testing purposes.
-                </p>
-                <div className="mt-4 flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={() => {
-                      const mutation = {
-                        mutate: async () => {
-                          try {
-                            const response = await fetch('/api/loot-boxes/generate-test', {
-                              method: 'POST',
-                              credentials: 'include',
-                              headers: { 'Content-Type': 'application/json' }
-                            });
-                            
-                            if (!response.ok) throw new Error('Failed to generate test crates');
-                            
-                            const data = await response.json();
-                            
-                            window.alert(`Generated ${data.lootBoxes?.length || 0} test loot crates successfully!`);
-                          } catch (error) {
-                            console.error(error);
-                            window.alert('Failed to generate test loot crates');
-                          }
-                        }
-                      };
-                      mutation.mutate();
-                    }}
-                  >
-                    Generate Test Crates
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 border-amber-500 hover:bg-amber-500/10"
-                    onClick={() => {
-                      const mutation = {
-                        mutate: async () => {
-                          try {
-                            const response = await fetch('/api/admin/inventory/reset-to-one', {
-                              method: 'POST',
-                              credentials: 'include',
-                              headers: { 'Content-Type': 'application/json' }
-                            });
-                            
-                            if (!response.ok) throw new Error('Failed to reset inventory');
-                            
-                            const data = await response.json();
-                            
-                            window.alert(`Inventory reset successfully. You now have exactly 1 of each item (${data.inventory ? Object.keys(data.inventory).length : 0} items).`);
-                          } catch (error) {
-                            console.error(error);
-                            window.alert('Failed to reset inventory');
-                          }
-                        }
-                      };
-                      mutation.mutate();
-                    }}
-                  >
-                    Reset Inventory
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
             
             <Card>
               <CardHeader className="pb-2 pt-4">
