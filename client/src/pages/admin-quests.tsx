@@ -630,7 +630,13 @@ const AdminQuests: React.FC = () => {
       })), // Use new format if available, otherwise convert legacy format
       components: questComponents.map(component => ({
         id: component.id,
-        // Explicitly preserve null values - important for "not used" components
+        // Include the new status field
+        status: component.status || (
+          component.required === true ? "required" : 
+          component.required === false ? "optional" : 
+          "not-used"
+        ),
+        // Keep required for backward compatibility
         required: component.required,
         quantity: component.quantity || 1
       })),
