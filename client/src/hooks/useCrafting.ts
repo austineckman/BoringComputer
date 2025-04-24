@@ -81,17 +81,29 @@ export function useCrafting() {
         }
       }
       
+      // Convert recipeId to a number since the server expects a number
+      const recipeIdNum = parseInt(recipeId, 10);
+      
+      console.log('Sending crafting request:', {
+        recipeId: recipeIdNum,
+        gridPattern: grid5x5
+      });
+      
       const response = await fetch('/api/crafting/craft', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ recipeId, gridPattern: grid5x5 }),
+        body: JSON.stringify({ 
+          recipeId: recipeIdNum, 
+          gridPattern: grid5x5 
+        }),
       });
       
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || 'Failed to craft item');
+        const errorText = await response.text();
+        console.error('Crafting error:', errorText);
+        throw new Error(errorText || 'Failed to craft item');
       }
       
       return response.json();
