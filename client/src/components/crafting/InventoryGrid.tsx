@@ -51,7 +51,7 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
             Your inventory is empty. Complete quests to get materials!
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {inventoryItems.map(({ itemId, quantity, isRequired, requiredAmount }) => (
               <InventoryItem
                 key={itemId}
@@ -67,7 +67,7 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
         {selectedRecipe && (
           <div className="mt-4 pt-4 border-t border-border">
             <h4 className="font-medium mb-2">Required for {selectedRecipe.name}:</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {Object.entries(getRequiredItems()).map(([itemId, amount]) => {
                 const currentAmount = inventory[itemId] || 0;
                 return (
