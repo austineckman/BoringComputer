@@ -94,6 +94,12 @@ export default function QuestDetailPage() {
     enabled: !!questId, // Only fetch when we have a quest ID
   });
   
+  // Fetch kits for kit details display
+  const kitsQuery = useQuery({
+    queryKey: ['/api/admin/kits'],
+    enabled: !!questId, // Only fetch when we have a quest ID
+  });
+  
   // Start editing mode
   const handleStartEdit = () => {
     // Initialize content fields if not present
@@ -764,15 +770,24 @@ export default function QuestDetailPage() {
                 <div className="mb-6">
                   <h3 className="text-xl font-semibold mb-2">Kit Required</h3>
                   <div className="bg-gray-800 p-3 rounded-md flex items-center gap-3">
-                    {quest.componentRequirements[0].imagePath && (
-                      <div className="w-12 h-12 rounded-md overflow-hidden bg-gray-700 flex-shrink-0">
-                        <img 
-                          src={quest.componentRequirements[0].imagePath} 
-                          alt={quest.componentRequirements[0].kitName} 
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
+                    {/* Find the kit in the kits list */}
+                    {(() => {
+                      const kitName = quest.componentRequirements[0].kitName;
+                      const kit = kitsQuery.data?.find((k: any) => k.name === kitName);
+                      
+                      // Use the kit image if found, otherwise fall back to component image
+                      const imagePath = kit?.imagePath || quest.componentRequirements[0].imagePath;
+                      
+                      return imagePath ? (
+                        <div className="w-12 h-12 rounded-md overflow-hidden bg-gray-700 flex-shrink-0">
+                          <img 
+                            src={imagePath} 
+                            alt={quest.componentRequirements[0].kitName} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : null;
+                    })()}
                     <p className="font-medium text-brand-accent">
                       {quest.componentRequirements[0].kitName}
                     </p>
