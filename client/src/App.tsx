@@ -1,7 +1,7 @@
 import { Route, Switch } from "wouter";
 import { useEffect, useState } from "react";
 import Home from "@/pages/home";
-import Login from "@/pages/login";
+import AuthPage from "@/pages/auth-page";
 import Quests from "@/pages/quests";
 import QuestDetail from "@/pages/quest-detail";
 import Inventory from "@/pages/new-inventory";
@@ -23,8 +23,7 @@ import NotFound from "@/pages/not-found";
 import MainLayout from "@/components/layout/MainLayout";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
-import { ProtectedRoute } from "@/lib/protected-route";
-import { AdminRoute } from "@/lib/admin-route";
+import { ProtectedRoute, AdminRoute } from "@/lib/protected-route";
 import { SoundProvider } from "@/context/SoundContext";
 import { AuthProvider } from "@/hooks/use-auth";
 
@@ -79,112 +78,153 @@ function App() {
     <AuthProvider>
       <Switch>
         <Route path="/login">
-          <Login />
+          <AuthPage />
         </Route>
         
         <Route path="/auth">
-          <Login />
+          <AuthPage />
         </Route>
         
         {/* Protected routes */}
-        <ProtectedRoute path="/">
-          <MainLayout>
-            <Home />
-          </MainLayout>
-        </ProtectedRoute>
+        <ProtectedRoute 
+          path="/" 
+          component={() => (
+            <MainLayout>
+              <Home />
+            </MainLayout>
+          )} 
+        />
         
-        <ProtectedRoute path="/quests">
-          <MainLayout>
-            <Home />
-          </MainLayout>
-        </ProtectedRoute>
+        <ProtectedRoute 
+          path="/quests" 
+          component={() => (
+            <MainLayout>
+              <Home />
+            </MainLayout>
+          )} 
+        />
 
-        <ProtectedRoute path="/quests/:id">
-          <MainLayout>
-            <QuestDetail />
-          </MainLayout>
-        </ProtectedRoute>
+        <ProtectedRoute 
+          path="/quests/:id" 
+          component={() => (
+            <MainLayout>
+              <QuestDetail />
+            </MainLayout>
+          )} 
+        />
         
-        <ProtectedRoute path="/inventory">
-          <MainLayout>
-            <Inventory />
-          </MainLayout>
-        </ProtectedRoute>
+        <ProtectedRoute 
+          path="/inventory" 
+          component={() => (
+            <MainLayout>
+              <Inventory />
+            </MainLayout>
+          )} 
+        />
         
-        <ProtectedRoute path="/unified-inventory">
-          <MainLayout>
-            <UnifiedInventory />
-          </MainLayout>
-        </ProtectedRoute>
+        <ProtectedRoute 
+          path="/unified-inventory" 
+          component={() => (
+            <MainLayout>
+              <UnifiedInventory />
+            </MainLayout>
+          )} 
+        />
         
-        <ProtectedRoute path="/loot-box-preview/:id">
-          <MainLayout>
-            <LootBoxPreview />
-          </MainLayout>
-        </ProtectedRoute>
+        <ProtectedRoute 
+          path="/loot-box-preview/:id" 
+          component={() => (
+            <MainLayout>
+              <LootBoxPreview />
+            </MainLayout>
+          )} 
+        />
         
-        <ProtectedRoute path="/character">
-          <MainLayout>
-            <Character />
-          </MainLayout>
-        </ProtectedRoute>
+        <ProtectedRoute 
+          path="/character" 
+          component={() => (
+            <MainLayout>
+              <Character />
+            </MainLayout>
+          )} 
+        />
         
-        <ProtectedRoute path="/forge">
-          <MainLayout>
-            <Forge />
-          </MainLayout>
-        </ProtectedRoute>
+        <ProtectedRoute 
+          path="/forge" 
+          component={() => (
+            <MainLayout>
+              <Forge />
+            </MainLayout>
+          )} 
+        />
         
         {/* Redirect workshop to forge */}
-        <ProtectedRoute path="/workshop">
-          <MainLayout>
-            <Forge />
-          </MainLayout>
-        </ProtectedRoute>
+        <ProtectedRoute 
+          path="/workshop" 
+          component={() => (
+            <MainLayout>
+              <Forge />
+            </MainLayout>
+          )} 
+        />
         
-        <ProtectedRoute path="/achievements">
-          <MainLayout>
-            <Achievements />
-          </MainLayout>
-        </ProtectedRoute>
+        <ProtectedRoute 
+          path="/achievements" 
+          component={() => (
+            <MainLayout>
+              <Achievements />
+            </MainLayout>
+          )} 
+        />
         
-        <AdminRoute path="/admin">
-          <Admin />
-        </AdminRoute>
+        <AdminRoute 
+          path="/admin" 
+          component={Admin} 
+        />
         
-        <AdminRoute path="/admin-items">
-          <AdminItems />
-        </AdminRoute>
+        <AdminRoute 
+          path="/admin-items" 
+          component={AdminItems} 
+        />
         
-        <AdminRoute path="/admin-recipes">
-          <AdminRecipes />
-        </AdminRoute>
+        <AdminRoute 
+          path="/admin-recipes" 
+          component={AdminRecipes} 
+        />
         
-        <AdminRoute path="/admin-quests">
-          <AdminQuests />
-        </AdminRoute>
+        <AdminRoute 
+          path="/admin-quests" 
+          component={AdminQuests} 
+        />
         
-        <AdminRoute path="/admin-lootboxes">
-          <AdminLootboxes />
-        </AdminRoute>
+        <AdminRoute 
+          path="/admin-lootboxes" 
+          component={AdminLootboxes} 
+        />
         
-        <AdminRoute path="/admin-basic">
-          <AdminBasic />
-        </AdminRoute>
+        <AdminRoute 
+          path="/admin-basic" 
+          component={AdminBasic} 
+        />
         
-        <AdminRoute path="/admin-simple">
-          <AdminSimple />
-        </AdminRoute>
+        <AdminRoute 
+          path="/admin-simple" 
+          component={AdminSimple} 
+        />
         
-        <AdminRoute path="/admin-kits">
-          <AdminKits />
-        </AdminRoute>
+        <AdminRoute 
+          path="/admin-kits" 
+          component={AdminKits} 
+        />
         
-        <ProtectedRoute path="/settings">
-          <MainLayout>
-            <Settings />
-          </MainLayout>
-        </ProtectedRoute>
+        <ProtectedRoute 
+          path="/settings" 
+          component={() => (
+            <MainLayout>
+              <Settings />
+            </MainLayout>
+          )} 
+        />
         
         <Route>
           <NotFound />
