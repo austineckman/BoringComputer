@@ -668,6 +668,46 @@ export default function QuestDetailPage() {
                   <div className="prose dark:prose-invert max-w-none mb-6 text-white">
                     <p>{quest.description}</p>
                   </div>
+                  
+                  {/* Component Requirements Section - Moved right after description */}
+                  {!isEditing && quest.componentRequirements && quest.componentRequirements.length > 0 && (
+                    <div className="mt-4 mb-6 border-t border-gray-700 pt-4">
+                      <h3 className="text-xl font-semibold mb-4">Required Components</h3>
+                      <div className="space-y-3">
+                        {quest.componentRequirements
+                          .filter(component => !component.is_optional) // Only show required components
+                          .map((component, index) => (
+                          <div key={index} className="flex items-start p-3 rounded-md bg-gray-800">
+                            {component.imagePath ? (
+                              <div className="w-12 h-12 rounded-md overflow-hidden bg-gray-900 mr-3 flex-shrink-0">
+                                <img 
+                                  src={component.imagePath} 
+                                  alt={component.name} 
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-12 h-12 rounded-md bg-gray-900 mr-3 flex-shrink-0 flex items-center justify-center">
+                                <span className="text-2xl text-gray-600">?</span>
+                              </div>
+                            )}
+                            <div className="flex-grow">
+                              <div className="flex items-center">
+                                <h4 className="text-sm font-medium">{component.name}</h4>
+                              </div>
+                              <p className="text-xs text-gray-400 mt-1">{component.description}</p>
+                              {component.partNumber && (
+                                <p className="text-xs text-gray-500 mt-1">Part #: {component.partNumber}</p>
+                              )}
+                              {component.quantity > 1 && (
+                                <p className="text-xs text-gray-300 mt-1">Quantity: {component.quantity}</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -1003,45 +1043,7 @@ export default function QuestDetailPage() {
                 </div>
               )}
               
-              {/* Component Requirements Section */}
-              {!isEditing && quest.componentRequirements && quest.componentRequirements.length > 0 && (
-                <div className="mt-6 border-t border-gray-700 pt-6">
-                  <h3 className="text-xl font-semibold mb-4">Required Components</h3>
-                  <div className="space-y-3">
-                    {quest.componentRequirements
-                      .filter(component => !component.is_optional) // Only show required components
-                      .map((component, index) => (
-                      <div key={index} className="flex items-start p-3 rounded-md bg-gray-800">
-                        {component.imagePath ? (
-                          <div className="w-12 h-12 rounded-md overflow-hidden bg-gray-900 mr-3 flex-shrink-0">
-                            <img 
-                              src={component.imagePath} 
-                              alt={component.name} 
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-12 h-12 rounded-md bg-gray-900 mr-3 flex-shrink-0 flex items-center justify-center">
-                            <span className="text-2xl text-gray-600">?</span>
-                          </div>
-                        )}
-                        <div className="flex-grow">
-                          <div className="flex items-center">
-                            <h4 className="text-sm font-medium">{component.name}</h4>
-                          </div>
-                          <p className="text-xs text-gray-400 mt-1">{component.description}</p>
-                          {component.partNumber && (
-                            <p className="text-xs text-gray-500 mt-1">Part #: {component.partNumber}</p>
-                          )}
-                          {component.quantity > 1 && (
-                            <p className="text-xs text-gray-300 mt-1">Quantity: {component.quantity}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Component Requirements Section - Moved to under description */}
               
               {!isEditing && (
                 <Button 
