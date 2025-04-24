@@ -35,32 +35,29 @@ const Home = () => {
   // Filter quests by selected kit if one is selected
   const filteredQuests = selectedKit 
     ? availableQuests.filter(quest => {
-        // Debug logging
-        console.log('Checking quest for kit match:', quest.title);
-        console.log('Quest component requirements:', quest.componentRequirements);
+        // Get the selected kit object
+        const selectedKitObj = kits.find(kit => kit.id === selectedKit);
+        if (!selectedKitObj) return false;
         
-        // Check if this quest has component requirements with the selected kit
-        if (quest.componentRequirements && Array.isArray(quest.componentRequirements) && quest.componentRequirements.length > 0) {
-          // Find the matching kit by matching the selected kit ID with the kit info in our kits array
-          const selectedKitObj = kits.find(kit => kit.id === selectedKit);
-          if (!selectedKitObj) {
-            console.log('Selected kit not found in kits array');
-            return false;
-          }
-          
-          console.log('Selected kit:', selectedKitObj.name, 'with ID:', selectedKit);
-          
-          // Check if any component requirement matches the selected kit name
-          const doesMatch = quest.componentRequirements.some(comp => {
-            console.log('Comparing comp.kitName:', comp.kitName, 'with selectedKit name:', selectedKitObj.name);
-            return comp.kitName === selectedKitObj.name || comp.kitId === selectedKit;
-          });
-          
-          console.log('Does this quest match the selected kit?', doesMatch);
-          return doesMatch;
+        // First approach: Check if any component requirement matches by kit name
+        if (quest.componentRequirements && 
+            Array.isArray(quest.componentRequirements) && 
+            quest.componentRequirements.length > 0 &&
+            quest.componentRequirements.some(comp => comp.kitName === selectedKitObj.name)) {
+          return true;
         }
         
-        console.log('Quest has no component requirements');
+        // Second approach: Check if quest.adventureLine matches kit name
+        // This is useful for quests that are part of a kit series but may not have components defined
+        if (quest.adventureLine === selectedKitObj.name) {
+          return true;
+        }
+        
+        // Third approach: Check if quest has kitId that matches the selected kit
+        if (quest.kitId === selectedKit) {
+          return true;
+        }
+        
         return false;
       })
     : availableQuests;
