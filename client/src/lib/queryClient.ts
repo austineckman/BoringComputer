@@ -11,36 +11,50 @@ export async function apiRequest(
   urlOrMethod: string,
   urlOrData?: string | unknown,
   dataOrHeaders?: unknown | Record<string, string>,
-  headers?: Record<string, string>,
+  headersParam?: Record<string, string>,
 ): Promise<Response> {
   // Detect if the first parameter is a URL (starts with /) or a method
   let method: string;
   let url: string;
   let data: unknown | undefined;
-  let finalHeaders: Record<string, string> | undefined;
+  let customHeaders: Record<string, string> | undefined;
   
   // First parameter is the URL (backward compatibility mode)
   if (urlOrMethod.startsWith('/')) {
     console.warn('Deprecated apiRequest usage: URL should be the second parameter, not the first');
-    method = 'GET';
+    // If data is provided, we must use POST not GET since GET cannot have a body
+    method = urlOrData ? 'POST' : 'GET'; 
     url = urlOrMethod;
     data = urlOrData;
-    finalHeaders = dataOrHeaders as Record<string, string> | undefined;
+    customHeaders = dataOrHeaders as Record<string, string> | undefined;
   } 
   // Normal usage: first parameter is the method
   else {
     method = urlOrMethod;
     url = urlOrData as string;
     data = dataOrHeaders;
-    finalHeaders = headers;
+    customHeaders = headersParam;
   }
   
-  // Default headers if not provided
-  const defaultHeaders = data instanceof FormData 
-    ? {} // Don't set Content-Type for FormData (browser will set it with boundary)
-    : data ? { "Content-Type": "application/json" } : {};
+  // GET/HEAD methods cannot have a body - if we have data, convert to POST
+  if ((method === 'GET' || method === 'HEAD') && data) {
+    console.warn(`Converting ${method} with body to POST request`);
+    method = 'POST';
+  }
   
-  const requestHeaders = { ...defaultHeaders, ...finalHeaders };
+  const requestHeaders: HeadersInit = {};
+  
+  // Only add Content-Type for non-FormData with data
+  if (!(data instanceof FormData) && data) {
+    requestHeaders["Content-Type"] = "application/json";
+  }
+  
+  // Add any custom headers
+  if (customHeaders) {
+    Object.keys(customHeaders).forEach(key => {
+      requestHeaders[key] = customHeaders![key];
+    });
+  }
   
   const res = await fetch(url, {
     method,
