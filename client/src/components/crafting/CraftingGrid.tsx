@@ -93,7 +93,7 @@ const CraftingGrid: React.FC<CraftingGridProps> = ({
           </div>
         )}
         
-        <div className="grid grid-cols-5 gap-2 mb-2">
+        <div className="grid grid-cols-3 gap-2 mb-2">
           {grid.map((row, rowIndex) => (
             row.map((cellItem, colIndex) => (
               <CraftingCell
