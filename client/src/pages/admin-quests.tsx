@@ -540,15 +540,32 @@ const AdminQuests: React.FC = () => {
         // Find the kit
         const selectedKit = componentKits.find((kit: any) => kit.id === quest.kitId);
         if (selectedKit && selectedKit.components) {
-          // Merge the saved quest components with the kit components 
+          console.log('Loading component state from saved quest data');
+          
+          // First, create a map of quest component required states by ID for quick lookup
+          const questComponentsMap = new Map();
+          quest.components.forEach((comp: any) => {
+            // Store the required state (prioritizing the quest's saved state)
+            questComponentsMap.set(comp.id, {
+              required: comp.required,
+              quantity: comp.quantity || 1
+            });
+          });
+          
+          // Create the merged components using the quest's saved state as priority
           const mergedComponents = selectedKit.components.map((kitComponent: any) => {
-            // Find if this component exists in the quest.components array
-            const savedComponent = quest.components.find((c: any) => c.id === kitComponent.id);
+            // Check if this component exists in the saved quest components
+            const savedComponentState = questComponentsMap.get(kitComponent.id);
+            
             return {
               id: kitComponent.id,
               name: kitComponent.name,
+              // Always use the kit's quantity as a baseline
               quantity: kitComponent.quantity,
-              required: savedComponent ? savedComponent.required : kitComponent.isRequired
+              // Use the saved required state if available, otherwise use the kit default
+              required: savedComponentState 
+                ? savedComponentState.required 
+                : Boolean(kitComponent.isRequired)
             };
           });
           
