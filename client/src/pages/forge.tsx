@@ -228,6 +228,9 @@ const ForgePage: React.FC = () => {
                 <Sparkles className="h-5 w-5 mr-2 text-amber-500" />
                 Crafting Complete!
               </DialogTitle>
+              <DialogDescription>
+                You have successfully crafted a new item.
+              </DialogDescription>
             </DialogHeader>
             
             {selectedRecipe && (
