@@ -555,6 +555,74 @@ router.get('/users', async (req, res) => {
   }
 });
 
+// Update user roles - toggle admin status
+router.put('/users/:id/toggle-admin', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+    
+    // Get the current user making the request
+    const adminUser = req.user;
+    if (!adminUser || !adminUser.roles?.includes('admin')) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    // Prevent admins from removing their own admin status
+    if (adminUser.id === id) {
+      return res.status(400).json({ 
+        error: 'Cannot modify your own admin status',
+        message: 'For security reasons, admins cannot remove their own admin privileges'
+      });
+    }
+    
+    // Get the target user
+    const targetUser = await storage.getUser(id);
+    if (!targetUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Check if user has roles array, if not create it
+    const currentRoles = targetUser.roles || [];
+    
+    // Toggle admin role
+    let newRoles;
+    if (currentRoles.includes('admin')) {
+      // If they're already an admin, remove admin role
+      newRoles = currentRoles.filter(role => role !== 'admin');
+    } else {
+      // If they're not an admin, add admin role
+      newRoles = [...currentRoles, 'admin'];
+    }
+    
+    // Always make sure 'user' role is present
+    if (!newRoles.includes('user')) {
+      newRoles.push('user');
+    }
+    
+    // Update the user with new roles
+    const updatedUser = await storage.updateUser(id, { roles: newRoles });
+    
+    if (!updatedUser) {
+      return res.status(500).json({ error: 'Failed to update user roles' });
+    }
+    
+    res.json({
+      success: true,
+      message: `Admin status ${newRoles.includes('admin') ? 'granted to' : 'revoked from'} ${updatedUser.username}`,
+      user: {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        roles: updatedUser.roles
+      }
+    });
+  } catch (error) {
+    console.error('Error updating user roles:', error);
+    res.status(500).json({ error: 'Failed to update user roles' });
+  }
+});
+
 // =================
 // FILE UPLOADS
 // =================
