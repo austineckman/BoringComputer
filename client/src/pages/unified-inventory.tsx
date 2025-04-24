@@ -412,7 +412,15 @@ export default function UnifiedInventory() {
         {/* Inventory Header with item count */}
         <div className="flex items-center justify-between border-b border-space-light/20 pb-3 mb-4">
           <div className="flex items-center gap-2">
-            <h3 className="text-lg font-semibold text-brand-orange">Inventory</h3>
+            <div className="flex items-center">
+              <img 
+                src="/assets/506_Gold_Bag_Leather_B.png" 
+                alt="Inventory Bag" 
+                className="w-6 h-6 mr-2 object-contain pixelated"
+                style={{ imageRendering: 'pixelated' }}
+              />
+              <h3 className="text-lg font-semibold text-brand-orange">Inventory</h3>
+            </div>
             <Button 
               variant="outline"
               size="sm"
