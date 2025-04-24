@@ -2,12 +2,13 @@ import express, { Request, Response } from 'express';
 import { storage } from '../storage';
 import { z } from 'zod';
 import { insertCraftingRecipeSchema } from '@shared/schema';
-import { isAdmin } from '../middleware/auth';
+// import { isAdmin } from '../middleware/auth'; 
+// Using adminAuth middleware from routes.ts instead
 
 const router = express.Router();
 
 // Get all recipes (admin version - shows all, even locked ones)
-router.get('/', isAdmin, async (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const recipes = await storage.getCraftingRecipes();
     res.status(200).json(recipes);
@@ -18,7 +19,7 @@ router.get('/', isAdmin, async (req: Request, res: Response) => {
 });
 
 // Get a specific recipe by ID (admin version - no unlock check)
-router.get('/:id', isAdmin, async (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -38,7 +39,7 @@ router.get('/:id', isAdmin, async (req: Request, res: Response) => {
 });
 
 // Create a new recipe
-router.post('/', isAdmin, async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
     const recipeSchema = insertCraftingRecipeSchema.extend({
       // Pattern is a 2D array representing required items in each position
@@ -61,7 +62,7 @@ router.post('/', isAdmin, async (req: Request, res: Response) => {
 });
 
 // Update an existing recipe
-router.patch('/:id', isAdmin, async (req: Request, res: Response) => {
+router.patch('/:id', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -93,7 +94,7 @@ router.patch('/:id', isAdmin, async (req: Request, res: Response) => {
 });
 
 // Delete a recipe
-router.delete('/:id', isAdmin, async (req: Request, res: Response) => {
+router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
