@@ -215,7 +215,81 @@ export default function Inventory() {
     }
   };
   
-
+  // Component for generating test loot crates
+  const GenerateTestCrates = () => {
+    const { toast } = useToast();
+    const { sounds } = useSoundEffects();
+    const [isGenerating, setIsGenerating] = useState(false);
+    
+    const generateCratesMutation = useMutation({
+      mutationFn: async () => {
+        const response = await apiRequest('POST', '/api/loot-boxes/generate-test');
+        return await response.json();
+      },
+      onSuccess: (data) => {
+        try {
+          sounds.questComplete();
+        } catch (e) {
+          console.warn('Could not play sound', e);
+        }
+        
+        toast({
+          title: "Test Crates Generated!",
+          description: `${data.lootBoxes.length} new loot crates have been added to your inventory.`,
+          variant: "default",
+        });
+        
+        // Invalidate the loot boxes query to refresh the list
+        queryClient.invalidateQueries({ queryKey: ['/api/loot-boxes'] });
+        setIsGenerating(false);
+      },
+      onError: (error) => {
+        console.error('Error generating test crates:', error);
+        toast({
+          title: "Failed to Generate Crates",
+          description: "There was an error generating test crates. Please try again.",
+          variant: "destructive",
+        });
+        setIsGenerating(false);
+      }
+    });
+    
+    // Function to handle generating test crates
+    const handleGenerateCrates = () => {
+      try {
+        sounds.click();
+      } catch (e) {
+        console.warn('Could not play sound', e);
+      }
+      
+      setIsGenerating(true);
+      generateCratesMutation.mutate();
+    };
+    
+    return (
+      <Button 
+        variant="default" 
+        className="gap-2 bg-brand-orange hover:bg-brand-orange/80 text-white font-medium border-2 border-brand-orange/40 shadow-lg shadow-brand-orange/20 relative overflow-hidden"
+        disabled={isGenerating}
+        onClick={handleGenerateCrates}
+      >
+        {/* Animated glow effect */}
+        <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 animate-shine -translate-x-full"></span>
+        
+        {isGenerating ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Generating...</span>
+          </>
+        ) : (
+          <>
+            <Gift size={16} />
+            <span>Generate Test Crates</span>
+          </>
+        )}
+      </Button>
+    );
+  };
   
   // Memoize inventory items to prevent infinite updates
   const allInventoryItems = useMemo(() => {
@@ -406,6 +480,8 @@ export default function Inventory() {
               <Clock size={16} />
               <span>View History</span>
             </Button>
+            
+            <GenerateTestCrates />
           </div>
         </div>
         
@@ -556,6 +632,16 @@ export default function Inventory() {
             </DndProvider>
             
             {/* Simple version without tabs */}
+            
+            {/* Test Loot Box Generator */}
+            <div className="mt-8 p-6 border border-brand-orange/30 rounded-lg bg-space-dark">
+              <h3 className="text-xl font-medium text-brand-orange mb-4">Test Loot Boxes Generator</h3>
+              <p className="text-sm text-brand-light/80 mb-4">Generate test loot boxes to try out the CS:GO-style opening animation.</p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <GenerateTestCrates />
+              </div>
+            </div>
         </div>
         
         {/* Loot Box Rewards Modal with CS:GO-style Animation */}
