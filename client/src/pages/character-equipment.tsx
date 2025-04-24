@@ -103,7 +103,7 @@ export default function CharacterEquipment() {
   // Mutation for equipping items
   const equipMutation = useMutation({
     mutationFn: async ({ itemId, slot }: { itemId: string, slot: SlotType }) => {
-      const response = await apiRequest('POST', '/api/character/equipment', { itemId, slot });
+      const response = await apiRequest('POST', '/api/character/equip', { itemId, slot });
       return response.json();
     },
     onSuccess: () => {
@@ -128,7 +128,7 @@ export default function CharacterEquipment() {
   // Mutation for unequipping items
   const unequipMutation = useMutation({
     mutationFn: async (slot: SlotType) => {
-      const response = await apiRequest('DELETE', `/api/character/equipment/${slot}`);
+      const response = await apiRequest('POST', `/api/character/unequip`, { slot });
       return response.json();
     },
     onSuccess: () => {
@@ -210,8 +210,8 @@ export default function CharacterEquipment() {
                   {/* Equipped Items as Overlays */}
                   {Object.entries(equipmentBySlot).map(([slot, item]) => {
                     const itemDetails = getItemDetails(item.itemId);
-                    // Check if item has custom overlay image, fall back to regular image
-                    const overlayImage = itemDetails?.overlayPath || itemDetails?.imagePath;
+                    // Use the item's image path directly
+                    const overlayImage = itemDetails?.imagePath;
                     
                     if (!overlayImage) return null;
                     
@@ -245,7 +245,7 @@ export default function CharacterEquipment() {
                       <EquipmentSlot
                         slot="head"
                         equipmentItem={equipmentBySlot.head}
-                        onEquip={(itemId) => handleEquipItem(itemId, 'head')}
+                        onEquip={(itemId: string) => handleEquipItem(itemId, 'head')}
                         onUnequip={() => handleUnequipItem('head')}
                         icon={<SkullIcon size={16} />}
                         label="Head"
@@ -257,7 +257,7 @@ export default function CharacterEquipment() {
                       <EquipmentSlot
                         slot="torso"
                         equipmentItem={equipmentBySlot.torso}
-                        onEquip={(itemId) => handleEquipItem(itemId, 'torso')}
+                        onEquip={(itemId: string) => handleEquipItem(itemId, 'torso')}
                         onUnequip={() => handleUnequipItem('torso')}
                         icon={<Shield size={16} />}
                         label="Torso"
@@ -269,7 +269,7 @@ export default function CharacterEquipment() {
                       <EquipmentSlot
                         slot="legs"
                         equipmentItem={equipmentBySlot.legs}
-                        onEquip={(itemId) => handleEquipItem(itemId, 'legs')}
+                        onEquip={(itemId: string) => handleEquipItem(itemId, 'legs')}
                         onUnequip={() => handleUnequipItem('legs')}
                         icon={<Zap size={16} />}
                         label="Legs"
@@ -281,7 +281,7 @@ export default function CharacterEquipment() {
                       <EquipmentSlot
                         slot="hands"
                         equipmentItem={equipmentBySlot.hands}
-                        onEquip={(itemId) => handleEquipItem(itemId, 'hands')}
+                        onEquip={(itemId: string) => handleEquipItem(itemId, 'hands')}
                         onUnequip={() => handleUnequipItem('hands')}
                         icon={<Swords size={16} />}
                         label="Hands"
@@ -293,7 +293,7 @@ export default function CharacterEquipment() {
                       <EquipmentSlot
                         slot="accessory"
                         equipmentItem={equipmentBySlot.accessory}
-                        onEquip={(itemId) => handleEquipItem(itemId, 'accessory')}
+                        onEquip={(itemId: string) => handleEquipItem(itemId, 'accessory')}
                         onUnequip={() => handleUnequipItem('accessory')}
                         icon={<Award size={16} />}
                         label="Accessory"
