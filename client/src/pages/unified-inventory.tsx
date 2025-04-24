@@ -19,6 +19,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { DraggableInventoryItem, DraggableEmptySlot } from '@/components/inventory/DraggableInventoryItem';
 import { getItemDetails } from '@/lib/itemDatabase';
 import { getRarityColorClass } from '@/lib/styleUtils';
+import goldBagIcon from '../assets/506_Gold_Bag_Leather_B.png';
 
 // Resource images are already imported above
 
@@ -414,7 +415,7 @@ export default function UnifiedInventory() {
           <div className="flex items-center gap-2">
             <div className="flex items-center">
               <img 
-                src="/assets/506_Gold_Bag_Leather_B.png" 
+                src={goldBagIcon} 
                 alt="Inventory Bag" 
                 className="w-6 h-6 mr-2 object-contain pixelated"
                 style={{ imageRendering: 'pixelated' }}
