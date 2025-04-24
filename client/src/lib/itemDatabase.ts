@@ -93,7 +93,8 @@ let itemDatabase: Record<string, ItemDetails> = { ...fallbackItemDatabase };
 // Function to initialize the item database from server
 export async function initializeItemDatabase(): Promise<void> {
   try {
-    const response = await fetch('/api/admin/items');
+    // Use the public items endpoint which doesn't require authentication
+    const response = await fetch('/api/items');
     if (!response.ok) {
       throw new Error('Failed to fetch items');
     }
@@ -122,7 +123,7 @@ initializeItemDatabase();
 // Custom hook to work with React components
 export function useItemDatabase() {
   const { data: items = [] } = useQuery<ItemDetails[]>({
-    queryKey: ['/api/admin/items'],
+    queryKey: ['/api/items'],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
