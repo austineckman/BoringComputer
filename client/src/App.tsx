@@ -20,6 +20,7 @@ import AdminBasic from "@/pages/admin-basic";
 import AdminKits from "@/pages/admin-kits";
 import AdminUsers from "@/pages/admin-users";
 import AdminStats from "@/pages/admin-stats";
+import AdminSettings from "@/pages/admin-settings";
 import LootBoxPreview from "@/pages/loot-box-preview";
 import NotFound from "@/pages/not-found";
 import MainLayout from "@/components/layout/MainLayout";

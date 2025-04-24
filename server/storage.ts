@@ -1622,6 +1622,74 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(questComponents).where(eq(questComponents.questId, questId));
     return true;
   }
+  
+  // System Settings methods
+  async getSystemSettings(): Promise<SystemSettings[]> {
+    return await db.select().from(systemSettings);
+  }
+  
+  async getSystemSettingsByCategory(category: string): Promise<SystemSettings[]> {
+    return await db.select().from(systemSettings).where(eq(systemSettings.category, category));
+  }
+  
+  async getSystemSetting(key: string): Promise<SystemSettings | undefined> {
+    const [setting] = await db.select().from(systemSettings).where(eq(systemSettings.key, key));
+    return setting;
+  }
+  
+  async createSystemSetting(setting: InsertSystemSettings): Promise<SystemSettings> {
+    const [newSetting] = await db.insert(systemSettings).values(setting).returning();
+    return newSetting;
+  }
+  
+  async updateSystemSetting(key: string, value: any, category?: string): Promise<SystemSettings | undefined> {
+    const updateData: Partial<SystemSettings> = {
+      value,
+      updatedAt: new Date()
+    };
+    
+    if (category) {
+      updateData.category = category;
+    }
+    
+    const [updatedSetting] = await db
+      .update(systemSettings)
+      .set(updateData)
+      .where(eq(systemSettings.key, key))
+      .returning();
+      
+    return updatedSetting;
+  }
+  
+  async deleteSystemSetting(key: string): Promise<boolean> {
+    const result = await db
+      .delete(systemSettings)
+      .where(eq(systemSettings.key, key));
+      
+    return true;
+  }
+  
+  // Statistics methods
+  async getUserCount(): Promise<number> {
+    const result = await db.select({ count: count() }).from(users);
+    return result[0].count;
+  }
+  
+  async getItemCount(): Promise<number> {
+    const result = await db.select({ count: count() }).from(items);
+    return result[0].count;
+  }
+  
+  async getCraftingRecipeCount(): Promise<number> {
+    const result = await db.select({ count: count() }).from(craftingRecipes);
+    return result[0].count;
+  }
+  
+  async getQuestCount(): Promise<number> {
+    const result = await db.select({ count: count() }).from(quests);
+    return result[0].count;
+  }
+  
   // Constructor for DatabaseStorage
   constructor() {
     const PostgresStore = connectPg(session);
