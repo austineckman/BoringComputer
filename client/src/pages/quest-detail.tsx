@@ -699,9 +699,6 @@ export default function QuestDetailPage() {
                               {component.partNumber && (
                                 <p className="text-xs text-gray-500 mt-1">Part #: {component.partNumber}</p>
                               )}
-                              {component.quantity > 1 && (
-                                <p className="text-xs text-gray-300 mt-1">Quantity: {component.quantity}</p>
-                              )}
                             </div>
                           </div>
                         ))}
