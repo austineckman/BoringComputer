@@ -1655,6 +1655,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Failed to fetch items' });
     }
   });
+  
+  // Public loot boxes endpoint - available to all users without authentication
+  app.get('/api/loot-boxes', async (req, res) => {
+    try {
+      // Get all loot box configurations
+      const lootBoxConfigs = await storage.getLootBoxConfigs();
+      return res.json(lootBoxConfigs);
+    } catch (error) {
+      console.error("Error getting loot box configs:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // Admin routes
   app.use('/api/admin', authenticate, adminRoutes);

@@ -85,16 +85,54 @@ export const PixelCardContent = ({
             onError={(e) => {
               // If the image fails to load, use a fallback
               console.log("Quest image failed to load:", questImage);
-              // If the image path is for a quest image, try a direct approach with the known name
-              const imageName = questImage.split('/').pop(); // Get just the filename
-              if (imageName) {
-                // Try accessing the file directly with the known correct path
-                e.currentTarget.src = `/uploads/quest-images/${imageName}`;
-                console.log("Trying corrected path:", `/uploads/quest-images/${imageName}`);
-              } else {
-                // Hide the image container if no alternatives work
+              
+              if (!questImage) {
+                // If no image is provided, hide the container
                 e.currentTarget.style.display = 'none';
                 e.currentTarget.parentElement!.style.display = 'none';
+                return;
+              }
+              
+              // Extract just the filename from the path
+              const imageName = questImage.split('/').pop(); 
+              
+              if (!imageName) {
+                // If we can't extract the filename, hide the container
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.parentElement!.style.display = 'none';
+                return;
+              }
+              
+              // 1. First try: Direct path from public/uploads/quest-images
+              if (questImage.includes('/uploads/')) {
+                // It's already a quest image path, try to fix it by using the direct public path
+                e.currentTarget.src = `/uploads/quest-images/${imageName}`;
+                console.log("Trying direct quest image path:", `/uploads/quest-images/${imageName}`);
+                
+                // Set up a second error handler in case this still fails
+                e.currentTarget.onerror = () => {
+                  // 2. Second try: Check if we can find an image with the same name in public/images/resources
+                  e.currentTarget.src = `/images/resources/${imageName}`;
+                  console.log("Trying resources path:", `/images/resources/${imageName}`);
+                  
+                  // Final error handler
+                  e.currentTarget.onerror = () => {
+                    // 3. Final fallback: Hide the image container if no alternatives work
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement!.style.display = 'none';
+                  };
+                };
+              } else {
+                // Not a quest image, try resources directory
+                e.currentTarget.src = `/images/resources/${imageName}`;
+                console.log("Trying resources path:", `/images/resources/${imageName}`);
+                
+                // Set up a second error handler
+                e.currentTarget.onerror = () => {
+                  // Hide if that fails too
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.parentElement!.style.display = 'none';
+                };
               }
             }}
           />
