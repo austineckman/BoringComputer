@@ -18,6 +18,7 @@ import { LootBoxModal } from '@/components/lootbox/LootBoxModal';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { DraggableInventoryItem, DraggableEmptySlot } from '@/components/inventory/DraggableInventoryItem';
+import goldBagIcon from '../assets/506_Gold_Bag_Leather_B.png';
 
 // Resource images are already imported above
 
@@ -396,7 +397,15 @@ export default function Inventory() {
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-brand-orange">ADVENTURES INVENTORY</h1>
+            <h1 className="text-3xl font-bold text-brand-orange flex items-center">
+              <img 
+                src={goldBagIcon} 
+                alt="Inventory Bag" 
+                className="w-7 h-7 mr-2 object-contain pixelated"
+                style={{ imageRendering: 'pixelated' }}
+              />
+              ADVENTURES INVENTORY
+            </h1>
             <p className="text-brand-light/70">All the crafting materials and loot you've gathered</p>
           </div>
           
@@ -521,7 +530,15 @@ export default function Inventory() {
           {/* Inventory Header with item count */}
             <div className="flex items-center justify-between border-b border-space-light/20 pb-3 mb-4">
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-brand-orange">Inventory</h3>
+                <div className="flex items-center">
+                  <img 
+                    src={goldBagIcon} 
+                    alt="Inventory Bag" 
+                    className="w-6 h-6 mr-2 object-contain pixelated"
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                  <h3 className="text-lg font-semibold text-brand-orange">Inventory</h3>
+                </div>
               </div>
               
               <div className="text-xs text-brand-light/60">

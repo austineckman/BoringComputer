@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import InventoryItem from './InventoryItem';
 import { Recipe } from '@/../../shared/types';
+import goldBagIcon from '../../assets/506_Gold_Bag_Leather_B.png';
 
 interface InventoryGridProps {
   inventory: Record<string, number>;
@@ -43,7 +44,15 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-xl">Inventory</CardTitle>
+        <CardTitle className="text-xl flex items-center">
+          <img 
+            src={goldBagIcon} 
+            alt="Inventory Bag" 
+            className="w-5 h-5 mr-2 object-contain pixelated"
+            style={{ imageRendering: 'pixelated' }}
+          />
+          Inventory
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {inventoryItems.length === 0 ? (
