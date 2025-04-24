@@ -9,6 +9,7 @@ import { Recipe } from '@/../../shared/types';
 import { getItemDetails } from '@/lib/itemDatabase';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import InventoryItem from './InventoryItem';
+import DndProvider from './DndProvider';
 
 interface RecipeListProps {
   recipes: Recipe[];
@@ -24,7 +25,8 @@ const RecipeList: React.FC<RecipeListProps> = ({
   recipes,
   selectedRecipe,
   onSelectRecipe,
-  isLoading
+  isLoading,
+  inventory
 }) => {
   const { sounds } = useSoundEffects();
   const [searchQuery, setSearchQuery] = useState('');
@@ -151,7 +153,7 @@ const RecipeList: React.FC<RecipeListProps> = ({
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-xl">Crafting Recipes</CardTitle>
+        <CardTitle className="text-xl">Available Recipes</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -188,14 +190,14 @@ const RecipeList: React.FC<RecipeListProps> = ({
             </Tabs>
           </div>
           
-          {/* Recipe list */}
-          <div className="space-y-3">
+          {/* Recipe list - horizontal layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {isLoading ? (
-              <div className="text-center py-8">Loading recipes...</div>
+              <div className="text-center py-8 col-span-3">Loading recipes...</div>
             ) : filteredRecipes.length > 0 ? (
               filteredRecipes.map(recipe => renderRecipeCard(recipe))
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 col-span-3 text-muted-foreground">
                 No recipes found
               </div>
             )}

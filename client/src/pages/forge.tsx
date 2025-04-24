@@ -177,42 +177,47 @@ const ForgePage: React.FC = () => {
           </AlertDescription>
         </Alert>
         
-        {/* Crafting interface */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Crafting interface - NEW LAYOUT */}
+        <div className="flex flex-col gap-6 mb-8">
           <DndProvider>
-            <div className="lg:col-span-2 space-y-6">
-              {/* Crafting grid */}
-              <CraftingGrid 
-                grid={grid} 
-                onDropItem={onDropItem} 
-                onRemoveItem={onRemoveItem} 
-                onResetGrid={onResetGrid}
-                highlightedCells={highlightedCells}
+            {/* Top Row: Crafting Grid and Inventory Side-by-Side */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+              {/* Crafting Grid on the left */}
+              <div className="lg:col-span-3">
+                <CraftingGrid 
+                  grid={grid} 
+                  onDropItem={onDropItem} 
+                  onRemoveItem={onRemoveItem} 
+                  onResetGrid={onResetGrid}
+                  highlightedCells={highlightedCells}
+                  selectedRecipe={selectedRecipe}
+                  canCraft={canCraft}
+                  onCraft={handleCraft}
+                />
+              </div>
+              
+              {/* Inventory on the right */}
+              <div className="lg:col-span-2">
+                <InventoryGrid
+                  inventory={remainingInventory as Record<string, number>}
+                  selectedRecipe={selectedRecipe}
+                />
+              </div>
+            </div>
+            
+            {/* Bottom Row: Recipes List */}
+            <div className="mt-6">
+              <RecipeList
+                recipes={recipes}
                 selectedRecipe={selectedRecipe}
+                onSelectRecipe={onSelectRecipe}
+                isLoading={isLoading}
+                inventory={remainingInventory as Record<string, number>}
                 canCraft={canCraft}
                 onCraft={handleCraft}
               />
-              
-              {/* Inventory */}
-              <InventoryGrid
-                inventory={remainingInventory as Record<string, number>}
-                selectedRecipe={selectedRecipe}
-              />
             </div>
           </DndProvider>
-          
-          {/* Recipe list */}
-          <div>
-            <RecipeList
-              recipes={recipes}
-              selectedRecipe={selectedRecipe}
-              onSelectRecipe={onSelectRecipe}
-              isLoading={isLoading}
-              inventory={remainingInventory as Record<string, number>}
-              canCraft={canCraft}
-              onCraft={handleCraft}
-            />
-          </div>
         </div>
         
         {/* Crafting results dialog */}
