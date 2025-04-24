@@ -23,10 +23,9 @@ import {
 
 interface AdminLayoutProps {
   children: React.ReactNode;
-  headerButtons?: React.ReactNode;
 }
 
-const AdminLayout: React.FC<AdminLayoutProps> = ({ children, headerButtons }) => {
+const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [location] = useLocation();
 
   // Get current user
@@ -109,11 +108,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, headerButtons }) =>
               <span>Return to Game</span>
             </Button>
           </Link>
-          
-          {/* Slot for additional header buttons */}
-          <div className="ml-3 flex items-center gap-2">
-            {headerButtons}
-          </div>
           
           <div className="ml-auto flex items-center gap-2">
             <div className="text-sm text-muted-foreground">
