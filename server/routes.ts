@@ -65,8 +65,6 @@ const legacyAuthenticate = async (req: Request, res: Response, next: Function) =
 // No need to redefine it here
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Serve uploaded quest images explicitly with correct ESM path
-  app.use('/uploads/quest-images', express.static(path.join(process.cwd(), "public/uploads/quest-images")));
   const httpServer = createServer(app);
   
   // Serve static files from the public directory
@@ -1655,18 +1653,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching items:', error);
       res.status(500).json({ message: 'Failed to fetch items' });
-    }
-  });
-  
-  // Public loot boxes endpoint - available to all users without authentication
-  app.get('/api/loot-boxes', async (req, res) => {
-    try {
-      // Get all loot box configurations
-      const lootBoxConfigs = await storage.getLootBoxConfigs();
-      return res.json(lootBoxConfigs);
-    } catch (error) {
-      console.error("Error getting loot box configs:", error);
-      return res.status(500).json({ message: "Internal server error" });
     }
   });
 
