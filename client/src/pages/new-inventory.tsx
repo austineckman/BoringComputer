@@ -401,7 +401,7 @@ export default function Inventory() {
               <img 
                 src={goldBagIcon} 
                 alt="Inventory Bag" 
-                className="w-7 h-7 mr-2 object-contain pixelated"
+                className="w-28 h-28 mr-2 object-contain pixelated"
                 style={{ imageRendering: 'pixelated' }}
               />
               ADVENTURES INVENTORY
@@ -534,7 +534,7 @@ export default function Inventory() {
                   <img 
                     src={goldBagIcon} 
                     alt="Inventory Bag" 
-                    className="w-6 h-6 mr-2 object-contain pixelated"
+                    className="w-24 h-24 mr-2 object-contain pixelated"
                     style={{ imageRendering: 'pixelated' }}
                   />
                   <h3 className="text-lg font-semibold text-brand-orange">Inventory</h3>
