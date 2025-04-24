@@ -429,7 +429,7 @@ export const questComponents = pgTable("quest_components", {
   questId: integer("quest_id").notNull(),
   componentId: integer("component_id").notNull(), // References the kit_components table
   quantity: integer("quantity").default(1), // How many of this component are needed
-  isOptional: boolean("is_optional"), // Whether this component is optional for quest completion (null = not used)
+  status: text("status", { enum: ["required", "optional", "not-used"] }).default("required"), // Component status in the quest
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -475,13 +475,11 @@ const baseQuestComponentSchema = createInsertSchema(questComponents).pick({
   questId: true,
   componentId: true,
   quantity: true,
-  isOptional: true,
+  status: true,
 });
 
-// Enhanced schema that allows isOptional to be null (for "not used" components)
-export const insertQuestComponentSchema = baseQuestComponentSchema.extend({
-  isOptional: z.boolean().nullable(), // Allow null to indicate "not used"
-});
+// Enhanced schema for quest components
+export const insertQuestComponentSchema = baseQuestComponentSchema;
 
 // Types for new tables
 export type ComponentKit = typeof componentKits.$inferSelect;

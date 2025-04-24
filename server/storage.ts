@@ -1523,14 +1523,13 @@ export class DatabaseStorage implements IStorage {
   async getQuestComponentsWithDetails(questId: number): Promise<any[]> {
     try {
       // Use Drizzle ORM to get quest components with details
-      // Add a condition to exclude components with is_optional = NULL (not used)
       const result = await db.execute(sql`
         SELECT 
           qc.id, 
           qc.quest_id as "questId", 
           qc.component_id as "componentId",
           qc.quantity, 
-          qc.is_optional, 
+          qc.status, 
           kc.name, 
           kc.description, 
           kc.image_path as "imagePath", 
@@ -1540,8 +1539,15 @@ export class DatabaseStorage implements IStorage {
         JOIN kit_components kc ON qc.component_id = kc.id
         JOIN component_kits ck ON kc.kit_id = ck.id
         WHERE qc.quest_id = ${questId}
-        -- Removed the "AND qc.is_optional IS NOT NULL" condition to include "not used" components
-        ORDER BY qc.is_optional ASC, kc.name ASC
+        -- Filter out "not-used" components when displaying to end-users
+        -- No filtering here in admin context - show all components
+        ORDER BY 
+          CASE 
+            WHEN qc.status = 'required' THEN 1
+            WHEN qc.status = 'optional' THEN 2
+            ELSE 3
+          END, 
+          kc.name ASC
       `);
       
       // Debug the result type
@@ -1561,7 +1567,7 @@ export class DatabaseStorage implements IStorage {
         id: component.componentId,
         name: component.name,
         description: component.description,
-        is_optional: component.is_optional,
+        status: component.status,
         quantity: component.quantity,
         imagePath: component.imagePath,
         partNumber: component.partNumber,

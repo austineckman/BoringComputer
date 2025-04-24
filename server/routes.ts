@@ -1282,7 +1282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             questId: quest.id,
             componentId: component.id,
             quantity: component.quantity || 1,
-            isOptional: !component.required
+            status: component.required === true ? "required" : component.required === false ? "optional" : "not-used"
           });
         }
       }
@@ -1380,12 +1380,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Saving component ${component.id} with required=${component.required}`);
           
           // Store all components, including "not used" ones
-          // Use isOptional=null to represent "not used" components
+          // Use status="not-used" to represent components that aren't used
           await storage.createQuestComponent({
             questId: questId,
             componentId: component.id,
             quantity: component.quantity || 1,
-            isOptional: component.required === null ? null : !component.required
+            status: component.required === true ? "required" : component.required === false ? "optional" : "not-used"
           });
         }
       }
