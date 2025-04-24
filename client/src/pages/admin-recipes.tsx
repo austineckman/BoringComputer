@@ -63,7 +63,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Grid5x5 } from '@/components/ui/grid';
+import { Grid3x3 } from '@/components/ui/grid';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Check, Plus, Trash2, Edit, ArrowLeft, X, RefreshCw, UploadCloud } from 'lucide-react';
 
@@ -323,7 +323,7 @@ const AdminRecipesPage: React.FC = () => {
       heroImage: recipe.heroImage || '',
       unlocked: recipe.unlocked,
     });
-    setPatternGrid(recipe.pattern || Array(5).fill(null).map(() => Array(5).fill(null)));
+    setPatternGrid(recipe.pattern || Array(3).fill(null).map(() => Array(3).fill(null)));
     setRequiredItems(recipe.requiredItems || {});
     setSelectedMaterial(""); // Reset selected material when editing a recipe
     setEditingRecipe(recipe);
@@ -335,7 +335,7 @@ const AdminRecipesPage: React.FC = () => {
     setIsAddingRecipe(false);
     setEditingRecipe(null);
     form.reset();
-    setPatternGrid(Array(5).fill(null).map(() => Array(5).fill(null)));
+    setPatternGrid(Array(3).fill(null).map(() => Array(3).fill(null)));
     setRequiredItems({});
     setSelectedMaterial("");
   };
@@ -697,7 +697,7 @@ const AdminRecipesPage: React.FC = () => {
                         </div>
                         
                         <div className="mt-2">
-                          <Grid5x5
+                          <Grid3x3
                             value={patternGrid}
                             onCellClick={handlePatternCellClick}
                             itemRenderer={renderPatternCell}
