@@ -392,3 +392,78 @@ export type InsertLootBoxConfig = z.infer<typeof insertLootBoxConfigSchema>;
 
 export type CharacterEquipment = typeof characterEquipment.$inferSelect;
 export type InsertCharacterEquipment = z.infer<typeof insertCharacterEquipmentSchema>;
+
+// Component Kits table - for educational kits (Arduino, Raspberry Pi, etc.)
+export const componentKits = pgTable("component_kits", {
+  id: text("id").primaryKey(), // e.g., "arduino", "raspberry-pi"
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  imagePath: text("image_path"),
+  category: text("category").default("electronics"), // electronics, robotics, etc.
+  difficulty: text("difficulty", { enum: ["beginner", "intermediate", "advanced"] }).default("beginner"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Kit Components table - components within each kit
+export const kitComponents = pgTable("kit_components", {
+  id: serial("id").primaryKey(),
+  kitId: text("kit_id").notNull(), // References the component_kits table
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  imagePath: text("image_path"),
+  partNumber: text("part_number"), // Manufacturer part number if applicable
+  isRequired: boolean("is_required").default(true), // Whether component is essential
+  quantity: integer("quantity").default(1), // How many of this component come in the kit
+  category: text("category").default("hardware"), // hardware, sensor, actuator, connector, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Quest Components table - tracks which components are required for each quest
+export const questComponents = pgTable("quest_components", {
+  id: serial("id").primaryKey(),
+  questId: integer("quest_id").notNull(),
+  componentId: integer("component_id").notNull(), // References the kit_components table
+  quantity: integer("quantity").default(1), // How many of this component are needed
+  isOptional: boolean("is_optional").default(false), // Whether this component is optional for quest completion
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Insert Schemas for new tables
+export const insertComponentKitSchema = createInsertSchema(componentKits).pick({
+  id: true,
+  name: true,
+  description: true,
+  imagePath: true,
+  category: true,
+  difficulty: true,
+});
+
+export const insertKitComponentSchema = createInsertSchema(kitComponents).pick({
+  kitId: true,
+  name: true,
+  description: true,
+  imagePath: true,
+  partNumber: true,
+  isRequired: true,
+  quantity: true,
+  category: true,
+});
+
+export const insertQuestComponentSchema = createInsertSchema(questComponents).pick({
+  questId: true,
+  componentId: true,
+  quantity: true,
+  isOptional: true,
+});
+
+// Types for new tables
+export type ComponentKit = typeof componentKits.$inferSelect;
+export type InsertComponentKit = z.infer<typeof insertComponentKitSchema>;
+
+export type KitComponent = typeof kitComponents.$inferSelect;
+export type InsertKitComponent = z.infer<typeof insertKitComponentSchema>;
+
+export type QuestComponent = typeof questComponents.$inferSelect;
+export type InsertQuestComponent = z.infer<typeof insertQuestComponentSchema>;
