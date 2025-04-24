@@ -1,15 +1,112 @@
+/* Pixel art rendering optimizations */
 .pixelated {
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
 }
 
-.resource-icon {
+/* Pixel-perfect scaling classes */
+.pixel-scale-1 {
+  width: 32px;
+  height: 32px;
+}
+
+.pixel-scale-2 {
+  width: 64px;
+  height: 64px;
+}
+
+.pixel-scale-3 {
+  width: 96px;
+  height: 96px;
+}
+
+.pixel-scale-4 {
+  width: 128px;
+  height: 128px;
+}
+
+/* Pixel art inventory grid */
+.pixel-inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 68px); /* 64px + 4px gap */
+  gap: 4px;
+  padding: 8px;
+}
+
+/* Item container with proper pixel art border styling */
+.pixel-item-container {
+  border-width: 2px;
+  overflow: hidden;
+  transition: transform 0.1s ease-out;
+  position: relative;
+}
+
+/* Hoverable pixel art items */
+.pixel-item-container:hover {
+  transform: scale(1.05);
+  z-index: 10;
+}
+
+/* Pixel-perfect quantity badge */
+.pixel-quantity-badge {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  font-size: 10px;
+  min-width: 14px;
+  height: 14px;
+  border-radius: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0 2px;
+  font-weight: bold;
 }
 
-.resource-icon img {
-  object-fit: contain;
+/* Proper centering for pixel art sprites */
+.pixel-centered {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Animation for pixel items */
+@keyframes pixel-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.pixel-pulse {
+  animation: pixel-pulse 2s infinite;
+}
+
+/* Rarity border colors with pixel-art friendly palette */
+.rarity-common {
+  border-color: #a0a0a0;
+  background-color: rgba(160, 160, 160, 0.1);
+}
+
+.rarity-uncommon {
+  border-color: #4caf50;
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.rarity-rare {
+  border-color: #2196f3;
+  background-color: rgba(33, 150, 243, 0.1);
+}
+
+.rarity-epic {
+  border-color: #9c27b0; 
+  background-color: rgba(156, 39, 176, 0.1);
+}
+
+.rarity-legendary {
+  border-color: #ff9800;
+  background-color: rgba(255, 152, 0, 0.1);
 }
