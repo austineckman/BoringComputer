@@ -358,8 +358,9 @@ const AdminLootBoxesPage: React.FC = () => {
         size="sm"
         onClick={() => generateTestCratesMutation.mutate()}
         disabled={generateTestCratesMutation.isPending}
-        className="flex items-center gap-1"
+        className="flex items-center gap-1 bg-gray-100"
       >
+        <Package className="h-4 w-4 mr-1" />
         {generateTestCratesMutation.isPending ? "Generating..." : "Gen Test Crates"}
       </Button>
       
@@ -368,8 +369,9 @@ const AdminLootBoxesPage: React.FC = () => {
         size="sm"
         onClick={() => resetInventoryMutation.mutate()}
         disabled={resetInventoryMutation.isPending}
-        className="border-amber-500 hover:bg-amber-500/10 flex items-center gap-1"
+        className="border-amber-500 hover:bg-amber-500/10 flex items-center gap-1 bg-gray-100"
       >
+        <ListPlus className="h-4 w-4 mr-1" />
         {resetInventoryMutation.isPending ? "Resetting..." : "Reset Inventory"}
       </Button>
     </>

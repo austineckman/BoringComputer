@@ -111,11 +111,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, headerButtons }) =>
           </Link>
           
           {/* Slot for additional header buttons */}
-          {headerButtons && (
-            <div className="ml-3 flex items-center gap-2">
-              {headerButtons}
-            </div>
-          )}
+          <div className="ml-3 flex items-center gap-2">
+            {headerButtons}
+          </div>
           
           <div className="ml-auto flex items-center gap-2">
             <div className="text-sm text-muted-foreground">
