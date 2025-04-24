@@ -12,8 +12,12 @@ import {
   Item, InsertItem,
   CraftingRecipe, InsertCraftingRecipe,
   CharacterEquipment, InsertCharacterEquipment,
+  QuestComponent, InsertQuestComponent,
+  ComponentKit, InsertComponentKit,
+  KitComponent, InsertKitComponent,
   users, quests, userQuests, submissions, craftables, craftedItems,
-  achievements, userAchievements, lootBoxes, inventoryHistory, craftingRecipes, items, lootBoxConfigs, characterEquipment
+  achievements, userAchievements, lootBoxes, inventoryHistory, craftingRecipes, items, lootBoxConfigs, characterEquipment,
+  componentKits, kitComponents, questComponents
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count } from "drizzle-orm";
@@ -108,6 +112,28 @@ export interface IStorage {
   getCharacterEquipment(userId: number): Promise<Record<string, any>>;
   equipItem(userId: number, itemId: string, slot: string): Promise<CharacterEquipment>;
   unequipItem(userId: number, slot: string): Promise<boolean>;
+  
+  // Component Kit methods
+  getComponentKits(): Promise<ComponentKit[]>;
+  getComponentKit(id: string): Promise<ComponentKit | undefined>;
+  createComponentKit(kit: InsertComponentKit): Promise<ComponentKit>;
+  updateComponentKit(id: string, kitData: Partial<ComponentKit>): Promise<ComponentKit | undefined>;
+  deleteComponentKit(id: string): Promise<boolean>;
+  
+  // Kit Component methods
+  getKitComponents(kitId: string): Promise<KitComponent[]>;
+  getKitComponent(id: number): Promise<KitComponent | undefined>;
+  createKitComponent(component: InsertKitComponent): Promise<KitComponent>;
+  updateKitComponent(id: number, componentData: Partial<KitComponent>): Promise<KitComponent | undefined>;
+  deleteKitComponent(id: number): Promise<boolean>;
+  
+  // Quest Component methods
+  getQuestComponents(questId: number): Promise<QuestComponent[]>;
+  getQuestComponentsWithDetails(questId: number): Promise<any[]>; // Returns an enriched component list with kit info
+  createQuestComponent(component: InsertQuestComponent): Promise<QuestComponent>;
+  updateQuestComponent(id: number, componentData: Partial<QuestComponent>): Promise<QuestComponent | undefined>;
+  deleteQuestComponent(id: number): Promise<boolean>;
+  deleteQuestComponentsByQuestId(questId: number): Promise<boolean>;
   
   // Statistics methods
   getUserCount(): Promise<number>;
@@ -1426,6 +1452,117 @@ export class DatabaseStorage implements IStorage {
     // This would require careful implementation in a production environment
     // For now, just a placeholder that does nothing
     console.log("Database reset is not implemented for safety reasons");
+  }
+
+  // Component Kit methods
+  async getComponentKits(): Promise<ComponentKit[]> {
+    const kits = await db.select().from(componentKits);
+    return kits;
+  }
+
+  async getComponentKit(id: string): Promise<ComponentKit | undefined> {
+    const [kit] = await db.select().from(componentKits).where(eq(componentKits.id, id));
+    return kit || undefined;
+  }
+
+  async createComponentKit(kit: InsertComponentKit): Promise<ComponentKit> {
+    const [newKit] = await db.insert(componentKits).values(kit).returning();
+    return newKit;
+  }
+
+  async updateComponentKit(id: string, kitData: Partial<ComponentKit>): Promise<ComponentKit | undefined> {
+    const [updatedKit] = await db
+      .update(componentKits)
+      .set(kitData)
+      .where(eq(componentKits.id, id))
+      .returning();
+    return updatedKit || undefined;
+  }
+
+  async deleteComponentKit(id: string): Promise<boolean> {
+    const result = await db.delete(componentKits).where(eq(componentKits.id, id));
+    return true;
+  }
+
+  // Kit Component methods
+  async getKitComponents(kitId: string): Promise<KitComponent[]> {
+    const components = await db.select().from(kitComponents).where(eq(kitComponents.kitId, kitId));
+    return components;
+  }
+
+  async getKitComponent(id: number): Promise<KitComponent | undefined> {
+    const [component] = await db.select().from(kitComponents).where(eq(kitComponents.id, id));
+    return component || undefined;
+  }
+
+  async createKitComponent(component: InsertKitComponent): Promise<KitComponent> {
+    const [newComponent] = await db.insert(kitComponents).values(component).returning();
+    return newComponent;
+  }
+
+  async updateKitComponent(id: number, componentData: Partial<KitComponent>): Promise<KitComponent | undefined> {
+    const [updatedComponent] = await db
+      .update(kitComponents)
+      .set(componentData)
+      .where(eq(kitComponents.id, id))
+      .returning();
+    return updatedComponent || undefined;
+  }
+
+  async deleteKitComponent(id: number): Promise<boolean> {
+    const result = await db.delete(kitComponents).where(eq(kitComponents.id, id));
+    return true;
+  }
+
+  // Quest Component methods
+  async getQuestComponents(questId: number): Promise<QuestComponent[]> {
+    const components = await db.select().from(questComponents).where(eq(questComponents.questId, questId));
+    return components;
+  }
+
+  async getQuestComponentsWithDetails(questId: number): Promise<any[]> {
+    try {
+      // Using SQL for this complex join
+      const { sql } = db.dialect;
+      const result = await db.execute(sql`
+        SELECT qc.*, kc.name, kc.description, kc.image_path as "imagePath", 
+               kc.part_number as "partNumber", ck.name as "kitName"
+        FROM quest_components qc
+        JOIN kit_components kc ON qc.component_id = kc.id
+        JOIN component_kits ck ON kc.kit_id = ck.id
+        WHERE qc.quest_id = ${questId}
+        ORDER BY qc.is_optional ASC, kc.name ASC
+      `);
+      
+      return result as any[];
+    } catch (error) {
+      console.error("Error fetching quest components with details:", error);
+      return [];
+    }
+  }
+
+  async createQuestComponent(component: InsertQuestComponent): Promise<QuestComponent> {
+    const [newComponent] = await db.insert(questComponents).values(component).returning();
+    return newComponent;
+  }
+
+  async updateQuestComponent(id: number, componentData: Partial<QuestComponent>): Promise<QuestComponent | undefined> {
+    const [updatedComponent] = await db
+      .update(questComponents)
+      .set(componentData)
+      .where(eq(questComponents.id, id))
+      .returning();
+    return updatedComponent || undefined;
+  }
+
+  async deleteQuestComponent(id: number): Promise<boolean> {
+    const result = await db.delete(questComponents).where(eq(questComponents.id, id));
+    return true;
+  }
+
+  async deleteQuestComponentsByQuestId(questId: number): Promise<boolean> {
+    const result = await db.delete(questComponents).where(eq(questComponents.questId, questId));
+    return true;
   }
 }
 
