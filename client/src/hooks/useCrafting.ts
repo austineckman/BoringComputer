@@ -19,23 +19,13 @@ export function useCrafting() {
     try {
       const savedGrid = localStorage.getItem('craftingGrid');
       if (savedGrid) {
-        // Check if we're converting from 5x5 to 3x3
-        const parsedGrid = JSON.parse(savedGrid);
-        if (parsedGrid.length === 5) {
-          // Extract the middle 3x3 from the 5x5 grid
-          return [
-            parsedGrid[1].slice(1, 4),
-            parsedGrid[2].slice(1, 4),
-            parsedGrid[3].slice(1, 4),
-          ];
-        }
-        return parsedGrid;
+        return JSON.parse(savedGrid);
       }
     } catch (error) {
       console.error('Error loading grid from localStorage:', error);
     }
     
-    // Return empty grid if nothing in localStorage
+    // Return empty 3x3 grid if nothing in localStorage
     return Array(3).fill('').map(() => Array(3).fill(''));
   });
   
@@ -74,47 +64,12 @@ export function useCrafting() {
         throw new Error('No recipe selected');
       }
       
-      // Get the recipe's pattern from the selected recipe
-      const recipePattern = selectedRecipe.pattern || [];
-      
-      // Instead of just placing our grid into a 5x5, we're going to use the actual recipe pattern
-      // and replace the items in the pattern with our grid items
-      
-      // Create grid5x5 based on recipe pattern size
-      let grid5x5;
-      
-      // If the recipe pattern is already 3x3, convert it to 5x5
-      if (recipePattern.length === 3) {
-        // Convert 3x3 to 5x5
-        grid5x5 = Array(5).fill('').map(() => Array(5).fill(''));
-        for (let row = 0; row < 3; row++) {
-          for (let col = 0; col < 3; col++) {
-            grid5x5[row + 1][col + 1] = recipePattern[row][col];
-          }
-        }
-      } else {
-        // Make a deep copy of the 5x5 recipe pattern
-        grid5x5 = JSON.parse(JSON.stringify(recipePattern));
-      }
-      
-      // Now map our 3x3 grid onto the pattern's 5x5 where items are expected
-      for (let row = 0; row < 3; row++) {
-        for (let col = 0; col < 3; col++) {
-          // Only set the grid item if it's not empty and there's something in the pattern
-          if (grid[row][col]) {
-            grid5x5[row + 1][col + 1] = grid[row][col];
-          }
-        }
-      }
-      
       // Convert recipeId to a number since the server expects a number
       const recipeIdNum = parseInt(recipeId, 10);
       
       console.log('Sending crafting request:', {
         recipeId: recipeIdNum,
-        gridPattern: grid5x5,
-        originalRecipePattern: recipePattern,
-        our3x3Grid: grid
+        gridPattern: grid
       });
       
       const response = await fetch('/api/crafting/craft', {
@@ -124,7 +79,7 @@ export function useCrafting() {
         },
         body: JSON.stringify({ 
           recipeId: recipeIdNum, 
-          gridPattern: grid5x5 
+          gridPattern: grid 
         }),
       });
       
@@ -245,28 +200,18 @@ export function useCrafting() {
     // Check if grid matches the pattern
     let patternMatches = true;
     
-    // Convert 5x5 recipe pattern to 3x3 if needed
+    // Ensure pattern is 3x3
     const recipePattern = selectedRecipe.pattern;
-    let pattern3x3: string[][];
-    
-    if (recipePattern.length === 5) {
-      // Extract middle 3x3 from 5x5 pattern
-      pattern3x3 = [
-        recipePattern[1].slice(1, 4),
-        recipePattern[2].slice(1, 4),
-        recipePattern[3].slice(1, 4),
-      ];
-    } else if (recipePattern.length === 3) {
-      pattern3x3 = recipePattern;
-    } else {
-      // Invalid pattern size
-      patternMatches = false;
-      pattern3x3 = Array(3).fill('').map(() => Array(3).fill(''));
+    if (!recipePattern || recipePattern.length !== 3) {
+      console.error('Recipe pattern is not 3x3:', recipePattern);
+      setHighlightedCells([]);
+      setCanCraft(false);
+      return;
     }
     
     for (let row = 0; row < 3; row++) {
       for (let col = 0; col < 3; col++) {
-        const patternItem = pattern3x3[row][col];
+        const patternItem = recipePattern[row][col];
         const gridItem = grid[row][col];
         
         if (patternItem && patternItem !== '') {
