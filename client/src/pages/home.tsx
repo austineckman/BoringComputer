@@ -11,11 +11,20 @@ import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { useAdventureNavigation } from "@/hooks/useAdventureNavigation";
 import AdventureImage from "@/components/adventure/AdventureImage";
 import { themeConfig } from "@/lib/themeConfig";
+import { 
+  SparklesCore, 
+  Spotlight, 
+  TextReveal, 
+  HoverBorderGradient, 
+  EvervaultCard 
+} from "@/components/ui/magic-ui";
 
 // Import banner images
 import currentQuestBanner from "../assets/current_quest_banner.png";
 import inventoryBanner from "../assets/inventory_banner.png";
 import forgeBanner from "../assets/forgehero.png";
+import wallBgImage from "@assets/wallbg.png";
+import baseCharacterImage from "@assets/basecharacter.png";
 
 const Home = () => {
   const { user } = useAuth();
