@@ -150,7 +150,8 @@ interface KitComponent {
 // Define form validation schema
 const questFormSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
-  description: z.string().min(1, { message: "Description is required" }),
+  description: z.string().min(1, { message: "Flavor text is required" }),
+  missionBrief: z.string().optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { 
     message: "Date must be in YYYY-MM-DD format" 
   }),
@@ -756,14 +757,38 @@ const AdminQuests: React.FC = () => {
                           name="description"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Description</FormLabel>
+                              <FormLabel>Flavor Text <span className="text-xs text-muted-foreground">(Italicized story text)</span></FormLabel>
                               <FormControl>
                                 <Textarea 
                                   {...field} 
-                                  placeholder="Describe the quest and its objectives"
+                                  placeholder="Add a flavor text or background story (will be displayed in italics)"
                                   className="min-h-[100px]"
                                 />
                               </FormControl>
+                              <FormDescription>
+                                This text creates atmosphere and context for the quest.
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="missionBrief"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Mission Brief <span className="text-xs text-muted-foreground">(Direct instructions)</span></FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  {...field} 
+                                  placeholder="Provide clear instructions for the mission objectives"
+                                  className="min-h-[150px]"
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                This text contains the specific instructions and requirements for quest completion.
+                              </FormDescription>
                               <FormMessage />
                             </FormItem>
                           )}
