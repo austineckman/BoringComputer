@@ -161,7 +161,27 @@ router.delete('/kits/:id', isAdmin, async (req: Request, res: Response) => {
 router.get('/kits/:kitId/components', isAdmin, async (req: Request, res: Response) => {
   try {
     const { kitId } = req.params;
+    console.log('Fetching components for kit ID:', kitId);
+    
+    // First check if the kit exists
+    const [kit] = await db.select().from(componentKits).where(eq(componentKits.id, kitId));
+    if (!kit) {
+      console.log('Kit not found with ID:', kitId);
+      return res.status(404).json({ message: 'Component kit not found' });
+    }
+    
+    console.log('Found kit:', kit.name);
+    
+    // Get components for the kit
     const components = await db.select().from(kitComponents).where(eq(kitComponents.kitId, kitId));
+    console.log(`Found ${components.length} components for kit:`, kitId);
+    
+    if (components.length > 0) {
+      console.log('First component:', components[0]);
+    } else {
+      console.log('No components found for this kit');
+    }
+    
     res.json(components);
   } catch (error) {
     console.error('Error fetching kit components:', error);
@@ -173,24 +193,48 @@ router.get('/kits/:kitId/components', isAdmin, async (req: Request, res: Respons
 router.post('/kits/:kitId/components', isAdmin, upload.single('image'), async (req: Request, res: Response) => {
   try {
     const { kitId } = req.params;
+    console.log('Creating component for kit ID:', kitId);
+    console.log('Request body:', req.body);
+    
     const componentData = { ...req.body, kitId };
     
     // Add image path if an image was uploaded
     if (req.file) {
       componentData.imagePath = `/uploads/kits/${req.file.filename}`;
+      console.log('Image uploaded:', req.file.filename);
+    } else {
+      console.log('No image uploaded');
     }
     
     // Check if kit exists
     const [kit] = await db.select().from(componentKits).where(eq(componentKits.id, kitId));
     if (!kit) {
+      console.log('Kit not found with ID:', kitId);
       return res.status(404).json({ message: 'Component kit not found' });
     }
+    console.log('Found kit:', kit.name);
+    
+    // Validate component data before conversion
+    console.log('Component data before validation:', componentData);
+    
+    // Convert isRequired to boolean and quantity to number
+    if (typeof componentData.isRequired === 'string') {
+      componentData.isRequired = componentData.isRequired === 'true';
+    }
+    
+    if (typeof componentData.quantity === 'string') {
+      componentData.quantity = parseInt(componentData.quantity, 10);
+    }
+    
+    console.log('Component data after type conversion:', componentData);
     
     // Validate component data
     const validatedData = insertKitComponentSchema.parse(componentData);
+    console.log('Validated data:', validatedData);
     
     // Insert component into database
     const [newComponent] = await db.insert(kitComponents).values(validatedData).returning();
+    console.log('New component created:', newComponent);
     
     res.status(201).json(newComponent);
   } catch (error) {
