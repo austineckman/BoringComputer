@@ -136,7 +136,7 @@ const AdminLootBoxesPage: React.FC = () => {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: (id: string) => 
-      apiRequest(`/api/admin/lootboxes/${id}`, 'DELETE'),
+      apiRequest('DELETE', `/api/admin/lootboxes/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/lootboxes'] });
       toast({ title: "Success", description: "Loot box configuration deleted successfully" });
@@ -154,7 +154,7 @@ const AdminLootBoxesPage: React.FC = () => {
   
   // Reset inventory to 1 of each item mutation
   const resetInventoryMutation = useMutation({
-    mutationFn: () => apiRequest('/api/admin/inventory/reset-to-one', 'POST'),
+    mutationFn: () => apiRequest('POST', '/api/admin/inventory/reset-to-one'),
     onSuccess: (data) => {
       toast({ 
         title: "Success", 
@@ -172,7 +172,7 @@ const AdminLootBoxesPage: React.FC = () => {
   
   // Generate test loot crates mutation
   const generateTestCratesMutation = useMutation({
-    mutationFn: () => apiRequest('/api/loot-boxes/generate-test', 'POST'),
+    mutationFn: () => apiRequest('POST', '/api/loot-boxes/generate-test'),
     onSuccess: (data) => {
       toast({ 
         title: "Success", 
