@@ -191,7 +191,7 @@ const AdminRecipesPage: React.FC = () => {
 
   // Form state for the recipe pattern and required items that can't be directly handled by react-hook-form
   const [patternGrid, setPatternGrid] = useState<(string | null)[][]>(
-    Array(5).fill(null).map(() => Array(5).fill(null))
+    Array(3).fill(null).map(() => Array(3).fill(null))
   );
   const [requiredItems, setRequiredItems] = useState<Record<string, number>>({});
   const [selectedMaterial, setSelectedMaterial] = useState<string>("");
@@ -304,7 +304,7 @@ const AdminRecipesPage: React.FC = () => {
       heroImage: '',
       unlocked: true,
     });
-    setPatternGrid(Array(5).fill(null).map(() => Array(5).fill(null)));
+    setPatternGrid(Array(3).fill(null).map(() => Array(3).fill(null)));
     setRequiredItems({});
     setSelectedMaterial("");
     setIsAddingRecipe(true);
