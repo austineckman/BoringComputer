@@ -623,7 +623,6 @@ const AdminKits = () => {
                           <TableHead className="text-brand-light">Description</TableHead>
                           <TableHead className="text-brand-light">Category</TableHead>
                           <TableHead className="text-brand-light">Quantity</TableHead>
-                          <TableHead className="text-brand-light">Required</TableHead>
                           <TableHead className="text-brand-light text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -649,11 +648,6 @@ const AdminKits = () => {
                             <TableCell className="max-w-xs truncate text-brand-light">{component.description}</TableCell>
                             <TableCell className="text-brand-light">{component.category}</TableCell>
                             <TableCell className="text-brand-light">{component.quantity}</TableCell>
-                            <TableCell>
-                              <Badge variant={component.isRequired ? "default" : "outline"}>
-                                {component.isRequired ? "Required" : "Optional"}
-                              </Badge>
-                            </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
                                 <Button variant="ghost" size="icon" onClick={() => handleEditComponent(component)}>
@@ -1108,30 +1102,7 @@ const AdminKits = () => {
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={componentForm.control}
-                    name="isRequired"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Required Component</FormLabel>
-                        <div className="flex items-center space-x-2 h-10">
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <span className="text-sm font-medium">
-                            {field.value ? "Required" : "Optional"}
-                          </span>
-                        </div>
-                        <FormDescription>
-                          Is this component essential for the kit?
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="component-image">Component Image</Label>
@@ -1274,27 +1245,7 @@ const AdminKits = () => {
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={componentForm.control}
-                    name="isRequired"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Required Component</FormLabel>
-                        <div className="flex items-center space-x-2 h-10">
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <span className="text-sm font-medium">
-                            {field.value ? "Required" : "Optional"}
-                          </span>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="component-image-edit">Component Image</Label>
