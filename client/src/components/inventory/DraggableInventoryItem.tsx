@@ -53,7 +53,7 @@ export function DraggableEmptySlot({ index, moveItem }: EmptySlotProps) {
       className="w-full h-full rounded-md pixel-empty-slot"
     >
       <div className="w-full h-full flex items-center justify-center">
-        {/* Empty slot - no + sign */}
+        {/* Empty slot - no icon as requested */}
       </div>
       {isOver && canDrop && (
         <div className="absolute inset-0 bg-brand-orange/20 border-2 border-brand-orange/40 rounded-md z-10"></div>
@@ -147,7 +147,7 @@ export function DraggableInventoryItem({
   return (
     <div 
       ref={ref}
-      className={`aspect-square pixel-item-container rarity-${rarity} rounded-md p-1 relative cursor-pointer ${isDragging ? 'dragging' : ''}`}
+      className={`aspect-square pixel-item-container rarity-${rarity} rounded-md p-0.5 relative cursor-pointer ${isDragging ? 'dragging' : ''}`}
       style={{ opacity }}
       onMouseEnter={() => handleItemHover(item.type)}
       onClick={() => {
@@ -191,18 +191,7 @@ export function DraggableInventoryItem({
               </div>
             )}
             
-            {/* Glow effect for rare items */}
-            {getItemDetails(item.type).rarity !== 'common' && (
-              <div className="absolute inset-0 rounded-lg animate-pulse-slow opacity-50" 
-                   style={{
-                     boxShadow: `0 0 8px 1px ${
-                       getItemDetails(item.type).rarity === 'legendary' ? 'rgba(245, 158, 11, 0.5)' :
-                       getItemDetails(item.type).rarity === 'epic' ? 'rgba(168, 85, 247, 0.5)' :
-                       getItemDetails(item.type).rarity === 'rare' ? 'rgba(59, 130, 246, 0.5)' :
-                       'rgba(34, 197, 94, 0.5)'
-                     }`
-                   }}></div>
-            )}
+            {/* Removed glow effect around items as requested */}
           </div>
         )}
       </div>
