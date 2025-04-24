@@ -16,9 +16,11 @@ import adminRoutes from './routes/admin';
 import characterRoutes from './routes/character';
 import adminUploadRoutes from './routes/admin/upload';
 import adminKitsRoutes from './routes/admin-kits';
+import { authenticate } from './auth';
+import { registerAuthRoutes } from './routes/auth';
 
-// Setup authentication middleware
-const authenticate = async (req: Request, res: Response, next: Function) => {
+// Legacy authentication middleware (now deprecated in favor of the one in auth.ts)
+const legacyAuthenticate = async (req: Request, res: Response, next: Function) => {
   const sessionToken = req.cookies?.sessionToken;
   
   if (!sessionToken) {
@@ -94,6 +96,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       next();
     }
   });
+  
+  // Register the new auth routes
+  registerAuthRoutes(app);
   
   // Auth routes
   app.post('/api/auth/login', async (req, res) => {
