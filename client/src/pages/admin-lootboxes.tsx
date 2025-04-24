@@ -371,26 +371,6 @@ const AdminLootBoxesPage: React.FC = () => {
                   <Plus className="mr-2 h-4 w-4" /> Create New
                 </Button>
               </div>
-              
-              {/* Admin utility buttons */}
-              <div className="flex flex-wrap gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => generateTestCratesMutation.mutate()}
-                  disabled={generateTestCratesMutation.isPending}
-                >
-                  {generateTestCratesMutation.isPending ? "Generating..." : "Generate Test Loot Crates"}
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  onClick={() => resetInventoryMutation.mutate()}
-                  disabled={resetInventoryMutation.isPending}
-                  className="border-amber-500 hover:bg-amber-500/10"
-                >
-                  {resetInventoryMutation.isPending ? "Resetting..." : "Reset Inventory to 1 of Each Item"}
-                </Button>
-              </div>
             </div>
             
             {isLoadingConfigs ? (
