@@ -763,7 +763,16 @@ export default function QuestDetailPage() {
               {quest.componentRequirements && quest.componentRequirements.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-xl font-semibold mb-2">Kit Required</h3>
-                  <div className="bg-gray-800 p-3 rounded-md">
+                  <div className="bg-gray-800 p-3 rounded-md flex items-center gap-3">
+                    {quest.componentRequirements[0].imagePath && (
+                      <div className="w-12 h-12 rounded-md overflow-hidden bg-gray-700 flex-shrink-0">
+                        <img 
+                          src={quest.componentRequirements[0].imagePath} 
+                          alt={quest.componentRequirements[0].kitName} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
                     <p className="font-medium text-brand-accent">
                       {quest.componentRequirements[0].kitName}
                     </p>
