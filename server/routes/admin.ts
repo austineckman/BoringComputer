@@ -224,7 +224,7 @@ async function addNewItemToAllUsersInventory(itemId: string) {
     const allUsers = await storage.getUsers();
     
     // Default quantity to add when a new item is created
-    const DEFAULT_QUANTITY = 10;
+    const DEFAULT_QUANTITY = 0;
     
     // Update each user's inventory with the new item
     for (const user of allUsers) {
@@ -233,7 +233,7 @@ async function addNewItemToAllUsersInventory(itemId: string) {
       
       // Only add the item if it doesn't already exist
       if (currentInventory[itemId] === undefined) {
-        // Add the new item with default quantity
+        // Add the new item with default quantity (0)
         currentInventory[itemId] = DEFAULT_QUANTITY;
         
         // Update the user's inventory

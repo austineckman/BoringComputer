@@ -70,10 +70,10 @@ router.post("/register", async (req, res, next) => {
       roles: ["user"],
       level: 1,
       inventory: {
-        "cloth": 5,
-        "copper": 3,
-        "techscrap": 2,
-        "crystal": 1
+        "cloth": 0,
+        "copper": 0,
+        "techscrap": 0,
+        "crystal": 0
       },
       xp: 0,
       xpToNextLevel: 300,

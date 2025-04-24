@@ -226,10 +226,10 @@ export class MemStorage implements IStorage {
       roles: ['admin', 'user'],
       level: 1,
       inventory: {
-        'cloth': 5,
-        'metal': 3,
-        'tech-scrap': 2,
-        'sensor-crystal': 1,
+        'cloth': 0,
+        'metal': 0,
+        'tech-scrap': 0,
+        'sensor-crystal': 0,
         'circuit-board': 0,
         'alchemy-ink': 0
       }
@@ -253,12 +253,12 @@ export class MemStorage implements IStorage {
       roles: ['admin', 'user'],
       level: 10,
       inventory: {
-        'cloth': 100,
-        'metal': 100,
-        'tech-scrap': 100,
-        'sensor-crystal': 100,
-        'circuit-board': 100,
-        'alchemy-ink': 100
+        'cloth': 10,
+        'metal': 10,
+        'tech-scrap': 10,
+        'sensor-crystal': 10,
+        'circuit-board': 10,
+        'alchemy-ink': 10
       }
     });
     
