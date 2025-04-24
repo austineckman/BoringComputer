@@ -117,13 +117,19 @@ const AdminKits = () => {
   // Fetch kits
   const { data: kits, isLoading: isLoadingKits } = useQuery({
     queryKey: ['/api/admin/kits'],
-    queryFn: () => apiRequest('/api/admin/kits', { method: 'GET' }),
+    queryFn: () => fetch('/api/admin/kits', { 
+      method: 'GET',
+      credentials: 'include' 
+    }).then(res => res.json()),
   });
 
   // Fetch components for selected kit
   const { data: components, isLoading: isLoadingComponents } = useQuery({
     queryKey: ['/api/admin/kits', selectedKit?.id, 'components'],
-    queryFn: () => apiRequest(`/api/admin/kits/${selectedKit?.id}/components`, { method: 'GET' }),
+    queryFn: () => fetch(`/api/admin/kits/${selectedKit?.id}/components`, { 
+      method: 'GET',
+      credentials: 'include'
+    }).then(res => res.json()),
     enabled: !!selectedKit,
   });
 
@@ -155,11 +161,11 @@ const AdminKits = () => {
   // Mutations
   const addKitMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      return apiRequest('/api/admin/kits', {
+      return fetch('/api/admin/kits', {
         method: 'POST',
         body: data,
-        headers: {},
-      });
+        credentials: 'include',
+      }).then(res => res.json());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/kits'] });
@@ -183,11 +189,11 @@ const AdminKits = () => {
 
   const updateKitMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      return apiRequest(`/api/admin/kits/${selectedKit?.id}`, {
+      return fetch(`/api/admin/kits/${selectedKit?.id}`, {
         method: 'PUT',
         body: data,
-        headers: {},
-      });
+        credentials: 'include',
+      }).then(res => res.json());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/kits'] });
@@ -214,9 +220,10 @@ const AdminKits = () => {
 
   const deleteKitMutation = useMutation({
     mutationFn: async (kitId: string) => {
-      return apiRequest(`/api/admin/kits/${kitId}`, {
+      return fetch(`/api/admin/kits/${kitId}`, {
         method: 'DELETE',
-      });
+        credentials: 'include',
+      }).then(res => res.json());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/kits'] });
@@ -238,11 +245,11 @@ const AdminKits = () => {
 
   const addComponentMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      return apiRequest(`/api/admin/kits/${selectedKit?.id}/components`, {
+      return fetch(`/api/admin/kits/${selectedKit?.id}/components`, {
         method: 'POST',
         body: data,
-        headers: {},
-      });
+        credentials: 'include',
+      }).then(res => res.json());
     },
     onSuccess: () => {
       if (selectedKit) {
@@ -268,11 +275,11 @@ const AdminKits = () => {
 
   const updateComponentMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      return apiRequest(`/api/admin/components/${selectedComponent?.id}`, {
+      return fetch(`/api/admin/components/${selectedComponent?.id}`, {
         method: 'PUT',
         body: data,
-        headers: {},
-      });
+        credentials: 'include',
+      }).then(res => res.json());
     },
     onSuccess: () => {
       if (selectedKit) {

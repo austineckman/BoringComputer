@@ -18,6 +18,7 @@ import {
   Trophy,
   Settings,
   ArrowRight,
+  Grid,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -99,6 +100,13 @@ const AdminDashboard: React.FC = () => {
       icon: <Trophy className="h-12 w-12 text-primary" />,
       link: '/admin-achievements',
       stats: 'Coming soon',
+    },
+    {
+      title: 'Component Kits',
+      description: 'Manage educational kits and their components',
+      icon: <Grid className="h-12 w-12 text-primary" />,
+      link: '/admin-kits',
+      stats: 'Educational Resources',
     },
   ];
 
