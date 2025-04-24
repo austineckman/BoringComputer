@@ -1065,4 +1065,131 @@ router.post('/lootboxes/:id/upload', lootboxUpload.single('image'), async (req, 
   }
 });
 
+// =================
+// SYSTEM SETTINGS
+// =================
+
+// Get all system settings
+router.get('/settings', async (req, res) => {
+  try {
+    const settings = await storage.getSystemSettings();
+    res.json(settings);
+  } catch (error) {
+    console.error('Error fetching system settings:', error);
+    res.status(500).json({ error: 'Failed to fetch system settings' });
+  }
+});
+
+// Get settings by category
+router.get('/settings/category/:category', async (req, res) => {
+  try {
+    const { category } = req.params;
+    
+    const settings = await storage.getSystemSettingsByCategory(category);
+    res.json(settings);
+  } catch (error) {
+    console.error('Error fetching system settings by category:', error);
+    res.status(500).json({ error: 'Failed to fetch system settings' });
+  }
+});
+
+// Get a single setting
+router.get('/settings/:key', async (req, res) => {
+  try {
+    const { key } = req.params;
+    const setting = await storage.getSystemSetting(key);
+    
+    if (!setting) {
+      return res.status(404).json({ error: 'Setting not found' });
+    }
+    
+    res.json(setting);
+  } catch (error) {
+    console.error('Error fetching system setting:', error);
+    res.status(500).json({ error: 'Failed to fetch system setting' });
+  }
+});
+
+// Create a new setting
+router.post('/settings', async (req, res) => {
+  try {
+    const { key, value, category } = req.body;
+    
+    if (!key || !value) {
+      return res.status(400).json({ error: 'Key and value are required' });
+    }
+    
+    // Check if setting already exists
+    const existingSetting = await storage.getSystemSetting(key);
+    if (existingSetting) {
+      return res.status(400).json({ error: 'Setting with this key already exists' });
+    }
+    
+    // Create new setting
+    const newSetting = await storage.createSystemSetting({
+      key,
+      value,
+      category: category || 'general',
+    });
+    
+    res.status(201).json(newSetting);
+  } catch (error) {
+    console.error('Error creating system setting:', error);
+    res.status(500).json({ error: 'Failed to create system setting' });
+  }
+});
+
+// Update a setting
+router.put('/settings/:key', async (req, res) => {
+  try {
+    const { key } = req.params;
+    const { value, category } = req.body;
+    
+    if (!value) {
+      return res.status(400).json({ error: 'Value is required' });
+    }
+    
+    // Check if setting exists
+    const existingSetting = await storage.getSystemSetting(key);
+    if (!existingSetting) {
+      return res.status(404).json({ error: 'Setting not found' });
+    }
+    
+    // Update setting
+    const updatedSetting = await storage.updateSystemSetting(key, value, category);
+    if (!updatedSetting) {
+      return res.status(500).json({ error: 'Failed to update setting' });
+    }
+    
+    res.json(updatedSetting);
+  } catch (error) {
+    console.error('Error updating system setting:', error);
+    res.status(500).json({ error: 'Failed to update system setting' });
+  }
+});
+
+// Delete a setting
+router.delete('/settings/:key', async (req, res) => {
+  try {
+    const { key } = req.params;
+    
+    // Check if setting exists
+    const existingSetting = await storage.getSystemSetting(key);
+    if (!existingSetting) {
+      return res.status(404).json({ error: 'Setting not found' });
+    }
+    
+    // Delete setting
+    const success = await storage.deleteSystemSetting(key);
+    if (!success) {
+      return res.status(500).json({ error: 'Failed to delete setting' });
+    }
+    
+    res.json({ success: true, message: 'Setting deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting system setting:', error);
+    res.status(500).json({ error: 'Failed to delete system setting' });
+  }
+});
+
 export default router;
