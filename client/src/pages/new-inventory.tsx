@@ -529,7 +529,6 @@ export default function Inventory() {
           
           {/* Inventory Header with item count */}
             <div className="flex items-center justify-between border-b border-space-light/20 pb-3 mb-4">
-              <div className="flex items-center gap-2">
                 <img 
                   src={goldBagIcon} 
                   alt="Inventory Bag" 
@@ -537,7 +536,6 @@ export default function Inventory() {
                   style={{ imageRendering: 'pixelated' }}
                 />
                 <h3 className="text-lg font-semibold text-brand-orange">Inventory</h3>
-              </div>
               
               <div className="text-xs text-brand-light/60">
                 <span>Total Items: {allInventoryItems.length}/{totalSlots}</span>
