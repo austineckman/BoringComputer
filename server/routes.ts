@@ -17,6 +17,7 @@ import authRoutes from './routes/auth';
 import characterRoutes from './routes/character';
 import adminUploadRoutes from './routes/admin/upload';
 import adminKitsRoutes from './routes/admin-kits';
+import adminRecipesRoutes from './routes/admin-recipes';
 import { authenticate } from './auth';
 import { componentKits, items } from '@shared/schema';
 import { itemDatabase } from './itemDatabase';
@@ -1664,6 +1665,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Admin kits routes
   app.use('/api/admin', authenticate, adminKitsRoutes);
+  
+  // Admin recipes routes
+  app.use('/api/admin/recipes', authenticate, adminRecipesRoutes);
   
   // Routes for admin recipes and crafting were already registered above
   
