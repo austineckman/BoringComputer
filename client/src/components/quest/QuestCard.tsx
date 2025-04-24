@@ -74,15 +74,15 @@ const QuestCard = ({
   const { sounds } = useSoundEffects();
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Fetch loot box configs for images and metadata - using the non-admin public endpoint
+  // Fetch loot box configs for images and metadata
   const { data: lootBoxConfigs, isLoading: isLoadingLootBoxes } = useQuery({
-    queryKey: ['/api/loot-boxes'],
+    queryKey: ['/api/admin/lootboxes'],
     refetchOnWindowFocus: false,
   });
   
-  // Fetch item database for resource item details - using the non-admin public endpoint
+  // Fetch item database for resource item details
   const { data: itemsData, isLoading: isLoadingItems } = useQuery({
-    queryKey: ['/api/items'],
+    queryKey: ['/api/admin/items'],
     refetchOnWindowFocus: false,
   });
   
@@ -322,12 +322,12 @@ const QuestCard = ({
                         <div className="w-8 h-8 animate-pulse rounded bg-space-light/20" />
                       ) : (
                         <img 
-                          src={getLootBoxData(reward.id || '', reward.type)?.image || '/images/resources/loot-crate.png'}
+                          src={getLootBoxData(reward.id || '', reward.type)?.image || '/assets/loot crate.png'}
                           alt={`${getLootBoxData(reward.id || '', reward.type)?.name || formatItemName(reward.type)} Loot Box`}
                           className="w-8 h-8 object-contain"
                           onError={(e) => {
-                            // Use the correct path for loot crates based on what we found in the resources directory
-                            e.currentTarget.src = '/images/resources/loot-crate.png';
+                            // Fallback to default image if the database image fails to load
+                            e.currentTarget.src = '/assets/loot crate.png';
                           }}
                         />
                       )}
@@ -346,34 +346,12 @@ const QuestCard = ({
                         <div className="w-8 h-8 animate-pulse rounded bg-space-light/20" />
                       ) : (
                         <img 
-                          src={getItemData(reward.id || reward.type)?.imagePath || `/images/resources/${(reward.id || reward.type).replace(/\s+/g, '-').toLowerCase()}.png`}
+                          src={getItemData(reward.id || reward.type)?.imagePath || `/assets/${reward.id || reward.type}.png`}
                           alt={getItemData(reward.id || reward.type)?.name || formatItemName(reward.type)}
                           className="w-8 h-8 object-contain"
                           onError={(e) => {
-                            // First try a standardized path for common game resources
-                            const resourceId = reward.id || reward.type;
-                            // Convert resource ID to correct format (dash instead of space, lowercase)
-                            const formattedId = resourceId.replace(/\s+/g, '-').toLowerCase();
-                            
-                            // Use the known resource paths we discovered in the public folder
-                            if (formattedId.includes('tech') || formattedId.includes('scrap')) {
-                              e.currentTarget.src = '/images/resources/tech-scrap.png';
-                            } else if (formattedId.includes('circuit')) {
-                              e.currentTarget.src = '/images/resources/circuit-board.png';
-                            } else if (formattedId.includes('crystal')) {
-                              e.currentTarget.src = '/images/resources/crystal.png';
-                            } else if (formattedId.includes('cloth')) {
-                              e.currentTarget.src = '/images/resources/cloth.png';
-                            } else if (formattedId.includes('copper') || formattedId.includes('metal')) {
-                              e.currentTarget.src = '/images/resources/metal.png';
-                            } else if (formattedId.includes('ink')) {
-                              e.currentTarget.src = '/images/resources/ink.png';
-                            } else if (formattedId.includes('loot') || formattedId.includes('crate')) {
-                              e.currentTarget.src = '/images/resources/loot-crate.png';
-                            } else {
-                              // Final fallback to a generic item image
-                              e.currentTarget.src = '/images/resources/tech-scrap.png';
-                            }
+                            // Fallback to a generic item image if the database image fails to load
+                            e.currentTarget.src = '/assets/tech-scrap.png';
                           }}
                         />
                       )}
@@ -418,12 +396,11 @@ const QuestCard = ({
                       <div className="w-8 h-8 animate-pulse rounded bg-space-light/20" />
                     ) : (
                       <img 
-                        src={getLootBoxData(lootBox.id || '', lootBox.type)?.image || '/images/resources/loot-crate.png'}
+                        src={getLootBoxData(lootBox.id || '', lootBox.type)?.image || '/assets/loot crate.png'}
                         alt={`${getLootBoxData(lootBox.id || '', lootBox.type)?.name || formatItemName(lootBox.type)} Loot Box`}
                         className="w-8 h-8 object-contain"
                         onError={(e) => {
-                          // Use the correct path for loot crates based on what we found in the resources directory
-                          e.currentTarget.src = '/images/resources/loot-crate.png';
+                          e.currentTarget.src = '/assets/loot crate.png';
                         }}
                       />
                     )}
