@@ -564,6 +564,7 @@ const AdminQuests: React.FC = () => {
               id: kitComponent.id,
               name: kitComponent.name,
               quantity: kitComponent.quantity,
+              // Explicitly handle null value for "not used" components
               required: savedComponent ? savedComponent.required : kitComponent.isRequired
             };
           });
@@ -624,6 +625,7 @@ const AdminQuests: React.FC = () => {
       })), // Use new format if available, otherwise convert legacy format
       components: questComponents.map(component => ({
         id: component.id,
+        // Explicitly preserve null values - important for "not used" components
         required: component.required,
         quantity: component.quantity || 1
       })),
