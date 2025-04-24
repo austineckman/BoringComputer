@@ -70,12 +70,23 @@ export function useCrafting() {
   // Mutation for crafting an item
   const craftMutation = useMutation({
     mutationFn: async (recipeId: string) => {
+      // Convert 3x3 grid to 5x5 grid format for the server
+      const grid5x5 = Array(5).fill('').map(() => Array(5).fill(''));
+      
+      // Place the 3x3 grid in the center of the 5x5 grid
+      for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 3; col++) {
+          // Place in positions [1,1] to [3,3] of the 5x5 grid
+          grid5x5[row + 1][col + 1] = grid[row][col];
+        }
+      }
+      
       const response = await fetch('/api/crafting/craft', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ recipeId, gridPattern: grid }),
+        body: JSON.stringify({ recipeId, gridPattern: grid5x5 }),
       });
       
       if (!response.ok) {
@@ -90,6 +101,8 @@ export function useCrafting() {
       resetGrid();
       // Invalidate inventory to update counts
       queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+      // Play success sound
+      sounds.craftComplete();
     },
   });
   
