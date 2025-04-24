@@ -350,8 +350,33 @@ const AdminLootBoxesPage: React.FC = () => {
     }
   };
 
+  // Header buttons for admin utility actions
+  const headerButtons = (
+    <>
+      <Button 
+        variant="outline" 
+        size="sm"
+        onClick={() => generateTestCratesMutation.mutate()}
+        disabled={generateTestCratesMutation.isPending}
+        className="flex items-center gap-1"
+      >
+        {generateTestCratesMutation.isPending ? "Generating..." : "Gen Test Crates"}
+      </Button>
+      
+      <Button 
+        variant="outline" 
+        size="sm"
+        onClick={() => resetInventoryMutation.mutate()}
+        disabled={resetInventoryMutation.isPending}
+        className="border-amber-500 hover:bg-amber-500/10 flex items-center gap-1"
+      >
+        {resetInventoryMutation.isPending ? "Resetting..." : "Reset Inventory"}
+      </Button>
+    </>
+  );
+
   return (
-    <AdminLayout>
+    <AdminLayout headerButtons={headerButtons}>
       <div className="container mx-auto py-6">
         <h1 className="text-3xl font-bold mb-6">Loot Box Configuration</h1>
         
@@ -369,26 +394,6 @@ const AdminLootBoxesPage: React.FC = () => {
                 <h2 className="text-2xl font-semibold">Available Loot Box Configurations</h2>
                 <Button onClick={() => setSelectedTab("create")}>
                   <Plus className="mr-2 h-4 w-4" /> Create New
-                </Button>
-              </div>
-              
-              {/* Admin utility buttons */}
-              <div className="flex flex-wrap gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => generateTestCratesMutation.mutate()}
-                  disabled={generateTestCratesMutation.isPending}
-                >
-                  {generateTestCratesMutation.isPending ? "Generating..." : "Generate Test Loot Crates"}
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  onClick={() => resetInventoryMutation.mutate()}
-                  disabled={resetInventoryMutation.isPending}
-                  className="border-amber-500 hover:bg-amber-500/10"
-                >
-                  {resetInventoryMutation.isPending ? "Resetting..." : "Reset Inventory to 1 of Each Item"}
                 </Button>
               </div>
             </div>
