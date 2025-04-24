@@ -1540,7 +1540,7 @@ export class DatabaseStorage implements IStorage {
         JOIN kit_components kc ON qc.component_id = kc.id
         JOIN component_kits ck ON kc.kit_id = ck.id
         WHERE qc.quest_id = ${questId}
-          AND qc.is_optional IS NOT NULL
+        -- Removed the "AND qc.is_optional IS NOT NULL" condition to include "not used" components
         ORDER BY qc.is_optional ASC, kc.name ASC
       `);
       
