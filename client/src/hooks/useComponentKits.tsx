@@ -11,7 +11,7 @@ export interface ComponentKit {
 
 export function useComponentKits() {
   const { data: kits, isLoading, error } = useQuery({
-    queryKey: ['/api/admin/kits'],
+    queryKey: ['/api/kits'],
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
