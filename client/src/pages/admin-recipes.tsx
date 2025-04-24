@@ -656,7 +656,10 @@ const AdminRecipesPage: React.FC = () => {
                       />
 
                       <div className="space-y-2">
-                        <FormLabel>Required Items</FormLabel>
+                        <FormLabel>Required Items for Recipe</FormLabel>
+                        <CardDescription>
+                          Materials needed for crafting (used in grid below)
+                        </CardDescription>
                         <RequiredItemsInput
                           items={requiredItems}
                           onItemsChange={setRequiredItems}
