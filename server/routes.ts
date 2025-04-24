@@ -366,6 +366,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           orderInLine: quest.orderInLine,
           xpReward: quest.xpReward,
           rewards: quest.rewards,
+          content: quest.content,
+          lootBoxRewards: quest.lootBoxRewards,
+          kitId: quest.kitId,
           status
         });
       });
