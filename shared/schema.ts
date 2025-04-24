@@ -25,7 +25,8 @@ export const quests = pgTable("quests", {
   id: serial("id").primaryKey(),
   date: text("date").notNull(), // YYYY-MM-DD format
   title: text("title").notNull(),
-  description: text("description").notNull(),
+  description: text("description").notNull(),  // Will be used as flavor text
+  missionBrief: text("mission_brief"),         // Direct mission instructions
   adventureLine: text("adventure_line").notNull(), // Changed from kitRequired to adventureLine
   difficulty: integer("difficulty").notNull(),
   orderInLine: integer("order_in_line").notNull().default(0), // New field for sequential ordering
@@ -223,7 +224,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export const insertQuestSchema = createInsertSchema(quests).pick({
   date: true,
   title: true,
-  description: true,
+  description: true,      // Now used as flavor text
+  missionBrief: true,     // Direct mission instructions
   adventureLine: true,
   difficulty: true,
   orderInLine: true,
