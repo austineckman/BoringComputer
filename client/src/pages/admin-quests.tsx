@@ -963,7 +963,7 @@ const AdminQuests: React.FC = () => {
                                               </SelectTrigger>
                                               <SelectContent>
                                                 <SelectItem value="required">Required</SelectItem>
-                                                <SelectItem value="optional">Optional</SelectItem>
+                                                <SelectItem value="optional">Not Used</SelectItem>
                                               </SelectContent>
                                             </Select>
                                           </div>
