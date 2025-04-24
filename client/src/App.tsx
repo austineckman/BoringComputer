@@ -10,6 +10,7 @@ import Character from "@/pages/character";
 import Forge from "@/pages/forge";
 import Achievements from "@/pages/achievements";
 import Settings from "@/pages/settings";
+import Logout from "@/pages/logout";
 import Admin from "@/pages/admin";
 import AdminItems from "@/pages/admin-items";
 import AdminRecipes from "@/pages/admin-recipes";
@@ -86,6 +87,10 @@ function App() {
         
         <Route path="/auth">
           <AuthPage />
+        </Route>
+        
+        <Route path="/logout">
+          <Logout />
         </Route>
         
         {/* Protected routes */}
