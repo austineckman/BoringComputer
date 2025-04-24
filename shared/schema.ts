@@ -429,7 +429,7 @@ export const questComponents = pgTable("quest_components", {
   questId: integer("quest_id").notNull(),
   componentId: integer("component_id").notNull(), // References the kit_components table
   quantity: integer("quantity").default(1), // How many of this component are needed
-  isOptional: boolean("is_optional").default(false), // Whether this component is optional for quest completion
+  isOptional: boolean("is_optional"), // Whether this component is optional for quest completion (null = not used)
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -470,11 +470,17 @@ export const insertKitComponentSchema = baseKitComponentSchema.extend({
   category: z.string().default('hardware'),
 });
 
-export const insertQuestComponentSchema = createInsertSchema(questComponents).pick({
+// Base schema created from the questComponents table
+const baseQuestComponentSchema = createInsertSchema(questComponents).pick({
   questId: true,
   componentId: true,
   quantity: true,
   isOptional: true,
+});
+
+// Enhanced schema that allows isOptional to be null (for "not used" components)
+export const insertQuestComponentSchema = baseQuestComponentSchema.extend({
+  isOptional: z.boolean().nullable(), // Allow null to indicate "not used"
 });
 
 // Types for new tables
