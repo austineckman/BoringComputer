@@ -181,6 +181,11 @@ export class MemStorage implements IStorage {
   private inventoryHistoryIdCounter: number;
 
   constructor() {
+    const MemoryStore = createMemoryStore(session);
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    });
+    
     this.users = new Map();
     this.quests = new Map();
     this.userQuests = new Map();
