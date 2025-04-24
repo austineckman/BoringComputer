@@ -214,38 +214,11 @@ router.post('/kits/:kitId/components', isAdmin, upload.single('image'), async (r
     }
     console.log('Found kit:', kit.name);
     
-    // Validate component data before conversion
+    // Zod schema will handle type conversions
     console.log('Component data before validation:', componentData);
     
-    // Convert isRequired to boolean and quantity to number
-    if (typeof componentData.isRequired === 'string') {
-      componentData.isRequired = componentData.isRequired === 'true';
-    }
-    
-    if (typeof componentData.quantity === 'string') {
-      componentData.quantity = parseInt(componentData.quantity, 10);
-    }
-    
-    console.log('Component data after type conversion:', componentData);
-    
-    // Create a properly typed object for validation
-    const dataToValidate = {
-      kitId: componentData.kitId,
-      name: componentData.name,
-      description: componentData.description,
-      imagePath: componentData.imagePath,
-      partNumber: componentData.partNumber || null,
-      isRequired: typeof componentData.isRequired === 'string' 
-        ? componentData.isRequired === 'true' 
-        : !!componentData.isRequired,
-      quantity: typeof componentData.quantity === 'string'
-        ? parseInt(componentData.quantity, 10)
-        : componentData.quantity || 1,
-      category: componentData.category || 'hardware'
-    };
-    
-    // Validate component data
-    const validatedData = insertKitComponentSchema.parse(dataToValidate);
+    // Validate component data with our enhanced Zod schema
+    const validatedData = insertKitComponentSchema.parse(componentData);
     console.log('Validated data:', validatedData);
     
     // Insert component into database
@@ -276,29 +249,31 @@ router.put('/components/:id', isAdmin, upload.single('image'), async (req: Reque
       return res.status(404).json({ message: 'Component not found' });
     }
     
-    // Only update fields that were provided, with proper type conversion
-    const updateData: any = {};
-    if (componentData.name) updateData.name = componentData.name;
-    if (componentData.description) updateData.description = componentData.description;
-    if (componentData.imagePath) updateData.imagePath = componentData.imagePath;
-    if (componentData.partNumber) updateData.partNumber = componentData.partNumber;
+    // Create an update object with only the provided fields
+    const updateObj: any = {
+      kitId: existingComponent.kitId // Keep the existing kitId
+    };
     
-    // Convert isRequired to boolean
-    if (componentData.isRequired !== undefined) {
-      updateData.isRequired = typeof componentData.isRequired === 'string' 
-        ? componentData.isRequired === 'true' 
-        : !!componentData.isRequired;
-    }
+    // Add only the fields that were provided
+    if (componentData.name) updateObj.name = componentData.name;
+    if (componentData.description) updateObj.description = componentData.description;
+    if (componentData.imagePath) updateObj.imagePath = componentData.imagePath;
+    if (componentData.partNumber) updateObj.partNumber = componentData.partNumber;
+    if (componentData.isRequired !== undefined) updateObj.isRequired = componentData.isRequired;
+    if (componentData.quantity) updateObj.quantity = componentData.quantity;
+    if (componentData.category) updateObj.category = componentData.category;
     
-    // Convert quantity to number
-    if (componentData.quantity) {
-      updateData.quantity = typeof componentData.quantity === 'string'
-        ? parseInt(componentData.quantity, 10)
-        : componentData.quantity;
-    }
+    console.log('Update object before validation:', updateObj);
     
-    if (componentData.category) updateData.category = componentData.category;
-    updateData.updatedAt = new Date();
+    // Zod schema will handle type conversions
+    const validatedData = insertKitComponentSchema.parse(updateObj);
+    console.log('Validated update data:', validatedData);
+    
+    // Add updatedAt timestamp
+    const updateData = {
+      ...validatedData,
+      updatedAt: new Date()
+    };
     
     // Update component in database
     const [updatedComponent] = await db
