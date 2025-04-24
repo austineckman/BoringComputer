@@ -8,6 +8,7 @@ import { Search, Filter } from 'lucide-react';
 import { Recipe } from '@/../../shared/types';
 import { getItemDetails } from '@/lib/itemDatabase';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
+import InventoryItem from './InventoryItem';
 
 interface RecipeListProps {
   recipes: Recipe[];

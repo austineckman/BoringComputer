@@ -80,7 +80,8 @@ const InventoryItem: React.FC<InventoryItemProps> = ({
         <img 
           src={itemDetails?.imagePath} 
           alt={itemDetails?.name || itemId}
-          className="w-4/5 h-4/5 object-contain"
+          className="w-[64px] h-[64px] object-contain pixelated transform scale-[1.25] origin-center"
+          style={{ imageRendering: 'pixelated' }}
         />
         
         <div className="absolute bottom-0 right-0 text-xs font-semibold bg-background/80 px-1 rounded-tl-md">
