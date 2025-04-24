@@ -2,6 +2,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { themeConfig } from "@/lib/themeConfig";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
+import { getItemDetails } from "@/lib/itemDatabase";
 
 // Import resource images
 import clothImage from "@assets/cloth.png";

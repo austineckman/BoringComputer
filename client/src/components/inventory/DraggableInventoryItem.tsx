@@ -50,10 +50,10 @@ export function DraggableEmptySlot({ index, moveItem }: EmptySlotProps) {
   return (
     <div 
       ref={ref}
-      className="w-full h-full rounded-md border-2 border-dashed border-space-light/20 bg-brand-orange/5 hover:bg-brand-orange/10 pixel-item-container transition-all duration-200"
+      className="w-full h-full rounded-md pixel-empty-slot"
     >
       <div className="w-full h-full flex items-center justify-center">
-        <div className="text-space-light/30 text-2xl font-pixel">+</div>
+        <div className="text-space-light/30 text-lg">+</div>
       </div>
       {isOver && canDrop && (
         <div className="absolute inset-0 bg-brand-orange/20 border-2 border-brand-orange/40 rounded-md z-10"></div>
@@ -140,10 +140,14 @@ export function DraggableInventoryItem({
   
   const opacity = isDragging ? 0.4 : 1;
   
+  // Get item details for rarity info
+  const itemDetails = getItemDetails(item.type);
+  const rarity = itemDetails?.rarity || 'common';
+
   return (
     <div 
       ref={ref}
-      className={`aspect-square pixel-item-container rarity-${getItemDetails(item.type).rarity} rounded-md p-1 relative cursor-pointer`}
+      className={`aspect-square pixel-item-container rarity-${rarity} rounded-md p-1 relative cursor-pointer ${isDragging ? 'dragging' : ''}`}
       style={{ opacity }}
       onMouseEnter={() => handleItemHover(item.type)}
       onClick={() => {
@@ -160,11 +164,11 @@ export function DraggableInventoryItem({
     >
       <div className="flex items-center justify-center h-full relative">
         {item.isLootBox ? (
-          <div className="w-full h-full flex items-center justify-center rounded-md overflow-hidden bg-space-mid">
+          <div className="w-full h-full flex items-center justify-center rounded-md overflow-hidden">
             <img 
               src={item.lootBoxData?.image || "/images/loot-crate.png"} 
               alt={item.lootBoxData?.name || "Loot Crate"}
-              className="w-full h-full object-contain pixelated" 
+              className="w-[32px] h-[32px] pixelated transform scale-[2] origin-center" 
               title={item.lootBoxData?.name || "Loot Crate"}
             />
           </div>
@@ -173,8 +177,8 @@ export function DraggableInventoryItem({
             {/* Using exact size for 32x32 pixel art with 2x scaling */}
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
               <img 
-                src={getItemDetails(item.type).imagePath}
-                alt={getItemDetails(item.type).name}
+                src={itemDetails?.imagePath || ''}
+                alt={itemDetails?.name || item.type}
                 className="w-[32px] h-[32px] pixelated transform scale-[2] origin-center" 
                 style={{ imageRendering: 'pixelated' }}
               />
