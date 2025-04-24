@@ -14,6 +14,7 @@ import * as craftingRecipeRoutes from './routes/craftingRecipes';
 import adminRoutes from './routes/admin';
 import characterRoutes from './routes/character';
 import adminUploadRoutes from './routes/admin/upload';
+import adminKitsRoutes from './routes/admin-kits';
 
 // Setup authentication middleware
 const authenticate = async (req: Request, res: Response, next: Function) => {
@@ -1502,6 +1503,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Admin upload routes
   app.use('/api/admin/upload', authenticate, adminUploadRoutes);
+  
+  // Admin kits routes
+  app.use('/api/admin', authenticate, adminKitsRoutes);
   
   // Routes for admin recipes and crafting were already registered above
   
