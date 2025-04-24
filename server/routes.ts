@@ -13,11 +13,11 @@ import { openLootBox, generateLootBoxRewards, LootBoxType } from './lootBoxSyste
 import { getItemDetails } from './itemDatabase';
 import * as craftingRecipeRoutes from './routes/craftingRecipes';
 import adminRoutes from './routes/admin';
+import authRoutes from './routes/auth';
 import characterRoutes from './routes/character';
 import adminUploadRoutes from './routes/admin/upload';
 import adminKitsRoutes from './routes/admin-kits';
 import { authenticate } from './auth';
-import { registerAuthRoutes } from './routes/auth';
 
 // Legacy authentication middleware (now deprecated in favor of the one in auth.ts)
 const legacyAuthenticate = async (req: Request, res: Response, next: Function) => {
@@ -98,7 +98,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Register the new auth routes
-  registerAuthRoutes(app);
+  app.use("/api/auth", authRoutes);
   
   // Auth routes
   app.post('/api/auth/login', async (req, res) => {
