@@ -27,7 +27,8 @@ import {
   Box,
   BarChart2,
   Database,
-  Activity
+  Activity,
+  Settings
 } from 'lucide-react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -44,7 +45,36 @@ interface AdminStats {
   itemCount: number;
   recipeCount: number;
   questCount: number;
-  // Will expand this as more stats are added to the API
+  dbStats: {
+    tableCount: number;
+    dbSizeMB: number;
+    rowCounts: {
+      users: number;
+      items: number;
+      quests: number;
+      recipes: number;
+    };
+  };
+  projectStats: {
+    linesOfCode: {
+      total: number;
+      client: number;
+      server: number;
+      shared: number;
+    };
+    filesByType: {
+      typescript: number;
+      reactComponents: number;
+      css: number;
+      total: number;
+    };
+    projectSizeMB: number;
+    dependencies: {
+      production: number;
+      development: number;
+      total: number;
+    };
+  };
 }
 
 export default function AdminStatsPage() {
@@ -59,11 +89,25 @@ export default function AdminStatsPage() {
     if (!stats) return [];
     
     return [
-      { name: 'Users', value: stats.userCount, color: COLORS[0] },
-      { name: 'Items', value: stats.itemCount, color: COLORS[1] },
-      { name: 'Recipes', value: stats.recipeCount, color: COLORS[2] },
-      { name: 'Quests', value: stats.questCount, color: COLORS[3] }
+      { name: 'Users', value: stats.userCount || 0, color: COLORS[0] },
+      { name: 'Items', value: stats.itemCount || 0, color: COLORS[1] },
+      { name: 'Recipes', value: stats.recipeCount || 0, color: COLORS[2] },
+      { name: 'Quests', value: stats.questCount || 0, color: COLORS[3] }
     ];
+  };
+
+  // Set default values for stats that might be undefined
+  const projectStats = stats?.projectStats || {
+    linesOfCode: { total: 0, client: 0, server: 0, shared: 0 },
+    filesByType: { typescript: 0, reactComponents: 0, css: 0, total: 0 },
+    projectSizeMB: 0,
+    dependencies: { production: 0, development: 0, total: 0 }
+  };
+  
+  const dbStats = stats?.dbStats || {
+    tableCount: 0,
+    dbSizeMB: 0,
+    rowCounts: { users: 0, items: 0, quests: 0, recipes: 0 }
   };
 
   const contentTypeData = prepareContentTypeData();
@@ -363,11 +407,230 @@ export default function AdminStatsPage() {
           </TabsContent>
         </Tabs>
 
-        {/* System Info */}
+        {/* Project Stats */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              <span>Project Statistics</span>
+            </CardTitle>
+            <CardDescription>
+              Detailed metrics about the codebase and development
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Lines of Code Stats */}
+              <div>
+                <h3 className="text-lg font-medium mb-3">Lines of Code</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Total</span>
+                    <span className="font-bold">{projectStats.linesOfCode.total.toLocaleString()}</span>
+                  </div>
+                  <div className="h-2 w-full bg-muted rounded">
+                    <div 
+                      className="h-2 bg-blue-500 rounded" 
+                      style={{ width: '100%' }}
+                    ></div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Client</span>
+                    <span className="font-bold">{projectStats.linesOfCode.client.toLocaleString()}</span>
+                  </div>
+                  <div className="h-2 w-full bg-muted rounded">
+                    <div 
+                      className="h-2 bg-green-500 rounded" 
+                      style={{ 
+                        width: `${(projectStats.linesOfCode.client / projectStats.linesOfCode.total) * 100}%` 
+                      }}
+                    ></div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Server</span>
+                    <span className="font-bold">{projectStats.linesOfCode.server.toLocaleString()}</span>
+                  </div>
+                  <div className="h-2 w-full bg-muted rounded">
+                    <div 
+                      className="h-2 bg-amber-500 rounded" 
+                      style={{ 
+                        width: `${(projectStats.linesOfCode.server / projectStats.linesOfCode.total) * 100}%` 
+                      }}
+                    ></div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Shared</span>
+                    <span className="font-bold">{projectStats.linesOfCode.shared.toLocaleString()}</span>
+                  </div>
+                  <div className="h-2 w-full bg-muted rounded">
+                    <div 
+                      className="h-2 bg-purple-500 rounded" 
+                      style={{ 
+                        width: `${(projectStats.linesOfCode.shared / projectStats.linesOfCode.total) * 100}%` 
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* File Type Stats */}
+              <div>
+                <h3 className="text-lg font-medium mb-3">Files by Type</h3>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-muted p-4 rounded-lg text-center">
+                      <div className="text-2xl font-bold">{projectStats.filesByType.typescript}</div>
+                      <div className="text-xs text-muted-foreground">TypeScript Files</div>
+                    </div>
+                    <div className="bg-muted p-4 rounded-lg text-center">
+                      <div className="text-2xl font-bold">{projectStats.filesByType.reactComponents}</div>
+                      <div className="text-xs text-muted-foreground">React Components</div>
+                    </div>
+                    <div className="bg-muted p-4 rounded-lg text-center">
+                      <div className="text-2xl font-bold">{projectStats.filesByType.css}</div>
+                      <div className="text-xs text-muted-foreground">CSS Files</div>
+                    </div>
+                    <div className="bg-muted p-4 rounded-lg text-center">
+                      <div className="text-2xl font-bold">{projectStats.filesByType.total}</div>
+                      <div className="text-xs text-muted-foreground">Total Files</div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Project Size</h4>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="flex justify-between mb-1">
+                        <span className="text-xs text-muted-foreground">Total Size</span>
+                        <span className="text-xs font-medium">{projectStats.projectSizeMB.toFixed(2)} MB</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Dependencies Stats */}
+            <div className="mt-6">
+              <h3 className="text-lg font-medium mb-3">Dependencies</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-muted p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold">{projectStats.dependencies.production}</div>
+                  <div className="text-xs text-muted-foreground">Production Dependencies</div>
+                </div>
+                <div className="bg-muted p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold">{projectStats.dependencies.development}</div>
+                  <div className="text-xs text-muted-foreground">Development Dependencies</div>
+                </div>
+                <div className="bg-muted p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold">{projectStats.dependencies.total}</div>
+                  <div className="text-xs text-muted-foreground">Total Dependencies</div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Database Stats */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Database className="h-5 w-5" />
+              <span>Database Statistics</span>
+            </CardTitle>
+            <CardDescription>
+              Insights into the PostgreSQL database
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-muted p-4 rounded-lg text-center">
+                <div className="text-2xl font-bold">{dbStats.tableCount}</div>
+                <div className="text-xs text-muted-foreground">Database Tables</div>
+              </div>
+              <div className="bg-muted p-4 rounded-lg text-center">
+                <div className="text-2xl font-bold">{dbStats.dbSizeMB.toFixed(2)} MB</div>
+                <div className="text-xs text-muted-foreground">Database Size</div>
+              </div>
+              <div className="bg-muted p-4 rounded-lg text-center">
+                <div className="text-2xl font-bold">
+                  {(dbStats.rowCounts.users +
+                    dbStats.rowCounts.items +
+                    dbStats.rowCounts.quests +
+                    dbStats.rowCounts.recipes).toLocaleString()}
+                </div>
+                <div className="text-xs text-muted-foreground">Total Rows</div>
+              </div>
+            </div>
+            
+            <h3 className="text-lg font-medium mb-3">Table Row Counts</h3>
+            <div className="space-y-2">
+              {/* Users Table Rows */}
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Users</span>
+                <span className="font-bold">{dbStats.rowCounts.users}</span>
+              </div>
+              <div className="h-2 w-full bg-muted rounded">
+                <div 
+                  className="h-2 bg-blue-500 rounded" 
+                  style={{ 
+                    width: '100%' 
+                  }}
+                ></div>
+              </div>
+              
+              {/* Items Table Rows */}
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Items</span>
+                <span className="font-bold">{dbStats.rowCounts.items}</span>
+              </div>
+              <div className="h-2 w-full bg-muted rounded">
+                <div 
+                  className="h-2 bg-green-500 rounded" 
+                  style={{ 
+                    width: `${(dbStats.rowCounts.items / dbStats.rowCounts.users) * 100}%` 
+                  }}
+                ></div>
+              </div>
+              
+              {/* Quests Table Rows */}
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Quests</span>
+                <span className="font-bold">{dbStats.rowCounts.quests}</span>
+              </div>
+              <div className="h-2 w-full bg-muted rounded">
+                <div 
+                  className="h-2 bg-amber-500 rounded" 
+                  style={{ 
+                    width: `${(dbStats.rowCounts.quests / dbStats.rowCounts.users) * 100}%` 
+                  }}
+                ></div>
+              </div>
+              
+              {/* Recipes Table Rows */}
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Recipes</span>
+                <span className="font-bold">{dbStats.rowCounts.recipes}</span>
+              </div>
+              <div className="h-2 w-full bg-muted rounded">
+                <div 
+                  className="h-2 bg-purple-500 rounded" 
+                  style={{ 
+                    width: `${(dbStats.rowCounts.recipes / dbStats.rowCounts.users) * 100}%` 
+                  }}
+                ></div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* System Info */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
               <span>System Information</span>
             </CardTitle>
           </CardHeader>

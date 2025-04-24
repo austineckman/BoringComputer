@@ -729,18 +729,182 @@ router.get('/stats', async (req, res) => {
     const recipeCount = await storage.getCraftingRecipeCount();
     const questCount = await storage.getQuestCount();
     
+    // Get database stats
+    const dbStats = await getDbStats();
+    
+    // Get project stats
+    const projectStats = await getProjectStats();
+    
     res.status(200).json({
       userCount,
       itemCount,
       recipeCount,
       questCount,
-      // Add more stats as needed
+      dbStats,
+      projectStats,
     });
   } catch (error: any) {
     console.error('Error getting stats:', error);
     res.status(500).json({ error: error.message || 'Failed to retrieve stats' });
   }
 });
+
+// Get database statistics
+async function getDbStats() {
+  try {
+    // Get database size and table counts
+    const tableCountResult = await db.execute(
+      `SELECT COUNT(*) as table_count FROM information_schema.tables WHERE table_schema = 'public'`
+    );
+    const tableCount = tableCountResult.rows[0]?.table_count || 0;
+    
+    // Get database size
+    const dbSizeResult = await db.execute(
+      `SELECT pg_database_size(current_database()) as size`
+    );
+    const dbSizeBytes = parseInt(dbSizeResult.rows[0]?.size || '0');
+    const dbSizeMB = Math.round(dbSizeBytes / (1024 * 1024) * 100) / 100;
+    
+    // Get row counts for main tables
+    const userRowCount = await storage.getUserCount();
+    const itemRowCount = await storage.getItemCount();
+    const questRowCount = await storage.getQuestCount();
+    const recipeRowCount = await storage.getCraftingRecipeCount();
+    
+    return {
+      tableCount,
+      dbSizeMB,
+      rowCounts: {
+        users: userRowCount,
+        items: itemRowCount,
+        quests: questRowCount,
+        recipes: recipeRowCount
+      }
+    };
+  } catch (error) {
+    console.error('Error getting DB stats:', error);
+    return {
+      tableCount: 0,
+      dbSizeMB: 0,
+      rowCounts: {
+        users: 0,
+        items: 0,
+        quests: 0,
+        recipes: 0
+      }
+    };
+  }
+}
+
+// Get project code statistics
+async function getProjectStats() {
+  try {
+    const { execSync } = require('child_process');
+    
+    // Count lines of code in project directories (excluding node_modules)
+    const clientLOC = parseInt(
+      execSync('find ./client/src -type f -name "*.ts*" | xargs wc -l 2>/dev/null || echo "0"')
+        .toString()
+        .split('\n')
+        .pop()
+        .trim()
+        .split(' ')[0] || '0'
+    );
+    
+    const serverLOC = parseInt(
+      execSync('find ./server -type f -name "*.ts" | xargs wc -l 2>/dev/null || echo "0"')
+        .toString()
+        .split('\n')
+        .pop()
+        .trim()
+        .split(' ')[0] || '0'
+    );
+    
+    const sharedLOC = parseInt(
+      execSync('find ./shared -type f -name "*.ts" | xargs wc -l 2>/dev/null || echo "0"')
+        .toString()
+        .split('\n')
+        .pop()
+        .trim()
+        .split(' ')[0] || '0'
+    );
+    
+    // Count files by type
+    const tsFileCount = parseInt(
+      execSync('find . -type f -name "*.ts" | wc -l 2>/dev/null || echo "0"')
+        .toString()
+        .trim() || '0'
+    );
+    
+    const tsxFileCount = parseInt(
+      execSync('find . -type f -name "*.tsx" | wc -l 2>/dev/null || echo "0"')
+        .toString()
+        .trim() || '0'
+    );
+    
+    const cssFileCount = parseInt(
+      execSync('find . -type f -name "*.css" | wc -l 2>/dev/null || echo "0"')
+        .toString()
+        .trim() || '0'
+    );
+    
+    // Get project size in MB (excluding node_modules)
+    const projectSizeMB = parseFloat(
+      execSync('du -sm . 2>/dev/null | cut -f1 || echo "0"')
+        .toString()
+        .trim() || '0'
+    );
+    
+    // Get dependencies count from package.json
+    const fs = require('fs');
+    const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+    const dependenciesCount = Object.keys(packageJson.dependencies || {}).length;
+    const devDependenciesCount = Object.keys(packageJson.devDependencies || {}).length;
+    
+    return {
+      linesOfCode: {
+        total: clientLOC + serverLOC + sharedLOC,
+        client: clientLOC,
+        server: serverLOC,
+        shared: sharedLOC
+      },
+      filesByType: {
+        typescript: tsFileCount,
+        reactComponents: tsxFileCount,
+        css: cssFileCount,
+        total: tsFileCount + tsxFileCount + cssFileCount
+      },
+      projectSizeMB,
+      dependencies: {
+        production: dependenciesCount,
+        development: devDependenciesCount,
+        total: dependenciesCount + devDependenciesCount
+      }
+    };
+  } catch (error) {
+    console.error('Error getting project stats:', error);
+    return {
+      linesOfCode: {
+        total: 0,
+        client: 0,
+        server: 0,
+        shared: 0
+      },
+      filesByType: {
+        typescript: 0,
+        reactComponents: 0,
+        css: 0,
+        total: 0
+      },
+      projectSizeMB: 0,
+      dependencies: {
+        production: 0,
+        development: 0,
+        total: 0
+      }
+    };
+  }
+}
 
 // Legacy endpoint for backward compatibility for item uploads by their IDs
 // This is kept for compatibility with older code but the specific item upload endpoint is preferred
