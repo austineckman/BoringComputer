@@ -81,7 +81,22 @@ export const PixelCardContent = ({
           <img 
             src={questImage} 
             alt={imageAlt || "Quest image"} 
-            className="w-full h-auto object-cover" 
+            className="w-full h-auto object-cover"
+            onError={(e) => {
+              // If the image fails to load, use a fallback
+              console.log("Quest image failed to load:", questImage);
+              // If the image path is for a quest image, try a direct approach with the known name
+              const imageName = questImage.split('/').pop(); // Get just the filename
+              if (imageName) {
+                // Try accessing the file directly with the known correct path
+                e.currentTarget.src = `/uploads/quest-images/${imageName}`;
+                console.log("Trying corrected path:", `/uploads/quest-images/${imageName}`);
+              } else {
+                // Hide the image container if no alternatives work
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.parentElement!.style.display = 'none';
+              }
+            }}
           />
         </div>
       )}
