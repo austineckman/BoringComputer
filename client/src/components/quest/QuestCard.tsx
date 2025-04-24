@@ -76,13 +76,13 @@ const QuestCard = ({
 
   // Fetch loot box configs for images and metadata
   const { data: lootBoxConfigs, isLoading: isLoadingLootBoxes } = useQuery({
-    queryKey: ['/api/admin/lootboxes'],
+    queryKey: ['/api/loot-boxes'],
     refetchOnWindowFocus: false,
   });
   
-  // Fetch item database for resource item details
+  // Fetch item database for resource item details - use the public API endpoint
   const { data: itemsData, isLoading: isLoadingItems } = useQuery({
-    queryKey: ['/api/admin/items'],
+    queryKey: ['/api/items'],
     refetchOnWindowFocus: false,
   });
   
@@ -322,12 +322,12 @@ const QuestCard = ({
                         <div className="w-8 h-8 animate-pulse rounded bg-space-light/20" />
                       ) : (
                         <img 
-                          src={getLootBoxData(reward.id || '', reward.type)?.image || '/assets/loot crate.png'}
+                          src={getLootBoxData(reward.id || '', reward.type)?.image || '/images/resources/loot-crate.png'}
                           alt={`${getLootBoxData(reward.id || '', reward.type)?.name || formatItemName(reward.type)} Loot Box`}
                           className="w-8 h-8 object-contain"
                           onError={(e) => {
-                            // Fallback to default image if the database image fails to load
-                            e.currentTarget.src = '/assets/loot crate.png';
+                            // Use the correct path for loot crates based on what we found in the resources directory
+                            e.currentTarget.src = '/images/resources/loot-crate.png';
                           }}
                         />
                       )}
