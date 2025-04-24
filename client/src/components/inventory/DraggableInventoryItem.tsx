@@ -168,18 +168,19 @@ export function DraggableInventoryItem({
             <img 
               src={item.lootBoxData?.image || "/images/loot-crate.png"} 
               alt={item.lootBoxData?.name || "Loot Crate"}
-              className="w-[32px] h-[32px] pixelated transform scale-[2] origin-center" 
+              className="w-[64px] h-[64px] pixelated transform scale-[2] origin-center" 
               title={item.lootBoxData?.name || "Loot Crate"}
+              style={{ imageRendering: 'pixelated' }}
             />
           </div>
         ) : (
-          <div className="pixel-scale-2 relative">
-            {/* Using exact size for 32x32 pixel art with 2x scaling */}
+          <div className="pixel-scale-4 relative">
+            {/* Using exact size for 64x64 pixel art with 2x scaling */}
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
               <img 
                 src={itemDetails?.imagePath || ''}
                 alt={itemDetails?.name || item.type}
-                className="w-[32px] h-[32px] pixelated transform scale-[2] origin-center" 
+                className="w-[64px] h-[64px] pixelated transform scale-[2] origin-center" 
                 style={{ imageRendering: 'pixelated' }}
               />
             </div>

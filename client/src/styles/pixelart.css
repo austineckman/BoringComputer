@@ -70,6 +70,12 @@
   position: relative;
 }
 
+.pixel-scale-4 {
+  width: 128px;
+  height: 128px;
+  position: relative;
+}
+
 /* Quantity badge with pixel styling */
 .pixel-quantity-badge {
   font-size: 10px;
