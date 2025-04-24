@@ -1373,18 +1373,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // First, remove all existing component relationships for this quest
         await storage.deleteQuestComponentsByQuestId(questId);
         
-        // Then add the new component relationships
+        // Then add the new component relationships - only for required and optional components
+        // We'll now store "not-used" components as well with a special flag
         for (const component of questData.components) {
-          // Skip components marked as "not used" (required is null)
-          if (component.required === null) {
-            continue;
-          }
+          // For debugging
+          console.log(`Saving component ${component.id} with required=${component.required}`);
           
+          // Store all components, including "not used" ones
+          // Use isOptional=null to represent "not used" components
           await storage.createQuestComponent({
             questId: questId,
             componentId: component.id,
             quantity: component.quantity || 1,
-            isOptional: !component.required
+            isOptional: component.required === null ? null : !component.required
           });
         }
       }

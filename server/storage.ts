@@ -1523,6 +1523,7 @@ export class DatabaseStorage implements IStorage {
   async getQuestComponentsWithDetails(questId: number): Promise<any[]> {
     try {
       // Use Drizzle ORM to get quest components with details
+      // Add a condition to exclude components with is_optional = NULL (not used)
       const result = await db.execute(sql`
         SELECT 
           qc.id, 
@@ -1539,6 +1540,7 @@ export class DatabaseStorage implements IStorage {
         JOIN kit_components kc ON qc.component_id = kc.id
         JOIN component_kits ck ON kc.kit_id = ck.id
         WHERE qc.quest_id = ${questId}
+          AND qc.is_optional IS NOT NULL
         ORDER BY qc.is_optional ASC, kc.name ASC
       `);
       
