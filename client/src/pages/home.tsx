@@ -37,9 +37,15 @@ const Home = () => {
     ? availableQuests.filter(quest => {
         // Check if this quest has component requirements with the selected kit
         if (quest.componentRequirements && Array.isArray(quest.componentRequirements) && quest.componentRequirements.length > 0) {
-          // Look at the first component requirement's kit (we group by kit)
-          const kitId = quest.kitId || '';
-          return kitId === selectedKit;
+          // Find the matching kit by matching the selected kit ID with the kit info in our kits array
+          const selectedKitObj = kits.find(kit => kit.id === selectedKit);
+          if (!selectedKitObj) return false;
+          
+          // Check if any component requirement matches the selected kit name
+          return quest.componentRequirements.some(comp => 
+            comp.kitName === selectedKitObj.name || 
+            comp.kitId === selectedKit
+          );
         }
         return false;
       })
@@ -443,7 +449,23 @@ const Home = () => {
               ))
             ) : (
               <div className="col-span-3 text-center py-8 bg-space-dark rounded-lg">
-                <p className="text-brand-light/70">No quests available right now. Check back later!</p>
+                {selectedKit ? (
+                  <div>
+                    <p className="text-brand-light/70 mb-2">No quests require this component kit at the moment.</p>
+                    <button
+                      className="text-brand-orange hover:text-brand-yellow text-sm"
+                      onClick={() => {
+                        setSelectedKit(null);
+                        sounds.click?.();
+                      }}
+                      onMouseEnter={handleButtonHover}
+                    >
+                      Clear filter to see all quests
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-brand-light/70">No quests available right now. Check back later!</p>
+                )}
               </div>
             )}
           </div>
