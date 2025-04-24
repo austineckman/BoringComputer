@@ -1009,7 +1009,7 @@ export default function QuestDetailPage() {
                   <h3 className="text-xl font-semibold mb-4">Required Components</h3>
                   <div className="space-y-3">
                     {quest.componentRequirements.map((component, index) => (
-                      <div key={index} className={`flex items-start p-3 rounded-md ${component.status === 'optional' ? 'bg-gray-800/40' : 'bg-gray-800'}`}>
+                      <div key={index} className={`flex items-start p-3 rounded-md ${component.is_optional ? 'bg-gray-800/40' : 'bg-gray-800'}`}>
                         {component.imagePath ? (
                           <div className="w-12 h-12 rounded-md overflow-hidden bg-gray-900 mr-3 flex-shrink-0">
                             <img 
@@ -1026,7 +1026,7 @@ export default function QuestDetailPage() {
                         <div className="flex-grow">
                           <div className="flex items-center">
                             <h4 className="text-sm font-medium">{component.name}</h4>
-                            {component.status === 'optional' && (
+                            {component.is_optional && (
                               <span className="ml-2 text-xs bg-yellow-800/40 text-yellow-300 px-2 py-0.5 rounded">
                                 Optional
                               </span>

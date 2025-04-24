@@ -297,22 +297,7 @@ const AdminQuests: React.FC = () => {
   // Update quest mutation
   const updateQuestMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      // Add logging before sending the request
-      console.log("Sending update with components:", data.components);
-      
-      // Create a deep copy of the data to ensure we don't modify the original
-      const dataToSend = JSON.parse(JSON.stringify(data));
-      
-      // Ensure components are properly structured for the API
-      if (dataToSend.components) {
-        dataToSend.components = dataToSend.components.map((component: any) => ({
-          id: component.id,
-          required: component.required,
-          quantity: component.quantity || 1
-        }));
-      }
-      
-      return await apiRequest('PUT', `/api/admin/quests/${id}`, dataToSend);
+      return await apiRequest('PUT', `/api/admin/quests/${id}`, data);
     },
     onSuccess: (data, variables) => {
       toast({
@@ -330,7 +315,6 @@ const AdminQuests: React.FC = () => {
       handleCloseDialog();
     },
     onError: (error: any) => {
-      console.error("Failed to update quest:", error);
       toast({
         title: 'Error',
         description: error?.message || 'Failed to update quest',
@@ -564,12 +548,6 @@ const AdminQuests: React.FC = () => {
               id: kitComponent.id,
               name: kitComponent.name,
               quantity: kitComponent.quantity,
-              // Use the new status field if available, otherwise derive from required
-              status: savedComponent?.status || 
-                     (savedComponent?.required === true ? "required" : 
-                      savedComponent?.required === false ? "optional" : 
-                      kitComponent.isRequired ? "required" : "optional"),
-              // Keep required for backward compatibility
               required: savedComponent ? savedComponent.required : kitComponent.isRequired
             };
           });
@@ -611,9 +589,6 @@ const AdminQuests: React.FC = () => {
 
   // Handle form submission
   const onSubmit = (values: z.infer<typeof questFormSchema>) => {
-    // Log the component state before submission
-    console.log("Submitting quest components:", questComponents);
-    
     const questData = {
       ...values,
       content: {
@@ -630,15 +605,8 @@ const AdminQuests: React.FC = () => {
       })), // Use new format if available, otherwise convert legacy format
       components: questComponents.map(component => ({
         id: component.id,
-        // Include the new status field
-        status: component.status || (
-          component.required === true ? "required" : 
-          component.required === false ? "optional" : 
-          "not-used"
-        ),
-        // Keep required for backward compatibility
         required: component.required,
-        quantity: component.quantity || 1
+        quantity: component.quantity
       })),
     };
 
@@ -921,33 +889,7 @@ const AdminQuests: React.FC = () => {
                               <FormLabel>Required Component Kit</FormLabel>
                               <FormControl>
                                 <Select
-                                  onValueChange={(value) => {
-                                    console.log("Kit changed to:", value);
-                                    
-                                    // Set the form field value
-                                    field.onChange(value);
-                                    
-                                    // Reset components when changing kits
-                                    if (value === "none") {
-                                      setQuestComponents([]);
-                                      return;
-                                    }
-                                    
-                                    // Find the selected kit
-                                    const kit = componentKits.find((k: any) => k.id === value);
-                                    if (kit && kit.components) {
-                                      // Initialize component state with default values
-                                      const initialComponents = kit.components.map((component: any) => ({
-                                        id: component.id,
-                                        name: component.name,
-                                        quantity: component.quantity || 1,
-                                        required: component.isRequired === true // Set default to true if isRequired is true
-                                      }));
-                                      
-                                      console.log("Setting initial components:", initialComponents);
-                                      setQuestComponents(initialComponents);
-                                    }
-                                  }}
+                                  onValueChange={field.onChange}
                                   defaultValue={field.value}
                                 >
                                   <SelectTrigger className="w-full">
@@ -981,25 +923,14 @@ const AdminQuests: React.FC = () => {
                             const selectedKit = componentKits.find((kit: ComponentKit) => kit.id === form.watch('kitId'));
                             if (selectedKit) {
                               // Initialize questComponents state if it's not already set
-                              // We'll let the kit selection handler manage this instead
-                              // Only initialize if we haven't set components yet and we're in edit mode
-                              if ((!questComponents || questComponents.length === 0) && editingQuest) {
-                                console.log("Setting components from editingQuest:", editingQuest.components);
-                                
-                                const initialQuestComponents = selectedKit.components?.map(component => {
-                                  // Find if this component exists in the quest.components array
-                                  const savedComponent = editingQuest.components?.find((c: any) => c.id === component.id);
-                                  
-                                  return {
-                                    id: component.id,
-                                    name: component.name,
-                                    quantity: component.quantity || 1,
-                                    // If a saved component exists, use its required value, otherwise use the default
-                                    required: savedComponent ? savedComponent.required : component.isRequired
-                                  };
-                                }) || [];
-                                
-                                console.log("Initializing components for edit:", initialQuestComponents);
+                              const initialQuestComponents = selectedKit.components?.map(component => ({
+                                id: component.id,
+                                name: component.name,
+                                required: component.isRequired,
+                                quantity: component.quantity
+                              })) || [];
+                              
+                              if (!questComponents || questComponents.length === 0) {
                                 setQuestComponents(initialQuestComponents);
                               }
                               
@@ -1017,22 +948,13 @@ const AdminQuests: React.FC = () => {
                                               <p className="text-xs text-muted-foreground">Quantity: {component.quantity}x</p>
                                             </div>
                                             <Select
-                                              value={component.status || (component.required === true ? "required" : component.required === false ? "optional" : "not-used")}
+                                              value={component.required ? "required" : "optional"}
                                               onValueChange={(value) => {
-                                                // Log the selection change
-                                                console.log(`Changing component ${component.id} to ${value}`);
-                                                
                                                 const updatedComponents = [...questComponents];
                                                 updatedComponents[index] = {
                                                   ...updatedComponents[index],
-                                                  status: value,
-                                                  // Keep required for backward compatibility
-                                                  required: value === "required" ? true : value === "optional" ? false : null
+                                                  required: value === "required"
                                                 };
-                                                
-                                                // Log the updated component
-                                                console.log("Updated component:", updatedComponents[index]);
-                                                
                                                 setQuestComponents(updatedComponents);
                                               }}
                                             >
@@ -1042,7 +964,6 @@ const AdminQuests: React.FC = () => {
                                               <SelectContent>
                                                 <SelectItem value="required">Required</SelectItem>
                                                 <SelectItem value="optional">Optional</SelectItem>
-                                                <SelectItem value="not-used">Not Used</SelectItem>
                                               </SelectContent>
                                             </Select>
                                           </div>
