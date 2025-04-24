@@ -50,8 +50,11 @@ export function DraggableEmptySlot({ index, moveItem }: EmptySlotProps) {
   return (
     <div 
       ref={ref}
-      className="w-full h-full rounded-md border border-space-light/5 bg-brand-orange/5 hover:bg-brand-orange/10 hover:border-brand-orange/20 transition-all duration-200"
+      className="w-full h-full rounded-md border-2 border-dashed border-space-light/20 bg-brand-orange/5 hover:bg-brand-orange/10 pixel-item-container transition-all duration-200"
     >
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="text-space-light/30 text-2xl font-pixel">+</div>
+      </div>
       {isOver && canDrop && (
         <div className="absolute inset-0 bg-brand-orange/20 border-2 border-brand-orange/40 rounded-md z-10"></div>
       )}
@@ -140,7 +143,7 @@ export function DraggableInventoryItem({
   return (
     <div 
       ref={ref}
-      className={`aspect-square ${getRarityColorClass(item.type)} hover:border-brand-orange/60 hover:shadow-md rounded-md p-1 relative cursor-pointer transition-all duration-200`}
+      className={`aspect-square pixel-item-container rarity-${getItemDetails(item.type).rarity} rounded-md p-1 relative cursor-pointer`}
       style={{ opacity }}
       onMouseEnter={() => handleItemHover(item.type)}
       onClick={() => {
@@ -155,25 +158,35 @@ export function DraggableInventoryItem({
         }
       }}
     >
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-full relative">
         {item.isLootBox ? (
           <div className="w-full h-full flex items-center justify-center rounded-md overflow-hidden bg-space-mid">
             <img 
               src={item.lootBoxData?.image || "/images/loot-crate.png"} 
               alt={item.lootBoxData?.name || "Loot Crate"}
-              className="w-full h-full object-contain" 
+              className="w-full h-full object-contain pixelated" 
               title={item.lootBoxData?.name || "Loot Crate"}
             />
           </div>
         ) : (
-          <div className="w-full h-full flex items-center justify-center relative">
-            {renderResourceIcon(item.type)}
+          <div className="pixel-scale-2 relative">
+            {/* Using exact size for 32x32 pixel art with 2x scaling */}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              <img 
+                src={getItemDetails(item.type).imagePath}
+                alt={getItemDetails(item.type).name}
+                className="w-[32px] h-[32px] pixelated transform scale-[2] origin-center" 
+                style={{ imageRendering: 'pixelated' }}
+              />
+            </div>
+            
             {/* Equipment icon badge - only for equippable items */}
             {getItemDetails(item.type).isEquippable && (
               <div className="absolute top-0 left-0 w-3 h-3 rounded-full bg-brand-yellow border border-brand-dark" 
                    title={`Equippable: ${getItemDetails(item.type).equipSlot}`}>
               </div>
             )}
+            
             {/* Glow effect for rare items */}
             {getItemDetails(item.type).rarity !== 'common' && (
               <div className="absolute inset-0 rounded-lg animate-pulse-slow opacity-50" 
@@ -189,7 +202,7 @@ export function DraggableInventoryItem({
           </div>
         )}
       </div>
-      <div className="absolute bottom-0 right-0 px-1.5 py-0.5 text-xs bg-space-darkest/80 rounded-tl-md rounded-br-sm">
+      <div className="pixel-quantity-badge">
         {item.quantity}
       </div>
       
