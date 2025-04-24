@@ -72,8 +72,8 @@ export default function AuthPage() {
         description: "Welcome back!",
       });
       
-      // Redirect to home page
-      setLocation("/");
+      // Redirect to home page using window.location for a full page reload
+      window.location.href = "/";
     } catch (error) {
       toast({
         title: "Login failed",
@@ -102,8 +102,8 @@ export default function AuthPage() {
         description: "Welcome to Quest Giver!",
       });
       
-      // Redirect to home page
-      setLocation("/");
+      // Redirect to home page using window.location for a full page reload
+      window.location.href = "/";
     } catch (error) {
       toast({
         title: "Registration failed",
