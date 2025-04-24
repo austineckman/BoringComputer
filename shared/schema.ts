@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, json, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, json, boolean, jsonb, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -204,6 +204,14 @@ export const characterEquipment = pgTable("character_equipment", {
   itemId: text("item_id").notNull(),
   slot: text("slot", { enum: ["head", "torso", "legs", "accessory", "hands"] }).notNull(),
   equippedAt: timestamp("equipped_at").defaultNow(),
+});
+
+// System Settings table
+export const systemSettings = pgTable("system_settings", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").notNull(),
+  category: text("category").notNull().default("general"),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Insert Schemas
@@ -488,3 +496,13 @@ export type InsertKitComponent = z.infer<typeof insertKitComponentSchema>;
 
 export type QuestComponent = typeof questComponents.$inferSelect;
 export type InsertQuestComponent = z.infer<typeof insertQuestComponentSchema>;
+
+// Insert schema for system settings
+export const insertSystemSettingsSchema = createInsertSchema(systemSettings).pick({
+  key: true,
+  value: true,
+  category: true,
+});
+
+export type SystemSettings = typeof systemSettings.$inferSelect;
+export type InsertSystemSettings = z.infer<typeof insertSystemSettingsSchema>;
