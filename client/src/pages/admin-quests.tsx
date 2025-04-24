@@ -589,6 +589,9 @@ const AdminQuests: React.FC = () => {
 
   // Handle form submission
   const onSubmit = (values: z.infer<typeof questFormSchema>) => {
+    // Log the component state before submission to debug the issue
+    console.log("Components before submission:", questComponents);
+    
     const questData = {
       ...values,
       content: {
@@ -609,6 +612,9 @@ const AdminQuests: React.FC = () => {
         quantity: component.quantity
       })),
     };
+    
+    // Log the final submission data to debug the issue
+    console.log("Quest data being submitted:", questData);
 
     if (editingQuest) {
       updateQuestMutation.mutate({
