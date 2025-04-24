@@ -154,7 +154,7 @@ const AdminLootBoxesPage: React.FC = () => {
   
   // Reset inventory to 1 of each item mutation
   const resetInventoryMutation = useMutation({
-    mutationFn: () => apiRequest('/api/admin/inventory/reset-to-one', 'POST'),
+    mutationFn: () => apiRequest('/api/admin/inventory/reset-to-one', 'POST', {}),
     onSuccess: (data) => {
       toast({ 
         title: "Success", 
@@ -172,7 +172,7 @@ const AdminLootBoxesPage: React.FC = () => {
   
   // Generate test loot crates mutation
   const generateTestCratesMutation = useMutation({
-    mutationFn: () => apiRequest('/api/loot-boxes/generate-test', 'POST'),
+    mutationFn: () => apiRequest('/api/loot-boxes/generate-test', 'POST', {}),
     onSuccess: (data) => {
       toast({ 
         title: "Success", 
