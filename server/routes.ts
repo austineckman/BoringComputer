@@ -1360,7 +1360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Updating components for quest ${questId}`);
         
         // First, remove all existing component relationships for this quest
-        await storage.deleteQuestComponents(questId);
+        await storage.deleteQuestComponentsByQuestId(questId);
         
         // Then add the new component relationships
         for (const component of questData.components) {
