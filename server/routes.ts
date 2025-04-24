@@ -1238,6 +1238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         date: z.string(),
         title: z.string(),
         description: z.string(),
+        missionBrief: z.string().optional(), // Add missionBrief field
         adventureLine: z.string(),
         difficulty: z.number().min(1).max(5),
         orderInLine: z.number().min(0),
@@ -1331,6 +1332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         date: z.string(),
         title: z.string(),
         description: z.string(),
+        missionBrief: z.string().optional(), // Add missionBrief field
         adventureLine: z.string(),
         difficulty: z.number().min(1).max(5),
         orderInLine: z.number().min(0),
@@ -1427,6 +1429,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: quest.id.toString(),
         title: quest.title,
         description: quest.description,
+        missionBrief: quest.missionBrief || null, // Include missionBrief in response
         adventureLine: quest.adventureLine,
         difficulty: quest.difficulty,
         orderInLine: quest.orderInLine,
