@@ -7,7 +7,7 @@ import InventoryGrid from '@/components/crafting/InventoryGrid';
 import RecipeList from '@/components/crafting/RecipeList';
 import DndProvider from '@/components/crafting/DndProvider';
 import { useCrafting } from '@/hooks/useCrafting';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import forgeHeroBg from '@assets/forgehero.png';
