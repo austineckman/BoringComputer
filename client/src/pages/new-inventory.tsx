@@ -530,15 +530,13 @@ export default function Inventory() {
           {/* Inventory Header with item count */}
             <div className="flex items-center justify-between border-b border-space-light/20 pb-3 mb-4">
               <div className="flex items-center gap-2">
-                <div className="flex items-center">
-                  <img 
-                    src={goldBagIcon} 
-                    alt="Inventory Bag" 
-                    className="w-24 h-24 mr-2 object-contain pixelated"
-                    style={{ imageRendering: 'pixelated' }}
-                  />
-                  <h3 className="text-lg font-semibold text-brand-orange">Inventory</h3>
-                </div>
+                <img 
+                  src={goldBagIcon} 
+                  alt="Inventory Bag" 
+                  className="w-24 h-24 mr-2 object-contain pixelated"
+                  style={{ imageRendering: 'pixelated' }}
+                />
+                <h3 className="text-lg font-semibold text-brand-orange">Inventory</h3>
               </div>
               
               <div className="text-xs text-brand-light/60">
