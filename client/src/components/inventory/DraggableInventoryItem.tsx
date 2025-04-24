@@ -4,7 +4,8 @@ import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { getItemDetails } from '@/lib/itemDatabase';
 import { getRarityColorClass } from '@/lib/styleUtils';
-import { LootBox } from '@/pages/new-inventory';
+// Use the unified-inventory LootBox definition which has more fields
+import { LootBox } from '@/pages/unified-inventory';
 
 // Define drag item types
 export const INVENTORY_ITEM = 'inventoryItem';
@@ -166,21 +167,44 @@ export function DraggableInventoryItem({
         {item.isLootBox ? (
           <div className="w-full h-full flex items-center justify-center rounded-md overflow-hidden">
             <img 
-              src={item.lootBoxData?.image || "/images/loot-crate.png"} 
-              alt={item.lootBoxData?.name || "Loot Crate"}
-              className="w-[64px] h-[64px] pixelated transform scale-[2] origin-center" 
-              title={item.lootBoxData?.name || "Loot Crate"}
+              src={
+                // Try to get image from different possible locations
+                item.lootBoxData?.config?.image ||
+                (typeof item.lootBoxData?.config === 'object' ? 
+                  // @ts-ignore - Some configs have the image property
+                  item.lootBoxData?.config?.image : null) ||
+                "/images/loot-crate.png"
+              } 
+              alt={
+                // Try to get name from different possible locations
+                item.lootBoxData?.config?.name || 
+                (typeof item.lootBoxData?.config === 'object' ? 
+                  // @ts-ignore - Some configs have the name property
+                  item.lootBoxData?.config?.name : null) ||
+                item.lootBoxData?.type || 
+                "Loot Crate"
+              }
+              className="w-[64px] h-[64px] pixelated" 
+              title={
+                // Try to get name from different possible locations
+                item.lootBoxData?.config?.name || 
+                (typeof item.lootBoxData?.config === 'object' ? 
+                  // @ts-ignore - Some configs have the name property
+                  item.lootBoxData?.config?.name : null) ||
+                item.lootBoxData?.type || 
+                "Loot Crate"
+              }
               style={{ imageRendering: 'pixelated' }}
             />
           </div>
         ) : (
           <div className="pixel-scale-4 relative">
-            {/* Using exact size for 64x64 pixel art with 2x scaling */}
+            {/* Using exact size for 64x64 pixel art without extra scaling */}
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
               <img 
                 src={itemDetails?.imagePath || ''}
                 alt={itemDetails?.name || item.type}
-                className="w-[64px] h-[64px] pixelated transform scale-[2] origin-center" 
+                className="w-[64px] h-[64px] pixelated" 
                 style={{ imageRendering: 'pixelated' }}
               />
             </div>
@@ -196,7 +220,7 @@ export function DraggableInventoryItem({
           </div>
         )}
       </div>
-      <div className="pixel-quantity-badge">
+      <div className="pixel-quantity-badge absolute bottom-1 right-1 bg-gray-800/80 text-white rounded px-1 text-xs font-bold">
         {item.quantity}
       </div>
       
