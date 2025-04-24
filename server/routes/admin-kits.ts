@@ -228,8 +228,24 @@ router.post('/kits/:kitId/components', isAdmin, upload.single('image'), async (r
     
     console.log('Component data after type conversion:', componentData);
     
+    // Create a properly typed object for validation
+    const dataToValidate = {
+      kitId: componentData.kitId,
+      name: componentData.name,
+      description: componentData.description,
+      imagePath: componentData.imagePath,
+      partNumber: componentData.partNumber || null,
+      isRequired: typeof componentData.isRequired === 'string' 
+        ? componentData.isRequired === 'true' 
+        : !!componentData.isRequired,
+      quantity: typeof componentData.quantity === 'string'
+        ? parseInt(componentData.quantity, 10)
+        : componentData.quantity || 1,
+      category: componentData.category || 'hardware'
+    };
+    
     // Validate component data
-    const validatedData = insertKitComponentSchema.parse(componentData);
+    const validatedData = insertKitComponentSchema.parse(dataToValidate);
     console.log('Validated data:', validatedData);
     
     // Insert component into database
@@ -260,14 +276,27 @@ router.put('/components/:id', isAdmin, upload.single('image'), async (req: Reque
       return res.status(404).json({ message: 'Component not found' });
     }
     
-    // Only update fields that were provided
+    // Only update fields that were provided, with proper type conversion
     const updateData: any = {};
     if (componentData.name) updateData.name = componentData.name;
     if (componentData.description) updateData.description = componentData.description;
     if (componentData.imagePath) updateData.imagePath = componentData.imagePath;
     if (componentData.partNumber) updateData.partNumber = componentData.partNumber;
-    if (componentData.isRequired !== undefined) updateData.isRequired = componentData.isRequired;
-    if (componentData.quantity) updateData.quantity = componentData.quantity;
+    
+    // Convert isRequired to boolean
+    if (componentData.isRequired !== undefined) {
+      updateData.isRequired = typeof componentData.isRequired === 'string' 
+        ? componentData.isRequired === 'true' 
+        : !!componentData.isRequired;
+    }
+    
+    // Convert quantity to number
+    if (componentData.quantity) {
+      updateData.quantity = typeof componentData.quantity === 'string'
+        ? parseInt(componentData.quantity, 10)
+        : componentData.quantity;
+    }
+    
     if (componentData.category) updateData.category = componentData.category;
     updateData.updatedAt = new Date();
     
