@@ -93,6 +93,7 @@ interface Quest {
   xpReward: number;
   lootBoxRewards: {type: string, quantity: number}[];
   active: boolean;
+  kitId?: string;
   content: {
     videos: string[];
     images: string[];
@@ -250,7 +251,7 @@ const AdminQuests: React.FC = () => {
   
   // Fetch component kits for quest requirements
   const { data: componentKits = [], isLoading: loadingKits } = useQuery({
-    queryKey: ['/api/admin/kits/components-for-quest'],
+    queryKey: ['/api/admin/components-for-quest'],
     // Use the default queryFn
     onSuccess: (data) => {
       console.log("Fetched component kits:", data);
@@ -347,6 +348,7 @@ const AdminQuests: React.FC = () => {
       orderInLine: 0,
       xpReward: 100,
       active: true,
+      kitId: '',
     },
   });
 
@@ -462,6 +464,7 @@ const AdminQuests: React.FC = () => {
       orderInLine: 0,
       xpReward: 100,
       active: true,
+      kitId: '',
     });
     
     // Reset content blocks and rewards
@@ -493,6 +496,7 @@ const AdminQuests: React.FC = () => {
       orderInLine: quest.orderInLine,
       xpReward: quest.xpReward,
       active: quest.active,
+      kitId: quest.kitId || '',
     });
     
     // Load content blocks
@@ -833,7 +837,74 @@ const AdminQuests: React.FC = () => {
                             </FormItem>
                           )}
                         />
+
+                        {/* Component Kit Selection */}
+                        <FormField
+                          control={form.control}
+                          name="kitId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Required Component Kit</FormLabel>
+                              <FormControl>
+                                <Select
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select a component kit (optional)" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
+                                    {!loadingKits && componentKits && Array.isArray(componentKits) && 
+                                      componentKits.map((kit: ComponentKit) => (
+                                        <SelectItem key={kit.id} value={kit.id}>
+                                          {kit.name}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                              <FormDescription>
+                                The physical component kit required to complete this quest
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       </div>
+                      
+                      {/* Component Kit Details (if selected) */}
+                      {form.watch('kitId') && (
+                        <div className="mt-4 p-4 border rounded-md bg-muted/20">
+                          <h4 className="font-medium mb-2">Component Kit Details</h4>
+                          {!loadingKits && componentKits && Array.isArray(componentKits) && (() => {
+                            const selectedKit = componentKits.find((kit: ComponentKit) => kit.id === form.watch('kitId'));
+                            if (selectedKit) {
+                              return (
+                                <div>
+                                  <p className="mb-2 text-sm">{selectedKit.description}</p>
+                                  {selectedKit.components && selectedKit.components.length > 0 ? (
+                                    <div>
+                                      <h5 className="text-sm font-medium mb-2">Components Required:</h5>
+                                      <ul className="space-y-1 text-sm list-disc list-inside">
+                                        {selectedKit.components.map((component: KitComponent) => (
+                                          <li key={component.id}>
+                                            {component.name} ({component.quantity}x) 
+                                            {component.isRequired ? ' - Required' : ' - Optional'}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-muted-foreground">No components added to this kit yet.</p>
+                                  )}
+                                </div>
+                              );
+                            }
+                            return <p className="text-sm text-muted-foreground">Select a component kit</p>;
+                          })()}
+                        </div>
+                      )}
                       
                       <Separator />
                       
