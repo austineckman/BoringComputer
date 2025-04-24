@@ -310,4 +310,32 @@ router.delete('/components/:id', isAdmin, async (req: Request, res: Response) =>
   }
 });
 
+// GET available components for quest selection (used by admin-quests)
+router.get('/components-for-quest', isAdmin, async (req: Request, res: Response) => {
+  try {
+    // Get all kits with their components
+    const kits = await db.select().from(componentKits);
+    
+    // For each kit, get its components
+    const kitsWithComponents = await Promise.all(
+      kits.map(async (kit) => {
+        const components = await db
+          .select()
+          .from(kitComponents)
+          .where(eq(kitComponents.kitId, kit.id));
+          
+        return {
+          ...kit,
+          components
+        };
+      })
+    );
+    
+    res.json(kitsWithComponents);
+  } catch (error) {
+    console.error('Error fetching components for quest selection:', error);
+    res.status(500).json({ message: 'Failed to fetch components for quest' });
+  }
+});
+
 export default router;

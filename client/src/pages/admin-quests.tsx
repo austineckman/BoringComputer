@@ -122,6 +122,28 @@ interface LootBoxConfig {
   }[];
 }
 
+interface ComponentKit {
+  id: string;
+  name: string;
+  description: string;
+  imagePath?: string;
+  category?: string;
+  difficulty?: string;
+  components?: KitComponent[];
+}
+
+interface KitComponent {
+  id: number;
+  kitId: string;
+  name: string;
+  description: string;
+  imagePath?: string;
+  partNumber?: string;
+  isRequired: boolean;
+  quantity: number;
+  category?: string;
+}
+
 // Define form validation schema
 const questFormSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
@@ -143,6 +165,7 @@ const questFormSchema = z.object({
   orderInLine: z.coerce.number().min(0),
   xpReward: z.coerce.number().min(1),
   active: z.boolean().default(true),
+  kitId: z.string().optional(), // Optional reference to a component kit
 });
 
 const contentBlockSchema = z.object({
@@ -217,8 +240,23 @@ const AdminQuests: React.FC = () => {
   const { data: items = [], isLoading: loadingItems } = useQuery({
     queryKey: ['/api/admin/items'],
     // Use the default queryFn
+    onSuccess: (data) => {
+      console.log("Fetched items:", data);
+    },
     onError: (error) => {
       console.error('Error fetching items:', error);
+    }
+  });
+  
+  // Fetch component kits for quest requirements
+  const { data: componentKits = [], isLoading: loadingKits } = useQuery({
+    queryKey: ['/api/admin/kits/components-for-quest'],
+    // Use the default queryFn
+    onSuccess: (data) => {
+      console.log("Fetched component kits:", data);
+    },
+    onError: (error) => {
+      console.error('Error fetching component kits:', error);
     }
   });
 

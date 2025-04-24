@@ -45,6 +45,8 @@ export const quests = pgTable("quests", {
     images: string[],
     codeBlocks: {language: string, code: string}[]
   }>().default({videos: [], images: [], codeBlocks: []}),
+  // Reference to a component kit (if this quest requires physical components)
+  kitId: text("kit_id").references(() => componentKits.id, { onDelete: 'set null' }),
 });
 
 // User Quests status table
@@ -230,6 +232,7 @@ export const insertQuestSchema = createInsertSchema(quests).pick({
   lootBoxRewards: true,   // Keep for backward compatibility
   content: true,
   active: true,
+  kitId: true,            // Reference to component kit
 });
 
 export const insertUserQuestSchema = createInsertSchema(userQuests).pick({
