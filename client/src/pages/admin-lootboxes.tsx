@@ -116,7 +116,7 @@ const AdminLootBoxesPage: React.FC = () => {
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: (data: LootBoxConfig) => 
-      apiRequest(`/api/admin/lootboxes/${data.id}`, 'PUT', data),
+      apiRequest('PUT', `/api/admin/lootboxes/${data.id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/lootboxes'] });
       toast({ title: "Success", description: "Loot box configuration updated successfully" });
