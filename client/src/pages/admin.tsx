@@ -152,25 +152,6 @@ const AdminDashboard: React.FC = () => {
             <Card>
               <CardHeader className="pb-2 pt-4">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">Configure Game Settings</CardTitle>
-                  <Settings className="h-5 w-5 text-muted-foreground" />
-                </div>
-              </CardHeader>
-              <CardContent className="pb-4 pt-0">
-                <p className="text-sm text-muted-foreground">
-                  Update global game settings, difficulty levels, and reward rates.
-                </p>
-                <Link href="/admin-settings">
-                  <Button variant="outline" className="mt-4 w-full">
-                    Open Settings
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2 pt-4">
-                <div className="flex items-center justify-between">
                   <CardTitle className="text-base">Testing Utilities</CardTitle>
                   <Package className="h-5 w-5 text-muted-foreground" />
                 </div>
@@ -240,6 +221,25 @@ const AdminDashboard: React.FC = () => {
                     Reset Inventory
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2 pt-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">Configure Game Settings</CardTitle>
+                  <Settings className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </CardHeader>
+              <CardContent className="pb-4 pt-0">
+                <p className="text-sm text-muted-foreground">
+                  Update global game settings, difficulty levels, and reward rates.
+                </p>
+                <Link href="/admin-settings">
+                  <Button variant="outline" className="mt-4 w-full">
+                    Open Settings
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </div>
