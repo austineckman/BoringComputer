@@ -414,7 +414,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         difficulty: quest.difficulty,
         orderInLine: quest.orderInLine,
         xpReward: quest.xpReward,
-        rewards: quest.rewards
+        rewards: quest.rewards,
+        content: quest.content,
+        lootBoxRewards: quest.lootBoxRewards,
+        kitId: quest.kitId
       });
     } catch (error) {
       console.error(error);
