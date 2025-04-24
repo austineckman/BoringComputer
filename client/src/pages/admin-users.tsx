@@ -47,7 +47,7 @@ export default function AdminUsersPage() {
     queryKey: ['/api/admin/users'],
     retry: 1,
   });
-  
+
   // Toggle admin access mutation
   const toggleAdminMutation = useMutation({
     mutationFn: async (userId: number) => {
