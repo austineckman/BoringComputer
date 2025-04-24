@@ -13,20 +13,30 @@ interface CellPos {
 export function useCrafting() {
   const { sounds } = useSoundEffects();
   
-  // Initialize grid from localStorage or create a new empty 5x5 grid
+  // Initialize grid from localStorage or create a new empty 3x3 grid
   const [grid, setGrid] = useState<string[][]>(() => {
     // Try to get grid from localStorage
     try {
       const savedGrid = localStorage.getItem('craftingGrid');
       if (savedGrid) {
-        return JSON.parse(savedGrid);
+        // Check if we're converting from 5x5 to 3x3
+        const parsedGrid = JSON.parse(savedGrid);
+        if (parsedGrid.length === 5) {
+          // Extract the middle 3x3 from the 5x5 grid
+          return [
+            parsedGrid[1].slice(1, 4),
+            parsedGrid[2].slice(1, 4),
+            parsedGrid[3].slice(1, 4),
+          ];
+        }
+        return parsedGrid;
       }
     } catch (error) {
       console.error('Error loading grid from localStorage:', error);
     }
     
     // Return empty grid if nothing in localStorage
-    return Array(5).fill('').map(() => Array(5).fill(''));
+    return Array(3).fill('').map(() => Array(3).fill(''));
   });
   
   // User's inventory state
@@ -85,7 +95,7 @@ export function useCrafting() {
   
   // Reset the crafting grid to empty
   const resetGrid = useCallback(() => {
-    const emptyGrid = Array(5).fill('').map(() => Array(5).fill(''));
+    const emptyGrid = Array(3).fill('').map(() => Array(3).fill(''));
     setGrid(emptyGrid);
     // Also clear from localStorage
     try {
@@ -182,9 +192,28 @@ export function useCrafting() {
     // Check if grid matches the pattern
     let patternMatches = true;
     
-    for (let row = 0; row < 5; row++) {
-      for (let col = 0; col < 5; col++) {
-        const patternItem = selectedRecipe.pattern[row][col];
+    // Convert 5x5 recipe pattern to 3x3 if needed
+    const recipePattern = selectedRecipe.pattern;
+    let pattern3x3: string[][];
+    
+    if (recipePattern.length === 5) {
+      // Extract middle 3x3 from 5x5 pattern
+      pattern3x3 = [
+        recipePattern[1].slice(1, 4),
+        recipePattern[2].slice(1, 4),
+        recipePattern[3].slice(1, 4),
+      ];
+    } else if (recipePattern.length === 3) {
+      pattern3x3 = recipePattern;
+    } else {
+      // Invalid pattern size
+      patternMatches = false;
+      pattern3x3 = Array(3).fill('').map(() => Array(3).fill(''));
+    }
+    
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        const patternItem = pattern3x3[row][col];
         const gridItem = grid[row][col];
         
         if (patternItem && patternItem !== '') {
