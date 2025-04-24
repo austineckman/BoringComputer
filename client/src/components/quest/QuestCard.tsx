@@ -255,6 +255,7 @@ const QuestCard = ({
       </PixelCardHeader>
       
       {/* Quest Content */}
+      {console.log("Quest content data:", content)}
       <PixelCardContent
         questImage={content?.images?.length > 0 ? content.images[0] : undefined}
         imageAlt={`${title} quest image`}
