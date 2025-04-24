@@ -1364,12 +1364,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle component updates if provided
       if (questData.components && questData.components.length > 0) {
         console.log(`Updating components for quest ${questId}`);
+        console.log(`Component data being sent:`, JSON.stringify(questData.components));
         
         // First, remove all existing component relationships for this quest
         await storage.deleteQuestComponentsByQuestId(questId);
         
         // Then add the new component relationships
         for (const component of questData.components) {
+          console.log(`Processing component ${component.id}: required=${component.required}, isOptional=${!component.required}`);
+          
           await storage.createQuestComponent({
             questId: questId,
             componentId: component.id,
