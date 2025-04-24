@@ -1303,53 +1303,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Fetch any required components for this quest
       let components = [];
       try {
-        // Use the existing storage interface to retrieve components
-        // This is a simpler approach since we'll extend it later
+        // Use our storage interface to get real component data
+        components = await storage.getQuestComponentsWithDetails(questId);
         
-        // For now, we'll use a mock component to demonstrate the UI
-        // In a real implementation, you'd fetch this from the database
-        if (questId === 1) { // Only for the first quest as a demonstration
-          components = [
-            {
-              id: 1,
-              questId: 1,
-              componentId: 101,
-              quantity: 1,
-              is_optional: false,
-              name: "Arduino Nano",
-              description: "A compact microcontroller board for embedded projects",
-              imagePath: "/uploads/arduino-nano.jpg",
-              partNumber: "ATmega328P",
-              kitName: "30 Days Lost in Space Kit"
-            },
-            {
-              id: 2,
-              questId: 1,
-              componentId: 102,
-              quantity: 2,
-              is_optional: false,
-              name: "LED (Red)",
-              description: "Light-emitting diode for status indicators",
-              imagePath: "/uploads/led-red.jpg",
-              partNumber: "RL-5-R",
-              kitName: "30 Days Lost in Space Kit"
-            },
-            {
-              id: 3,
-              questId: 1,
-              componentId: 103,
-              quantity: 1,
-              is_optional: true,
-              name: "Breadboard",
-              description: "Solderless prototyping board for temporary circuits",
-              imagePath: "/uploads/breadboard.jpg",
-              partNumber: "BB-400",
-              kitName: "30 Days Lost in Space Kit"
-            }
-          ];
+        // If no components are found, it means this quest has no component requirements
+        if (!components || components.length === 0) {
+          console.log(`No components found for quest ID ${questId}`);
+        } else {
+          console.log(`Found ${components.length} components for quest ID ${questId}`);
         }
       } catch (err) {
-        console.error("Error setting up component requirements:", err);
+        console.error("Error fetching quest components:", err);
         // Continue even if component fetch fails
       }
       
