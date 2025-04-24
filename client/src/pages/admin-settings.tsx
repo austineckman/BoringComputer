@@ -125,7 +125,8 @@ export default function AdminSettingsPage() {
         performanceMode,
       });
     }
-  }, [settings, getSetting]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings]);
 
   // Handler for site info form submission
   const onSiteInfoSubmit = async (data: SiteInfoValues) => {
