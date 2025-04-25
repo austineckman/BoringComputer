@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, X, AlertTriangle, Check } from "lucide-react";
+
 // Define interfaces locally
 interface ItemDetails {
   id: string;
@@ -14,22 +15,35 @@ interface ItemDetails {
   category?: string;
 }
 
-// Define recipe interface
+// Define server recipe interface
+interface ServerRecipe {
+  id: number;
+  name: string;
+  description: string;
+  difficulty: string;
+  unlocked: boolean;
+  pattern: (string | null)[][];
+  requiredItems: Record<string, number>;
+  resultItem: string;
+  resultQuantity: number;
+}
+
+// Client-side recipe interface
 interface Recipe {
   id: string;
   name: string;
+  description: string;
+  difficulty: string;
+  unlocked: boolean;
+  inputs: {
+    itemId: string;
+    quantity: number;
+    position: [number, number];
+  }[];
   output: {
     itemId: string;
     quantity: number;
   };
-  inputs: {
-    itemId: string;
-    quantity: number;
-    position: [number, number]; // [row, col] 0-indexed
-  }[];
-  description: string;
-  imagePath?: string;
-  category?: string;
 }
 
 interface CraftingGridItem {
@@ -55,7 +69,10 @@ const CraftingWindow: React.FC = () => {
     isLoading: inventoryLoading 
   } = useQuery({
     queryKey: ["/api/inventory"],
-    queryFn: getQueryFn({ on401: "throw" }),
+    queryFn: getQueryFn({ 
+      on401: "throw",
+      withCredentials: true 
+    }),
   });
 
   // Fetch all item details
@@ -64,17 +81,64 @@ const CraftingWindow: React.FC = () => {
     isLoading: itemsLoading 
   } = useQuery<ItemDetails[]>({
     queryKey: ["/api/items"],
-    queryFn: getQueryFn({ on401: "throw" }),
+    queryFn: getQueryFn({ 
+      on401: "throw",
+      withCredentials: true 
+    }),
   });
 
   // Fetch all recipes
   const {
-    data: recipes,
+    data: serverRecipes,
     isLoading: recipesLoading
-  } = useQuery<Recipe[]>({
+  } = useQuery<ServerRecipe[]>({
     queryKey: ["/api/crafting/recipes"],
-    queryFn: getQueryFn({ on401: "throw" }),
+    queryFn: getQueryFn({ 
+      on401: "throw",
+      withCredentials: true
+    }),
   });
+
+  // Transform server recipes to client format
+  const recipes: Recipe[] = React.useMemo(() => {
+    if (!serverRecipes) return [];
+    
+    return serverRecipes.map(recipe => {
+      // Extract inputs from pattern and requiredItems
+      const inputs: { itemId: string; quantity: number; position: [number, number] }[] = [];
+      
+      if (recipe.pattern) {
+        for (let row = 0; row < recipe.pattern.length; row++) {
+          for (let col = 0; col < recipe.pattern[row].length; col++) {
+            const itemId = recipe.pattern[row][col];
+            if (itemId) {
+              // Find quantity from requiredItems
+              const quantity = recipe.requiredItems[itemId] || 1; 
+              
+              inputs.push({
+                itemId,
+                quantity, 
+                position: [row, col]
+              });
+            }
+          }
+        }
+      }
+      
+      return {
+        id: recipe.id.toString(),
+        name: recipe.name,
+        description: recipe.description,
+        difficulty: recipe.difficulty,
+        unlocked: recipe.unlocked,
+        inputs,
+        output: {
+          itemId: recipe.resultItem,
+          quantity: recipe.resultQuantity
+        }
+      };
+    });
+  }, [serverRecipes]);
 
   // Craft mutation
   const craftMutation = useMutation({
@@ -216,35 +280,46 @@ const CraftingWindow: React.FC = () => {
       {/* Left side - Recipes */}
       <div className="w-1/3 pr-4 border-r border-gray-300 overflow-y-auto">
         <h2 className="text-lg font-bold mb-3">Recipes</h2>
-        <div className="space-y-2">
-          {recipes && Array.isArray(recipes) && recipes.map((recipe) => {
-            const outputItem = getItemDetails(recipe.output.itemId);
-            
-            return (
-              <div 
-                key={recipe.id}
-                className={`p-2 border rounded cursor-pointer hover:bg-gray-100 transition-colors ${selectedRecipeId === recipe.id ? 'bg-blue-100 border-blue-500' : 'border-gray-300'}`}
-                onClick={() => handleRecipeClick(recipe)}
-              >
-                <div className="flex items-center">
-                  {outputItem?.imagePath && (
-                    <div className={`w-10 h-10 ${getRarityColor(outputItem.rarity)} rounded-md mr-3 flex items-center justify-center`}>
-                      <img 
-                        src={outputItem.imagePath} 
-                        alt={outputItem.name} 
-                        className="w-8 h-8 object-contain pixelated-image"
-                      />
+        {recipesLoading ? (
+          <div className="flex items-center justify-center p-4">
+            <Loader2 className="h-6 w-6 animate-spin text-border" />
+          </div>
+        ) : recipes && recipes.length > 0 ? (
+          <div className="space-y-2">
+            {recipes.map((recipe) => {
+              const outputItem = getItemDetails(recipe.output.itemId);
+              
+              return (
+                <div 
+                  key={recipe.id}
+                  className={`p-2 border rounded cursor-pointer hover:bg-gray-100 transition-colors ${selectedRecipeId === recipe.id ? 'bg-blue-100 border-blue-500' : 'border-gray-300'}`}
+                  onClick={() => handleRecipeClick(recipe)}
+                >
+                  <div className="flex items-center">
+                    {outputItem?.imagePath && (
+                      <div className={`w-10 h-10 ${getRarityColor(outputItem.rarity)} rounded-md mr-3 flex items-center justify-center`}>
+                        <img 
+                          src={outputItem.imagePath} 
+                          alt={outputItem.name} 
+                          className="w-8 h-8 object-contain pixelated-image"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <div className="font-bold text-sm">{recipe.name}</div>
+                      <div className="text-xs text-gray-600">{recipe.description}</div>
                     </div>
-                  )}
-                  <div>
-                    <div className="font-bold text-sm">{recipe.name}</div>
-                    <div className="text-xs text-gray-600">{recipe.description}</div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="p-4 text-center text-gray-500">
+            <p>No recipes available</p>
+            <p className="text-xs mt-1">Complete quests to unlock recipes</p>
+          </div>
+        )}
       </div>
       
       {/* Right side - Crafting grid and result */}
