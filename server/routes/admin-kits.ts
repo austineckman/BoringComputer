@@ -417,4 +417,95 @@ router.get('/all-components', isAdmin, async (req: Request, res: Response) => {
   }
 });
 
+// KIT ARTWORK ENDPOINTS
+
+// GET all artwork for a kit
+router.get('/kits/:kitId/artwork', isAdmin, async (req: Request, res: Response) => {
+  try {
+    const { kitId } = req.params;
+    
+    // Check if kit exists
+    const [kit] = await db.select().from(componentKits).where(eq(componentKits.id, kitId));
+    if (!kit) {
+      return res.status(404).json({ message: 'Component kit not found' });
+    }
+    
+    // Get all artwork for this kit
+    const artwork = await db.select().from(kitArtwork).where(eq(kitArtwork.kitId, kitId));
+    
+    res.json(artwork);
+  } catch (error) {
+    console.error('Error fetching kit artwork:', error);
+    res.status(500).json({ message: 'Failed to fetch kit artwork' });
+  }
+});
+
+// Upload artwork for a kit
+router.post('/kits/:kitId/artwork', isAdmin, upload.single('image'), async (req: Request, res: Response) => {
+  try {
+    const { kitId } = req.params;
+    
+    // Check if kit exists
+    const [kit] = await db.select().from(componentKits).where(eq(componentKits.id, kitId));
+    if (!kit) {
+      return res.status(404).json({ message: 'Component kit not found' });
+    }
+    
+    // Ensure an image was uploaded
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image provided' });
+    }
+    
+    // Create artwork record in database
+    const artworkData = {
+      kitId,
+      imagePath: `/uploads/kits/${req.file.filename}`
+    };
+    
+    const validatedData = insertKitArtworkSchema.parse(artworkData);
+    
+    const [newArtwork] = await db.insert(kitArtwork).values(validatedData).returning();
+    
+    res.status(201).json(newArtwork);
+  } catch (error) {
+    console.error('Error uploading kit artwork:', error);
+    res.status(500).json({ message: 'Failed to upload kit artwork', error: String(error) });
+  }
+});
+
+// Delete artwork
+router.delete('/artwork/:id', isAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    // Find the artwork to get file path before deleting
+    const [artwork] = await db.select().from(kitArtwork).where(eq(kitArtwork.id, parseInt(id)));
+    
+    if (!artwork) {
+      return res.status(404).json({ message: 'Artwork not found' });
+    }
+    
+    // Delete from database
+    await db.delete(kitArtwork).where(eq(kitArtwork.id, parseInt(id)));
+    
+    // Optional: Delete the physical file (uncomment if desired)
+    // Might want to keep files for potential reuse
+    /*
+    try {
+      const filePath = path.join(process.cwd(), 'public', artwork.imagePath);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (fileError) {
+      console.warn('Could not delete artwork file:', fileError);
+    }
+    */
+    
+    res.json({ message: 'Artwork deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting artwork:', error);
+    res.status(500).json({ message: 'Failed to delete artwork' });
+  }
+});
+
 export default router;
