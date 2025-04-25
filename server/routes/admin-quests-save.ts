@@ -48,18 +48,21 @@ router.post("/api/admin/quests", async (req: Request, res: Response) => {
     // Convert the text suggestion to valid rewards
     let questRewards = [];
     
-    // Use a default loot crate if we can't parse specific items
+    // Get actual items from the database
+    const { db } = await import('../db');
+    const validItems = await db.query.items.findMany();
+    const validItemIds = validItems.map(item => item.id);
+    
+    // Try to extract potential item matches from the suggestion
     if (lootSuggestion) {
-      // First check if we have these items in our database
-      questRewards.push({
-        type: "item",
-        id: "loot-crate",
-        quantity: 1,
-        note: `Quest reward: ${lootSuggestion}`
-      });
+      let foundMatchingItems = false;
       
-      // Try to extract potential item matches from the suggestion
       for (const item of availableItems) {
+        // Only use items that exist in the database
+        if (!validItemIds.includes(item.id)) {
+          continue;
+        }
+        
         const itemNameLower = item.name.toLowerCase();
         if (lootSuggestion.toLowerCase().includes(itemNameLower)) {
           // Extract quantity if specified (e.g., "Copper x3")
@@ -73,7 +76,19 @@ router.post("/api/admin/quests", async (req: Request, res: Response) => {
             id: item.id,
             quantity: quantity
           });
+          
+          foundMatchingItems = true;
         }
+      }
+      
+      // If no matching items were found, add a default item from the valid items
+      if (!foundMatchingItems && validItemIds.length > 0) {
+        // Use the first item in the database as a fallback
+        questRewards.push({
+          type: "item",
+          id: validItemIds[0],
+          quantity: 1
+        });
       }
     }
     
@@ -89,11 +104,14 @@ router.post("/api/admin/quests", async (req: Request, res: Response) => {
       difficulty: 1, // Default difficulty
       orderInLine: 0, // Default order in adventure line
       // Convert our questRewards array to match the schema's expected format
-      rewards: questRewards.length > 0 ? questRewards.map(reward => ({
-        type: reward.type as 'item' | 'lootbox' | 'equipment',
-        id: reward.id,
-        quantity: reward.quantity
-      })) : [],
+      rewards: questRewards.length > 0 ? questRewards.map(reward => {
+        // Always set type to 'item' since we're working with items from database
+        return {
+          type: 'item' as const,
+          id: reward.id,
+          quantity: reward.quantity
+        };
+      }) : [],
       content: {
         videos: [],
         images: imageUrl ? [imageUrl] : [],
