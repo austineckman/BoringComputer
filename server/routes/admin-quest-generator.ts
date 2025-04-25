@@ -97,14 +97,18 @@ router.post("/api/admin/generate-quest", async (req: Request, res: Response) => 
         let enhancedPrompt = imagePrompt || "";
         
         if (kitArtworks && kitArtworks.length > 0) {
-          // Add a note about using reference images for inspiration
-          enhancedPrompt += `\n\nReference images from the kit (use these for component appearance and style inspiration):\n`;
+          // Add a note about component descriptions instead of trying to reference images
+          // DALL-E can't see the images by filepath reference
+          enhancedPrompt += `\n\nInclude these visual elements in the pixel art scene:\n`;
           
-          // Include paths to reference images
-          for (let i = 0; i < Math.min(kitArtworks.length, 3); i++) { // Limit to 3 references to avoid prompt confusion
-            const artworkPath = kitArtworks[i].imagePath;
-            enhancedPrompt += `- Use ${artworkPath} as a reference for visual elements\n`;
+          // Describe components instead of trying to reference images directly
+          for (let i = 0; i < Math.min(kitArtworks.length, 3); i++) { 
+            // Since we don't have componentId in the kitArtwork table, we'll use kit name instead
+            enhancedPrompt += `- Electronic components from ${kit.name} with vibrant pixel art details\n`;
           }
+          
+          // Add scene composition guidance
+          enhancedPrompt += `\nCreate a cohesive scene showing these components in action, with a character interacting with them.`;
         }
         
         console.log("Generating image with enhanced prompt including kit artwork references");
@@ -255,27 +259,27 @@ async function generateQuestContent({
 
 async function generateQuestImage(title: string, description: string, theme: string, customPrompt: string = "") {
   try {
-    // Build base prompt with strong emphasis on no text
-    let basePrompt = `Create a pixel art style image for an educational STEM quest called "${title}". The quest description is: "${description}". Theme: ${theme}. 
+    // Build a simpler, focused prompt for pixel art
+    let basePrompt = `Create a pixel art scene for a game about "${title}". The scene shows: "${description}". Setting: ${theme}.
+
+    Create pure pixel art in the style of classic 16-bit games like Legend of Zelda, Final Fantasy, or Stardew Valley.
     
-    The image should be vibrant, educational, and in a retro pixel art style similar to games like Stardew Valley or Terraria, with 16-bit or 32-bit aesthetic. Include relevant STEM elements and make it suitable for children.
-    
-    IMPORTANT INSTRUCTIONS:
-    - DO NOT INCLUDE ANY TEXT WHATSOEVER IN THE IMAGE
-    - NO LABELS, NO CAPTIONS, NO SIGNS, NO WORDS
-    - FOCUS ONLY ON VISUAL STORYTELLING
-    - USE COLOR AND COMPOSITION INSTEAD OF TEXT
-    - USE A CONSISTENT PIXEL ART STYLE WITH 32x32 PIXEL GRID ELEMENTS
-    - ENSURE THE IMAGE HAS A CLEAN, CLEARLY DEFINED PIXEL GRID`;
+    TECHNICAL REQUIREMENTS:
+    - Use a LIMITED COLOR PALETTE (maximum 16-32 colors)
+    - Create CLEAN PIXEL EDGES (no anti-aliasing)
+    - Use a CONSISTENT PIXEL SIZE throughout
+    - NO TEXT in the image
+    - STRONG SILHOUETTES and readable shapes
+    - Focus on VISUAL STORYTELLING`; 
     
     // Add custom prompt if provided
     if (customPrompt && customPrompt.trim().length > 0) {
       console.log("Adding custom prompt to image generation:", customPrompt.substring(0, 100) + "...");
-      basePrompt += `\n\nAdditional style instructions: ${customPrompt}`;
+      basePrompt += `\n\nStyle reference: ${customPrompt}`;
     }
     
-    // Add final reminder about text
-    basePrompt += `\n\nFinal reminder: This image must not contain any text, letters, numbers, or written elements of any kind. Make it clean pixel art with vibrant colors.`;
+    // Add final reminder about the art style
+    basePrompt += `\n\nCreate authentic pixel art that looks like it belongs in a retro video game, with vibrant colors and clearly defined pixels.`;
     
     console.log("Sending image generation request to OpenAI with prompt length:", basePrompt.length);
     
