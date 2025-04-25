@@ -8,6 +8,7 @@ import ItemDetailsWindow from "./ItemDetailsWindow";
 import CraftingWindow from "./CraftingWindow";
 import TerminalWindow from "./TerminalWindow";
 import WebBrowserWindow from "./WebBrowserWindow";
+import ProfileWindow from "./ProfileWindow";
 import FullscreenQuestsApp from "./FullscreenQuestsApp";
 import wallpaperImage from "@assets/wallpaper.png";
 import backgroundMusic from "@assets/Fantasy Guild Hall.mp3";
