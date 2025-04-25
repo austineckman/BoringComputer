@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Wrench } from "lucide-react";
+import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Wrench, Terminal } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -60,6 +60,16 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
           path: "/my-quests"
         }
       ]
+    },
+    {
+      id: "terminal",
+      label: "Command Prompt",
+      icon: <Terminal size={16} />,
+      onClick: () => {
+        // We'll handle this in RetroDesktop
+        const event = new CustomEvent('openTerminal');
+        window.dispatchEvent(event);
+      }
     },
     {
       id: "inventory",
