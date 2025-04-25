@@ -31,21 +31,23 @@ const RetroDesktop: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [windows, setWindows] = useState<RetroWindow[]>([]);
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
-  const [activeDesktopIcons] = useState([
-    { id: "quests", name: "Quests", icon: "📜", path: "/quests" },
-    { id: "inventory", name: "Inventory", icon: "🎒", path: "/inventory" },
-    { id: "crafting", name: "Crafting", icon: "⚒️", path: "/crafting" },
-    { id: "lootboxes", name: "Loot Crates", icon: "🎁", path: "/lootboxes" },
-    { id: "shop", name: "Shop", icon: "🛒", path: "/shop" },
+  const [selectedIcon, setSelectedIcon] = useState<string | null>(null);
+  
+  const [activeDesktopIcons, setActiveDesktopIcons] = useState([
+    { id: "quests", name: "Quests", icon: "📜", path: "/quests", position: { x: 20, y: 20 } },
+    { id: "inventory", name: "Inventory", icon: "🎒", path: "/inventory", position: { x: 20, y: 120 } },
+    { id: "crafting", name: "Crafting", icon: "⚒️", path: "/crafting", position: { x: 20, y: 220 } },
+    { id: "lootboxes", name: "Loot Crates", icon: "🎁", path: "/lootboxes", position: { x: 20, y: 320 } },
+    { id: "shop", name: "Shop", icon: "🛒", path: "/shop", position: { x: 20, y: 420 } },
   ]);
   
   // Admin icons only shown to admin users
-  const [adminIcons] = useState([
-    { id: "admin-quests", name: "Quest Admin", icon: "🧪", path: "/admin/quests" },
-    { id: "admin-items", name: "Item Database", icon: "💾", path: "/admin/items" },
-    { id: "admin-kits", name: "Component Kits", icon: "🔌", path: "/admin/kits" },
-    { id: "admin-users", name: "User Admin", icon: "👥", path: "/admin/users" },
-    { id: "admin-generator", name: "AI Generator", icon: "🤖", path: "/admin/quest-generator" },
+  const [adminIcons, setAdminIcons] = useState([
+    { id: "admin-quests", name: "Quest Admin", icon: "🧪", path: "/admin/quests", position: { x: 100, y: 20 } },
+    { id: "admin-items", name: "Item Database", icon: "💾", path: "/admin/items", position: { x: 100, y: 120 } },
+    { id: "admin-kits", name: "Component Kits", icon: "🔌", path: "/admin/kits", position: { x: 100, y: 220 } },
+    { id: "admin-users", name: "User Admin", icon: "👥", path: "/admin/users", position: { x: 100, y: 320 } },
+    { id: "admin-generator", name: "AI Generator", icon: "🤖", path: "/admin/quest-generator", position: { x: 100, y: 420 } },
   ]);
   
   useEffect(() => {
@@ -158,7 +160,15 @@ const RetroDesktop: React.FC = () => {
   };
   
   const handleIconClick = (icon: { id: string, name: string, icon: string, path: string }) => {
-    // Check icon ID to determine what to do
+    // Select this icon
+    setSelectedIcon(icon.id);
+    
+    // For double-clicks and special windows, specific handling is done elsewhere
+  };
+  
+  // Handle double click on icons
+  const handleIconDoubleClick = (icon: { id: string, name: string, icon: string, path: string }) => {
+    // Handle specific icons with custom windows
     if (icon.id === "inventory") {
       openInventoryWindow();
     } else if (icon.id === "crafting") {
@@ -167,6 +177,74 @@ const RetroDesktop: React.FC = () => {
       // For other icons, navigate to the path
       navigate(icon.path);
     }
+    
+    // Clear icon selection after action
+    setSelectedIcon(null);
+  };
+  
+  // Function to start dragging desktop icons
+  const startIconDrag = (e: React.MouseEvent, iconType: 'regular' | 'admin', iconId: string) => {
+    e.preventDefault();
+    
+    // Find the icon being dragged
+    const iconList = iconType === 'regular' ? activeDesktopIcons : adminIcons;
+    const iconToMove = iconList.find(icon => icon.id === iconId);
+    
+    if (!iconToMove) return;
+    
+    // Get initial mouse position and icon position
+    const startMouseX = e.clientX;
+    const startMouseY = e.clientY;
+    const startIconX = iconToMove.position.x;
+    const startIconY = iconToMove.position.y;
+    
+    // Create a function to handle the mouse movement
+    const onMouseMove = (e: MouseEvent) => {
+      // Calculate the new position based on mouse movement
+      const newX = startIconX + (e.clientX - startMouseX);
+      const newY = startIconY + (e.clientY - startMouseY);
+      
+      // Update the appropriate icon collection
+      if (iconType === 'regular') {
+        setActiveDesktopIcons(
+          activeDesktopIcons.map(icon => 
+            icon.id === iconId 
+              ? { 
+                  ...icon, 
+                  position: {
+                    x: newX,
+                    y: newY,
+                  } 
+                } 
+              : icon
+          )
+        );
+      } else {
+        setAdminIcons(
+          adminIcons.map(icon => 
+            icon.id === iconId 
+              ? { 
+                  ...icon, 
+                  position: {
+                    x: newX,
+                    y: newY, 
+                  } 
+                } 
+              : icon
+          )
+        );
+      }
+    };
+    
+    // Function to clean up event listeners when drag ends
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+    
+    // Add event listeners for mouse movement and release
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
   };
   
   // Function to open the crafting window
@@ -231,6 +309,14 @@ const RetroDesktop: React.FC = () => {
     }, 800);
   }, []);
   
+  // Handle click on the desktop background to deselect icons
+  const handleDesktopClick = (e: React.MouseEvent) => {
+    // Only process if this is a direct click on the desktop, not on an icon
+    if ((e.target as HTMLElement).classList.contains('retro-desktop')) {
+      setSelectedIcon(null);
+    }
+  };
+  
   return (
     <div 
       className="retro-desktop relative min-h-[80vh] overflow-hidden text-black"
@@ -241,31 +327,90 @@ const RetroDesktop: React.FC = () => {
         backgroundRepeat: 'no-repeat',
         imageRendering: 'pixelated'
       }}
+      onClick={handleDesktopClick}
     >
       {/* Desktop Icons */}
-      <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-8 gap-3 p-3">
+      <div className="absolute top-0 left-0 right-0 bottom-0">
+        {/* Regular icons */}
         {activeDesktopIcons.map((icon) => (
           <div 
             key={icon.id}
-            className="desktop-icon flex flex-col items-center justify-center p-2 cursor-pointer hover:bg-blue-600/30 hover:scale-105 active:bg-blue-700/40 rounded transition-all duration-150"
+            className={`desktop-icon absolute flex flex-col items-center justify-center p-2 cursor-pointer rounded transition-all duration-150 w-24 ${
+              selectedIcon === icon.id ? 'bg-blue-600/50 scale-105' : 'hover:bg-blue-600/30 hover:scale-105 active:bg-blue-700/40'
+            }`}
+            style={{
+              top: `${icon.position.y}px`,
+              left: `${icon.position.x}px`,
+            }}
             onClick={() => handleIconClick(icon)}
-            onDoubleClick={() => navigate(icon.path)}
+            onDoubleClick={() => handleIconDoubleClick(icon)}
+            onMouseDown={(e) => {
+              // Allow single click for selection without starting drag
+              if (e.button === 0 && e.detail === 1) {
+                // Don't allow the drag to start immediately to distinguish from click
+                const dragTimeout = setTimeout(() => {
+                  startIconDrag(e, 'regular', icon.id);
+                }, 200);
+                
+                // Clear the timeout if they release before the drag starts
+                const clearDragStart = () => {
+                  clearTimeout(dragTimeout);
+                  window.removeEventListener('mouseup', clearDragStart);
+                };
+                
+                window.addEventListener('mouseup', clearDragStart, { once: true });
+              }
+            }}
           >
-            <div className="text-4xl mb-1 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">{icon.icon}</div>
+            {/* Icon image - using a shadow box style for Windows-like appearance */}
+            <div className="flex items-center justify-center w-12 h-12 rounded-sm bg-gradient-to-br from-blue-100 to-blue-300 border border-blue-400 shadow-md mb-1">
+              <span className="text-3xl drop-shadow-md">{icon.icon}</span>
+            </div>
+            
+            {/* Icon label */}
             <div className="text-center text-sm font-bold text-white bg-black/60 px-1 py-0.5 rounded shadow-sm w-full">
               {icon.name}
             </div>
           </div>
         ))}
         
+        {/* Admin icons */}
         {user?.roles?.includes('admin') && adminIcons.map((icon) => (
           <div 
             key={icon.id}
-            className="desktop-icon flex flex-col items-center justify-center p-2 cursor-pointer hover:bg-purple-600/30 hover:scale-105 active:bg-purple-700/40 rounded transition-all duration-150"
+            className={`desktop-icon absolute flex flex-col items-center justify-center p-2 cursor-pointer rounded transition-all duration-150 w-24 ${
+              selectedIcon === icon.id ? 'bg-purple-600/50 scale-105' : 'hover:bg-purple-600/30 hover:scale-105 active:bg-purple-700/40'
+            }`}
+            style={{
+              top: `${icon.position.y}px`,
+              left: `${icon.position.x}px`,
+            }}
             onClick={() => handleIconClick(icon)}
-            onDoubleClick={() => navigate(icon.path)}
+            onDoubleClick={() => handleIconDoubleClick(icon)}
+            onMouseDown={(e) => {
+              // Allow single click for selection without starting drag
+              if (e.button === 0 && e.detail === 1) {
+                // Don't allow the drag to start immediately to distinguish from click
+                const dragTimeout = setTimeout(() => {
+                  startIconDrag(e, 'admin', icon.id);
+                }, 200);
+                
+                // Clear the timeout if they release before the drag starts
+                const clearDragStart = () => {
+                  clearTimeout(dragTimeout);
+                  window.removeEventListener('mouseup', clearDragStart);
+                };
+                
+                window.addEventListener('mouseup', clearDragStart, { once: true });
+              }
+            }}
           >
-            <div className="text-4xl mb-1 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">{icon.icon}</div>
+            {/* Icon image - using a shadow box style for Windows-like appearance */}
+            <div className="flex items-center justify-center w-12 h-12 rounded-sm bg-gradient-to-br from-purple-100 to-purple-300 border border-purple-400 shadow-md mb-1">
+              <span className="text-3xl drop-shadow-md">{icon.icon}</span>
+            </div>
+            
+            {/* Icon label */}
             <div className="text-center text-sm font-bold text-yellow-300 bg-purple-900/70 px-1 py-0.5 rounded shadow-sm w-full">
               {icon.name}
             </div>
