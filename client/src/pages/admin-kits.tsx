@@ -594,8 +594,11 @@ const AdminKits = () => {
     if (!selectedKit) return;
     
     const formData = new FormData();
-    artworkFiles.forEach((file, index) => {
-      formData.append(`artwork${index + 1}`, file);
+    // Using a single 'artwork' field name as expected by the server's multer configuration
+    artworkFiles.forEach(file => {
+      if (file) {
+        formData.append('artwork', file);
+      }
     });
     
     uploadArtworkMutation.mutate(formData);
