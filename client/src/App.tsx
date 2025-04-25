@@ -23,6 +23,7 @@ import AdminKits from "@/pages/admin-kits";
 import AdminUsers from "@/pages/admin-users";
 import AdminStats from "@/pages/admin-stats";
 import AdminSettings from "@/pages/admin-settings";
+import AdminQuestGenerator from "@/pages/admin-quest-generator";
 import LootBoxPreview from "@/pages/loot-box-preview";
 import NotFound from "@/pages/not-found";
 import MainLayout from "@/components/layout/MainLayout";
@@ -248,6 +249,11 @@ function App() {
         <AdminRoute 
           path="/admin-settings" 
           component={AdminSettings} 
+        />
+        
+        <AdminRoute 
+          path="/admin-quest-generator" 
+          component={AdminQuestGenerator} 
         />
         
         <ProtectedRoute 
