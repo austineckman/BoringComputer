@@ -7,7 +7,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import wallpaper from "@assets/wallbg.png";
-import characterImage from "@assets/basecharacter.png";
+import hoodedFigureImg from "@assets/hooded-figure.png";
 import bagImage from "@assets/506_Gold_Bag_Leather_B.png";
 import "@/components/retro-ui/retro-ui.css";
 
@@ -166,8 +166,8 @@ export default function AuthPage() {
             <div className="flex mb-5 justify-center">
               <div className="relative w-20 h-20 mr-3 overflow-hidden border-2 border-t-gray-400 border-l-gray-400 border-r-black border-b-black bg-white p-1">
                 <img 
-                  src={characterImage} 
-                  alt="Character" 
+                  src={hoodedFigureImg} 
+                  alt="Hooded Figure" 
                   className="w-full h-full object-contain"
                   style={{ imageRendering: 'pixelated' }}
                 />
@@ -338,22 +338,6 @@ export default function AuthPage() {
               <span>CraftingTableOS, © 2025 CraftingTable LLC.</span>
             </div>
           </div>
-        </div>
-      </div>
-      
-      {/* Stat Blocks - Only visible on larger screens */}
-      <div className="hidden lg:flex gap-4 justify-center mt-6">
-        <div className="bg-black/50 backdrop-blur-sm p-3 rounded-lg text-white text-center w-32 border border-white/20">
-          <div className="text-2xl font-bold">100+</div>
-          <div className="text-xs">Quests</div>
-        </div>
-        <div className="bg-black/50 backdrop-blur-sm p-3 rounded-lg text-white text-center w-32 border border-white/20">
-          <div className="text-2xl font-bold">50+</div>
-          <div className="text-xs">Projects</div>
-        </div>
-        <div className="bg-black/50 backdrop-blur-sm p-3 rounded-lg text-white text-center w-32 border border-white/20">
-          <div className="text-2xl font-bold">5K+</div>
-          <div className="text-xs">Adventurers</div>
         </div>
       </div>
     </div>
