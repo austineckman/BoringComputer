@@ -192,7 +192,7 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
       <div className="bg-gradient-to-r from-blue-700 to-blue-500 text-white p-3 flex items-center">
         <div className="bg-gray-200 w-10 h-10 rounded-full flex items-center justify-center">
           <img 
-            src="/images/logo.png" 
+            src="/logo.png" 
             alt="Logo" 
             className="h-7 w-7 object-contain" 
           />
