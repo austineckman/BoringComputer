@@ -8,6 +8,7 @@ import ItemDetailsWindow from "./ItemDetailsWindow";
 import CraftingWindow from "./CraftingWindow";
 import TerminalWindow from "./TerminalWindow";
 import WebBrowserWindow from "./WebBrowserWindow";
+import FullscreenQuestsApp from "./FullscreenQuestsApp";
 import wallpaperImage from "@assets/wallpaper.png";
 import backgroundMusic from "@assets/Fantasy Guild Hall.mp3";
 import goldCrateImage from "@assets/goldcrate.png";
@@ -61,6 +62,7 @@ const RetroDesktop: React.FC = () => {
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
   const [selectedIcon, setSelectedIcon] = useState<string | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [isQuestsAppOpen, setIsQuestsAppOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   
   // Desktop icons (regular icons visible to all users)
@@ -306,6 +308,12 @@ const RetroDesktop: React.FC = () => {
       openTerminalWindow();
     } else if (iconId === "shop") {
       openShopWindow();
+    } else if (iconId === "quests") {
+      setIsQuestsAppOpen(true);
+      // Play sound if available
+      if (window.sounds) {
+        window.sounds.click();
+      }
     } else if (iconId === "admin-folder") {
       toggleAdminFolder();
     } else if (iconPath) {
