@@ -1606,17 +1606,46 @@ const AdminKits = () => {
             </DialogHeader>
             
             <div className="space-y-4">
+              {/* Display existing artwork if available */}
+              {isLoadingArtwork ? (
+                <div className="flex justify-center p-4">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                </div>
+              ) : kitArtwork && Array.isArray(kitArtwork) && kitArtwork.length > 0 ? (
+                <div className="rounded-md border p-4">
+                  <h3 className="text-md font-medium mb-3">Existing Artwork</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {kitArtwork.map((artwork, index) => (
+                      <div key={`existing-${index}`} className="space-y-2">
+                        <div className="flex flex-col items-center gap-3 border rounded-md p-3">
+                          <div className="relative w-full h-32 bg-gray-100 rounded-md overflow-hidden">
+                            <img
+                              src={artwork.imagePath}
+                              alt={`Existing Artwork ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            {/* Add delete functionality in future enhancement */}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              
+              {/* Upload new artwork section */}
               <div className="rounded-md border p-4">
+                <h3 className="text-md font-medium mb-3">Upload New Artwork</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {Array.from({ length: 6 }).map((_, index) => (
                     <div key={index} className="space-y-2">
-                      <Label htmlFor={`artwork-${index + 1}`}>Artwork {index + 1}</Label>
+                      <Label htmlFor={`artwork-${index + 1}`}>New Artwork {index + 1}</Label>
                       <div className="flex flex-col items-center gap-3 border rounded-md p-3">
                         {artworkFiles[index] ? (
                           <div className="relative w-full h-32 bg-gray-100 rounded-md overflow-hidden">
                             <img
                               src={URL.createObjectURL(artworkFiles[index])}
-                              alt={`Artwork ${index + 1}`}
+                              alt={`New Artwork ${index + 1}`}
                               className="w-full h-full object-cover"
                             />
                             <Button 
@@ -1682,7 +1711,7 @@ const AdminKits = () => {
                   variant="outline" 
                   onClick={() => setIsManagingArtwork(false)}
                 >
-                  Cancel
+                  Close
                 </Button>
                 <Button 
                   type="button" 
@@ -1692,7 +1721,7 @@ const AdminKits = () => {
                   {uploadArtworkMutation.isPending && (
                     <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                   )}
-                  Upload Artwork
+                  Upload New Artwork
                 </Button>
               </DialogFooter>
             </div>
