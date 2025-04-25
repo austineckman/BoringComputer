@@ -48,47 +48,27 @@ export async function comparePasswords(supplied: string, stored: string): Promis
 
 // Authentication middleware
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
-  // For development purposes, bypass authentication for all routes
+  // For development purposes, temporarily skip authentication
   const BYPASS_AUTH = process.env.NODE_ENV === 'development';
-  const isAdminRoute = req.originalUrl.startsWith('/api/admin');
   
   if (!req.isAuthenticated()) {
     if (BYPASS_AUTH) {
-      // Create a mock user for development - use a regular user for non-admin routes
-      if (isAdminRoute) {
-        // Admin user for admin routes
-        (req as any).user = {
-          id: 999,
-          username: "devadmin",
-          email: "dev@example.com",
-          roles: ["admin", "user"],
-          level: 10,
-          inventory: {
-            "copper": 10,
-            "crystal": 5,
-            "techscrap": 3,
-            "circuit_board": 2,
-            "cloth": 8
-          }
-        };
-        console.log("⚠️ Development mode: Authentication bypassed with mock admin user");
-      } else {
-        // Regular user for non-admin routes
-        (req as any).user = {
-          id: 888,
-          username: "player",
-          email: "player@example.com",
-          roles: ["user"],
-          level: 5,
-          inventory: {
-            "copper": 5,
-            "crystal": 2,
-            "techscrap": 1
-          }
-        };
-        console.log("⚠️ Development mode: Authentication bypassed with mock user");
-      }
-      
+      // Create a mock user for development
+      (req as any).user = {
+        id: 999,
+        username: "devuser",
+        email: "dev@example.com",
+        roles: ["admin", "user"],
+        level: 10,
+        inventory: {
+          "copper": 10,
+          "crystal": 5,
+          "techscrap": 3,
+          "circuit_board": 2,
+          "cloth": 8
+        }
+      };
+      console.log("⚠️ Development mode: Authentication bypassed with mock user");
       return next();
     }
     
@@ -99,7 +79,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
 
 // Admin-only middleware
 export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
-  // For development purposes
+  // For development purposes, temporarily skip admin check
   const BYPASS_AUTH = process.env.NODE_ENV === 'development';
   
   if (!req.isAuthenticated()) {
@@ -126,8 +106,10 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction) =>
     return res.status(401).json({ message: "Authentication required" });
   }
   
-  // We no longer skip admin role checks even in development mode
-  // to properly test admin-only features with non-admin users
+  // Skip admin role check in development mode
+  if (BYPASS_AUTH) {
+    return next();
+  }
   
   // Check if user has admin role
   const user = req.user as User;

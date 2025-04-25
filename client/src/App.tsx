@@ -1,6 +1,5 @@
-import { Route, Switch, Redirect } from "wouter";
+import { Route, Switch } from "wouter";
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
 import Home from "@/pages/home";
 import DesktopHome from "@/pages/desktop-home";
 import AuthPage from "@/pages/auth-page";
@@ -33,7 +32,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { ProtectedRoute, AdminRoute } from "@/lib/protected-route";
 import { SoundProvider } from "@/context/SoundContext";
-import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { AuthProvider } from "@/hooks/use-auth";
 
 function App() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -97,22 +96,11 @@ function App() {
           <Logout />
         </Route>
         
-        {/* Root route - check auth and redirect if needed */}
-        <Route path="/">
-          {() => {
-            const { user, isLoading } = useAuth();
-            
-            if (isLoading) {
-              return (
-                <div className="flex items-center justify-center min-h-screen">
-                  <Loader2 className="h-8 w-8 animate-spin text-border" />
-                </div>
-              );
-            }
-            
-            return user ? <DesktopHome /> : <Redirect to="/auth" />;
-          }}
-        </Route>
+        {/* Protected routes */}
+        <ProtectedRoute 
+          path="/" 
+          component={DesktopHome} 
+        />
         
         <ProtectedRoute 
           path="/quests" 

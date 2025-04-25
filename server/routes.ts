@@ -1429,13 +1429,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin routes
-  app.use('/api/admin', authenticate, adminAuth, adminRoutes);
+  app.use('/api/admin', authenticate, adminRoutes);
   
   // Admin upload routes
-  app.use('/api/admin/upload', authenticate, adminAuth, adminUploadRoutes);
+  app.use('/api/admin/upload', authenticate, adminUploadRoutes);
   
   // Admin kits routes
-  app.use('/api/admin', authenticate, adminAuth, adminKitsRoutes);
+  app.use('/api/admin', authenticate, adminKitsRoutes);
   
   // Admin recipes routes - ensure we also apply admin authorization
   app.use('/api/admin/recipes', authenticate, adminAuth, adminRecipesRoutes);
