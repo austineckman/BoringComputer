@@ -21,7 +21,7 @@ import adminRecipesRoutes from './routes/admin-recipes';
 import adminQuestGeneratorRoutes from './routes/admin-quest-generator';
 import adminQuestsSaveRoutes from './routes/admin-quests-save';
 import adventureLinesRoutes from './routes/adventure-lines';
-import { authenticate } from './auth';
+import { authenticate, hashPassword } from './auth';
 import { componentKits, items } from '@shared/schema';
 import { itemDatabase } from './itemDatabase';
 
@@ -124,10 +124,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (!user) {
           // Create demo user if it doesn't exist
+          const hashedPassword = await hashPassword('demo123');
           user = await storage.createUser({
             username: 'demo',
             email: 'demo@questgiver.com',
-            password: 'demo123', // In a real app, this would be hashed
+            password: hashedPassword,
             roles: ['user'],
             level: 1,
             inventory: {
@@ -146,10 +147,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (!user) {
           // Create admin user if it doesn't exist
+          const hashedPassword = await hashPassword('admin123');
           user = await storage.createUser({
             username: 'admin',
             email: 'admin@questgiver.com',
-            password: 'admin123', // In a real app, this would be hashed
+            password: hashedPassword, 
             roles: ['admin', 'user'],
             level: 10,
             inventory: {
