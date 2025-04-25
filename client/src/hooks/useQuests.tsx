@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { getQueryFn } from '../lib/queryClient';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { getQueryFn, apiRequest, queryClient } from '../lib/queryClient';
 
 export interface QuestComponent {
   id: number;
@@ -41,15 +41,138 @@ export interface QuestsByLine {
   [adventureLine: string]: Quest[];
 }
 
+// Sample dummy data for development
+const dummyQuests: Quest[] = [
+  {
+    id: '1',
+    title: 'Introduction to Electronics',
+    description: 'Begin your journey into electronics with this simple LED circuit project.',
+    missionBrief: 'Create a basic LED circuit and make it light up.',
+    adventureLine: 'Arduino',
+    difficulty: 1,
+    orderInLine: 1,
+    xpReward: 100,
+    status: 'available',
+    lootBoxRewards: [{ type: 'common', quantity: 1 }],
+    content: {
+      videos: [],
+      images: [],
+      codeBlocks: []
+    },
+    componentRequirements: [
+      {
+        id: 1,
+        name: 'Arduino Uno',
+        description: 'Microcontroller board based on the ATmega328P',
+        imagePath: null,
+        kitId: 'arduino',
+        kitName: 'Arduino Kit',
+        isRequired: true,
+        quantity: 1
+      },
+      {
+        id: 2,
+        name: 'LED',
+        description: 'Light-emitting diode',
+        imagePath: null,
+        kitId: 'arduino',
+        kitName: 'Arduino Kit',
+        isRequired: true,
+        quantity: 1
+      }
+    ]
+  },
+  {
+    id: '2',
+    title: 'Sensing Temperature',
+    description: 'Learn how to read temperature using a sensor and Arduino.',
+    missionBrief: 'Connect a temperature sensor to Arduino and display readings.',
+    adventureLine: 'Arduino',
+    difficulty: 2,
+    orderInLine: 2,
+    xpReward: 150,
+    status: 'locked',
+    lootBoxRewards: [{ type: 'common', quantity: 1 }],
+    content: {
+      videos: [],
+      images: [],
+      codeBlocks: []
+    },
+    componentRequirements: [
+      {
+        id: 1,
+        name: 'Arduino Uno',
+        description: 'Microcontroller board based on the ATmega328P',
+        imagePath: null,
+        kitId: 'arduino',
+        kitName: 'Arduino Kit',
+        isRequired: true,
+        quantity: 1
+      },
+      {
+        id: 3,
+        name: 'Temperature Sensor',
+        description: 'DHT11 or similar sensor',
+        imagePath: null,
+        kitId: 'arduino',
+        kitName: 'Arduino Kit',
+        isRequired: true,
+        quantity: 1
+      }
+    ]
+  },
+  {
+    id: '3',
+    title: 'Hello Raspberry Pi',
+    description: 'Get started with Raspberry Pi programming.',
+    missionBrief: 'Set up your Raspberry Pi and write your first Python script.',
+    adventureLine: 'Raspberry Pi',
+    difficulty: 1,
+    orderInLine: 1,
+    xpReward: 120,
+    status: 'available',
+    lootBoxRewards: [{ type: 'common', quantity: 1 }],
+    content: {
+      videos: [],
+      images: [],
+      codeBlocks: []
+    },
+    componentRequirements: [
+      {
+        id: 4,
+        name: 'Raspberry Pi',
+        description: 'Single-board computer',
+        imagePath: null,
+        kitId: 'raspi',
+        kitName: 'Raspberry Pi Kit',
+        isRequired: true,
+        quantity: 1
+      }
+    ]
+  }
+];
+
+// Group sample quests by adventure line
+const groupQuestsByLine = (quests: Quest[]): QuestsByLine => {
+  return quests.reduce((acc, quest) => {
+    const line = quest.adventureLine;
+    if (!acc[line]) {
+      acc[line] = [];
+    }
+    acc[line].push(quest);
+    return acc;
+  }, {} as QuestsByLine);
+};
+
 export function useQuests() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['/api/quests'],
     queryFn: getQueryFn({ on401: 'returnNull' }),
   });
 
-  // If the data is in the expected format, use it; otherwise, provide fallbacks
-  const questsByAdventureLine: QuestsByLine = data?.questsByAdventureLine || {};
-  const allQuests: Quest[] = data?.allQuests || Object.values(questsByAdventureLine).flat() || [];
+  // If real data is available, use it; otherwise, use dummy data during development
+  const questsByAdventureLine: QuestsByLine = data?.questsByAdventureLine || groupQuestsByLine(dummyQuests);
+  const allQuests: Quest[] = data?.allQuests || dummyQuests;
   
   return {
     questsByAdventureLine,
