@@ -10,6 +10,8 @@ import TerminalWindow from "./TerminalWindow";
 import WebBrowserWindow from "./WebBrowserWindow";
 import wallpaperImage from "@assets/wallpaper.png";
 import backgroundMusic from "@assets/Fantasy Guild Hall.mp3";
+import goldCrateImage from "@assets/goldcrate.png";
+import ironBagImage from "@assets/506_Gold_Bag_Leather_B.png";
 
 // Type definitions
 interface Position {
@@ -61,9 +63,9 @@ const RetroDesktop: React.FC = () => {
   // Desktop icons (regular icons visible to all users)
   const [desktopIcons, setDesktopIcons] = useState<DesktopIcon[]>([
     { id: "quests", name: "Quests", icon: "📜", path: "/quests", position: { x: 20, y: 20 } },
-    { id: "inventory", name: "Inventory", icon: "🎒", path: "/inventory", position: { x: 20, y: 120 } },
+    { id: "inventory", name: "loot.exe", icon: "ironbag", path: "/inventory", position: { x: 20, y: 120 } },
     { id: "crafting", name: "Crafting", icon: "⚒️", path: "/crafting", position: { x: 20, y: 220 } },
-    { id: "lootboxes", name: "Loot Crates", icon: "🎁", path: "/lootboxes", position: { x: 20, y: 320 } },
+    { id: "lootboxes", name: "Loot Crates", icon: "goldcrate", path: "/lootboxes", position: { x: 20, y: 320 } },
     { id: "shop", name: "Shop", icon: "🛒", path: "/shop", position: { x: 20, y: 420 } },
     { id: "terminal", name: "Command Prompt", icon: "💻", path: "/terminal", position: { x: 130, y: 20 } },
   ]);
@@ -577,7 +579,16 @@ const RetroDesktop: React.FC = () => {
           >
             {/* Icon image */}
             <div className="flex items-center justify-center w-12 h-12 rounded-sm bg-gradient-to-br from-blue-100 to-blue-300 border border-blue-400 shadow-md mb-1">
-              <span className="text-3xl drop-shadow-md">{icon.icon}</span>
+              {icon.icon === "goldcrate" ? (
+                <img 
+                  src={goldCrateImage} 
+                  alt="Gold Crate" 
+                  className="w-10 h-10 object-contain" 
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              ) : (
+                <span className="text-3xl drop-shadow-md">{icon.icon}</span>
+              )}
             </div>
             
             {/* Icon label */}
