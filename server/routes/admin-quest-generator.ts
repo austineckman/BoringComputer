@@ -96,6 +96,7 @@ router.post("/api/admin/generate-quest", async (req: Request, res: Response) => 
     const response: GeneratedQuest = {
       title: questContent.title,
       description: questContent.description,
+      missionBrief: questContent.missionBrief,
       imageUrl,
       components: questContent.components,
       xpReward: questContent.xpReward,
@@ -151,7 +152,9 @@ async function generateQuestContent({
     
     Please generate a creative quest with:
     1. A catchy title (max 50 chars)
-    2. An engaging description (max 300 chars) that explains the mission in a pixel-art game style
+    2. Two separate text sections:
+       a. An engaging story/lore description (max a few sentences) with creative flavor text that sets the scene
+       b. A clear mission brief with specific instructions on what to build/create (should be direct and clear)
     3. Select 3-5 components from the Available Components list that would be required for this quest
     4. A suggested XP reward (between ${difficulty * 50} and ${difficulty * 100})
     5. A suggested loot reward using ONLY items from this list: ${itemNames}
@@ -159,7 +162,7 @@ async function generateQuestContent({
     6. An adventure line name that this quest would fit into (something like "Cogsworth City", "Neon Realm", or "30 Days Lost in Space")
     
     Format your response as a JSON object with these keys:
-    "title", "description", "components", "xpReward", "lootSuggestion", "adventureLine"
+    "title", "description" (for the story/lore), "missionBrief" (for the clear instructions), "components", "xpReward", "lootSuggestion", "adventureLine"
   `;
 
   // Call OpenAI API for quest generation
