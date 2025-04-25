@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import questsLoadingImage from '../../assets/quests_loading.png';
 
 interface LoadingScreenProps {
-  onComplete: () => void;
+  onComplete?: () => void;
   duration?: number;
 }
 
@@ -11,18 +11,22 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
   onComplete, 
   duration = 3000 
 }) => {
-  const [dots, setDots] = useState('.');
+  const [progress, setProgress] = useState(0);
   const [opacity, setOpacity] = useState(0);
   const [fadeOut, setFadeOut] = useState(false);
 
-  // Handle loading dots animation
+  // Handle progress bar animation
   useEffect(() => {
-    const interval = setInterval(() => {
-      setDots(prev => prev.length < 3 ? prev + '.' : '.');
-    }, 500);
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        // Calculate progress as a percentage of elapsed time
+        const newProgress = prev + (100 / (duration / 100));
+        return Math.min(newProgress, 100);
+      });
+    }, 100);
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => clearInterval(progressInterval);
+  }, [duration]);
 
   // Handle fade in
   useEffect(() => {
@@ -40,7 +44,9 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
 
     // Execute onComplete at the end of duration
     const completeTimer = setTimeout(() => {
-      onComplete();
+      if (onComplete && typeof onComplete === 'function') {
+        onComplete();
+      }
     }, duration);
 
     return () => {
@@ -52,7 +58,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
   return (
     <div 
       className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90
-        ${fadeOut ? 'opacity-0' : `opacity-${opacity}`} transition-opacity duration-500`}
+        ${fadeOut ? 'opacity-0' : 'opacity-100'} transition-opacity duration-500`}
     >
       <div className="max-w-md relative">
         <img 
@@ -61,13 +67,16 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
           className="w-full h-auto"
           style={{ imageRendering: 'pixelated' }}
         />
-        <div className="absolute bottom-10 left-0 right-0 text-center text-amber-500 text-2xl font-bold">
-          LOADING{dots}
+        
+        {/* Progress bar */}
+        <div className="absolute bottom-4 left-0 right-0 mx-auto w-4/5">
+          <div className="w-full bg-gray-800 h-3 rounded-full overflow-hidden border border-amber-600">
+            <div 
+              className="bg-amber-500 h-full rounded-full transition-all duration-100 ease-linear"
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
         </div>
-      </div>
-      
-      <div className="mt-8 text-amber-500 text-sm font-mono animate-pulse">
-        Booting Quests Engine v1.0.4
       </div>
     </div>
   );
