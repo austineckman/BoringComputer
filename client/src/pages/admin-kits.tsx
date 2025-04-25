@@ -53,7 +53,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { apiRequest } from "@/lib/queryClient";
-import { Trash2, Edit, Plus, ImagePlus, FileText, ChevronRight, Package, Database, Grid, Settings } from "lucide-react";
+import { Trash2, Edit, Plus, ImagePlus, FileText, ChevronRight, Package, Database, Grid, Settings, Image as ImageIcon, Upload } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -115,9 +115,11 @@ const AdminKits = () => {
   const [isEditingKit, setIsEditingKit] = useState(false);
   const [isAddingComponent, setIsAddingComponent] = useState(false);
   const [isEditingComponent, setIsEditingComponent] = useState(false);
+  const [isManagingArtwork, setIsManagingArtwork] = useState(false);
   const [selectedComponent, setSelectedComponent] = useState<Component | null>(null);
   const [kitImageFile, setKitImageFile] = useState<File | null>(null);
   const [componentImageFile, setComponentImageFile] = useState<File | null>(null);
+  const [artworkFiles, setArtworkFiles] = useState<File[]>([]);
   const [activeTab, setActiveTab] = useState<string>("kits");
   const [useExistingComponent, setUseExistingComponent] = useState(false);
   const [selectedExistingComponent, setSelectedExistingComponent] = useState<number | null>(null);
@@ -376,6 +378,45 @@ const AdminKits = () => {
       });
     },
   });
+  
+  const uploadArtworkMutation = useMutation({
+    mutationFn: async (data: FormData) => {
+      console.log("Uploading artwork for kit:", selectedKit?.id);
+      const response = await fetch(`/api/admin/kits/${selectedKit?.id}/artwork`, {
+        method: 'POST',
+        body: data,
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error uploading artwork:", errorData);
+        throw new Error(errorData.message || "Failed to upload artwork");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/kits'] });
+      if (selectedKit) {
+        queryClient.invalidateQueries({ queryKey: ['/api/admin/kits', selectedKit.id, 'artwork'] });
+      }
+      toast({
+        title: "Artwork uploaded",
+        description: "The artwork was uploaded successfully",
+        variant: "default",
+      });
+      setIsManagingArtwork(false);
+      setArtworkFiles([]);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error uploading artwork",
+        description: error.toString(),
+        variant: "destructive",
+      });
+    },
+  });
 
   // Handle form submissions
   const onAddKit = (data: z.infer<typeof kitFormSchema>) => {
@@ -498,6 +539,12 @@ const AdminKits = () => {
     setSelectedKit(kit);
     setActiveTab("components");
   };
+  
+  const handleKitArtwork = (kit: Kit) => {
+    setSelectedKit(kit);
+    setIsManagingArtwork(true);
+    setArtworkFiles([]);
+  };
 
   const handleAddComponent = () => {
     componentForm.reset({
@@ -512,6 +559,17 @@ const AdminKits = () => {
     setUseExistingComponent(false);
     setSelectedExistingComponent(null);
     setIsAddingComponent(true);
+  };
+  
+  const onUploadArtwork = () => {
+    if (!selectedKit) return;
+    
+    const formData = new FormData();
+    artworkFiles.forEach((file, index) => {
+      formData.append(`artwork${index + 1}`, file);
+    });
+    
+    uploadArtworkMutation.mutate(formData);
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -599,9 +657,14 @@ const AdminKits = () => {
                       </div>
                     </CardContent>
                     <CardFooter className="flex justify-between pt-0">
-                      <Button variant="secondary" size="sm" onClick={() => handleSelectKit(kit)}>
-                        View Components <ChevronRight className="ml-1 h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button variant="secondary" size="sm" onClick={() => handleSelectKit(kit)}>
+                          View Components <ChevronRight className="ml-1 h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleKitArtwork(kit)}>
+                          Artwork <ImageIcon className="ml-1 h-4 w-4" />
+                        </Button>
+                      </div>
                       <div className="flex gap-2">
                         <Button variant="ghost" size="icon" onClick={() => handleEditKit(kit)}>
                           <Edit className="h-4 w-4" />
@@ -1500,6 +1563,110 @@ const AdminKits = () => {
                 </DialogFooter>
               </form>
             </Form>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Artwork Upload Dialog */}
+        <Dialog open={isManagingArtwork} onOpenChange={setIsManagingArtwork}>
+          <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Manage Artwork for {selectedKit?.name}</DialogTitle>
+              <DialogDescription>
+                Upload up to 6 artwork images that represent the theme and world of this kit. These images will be used for AI image generation to ensure consistency.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="rounded-md border p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} className="space-y-2">
+                      <Label htmlFor={`artwork-${index + 1}`}>Artwork {index + 1}</Label>
+                      <div className="flex flex-col items-center gap-3 border rounded-md p-3">
+                        {artworkFiles[index] ? (
+                          <div className="relative w-full h-32 bg-gray-100 rounded-md overflow-hidden">
+                            <img
+                              src={URL.createObjectURL(artworkFiles[index])}
+                              alt={`Artwork ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            <Button 
+                              variant="destructive" 
+                              size="icon" 
+                              className="absolute top-1 right-1 h-6 w-6"
+                              onClick={() => {
+                                const newFiles = [...artworkFiles];
+                                newFiles.splice(index, 1);
+                                setArtworkFiles(newFiles);
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center w-full h-32 bg-gray-100 rounded-md">
+                            <ImageIcon className="h-10 w-10 text-gray-300 mb-2" />
+                            <Input
+                              id={`artwork-${index + 1}`}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                  const newFiles = [...artworkFiles];
+                                  newFiles[index] = e.target.files[0];
+                                  setArtworkFiles(newFiles);
+                                }
+                              }}
+                            />
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                document.getElementById(`artwork-${index + 1}`)?.click();
+                              }}
+                            >
+                              <Upload className="h-4 w-4 mr-1" /> Upload
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-md p-4 border">
+                <h4 className="text-sm font-medium mb-2">Tips for effective artwork:</h4>
+                <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                  <li>Include images that represent the theme, setting, and aesthetic of your kit</li>
+                  <li>Provide images with consistent art style to ensure coherent quest imagery</li>
+                  <li>Use high-quality images with good lighting and clear subjects</li>
+                  <li>Include environment shots, characters, and technology relevant to your kit</li>
+                  <li>Uploaded images will be used as reference for AI image generation</li>
+                </ul>
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsManagingArtwork(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="button" 
+                  disabled={artworkFiles.length === 0 || uploadArtworkMutation.isPending}
+                  onClick={onUploadArtwork}
+                >
+                  {uploadArtworkMutation.isPending && (
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  )}
+                  Upload Artwork
+                </Button>
+              </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
