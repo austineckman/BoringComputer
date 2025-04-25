@@ -48,15 +48,16 @@ export async function comparePasswords(supplied: string, stored: string): Promis
 
 // Authentication middleware
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
-  // For development purposes, temporarily skip authentication
-  const BYPASS_AUTH = process.env.NODE_ENV === 'development';
+  // Check if the URL is for admin routes - only bypass auth for admin routes in development
+  const isAdminRoute = req.originalUrl.startsWith('/api/admin');
+  const BYPASS_ADMIN_AUTH = process.env.NODE_ENV === 'development' && isAdminRoute;
   
   if (!req.isAuthenticated()) {
-    if (BYPASS_AUTH) {
-      // Create a mock user for development
+    if (BYPASS_ADMIN_AUTH) {
+      // Create a mock admin user for development (only for admin routes)
       (req as any).user = {
         id: 999,
-        username: "devuser",
+        username: "devadmin",
         email: "dev@example.com",
         roles: ["admin", "user"],
         level: 10,
@@ -68,7 +69,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
           "cloth": 8
         }
       };
-      console.log("⚠️ Development mode: Authentication bypassed with mock user");
+      console.log("⚠️ Development mode: Authentication bypassed with mock admin user (admin routes only)");
       return next();
     }
     
@@ -79,11 +80,12 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
 
 // Admin-only middleware
 export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
-  // For development purposes, temporarily skip admin check
-  const BYPASS_AUTH = process.env.NODE_ENV === 'development';
+  // For development purposes, only bypass authentication for admin routes
+  const isAdminRoute = req.originalUrl.startsWith('/api/admin');
+  const BYPASS_ADMIN_AUTH = process.env.NODE_ENV === 'development' && isAdminRoute;
   
   if (!req.isAuthenticated()) {
-    if (BYPASS_AUTH) {
+    if (BYPASS_ADMIN_AUTH) {
       // Create a mock admin user for development
       (req as any).user = {
         id: 999,
@@ -99,15 +101,15 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction) =>
           "cloth": 8
         }
       };
-      console.log("⚠️ Development mode: Admin authentication bypassed with mock admin user");
+      console.log("⚠️ Development mode: Admin authentication bypassed with mock admin user (admin routes only)");
       return next();
     }
     
     return res.status(401).json({ message: "Authentication required" });
   }
   
-  // Skip admin role check in development mode
-  if (BYPASS_AUTH) {
+  // Skip admin role check in development mode only for admin routes
+  if (BYPASS_ADMIN_AUTH) {
     return next();
   }
   
