@@ -170,26 +170,36 @@ export function useQuests() {
     queryFn: getQueryFn({ on401: 'returnNull' }),
   });
 
-  // Use data from API if available
+  // Process the data from the API
   let questsByAdventureLine: QuestsByLine = {};
   let allQuests: Quest[] = [];
 
-  if (data && Object.keys(data).length > 0) {
-    // If server returns data in the expected format (questsByAdventureLine and allQuests)
+  // Log the raw data for debugging
+  console.log('Raw quest data from API:', data);
+
+  if (data) {
     if (data.questsByAdventureLine && data.allQuests) {
+      // If API returns data in the expected format
       questsByAdventureLine = data.questsByAdventureLine;
       allQuests = data.allQuests;
-    } 
-    // Or if server returns just an array of quests
-    else if (Array.isArray(data)) {
+    } else if (Array.isArray(data)) {
+      // If API returns an array of quests
       allQuests = data;
       questsByAdventureLine = groupQuestsByLine(data);
+    } else if (typeof data === 'object') {
+      // If API returns some other object format, try to extract quests
+      if (data.quests && Array.isArray(data.quests)) {
+        allQuests = data.quests;
+        questsByAdventureLine = groupQuestsByLine(data.quests);
+      }
     }
-  } else {
-    // Temporarily use dummy data during development
-    questsByAdventureLine = groupQuestsByLine(dummyQuests);
-    allQuests = dummyQuests;
   }
+  
+  // Log the processed data
+  console.log('Processed quest data:', { 
+    quests: allQuests.length, 
+    adventureLines: Object.keys(questsByAdventureLine)
+  });
   
   return {
     questsByAdventureLine,
