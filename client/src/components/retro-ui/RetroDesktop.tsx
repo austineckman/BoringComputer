@@ -318,6 +318,9 @@ const RetroDesktop: React.FC = () => {
     
     // Setup audio element
     if (audioElement) {
+      // Ensure audio is paused initially - default state is muted
+      audioElement.pause();
+      audioElement.currentTime = 0;
       audioElement.volume = 0.5; // Set to 50% volume by default
       
       // Add audio event listeners for better state management
@@ -359,16 +362,25 @@ const RetroDesktop: React.FC = () => {
   
   // Toggle background music play/pause
   const toggleMusic = () => {
-    if (audioRef.current) {
-      if (isMusicPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play().catch(error => {
-          console.warn("Audio playback failed:", error);
-        });
-      }
-      setIsMusicPlaying(!isMusicPlaying);
+    const audioElement = audioRef.current;
+    if (!audioElement) return;
+    
+    if (isMusicPlaying) {
+      // If music is playing, pause it
+      audioElement.pause();
+      // No need to manually update state as the 'pause' event listener will do it
+    } else {
+      // If music is paused, reset and play it
+      audioElement.currentTime = 0; // Reset to beginning to avoid multi-track issues
+      
+      // Play the audio
+      audioElement.play().catch(error => {
+        console.warn("Audio playback failed:", error);
+        // Force state update in case the event listener doesn't fire
+        setIsMusicPlaying(false);
+      });
     }
+    // State will be updated by event listeners rather than directly toggling
   };
   
   return (
