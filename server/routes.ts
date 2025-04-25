@@ -1671,6 +1671,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin recipes routes - ensure we also apply admin authorization
   app.use('/api/admin/recipes', authenticate, adminAuth, adminRecipesRoutes);
   
+  // Register the admin routes for quest generator
+  app.use('/', authenticate, adminAuth, adminQuestGeneratorRoutes);
+  
+  // Register the admin routes for saving quests
+  app.use('/', authenticate, adminAuth, adminQuestsSaveRoutes);
+  
   // Routes for admin recipes and crafting were already registered above
   
   return httpServer;
