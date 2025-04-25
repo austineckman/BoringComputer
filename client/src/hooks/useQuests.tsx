@@ -1,6 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { getQueryFn } from '@/lib/queryClient';
 
+export interface QuestComponent {
+  id: number;
+  name: string;
+  description: string;
+  imagePath: string | null;
+  kitId: string | null;
+  kitName: string | null;
+  isRequired: boolean;
+  quantity: number;
+}
+
 export interface Quest {
   id: string;
   title: string;
@@ -23,16 +34,7 @@ export interface Quest {
       code: string;
     }[];
   };
-  componentRequirements?: {
-    id: number;
-    name: string;
-    description: string;
-    imagePath: string | null;
-    kitId: string | null;
-    kitName: string | null;
-    isRequired: boolean;
-    quantity: number;
-  }[];
+  componentRequirements?: QuestComponent[];
 }
 
 export interface QuestsByLine {
@@ -42,14 +44,16 @@ export interface QuestsByLine {
 export function useQuests() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['/api/quests'],
-    queryFn: getQueryFn({ on401: 'throw' }),
+    queryFn: getQueryFn({ on401: 'returnNull' }),
   });
 
+  // If the data is in the expected format, use it; otherwise, provide fallbacks
   const questsByAdventureLine: QuestsByLine = data?.questsByAdventureLine || {};
+  const allQuests: Quest[] = data?.allQuests || Object.values(questsByAdventureLine).flat() || [];
   
   return {
     questsByAdventureLine,
-    allQuests: Object.values(questsByAdventureLine).flat(),
+    allQuests,
     loading: isLoading,
     error
   };
@@ -58,12 +62,12 @@ export function useQuests() {
 export function useQuestDetail(questId: string | null) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['/api/quests', questId],
-    queryFn: getQueryFn({ on401: 'throw' }),
+    queryFn: getQueryFn({ on401: 'returnNull' }),
     enabled: !!questId,
   });
 
   return {
-    quest: data as Quest,
+    quest: data as Quest | null,
     loading: isLoading,
     error
   };
