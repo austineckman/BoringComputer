@@ -1,27 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 
-// ASCII art for the loading screen
-const ASCII_ART = `
-   ▄████▄   ██▀███   ▄▄▄        █████▒▄▄▄█████▓ ██▓ ███▄    █   ▄████ 
-  ▒██▀ ▀█  ▓██ ▒ ██▒▒████▄    ▓██   ▒ ▓  ██▒ ▓▒▓██▒ ██ ▀█   █  ██▒ ▀█▒
-  ▒▓█    ▄ ▓██ ░▄█ ▒▒██  ▀█▄  ▒████ ░ ▒ ▓██░ ▒░▒██▒▓██  ▀█ ██▒▒██░▄▄▄░
-  ▒▓▓▄ ▄██▒▒██▀▀█▄  ░██▄▄▄▄██ ░▓█▒  ░ ░ ▓██▓ ░ ░██░▓██▒  ▐▌██▒░▓█  ██▓
-  ▒ ▓███▀ ░░██▓ ▒██▒ ▓█   ▓██▒░▒█░      ▒██▒ ░ ░██░▒██░   ▓██░░▒▓███▀▒
-  ░ ░▒ ▒  ░░ ▒▓ ░▒▓░ ▒▒   ▓▒█░ ▒ ░      ▒ ░░   ░▓  ░ ▒░   ▒ ▒  ░▒   ▒ 
-    ░  ▒     ░▒ ░ ▒░  ▒   ▒▒ ░ ░          ░     ▒ ░░ ░░   ░ ▒░  ░   ░ 
-  ░          ░░   ░   ░   ▒    ░ ░      ░       ▒ ░   ░   ░ ░ ░ ░   ░ 
-  ░ ░         ░           ░  ░                  ░           ░       ░ 
-  ░                                                                    
- ▄▄▄█████▓ ▄▄▄       ▄▄▄▄    ██▓    ▓█████   ▒█████    ██████         
- ▓  ██▒ ▓▒▒████▄    ▓█████▄ ▓██▒    ▓█   ▀  ▒██▒  ██▒▒██    ▒         
- ▒ ▓██░ ▒░▒██  ▀█▄  ▒██▒ ▄██▒██░    ▒███    ▒██░  ██▒░ ▓██▄           
- ░ ▓██▓ ░ ░██▄▄▄▄██ ▒██░█▀  ▒██░    ▒▓█  ▄  ▒██   ██░  ▒   ██▒        
-   ▒██▒ ░  ▓█   ▓██▒░▓█  ▀█▓░██████▒░▒████▒░ ████▓▒░▒██████▒▒        
-   ▒ ░░    ▒▒   ▓▒█░░▒▓███▀▒░ ▒░▓  ░░░ ▒░ ░░ ▒░▒░▒░ ▒ ▒▓▒ ▒ ░        
-     ░      ▒   ▒▒ ░▒░▒   ░ ░ ░ ▒  ░ ░ ░  ░  ░ ▒ ▒░ ░ ░▒  ░ ░        
-   ░        ░   ▒    ░    ░   ░ ░      ░   ░ ░ ░ ▒  ░  ░  ░          
-              ░  ░ ░          ░  ░   ░  ░    ░ ░        ░          
-                        ░                                            
+// ASCII art - much smaller version
+const SMALL_ASCII_ART = `
+  _______ ______  _     _  _____  _______ _______
+  |       |_____] |     | |     | |______ |______
+  |_____  |_____] |_____| |_____| ______| |______
 `;
 
 // List of loading messages for the terminal
@@ -46,23 +29,22 @@ const LOADING_MESSAGES = [
   "Initializing desktop environment...",
 ];
 
-// Easter egg messages (randomly shown)
-const EASTER_EGGS = [
-  "ERROR 418: I'm a teapot. Just kidding, proceeding with boot sequence...",
-  "Did you know? The three golden keys unlock something special...",
-  "Secret developer mode activated... Just kidding!",
-  "Fun fact: This system runs on pure imagination.",
-  "Detecting cats on keyboard... Shooing them away...",
-  "Hmm, have you tried turning it off and on again?",
-  "Remember: Don't feed the gremlins after midnight.",
-  "System temperature: HOT HOT HOT!",
-  "Coffee levels critical. Recommend immediate refill.",
-  "Searching for meaning of life... file not found.",
-  "Loading unnecessary complex animations...",
-  "That wasn't a bug, it was a feature!",
-  "Generating witty loading messages...",
-  "Reticulating splines...",
-  "Looking for the ANY key...",
+// As progress gets higher, we'll show these garbled/glitched messages
+const GLITCH_MESSAGES = [
+  "W@rn!ng: M3m0ry c0rrup+ion d3t3cted...",
+  "C0de inj3c+!on att3mpt bl0ck3d...",
+  "Synta&* err0r^^ in m0dul3 l0ading...",
+  "D@t@ fragm3n+s r3c0v3r3d...",
+  ">Syst3m inst@bil!ty d3t3c+ed<!",
+  "F!le s¥st3m ch@0s r3p0rt3d...",
+  "KEY.<ANOMALY>.DETECTED:///",
+  "SYNCHRONIZATION.FAILURE..#@%",
+  "MEMORY_OVERFLOW:ERROR:0x94FF32...",
+  "ATTEMPTING_RECOVERY-SEQUENCE...",
+  "TIMELINE_CORRUPTION_DETECTED...",
+  "DIMENSIONAL_RIFT_CLOSING...",
+  "REALITY.PARAMETERS.NORMALIZING...",
+  "SYSTEM.REBOOT.IMMINENT...3...2...1...",
 ];
 
 interface LoadingScreenProps {
@@ -71,29 +53,38 @@ interface LoadingScreenProps {
 
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [currentMessage, setCurrentMessage] = useState("");
   const [messages, setMessages] = useState<string[]>([]);
-  const [showEasterEgg, setShowEasterEgg] = useState(false);
-  const [easterEggMessage, setEasterEggMessage] = useState("");
-  const animationFrameRef = useRef<number>();
-  
-  // Terminal blink effect
+  const [currentMessage, setCurrentMessage] = useState("");
+  const [messageSpeed, setMessageSpeed] = useState(1000);
   const [terminalCursor, setTerminalCursor] = useState(true);
+  const terminalRef = useRef<HTMLDivElement>(null);
+  const animationFrameRef = useRef<number>();
   
   // Simulate loading progress
   useEffect(() => {
     const simulateLoading = () => {
       setLoadingProgress(prev => {
-        // Slow down the loading a bit toward the end for dramatic effect
+        // Adjust increment to control loading speed
         const increment = prev < 70 ? 
-          Math.random() * 2.5 : 
-          Math.random() * 1.2;
+          Math.random() * 2 : 
+          Math.random() * 1.5;
         
         const newProgress = Math.min(prev + increment, 100);
         
+        // Speed up messages as loading progresses
+        if (prev < 30 && newProgress >= 30) {
+          setMessageSpeed(800); // Speed up a bit
+        } else if (prev < 60 && newProgress >= 60) {
+          setMessageSpeed(500); // Speed up more
+        } else if (prev < 85 && newProgress >= 85) {
+          setMessageSpeed(250); // Speed up a lot
+        } else if (prev < 95 && newProgress >= 95) {
+          setMessageSpeed(100); // Very fast at the end
+        }
+        
         // When we reach 100%, signal that loading is complete
         if (newProgress >= 100 && prev < 100) {
-          // Let the user see the 100% state for a moment before transitioning
+          // Let the user see the final state for a moment before transitioning
           setTimeout(() => {
             onLoadComplete();
           }, 1000);
@@ -109,39 +100,43 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
   
   // Show loading messages
   useEffect(() => {
-    let currentIndex = 0;
     let messageTimer: NodeJS.Timeout;
+    let messageIndex = 0;
     
     const showNextMessage = () => {
-      // Add the current message to our messages array
-      if (currentIndex < LOADING_MESSAGES.length) {
-        const message = LOADING_MESSAGES[currentIndex];
-        setCurrentMessage(message);
+      let message: string;
+      
+      // Decide if we show a normal message or a glitched message based on progress
+      if (loadingProgress < 50 || (loadingProgress < 85 && Math.random() > 0.3)) {
+        // Normal message
+        message = LOADING_MESSAGES[messageIndex % LOADING_MESSAGES.length];
+        messageIndex++;
+      } else {
+        // Glitched message - more likely as we approach 100%
+        const glitchIndex = Math.floor(Math.random() * GLITCH_MESSAGES.length);
+        message = GLITCH_MESSAGES[glitchIndex];
         
-        // After a delay, add it to the messages list and clear current
-        messageTimer = setTimeout(() => {
-          setMessages(prev => [...prev, message]);
-          setCurrentMessage("");
-          currentIndex++;
-          
-          // Randomly show an easter egg after some messages
-          if (currentIndex > 3 && Math.random() < 0.3 && !showEasterEgg) {
-            const randomEgg = EASTER_EGGS[Math.floor(Math.random() * EASTER_EGGS.length)];
-            setEasterEggMessage(randomEgg);
-            setShowEasterEgg(true);
-            
-            // Hide the easter egg after a few seconds
-            setTimeout(() => {
-              setShowEasterEgg(false);
-            }, 3000);
+        // Add some random glitch characters for extra effect
+        if (loadingProgress > 85) {
+          const glitchChars = "@#$%^&*!~`';:.,<>/?\\|{}[]";
+          const numGlitches = Math.floor(Math.random() * 3) + 1;
+          for (let i = 0; i < numGlitches; i++) {
+            const position = Math.floor(Math.random() * message.length);
+            const glitchChar = glitchChars[Math.floor(Math.random() * glitchChars.length)];
+            message = message.substring(0, position) + glitchChar + message.substring(position + 1);
           }
-          
-          // Schedule the next message
-          if (currentIndex < LOADING_MESSAGES.length) {
-            showNextMessage();
-          }
-        }, 1500); // Display each message for 1.5 seconds
+        }
       }
+      
+      // Set the current message and add it to the messages array
+      setCurrentMessage(message);
+      messageTimer = setTimeout(() => {
+        setMessages(prev => [...prev, message]);
+        setCurrentMessage("");
+        
+        // Schedule the next message
+        showNextMessage();
+      }, messageSpeed);
     };
     
     showNextMessage();
@@ -149,7 +144,14 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
     return () => {
       clearTimeout(messageTimer);
     };
-  }, []);
+  }, [loadingProgress, messageSpeed]);
+  
+  // Keep terminal scrolled to bottom
+  useEffect(() => {
+    if (terminalRef.current) {
+      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+    }
+  }, [messages, currentMessage]);
   
   // Blinking cursor effect
   useEffect(() => {
@@ -172,25 +174,31 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
     canvas.height = window.innerHeight;
     
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-={}[]|;:,.<>?/';
-    const fontSize = 14;
+    const fontSize = 16;
     const columns = canvas.width / fontSize;
     
     let drops: number[] = [];
     for (let i = 0; i < columns; i++) {
-      drops[i] = 1;
+      drops[i] = Math.floor(Math.random() * -20);
     }
     
     const drawMatrix = () => {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      ctx.fillStyle = '#0f0';
-      ctx.font = `${fontSize}px monospace`;
+      // Start with orange-ish color
+      const baseColor = 'rgba(255, 165, 0, ';
       
       for (let i = 0; i < drops.length; i++) {
+        // Generate a more orangeish color with varying opacity
+        const alpha = Math.random() * 0.5 + 0.5;
+        ctx.fillStyle = baseColor + alpha + ')';
+        
         const text = chars[Math.floor(Math.random() * chars.length)];
+        ctx.font = `${fontSize}px monospace`;
         ctx.fillText(text, i * fontSize, drops[i] * fontSize);
         
+        // Reset drops when they go off screen
         if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
           drops[i] = 0;
         }
@@ -210,66 +218,139 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
     };
   }, []);
   
+  // Random glitch effect on terminal text at intervals
+  useEffect(() => {
+    if (loadingProgress < 70) return;
+    
+    const glitchInterval = setInterval(() => {
+      if (Math.random() > 0.7) {
+        const terminalElement = document.getElementById('terminal-output');
+        if (terminalElement) {
+          terminalElement.classList.add('glitch-effect');
+          setTimeout(() => {
+            terminalElement.classList.remove('glitch-effect');
+          }, 150);
+        }
+      }
+    }, 1000);
+    
+    return () => clearInterval(glitchInterval);
+  }, [loadingProgress]);
+  
   return (
     <div className="fixed inset-0 bg-black flex flex-col items-center justify-center z-50 overflow-hidden">
       {/* Matrix-like background */}
-      <canvas id="matrix-canvas" className="absolute inset-0 opacity-20"></canvas>
+      <canvas id="matrix-canvas" className="absolute inset-0 opacity-30"></canvas>
       
-      {/* Main content */}
-      <div className="relative z-10 w-full max-w-4xl px-6">
-        {/* ASCII Logo */}
-        <div className="mb-8">
-          <pre className="text-green-500 font-mono text-xs leading-tight whitespace-pre overflow-x-auto">
-            {ASCII_ART}
+      {/* Main terminal */}
+      <div 
+        className="relative z-10 w-full max-w-3xl bg-black border border-orange-500 rounded p-4 flex flex-col"
+        style={{ height: '80vh' }}
+      >
+        {/* Terminal header */}
+        <div className="border-b border-orange-500 pb-2 mb-4 flex justify-between items-center">
+          <div className="text-orange-500 font-mono text-sm">
+            CRAFTING_TABLE_OS v1.0.4815
+          </div>
+          <div className="text-orange-400 font-mono text-xs">
+            {new Date().toLocaleTimeString()} | BOOT SEQUENCE
+          </div>
+        </div>
+        
+        {/* ASCII art - smaller version */}
+        <div className="mb-4">
+          <pre className="text-orange-500 font-mono text-sm leading-tight">
+            {SMALL_ASCII_ART}
           </pre>
         </div>
         
         {/* Loading bar */}
-        <div className="h-6 bg-gray-800 border-2 border-orange-500 rounded-sm mb-6 overflow-hidden">
+        <div className="h-4 bg-black border border-orange-500 mb-4">
           <div 
             className="h-full bg-orange-500 transition-all duration-300 ease-linear"
             style={{ width: `${loadingProgress}%` }}
-          >
-          </div>
+          ></div>
         </div>
         
         {/* Loading percentage */}
-        <div className="text-orange-500 font-mono text-center mb-6">
-          Loading CraftingTableOS... {Math.floor(loadingProgress)}%
+        <div className="text-orange-400 font-mono text-xs mb-4 flex justify-between">
+          <span>SYSTEM BOOT: {Math.floor(loadingProgress)}% COMPLETE</span>
+          <span>{loadingProgress < 70 ? "STATUS: NOMINAL" : 
+                 loadingProgress < 90 ? "STATUS: WARNING" : 
+                 "STATUS: CRITICAL"}</span>
         </div>
         
-        {/* Terminal window */}
-        <div className="bg-black border-2 border-orange-500 p-4 rounded-sm h-60 overflow-hidden font-mono text-sm">
-          <div className="text-orange-500 mb-2">
-            # CraftingTableOS Terminal v1.0.4815
-          </div>
-          
-          {/* Previous messages */}
-          <div className="text-orange-400">
-            {messages.map((msg, index) => (
-              <div key={index}>$ {msg}</div>
-            ))}
-          </div>
-          
-          {/* Current message being "typed" */}
-          <div className="text-orange-400 flex">
-            <span>$ {currentMessage}</span>
-            <span className={terminalCursor ? 'opacity-100' : 'opacity-0'}>_</span>
-          </div>
-          
-          {/* Easter egg message */}
-          {showEasterEgg && (
-            <div className="text-yellow-300 mt-2 font-bold">
-              ! {easterEggMessage}
+        {/* Terminal output - scrollable */}
+        <div 
+          ref={terminalRef}
+          id="terminal-output"
+          className="bg-black flex-1 font-mono text-sm overflow-y-auto p-2 text-orange-400"
+          style={{ 
+            maxHeight: 'calc(80vh - 200px)',
+            boxShadow: 'inset 0 0 10px rgba(255, 165, 0, 0.2)'
+          }}
+        >
+          {messages.map((msg, index) => (
+            <div key={index} className={`mb-1 ${loadingProgress > 80 && Math.random() > 0.7 ? 'text-green-400' : ''}`}>
+              $ {msg}
+            </div>
+          ))}
+          {currentMessage && (
+            <div className="flex">
+              <span>$ {currentMessage}</span>
+              <span className={terminalCursor ? 'opacity-100' : 'opacity-0'}>▊</span>
             </div>
           )}
         </div>
         
-        {/* Credits */}
-        <div className="text-gray-500 text-xs mt-4 text-center">
-          © CraftingTable LLC v1.0.4815 | All Rights Reserved
+        {/* Footer with system info */}
+        <div className="border-t border-orange-500 pt-2 mt-4">
+          <div className="flex justify-between text-orange-500 font-mono text-xs">
+            <div>
+              MEMORY: {Math.floor(loadingProgress)}% ALLOCATED
+            </div>
+            <div>
+              CPU: {Math.min(99, Math.floor(loadingProgress * 1.2))}% USAGE
+            </div>
+            <div>
+              {loadingProgress < 90 ? 
+                "BOOT SEQUENCE IN PROGRESS..." : 
+                "PREPARING DESKTOP ENVIRONMENT..."}
+            </div>
+          </div>
         </div>
       </div>
+      
+      {/* Add some CSS for the glitch effect */}
+      <style>{`
+        .glitch-effect {
+          animation: glitch 0.3s infinite;
+          text-shadow: 2px 0 #ff0000, -2px 0 #00ff00;
+        }
+        
+        @keyframes glitch {
+          0% {
+            transform: translate(2px, 0);
+            text-shadow: 2px 0 #ff0000, -2px 0 #00ff00;
+          }
+          25% {
+            transform: translate(-2px, 0);
+            text-shadow: -2px 0 #ff0000, 2px 0 #00ff00;
+          }
+          50% {
+            transform: translate(0, 2px);
+            text-shadow: 2px 0 #0000ff, -2px 0 #ff0000;
+          }
+          75% {
+            transform: translate(0, -2px);
+            text-shadow: -2px 0 #0000ff, 2px 0 #ff0000;
+          }
+          100% {
+            transform: translate(2px, 0);
+            text-shadow: 2px 0 #ff0000, -2px 0 #00ff00;
+          }
+        }
+      `}</style>
     </div>
   );
 };
