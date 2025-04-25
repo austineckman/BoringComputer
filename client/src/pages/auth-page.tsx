@@ -9,6 +9,7 @@ import { apiRequest } from "@/lib/queryClient";
 import wallpaper from "@assets/wallbg.png";
 import characterImage from "@assets/basecharacter.png";
 import bagImage from "@assets/506_Gold_Bag_Leather_B.png";
+import "@/components/retro-ui/retro-ui.css";
 
 // Auth validation schemas
 const loginSchema = z.object({
@@ -125,7 +126,7 @@ export default function AuthPage() {
   
   return (
     <div 
-      className="min-h-screen w-full flex flex-col justify-center items-center relative overflow-hidden"
+      className="min-h-screen w-full flex flex-col justify-center items-center relative overflow-hidden retro-desktop"
       style={{
         backgroundImage: `url(${wallpaper})`,
         backgroundSize: 'cover',
