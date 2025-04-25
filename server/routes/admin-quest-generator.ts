@@ -64,8 +64,13 @@ router.post("/api/admin/generate-quest", async (req: Request, res: Response) => 
       return res.status(404).json({ error: "Kit not found" });
     }
     
-    // Get component names for the kit
-    const componentNames = kit.components.map(comp => comp.name);
+    // Get components for the kit with both name and ID
+    const kitComponents = kit.components.map(comp => ({
+      id: comp.id,
+      name: comp.name,
+      description: comp.description
+    }));
+    const componentNames = kitComponents.map(comp => comp.name);
     
     // Generate quest content
     const questContent = await generateQuestContent({
@@ -93,12 +98,39 @@ router.post("/api/admin/generate-quest", async (req: Request, res: Response) => 
       }
     }
     
+    // Map the AI-generated component names to actual component IDs
+    const selectedComponents = questContent.components;
+    
+    // Map component names to component objects (with IDs)
+    const resolvedComponents = selectedComponents.map(componentName => {
+      // First try exact match
+      let match = kitComponents.find(comp => 
+        comp.name.toLowerCase() === componentName.toLowerCase());
+      
+      // If no exact match, try to find a component containing the AI component name
+      if (!match) {
+        match = kitComponents.find(comp => 
+          comp.name.toLowerCase().includes(componentName.toLowerCase()) || 
+          (comp.description && comp.description.toLowerCase().includes(componentName.toLowerCase())));
+      }
+      
+      // If still no match, try the reverse - AI component name containing a kit component name
+      if (!match) {
+        match = kitComponents.find(comp => 
+          componentName.toLowerCase().includes(comp.name.toLowerCase()));
+      }
+      
+      return match ? match : componentName;
+    });
+    
+    // Provide both component names for display and component IDs for database storage
     const response: GeneratedQuest = {
       title: questContent.title,
       description: questContent.description,
       missionBrief: questContent.missionBrief,
       imageUrl,
-      components: questContent.components,
+      components: selectedComponents,
+      componentIds: resolvedComponents.map(c => typeof c === 'string' ? null : c.id),
       xpReward: questContent.xpReward,
       lootSuggestion: questContent.lootSuggestion,
       adventureLine: questContent.adventureLine

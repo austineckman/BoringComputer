@@ -12,6 +12,7 @@ router.use(adminAuth);
 interface SaveQuestRequest {
   title: string;
   description: string;
+  missionBrief?: string;
   imageUrl?: string;
   components: string[];
   xpReward: number;
@@ -27,7 +28,8 @@ router.post("/api/admin/quests", async (req: Request, res: Response) => {
     
     const { 
       title, 
-      description, 
+      description,
+      missionBrief,
       imageUrl, 
       components,
       xpReward,
@@ -37,7 +39,7 @@ router.post("/api/admin/quests", async (req: Request, res: Response) => {
     } = req.body as SaveQuestRequest;
 
     console.log("Extracted fields:", {
-      title, description, imageUrl, components, xpReward, lootSuggestion, kitId, adventureLine
+      title, description, missionBrief, imageUrl, components, xpReward, lootSuggestion, kitId, adventureLine
     });
 
     // Simple validation
@@ -149,7 +151,7 @@ router.post("/api/admin/quests", async (req: Request, res: Response) => {
       xpReward || 100, 
       new Date().toISOString().split('T')[0], // date
       kitId,
-      null, // mission_brief 
+      missionBrief, // mission_brief 
       true, // active
       lootBoxRewardsJSON,
       rewardsJSON,
@@ -164,18 +166,53 @@ router.post("/api/admin/quests", async (req: Request, res: Response) => {
 
     // Now add the components for this quest using direct SQL
     if (components.length > 0) {
-      // First get the components IDs with a direct query
-      const componentsResult = await pool.query(`
-        SELECT id, name FROM kit_components 
-        WHERE kit_id = $1 AND name = ANY($2)
-      `, [kitId, components]);
+      // First get all kit components to find best matches
+      const kitComponentsResult = await pool.query(`
+        SELECT id, name, description FROM kit_components 
+        WHERE kit_id = $1
+      `, [kitId]);
       
-      console.log("Found components:", componentsResult.rows);
+      const kitComponents = kitComponentsResult.rows;
+      console.log(`Found ${kitComponents.length} components in kit ${kitId}`);
+      
+      // For each AI-generated component name, find the best matching component in the kit
+      const componentMatches = [];
+      
+      for (const aiComponent of components) {
+        // First try exact match
+        let match = kitComponents.find(comp => 
+          comp.name.toLowerCase() === aiComponent.toLowerCase());
+        
+        // If no exact match, try to find a component containing the AI component name
+        if (!match) {
+          match = kitComponents.find(comp => 
+            comp.name.toLowerCase().includes(aiComponent.toLowerCase()) || 
+            (comp.description && comp.description.toLowerCase().includes(aiComponent.toLowerCase())));
+        }
+        
+        // If still no match, try the reverse - AI component name containing a kit component name
+        if (!match) {
+          match = kitComponents.find(comp => 
+            aiComponent.toLowerCase().includes(comp.name.toLowerCase()));
+        }
+        
+        if (match) {
+          componentMatches.push(match);
+        }
+      }
+      
+      console.log(`Matched ${componentMatches.length} out of ${components.length} components`);
+      
+      // If we don't have any matches but the kit has components, add the first 3 components from the kit
+      if (componentMatches.length === 0 && kitComponents.length > 0) {
+        componentMatches.push(...kitComponents.slice(0, Math.min(3, kitComponents.length)));
+        console.log(`Using ${componentMatches.length} default components from the kit`);
+      }
       
       // Link components to the quest using direct SQL
-      if (componentsResult.rows.length > 0) {
+      if (componentMatches.length > 0) {
         // For each component, insert the relation
-        for (const comp of componentsResult.rows) {
+        for (const comp of componentMatches) {
           await pool.query(`
             INSERT INTO quest_components (
               quest_id, component_id, created_at, updated_at
@@ -187,7 +224,7 @@ router.post("/api/admin/quests", async (req: Request, res: Response) => {
             new Date()
           ]);
         }
-        console.log(`Added ${componentsResult.rows.length} components to quest`);
+        console.log(`Added ${componentMatches.length} components to quest`);
       }
     }
 
