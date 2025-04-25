@@ -10,8 +10,6 @@ import TerminalWindow from "./TerminalWindow";
 import WebBrowserWindow from "./WebBrowserWindow";
 import wallpaperImage from "@assets/wallpaper.png";
 import backgroundMusic from "@assets/Fantasy Guild Hall.mp3";
-// We'll use a simple inline SVG for the CraftingTable logo instead of importing an image
-// This ensures it will work regardless of image path issues
 
 // Type definitions
 interface Position {
@@ -799,13 +797,7 @@ const RetroDesktop: React.FC = () => {
             className="flex items-center bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold px-4 py-1.5 rounded-sm mr-4 border border-cyan-300 shadow-inner"
             onClick={() => setIsStartMenuOpen(!isStartMenuOpen)}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" className="mr-2" xmlns="http://www.w3.org/2000/svg">
-              <path d="M5,2 L19,2 L19,22 L5,22 Z" fill="#FF6700" />
-              <path d="M1,5 L5,2 L5,22 L1,19 Z" fill="#E35D00" />
-              <path d="M19,2 L23,5 L23,19 L19,22 Z" fill="#E35D00" />
-              <path d="M5,2 L19,2 L23,5 L5,5 Z" fill="#FF8333" />
-              <path d="M5,22 L19,22 L23,19 L5,19 Z" fill="#CC5200" />
-            </svg>
+            <span className="mr-2 text-lg">🚀</span>
             <span>Start</span>
           </button>
           
