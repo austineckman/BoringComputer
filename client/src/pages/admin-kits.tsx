@@ -140,7 +140,24 @@ const AdminKits = () => {
       method: 'GET',
       credentials: 'include'
     }).then(res => res.json()),
-    enabled: !!selectedKit,
+    
+  });
+  
+  // Fetch artwork for selected kit
+  const { data: kitArtwork, isLoading: isLoadingArtwork } = useQuery({
+    queryKey: ['/api/admin/kits', selectedKit?.id, 'artwork'],
+    queryFn: () => fetch(`/api/admin/kits/${selectedKit?.id}/artwork`, { 
+      method: 'GET',
+      credentials: 'include'
+    }).then(res => {
+      if (!res.ok) {
+        // If the response is not OK (e.g., 404), return an empty array
+        // This happens if no artwork exists yet
+        return [];
+      }
+      return res.json();
+    }),
+    enabled: !!selectedKit && isManagingArtwork,
   });
   
   // Fetch all components across all kits for reuse
@@ -382,16 +399,28 @@ const AdminKits = () => {
   const uploadArtworkMutation = useMutation({
     mutationFn: async (data: FormData) => {
       console.log("Uploading artwork for kit:", selectedKit?.id);
-      const response = await fetch(`/api/admin/kits/${selectedKit?.id}/artwork`, {
+      if (!selectedKit?.id) {
+        throw new Error("No kit selected for artwork upload");
+      }
+      
+      // Using apiRequest was causing issues, so using direct fetch
+      const response = await fetch(`/api/admin/kits/${selectedKit.id}/artwork`, {
         method: 'POST',
         body: data,
+        // Important: Don't set Content-Type header, browser will set it with boundary for FormData
         credentials: 'include',
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error uploading artwork:", errorData);
-        throw new Error(errorData.message || "Failed to upload artwork");
+        let errorMessage = "Failed to upload artwork";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+          console.error("Error uploading artwork:", errorData);
+        } catch (e) {
+          console.error("Error parsing error response:", e);
+        }
+        throw new Error(errorMessage);
       }
       
       return response.json();
