@@ -473,6 +473,44 @@ const AdminQuestGenerator = () => {
                     <X className="h-4 w-4 mr-1" /> Discard
                   </Button>
                   <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (!generatedQuest) return;
+                      
+                      // Navigate to the quests admin page with query params
+                      // We'll use the presence of these params to trigger opening the edit dialog
+                      const params = new URLSearchParams();
+                      params.append('action', 'new');
+                      params.append('title', generatedQuest.title);
+                      params.append('description', generatedQuest.description);
+                      params.append('missionBrief', generatedQuest.missionBrief);
+                      params.append('adventureLine', generatedQuest.adventureLine || 'Adventure');
+                      params.append('kitId', form.getValues('kitId'));
+                      params.append('xpReward', generatedQuest.xpReward.toString());
+                      params.append('difficulty', form.getValues('difficulty').toString());
+                      
+                      // Include image if available
+                      if (generatedQuest.imageUrl) {
+                        params.append('imageUrl', generatedQuest.imageUrl);
+                      }
+                      
+                      // Include component IDs if available
+                      if (generatedQuest.componentIds && Array.isArray(generatedQuest.componentIds)) {
+                        params.append('componentIds', JSON.stringify(generatedQuest.componentIds));
+                        params.append('components', JSON.stringify(generatedQuest.components));
+                      }
+                      
+                      // Include rewards
+                      params.append('lootSuggestion', generatedQuest.lootSuggestion);
+                      
+                      navigate(`/admin/quests?${params.toString()}`);
+                    }}
+                    disabled={saving}
+                  >
+                    <Edit className="h-4 w-4 mr-1" /> Edit in Full Editor
+                  </Button>
+                  <Button 
                     variant="default" 
                     size="sm"
                     onClick={handleSaveQuest}
