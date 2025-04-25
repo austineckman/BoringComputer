@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { X, Maximize2, Minimize2, Info, ChevronRight, Volume2, VolumeX } from "lucide-react";
+import { X, Maximize2, Minimize2, Info, ChevronRight, Volume2, VolumeX, Terminal } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import RetroStartMenu from "./RetroStartMenu";
 import InventoryWindow from "./InventoryWindow";
 import ItemDetailsWindow from "./ItemDetailsWindow";
 import CraftingWindow from "./CraftingWindow";
+import TerminalWindow from "./TerminalWindow";
 import wallpaperImage from "@assets/wallpaper.png";
 import backgroundMusic from "@assets/Fantasy Guild Hall.mp3";
 
@@ -42,6 +43,7 @@ const RetroDesktop: React.FC = () => {
     { id: "crafting", name: "Crafting", icon: "⚒️", path: "/crafting", position: { x: 20, y: 220 } },
     { id: "lootboxes", name: "Loot Crates", icon: "🎁", path: "/lootboxes", position: { x: 20, y: 320 } },
     { id: "shop", name: "Shop", icon: "🛒", path: "/shop", position: { x: 20, y: 420 } },
+    { id: "terminal", name: "Command Prompt", icon: "💻", path: "/terminal", position: { x: 130, y: 20 } },
   ]);
   
   // Admin icons only shown to admin users
@@ -176,6 +178,8 @@ const RetroDesktop: React.FC = () => {
       openInventoryWindow();
     } else if (icon.id === "crafting") {
       openCraftingWindow();
+    } else if (icon.id === "terminal") {
+      openTerminalWindow();
     } else {
       // For other icons, navigate to the path
       navigate(icon.path);
@@ -275,6 +279,15 @@ const RetroDesktop: React.FC = () => {
     );
     
     openWindow(`item-${itemId}`, `Item Details: ${itemId}`, itemDetailsContent, "📦");
+  };
+  
+  // Function to open the terminal window
+  const openTerminalWindow = () => {
+    const terminalContent = (
+      <TerminalWindow />
+    );
+    
+    openWindow("terminal", "Command Prompt", terminalContent, "💻");
   };
   
   const openWelcomeWindow = () => {
