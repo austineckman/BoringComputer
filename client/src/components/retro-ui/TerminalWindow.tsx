@@ -12,8 +12,8 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory = "C:
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [commandInput, setCommandInput] = useState("");
   const [terminalOutput, setTerminalOutput] = useState<Array<{type: string, content: string}>>([
-    { type: "system", content: "Quest OS [Version 1.0.4815]" },
-    { type: "system", content: "(c) 2025 The Quest Giver Corporation. All rights reserved." },
+    { type: "system", content: "CraftingTableOS [Version 1.0.4815]" },
+    { type: "system", content: "(c) 2025 CraftingTable LLC. Good luck on your hunt for the three golden keys" },
     { type: "system", content: "" },
     { type: "prompt", content: `${currentDirectory}>` }
   ]);
@@ -279,8 +279,8 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory = "C:
       case "clear":
         // Clear screen, but keep initial system message
         setTerminalOutput([
-          { type: "system", content: "Quest OS [Version 1.0.4815]" },
-          { type: "system", content: "(c) 2025 The Quest Giver Corporation. All rights reserved." },
+          { type: "system", content: "CraftingTableOS [Version 1.0.4815]" },
+          { type: "system", content: "(c) 2025 CraftingTable LLC. Good luck on your hunt for the three golden keys" },
           { type: "system", content: "" }
         ]);
         break;
@@ -289,9 +289,9 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory = "C:
         // Show system information
         addToOutput("output", "SYSTEM INFORMATION");
         addToOutput("output", "-----------------");
-        addToOutput("output", `OS Name:                   Quest OS`);
+        addToOutput("output", `OS Name:                   CraftingTableOS`);
         addToOutput("output", `OS Version:                1.0.4815`);
-        addToOutput("output", `System Type:               Educational Gaming Platform`);
+        addToOutput("output", `System Type:               Crafting Exploration Platform`);
         addToOutput("output", `User Name:                 ${user?.username || "Unknown"}`);
         addToOutput("output", `User Level:                ${user?.level || 1}`);
         addToOutput("output", `Items in Inventory:        ${user?.inventory ? Object.keys(user.inventory).length : 0}`);
@@ -299,7 +299,7 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory = "C:
         
       case "ver":
         // Show version information
-        addToOutput("output", "Quest OS [Version 1.0.4815]");
+        addToOutput("output", "CraftingTableOS [Version 1.0.4815]");
         break;
         
       case "date":
@@ -457,11 +457,11 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory = "C:
         // Show game credits
         addToOutput("output", "CREDITS");
         addToOutput("output", "-------");
-        addToOutput("output", "The Quest Giver - Educational Gaming Platform");
+        addToOutput("output", "CraftingTable LLC - Crafting Exploration Platform");
         addToOutput("output", "Created in 2025");
         addToOutput("output", "");
-        addToOutput("output", "Designed for learning electronics and programming");
-        addToOutput("output", "through fun, engaging quests and challenges.");
+        addToOutput("output", "Designed for finding the three golden keys");
+        addToOutput("output", "through crafting, exploration, and adventure.");
         addToOutput("output", "");
         addToOutput("output", "Thank you for playing!");
         break;
