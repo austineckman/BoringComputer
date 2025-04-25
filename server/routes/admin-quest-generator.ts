@@ -131,10 +131,10 @@ async function generateQuestContent({
   lootSuggestion: string;
   adventureLine?: string;
 }> {
-  // Get available items from the database for rewards
-  const { getAllItems } = await import('../itemDatabase');
-  const availableItems = getAllItems();
-  const itemNames = availableItems.map(item => `${item.name} (${item.rarity})`).join(', ');
+  // Get available items from the database for rewards - use actual database items
+  const { db } = await import('../db');
+  const availableItems = await db.query.items.findMany();
+  const itemNames = availableItems.map(item => `${item.name} (id: ${item.id}, rarity: ${item.rarity})`).join(', ');
   
   // Format the prompt with all relevant information
   const prompt = `
@@ -153,7 +153,7 @@ async function generateQuestContent({
     3. Select 3-5 components from the Available Components list that would be required for this quest
     4. A suggested XP reward (between ${difficulty * 50} and ${difficulty * 100})
     5. A suggested loot reward using ONLY items from this list: ${itemNames}
-       Format rewards like "Copper x3, Crystal x1" - must use exact names from the list
+       Format rewards like "tech-scrap x3, circuit-board x1" - must use exact item IDs, not names
     6. An adventure line name that this quest would fit into (something like "Cogsworth City", "Neon Realm", or "30 Days Lost in Space")
     
     Format your response as a JSON object with these keys:
