@@ -1,8 +1,19 @@
 import React from "react";
 import { getQueryFn } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
-import { ItemDetails as ItemDetailsType } from "@/types"; 
 import { Loader2 } from "lucide-react";
+
+// Define ItemDetails interface locally to avoid import issues
+interface ItemDetails {
+  id: string;
+  name: string; 
+  description: string;
+  flavorText: string;
+  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  craftingUses: string[];
+  imagePath: string;
+  category?: string;
+}
 
 interface ItemDetailsWindowProps {
   itemId: string;
@@ -15,9 +26,9 @@ const ItemDetailsWindow: React.FC<ItemDetailsWindowProps> = ({ itemId, quantity 
     data: item,
     isLoading,
     error,
-  } = useQuery<ItemDetailsType>({
+  } = useQuery<ItemDetails>({
     queryKey: ["/api/items", itemId],
-    queryFn: () => getQueryFn()(`/api/items/${itemId}`),
+    queryFn: getQueryFn(),
   });
 
   if (isLoading) {
