@@ -849,6 +849,54 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Additional methods required by the interface
+  async addUserXP(userId: number, xpAmount: number): Promise<User> {
+    // First get the user
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    // Calculate the current XP and level
+    const currentXP = user.xp || 0;
+    const currentLevel = user.level || 1;
+    const newXP = currentXP + xpAmount;
+    
+    // Simple level calculation based on xpToNextLevel field
+    let newLevel = currentLevel;
+    let xpToNextLevel = user.xpToNextLevel || 300; // Default 300 XP for next level
+    
+    // Calculate if user levels up
+    if (newXP >= xpToNextLevel) {
+      newLevel = currentLevel + 1;
+      // Each level requires more XP: base * level^1.5
+      const nextLevelXP = Math.round(300 * Math.pow(newLevel, 1.5));
+      
+      // Update user with new XP and level
+      const updatedUser = await this.updateUser(userId, {
+        xp: newXP,
+        level: newLevel,
+        xpToNextLevel: nextLevelXP
+      });
+      
+      if (!updatedUser) {
+        throw new Error(`Failed to update user with ID ${userId}`);
+      }
+      
+      return updatedUser;
+    } else {
+      // Just update XP, no level change
+      const updatedUser = await this.updateUser(userId, {
+        xp: newXP
+      });
+      
+      if (!updatedUser) {
+        throw new Error(`Failed to update user with ID ${userId}`);
+      }
+      
+      return updatedUser;
+    }
+  }
+  
   async getAvailableQuestsForUser(userId: number): Promise<Quest[]> {
     // For now, just return all active quests
     return await db.select().from(quests).where(eq(quests.active, true));
