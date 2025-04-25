@@ -36,7 +36,8 @@ export interface Quest {
       code: string;
     }[];
   };
-  componentRequirements?: QuestComponent[];
+  // Component requirements should have proper typing
+  componentRequirements: QuestComponent[];
 }
 
 export interface QuestsByLine {

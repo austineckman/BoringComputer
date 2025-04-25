@@ -40,37 +40,29 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
     // Filter by selected kit
     if (selectedKit) {
       console.log('Filtering by kit ID:', selectedKit);
-      // First check for direct kitId match on the quest itself
+      
       filtered = filtered.filter(quest => {
-        // Check if the quest itself has a kitId property matching selectedKit
+        // First check if the quest directly belongs to this kit
         if (quest.kitId === selectedKit) {
-          console.log(`Quest "${quest.title}" matched by direct kitId: ${quest.kitId}`);
+          console.log(`Quest "${quest.title}" matches kit ${selectedKit} by direct kitId`);
           return true;
         }
         
-        // Make sure componentRequirements exists and is an array
+        // Debug info about component requirements
         const components = quest.componentRequirements || [];
-        if (components.length === 0) {
-          console.log(`Quest "${quest.title}" has no component requirements`);
-        } else {
-          console.log(`Quest "${quest.title}" has ${components.length} component requirements`);
+        console.log(`Quest "${quest.title}" has ${components.length} component requirements`);
+        
+        // Check if any component from this kit is required for the quest
+        if (components.length > 0) {
+          for (const comp of components) {
+            if (comp && comp.kitId === selectedKit) {
+              console.log(`Quest "${quest.title}" requires component ${comp.name} from kit ${selectedKit}`);
+              return true;
+            }
+          }
         }
         
-        // Check if any component in the quest has a kitId matching selectedKit
-        const hasMatchingComponent = components.some(comp => {
-          if (!comp) return false;
-          if (typeof comp !== 'object') return false;
-          
-          // Log component details for debugging
-          if ('kitId' in comp) {
-            console.log(`Component has kitId: ${comp.kitId}, comparing with ${selectedKit}`);
-            return comp.kitId === selectedKit;
-          }
-          
-          return false;
-        });
-        
-        return hasMatchingComponent;
+        return false;
       });
       
       console.log(`After filtering by kit ${selectedKit}, ${filtered.length} quests remain`);
@@ -263,13 +255,13 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                 Required Components
               </h4>
               <div className="flex flex-wrap gap-1">
-                {quest.componentRequirements.slice(0, 3).map((comp: any) => (
+                {quest.componentRequirements.slice(0, 3).map((comp) => (
                   <span 
                     key={comp.id} 
                     className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded"
                     title={comp.description}
                   >
-                    {comp.name} {comp.quantity > 1 ? `(${comp.quantity})` : ''}
+                    {comp.name}
                   </span>
                 ))}
                 {quest.componentRequirements.length > 3 && (
