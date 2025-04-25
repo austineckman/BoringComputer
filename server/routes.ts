@@ -18,6 +18,8 @@ import characterRoutes from './routes/character';
 import adminUploadRoutes from './routes/admin/upload';
 import adminKitsRoutes from './routes/admin-kits';
 import adminRecipesRoutes from './routes/admin-recipes';
+import adminQuestGeneratorRoutes from './routes/admin-quest-generator';
+import adminQuestsSaveRoutes from './routes/admin-quests-save';
 import { authenticate } from './auth';
 import { componentKits, items } from '@shared/schema';
 import { itemDatabase } from './itemDatabase';
