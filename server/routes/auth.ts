@@ -96,7 +96,7 @@ router.post("/register", async (req, res, next) => {
   }
 });
 
-// Logout routes
+// Logout route
 router.post("/logout", (req, res) => {
   req.logout((err) => {
     if (err) {
@@ -107,42 +107,31 @@ router.post("/logout", (req, res) => {
   });
 });
 
-// GET logout for easy browser access
-router.get("/logout", (req, res) => {
-  req.logout((err) => {
-    if (err) {
-      return res.status(500).json({ message: "Logout failed" });
-    }
-    
-    // Redirect to login page after logout
-    res.redirect("/auth");
-  });
-});
-
 // Get current user
 router.get("/me", (req, res) => {
-  // For development purposes, create a mock user
+  // For development purposes, provide a mock user if not authenticated
   const BYPASS_AUTH = process.env.NODE_ENV === 'development';
   
-  // Check if user is authenticated
   if (!req.isAuthenticated()) {
     if (BYPASS_AUTH) {
-      // Create a mock user for development with regular user access (not admin)
-      const mockUser = {
+      // Return a development mock user
+      console.log("⚠️ Development mode: Providing mock user for /api/auth/me");
+      return res.json({
         id: 999,
         username: "devuser",
         email: "dev@example.com",
-        roles: ["user"],  // Regular user, not admin
-        level: 5,
+        roles: ["admin", "user"],
+        level: 10,
         inventory: {
-          "copper": 5,
-          "crystal": 2,
-          "techscrap": 1
-        }
-      };
-      
-      console.log("⚠️ Development mode: Returning mock user for /api/auth/me");
-      return res.json(mockUser);
+          "copper": 10,
+          "crystal": 5,
+          "techscrap": 3,
+          "circuit_board": 2,
+          "cloth": 8
+        },
+        xp: 2500,
+        xpToNextLevel: 3000
+      });
     }
     
     return res.status(401).json({ message: "Not authenticated" });
