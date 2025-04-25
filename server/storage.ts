@@ -706,14 +706,16 @@ export class DatabaseStorage implements IStorage {
       
       // Get component details from kit components
       const formattedComponents = await Promise.all(components.map(async (component) => {
-        if (!component.kitComponentId) {
+        if (!component.componentId) {
           return {
-            ...component,
+            id: component.id,
             name: "Custom Component",
-            description: component.notes || "No description available",
+            description: "No description available",
             imagePath: null,
             kitId: null,
-            kitName: null
+            kitName: null,
+            isRequired: component.isOptional === false,
+            quantity: component.quantity || 1
           };
         }
         
@@ -721,16 +723,18 @@ export class DatabaseStorage implements IStorage {
         const [kitComponent] = await db
           .select()
           .from(kitComponents)
-          .where(eq(kitComponents.id, component.kitComponentId));
+          .where(eq(kitComponents.id, component.componentId));
         
         if (!kitComponent) {
           return {
-            ...component,
+            id: component.id,
             name: "Unknown Component",
-            description: component.notes || "Component not found",
+            description: "Component not found",
             imagePath: null,
             kitId: null,
-            kitName: null
+            kitName: null,
+            isRequired: component.isOptional === false,
+            quantity: component.quantity || 1
           };
         }
         
@@ -741,12 +745,15 @@ export class DatabaseStorage implements IStorage {
           .where(eq(componentKits.id, kitComponent.kitId));
         
         return {
-          ...component,
+          id: component.id,
           name: kitComponent.name,
           description: kitComponent.description,
           imagePath: kitComponent.imagePath,
           kitId: kitComponent.kitId,
-          kitName: kit ? kit.name : "Unknown Kit"
+          kitName: kit ? kit.name : "Unknown Kit",
+          isRequired: component.isOptional === false,
+          quantity: component.quantity || 1,
+          status: component.status || 'required'
         };
       }));
       
