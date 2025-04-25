@@ -16,6 +16,7 @@ import ironBagImage from "@assets/506_Gold_Bag_Leather_B.png";
 import craftingImage from "@assets/62_Ice_Armor.png";
 import questImage from "@assets/01_Fire_Grimoire.png";
 import shopCoinImage from "@assets/22_Leperchaun_Coin.png";
+import logoImage from "@assets/Asset 6@2x-8.png";
 
 // Type definitions
 interface Position {
