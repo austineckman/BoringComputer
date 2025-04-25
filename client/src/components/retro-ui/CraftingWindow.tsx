@@ -69,10 +69,7 @@ const CraftingWindow: React.FC = () => {
     isLoading: inventoryLoading 
   } = useQuery({
     queryKey: ["/api/inventory"],
-    queryFn: getQueryFn({ 
-      on401: "throw",
-      withCredentials: true 
-    }),
+    queryFn: getQueryFn({ on401: "throw" }),
   });
 
   // Fetch all item details
@@ -81,10 +78,7 @@ const CraftingWindow: React.FC = () => {
     isLoading: itemsLoading 
   } = useQuery<ItemDetails[]>({
     queryKey: ["/api/items"],
-    queryFn: getQueryFn({ 
-      on401: "throw",
-      withCredentials: true 
-    }),
+    queryFn: getQueryFn({ on401: "throw" }),
   });
 
   // Fetch all recipes
@@ -93,10 +87,7 @@ const CraftingWindow: React.FC = () => {
     isLoading: recipesLoading
   } = useQuery<ServerRecipe[]>({
     queryKey: ["/api/crafting/recipes"],
-    queryFn: getQueryFn({ 
-      on401: "throw",
-      withCredentials: true
-    }),
+    queryFn: getQueryFn({ on401: "throw" }),
   });
 
   // Transform server recipes to client format
