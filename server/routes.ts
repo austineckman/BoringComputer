@@ -113,11 +113,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allQuests = await storage.getQuests();
       console.log(`Found ${allQuests.length} total quests in database`);
       
+      // Fetch component requirements for all quests
+      console.log('Fetching component requirements for all quests');
+      const questsWithComponents = [];
+      for (const quest of allQuests) {
+        try {
+          const components = await storage.getQuestComponentsWithDetails(quest.id);
+          console.log(`Quest ${quest.id} (${quest.title}) has ${components.length} components`);
+          
+          // Add component requirements to quest object
+          const questWithComponents = {
+            ...quest,
+            componentRequirements: components
+          };
+          questsWithComponents.push(questWithComponents);
+        } catch (err) {
+          console.error(`Error fetching components for quest ${quest.id}:`, err);
+          questsWithComponents.push(quest); // Add quest without components
+        }
+      }
+      
       // Group quests by adventure line to help with frontend organization
       const questsByAdventureLine: Record<string, any[]> = {};
       
       // Process all quests to determine their status
-      allQuests.forEach(quest => {
+      questsWithComponents.forEach(quest => {
         const adventureLine = quest.adventureLine;
         if (!questsByAdventureLine[adventureLine]) {
           questsByAdventureLine[adventureLine] = [];
@@ -157,6 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           content: quest.content,
           lootBoxRewards: quest.lootBoxRewards,
           kitId: quest.kitId,
+          componentRequirements: quest.componentRequirements || [], // Include component requirements
           status
         });
       });

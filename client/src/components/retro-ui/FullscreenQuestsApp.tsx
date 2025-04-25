@@ -255,15 +255,15 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
             </span>
           </div>
           
-          {/* Component requirements - handle potentially missing componentRequirements */}
-          {(quest as any).componentRequirements && (quest as any).componentRequirements.length > 0 && (
+          {/* Component requirements */}
+          {quest.componentRequirements && quest.componentRequirements.length > 0 && (
             <div className="mt-2">
               <h4 className="text-xs uppercase text-gray-400 mb-1 flex items-center">
                 <Cpu className="w-3 h-3 mr-1" />
                 Required Components
               </h4>
               <div className="flex flex-wrap gap-1">
-                {(quest as any).componentRequirements.slice(0, 3).map((comp: any) => (
+                {quest.componentRequirements.slice(0, 3).map((comp: any) => (
                   <span 
                     key={comp.id} 
                     className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded"
@@ -272,9 +272,9 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                     {comp.name} {comp.quantity > 1 ? `(${comp.quantity})` : ''}
                   </span>
                 ))}
-                {(quest as any).componentRequirements.length > 3 && (
+                {quest.componentRequirements.length > 3 && (
                   <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded">
-                    +{(quest as any).componentRequirements.length - 3} more
+                    +{quest.componentRequirements.length - 3} more
                   </span>
                 )}
               </div>
