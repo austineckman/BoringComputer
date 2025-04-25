@@ -798,7 +798,7 @@ const RetroDesktop: React.FC = () => {
             onClick={() => setIsStartMenuOpen(!isStartMenuOpen)}
           >
             <img 
-              src="/images/logo.png" 
+              src="/logo.png" 
               alt="Start" 
               className="mr-2 h-5 w-5 object-contain" 
               style={{ filter: 'brightness(1.2)' }} 
