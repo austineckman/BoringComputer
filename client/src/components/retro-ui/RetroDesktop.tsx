@@ -797,7 +797,12 @@ const RetroDesktop: React.FC = () => {
             className="flex items-center bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold px-4 py-1.5 rounded-sm mr-4 border border-cyan-300 shadow-inner"
             onClick={() => setIsStartMenuOpen(!isStartMenuOpen)}
           >
-            <span className="mr-2 text-lg">🚀</span>
+            <img 
+              src="/images/logo.png" 
+              alt="Start" 
+              className="mr-2 h-5 w-5 object-contain" 
+              style={{ filter: 'brightness(1.2)' }} 
+            />
             <span>Start</span>
           </button>
           
