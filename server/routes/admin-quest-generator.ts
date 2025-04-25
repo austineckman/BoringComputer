@@ -1,10 +1,10 @@
 import express, { Request, Response } from "express";
 import OpenAI from "openai";
-import { AdminAuthorize } from "@server/middleware/adminAuth";
+import { adminAuth } from "../middleware/adminAuth";
 import { nanoid } from "nanoid";
 import * as fs from "fs";
 import * as path from "path";
-import { db } from "@server/db";
+import { db } from "../db";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const MODEL = "gpt-4o";
@@ -23,7 +23,7 @@ const openai = new OpenAI({
 const router = express.Router();
 
 // Middleware to ensure user is an admin
-router.use(AdminAuthorize);
+router.use(adminAuth);
 
 interface QuestGenRequest {
   kitId: string;
@@ -171,7 +171,7 @@ async function generateQuestImage(title: string, description: string, theme: str
       n: 1,
       size: "1024x1024",
       quality: "standard",
-      style: "pixel_art",
+      style: "vivid",
     });
     
     const imageUrl = response.data[0]?.url;

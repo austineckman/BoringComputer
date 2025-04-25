@@ -1,13 +1,13 @@
 import express, { Request, Response } from "express";
-import { AdminAuthorize } from "@server/middleware/adminAuth";
-import { db } from "@server/db";
+import { adminAuth } from "../middleware/adminAuth";
+import { db } from "../db";
 import { quests, questComponents } from "@shared/schema";
 import { nanoid } from "nanoid";
 
 const router = express.Router();
 
 // Middleware to ensure user is an admin
-router.use(AdminAuthorize);
+router.use(adminAuth);
 
 interface SaveQuestRequest {
   title: string;
