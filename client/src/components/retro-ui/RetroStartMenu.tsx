@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Wrench, Terminal, Globe } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import logoImage from "@assets/Asset 6@2x-8.png";
 
 type MenuItem = {
   id: string;
@@ -192,7 +193,7 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
       <div className="bg-gradient-to-r from-blue-700 to-blue-500 text-white p-3 flex items-center">
         <div className="bg-gray-200 w-10 h-10 rounded-full flex items-center justify-center">
           <img 
-            src="/logo.png" 
+            src={logoImage} 
             alt="Logo" 
             className="h-7 w-7 object-contain" 
           />
