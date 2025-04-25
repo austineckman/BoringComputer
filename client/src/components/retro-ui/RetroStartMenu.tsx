@@ -190,8 +190,12 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
     >
       {/* User info section */}
       <div className="bg-gradient-to-r from-blue-700 to-blue-500 text-white p-3 flex items-center">
-        <div className="bg-gray-200 text-blue-700 w-10 h-10 rounded-full flex items-center justify-center font-bold text-xl">
-          {user?.username?.[0]?.toUpperCase() || "U"}
+        <div className="bg-gray-200 w-10 h-10 rounded-full flex items-center justify-center">
+          <img 
+            src="/images/logo.png" 
+            alt="Logo" 
+            className="h-7 w-7 object-contain" 
+          />
         </div>
         <div className="ml-3">
           <div className="font-bold">{user?.username || "User"}</div>
