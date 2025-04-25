@@ -154,7 +154,7 @@ export default function AuthPage() {
         {/* Main Window */}
         <div className="border-[3px] border-t-gray-300 border-l-gray-300 border-r-gray-800 border-b-gray-800 bg-gray-200 shadow-2xl overflow-hidden">
           {/* Title Bar */}
-          <div className="bg-gradient-to-r from-blue-800 via-blue-600 to-blue-800 text-white py-1.5 px-3 flex items-center select-none">
+          <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white py-1.5 px-3 flex items-center select-none">
             <div className="flex items-center">
               <span className="mr-2 text-lg">💻</span>
               <span className="font-bold tracking-tight">CraftingTableOS</span>
@@ -186,7 +186,7 @@ export default function AuthPage() {
             <div className="border-t border-l border-r border-gray-400 mb-4">
               <div className="flex">
                 <button 
-                  className={`px-4 py-1 text-sm ${activeTab === 'login' 
+                  className={`px-4 py-1 text-sm text-black ${activeTab === 'login' 
                     ? 'bg-gray-200' 
                     : 'bg-gray-300'}`}
                   onClick={() => setActiveTab('login')}
@@ -194,7 +194,7 @@ export default function AuthPage() {
                   Login
                 </button>
                 <button 
-                  className={`px-4 py-1 text-sm ${activeTab === 'register' 
+                  className={`px-4 py-1 text-sm text-black ${activeTab === 'register' 
                     ? 'bg-gray-200' 
                     : 'bg-gray-300'}`}
                   onClick={() => setActiveTab('register')}
@@ -214,7 +214,7 @@ export default function AuthPage() {
                       render={({ field }) => (
                         <FormItem>
                           <div className="flex items-center">
-                            <label className="w-24 text-sm">Username:</label>
+                            <label className="w-24 text-sm text-black">Username:</label>
                             <div className="flex-1">
                               <FormControl>
                                 <input
@@ -236,7 +236,7 @@ export default function AuthPage() {
                       render={({ field }) => (
                         <FormItem>
                           <div className="flex items-center">
-                            <label className="w-24 text-sm">Password:</label>
+                            <label className="w-24 text-sm text-black">Password:</label>
                             <div className="flex-1">
                               <FormControl>
                                 <input
@@ -275,7 +275,7 @@ export default function AuthPage() {
                       render={({ field }) => (
                         <FormItem>
                           <div className="flex items-center">
-                            <label className="w-24 text-sm">Username:</label>
+                            <label className="w-24 text-sm text-black">Username:</label>
                             <div className="flex-1">
                               <FormControl>
                                 <input
@@ -297,7 +297,7 @@ export default function AuthPage() {
                       render={({ field }) => (
                         <FormItem>
                           <div className="flex items-center">
-                            <label className="w-24 text-sm">Password:</label>
+                            <label className="w-24 text-sm text-black">Password:</label>
                             <div className="flex-1">
                               <FormControl>
                                 <input
