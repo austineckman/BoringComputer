@@ -3,7 +3,7 @@ import NavigationBar from "./NavigationBar";
 import Footer from "./Footer";
 import StarBackground from "./StarBackground";
 import { useAuth } from "@/hooks/useAuth";
-import { Redirect } from "wouter";
+import { Redirect, useLocation } from "wouter";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -11,6 +11,8 @@ interface MainLayoutProps {
 
 const MainLayout = ({ children }: MainLayoutProps) => {
   const { user, loading } = useAuth();
+  const [location] = useLocation();
+  const isHomePage = location === "/" || location === "/home";
 
   // If not loading and no user, redirect to auth page
   if (!loading && !user) {
@@ -25,7 +27,17 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       </div>
     );
   }
+  
+  // For homepage, use a fullscreen layout without navigation or footer
+  if (isHomePage) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        {children}
+      </div>
+    );
+  }
 
+  // For other pages, use standard layout with navigation and footer
   return (
     <div className="flex flex-col min-h-screen app-background">
       <StarBackground />

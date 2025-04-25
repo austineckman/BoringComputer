@@ -1,0 +1,270 @@
+/* Retro UI CSS */
+
+/* CRT Effect */
+@keyframes flicker {
+  0% {
+    opacity: 0.96;
+  }
+  5% {
+    opacity: 0.98;
+  }
+  10% {
+    opacity: 0.93;
+  }
+  15% {
+    opacity: 0.97;
+  }
+  20% {
+    opacity: 0.95;
+  }
+  25% {
+    opacity: 0.98;
+  }
+  30% {
+    opacity: 0.92;
+  }
+  35% {
+    opacity: 0.95;
+  }
+  40% {
+    opacity: 0.97;
+  }
+  45% {
+    opacity: 0.94;
+  }
+  50% {
+    opacity: 0.98;
+  }
+  55% {
+    opacity: 0.93;
+  }
+  60% {
+    opacity: 0.95;
+  }
+  65% {
+    opacity: 0.97;
+  }
+  70% {
+    opacity: 0.94;
+  }
+  75% {
+    opacity: 0.98;
+  }
+  80% {
+    opacity: 0.94;
+  }
+  85% {
+    opacity: 0.96;
+  }
+  90% {
+    opacity: 0.98;
+  }
+  95% {
+    opacity: 0.94;
+  }
+  100% {
+    opacity: 0.97;
+  }
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(0px);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+.retro-desktop {
+  position: relative;
+  font-family: "VT323", "Courier New", monospace;
+  overflow: hidden;
+  animation: flicker 0.15s infinite;
+}
+
+.retro-desktop::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%,
+    rgba(0, 0, 0, 0.25) 50%
+  );
+  background-size: 100% 4px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.retro-desktop::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  animation: scanline 6s linear infinite;
+  z-index: 101;
+  pointer-events: none;
+}
+
+/* Windows 95/98 styling */
+.retro-window {
+  background-color: #c0c0c0;
+  border: 3px solid;
+  border-color: #ffffff #808080 #808080 #ffffff;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.retro-window-title {
+  background: linear-gradient(to right, #000080, #1084d0);
+  color: white;
+  font-weight: bold;
+  padding: 2px 5px;
+}
+
+.retro-button {
+  background-color: #c0c0c0;
+  border: 2px solid;
+  border-color: #ffffff #808080 #808080 #ffffff;
+  color: black;
+  padding: 4px 10px;
+  font-family: "MS Sans Serif", Arial, sans-serif;
+  font-size: 11px;
+  text-transform: capitalize;
+}
+
+.retro-button:active {
+  border-color: #808080 #ffffff #ffffff #808080;
+}
+
+.retro-input {
+  background-color: white;
+  border: 2px inset #c0c0c0;
+  padding: 2px 5px;
+  font-family: "MS Sans Serif", Arial, sans-serif;
+  font-size: 11px;
+}
+
+/* 90s Aesthetic */
+.vapor-bg {
+  background: linear-gradient(45deg, #ff00a0, #00d4ff, #6a0dad);
+  color: white;
+  text-shadow: 2px 2px 0px #ff00a0, -2px -2px 0px #00d4ff;
+}
+
+.pixel-border {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  border-image-slice: 2;
+  border-image-width: 2;
+  border-image-repeat: stretch;
+  border-style: solid;
+}
+
+/* Desktop icons */
+.desktop-icon {
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.1s;
+}
+
+.desktop-icon:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+.desktop-icon:active {
+  transform: scale(0.95);
+}
+
+/* Custom scrollbar */
+.retro-window-body::-webkit-scrollbar {
+  width: 16px;
+}
+
+.retro-window-body::-webkit-scrollbar-track {
+  background: #c0c0c0;
+  border: 1px inset #808080;
+}
+
+.retro-window-body::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border: 2px outset #ffffff;
+  border-right-color: #808080;
+  border-bottom-color: #808080;
+}
+
+.retro-window-body::-webkit-scrollbar-button:single-button {
+  background-color: #c0c0c0;
+  border: 2px outset #ffffff;
+  border-right-color: #808080;
+  border-bottom-color: #808080;
+  height: 16px;
+  width: 16px;
+}
+
+.retro-window-body::-webkit-scrollbar-button:single-button:vertical:decrement {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M18 15l-6-6-6 6'/></svg>");
+  background-position: center 4px;
+  background-repeat: no-repeat;
+}
+
+.retro-window-body::-webkit-scrollbar-button:single-button:vertical:increment {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-position: center 4px;
+  background-repeat: no-repeat;
+}
+
+/* Retro Window Content */
+.retro-window-content {
+  background-color: #ffffff;
+  padding: 10px;
+  font-family: "MS Sans Serif", Arial, sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Retro Start Button */
+.start-button {
+  background: linear-gradient(to bottom, #1f881f, #125612);
+  color: white;
+  font-weight: bold;
+  padding: 2px 10px;
+  display: flex;
+  align-items: center;
+  border: 2px solid;
+  border-color: #ffffff #808080 #808080 #ffffff;
+}
+
+.start-button:active {
+  background: linear-gradient(to bottom, #125612, #1f881f);
+  border-color: #808080 #ffffff #ffffff #808080;
+}
+
+.start-button img {
+  margin-right: 5px;
+  width: 16px;
+  height: 16px;
+}
+
+/* Vaporwave elements */
+.vaporwave-text {
+  font-family: "VT323", "Courier New", monospace;
+  background: linear-gradient(to right, #ff00ff, #00ffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 3px 3px 0 rgba(0, 0, 255, 0.5);
+  font-weight: bold;
+}
+
+/* For pixel art imagery */
+.pixel-image {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
