@@ -20,6 +20,7 @@ import adminKitsRoutes from './routes/admin-kits';
 import adminRecipesRoutes from './routes/admin-recipes';
 import adminQuestGeneratorRoutes from './routes/admin-quest-generator';
 import adminQuestsSaveRoutes from './routes/admin-quests-save';
+import adventureLinesRoutes from './routes/adventure-lines';
 import { authenticate } from './auth';
 import { componentKits, items } from '@shared/schema';
 import { itemDatabase } from './itemDatabase';
@@ -1676,6 +1677,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register the admin routes for saving quests
   app.use('/', authenticate, adminAuth, adminQuestsSaveRoutes);
+  
+  // Register adventure lines routes
+  app.use('/', adventureLinesRoutes);
   
   // Routes for admin recipes and crafting were already registered above
   

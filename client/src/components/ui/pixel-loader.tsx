@@ -1,30 +1,116 @@
-import React from "react";
+import React, { useEffect, useState } from 'react';
 
-type PixelLoaderProps = {
-  size?: "sm" | "md" | "lg";
+interface PixelLoaderProps {
+  message?: string;
   color?: string;
-};
+  size?: number;
+  speed?: number;
+}
 
 const PixelLoader: React.FC<PixelLoaderProps> = ({
-  size = "md",
-  color = "orange",
+  message = "Loading...",
+  color = "#ff6b6b",
+  size = 8,
+  speed = 300,
 }) => {
-  const sizesMap = {
-    sm: "w-8 h-8",
-    md: "w-12 h-12",
-    lg: "w-16 h-16",
-  };
+  const [frame, setFrame] = useState(0);
   
-  const sizeClass = sizesMap[size];
-  const colorClass = `text-brand-${color}`;
+  // Animation frames represented as ASCII art patterns
+  const frames = [
+    [
+      "  ██  ", 
+      "██████", 
+      "██████", 
+      "██████", 
+      "  ██  "
+    ],
+    [
+      " ████ ", 
+      "██████", 
+      "██████", 
+      "██████", 
+      " ████ "
+    ],
+    [
+      "██████", 
+      "██████", 
+      "██████", 
+      "██████", 
+      "██████"
+    ],
+    [
+      "██████", 
+      "██  ██", 
+      "██  ██", 
+      "██  ██", 
+      "██████"
+    ],
+    [
+      "██████", 
+      "██  ██", 
+      "      ", 
+      "██  ██", 
+      "██████"
+    ],
+    [
+      "██  ██", 
+      "      ", 
+      "      ", 
+      "      ", 
+      "██  ██"
+    ],
+    [
+      "██  ██", 
+      "      ", 
+      "  ██  ", 
+      "      ", 
+      "██  ██"
+    ],
+    [
+      "██  ██", 
+      "      ", 
+      " ████ ", 
+      "      ", 
+      "██  ██"
+    ],
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFrame((prevFrame) => (prevFrame + 1) % frames.length);
+    }, speed);
+    
+    return () => clearInterval(interval);
+  }, [frames.length, speed]);
 
   return (
-    <div className={`${sizeClass} relative`} aria-label="Loading">
-      <div className={`${colorClass} animate-pixel-loader`}>
-        <div className="absolute top-0 left-0 w-2/6 h-2/6 bg-current"></div>
-        <div className="absolute top-0 right-0 w-2/6 h-2/6 bg-current"></div>
-        <div className="absolute bottom-0 left-0 w-2/6 h-2/6 bg-current"></div>
-        <div className="absolute bottom-0 right-0 w-2/6 h-2/6 bg-current"></div>
+    <div className="flex flex-col items-center justify-center gap-4 p-4">
+      <div 
+        className="relative"
+        style={{
+          height: `${size * 5}px`,
+          width: `${size * 6}px`,
+        }}
+      >
+        {frames[frame].map((row, rowIndex) => (
+          <div key={rowIndex} className="flex">
+            {[...row].map((cell, cellIndex) => (
+              <div 
+                key={`${rowIndex}-${cellIndex}`}
+                style={{
+                  width: `${size}px`,
+                  height: `${size}px`,
+                  backgroundColor: cell === "█" ? color : "transparent",
+                  imageRendering: "pixelated",
+                }}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+      
+      <div className="text-sm font-pixel text-center animate-pulse mt-2">
+        {message}
       </div>
     </div>
   );
