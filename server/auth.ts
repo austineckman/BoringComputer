@@ -33,12 +33,7 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 export async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
-  // Handle plain text passwords (for backward compatibility)
-  if (!stored.includes('.')) {
-    return supplied === stored;
-  }
-  
-  // Handle properly hashed passwords
+  // Only support properly hashed passwords
   const [hashed, salt] = stored.split(".");
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
