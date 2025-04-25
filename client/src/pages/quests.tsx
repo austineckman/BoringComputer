@@ -130,7 +130,7 @@ const Quests = () => {
   
   const navigateToAdventureLine = (adventureLineId: string) => {
     playSound("click");
-    setFilter(adventureLineId);
+    navigate(`/adventure/${adventureLineId}`);
   };
   
   return (
