@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -1125,28 +1126,51 @@ const AdminKits = () => {
                     )}
                   </div>
                   
-                  <FormField
-                    control={componentForm.control}
-                    name="quantity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Quantity</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            min={1} 
-                            max={100} 
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          How many of this component come in the kit
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={componentForm.control}
+                      name="quantity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Quantity</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min={1} 
+                              max={100} 
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            How many of this component come in the kit
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={componentForm.control}
+                      name="isRequired"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>Required Component</FormLabel>
+                            <FormDescription>
+                              Is this component required for kit completion?
+                            </FormDescription>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   
                   <DialogFooter>
                     <Button 
