@@ -1,70 +1,214 @@
-/* Star field animation */
+/* Star field animation styles */
 .star-field-animation {
-  background: radial-gradient(ellipse at center, rgba(33, 45, 58, 0) 0%, rgba(33, 45, 58, 1) 100%), 
-              url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfQAAAH0BAMAAAA5+MK5AAAAD1BMVEUYHS4YHS4YHS4YHS4YHS6+2CAyAAAABXRSTlMCDxYfIJI2r1QAAANISURBVHja7NAxAQAAAMKg9U9tDQ+gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXgMbNQABGIbC/KO8iDFl0i3uEOFe7gErWn+kJ3plcnpnnjpnnjpnnjpnnjpnnjpnnjpnnjpnnjpnnjpnnjpnnjpnnjpnnjpnnjpnnjpnnjpnnjpnnjpnnjpnnjrnzJmnzpmn/vFT76yO1qmeWP1KR+tsdK56bHSsemj0WvXE6rHRqdHLAGvflfphWfV3/bSu+rXeW339ZdWn9cvq17pZff5l1af1cPXhl1Wf1sPVLz+t+mY9XH38ZdVv9XD1+MuqP+vh6t0vq/6oT1cPv6z6qz5dPf6y6lM9XH34ZdXf9XD16ZdV/9TD1cdfVv1ZD1fvfln1R326evhl1V/16erxl1V/1MPVh19W/V0PV59+WfV/PTx98suqT/UTpdNvq/5JvaQH5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qlz5qkH1FcBGDWAABiGwfyje4AxFVnlDgHukRE87e2XepJPTcvS9Gx6Nj2bnk3PpmfTs+nZ9Gx6Nj2bnk3PpmfTs+nZ9Gx6Nj2bnk3PpmfTs+nZ9Gx6Nj2bnk3PpmfTs+nZ9Gx6Nj2bnk3PpvfiJ0UBF57PVTw9AAAAAElFTkSuQmCC");
-  background-repeat: repeat;
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  animation: starAnimation 200s linear infinite;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
-/* Animation for the star field to slowly move */
-@keyframes starAnimation {
-  from {
-    background-position: 0 0;
+.star-field-animation::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  box-shadow: 
+    0 0 10px 1px rgba(255, 255, 255, 0.1),
+    0 0 20px 2px rgba(255, 255, 255, 0.1),
+    0 0 30px 3px rgba(255, 255, 255, 0.1);
+}
+
+.star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background-color: white;
+  border-radius: 50%;
+  opacity: 0.5;
+  animation: twinkle var(--duration, 5s) infinite var(--delay, 0s);
+}
+
+.star--small {
+  width: 1px;
+  height: 1px;
+}
+
+.star--medium {
+  width: 2px;
+  height: 2px;
+}
+
+.star--large {
+  width: 3px;
+  height: 3px;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.8; }
+}
+
+/* Star parallax effect */
+.parallax-stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 200%;
+  transform: translate3d(-25%, -25%, 0);
+  animation: drift 60s linear infinite;
+}
+
+.parallax-stars--slow {
+  animation-duration: 120s;
+}
+
+.parallax-stars--medium {
+  animation-duration: 90s;
+}
+
+.parallax-stars--fast {
+  animation-duration: 60s;
+}
+
+@keyframes drift {
+  0% {
+    transform: translate3d(-25%, -25%, 0) rotate(0deg);
   }
-  to {
-    background-position: 1000px 1000px;
+  100% {
+    transform: translate3d(-25%, -25%, 0) rotate(360deg);
   }
 }
 
-/* Subtle pulse animation for buttons and UI elements */
-.animate-pulse-subtle {
-  animation: pulse-subtle 2s ease-in-out infinite;
+/* Nebula effect */
+.nebula {
+  position: absolute;
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    rgba(127, 17, 224, 0.1),
+    rgba(127, 17, 224, 0),
+    rgba(127, 17, 224, 0)
+  );
+  border-radius: 50%;
+  animation: nebula-pulse 10s ease-in-out infinite;
+  filter: blur(10px);
 }
 
-@keyframes pulse-subtle {
+.nebula--orange {
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    rgba(224, 134, 17, 0.1),
+    rgba(224, 134, 17, 0),
+    rgba(224, 134, 17, 0)
+  );
+}
+
+.nebula--blue {
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    rgba(17, 127, 224, 0.1),
+    rgba(17, 127, 224, 0),
+    rgba(17, 127, 224, 0)
+  );
+}
+
+@keyframes nebula-pulse {
   0%, 100% {
+    opacity: 0.4;
     transform: scale(1);
   }
   50% {
-    transform: scale(1.03);
+    opacity: 0.8;
+    transform: scale(1.1);
   }
 }
 
-/* Slow ping animation for map locations */
-.animate-ping-slow {
-  animation: ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite;
-}
-
-@keyframes ping-slow {
-  75%, 100% {
-    transform: scale(2);
-    opacity: 0;
+/* Generate a bunch of stars with JavaScript:
+document.addEventListener('DOMContentLoaded', () => {
+  const starfield = document.querySelector('.star-field-animation');
+  if (starfield) {
+    for (let i = 0; i < 100; i++) {
+      const star = document.createElement('div');
+      star.classList.add('star');
+      
+      // Random size
+      const size = Math.random();
+      if (size < 0.6) {
+        star.classList.add('star--small');
+      } else if (size < 0.9) {
+        star.classList.add('star--medium');
+      } else {
+        star.classList.add('star--large');
+      }
+      
+      // Random position
+      star.style.top = `${Math.random() * 100}%`;
+      star.style.left = `${Math.random() * 100}%`;
+      
+      // Random animation timing
+      star.style.setProperty('--duration', `${3 + Math.random() * 7}s`);
+      star.style.setProperty('--delay', `${Math.random() * 5}s`);
+      
+      starfield.appendChild(star);
+    }
+    
+    // Add a few nebulae
+    for (let i = 0; i < 3; i++) {
+      const nebula = document.createElement('div');
+      nebula.classList.add('nebula');
+      
+      // Random size and position
+      const size = 100 + Math.random() * 200;
+      nebula.style.width = `${size}px`;
+      nebula.style.height = `${size}px`;
+      nebula.style.top = `${Math.random() * 100}%`;
+      nebula.style.left = `${Math.random() * 100}%`;
+      
+      // Random color
+      if (Math.random() > 0.5) {
+        nebula.classList.add('nebula--orange');
+      } else {
+        nebula.classList.add('nebula--blue');
+      }
+      
+      starfield.appendChild(nebula);
+    }
   }
+});
+*/
+
+/* Pre-rendered star field */
+.star-field-animation {
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(127, 17, 224, 0.1), transparent 8%),
+    radial-gradient(circle at 80% 60%, rgba(224, 134, 17, 0.1), transparent 12%),
+    radial-gradient(circle at 40% 80%, rgba(17, 127, 224, 0.1), transparent 10%);
 }
 
-/* Fade in animation for section transitions */
-.animate-fadeIn {
-  animation: fadeIn 0.5s ease-in-out;
+.star-field-animation::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(white, transparent 1px),
+    radial-gradient(white, transparent 0.5px);
+  background-size: 50px 50px, 30px 30px;
+  background-position: 0 0, 25px 25px;
+  animation: twinkle-bg 5s alternate infinite ease-in-out;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+@keyframes twinkle-bg {
+  0% {
+    opacity: 0.3;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  50% {
+    opacity: 0.5;
   }
-}
-
-/* Image rendering for pixel art */
-.pixelated {
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
+  100% {
+    opacity: 0.3;
+  }
 }
