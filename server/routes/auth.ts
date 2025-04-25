@@ -109,8 +109,32 @@ router.post("/logout", (req, res) => {
 
 // Get current user
 router.get("/me", (req, res) => {
+  // For development purposes, create a mock user
+  const BYPASS_AUTH = process.env.NODE_ENV === 'development';
+  
   // Check if user is authenticated
   if (!req.isAuthenticated()) {
+    if (BYPASS_AUTH) {
+      // Create a mock user for development
+      const mockUser = {
+        id: 999,
+        username: "devuser",
+        email: "dev@example.com",
+        roles: ["user"],
+        level: 1,
+        inventory: {
+          "copper": 10,
+          "crystal": 5,
+          "techscrap": 3,
+          "circuit_board": 2,
+          "cloth": 8
+        }
+      };
+      
+      console.log("⚠️ Development mode: Returning mock user for /api/auth/me");
+      return res.json(mockUser);
+    }
+    
     return res.status(401).json({ message: "Not authenticated" });
   }
   
