@@ -154,21 +154,10 @@ export default function AuthPage() {
         {/* Main Window */}
         <div className="border-[3px] border-t-gray-300 border-l-gray-300 border-r-gray-800 border-b-gray-800 bg-gray-200 shadow-2xl overflow-hidden">
           {/* Title Bar */}
-          <div className="bg-gradient-to-r from-blue-800 via-blue-600 to-blue-800 text-white py-1.5 px-3 flex justify-between items-center select-none">
+          <div className="bg-gradient-to-r from-blue-800 via-blue-600 to-blue-800 text-white py-1.5 px-3 flex items-center select-none">
             <div className="flex items-center">
               <span className="mr-2 text-lg">💻</span>
               <span className="font-bold tracking-tight">CraftingTableOS</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <button className="w-5 h-5 flex items-center justify-center bg-gray-300 hover:bg-gray-400 border-t-white border-l-white border-r-gray-500 border-b-gray-500 border text-gray-800">
-                <span className="text-xs mb-1 font-bold">_</span>
-              </button>
-              <button className="w-5 h-5 flex items-center justify-center bg-gray-300 hover:bg-gray-400 border-t-white border-l-white border-r-gray-500 border-b-gray-500 border text-gray-800">
-                <span className="text-xs">□</span>
-              </button>
-              <button className="w-5 h-5 flex items-center justify-center bg-gray-300 hover:bg-gray-400 border-t-white border-l-white border-r-gray-500 border-b-gray-500 border text-gray-800">
-                <span className="text-xs">×</span>
-              </button>
             </div>
           </div>
           
@@ -264,22 +253,13 @@ export default function AuthPage() {
                       )}
                     />
                     
-                    <div className="flex justify-end space-x-2 mt-5 pt-3 border-t border-gray-400">
+                    <div className="flex justify-center mt-5 pt-3 border-t border-gray-400">
                       <button 
                         type="submit" 
                         disabled={isLoading} 
-                        className="min-w-24 px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-normal text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white"
+                        className="min-w-32 px-6 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-normal text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white"
                       >
-                        {isLoading ? "Logging in..." : "OK"}
-                      </button>
-                      <button 
-                        type="button" 
-                        className="min-w-24 px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-normal text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white"
-                        onClick={() => {
-                          loginForm.reset();
-                        }}
-                      >
-                        Cancel
+                        {isLoading ? "Logging in..." : "Login"}
                       </button>
                     </div>
                   </div>
@@ -334,22 +314,13 @@ export default function AuthPage() {
                       )}
                     />
                     
-                    <div className="flex justify-end space-x-2 mt-5 pt-3 border-t border-gray-400">
+                    <div className="flex justify-center mt-5 pt-3 border-t border-gray-400">
                       <button 
                         type="submit" 
                         disabled={isLoading} 
-                        className="min-w-24 px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-normal text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white"
+                        className="min-w-32 px-6 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-normal text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white"
                       >
                         {isLoading ? "Creating..." : "Create Account"}
-                      </button>
-                      <button 
-                        type="button" 
-                        className="min-w-24 px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-normal text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white"
-                        onClick={() => {
-                          registerForm.reset();
-                        }}
-                      >
-                        Cancel
                       </button>
                     </div>
                   </div>
