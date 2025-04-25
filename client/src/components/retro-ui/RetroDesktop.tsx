@@ -323,6 +323,17 @@ const RetroDesktop: React.FC = () => {
     setTimeout(() => {
       openWelcomeWindow();
     }, 800);
+    
+    // Add event listener for opening terminal from Start Menu
+    const handleOpenTerminal = () => {
+      openTerminalWindow();
+    };
+    
+    window.addEventListener('openTerminal', handleOpenTerminal);
+    
+    return () => {
+      window.removeEventListener('openTerminal', handleOpenTerminal);
+    };
   }, []);
   
   // Initialize audio with user interaction awareness
