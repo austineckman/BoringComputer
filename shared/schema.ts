@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, timestamp, json, boolean, jsonb, primaryKey } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -421,7 +422,7 @@ export const componentKits = pgTable("component_kits", {
 // Kit Components table - components within each kit
 export const kitComponents = pgTable("kit_components", {
   id: serial("id").primaryKey(),
-  kitId: text("kit_id").notNull(), // References the component_kits table
+  kitId: text("kit_id").notNull().references(() => componentKits.id), // References the component_kits table
   name: text("name").notNull(),
   description: text("description").notNull(),
   imagePath: text("image_path"),
@@ -506,3 +507,15 @@ export const insertSystemSettingsSchema = createInsertSchema(systemSettings).pic
 
 export type SystemSettings = typeof systemSettings.$inferSelect;
 export type InsertSystemSettings = z.infer<typeof insertSystemSettingsSchema>;
+
+// Define relations between tables
+export const componentKitsRelations = relations(componentKits, ({ many }) => ({
+  components: many(kitComponents),
+}));
+
+export const kitComponentsRelations = relations(kitComponents, ({ one }) => ({
+  kit: one(componentKits, {
+    fields: [kitComponents.kitId],
+    references: [componentKits.id],
+  }),
+}));
