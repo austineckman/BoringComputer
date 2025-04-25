@@ -225,34 +225,34 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
         </div>
         
         {/* Loading bar */}
-        <div className="h-6 bg-gray-800 border-2 border-green-500 rounded-sm mb-6 overflow-hidden">
+        <div className="h-6 bg-gray-800 border-2 border-orange-500 rounded-sm mb-6 overflow-hidden">
           <div 
-            className="h-full bg-green-500 transition-all duration-300 ease-linear"
+            className="h-full bg-orange-500 transition-all duration-300 ease-linear"
             style={{ width: `${loadingProgress}%` }}
           >
           </div>
         </div>
         
         {/* Loading percentage */}
-        <div className="text-green-500 font-mono text-center mb-6">
+        <div className="text-orange-500 font-mono text-center mb-6">
           Loading CraftingTableOS... {Math.floor(loadingProgress)}%
         </div>
         
         {/* Terminal window */}
-        <div className="bg-black border-2 border-green-500 p-4 rounded-sm h-60 overflow-hidden font-mono text-sm">
-          <div className="text-green-500 mb-2">
+        <div className="bg-black border-2 border-orange-500 p-4 rounded-sm h-60 overflow-hidden font-mono text-sm">
+          <div className="text-orange-500 mb-2">
             # CraftingTableOS Terminal v1.0.4815
           </div>
           
           {/* Previous messages */}
-          <div className="text-green-400">
+          <div className="text-orange-400">
             {messages.map((msg, index) => (
               <div key={index}>$ {msg}</div>
             ))}
           </div>
           
           {/* Current message being "typed" */}
-          <div className="text-green-400 flex">
+          <div className="text-orange-400 flex">
             <span>$ {currentMessage}</span>
             <span className={terminalCursor ? 'opacity-100' : 'opacity-0'}>_</span>
           </div>
