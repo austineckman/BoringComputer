@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { useQuests } from "@/hooks/useQuests";
 import QuestCard from "@/components/quest/QuestCard";
+import AdventureImage from "@/components/adventure/AdventureImage";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -103,20 +104,32 @@ const AdventureLine = () => {
       {/* Adventure description */}
       <div className="bg-space-mid rounded-lg p-4 mb-8 border border-brand-orange/30">
         <div className="flex items-start">
-          {adventureConfig.image && (
-            <img 
-              src={adventureConfig.image} 
-              alt={adventureConfig.name} 
-              className="w-20 h-20 object-cover rounded-md mr-4"
+          <div className="w-20 h-20 mr-4">
+            <AdventureImage
+              adventureId={adventureConfig.id}
+              alt={adventureConfig.name}
+              className="w-full h-full object-cover rounded-md"
               style={{ imageRendering: 'pixelated' }}
             />
-          )}
+          </div>
           <div>
             <div className="flex items-center mb-2">
               <MapPin className="h-4 w-4 text-brand-orange mr-2" />
-              <span className="text-sm text-brand-light">{adventureConfig.location || "Unknown Location"}</span>
+              <span className="text-sm text-brand-light">
+                {adventureConfig.id === 'lost-in-space' ? 'Sector 12' :
+                 adventureConfig.id === 'cogsworth-city' ? 'Mechanica Prime' :
+                 adventureConfig.id === 'pandoras-box' ? 'Ancient Ruins of Mythos' :
+                 adventureConfig.id === 'neon-realm' ? 'The Digital Frontier' :
+                 'Unknown Location'}
+              </span>
             </div>
-            <p className="text-brand-light text-sm mb-3">{adventureConfig.description || "No description available."}</p>
+            <p className="text-brand-light text-sm mb-3">
+              {adventureConfig.id === 'lost-in-space' ? 'Survive 30 days stranded in space with limited resources' :
+               adventureConfig.id === 'cogsworth-city' ? 'Unravel the mysteries of a mechanical metropolis governed by time' :
+               adventureConfig.id === 'pandoras-box' ? 'Contain the chaos of an ancient artifact with unpredictable powers' :
+               adventureConfig.id === 'neon-realm' ? 'Navigate the digital world of light and energy, solving logic puzzles' :
+               'No description available.'}
+            </p>
             <div className="flex items-center gap-3 text-xs text-brand-light/70">
               <div className="flex items-center">
                 <Calendar className="h-3 w-3 mr-1" />
@@ -124,7 +137,13 @@ const AdventureLine = () => {
               </div>
               <div className="flex items-center">
                 <Star className="h-3 w-3 mr-1" />
-                <span>{adventureConfig.difficulty || "Mixed"} Difficulty</span>
+                <span>
+                  {adventureConfig.id === 'lost-in-space' ? 'Medium' :
+                   adventureConfig.id === 'cogsworth-city' ? 'Hard' :
+                   adventureConfig.id === 'pandoras-box' ? 'Extreme' :
+                   adventureConfig.id === 'neon-realm' ? 'Medium' :
+                   'Mixed'} Difficulty
+                </span>
               </div>
               <div className="flex items-center">
                 <Award className="h-3 w-3 mr-1" />
