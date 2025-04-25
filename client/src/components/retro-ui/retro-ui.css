@@ -1,270 +1,197 @@
-/* Retro UI CSS */
+/* Retro UI CSS Styles */
 
 /* CRT Effect */
-@keyframes flicker {
-  0% {
-    opacity: 0.96;
-  }
-  5% {
-    opacity: 0.98;
-  }
-  10% {
-    opacity: 0.93;
-  }
-  15% {
-    opacity: 0.97;
-  }
-  20% {
-    opacity: 0.95;
-  }
-  25% {
-    opacity: 0.98;
-  }
-  30% {
-    opacity: 0.92;
-  }
-  35% {
-    opacity: 0.95;
-  }
-  40% {
-    opacity: 0.97;
-  }
-  45% {
-    opacity: 0.94;
-  }
-  50% {
-    opacity: 0.98;
-  }
-  55% {
-    opacity: 0.93;
-  }
-  60% {
-    opacity: 0.95;
-  }
-  65% {
-    opacity: 0.97;
-  }
-  70% {
-    opacity: 0.94;
-  }
-  75% {
-    opacity: 0.98;
-  }
-  80% {
-    opacity: 0.94;
-  }
-  85% {
-    opacity: 0.96;
-  }
-  90% {
-    opacity: 0.98;
-  }
-  95% {
-    opacity: 0.94;
-  }
-  100% {
-    opacity: 0.97;
-  }
+.retro-desktop::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+  z-index: 100;
 }
 
-@keyframes scanline {
-  0% {
-    transform: translateY(0px);
-  }
-  100% {
-    transform: translateY(100vh);
-  }
-}
-
-.retro-desktop {
-  position: relative;
-  font-family: "VT323", "Courier New", monospace;
-  overflow: hidden;
+/* Add scanlines */
+.retro-desktop::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: rgba(18, 16, 16, 0.1);
+  opacity: 0;
+  z-index: 99;
+  pointer-events: none;
   animation: flicker 0.15s infinite;
 }
 
-.retro-desktop::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    rgba(18, 16, 16, 0) 50%,
-    rgba(0, 0, 0, 0.25) 50%
-  );
-  background-size: 100% 4px;
-  z-index: 100;
-  pointer-events: none;
+@keyframes flicker {
+  0% {
+    opacity: 0.27861;
+  }
+  5% {
+    opacity: 0.34769;
+  }
+  10% {
+    opacity: 0.23604;
+  }
+  15% {
+    opacity: 0.90626;
+  }
+  20% {
+    opacity: 0.18128;
+  }
+  25% {
+    opacity: 0.83891;
+  }
+  30% {
+    opacity: 0.65583;
+  }
+  35% {
+    opacity: 0.67807;
+  }
+  40% {
+    opacity: 0.26559;
+  }
+  45% {
+    opacity: 0.84693;
+  }
+  50% {
+    opacity: 0.96019;
+  }
+  55% {
+    opacity: 0.08594;
+  }
+  60% {
+    opacity: 0.20313;
+  }
+  65% {
+    opacity: 0.71988;
+  }
+  70% {
+    opacity: 0.53455;
+  }
+  75% {
+    opacity: 0.37288;
+  }
+  80% {
+    opacity: 0.71428;
+  }
+  85% {
+    opacity: 0.70419;
+  }
+  90% {
+    opacity: 0.7003;
+  }
+  95% {
+    opacity: 0.36108;
+  }
+  100% {
+    opacity: 0.24387;
+  }
 }
 
-.retro-desktop::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.15);
-  animation: scanline 6s linear infinite;
-  z-index: 101;
-  pointer-events: none;
+/* Pixelated Image Rendering */
+.pixelated-image {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
-/* Windows 95/98 styling */
-.retro-window {
-  background-color: #c0c0c0;
-  border: 3px solid;
-  border-color: #ffffff #808080 #808080 #ffffff;
-  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
-}
-
-.retro-window-title {
-  background: linear-gradient(to right, #000080, #1084d0);
-  color: white;
-  font-weight: bold;
-  padding: 2px 5px;
-}
-
+/* Windows 95 Style Buttons */
 .retro-button {
   background-color: #c0c0c0;
-  border: 2px solid;
+  border-width: 2px;
+  border-style: solid;
   border-color: #ffffff #808080 #808080 #ffffff;
-  color: black;
-  padding: 4px 10px;
-  font-family: "MS Sans Serif", Arial, sans-serif;
-  font-size: 11px;
-  text-transform: capitalize;
+  padding: 2px 10px;
+  font-family: 'Arial', sans-serif;
+  font-size: 12px;
+  color: #000000;
+  box-shadow: 1px 1px 0px #000000;
 }
 
 .retro-button:active {
   border-color: #808080 #ffffff #ffffff #808080;
+  box-shadow: none;
+  transform: translateY(1px);
 }
 
-.retro-input {
-  background-color: white;
-  border: 2px inset #c0c0c0;
-  padding: 2px 5px;
-  font-family: "MS Sans Serif", Arial, sans-serif;
-  font-size: 11px;
+/* Retro Windows */
+.retro-window-body {
+  background-color: #f0f0f0;
+  font-family: 'MS Sans Serif', Arial, sans-serif;
+  font-size: 12px;
+  color: #000000;
 }
 
-/* 90s Aesthetic */
-.vapor-bg {
-  background: linear-gradient(45deg, #ff00a0, #00d4ff, #6a0dad);
-  color: white;
-  text-shadow: 2px 2px 0px #ff00a0, -2px -2px 0px #00d4ff;
-}
-
-.pixel-border {
-  image-rendering: pixelated;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: crisp-edges;
-  border-image-slice: 2;
-  border-image-width: 2;
-  border-image-repeat: stretch;
-  border-style: solid;
-}
-
-/* Desktop icons */
+/* Desktop Icons Styling */
 .desktop-icon {
   cursor: pointer;
-  transition: transform 0.1s, filter 0.1s;
-}
-
-.desktop-icon:hover {
-  transform: scale(1.05);
-  filter: brightness(1.1);
+  user-select: none;
 }
 
 .desktop-icon:active {
   transform: scale(0.95);
 }
 
-/* Custom scrollbar */
+/* Start Menu Styling */
+.start-menu {
+  background-color: #c0c0c0;
+  border-width: 2px;
+  border-style: solid;
+  border-color: #ffffff #808080 #808080 #ffffff;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Custom Scrollbar */
 .retro-window-body::-webkit-scrollbar {
   width: 16px;
+  height: 16px;
 }
 
 .retro-window-body::-webkit-scrollbar-track {
   background: #c0c0c0;
-  border: 1px inset #808080;
+  border: 1px solid #808080;
 }
 
 .retro-window-body::-webkit-scrollbar-thumb {
   background: #c0c0c0;
-  border: 2px outset #ffffff;
-  border-right-color: #808080;
-  border-bottom-color: #808080;
-}
-
-.retro-window-body::-webkit-scrollbar-button:single-button {
-  background-color: #c0c0c0;
-  border: 2px outset #ffffff;
-  border-right-color: #808080;
-  border-bottom-color: #808080;
-  height: 16px;
-  width: 16px;
-}
-
-.retro-window-body::-webkit-scrollbar-button:single-button:vertical:decrement {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M18 15l-6-6-6 6'/></svg>");
-  background-position: center 4px;
-  background-repeat: no-repeat;
-}
-
-.retro-window-body::-webkit-scrollbar-button:single-button:vertical:increment {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
-  background-position: center 4px;
-  background-repeat: no-repeat;
-}
-
-/* Retro Window Content */
-.retro-window-content {
-  background-color: #ffffff;
-  padding: 10px;
-  font-family: "MS Sans Serif", Arial, sans-serif;
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-/* Retro Start Button */
-.start-button {
-  background: linear-gradient(to bottom, #1f881f, #125612);
-  color: white;
-  font-weight: bold;
-  padding: 2px 10px;
-  display: flex;
-  align-items: center;
-  border: 2px solid;
+  border-width: 2px;
+  border-style: solid;
   border-color: #ffffff #808080 #808080 #ffffff;
 }
 
-.start-button:active {
-  background: linear-gradient(to bottom, #125612, #1f881f);
-  border-color: #808080 #ffffff #ffffff #808080;
-}
-
-.start-button img {
-  margin-right: 5px;
-  width: 16px;
+.retro-window-body::-webkit-scrollbar-button {
+  background-color: #c0c0c0;
+  border-width: 2px;
+  border-style: solid;
+  border-color: #ffffff #808080 #808080 #ffffff;
+  display: block;
   height: 16px;
+  width: 16px;
 }
 
-/* Vaporwave elements */
-.vaporwave-text {
-  font-family: "VT323", "Courier New", monospace;
-  background: linear-gradient(to right, #ff00ff, #00ffff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 3px 3px 0 rgba(0, 0, 255, 0.5);
-  font-weight: bold;
+/* 90s Background Pattern */
+.retro-bg-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%239C92AC' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
 }
 
-/* For pixel art imagery */
-.pixel-image {
-  image-rendering: pixelated;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: crisp-edges;
+/* Extra Scan Effect */
+@keyframes scan {
+  0% {
+    background-position: 0 -100vh;
+  }
+  35%, 100% {
+    background-position: 0 100vh;
+  }
+}
+
+.retro-desktop::before {
+  animation: scan 7.5s linear 0s infinite;
 }
