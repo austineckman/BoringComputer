@@ -181,7 +181,7 @@ const WebBrowserWindow: React.FC<WebBrowserWindowProps> = ({
         <div className="relative">
           <button
             onClick={() => setShowFavorites(!showFavorites)}
-            className="p-1 rounded hover:bg-gray-300 flex items-center"
+            className="favorites-button p-1 rounded hover:bg-gray-300 flex items-center"
             title="Favorites"
           >
             <span className="text-xs mr-1">Favorites</span>
@@ -189,23 +189,49 @@ const WebBrowserWindow: React.FC<WebBrowserWindowProps> = ({
           </button>
           
           {showFavorites && (
-            <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-gray-300 rounded shadow-lg z-20 max-h-60 overflow-y-auto">
+            <div className="favorites-menu absolute top-full left-0 mt-1 w-64 bg-white border border-gray-300 rounded shadow-lg z-20 max-h-60 overflow-y-auto">
+              <div className="p-2 bg-gray-100 border-b border-gray-200 flex justify-between items-center">
+                <span className="font-medium text-sm">Bookmarks</span>
+                {favorites.length > 0 && (
+                  <span className="text-xs text-gray-500">{favorites.length} saved</span>
+                )}
+              </div>
+              
               {favorites.length === 0 ? (
-                <div className="p-2 text-center text-gray-500 text-sm">No favorites yet</div>
+                <div className="p-4 text-center text-gray-500 text-sm">
+                  <div className="mb-2">
+                    <Star size={24} className="mx-auto text-gray-300" />
+                  </div>
+                  <p>No favorites yet</p>
+                  <p className="text-xs mt-1">Click the star icon to add the current page</p>
+                </div>
               ) : (
                 <ul>
                   {favorites.map((url, index) => (
-                    <li key={index} className="border-b border-gray-200 last:border-0">
-                      <button
-                        onClick={() => {
-                          navigate(url);
-                          setShowFavorites(false);
-                        }}
-                        className="w-full text-left p-2 hover:bg-blue-50 text-sm flex items-center"
-                      >
-                        <Star size={12} className="text-yellow-500 fill-yellow-500 mr-2" />
-                        <span className="truncate">{url.replace(/^https?:\/\//, '')}</span>
-                      </button>
+                    <li key={index} className="border-b border-gray-200 last:border-0 group">
+                      <div className="flex items-center">
+                        <button
+                          onClick={() => {
+                            navigate(url);
+                            setShowFavorites(false);
+                          }}
+                          className="flex-grow text-left p-2 hover:bg-blue-50 text-sm flex items-center"
+                        >
+                          <Star size={12} className="text-yellow-500 fill-yellow-500 mr-2" />
+                          <span className="truncate">{url.replace(/^https?:\/\//, '')}</span>
+                        </button>
+                        <button 
+                          onClick={() => {
+                            const newFavorites = favorites.filter(u => u !== url);
+                            setFavorites(newFavorites);
+                            localStorage.setItem('browser_favorites', JSON.stringify(newFavorites));
+                          }}
+                          className="invisible group-hover:visible p-1 mr-1 text-gray-400 hover:text-red-500"
+                          title="Remove"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
                     </li>
                   ))}
                 </ul>
