@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Wrench, Terminal } from "lucide-react";
+import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Wrench, Terminal, Globe } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -68,6 +68,16 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
       onClick: () => {
         // We'll handle this in RetroDesktop
         const event = new CustomEvent('openTerminal');
+        window.dispatchEvent(event);
+      }
+    },
+    {
+      id: "browser",
+      label: "Web Browser",
+      icon: <Globe size={16} />,
+      onClick: () => {
+        // Send event to open browser
+        const event = new CustomEvent('openBrowser');
         window.dispatchEvent(event);
       }
     },
@@ -238,7 +248,7 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
       
       {/* Footer */}
       <div className="p-2 text-center text-xs text-gray-500 border-t border-gray-300">
-        © The Quest Giver v1.0.0
+        © CraftingTable LLC v1.0.4815
       </div>
     </div>
   );
