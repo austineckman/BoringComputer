@@ -35,7 +35,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
   
   // Filter quests based on selected kit, search query, and adventure line
   useEffect(() => {
-    let filtered = [...allQuests];
+    let filtered = allQuests ? [...allQuests] : [];
     
     // Filter by selected kit
     if (selectedKit) {
@@ -378,7 +378,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
             </div>
             
             <div className="space-y-1">
-              {Object.keys(questsByAdventureLine).map(line => (
+              {Object.keys(questsByAdventureLine || {}).map(line => (
                 <div 
                   key={line}
                   className={`
