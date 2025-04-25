@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Press+Start+2P&display=swap');
+@import './styles/star-animation.css';
 
 @tailwind base;
 @tailwind components;
