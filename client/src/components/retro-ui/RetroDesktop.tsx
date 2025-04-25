@@ -3,6 +3,8 @@ import { X, Maximize2, Minimize2, Info, ChevronRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import RetroStartMenu from "./RetroStartMenu";
+import InventoryWindow from "./InventoryWindow";
+import ItemDetailsWindow from "./ItemDetailsWindow";
 
 type WindowPosition = {
   x: number;
@@ -154,8 +156,31 @@ const RetroDesktop: React.FC = () => {
   };
   
   const handleIconClick = (icon: { id: string, name: string, icon: string, path: string }) => {
-    // For demonstration, just navigate to the path
-    navigate(icon.path);
+    // If icon is inventory, open it in a window
+    if (icon.id === "inventory") {
+      openInventoryWindow();
+    } else {
+      // For other icons, navigate to the path
+      navigate(icon.path);
+    }
+  };
+  
+  // Function to open the inventory window
+  const openInventoryWindow = () => {
+    const inventoryContent = (
+      <InventoryWindow openItemDetails={openItemDetailsWindow} />
+    );
+    
+    openWindow("inventory", "Inventory", inventoryContent, "🎒");
+  };
+  
+  // Function to open item details window
+  const openItemDetailsWindow = (itemId: string, quantity: number) => {
+    const itemDetailsContent = (
+      <ItemDetailsWindow itemId={itemId} quantity={quantity} />
+    );
+    
+    openWindow(`item-${itemId}`, `Item Details: ${itemId}`, itemDetailsContent, "📦");
   };
   
   const openWelcomeWindow = () => {
