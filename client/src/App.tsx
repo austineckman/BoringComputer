@@ -107,7 +107,7 @@ function App() {
           path="/quests" 
           component={() => (
             <MainLayout>
-              <Home />
+              <Quests />
             </MainLayout>
           )} 
         />
