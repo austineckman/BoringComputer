@@ -4,6 +4,7 @@ import Home from "@/pages/home";
 import AuthPage from "@/pages/auth-page";
 import Quests from "@/pages/quests";
 import QuestDetail from "@/pages/quest-detail";
+import AdventureLine from "@/pages/adventure-line";
 import Inventory from "@/pages/new-inventory";
 import UnifiedInventory from "@/pages/unified-inventory";
 import Character from "@/pages/character";
@@ -108,6 +109,15 @@ function App() {
           component={() => (
             <MainLayout>
               <Quests />
+            </MainLayout>
+          )} 
+        />
+
+        <ProtectedRoute 
+          path="/adventure/:id" 
+          component={() => (
+            <MainLayout>
+              <AdventureLine />
             </MainLayout>
           )} 
         />
