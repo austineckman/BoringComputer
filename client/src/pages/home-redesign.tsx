@@ -5,6 +5,7 @@ import QuestCard from "@/components/quest-card";
 import PixelButton from "@/components/ui/pixel-button";
 import { useSound } from "@/context/SoundContext";
 import { motion } from "framer-motion";
+import TerminalInterface from "@/components/terminal";
 
 // Import assets
 import currentQuestBanner from "@assets/current_quest_banner.png";
@@ -341,6 +342,30 @@ const HomeRedesign: React.FC = () => {
                 <p className="text-sm text-brand-orange">Check back later or select another zone!</p>
               </div>
             )}
+          </div>
+        </section>
+      )}
+      
+      {/* Retro Terminal Section for Secret Quests */}
+      {!selectedAdventure && (
+        <section className="mb-8">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-pixel text-xl text-brand-orange">TERMINAL ACCESS</h2>
+            <div className="text-sm text-brand-light/60">Find secret quests with DOS commands</div>
+          </div>
+          
+          <div className="bg-black rounded-lg overflow-hidden border-2 border-gray-700">
+            {/* Terminal header */}
+            <div className="bg-blue-900 text-white px-3 py-1 flex justify-between items-center">
+              <div className="font-mono text-sm">C:\SYSTEM\QUESTFINDER.EXE</div>
+              <div className="flex gap-2">
+                <button className="h-3 w-5 bg-gray-400 text-blue-900 text-[8px] flex items-center justify-center">_</button>
+                <button className="h-3 w-3 bg-gray-400 text-blue-900 text-[8px] flex items-center justify-center">×</button>
+              </div>
+            </div>
+            
+            {/* Terminal content */}
+            <TerminalInterface />
           </div>
         </section>
       )}
