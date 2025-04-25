@@ -5,6 +5,7 @@ import { useLocation } from "wouter";
 import RetroStartMenu from "./RetroStartMenu";
 import InventoryWindow from "./InventoryWindow";
 import ItemDetailsWindow from "./ItemDetailsWindow";
+import CraftingWindow from "./CraftingWindow";
 
 type WindowPosition = {
   x: number;
@@ -156,13 +157,24 @@ const RetroDesktop: React.FC = () => {
   };
   
   const handleIconClick = (icon: { id: string, name: string, icon: string, path: string }) => {
-    // If icon is inventory, open it in a window
+    // Check icon ID to determine what to do
     if (icon.id === "inventory") {
       openInventoryWindow();
+    } else if (icon.id === "crafting") {
+      openCraftingWindow();
     } else {
       // For other icons, navigate to the path
       navigate(icon.path);
     }
+  };
+  
+  // Function to open the crafting window
+  const openCraftingWindow = () => {
+    const craftingContent = (
+      <CraftingWindow />
+    );
+    
+    openWindow("crafting", "Crafting Station", craftingContent, "⚒️");
   };
   
   // Function to open the inventory window
