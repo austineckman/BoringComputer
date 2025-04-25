@@ -23,6 +23,8 @@ interface SaveQuestRequest {
 // Endpoint to save a generated quest
 router.post("/api/admin/quests", async (req: Request, res: Response) => {
   try {
+    console.log("Request body:", JSON.stringify(req.body));
+    
     const { 
       title, 
       description, 
@@ -33,6 +35,10 @@ router.post("/api/admin/quests", async (req: Request, res: Response) => {
       kitId,
       adventureLine
     } = req.body as SaveQuestRequest;
+
+    console.log("Extracted fields:", {
+      title, description, imageUrl, components, xpReward, lootSuggestion, kitId, adventureLine
+    });
 
     // Simple validation
     if (!title || !description || !kitId || !components || !Array.isArray(components)) {
@@ -92,57 +98,96 @@ router.post("/api/admin/quests", async (req: Request, res: Response) => {
       }
     }
     
-    // Create a quest that exactly matches the database schema
-    const [newQuest] = await db.insert(quests).values({
-      title: title,
-      description: description,
-      adventure_line: adventureLine || 'Default Adventure',
-      difficulty: difficulty || 1,
-      order_in_line: 0,
-      xp_reward: xpReward || 100,
-      date: new Date().toISOString().split('T')[0],
-      kit_id: kitId,
-      mission_brief: null,
-      active: true,
-      loot_box_rewards: [],
-      // Format the rewards exactly as they are in existing quests
-      rewards: questRewards.length > 0 ? questRewards.map(reward => ({
-        type: "item",
-        id: reward.id,
-        quantity: reward.quantity
-      })) : [],
-      // Format content exactly as expected
-      content: {
-        videos: [],
-        images: imageUrl ? [imageUrl] : [],
-        codeBlocks: []
-      }
-    }).returning();
+    console.log("Preparing quest with rewards:", questRewards);
+    
+    // Instead of using Drizzle ORM which is having validation issues,
+    // let's use a direct SQL query that we know works from our test
+    const rewardsJSON = JSON.stringify(
+      questRewards.length > 0 ? 
+        questRewards.map(reward => ({
+          type: "item",
+          id: reward.id,
+          quantity: reward.quantity
+        })) : 
+        []
+    );
+    
+    const contentJSON = JSON.stringify({
+      videos: [],
+      images: imageUrl ? [imageUrl] : [],
+      codeBlocks: []
+    });
+    
+    const lootBoxRewardsJSON = JSON.stringify([]);
+    
+    // Use the pool directly for a raw query
+    const { pool } = await import('../db');
+    const result = await pool.query(`
+      INSERT INTO quests (
+        title, 
+        description, 
+        adventure_line, 
+        difficulty, 
+        order_in_line, 
+        xp_reward, 
+        date, 
+        kit_id, 
+        mission_brief, 
+        active, 
+        loot_box_rewards, 
+        rewards, 
+        content
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+      ) RETURNING *
+    `, [
+      title, 
+      description, 
+      adventureLine || 'Default Adventure',
+      1, // difficulty 
+      0, // order_in_line
+      xpReward || 100, 
+      new Date().toISOString().split('T')[0], // date
+      kitId,
+      null, // mission_brief 
+      true, // active
+      lootBoxRewardsJSON,
+      rewardsJSON,
+      contentJSON
+    ]);
+    
+    const newQuest = result.rows[0];
 
     if (!newQuest) {
       return res.status(500).json({ error: "Failed to create quest" });
     }
 
-    // Now add the components for this quest
+    // Now add the components for this quest using direct SQL
     if (components.length > 0) {
-      // Get components data
-      const kitComponents = await db.query.kitComponents.findMany({
-        where: (comp, { eq, and, inArray }) => and(
-          eq(comp.kitId, kitId),
-          inArray(comp.name, components)
-        )
-      });
-
-      // Link components to the quest
-      if (kitComponents.length > 0) {
-        const componentInserts = kitComponents.map(comp => ({
-          questId: newQuest.id,
-          componentId: comp.id,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }));
-
-        await db.insert(questComponents).values(componentInserts);
+      // First get the components IDs with a direct query
+      const componentsResult = await pool.query(`
+        SELECT id, name FROM kit_components 
+        WHERE kit_id = $1 AND name = ANY($2)
+      `, [kitId, components]);
+      
+      console.log("Found components:", componentsResult.rows);
+      
+      // Link components to the quest using direct SQL
+      if (componentsResult.rows.length > 0) {
+        // For each component, insert the relation
+        for (const comp of componentsResult.rows) {
+          await pool.query(`
+            INSERT INTO quest_components (
+              quest_id, component_id, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4)
+          `, [
+            newQuest.id, 
+            comp.id, 
+            new Date(), 
+            new Date()
+          ]);
+        }
+        console.log(`Added ${componentsResult.rows.length} components to quest`);
       }
     }
 
