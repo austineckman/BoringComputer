@@ -44,6 +44,7 @@ const AdminQuestGenerator = () => {
     description: string;  // This is the flavor text/storytelling (lore)
     missionBrief: string; // This is the clear classroom assignment
     components: string[];
+    componentIds?: (number | null)[];  // Added field to store resolved component IDs
     xpReward: number;
     lootSuggestion: string;
     kitId: string;
@@ -169,12 +170,18 @@ const AdminQuestGenerator = () => {
       difficulty: form.getValues('difficulty') || 2,
       orderInLine: 0, // Default position in adventure line
       
-      // Map components to the format expected
-      components: generatedQuest.components.map(name => ({
-        id: 0, // We'll need to update this to use real component IDs
-        required: true,
-        quantity: 1
-      })),
+      // Map components to the format expected using componentIds from the response
+      components: generatedQuest.componentIds && Array.isArray(generatedQuest.componentIds) && generatedQuest.componentIds.length === generatedQuest.components.length
+        ? generatedQuest.componentIds.map((id, index) => ({
+            id: id || 0, // Use the resolved component ID from backend
+            required: true,
+            quantity: 1
+          }))
+        : generatedQuest.components.map(name => ({
+            id: 0, // Fallback if no component IDs are provided
+            required: true,
+            quantity: 1
+          })),
       
       // Add content object with images
       content: {
