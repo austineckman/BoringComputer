@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Search, FilterX, Filter, ChevronRight, Clock, Award, Cpu, Loader2 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useComponentKits } from '@/hooks/useComponentKits';
-import { useQuests, type Quest, type QuestsByLine } from '@/hooks/useQuests';
+import { useQuests, type Quest } from '@/hooks/useQuests';
 import questImage from '@assets/01_Fire_Grimoire.png';
 import wallbg from '@assets/wallbg.png';
 
@@ -41,7 +41,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
     if (selectedKit) {
       filtered = filtered.filter(quest => {
         const components = quest.componentRequirements || [];
-        return components.some(comp => comp.kitId === selectedKit);
+        return components.some((comp: { kitId: string | null }) => comp.kitId === selectedKit);
       });
     }
     
