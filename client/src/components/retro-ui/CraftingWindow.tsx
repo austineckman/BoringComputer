@@ -72,14 +72,22 @@ const CraftingWindow: React.FC = () => {
     data: recipes,
     isLoading: recipesLoading
   } = useQuery<Recipe[]>({
-    queryKey: ["/api/recipes"],
+    queryKey: ["/api/crafting/recipes"],
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
   // Craft mutation
   const craftMutation = useMutation({
     mutationFn: async (recipeId: string) => {
-      const res = await apiRequest("POST", "/api/craft", { recipeId });
+      // Convert the crafting grid into a 2D array of item IDs
+      const gridPattern = craftingGrid.map(row => 
+        row.map(cell => cell.itemId)
+      );
+      
+      const res = await apiRequest("POST", "/api/crafting/craft", { 
+        recipeId: parseInt(recipeId, 10),
+        gridPattern 
+      });
       return await res.json();
     },
     onSuccess: () => {
