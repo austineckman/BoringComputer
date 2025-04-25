@@ -32,7 +32,6 @@ const formSchema = z.object({
   missionKeywords: z.string().optional(),
   difficulty: z.number().min(1).max(5).default(2),
   includeImage: z.boolean().default(true),
-  adventureLine: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -172,38 +171,6 @@ const AdminQuestGenerator = () => {
                         </Select>
                         <FormDescription>
                           Select the component kit this quest will use.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="adventureLine"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Adventure Line</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          disabled={generateMutation.isPending || adventureLinesLoading}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select an adventure line (optional)" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {adventureLines?.map((line: any) => (
-                              <SelectItem key={line.id} value={line.id}>
-                                {line.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Optionally assign to an adventure line, or let AI suggest one.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
