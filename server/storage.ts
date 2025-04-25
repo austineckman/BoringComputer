@@ -16,6 +16,7 @@ import {
   ComponentKit, InsertComponentKit,
   KitComponent, InsertKitComponent,
   SystemSettings, InsertSystemSettings,
+  LootBoxConfig, InsertLootBoxConfig,
   users, quests, userQuests, submissions, craftables, craftedItems,
   achievements, userAchievements, lootBoxes, inventoryHistory, craftingRecipes, items, lootBoxConfigs, characterEquipment,
   componentKits, kitComponents, questComponents, systemSettings
@@ -26,7 +27,6 @@ import { eq, and, desc, count, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
-import createMemoryStore from "memorystore";
 
 export interface IStorage {
   // Session store
@@ -162,805 +162,19 @@ export interface IStorage {
   resetDatabase(): Promise<void>;
 }
 
-// Memory storage implementation
-export class MemStorage implements IStorage {
-  sessionStore: session.Store;
-  
-  private users: Map<number, User>;
-  private quests: Map<number, Quest>;
-  private userQuests: Map<number, UserQuest>;
-  private submissions: Map<number, Submission>;
-  private craftables: Map<number, Craftable>;
-  private craftedItems: Map<number, CraftedItem>;
-  private achievements: Map<number, Achievement>;
-  private userAchievements: Map<number, UserAchievement>;
-  private lootBoxes: Map<number, LootBox>;
-  private inventoryHistory: Map<number, InventoryHistory>;
-  private items: Map<string, Item>;
-  
-  private userIdCounter: number;
-  private questIdCounter: number;
-  private userQuestIdCounter: number;
-  private submissionIdCounter: number;
-  private craftableIdCounter: number;
-  private craftedItemIdCounter: number;
-  private achievementIdCounter: number;
-  private userAchievementIdCounter: number;
-  private lootBoxIdCounter: number;
-  private inventoryHistoryIdCounter: number;
-
-  constructor() {
-    const MemoryStore = createMemoryStore(session);
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000 // prune expired entries every 24h
-    });
-    
-    this.users = new Map();
-    this.quests = new Map();
-    this.userQuests = new Map();
-    this.submissions = new Map();
-    this.craftables = new Map();
-    this.craftedItems = new Map();
-    this.achievements = new Map();
-    this.userAchievements = new Map();
-    this.lootBoxes = new Map();
-    this.inventoryHistory = new Map();
-    this.items = new Map();
-    
-    this.userIdCounter = 1;
-    this.questIdCounter = 1;
-    this.userQuestIdCounter = 1;
-    this.submissionIdCounter = 1;
-    this.craftableIdCounter = 1;
-    this.craftedItemIdCounter = 1;
-    this.achievementIdCounter = 1;
-    this.userAchievementIdCounter = 1;
-    this.lootBoxIdCounter = 1;
-    this.inventoryHistoryIdCounter = 1;
-    
-    // Initialize with sample data
-    this.initializeData();
-  }
-
-  private initializeData() {
-    // Initialize items from itemDatabase.ts
-    this.initializeItems();
-    
-    // Create default users
-    // Demo user
-    const demoUser = this.createUser({
-      username: 'demo',
-      email: 'demo@questgiver.com',
-      password: 'demo123', // In a real app, this would be hashed
-      roles: ['admin', 'user'],
-      level: 1,
-      inventory: {
-        'cloth': 0,
-        'metal': 0,
-        'tech-scrap': 0,
-        'sensor-crystal': 0,
-        'circuit-board': 0,
-        'alchemy-ink': 0
-      }
-    });
-    
-    // Add a welcome loot crate for demo user
-    this.createLootBox({
-      userId: demoUser.id,
-      type: 'rare',
-      opened: false,
-      rewards: null, // Will be generated when opened
-      source: 'New Account Welcome Gift',
-      sourceId: null
-    });
-    
-    // Admin user
-    const adminUser = this.createUser({
-      username: 'admin',
-      email: 'admin@questgiver.com',
-      password: 'admin123', // In a real app, this would be hashed
-      roles: ['admin', 'user'],
-      level: 10,
-      inventory: {
-        'cloth': 10,
-        'metal': 10,
-        'tech-scrap': 10,
-        'sensor-crystal': 10,
-        'circuit-board': 10,
-        'alchemy-ink': 10
-      }
-    });
-    
-    // Add a welcome loot crate for admin user
-    this.createLootBox({
-      userId: adminUser.id,
-      type: 'legendary',
-      opened: false,
-      rewards: null, // Will be generated when opened
-      source: 'Admin Account Welcome Gift',
-      sourceId: null
-    });
-    
-    // Initialize with adventure kits and sample quests
-    const adventureKits = [
-      { id: 'lost-in-space', name: '30 Days Lost in Space' },
-      { id: 'cogsworth-city', name: 'Cogsworth City' },
-      { id: 'pandoras-box', name: 'Pandora\'s Box' },
-      { id: 'neon-realm', name: 'Neon Realm' },
-      { id: 'nebula-raiders', name: 'Nebula Raiders' }
-    ];
-    
-    // Sample quests - Lost in Space adventure line
-    this.createQuest({
-      date: '2023-06-01',
-      title: 'Incoming Broadcast from InventrCorp',
-      description: 'Establish communication with InventrCorp headquarters to receive your mission details.',
-      adventureLine: 'lost-in-space',
-      difficulty: 1,
-      orderInLine: 0,
-      xpReward: 100,
-      lootBoxRewards: [{ type: 'metal', quantity: 2 }, { type: 'cloth', quantity: 1 }],
-      active: true
-    });
-    
-    this.createQuest({
-      date: '2023-06-02',
-      title: 'It\'s Really Dark In Here',
-      description: 'Set up your first circuit to get some light in your spacecraft.',
-      adventureLine: 'lost-in-space',
-      difficulty: 1,
-      orderInLine: 1,
-      xpReward: 120,
-      lootBoxRewards: [{ type: 'tech-scrap', quantity: 1 }, { type: 'metal', quantity: 1 }],
-      active: true
-    });
-    
-    this.createQuest({
-      date: '2023-06-03',
-      title: 'H_jyfwapj_tlzzhnl',
-      description: 'Decrypt the mysterious message received from HQ using the cipher provided.',
-      adventureLine: 'lost-in-space',
-      difficulty: 3,
-      orderInLine: 2,
-      xpReward: 150,
-      lootBoxRewards: [{ type: 'tech-scrap', quantity: 2 }, { type: 'sensor-crystal', quantity: 1 }, { type: 'circuit-board', quantity: 1 }],
-      active: true
-    });
-    
-    // Cogsworth City adventure line
-    this.createQuest({
-      date: '2023-06-04',
-      title: 'The Clockwork Conundrum',
-      description: 'Fix the central timing mechanism in Cogsworth Square to restore power to the city\'s main district.',
-      adventureLine: 'cogsworth-city',
-      difficulty: 2,
-      orderInLine: 0,
-      xpReward: 100,
-      lootBoxRewards: [{ type: 'metal', quantity: 2 }, { type: 'cloth', quantity: 1 }],
-      active: true
-    });
-    
-    // Sample craftables
-    this.createCraftable({
-      name: 'Quest Giver T-Shirt',
-      description: 'A limited edition t-shirt featuring the Quest Giver logo.',
-      image: 'https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8fHx8fHx8MTYyMjg0NjU4Mg&ixlib=rb-1.2.1&q=80&utm_campaign=api-credit&utm_medium=referral&utm_source=unsplash_source&w=300',
-      recipe: [{ type: 'cloth', quantity: 5 }, { type: 'metal', quantity: 2 }],
-      type: 'physical'
-    });
-    
-    this.createCraftable({
-      name: 'Mystery Sensor Pack',
-      description: 'A random selection of 3 sensors to expand your HERO board capabilities.',
-      image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8fHx8fHx8MTYyMjg0NjYzMg&ixlib=rb-1.2.1&q=80&utm_campaign=api-credit&utm_medium=referral&utm_source=unsplash_source&w=300',
-      recipe: [{ type: 'tech-scrap', quantity: 3 }, { type: 'sensor-crystal', quantity: 2 }],
-      type: 'physical'
-    });
-    
-    this.createCraftable({
-      name: 'Neon Realm Patch',
-      description: 'An embroidered patch from the Neon Realm adventure series.',
-      image: 'https://images.unsplash.com/photo-1623275563389-0ba1af35002c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8fHx8fHx8MTYyMjg0NjY1NQ&ixlib=rb-1.2.1&q=80&utm_campaign=api-credit&utm_medium=referral&utm_source=unsplash_source&w=300',
-      recipe: [{ type: 'cloth', quantity: 3 }, { type: 'alchemy-ink', quantity: 2 }],
-      type: 'physical'
-    });
-    
-    this.createCraftable({
-      name: 'HERO Board Pro Upgrade',
-      description: 'Digital upgrade unlocking advanced features for your HERO board.',
-      image: 'https://images.unsplash.com/photo-1603732551681-2e91159b9dc2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8fHx8fHx8MTYyMjg0NjY3Mw&ixlib=rb-1.2.1&q=80&utm_campaign=api-credit&utm_medium=referral&utm_source=unsplash_source&w=300',
-      recipe: [{ type: 'tech-scrap', quantity: 4 }, { type: 'circuit-board', quantity: 2 }, { type: 'sensor-crystal', quantity: 3 }],
-      type: 'digital'
-    });
-    
-    // Sample achievements
-    this.createAchievement({
-      name: 'First Contact',
-      description: 'Completed your first quest',
-      tier: 'apprentice',
-      icon: 'rocket',
-      requirementType: 'quests_completed',
-      requirementValue: 1
-    });
-    
-    this.createAchievement({
-      name: 'Let There Be Light',
-      description: 'Mastered the LED circuit',
-      tier: 'apprentice',
-      icon: 'lightbulb',
-      requirementType: 'quests_completed',
-      requirementValue: 2
-    });
-    
-    this.createAchievement({
-      name: 'Power Restored',
-      description: 'Fixed your ship\'s battery',
-      tier: 'journeyman',
-      icon: 'battery-three-quarters',
-      requirementType: 'quests_completed',
-      requirementValue: 5
-    });
-    
-    this.createAchievement({
-      name: 'Color Wizard',
-      description: 'Mastered RGB LED controls',
-      tier: 'journeyman',
-      icon: 'tint',
-      requirementType: 'quests_completed',
-      requirementValue: 8
-    });
-    
-    this.createAchievement({
-      name: 'Sound the Alarm',
-      description: 'Master the buzzer module',
-      tier: 'master',
-      icon: 'volume-up',
-      requirementType: 'quests_completed',
-      requirementValue: 12
-    });
-    
-    this.createAchievement({
-      name: 'Display Master',
-      description: 'Program all display modules',
-      tier: 'archmage',
-      icon: 'desktop',
-      requirementType: 'quests_completed',
-      requirementValue: 20
-    });
-  }
-
-  // User methods
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-  
-  async getUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username.toLowerCase() === username.toLowerCase()
-    );
-  }
-
-  async getUserByDiscordId(discordId: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.discordId === discordId
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userIdCounter++;
-    const createdAt = new Date();
-    const lastLogin = new Date();
-    const level = insertUser.level || 1;
-    const xp = insertUser.xp || 0;
-    const xpToNextLevel = insertUser.xpToNextLevel || 300;
-    const completedQuests = insertUser.completedQuests || [];
-    const inventory = insertUser.inventory || {};
-    
-    const user: User = {
-      id,
-      ...insertUser,
-      level,
-      xp,
-      xpToNextLevel,
-      completedQuests,
-      inventory,
-      createdAt,
-      lastLogin
-    };
-    
-    this.users.set(id, user);
-    return user;
-  }
-
-  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-    
-    const updatedUser = { ...user, ...userData };
-    this.users.set(id, updatedUser);
-    return updatedUser;
-  }
-
-  // Quest methods
-  async getQuests(): Promise<Quest[]> {
-    return Array.from(this.quests.values());
-  }
-
-  async getQuest(id: number): Promise<Quest | undefined> {
-    return this.quests.get(id);
-  }
-
-  async getQuestByDate(date: string): Promise<Quest | undefined> {
-    return Array.from(this.quests.values()).find(
-      (quest) => quest.date === date
-    );
-  }
-
-  async createQuest(insertQuest: InsertQuest): Promise<Quest> {
-    const id = this.questIdCounter++;
-    
-    const quest: Quest = {
-      id,
-      ...insertQuest
-    };
-    
-    this.quests.set(id, quest);
-    return quest;
-  }
-
-  async updateQuest(id: number, questData: Partial<Quest>): Promise<Quest | undefined> {
-    const quest = this.quests.get(id);
-    if (!quest) return undefined;
-    
-    const updatedQuest = { ...quest, ...questData };
-    this.quests.set(id, updatedQuest);
-    return updatedQuest;
-  }
-
-  // UserQuest methods
-  async getUserQuests(userId: number): Promise<UserQuest[]> {
-    return Array.from(this.userQuests.values()).filter(
-      (userQuest) => userQuest.userId === userId
-    );
-  }
-
-  async getUserQuest(userId: number, questId: number): Promise<UserQuest | undefined> {
-    return Array.from(this.userQuests.values()).find(
-      (userQuest) => userQuest.userId === userId && userQuest.questId === questId
-    );
-  }
-
-  async createUserQuest(insertUserQuest: InsertUserQuest): Promise<UserQuest> {
-    const id = this.userQuestIdCounter++;
-    
-    const userQuest: UserQuest = {
-      id,
-      ...insertUserQuest,
-      startedAt: new Date(),
-      completedAt: null
-    };
-    
-    this.userQuests.set(id, userQuest);
-    return userQuest;
-  }
-
-  async updateUserQuest(id: number, userQuestData: Partial<UserQuest>): Promise<UserQuest | undefined> {
-    const userQuest = this.userQuests.get(id);
-    if (!userQuest) return undefined;
-    
-    const updatedUserQuest = { ...userQuest, ...userQuestData };
-    this.userQuests.set(id, updatedUserQuest);
-    return updatedUserQuest;
-  }
-
-  // Submission methods
-  async getSubmissions(userId: number): Promise<Submission[]> {
-    return Array.from(this.submissions.values()).filter(
-      (submission) => submission.userId === userId
-    );
-  }
-
-  async getSubmission(id: number): Promise<Submission | undefined> {
-    return this.submissions.get(id);
-  }
-
-  async createSubmission(insertSubmission: InsertSubmission): Promise<Submission> {
-    const id = this.submissionIdCounter++;
-    
-    const submission: Submission = {
-      id,
-      ...insertSubmission,
-      createdAt: new Date()
-    };
-    
-    this.submissions.set(id, submission);
-    return submission;
-  }
-
-  // Craftable methods
-  async getCraftables(): Promise<Craftable[]> {
-    return Array.from(this.craftables.values());
-  }
-
-  async getCraftable(id: number): Promise<Craftable | undefined> {
-    return this.craftables.get(id);
-  }
-
-  async createCraftable(insertCraftable: InsertCraftable): Promise<Craftable> {
-    const id = this.craftableIdCounter++;
-    
-    const craftable: Craftable = {
-      id,
-      ...insertCraftable
-    };
-    
-    this.craftables.set(id, craftable);
-    return craftable;
-  }
-
-  // CraftedItem methods
-  async getCraftedItems(userId: number): Promise<CraftedItem[]> {
-    return Array.from(this.craftedItems.values()).filter(
-      (craftedItem) => craftedItem.userId === userId
-    );
-  }
-
-  async getCraftedItem(id: number): Promise<CraftedItem | undefined> {
-    return this.craftedItems.get(id);
-  }
-
-  async createCraftedItem(insertCraftedItem: InsertCraftedItem): Promise<CraftedItem> {
-    const id = this.craftedItemIdCounter++;
-    
-    const craftedItem: CraftedItem = {
-      id,
-      ...insertCraftedItem,
-      dateCrafted: new Date(),
-      redeemedAt: null
-    };
-    
-    this.craftedItems.set(id, craftedItem);
-    return craftedItem;
-  }
-
-  async updateCraftedItem(id: number, craftedItemData: Partial<CraftedItem>): Promise<CraftedItem | undefined> {
-    const craftedItem = this.craftedItems.get(id);
-    if (!craftedItem) return undefined;
-    
-    const updatedCraftedItem = { ...craftedItem, ...craftedItemData };
-    this.craftedItems.set(id, updatedCraftedItem);
-    return updatedCraftedItem;
-  }
-
-  // Achievement methods
-  async getAchievements(): Promise<Achievement[]> {
-    return Array.from(this.achievements.values());
-  }
-
-  async getAchievement(id: number): Promise<Achievement | undefined> {
-    return this.achievements.get(id);
-  }
-
-  async createAchievement(insertAchievement: InsertAchievement): Promise<Achievement> {
-    const id = this.achievementIdCounter++;
-    
-    const achievement: Achievement = {
-      id,
-      ...insertAchievement
-    };
-    
-    this.achievements.set(id, achievement);
-    return achievement;
-  }
-
-  // UserAchievement methods
-  async getUserAchievements(userId: number): Promise<UserAchievement[]> {
-    return Array.from(this.userAchievements.values()).filter(
-      (userAchievement) => userAchievement.userId === userId
-    );
-  }
-
-  async getUserAchievement(userId: number, achievementId: number): Promise<UserAchievement | undefined> {
-    return Array.from(this.userAchievements.values()).find(
-      (userAchievement) => userAchievement.userId === userId && userAchievement.achievementId === achievementId
-    );
-  }
-
-  async createUserAchievement(insertUserAchievement: InsertUserAchievement): Promise<UserAchievement> {
-    const id = this.userAchievementIdCounter++;
-    
-    const userAchievement: UserAchievement = {
-      id,
-      ...insertUserAchievement,
-      unlockedAt: insertUserAchievement.unlocked ? new Date() : null
-    };
-    
-    this.userAchievements.set(id, userAchievement);
-    return userAchievement;
-  }
-
-  async updateUserAchievement(id: number, userAchievementData: Partial<UserAchievement>): Promise<UserAchievement | undefined> {
-    const userAchievement = this.userAchievements.get(id);
-    if (!userAchievement) return undefined;
-    
-    // If achievement is being unlocked, set the unlockedAt timestamp
-    const unlockedAt = userAchievementData.unlocked && !userAchievement.unlocked
-      ? new Date()
-      : userAchievement.unlockedAt;
-    
-    const updatedUserAchievement = { 
-      ...userAchievement, 
-      ...userAchievementData,
-      unlockedAt
-    };
-    
-    this.userAchievements.set(id, updatedUserAchievement);
-    return updatedUserAchievement;
-  }
-
-  // Loot Box methods
-  async getLootBoxes(userId: number): Promise<LootBox[]> {
-    return Array.from(this.lootBoxes.values()).filter(
-      (lootBox) => lootBox.userId === userId
-    );
-  }
-
-  async getLootBox(id: number): Promise<LootBox | undefined> {
-    return this.lootBoxes.get(id);
-  }
-
-  async createLootBox(insertLootBox: InsertLootBox): Promise<LootBox> {
-    const id = this.lootBoxIdCounter++;
-    
-    const lootBox: LootBox = {
-      id,
-      ...insertLootBox,
-      acquiredAt: insertLootBox.acquiredAt || new Date(),
-      openedAt: insertLootBox.opened ? new Date() : null
-    };
-    
-    this.lootBoxes.set(id, lootBox);
-    return lootBox;
-  }
-
-  async updateLootBox(id: number, lootBoxData: Partial<LootBox>): Promise<LootBox | undefined> {
-    const lootBox = this.lootBoxes.get(id);
-    if (!lootBox) return undefined;
-    
-    // If loot box is being opened, set the openedAt timestamp
-    const openedAt = lootBoxData.opened && !lootBox.opened
-      ? new Date()
-      : lootBox.openedAt;
-    
-    const updatedLootBox = { 
-      ...lootBox, 
-      ...lootBoxData,
-      openedAt
-    };
-    
-    this.lootBoxes.set(id, updatedLootBox);
-    return updatedLootBox;
-  }
-
-  // Inventory History methods
-  async getInventoryHistory(userId: number): Promise<InventoryHistory[]> {
-    return Array.from(this.inventoryHistory.values())
-      .filter((history) => history.userId === userId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  }
-
-  async createInventoryHistory(insertInventoryHistory: InsertInventoryHistory): Promise<InventoryHistory> {
-    const id = this.inventoryHistoryIdCounter++;
-    
-    const inventoryHistory: InventoryHistory = {
-      id,
-      ...insertInventoryHistory,
-      createdAt: new Date()
-    };
-    
-    this.inventoryHistory.set(id, inventoryHistory);
-    return inventoryHistory;
-  }
-
-  // XP and Level methods
-  async addUserXP(userId: number, xpAmount: number): Promise<User> {
-    const user = await this.getUser(userId);
-    if (!user) {
-      throw new Error(`User with ID ${userId} not found`);
-    }
-    
-    // Calculate new XP
-    const newXP = user.xp + xpAmount;
-    let newLevel = user.level;
-    let newXPToNextLevel = user.xpToNextLevel;
-    
-    // Check if user levels up
-    if (newXP >= user.xpToNextLevel) {
-      newLevel += 1;
-      // Formula for next level: current level requirement * 1.5
-      newXPToNextLevel = Math.floor(user.xpToNextLevel * 1.5);
-    }
-    
-    // Update the user
-    const updatedUser = await this.updateUser(userId, {
-      xp: newXP,
-      level: newLevel,
-      xpToNextLevel: newXPToNextLevel
-    });
-    
-    if (!updatedUser) {
-      throw new Error(`Failed to update user with ID ${userId}`);
-    }
-    
-    return updatedUser;
-  }
-
-  async getAvailableQuestsForUser(userId: number): Promise<Quest[]> {
-    const user = await this.getUser(userId);
-    if (!user) {
-      throw new Error(`User with ID ${userId} not found`);
-    }
-    
-    // Get all quests
-    const allQuests = await this.getQuests();
-    
-    // Filter out completed quests
-    const completedQuestIds = user.completedQuests || [];
-    return allQuests.filter(
-      (quest) => !completedQuestIds.includes(quest.id) && quest.active
-    );
-  }
-
-  async getQuestsByAdventureLine(adventureLine: string): Promise<Quest[]> {
-    return Array.from(this.quests.values())
-      .filter((quest) => quest.adventureLine === adventureLine)
-      .sort((a, b) => a.orderInLine - b.orderInLine);
-  }
-
-  // Item methods
-  async getItems(): Promise<Item[]> {
-    return Array.from(this.items.values());
-  }
-
-  async getItem(id: string): Promise<Item | undefined> {
-    return this.items.get(id);
-  }
-
-  async createItem(insertItem: InsertItem): Promise<Item> {
-    const item: Item = {
-      ...insertItem,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    this.items.set(item.id, item);
-    return item;
-  }
-
-  async updateItem(id: string, itemData: Partial<Item>): Promise<Item | undefined> {
-    const item = this.items.get(id);
-    if (!item) return undefined;
-    
-    const updatedItem = { 
-      ...item, 
-      ...itemData,
-      updatedAt: new Date()
-    };
-    
-    this.items.set(id, updatedItem);
-    return updatedItem;
-  }
-
-  async deleteItem(id: string): Promise<boolean> {
-    return this.items.delete(id);
-  }
-
-  // Crafting Recipe methods
-  async getCraftingRecipes(): Promise<CraftingRecipe[]> {
-    // This is still a stub to be implemented
-    return [];
-  }
-
-  async getCraftingRecipe(id: number): Promise<CraftingRecipe | undefined> {
-    // This is still a stub to be implemented
-    return undefined;
-  }
-
-  async createCraftingRecipe(recipe: InsertCraftingRecipe): Promise<CraftingRecipe> {
-    // This is still a stub to be implemented
-    throw new Error("Not implemented");
-  }
-
-  async updateCraftingRecipe(id: number, recipeData: Partial<CraftingRecipe>): Promise<CraftingRecipe | undefined> {
-    // This is still a stub to be implemented
-    return undefined;
-  }
-
-  async deleteCraftingRecipe(id: number): Promise<boolean> {
-    // This is still a stub to be implemented
-    return false;
-  }
-
-  async getAvailableCraftingRecipes(userId: number): Promise<CraftingRecipe[]> {
-    // This is still a stub to be implemented
-    return [];
-  }
-
-  // Character Equipment methods
-  async getCharacterEquipment(userId: number): Promise<Record<string, any>> {
-    // This is still a stub to be implemented
-    return {};
-  }
-
-  async equipItem(userId: number, itemId: string, slot: string): Promise<CharacterEquipment> {
-    // This is still a stub to be implemented
-    throw new Error("Not implemented");
-  }
-
-  async unequipItem(userId: number, slot: string): Promise<boolean> {
-    // This is still a stub to be implemented
-    return false;
-  }
-
-  // Statistics methods
-  async getUserCount(): Promise<number> {
-    return this.users.size;
-  }
-
-  async getItemCount(): Promise<number> {
-    return this.items.size;
-  }
-
-  async getCraftingRecipeCount(): Promise<number> {
-    return 0; // Not implemented yet
-  }
-
-  async getQuestCount(): Promise<number> {
-    return this.quests.size;
-  }
-
-  // Additional helper methods for specific implementations
-  private initializeItems(): void {
-    // This would be populated with the items from itemDatabase.ts
-  }
-
-  // Database management methods
-  async resetDatabase(): Promise<void> {
-    this.users.clear();
-    this.quests.clear();
-    this.userQuests.clear();
-    this.submissions.clear();
-    this.craftables.clear();
-    this.craftedItems.clear();
-    this.achievements.clear();
-    this.userAchievements.clear();
-    this.lootBoxes.clear();
-    this.inventoryHistory.clear();
-    this.items.clear();
-    
-    // Reset counters
-    this.userIdCounter = 1;
-    this.questIdCounter = 1;
-    this.userQuestIdCounter = 1;
-    this.submissionIdCounter = 1;
-    this.craftableIdCounter = 1;
-    this.craftedItemIdCounter = 1;
-    this.achievementIdCounter = 1;
-    this.userAchievementIdCounter = 1;
-    this.lootBoxIdCounter = 1;
-    this.inventoryHistoryIdCounter = 1;
-    
-    // Re-initialize with sample data
-    this.initializeData();
-  }
-}
-
 // Database Storage implementation
 export class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
+  
+  constructor() {
+    const PostgresSessionStore = connectPg(session);
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      tableName: 'sessions',
+      createTableIfMissing: true
+    });
+  }
+  
   // User methods
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -1318,13 +532,13 @@ export class DatabaseStorage implements IStorage {
     return craftingRecipe;
   }
 
-  async updateCraftingRecipe(id: number, craftingRecipeData: Partial<CraftingRecipe>): Promise<CraftingRecipe | undefined> {
-    const [updatedCraftingRecipe] = await db
+  async updateCraftingRecipe(id: number, recipeData: Partial<CraftingRecipe>): Promise<CraftingRecipe | undefined> {
+    const [updatedRecipe] = await db
       .update(craftingRecipes)
-      .set(craftingRecipeData)
+      .set(recipeData)
       .where(eq(craftingRecipes.id, id))
       .returning();
-    return updatedCraftingRecipe || undefined;
+    return updatedRecipe || undefined;
   }
 
   async deleteCraftingRecipe(id: number): Promise<boolean> {
@@ -1333,155 +547,75 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAvailableCraftingRecipes(userId: number): Promise<CraftingRecipe[]> {
-    // Get all unlocked recipes
-    return await db.select().from(craftingRecipes).where(eq(craftingRecipes.unlocked, true));
+    // Get all available crafting recipes
+    const recipes = await this.getCraftingRecipes();
+    // TODO: Filter based on user inventory
+    return recipes;
   }
   
   // Character Equipment methods
   async getCharacterEquipment(userId: number): Promise<Record<string, any>> {
-    // Get all equipment for the user, organized by slot
-    const equipmentItems = await db
+    const equipment = await db
       .select()
       .from(characterEquipment)
       .where(eq(characterEquipment.userId, userId));
     
-    // Turn the list into a record with slot as key
-    const result: Record<string, any> = {};
-    
-    for (const item of equipmentItems) {
-      // For each equipped item, get the full item details
-      const itemDetails = await this.getItem(item.itemId);
-      if (itemDetails) {
-        result[item.slot] = {
-          ...item,
-          itemDetails
-        };
-      }
+    // Transform to slot -> item mapping
+    const equipmentMap: Record<string, any> = {};
+    for (const item of equipment) {
+      equipmentMap[item.slot] = item;
     }
     
-    return result;
+    return equipmentMap;
   }
 
   async equipItem(userId: number, itemId: string, slot: string): Promise<CharacterEquipment> {
-    // First, unequip any item in that slot
-    await this.unequipItem(userId, slot);
+    // First check if slot is already occupied
+    const [existingItem] = await db
+      .select()
+      .from(characterEquipment)
+      .where(and(
+        eq(characterEquipment.userId, userId),
+        eq(characterEquipment.slot, slot)
+      ));
     
-    // Then equip the new item
-    const [equipment] = await db
-      .insert(characterEquipment)
-      .values({
-        userId,
-        itemId,
-        slot
-      })
-      .returning();
-    
-    return equipment;
+    if (existingItem) {
+      // Update existing slot
+      const [updatedItem] = await db
+        .update(characterEquipment)
+        .set({ itemId, equippedAt: new Date() })
+        .where(eq(characterEquipment.id, existingItem.id))
+        .returning();
+      return updatedItem;
+    } else {
+      // Create new equipment record
+      const [newItem] = await db
+        .insert(characterEquipment)
+        .values({
+          userId,
+          itemId,
+          slot,
+          equippedAt: new Date()
+        })
+        .returning();
+      return newItem;
+    }
   }
 
   async unequipItem(userId: number, slot: string): Promise<boolean> {
     const result = await db
       .delete(characterEquipment)
-      .where(and(eq(characterEquipment.userId, userId), eq(characterEquipment.slot, slot)));
+      .where(and(
+        eq(characterEquipment.userId, userId),
+        eq(characterEquipment.slot, slot)
+      ));
     
     return !!result;
   }
   
-  // XP and Level methods
-  async addUserXP(userId: number, xpAmount: number): Promise<User> {
-    // Get the current user
-    const user = await this.getUser(userId);
-    if (!user) {
-      throw new Error(`User with ID ${userId} not found`);
-    }
-    
-    // Calculate new XP
-    const newXP = user.xp + xpAmount;
-    let newLevel = user.level;
-    let newXPToNextLevel = user.xpToNextLevel;
-    
-    // Check if user levels up
-    if (newXP >= user.xpToNextLevel) {
-      newLevel += 1;
-      // Formula for next level: current level requirement * 1.5
-      newXPToNextLevel = Math.floor(user.xpToNextLevel * 1.5);
-    }
-    
-    // Update the user
-    const updatedUser = await this.updateUser(userId, {
-      xp: newXP,
-      level: newLevel,
-      xpToNextLevel: newXPToNextLevel
-    });
-    
-    if (!updatedUser) {
-      throw new Error(`Failed to update user with ID ${userId}`);
-    }
-    
-    return updatedUser;
-  }
-  
-  async getAvailableQuestsForUser(userId: number): Promise<Quest[]> {
-    // Get the user to check their completed quests
-    const user = await this.getUser(userId);
-    if (!user) {
-      throw new Error(`User with ID ${userId} not found`);
-    }
-    
-    // Get all quests that are active
-    let availableQuests = await db
-      .select()
-      .from(quests)
-      .where(eq(quests.active, true));
-    
-    // Filter out completed quests
-    availableQuests = availableQuests.filter(
-      quest => !user.completedQuests.includes(quest.id)
-    );
-    
-    return availableQuests;
-  }
-  
-  async getQuestsByAdventureLine(adventureLine: string): Promise<Quest[]> {
-    return await db
-      .select()
-      .from(quests)
-      .where(eq(quests.adventureLine, adventureLine))
-      .orderBy(quests.orderInLine);
-  }
-  
-  // Statistics methods
-  async getUserCount(): Promise<number> {
-    const result = await db.select({ count: count() }).from(users);
-    return result[0].count;
-  }
-  
-  async getItemCount(): Promise<number> {
-    const result = await db.select({ count: count() }).from(items);
-    return result[0].count;
-  }
-  
-  async getCraftingRecipeCount(): Promise<number> {
-    const result = await db.select({ count: count() }).from(craftingRecipes);
-    return result[0].count;
-  }
-  
-  async getQuestCount(): Promise<number> {
-    const result = await db.select({ count: count() }).from(quests);
-    return result[0].count;
-  }
-  
-  // Database management methods
-  async resetDatabase(): Promise<void> {
-    // This would require careful implementation in a production environment
-    // For now, just a placeholder that does nothing
-    console.log("Database reset is not implemented for safety reasons");
-  }
-
   // Component Kit methods
   async getComponentKits(): Promise<ComponentKit[]> {
-    const kits = await db.select().from(componentKits);
-    return kits;
+    return await db.select().from(componentKits);
   }
 
   async getComponentKit(id: string): Promise<ComponentKit | undefined> {
@@ -1489,9 +623,12 @@ export class DatabaseStorage implements IStorage {
     return kit || undefined;
   }
 
-  async createComponentKit(kit: InsertComponentKit): Promise<ComponentKit> {
-    const [newKit] = await db.insert(componentKits).values(kit).returning();
-    return newKit;
+  async createComponentKit(insertKit: InsertComponentKit): Promise<ComponentKit> {
+    const [kit] = await db
+      .insert(componentKits)
+      .values(insertKit)
+      .returning();
+    return kit;
   }
 
   async updateComponentKit(id: string, kitData: Partial<ComponentKit>): Promise<ComponentKit | undefined> {
@@ -1504,14 +641,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteComponentKit(id: string): Promise<boolean> {
-    const result = await db.delete(componentKits).where(eq(componentKits.id, id));
-    return true;
+    try {
+      // First delete all kit components
+      await db.delete(kitComponents).where(eq(kitComponents.kitId, id));
+      // Then delete the kit
+      await db.delete(componentKits).where(eq(componentKits.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting component kit:", error);
+      return false;
+    }
   }
-
+  
   // Kit Component methods
   async getKitComponents(kitId: string): Promise<KitComponent[]> {
-    const components = await db.select().from(kitComponents).where(eq(kitComponents.kitId, kitId));
-    return components;
+    return await db.select().from(kitComponents).where(eq(kitComponents.kitId, kitId));
   }
 
   async getKitComponent(id: number): Promise<KitComponent | undefined> {
@@ -1519,9 +663,12 @@ export class DatabaseStorage implements IStorage {
     return component || undefined;
   }
 
-  async createKitComponent(component: InsertKitComponent): Promise<KitComponent> {
-    const [newComponent] = await db.insert(kitComponents).values(component).returning();
-    return newComponent;
+  async createKitComponent(insertComponent: InsertKitComponent): Promise<KitComponent> {
+    const [component] = await db
+      .insert(kitComponents)
+      .values(insertComponent)
+      .returning();
+    return component;
   }
 
   async updateKitComponent(id: number, componentData: Partial<KitComponent>): Promise<KitComponent | undefined> {
@@ -1535,62 +682,73 @@ export class DatabaseStorage implements IStorage {
 
   async deleteKitComponent(id: number): Promise<boolean> {
     const result = await db.delete(kitComponents).where(eq(kitComponents.id, id));
-    return true;
+    return !!result;
   }
-
+  
   // Quest Component methods
   async getQuestComponents(questId: number): Promise<QuestComponent[]> {
-    const components = await db.select().from(questComponents).where(eq(questComponents.questId, questId));
-    return components;
+    return await db
+      .select()
+      .from(questComponents)
+      .where(eq(questComponents.questId, questId));
   }
 
   async getQuestComponentsWithDetails(questId: number): Promise<any[]> {
     try {
-      // Use Drizzle ORM to get quest components with details
-      const result = await db.execute(sql`
-        SELECT 
-          qc.id, 
-          qc.quest_id as "questId", 
-          qc.component_id as "componentId",
-          qc.quantity, 
-          qc.is_optional, 
-          kc.name, 
-          kc.description, 
-          kc.image_path as "imagePath", 
-          kc.part_number as "partNumber", 
-          ck.name as "kitName"
-        FROM quest_components qc
-        JOIN kit_components kc ON qc.component_id = kc.id
-        JOIN component_kits ck ON kc.kit_id = ck.id
-        WHERE qc.quest_id = ${questId}
-        ORDER BY qc.is_optional ASC, kc.name ASC
-      `);
+      // Get quest components
+      const components = await db
+        .select()
+        .from(questComponents)
+        .where(eq(questComponents.questId, questId));
       
-      // Debug the result type
-      console.log('Query result type:', typeof result);
-      console.log('Query result:', JSON.stringify(result).substring(0, 200));
+      // If no components, return empty array
+      if (!components.length) return [];
       
-      // Make sure we have an array to work with
-      const components = Array.isArray(result) ? result : result.rows || [];
-      
-      if (components.length === 0) {
-        console.log(`No components found for quest ID ${questId} after query`);
-        return [];
-      }
-      
-      // Format the results to match what the client expects
-      const formattedComponents = components.map(component => ({
-        id: component.componentId,
-        name: component.name,
-        description: component.description,
-        is_optional: component.is_optional,
-        quantity: component.quantity,
-        imagePath: component.imagePath,
-        partNumber: component.partNumber,
-        kitName: component.kitName
+      // Get component details from kit components
+      const formattedComponents = await Promise.all(components.map(async (component) => {
+        if (!component.kitComponentId) {
+          return {
+            ...component,
+            name: "Custom Component",
+            description: component.notes || "No description available",
+            imagePath: null,
+            kitId: null,
+            kitName: null
+          };
+        }
+        
+        // Get kit component details
+        const [kitComponent] = await db
+          .select()
+          .from(kitComponents)
+          .where(eq(kitComponents.id, component.kitComponentId));
+        
+        if (!kitComponent) {
+          return {
+            ...component,
+            name: "Unknown Component",
+            description: component.notes || "Component not found",
+            imagePath: null,
+            kitId: null,
+            kitName: null
+          };
+        }
+        
+        // Get kit name
+        const [kit] = await db
+          .select()
+          .from(componentKits)
+          .where(eq(componentKits.id, kitComponent.kitId));
+        
+        return {
+          ...component,
+          name: kitComponent.name,
+          description: kitComponent.description,
+          imagePath: kitComponent.imagePath,
+          kitId: kitComponent.kitId,
+          kitName: kit ? kit.name : "Unknown Kit"
+        };
       }));
-      
-      console.log(`Found ${formattedComponents.length} formatted components`);
       
       return formattedComponents;
     } catch (error) {
@@ -1690,14 +848,24 @@ export class DatabaseStorage implements IStorage {
     return result[0].count;
   }
   
-  // Constructor for DatabaseStorage
-  constructor() {
-    const PostgresStore = connectPg(session);
-    this.sessionStore = new PostgresStore({
-      pool,
-      tableName: 'sessions',
-      createTableIfMissing: true
-    });
+  // Additional methods required by the interface
+  async getAvailableQuestsForUser(userId: number): Promise<Quest[]> {
+    // For now, just return all active quests
+    return await db.select().from(quests).where(eq(quests.active, true));
+  }
+
+  async getQuestsByAdventureLine(adventureLine: string): Promise<Quest[]> {
+    return await db
+      .select()
+      .from(quests)
+      .where(eq(quests.adventureLine, adventureLine))
+      .orderBy(quests.orderInLine);
+  }
+
+  async resetDatabase(): Promise<void> {
+    // This is a dangerous operation and should be used with caution
+    console.warn("resetDatabase() called - This would reset the entire database");
+    // Implementation would go here for development environments only
   }
 }
 
