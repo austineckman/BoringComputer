@@ -124,11 +124,64 @@ const AdminQuestGenerator = () => {
     if (!generatedQuest) return;
     
     setSaving(true);
+    
+    // Parse lootSuggestion string into an array of reward objects
+    // Format is typically "item-id x3, other-item x1"
+    const rewards = generatedQuest.lootSuggestion.split(',').map(item => {
+      const [idPart, quantityPart] = item.trim().split('x');
+      const id = idPart.trim();
+      
+      // Determine the correct reward type based on naming convention or ID pattern
+      let rewardType: 'lootbox' | 'item' | 'equipment' = 'item'; // Default to 'item'
+      
+      // If it contains "box", "crate", or "pack", it's probably a lootbox
+      if (id.includes('box') || id.includes('crate') || id.includes('pack')) {
+        rewardType = 'lootbox';
+      }
+      // If it's wearable or equippable based on known items (this is simplified)
+      else if (id.includes('helmet') || id.includes('armor') || id.includes('sword') || 
+               id.includes('boots') || id.includes('gloves') || id.includes('shield')) {
+        rewardType = 'equipment';
+      }
+      
+      return {
+        type: rewardType,
+        id: id,
+        quantity: parseInt(quantityPart?.trim() || '1', 10) || 1
+      };
+    });
+    
+    // Create the quest object in the format expected by the API
     const questToSave = {
-      ...generatedQuest,
+      title: generatedQuest.title,
+      description: generatedQuest.description,
+      missionBrief: generatedQuest.missionBrief,
+      adventureLine: generatedQuest.adventureLine || "Adventure",
       kitId: form.getValues('kitId'),
+      xpReward: generatedQuest.xpReward,
+      rewards: rewards,
+      
+      // Add additional required fields
+      date: new Date().toISOString().split('T')[0],
+      difficulty: form.getValues('difficulty') || 2,
+      orderInLine: 0, // Default position in adventure line
+      
+      // Map components to the format expected
+      components: generatedQuest.components.map(name => ({
+        id: 0, // We'll need to update this to use real component IDs
+        required: true,
+        quantity: 1
+      })),
+      
+      // Add content object with images
+      content: {
+        images: generatedQuest.imageUrl ? [generatedQuest.imageUrl] : [],
+        videos: [] as string[],  // Explicit type definition to avoid undefined[]
+        codeBlocks: [] as Array<{language: string, code: string}>  // Empty array with explicit type
+      }
     };
     
+    console.log("Saving quest:", questToSave);
     saveMutation.mutate(questToSave);
   };
   
