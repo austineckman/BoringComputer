@@ -430,7 +430,7 @@ const TerminalInterface: React.FC = () => {
           return (
             <div key={line.id} className="text-yellow-400 animate-pulse">
               <Link href={`/quests/${line.questId}`}>
-                &gt;&gt; {line.title} &lt;&lt; (Click to accept quest)
+                {'>>'} {line.title} {'<<'} (Click to accept quest)
               </Link>
             </div>
           );
@@ -445,7 +445,7 @@ const TerminalInterface: React.FC = () => {
       
       {/* Current input line */}
       <div className="flex">
-        <span className="text-green-400 mr-0">{currentPath.join('\\')}></span>
+        <span className="text-green-400 mr-0">{currentPath.join('\\')}{'>'}</span>
         <input
           type="text"
           ref={inputRef}
