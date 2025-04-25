@@ -25,7 +25,7 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
     isLoading: inventoryLoading 
   } = useQuery<InventoryItem[]>({
     queryKey: ["/api/inventory"],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: "throw" }),
   });
 
   // Fetch all item details
@@ -34,7 +34,7 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
     isLoading: itemsLoading 
   } = useQuery<ItemDetails[]>({
     queryKey: ["/api/items"],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: "throw" }),
   });
 
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
