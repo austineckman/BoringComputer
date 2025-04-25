@@ -10,12 +10,13 @@ import PixelButton from "@/components/ui/pixel-button";
 import { themeConfig } from "@/lib/themeConfig";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import AdventureImage from "@/components/adventure/AdventureImage";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 const Quests = () => {
   const { quests, activeQuest, loading, startQuest, completeQuest, isStarting, isCompleting } = useQuests();
   const { toast } = useToast();
   const { sounds } = useSoundEffects();
+  const [, navigate] = useLocation();
   
   const playSound = (type: string) => {
     try {
