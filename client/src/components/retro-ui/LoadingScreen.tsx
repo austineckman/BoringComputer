@@ -55,7 +55,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [messages, setMessages] = useState<string[]>([]);
   const [currentMessage, setCurrentMessage] = useState("");
-  const [messageSpeed, setMessageSpeed] = useState(1000);
+  const [messageSpeed, setMessageSpeed] = useState(500); // Faster initial messages
   const [terminalCursor, setTerminalCursor] = useState(true);
   const terminalRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number>();
@@ -64,22 +64,22 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
   useEffect(() => {
     const simulateLoading = () => {
       setLoadingProgress(prev => {
-        // Adjust increment to control loading speed
+        // Adjust increment to control loading speed - doubled for faster loading
         const increment = prev < 70 ? 
-          Math.random() * 2 : 
-          Math.random() * 1.5;
+          Math.random() * 4 : 
+          Math.random() * 3;
         
         const newProgress = Math.min(prev + increment, 100);
         
-        // Speed up messages as loading progresses
+        // Speed up messages as loading progresses - all speeds reduced
         if (prev < 30 && newProgress >= 30) {
-          setMessageSpeed(800); // Speed up a bit
+          setMessageSpeed(400); // Speed up a bit
         } else if (prev < 60 && newProgress >= 60) {
-          setMessageSpeed(500); // Speed up more
+          setMessageSpeed(250); // Speed up more
         } else if (prev < 85 && newProgress >= 85) {
-          setMessageSpeed(250); // Speed up a lot
+          setMessageSpeed(150); // Speed up a lot
         } else if (prev < 95 && newProgress >= 95) {
-          setMessageSpeed(100); // Very fast at the end
+          setMessageSpeed(50); // Very fast at the end
         }
         
         // When we reach 100%, signal that loading is complete
@@ -87,14 +87,14 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
           // Let the user see the final state for a moment before transitioning
           setTimeout(() => {
             onLoadComplete();
-          }, 1000);
+          }, 500); // Faster completion
         }
         
         return newProgress;
       });
     };
     
-    const interval = setInterval(simulateLoading, 180);
+    const interval = setInterval(simulateLoading, 90); // Faster interval
     return () => clearInterval(interval);
   }, [onLoadComplete]);
   
