@@ -1,6 +1,8 @@
 import express, { Request, Response } from "express";
 import { adminAuth } from "../middleware/adminAuth";
 import { db } from "../db";
+import { kitArtwork, componentKits } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import OpenAI from "openai";
 import axios from "axios";
 import * as fs from "fs";
@@ -65,6 +67,10 @@ router.post("/api/admin/generate-quest", async (req: Request, res: Response) => 
       return res.status(404).json({ error: "Kit not found" });
     }
     
+    // Fetch artwork references for this kit
+    const kitArtworks = await db.select().from(kitArtwork).where(eq(kitArtwork.kitId, kitId));
+    console.log(`Found ${kitArtworks.length} artwork references for kit ${kitId}`);
+    
     // Get components for the kit with both name and ID
     const kitComponents = kit.components.map(comp => ({
       id: comp.id,
@@ -87,11 +93,26 @@ router.post("/api/admin/generate-quest", async (req: Request, res: Response) => 
     let imageUrl = undefined;
     if (includeImage) {
       try {
+        // Enhance image prompt with kit artwork if available
+        let enhancedPrompt = imagePrompt || "";
+        
+        if (kitArtworks && kitArtworks.length > 0) {
+          // Add a note about using reference images for inspiration
+          enhancedPrompt += `\n\nReference images from the kit (use these for component appearance and style inspiration):\n`;
+          
+          // Include paths to reference images
+          for (let i = 0; i < Math.min(kitArtworks.length, 3); i++) { // Limit to 3 references to avoid prompt confusion
+            const artworkPath = kitArtworks[i].imagePath;
+            enhancedPrompt += `- Use ${artworkPath} as a reference for visual elements\n`;
+          }
+        }
+        
+        console.log("Generating image with enhanced prompt including kit artwork references");
         imageUrl = await generateQuestImage(
           questContent.title,
           questContent.description,
           theme || kit.name,
-          imagePrompt
+          enhancedPrompt
         );
       } catch (imageError) {
         console.error("Error generating quest image:", imageError);
@@ -243,15 +264,20 @@ async function generateQuestImage(title: string, description: string, theme: str
     - DO NOT INCLUDE ANY TEXT WHATSOEVER IN THE IMAGE
     - NO LABELS, NO CAPTIONS, NO SIGNS, NO WORDS
     - FOCUS ONLY ON VISUAL STORYTELLING
-    - USE COLOR AND COMPOSITION INSTEAD OF TEXT`;
+    - USE COLOR AND COMPOSITION INSTEAD OF TEXT
+    - USE A CONSISTENT PIXEL ART STYLE WITH 32x32 PIXEL GRID ELEMENTS
+    - ENSURE THE IMAGE HAS A CLEAN, CLEARLY DEFINED PIXEL GRID`;
     
     // Add custom prompt if provided
     if (customPrompt && customPrompt.trim().length > 0) {
+      console.log("Adding custom prompt to image generation:", customPrompt.substring(0, 100) + "...");
       basePrompt += `\n\nAdditional style instructions: ${customPrompt}`;
     }
     
     // Add final reminder about text
-    basePrompt += `\n\nFinal reminder: This image must not contain any text, letters, numbers, or written elements of any kind.`;
+    basePrompt += `\n\nFinal reminder: This image must not contain any text, letters, numbers, or written elements of any kind. Make it clean pixel art with vibrant colors.`;
+    
+    console.log("Sending image generation request to OpenAI with prompt length:", basePrompt.length);
     
     // Generate the image
     const response = await openai.images.generate({
