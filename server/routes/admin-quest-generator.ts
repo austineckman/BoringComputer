@@ -1,24 +1,11 @@
 import express, { Request, Response } from "express";
-import OpenAI from "openai";
 import { adminAuth } from "../middleware/adminAuth";
-import { nanoid } from "nanoid";
+import { db } from "../db";
+import OpenAI from "openai";
+import axios from "axios";
 import * as fs from "fs";
 import * as path from "path";
-import { db } from "../db";
-
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const MODEL = "gpt-4o";
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "quest-images");
-
-// Ensure upload directory exists
-if (!fs.existsSync(UPLOAD_DIR)) {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-}
-
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { nanoid } from 'nanoid';
 
 const router = express.Router();
 
@@ -43,160 +30,186 @@ interface GeneratedQuest {
   adventureLine?: string;
 }
 
-// Endpoint to generate a quest
+// OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Ensure uploads directory exists
+const UPLOADS_DIR = path.join(process.cwd(), 'public', 'uploads', 'quest-images');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+// Endpoint to generate quest content using OpenAI API
 router.post("/api/admin/generate-quest", async (req: Request, res: Response) => {
-  const { kitId, theme, missionKeywords, difficulty = 3, includeImage = true } = req.body as QuestGenRequest;
-  
   try {
-    // Fetch the kit details
-    const kit = await db.query.kits.findFirst({
+    const { kitId, theme, missionKeywords, difficulty = 2, includeImage = true } = req.body as QuestGenRequest;
+    
+    if (!kitId) {
+      return res.status(400).json({ error: "Kit ID is required" });
+    }
+    
+    // Get kit details
+    const kit = await db.query.componentKits.findFirst({
       where: (kits, { eq }) => eq(kits.id, kitId),
       with: {
-        components: true,
-      },
+        components: true
+      }
     });
     
     if (!kit) {
       return res.status(404).json({ error: "Kit not found" });
     }
     
-    // Prepare the components for the prompt
-    const componentsList = kit.components.map(comp => `${comp.name}: ${comp.description}`).join("\n");
+    // Get component names for the kit
+    const componentNames = kit.components.map(comp => comp.name);
     
     // Generate quest content
-    const questContent = await generateQuestContent(
-      kit.name,
-      kit.description,
-      componentsList,
-      theme || "",
-      missionKeywords || "",
+    const questContent = await generateQuestContent({
+      kitName: kit.name,
+      kitDescription: kit.description || "",
+      componentNames,
+      theme: theme || "",
+      missionKeywords: missionKeywords || "",
       difficulty
-    );
+    });
     
-    let imageUrl;
+    // Generate quest image if requested
+    let imageUrl = undefined;
     if (includeImage) {
-      // Generate an image for the quest
-      imageUrl = await generateQuestImage(questContent.title, questContent.description, theme || "");
+      try {
+        imageUrl = await generateQuestImage(
+          questContent.title,
+          questContent.description,
+          theme || kit.name
+        );
+      } catch (imageError) {
+        console.error("Error generating quest image:", imageError);
+        // Continue without image if generation fails
+      }
     }
     
-    // Prepare response
     const response: GeneratedQuest = {
       title: questContent.title,
       description: questContent.description,
       imageUrl,
-      components: questContent.requiredComponents,
+      components: questContent.components,
       xpReward: questContent.xpReward,
       lootSuggestion: questContent.lootSuggestion,
+      adventureLine: questContent.adventureLine
     };
     
-    res.status(200).json(response);
+    res.json(response);
   } catch (error) {
     console.error("Error generating quest:", error);
     res.status(500).json({ error: "Failed to generate quest content" });
   }
 });
 
-// Function to generate quest content using OpenAI
-async function generateQuestContent(
-  kitName: string,
-  kitDescription: string,
-  componentsList: string,
-  theme: string,
-  missionKeywords: string,
-  difficulty: number
-) {
-  const difficultyLabels = ["Very Easy", "Easy", "Medium", "Hard", "Very Hard"];
-  const difficultyText = difficultyLabels[difficulty - 1] || "Medium";
+async function generateQuestContent({
+  kitName,
+  kitDescription,
+  componentNames,
+  theme,
+  missionKeywords,
+  difficulty
+}: {
+  kitName: string;
+  kitDescription: string;
+  componentNames: string[];
+  theme: string;
+  missionKeywords: string;
+  difficulty: number;
+}): Promise<{
+  title: string;
+  description: string;
+  components: string[];
+  xpReward: number;
+  lootSuggestion: string;
+  adventureLine?: string;
+}> {
+  // Format the prompt with all relevant information
+  const prompt = `
+    Create an educational and engaging quest for a STEM learning platform.
+    
+    Kit: ${kitName}
+    Kit Description: ${kitDescription}
+    Available Components: ${componentNames.join(', ')}
+    Theme: ${theme || "futuristic technology"}
+    Mission Keywords: ${missionKeywords || "exploration, discovery, problem-solving"}
+    Difficulty Level (1-5): ${difficulty}
+    
+    Please generate a creative quest with:
+    1. A catchy title (max 50 chars)
+    2. An engaging description (max 300 chars) that explains the mission in a pixel-art game style
+    3. Select 3-5 components from the Available Components list that would be required for this quest
+    4. A suggested XP reward (between ${difficulty * 50} and ${difficulty * 100})
+    5. A suggested loot reward (like "Circuit Components x3, Rare Crystal x1")
+    6. An adventure line name that this quest would fit into (something like "Cogsworth City", "Neon Realm", or "30 Days Lost in Space")
+    
+    Format your response as a JSON object with these keys:
+    "title", "description", "components", "xpReward", "lootSuggestion", "adventureLine"
+  `;
+
+  // Call OpenAI API for quest generation
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+    messages: [
+      {
+        role: "system",
+        content: "You are a creative quest designer for a STEM education platform with a pixel art game aesthetic. Your quests should be engaging, educational, and themed appropriately."
+      },
+      { role: "user", content: prompt }
+    ],
+    response_format: { type: "json_object" }
+  });
   
-  const themePrompt = theme ? `The theme is: ${theme}` : "";
-  const keywordsPrompt = missionKeywords 
-    ? `The mission should involve: ${missionKeywords}` 
-    : "";
+  // Parse the response
+  const responseContent = completion.choices[0].message.content;
+  const parsedContent = JSON.parse(responseContent);
   
-  const prompt = `Generate an educational quest for a hands-on electronics kit. 
-
-KIT INFORMATION:
-Name: ${kitName}
-Description: ${kitDescription}
-
-COMPONENTS AVAILABLE:
-${componentsList}
-
-QUEST REQUIREMENTS:
-${themePrompt}
-${keywordsPrompt}
-Difficulty level: ${difficultyText}
-
-The quest should be educational, engaging, and involve using electronics components in a creative way.
-The response should be JSON formatted with the following fields:
-- title: an exciting title for the quest (max 60 characters)
-- description: a detailed quest description with at least 200-300 words including context, story, and specific technical steps
-- requiredComponents: an array of 2-4 required component names from the list above
-- xpReward: a number between 100-500 based on difficulty
-- lootSuggestion: a suggestion for a loot item the player might receive
-
-Make sure the description has both a narrative part and technical instructions. Use a pixel art game style writing tone.`;
-
-  try {
-    const completion = await openai.chat.completions.create({
-      model: MODEL,
-      messages: [
-        { role: "system", content: "You are a quest designer for an educational STEM game focusing on electronics and coding." },
-        { role: "user", content: prompt }
-      ],
-      temperature: 0.7,
-      response_format: { type: "json_object" }
-    });
-
-    const content = completion.choices[0].message.content;
-    if (!content) {
-      throw new Error("No content returned from OpenAI");
-    }
-
-    return JSON.parse(content);
-  } catch (error) {
-    console.error("Error in OpenAI request:", error);
-    throw new Error("Failed to generate quest content with AI");
-  }
+  // Ensure required fields are present
+  return {
+    title: parsedContent.title || `New ${kitName} Quest`,
+    description: parsedContent.description || `A quest using the ${kitName} kit.`,
+    components: Array.isArray(parsedContent.components) ? parsedContent.components : componentNames.slice(0, 3),
+    xpReward: parsedContent.xpReward || difficulty * 75,
+    lootSuggestion: parsedContent.lootSuggestion || "Mystery Components x1",
+    adventureLine: parsedContent.adventureLine || kitName
+  };
 }
 
-// Function to generate an image for the quest using DALL-E
 async function generateQuestImage(title: string, description: string, theme: string) {
   try {
-    const prompt = `Create a pixel art style image for an educational electronics quest titled "${title}". The quest is about ${description.substring(0, 100)}... Theme: ${theme || "technology"}. Use vibrant colors and a 16-bit retro game aesthetic. The image should be suitable as a quest header image.`;
-    
+    // Generate a pixel art style image based on the quest
     const response = await openai.images.generate({
       model: "dall-e-3",
-      prompt,
+      prompt: `Create a pixel art style image for an educational STEM quest called "${title}". The quest description is: "${description}". Theme: ${theme}. The image should be vibrant, educational, and in a retro pixel art style similar to games like Stardew Valley or Terraria, with 16-bit or 32-bit aesthetic. Include relevant STEM elements and make it suitable for children. Do not include any text in the image.`,
       n: 1,
       size: "1024x1024",
       quality: "standard",
-      style: "vivid",
     });
     
-    const imageUrl = response.data[0]?.url;
-    if (!imageUrl) {
-      throw new Error("No image URL returned from OpenAI");
+    if (!response.data[0]?.url) {
+      throw new Error("No image URL in response");
     }
     
-    // Download and save the image
-    const imageResponse = await fetch(imageUrl);
-    const imageBuffer = await imageResponse.arrayBuffer();
-    
-    // Create a unique filename
-    const imageId = nanoid(8);
-    const filename = `${imageId}.png`;
-    const filepath = path.join(UPLOAD_DIR, filename);
+    // Download the image
+    const imageUrl = response.data[0].url;
+    const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
     
     // Save the image to the uploads directory
-    fs.writeFileSync(filepath, Buffer.from(imageBuffer));
+    const fileName = `${nanoid(8)}.png`;
+    const filePath = path.join(UPLOADS_DIR, fileName);
     
-    // Return the path to the saved image
-    return `/uploads/quest-images/${filename}`;
+    fs.writeFileSync(filePath, Buffer.from(imageResponse.data));
+    
+    // Return the relative URL to the image
+    return `/uploads/quest-images/${fileName}`;
   } catch (error) {
     console.error("Error generating image:", error);
-    // Don't throw here - we'll continue without an image
-    return undefined;
+    throw error;
   }
 }
 
