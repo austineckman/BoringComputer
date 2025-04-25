@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
+import { useLocation } from 'wouter';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -189,6 +190,8 @@ const rewardSchema = z.object({
 });
 
 const AdminQuests: React.FC = () => {
+  const [location] = useLocation();
+  
   // State for dialog control
   const [isAddingQuest, setIsAddingQuest] = useState(false);
   const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
@@ -363,6 +366,125 @@ const AdminQuests: React.FC = () => {
       kitId: '',
     },
   });
+
+  // Handle URL parameters from quest generator
+  useEffect(() => {
+    // Check if we have URL parameters that indicate we should open the quest editor
+    if (location.includes('?')) {
+      const params = new URLSearchParams(location.split('?')[1]);
+      const action = params.get('action');
+      
+      if (action === 'new') {
+        // We're coming from the quest generator, pre-populate the form
+        const title = params.get('title') || '';
+        const description = params.get('description') || '';
+        const missionBrief = params.get('missionBrief') || '';
+        const adventureLine = params.get('adventureLine') || '30 Days Lost in Space';
+        const kitId = params.get('kitId') || '';
+        const xpReward = parseInt(params.get('xpReward') || '100', 10);
+        const difficulty = parseInt(params.get('difficulty') || '1', 10);
+        const imageUrl = params.get('imageUrl') || '';
+        const lootSuggestion = params.get('lootSuggestion') || '';
+        
+        // Reset form with values from URL parameters
+        form.reset({
+          title,
+          description,
+          missionBrief,
+          date: new Date().toISOString().split('T')[0],
+          adventureLine: adventureLine as any,
+          difficulty,
+          orderInLine: 0,
+          xpReward,
+          active: true,
+          kitId,
+        });
+        
+        // Set images if available
+        if (imageUrl) {
+          setImageUrls([imageUrl]);
+        } else {
+          setImageUrls([]);
+        }
+        
+        // Reset other content blocks
+        setVideoUrls([]);
+        setCodeBlocks([]);
+        
+        // Process component IDs if available
+        try {
+          const componentIdsParam = params.get('componentIds');
+          const componentsParam = params.get('components');
+          
+          if (componentIdsParam && componentsParam) {
+            const componentIds = JSON.parse(componentIdsParam);
+            const componentNames = JSON.parse(componentsParam);
+            
+            if (Array.isArray(componentIds) && Array.isArray(componentNames) && 
+                componentIds.length === componentNames.length) {
+              
+              // Map component IDs to component objects for the quest
+              const questComponentsList = componentIds.map((id, index) => ({
+                id: id || 0,
+                name: componentNames[index] || 'Unknown Component',
+                required: true,
+                quantity: 1
+              }));
+              
+              setQuestComponents(questComponentsList);
+              console.log('Loaded components from URL params:', questComponentsList);
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing component data from URL:', e);
+        }
+        
+        // Process rewards from lootSuggestion if available
+        if (lootSuggestion) {
+          try {
+            // Parse lootSuggestion string into an array of reward objects
+            // Format is typically "item-id x3, other-item x1"
+            const rewards = lootSuggestion.split(',').map(item => {
+              const [idPart, quantityPart] = item.trim().split('x');
+              const id = idPart.trim();
+              
+              // Determine the correct reward type based on naming convention or ID pattern
+              let rewardType: 'lootbox' | 'item' | 'equipment' = 'item'; // Default to 'item'
+              
+              // If it contains "box", "crate", or "pack", it's probably a lootbox
+              if (id.includes('box') || id.includes('crate') || id.includes('pack')) {
+                rewardType = 'lootbox';
+              }
+              // If it's wearable or equippable based on known items (this is simplified)
+              else if (id.includes('helmet') || id.includes('armor') || id.includes('sword') || 
+                       id.includes('boots') || id.includes('gloves') || id.includes('shield')) {
+                rewardType = 'equipment';
+              }
+              
+              return {
+                type: rewardType,
+                id: id,
+                quantity: parseInt(quantityPart?.trim() || '1', 10) || 1
+              };
+            });
+            
+            // Set the rewards in our form data
+            setFormData({
+              rewards: rewards
+            });
+          } catch (e) {
+            console.error('Error parsing rewards from lootSuggestion:', e);
+          }
+        } else {
+          setFormData({ rewards: [] });
+        }
+        
+        // Open the dialog for creating a new quest
+        setIsAddingQuest(true);
+        setEditingQuest(null);
+      }
+    }
+  }, [location, form]);
 
   // Content management functions
   const addVideoUrl = () => {
