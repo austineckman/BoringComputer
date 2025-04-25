@@ -2,7 +2,17 @@ import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
-import { InventoryItem as InventoryItemType, ItemDetails } from "@/types";
+import { ItemDetails } from "@/types";
+
+// Define interfaces locally since we're having import issues
+interface InventoryItem {
+  id: string;
+  type: string;
+  quantity: number;
+  name?: string;
+  rarity?: string;
+  imagePath?: string;
+}
 
 interface InventoryWindowProps {
   openItemDetails: (itemId: string, quantity: number) => void;
@@ -13,9 +23,9 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
   const { 
     data: inventoryItems, 
     isLoading: inventoryLoading 
-  } = useQuery<InventoryItemType[]>({
+  } = useQuery<InventoryItem[]>({
     queryKey: ["/api/inventory"],
-    queryFn: () => getQueryFn()("/api/inventory"),
+    queryFn: getQueryFn(),
   });
 
   // Fetch all item details
@@ -24,7 +34,7 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
     isLoading: itemsLoading 
   } = useQuery<ItemDetails[]>({
     queryKey: ["/api/items"],
-    queryFn: () => getQueryFn()("/api/items"),
+    queryFn: getQueryFn(),
   });
 
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
@@ -55,7 +65,8 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
 
   // Helper function to find the item details for a given item ID
   const getItemDetails = (itemId: string) => {
-    return allItems?.find((item: ItemDetails) => item.id === itemId);
+    if (!allItems) return null;
+    return allItems.find((item) => item.id === itemId);
   };
 
   return (
@@ -63,7 +74,7 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
       <h2 className="text-lg font-bold mb-3">Inventory</h2>
       <div className="relative">
         <div className="grid grid-cols-8 gap-2">
-          {inventoryItems?.map((item) => {
+          {inventoryItems && inventoryItems.map((item) => {
             const itemDetails = getItemDetails(item.type);
             return (
               <div 
@@ -80,7 +91,7 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
                 {itemDetails?.imagePath && (
                   <img 
                     src={itemDetails.imagePath} 
-                    alt={item.name || 'Item'} 
+                    alt={itemDetails.name || 'Item'} 
                     className="w-full h-full object-contain p-1 pixelated-image" 
                   />
                 )}
@@ -93,7 +104,7 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
                   <div className="absolute z-10 p-2 bg-gray-800 text-white text-xs rounded shadow-lg -mt-10 -ml-10 w-32 left-0 -top-0 transform -translate-y-full">
                     <p className="font-bold">{itemDetails?.name || item.type}</p>
                     <p className="text-[10px] italic truncate">
-                      {itemDetails?.rarity?.charAt(0).toUpperCase() + itemDetails?.rarity?.slice(1) || 'Unknown'}
+                      {itemDetails?.rarity ? `${itemDetails.rarity.charAt(0).toUpperCase()}${itemDetails.rarity.slice(1)}` : 'Unknown'}
                     </p>
                   </div>
                 )}
