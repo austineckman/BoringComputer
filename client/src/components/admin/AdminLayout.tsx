@@ -105,8 +105,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           
           {/* Return to Game button */}
           <Link href="/">
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
-              <Layout className="h-4 w-4" />
+            <Button variant="default" size="sm" className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
+              <ArrowLeftCircle className="h-4 w-4" />
               <span>Return to Game</span>
             </Button>
           </Link>

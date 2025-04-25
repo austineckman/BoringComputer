@@ -79,11 +79,14 @@ const RetroDesktop: React.FC = () => {
   
   // Admin icons within the folder (not displayed directly on desktop)
   const adminIcons: DesktopIcon[] = [
-    { id: "admin-quests", name: "Quest Admin", icon: "🧪", path: "/admin/quests", position: { x: 0, y: 0 } },
-    { id: "admin-items", name: "Item Database", icon: "💾", path: "/admin/items", position: { x: 0, y: 0 } },
-    { id: "admin-kits", name: "Component Kits", icon: "🔌", path: "/admin/kits", position: { x: 0, y: 0 } },
-    { id: "admin-users", name: "User Admin", icon: "👥", path: "/admin/users", position: { x: 0, y: 0 } },
-    { id: "admin-generator", name: "AI Generator", icon: "🤖", path: "/admin/quest-generator", position: { x: 0, y: 0 } },
+    { id: "admin-quests", name: "Quest Admin", icon: "🧪", path: "/admin-quests", position: { x: 0, y: 0 } },
+    { id: "admin-items", name: "Item Database", icon: "💾", path: "/admin-items", position: { x: 0, y: 0 } },
+    { id: "admin-kits", name: "Component Kits", icon: "🔌", path: "/admin-kits", position: { x: 0, y: 0 } },
+    { id: "admin-users", name: "User Admin", icon: "👥", path: "/admin-users", position: { x: 0, y: 0 } },
+    { id: "admin-generator", name: "AI Generator", icon: "🤖", path: "/admin-quest-generator", position: { x: 0, y: 0 } },
+    { id: "admin-dashboard", name: "Admin Panel", icon: "🖥️", path: "/admin", position: { x: 0, y: 0 } },
+    { id: "admin-lootboxes", name: "Loot Boxes", icon: "🎁", path: "/admin-lootboxes", position: { x: 0, y: 0 } },
+    { id: "admin-recipes", name: "Recipes", icon: "📋", path: "/admin-recipes", position: { x: 0, y: 0 } },
   ];
   
   // Update clock every second
