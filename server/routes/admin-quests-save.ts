@@ -40,6 +40,43 @@ router.post("/api/admin/quests", async (req: Request, res: Response) => {
     }
 
     // Create a new quest
+    // Parse the loot suggestion to create actual rewards from our item database
+    // Import the items we know we have available
+    const { getAllItems } = await import('../itemDatabase');
+    const availableItems = getAllItems();
+    
+    // Convert the text suggestion to valid rewards
+    let questRewards = [];
+    
+    // Use a default loot crate if we can't parse specific items
+    if (lootSuggestion) {
+      // First check if we have these items in our database
+      questRewards.push({
+        type: "item",
+        id: "loot-crate",
+        quantity: 1,
+        note: `Quest reward: ${lootSuggestion}`
+      });
+      
+      // Try to extract potential item matches from the suggestion
+      for (const item of availableItems) {
+        const itemNameLower = item.name.toLowerCase();
+        if (lootSuggestion.toLowerCase().includes(itemNameLower)) {
+          // Extract quantity if specified (e.g., "Copper x3")
+          const quantityMatch = lootSuggestion.match(
+            new RegExp(`${itemNameLower}\\s*(?:x|×)\\s*(\\d+)`, 'i')
+          );
+          const quantity = quantityMatch ? parseInt(quantityMatch[1]) : 1;
+          
+          questRewards.push({
+            type: "item",
+            id: item.id,
+            quantity: quantity
+          });
+        }
+      }
+    }
+    
     const [newQuest] = await db.insert(quests).values({
       title,
       description,
@@ -51,15 +88,9 @@ router.post("/api/admin/quests", async (req: Request, res: Response) => {
       date: new Date().toISOString().split('T')[0],
       createdAt: new Date(),
       updatedAt: new Date(),
-      lootTable: lootSuggestion ? JSON.stringify({
+      lootTable: questRewards.length > 0 ? JSON.stringify({
         type: "quest",
-        rewards: [
-          {
-            itemId: "quest-loot-crate",
-            quantity: 1,
-            note: `Contains: ${lootSuggestion}`
-          }
-        ]
+        rewards: questRewards
       }) : null,
       questId: `quest-${nanoid(8)}`,
     }).returning();

@@ -131,6 +131,11 @@ async function generateQuestContent({
   lootSuggestion: string;
   adventureLine?: string;
 }> {
+  // Get available items from the database for rewards
+  const { getAllItems } = await import('../itemDatabase');
+  const availableItems = getAllItems();
+  const itemNames = availableItems.map(item => `${item.name} (${item.rarity})`).join(', ');
+  
   // Format the prompt with all relevant information
   const prompt = `
     Create an educational and engaging quest for a STEM learning platform.
@@ -147,7 +152,8 @@ async function generateQuestContent({
     2. An engaging description (max 300 chars) that explains the mission in a pixel-art game style
     3. Select 3-5 components from the Available Components list that would be required for this quest
     4. A suggested XP reward (between ${difficulty * 50} and ${difficulty * 100})
-    5. A suggested loot reward (like "Circuit Components x3, Rare Crystal x1")
+    5. A suggested loot reward using ONLY items from this list: ${itemNames}
+       Format rewards like "Copper x3, Crystal x1" - must use exact names from the list
     6. An adventure line name that this quest would fit into (something like "Cogsworth City", "Neon Realm", or "30 Days Lost in Space")
     
     Format your response as a JSON object with these keys:
