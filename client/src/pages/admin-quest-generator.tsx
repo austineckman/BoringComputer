@@ -414,9 +414,14 @@ const AdminQuestGenerator = () => {
                         <img 
                           src={generatedQuest.imageUrl} 
                           alt="Quest illustration" 
-                          className="h-48 w-full object-cover"
+                          className="w-full"
                           style={{
                             imageRendering: 'pixelated',
+                            height: '192px', // Fixed height: multiple of pixel size
+                            objectFit: 'contain',
+                            backgroundColor: '#111',
+                            padding: '1rem',
+                            borderRadius: '4px'
                           }}
                         />
                       </div>
