@@ -236,12 +236,13 @@ router.post('/kits/:kitId/components', isAdmin, upload.single('image'), async (r
       
       console.log('Creating new component from existing one:', newComponentData);
       
+      let newComponent;
       try {
         // Validate the new component data
         const validatedData = insertKitComponentSchema.parse(newComponentData);
         
         // Insert into database
-        const [newComponent] = await db.insert(kitComponents).values(validatedData).returning();
+        [newComponent] = await db.insert(kitComponents).values(validatedData).returning();
         console.log('Component reused successfully:', newComponent);
         
         return res.status(201).json(newComponent);
@@ -253,8 +254,6 @@ router.post('/kits/:kitId/components', isAdmin, upload.single('image'), async (r
           providedData: newComponentData
         });
       }
-      
-      return res.status(201).json(newComponent);
     } else {
       // Regular flow for creating a new component
       const componentData = { ...req.body, kitId };
