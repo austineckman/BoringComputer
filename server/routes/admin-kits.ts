@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db';
-import { componentKits, kitComponents, insertComponentKitSchema, insertKitComponentSchema } from '@shared/schema';
+import { componentKits, kitComponents, kitArtwork, insertComponentKitSchema, insertKitComponentSchema } from '@shared/schema';
 import { isAdmin } from '../middleware/auth';
 import { eq } from 'drizzle-orm';
 
