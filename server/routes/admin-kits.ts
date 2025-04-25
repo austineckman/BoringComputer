@@ -219,6 +219,9 @@ router.post('/kits/:kitId/components', isAdmin, upload.single('image'), async (r
         return res.status(404).json({ message: 'Existing component not found' });
       }
       
+      // Log the existing component for debugging
+      console.log('Found existing component:', existingComponent);
+      
       // Create a new component based on the existing one
       const newComponentData = {
         kitId,
@@ -233,12 +236,23 @@ router.post('/kits/:kitId/components', isAdmin, upload.single('image'), async (r
       
       console.log('Creating new component from existing one:', newComponentData);
       
-      // Validate the new component data
-      const validatedData = insertKitComponentSchema.parse(newComponentData);
-      
-      // Insert into database
-      const [newComponent] = await db.insert(kitComponents).values(validatedData).returning();
-      console.log('Component reused successfully:', newComponent);
+      try {
+        // Validate the new component data
+        const validatedData = insertKitComponentSchema.parse(newComponentData);
+        
+        // Insert into database
+        const [newComponent] = await db.insert(kitComponents).values(validatedData).returning();
+        console.log('Component reused successfully:', newComponent);
+        
+        return res.status(201).json(newComponent);
+      } catch (validationError) {
+        console.error('Validation error creating component from existing one:', validationError);
+        return res.status(400).json({ 
+          message: 'Invalid component data', 
+          error: String(validationError),
+          providedData: newComponentData
+        });
+      }
       
       return res.status(201).json(newComponent);
     } else {
