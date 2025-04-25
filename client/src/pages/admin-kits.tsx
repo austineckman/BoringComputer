@@ -113,6 +113,8 @@ const AdminKits = () => {
   const [kitImageFile, setKitImageFile] = useState<File | null>(null);
   const [componentImageFile, setComponentImageFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState<string>("kits");
+  const [useExistingComponent, setUseExistingComponent] = useState(false);
+  const [selectedExistingComponent, setSelectedExistingComponent] = useState<number | null>(null);
   
   // Fetch kits
   const { data: kits, isLoading: isLoadingKits } = useQuery({
@@ -131,6 +133,15 @@ const AdminKits = () => {
       credentials: 'include'
     }).then(res => res.json()),
     enabled: !!selectedKit,
+  });
+  
+  // Fetch all components across all kits for reuse
+  const { data: allComponents, isLoading: isLoadingAllComponents } = useQuery({
+    queryKey: ['/api/admin/all-components'],
+    queryFn: () => fetch('/api/admin/all-components', {
+      method: 'GET',
+      credentials: 'include'
+    }).then(res => res.json()),
   });
 
   // Kit form
@@ -392,15 +403,24 @@ const AdminKits = () => {
 
   const onAddComponent = (data: z.infer<typeof componentFormSchema>) => {
     const formData = new FormData();
-    formData.append('name', data.name);
-    formData.append('description', data.description);
-    formData.append('partNumber', data.partNumber || '');
-    formData.append('isRequired', data.isRequired.toString());
-    formData.append('quantity', data.quantity.toString());
-    formData.append('category', data.category);
     
-    if (componentImageFile) {
-      formData.append('image', componentImageFile);
+    // If using an existing component
+    if (useExistingComponent && selectedExistingComponent) {
+      formData.append('fromExistingId', selectedExistingComponent.toString());
+      formData.append('quantity', data.quantity.toString());
+      formData.append('isRequired', data.isRequired.toString());
+    } else {
+      // Creating a new component from scratch
+      formData.append('name', data.name);
+      formData.append('description', data.description);
+      formData.append('partNumber', data.partNumber || '');
+      formData.append('isRequired', data.isRequired.toString());
+      formData.append('quantity', data.quantity.toString());
+      formData.append('category', data.category);
+      
+      if (componentImageFile) {
+        formData.append('image', componentImageFile);
+      }
     }
     
     addComponentMutation.mutate(formData);
@@ -476,6 +496,8 @@ const AdminKits = () => {
       category: "hardware",
     });
     setComponentImageFile(null);
+    setUseExistingComponent(false);
+    setSelectedExistingComponent(null);
     setIsAddingComponent(true);
   };
 

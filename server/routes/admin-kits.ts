@@ -338,4 +338,30 @@ router.get('/components-for-quest', isAdmin, async (req: Request, res: Response)
   }
 });
 
+// GET all existing components across all kits (for component reuse)
+router.get('/all-components', isAdmin, async (req: Request, res: Response) => {
+  try {
+    // Get all components joined with their kit information
+    const components = await db
+      .select({
+        id: kitComponents.id,
+        name: kitComponents.name,
+        description: kitComponents.description,
+        imagePath: kitComponents.imagePath,
+        partNumber: kitComponents.partNumber,
+        category: kitComponents.category,
+        quantity: kitComponents.quantity,
+        kitId: kitComponents.kitId,
+        kitName: componentKits.name,
+      })
+      .from(kitComponents)
+      .leftJoin(componentKits, eq(kitComponents.kitId, componentKits.id));
+    
+    res.json(components);
+  } catch (error) {
+    console.error('Error fetching all components:', error);
+    res.status(500).json({ message: 'Failed to fetch all components' });
+  }
+});
+
 export default router;
