@@ -445,9 +445,9 @@ const RetroDesktop: React.FC = () => {
   const openInventoryWindow = () => {
     openWindow(
       "inventory", 
-      "Inventory", 
+      "loot.exe", 
       <InventoryWindow openItemDetails={openItemDetailsWindow} />, 
-      "🎒",
+      "ironbag",
       { width: 650, height: 520 }
     );
   };
@@ -586,6 +586,13 @@ const RetroDesktop: React.FC = () => {
                   className="w-10 h-10 object-contain" 
                   style={{ imageRendering: 'pixelated' }}
                 />
+              ) : icon.icon === "ironbag" ? (
+                <img 
+                  src={ironBagImage} 
+                  alt="Inventory Bag" 
+                  className="w-10 h-10 object-contain" 
+                  style={{ imageRendering: 'pixelated' }}
+                />
               ) : (
                 <span className="text-3xl drop-shadow-md">{icon.icon}</span>
               )}
@@ -670,7 +677,23 @@ const RetroDesktop: React.FC = () => {
               onMouseDown={(e) => startDrag(e, window.id)}
             >
               <div className="flex items-center">
-                <span className="mr-2 text-lg">{window.icon}</span>
+                {window.icon === "ironbag" ? (
+                  <img 
+                    src={ironBagImage} 
+                    alt="Inventory" 
+                    className="mr-2 w-6 h-6 object-contain" 
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                ) : window.icon === "goldcrate" ? (
+                  <img 
+                    src={goldCrateImage} 
+                    alt="Gold Crate" 
+                    className="mr-2 w-6 h-6 object-contain" 
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                ) : (
+                  <span className="mr-2 text-lg">{window.icon}</span>
+                )}
                 <span className="font-bold text-sm truncate">{window.title}</span>
               </div>
               <div className="flex space-x-2">
@@ -825,7 +848,23 @@ const RetroDesktop: React.FC = () => {
                 className="flex items-center bg-blue-800 hover:bg-blue-700 border border-blue-500 px-3 py-1.5 text-xs text-white rounded-sm transition-colors"
                 onClick={() => activateWindow(window.id)}
               >
-                <span className="mr-2">{window.icon}</span>
+                {window.icon === "ironbag" ? (
+                  <img 
+                    src={ironBagImage} 
+                    alt="Inventory" 
+                    className="mr-2 w-4 h-4 object-contain" 
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                ) : window.icon === "goldcrate" ? (
+                  <img 
+                    src={goldCrateImage} 
+                    alt="Gold Crate" 
+                    className="mr-2 w-4 h-4 object-contain" 
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                ) : (
+                  <span className="mr-2">{window.icon}</span>
+                )}
                 <span className="truncate max-w-[100px]">{window.title}</span>
               </button>
             ))}
