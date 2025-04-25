@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { X, Maximize2, Minimize2, Info, ChevronRight } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { X, Maximize2, Minimize2, Info, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import RetroStartMenu from "./RetroStartMenu";
@@ -7,6 +7,7 @@ import InventoryWindow from "./InventoryWindow";
 import ItemDetailsWindow from "./ItemDetailsWindow";
 import CraftingWindow from "./CraftingWindow";
 import wallpaperImage from "@assets/wallpaper.png";
+import backgroundMusic from "@assets/Fantasy Guild Hall.mp3";
 
 type WindowPosition = {
   x: number;
@@ -32,6 +33,8 @@ const RetroDesktop: React.FC = () => {
   const [windows, setWindows] = useState<RetroWindow[]>([]);
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
   const [selectedIcon, setSelectedIcon] = useState<string | null>(null);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
   
   const [activeDesktopIcons, setActiveDesktopIcons] = useState([
     { id: "quests", name: "Quests", icon: "📜", path: "/quests", position: { x: 20, y: 20 } },
@@ -309,11 +312,62 @@ const RetroDesktop: React.FC = () => {
     }, 800);
   }, []);
   
+  // Initialize audio with user interaction awareness
+  useEffect(() => {
+    const audioElement = audioRef.current;
+    
+    // Setup audio element
+    if (audioElement) {
+      audioElement.volume = 0.5; // Set to 50% volume by default
+      
+      // Add audio event listeners for better state management
+      const handleAudioPlay = () => setIsMusicPlaying(true);
+      const handleAudioPause = () => setIsMusicPlaying(false);
+      const handleAudioEnded = () => {
+        // This shouldn't normally trigger due to the loop attribute,
+        // but we'll handle it just in case
+        if (audioElement.loop) {
+          audioElement.play().catch(err => console.warn("Auto-replay failed:", err));
+        } else {
+          setIsMusicPlaying(false);
+        }
+      };
+      
+      audioElement.addEventListener('play', handleAudioPlay);
+      audioElement.addEventListener('pause', handleAudioPause);
+      audioElement.addEventListener('ended', handleAudioEnded);
+      
+      // Clean up event listeners on unmount
+      return () => {
+        audioElement.removeEventListener('play', handleAudioPlay);
+        audioElement.removeEventListener('pause', handleAudioPause);
+        audioElement.removeEventListener('ended', handleAudioEnded);
+        
+        // Pause audio when component unmounts
+        audioElement.pause();
+      };
+    }
+  }, []);
+  
   // Handle click on the desktop background to deselect icons
   const handleDesktopClick = (e: React.MouseEvent) => {
     // Only process if this is a direct click on the desktop, not on an icon
     if ((e.target as HTMLElement).classList.contains('retro-desktop')) {
       setSelectedIcon(null);
+    }
+  };
+  
+  // Toggle background music play/pause
+  const toggleMusic = () => {
+    if (audioRef.current) {
+      if (isMusicPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play().catch(error => {
+          console.warn("Audio playback failed:", error);
+        });
+      }
+      setIsMusicPlaying(!isMusicPlaying);
     }
   };
   
@@ -519,9 +573,24 @@ const RetroDesktop: React.FC = () => {
           </div>
         </div>
         
-        {/* Clock */}
-        <div className="bg-blue-800 border border-blue-500 rounded-sm px-3 py-1.5 text-xs font-mono text-white">
-          {currentTime.toLocaleTimeString()} | {currentTime.toLocaleDateString()}
+        {/* Clock and Sound Controls */}
+        <div className="flex items-center space-x-3">
+          {/* Sound Control Button */}
+          <button 
+            className="bg-blue-800 border border-blue-500 rounded-sm px-2 py-1.5 text-white hover:bg-blue-700 transition-colors"
+            onClick={toggleMusic}
+            title={isMusicPlaying ? "Mute music" : "Play music"}
+          >
+            {isMusicPlaying ? <Volume2 size={16} /> : <VolumeX size={16} />}
+          </button>
+          
+          {/* Clock */}
+          <div className="bg-blue-800 border border-blue-500 rounded-sm px-3 py-1.5 text-xs font-mono text-white">
+            {currentTime.toLocaleTimeString()} | {currentTime.toLocaleDateString()}
+          </div>
+          
+          {/* Hidden audio element */}
+          <audio ref={audioRef} src={backgroundMusic} loop preload="auto" />
         </div>
       </div>
     </div>
