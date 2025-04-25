@@ -28,7 +28,7 @@ const ItemDetailsWindow: React.FC<ItemDetailsWindowProps> = ({ itemId, quantity 
     error,
   } = useQuery<ItemDetails>({
     queryKey: ["/api/items", itemId],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: "throw" }),
   });
 
   if (isLoading) {
