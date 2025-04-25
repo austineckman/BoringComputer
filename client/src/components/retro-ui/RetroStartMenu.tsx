@@ -148,7 +148,11 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
       id: "profile",
       label: "My Profile",
       icon: <User size={16} />,
-      path: "/profile"
+      onClick: () => {
+        // Send event to open profile window
+        const event = new CustomEvent('openProfile');
+        window.dispatchEvent(event);
+      }
     },
     {
       id: "logout",
