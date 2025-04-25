@@ -27,6 +27,7 @@ interface GeneratedQuest {
   missionBrief: string; // This is the clear classroom assignment
   imageUrl?: string;
   components: string[];
+  componentIds?: (number | null)[];  // Added field to store resolved component IDs
   xpReward: number;
   lootSuggestion: string;
   adventureLine?: string;
