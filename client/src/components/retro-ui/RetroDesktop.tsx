@@ -6,6 +6,7 @@ import RetroStartMenu from "./RetroStartMenu";
 import InventoryWindow from "./InventoryWindow";
 import ItemDetailsWindow from "./ItemDetailsWindow";
 import CraftingWindow from "./CraftingWindow";
+import wallpaperImage from "@assets/wallpaper.png";
 
 type WindowPosition = {
   x: number;
@@ -231,18 +232,27 @@ const RetroDesktop: React.FC = () => {
   }, []);
   
   return (
-    <div className="retro-desktop relative min-h-[80vh] overflow-hidden bg-[#008080] text-black">
+    <div 
+      className="retro-desktop relative min-h-[80vh] overflow-hidden text-black"
+      style={{
+        backgroundImage: `url(${wallpaperImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        imageRendering: 'pixelated'
+      }}
+    >
       {/* Desktop Icons */}
       <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-8 gap-3 p-3">
         {activeDesktopIcons.map((icon) => (
           <div 
             key={icon.id}
-            className="desktop-icon flex flex-col items-center justify-center p-2 cursor-pointer hover:bg-blue-200/40 active:bg-blue-300/40 rounded"
+            className="desktop-icon flex flex-col items-center justify-center p-2 cursor-pointer hover:bg-blue-600/30 hover:scale-105 active:bg-blue-700/40 rounded transition-all duration-150"
             onClick={() => handleIconClick(icon)}
             onDoubleClick={() => navigate(icon.path)}
           >
-            <div className="text-4xl mb-1">{icon.icon}</div>
-            <div className="text-center text-sm font-bold text-navy bg-white/80 px-1 py-0.5 rounded shadow-sm w-full">
+            <div className="text-4xl mb-1 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">{icon.icon}</div>
+            <div className="text-center text-sm font-bold text-white bg-black/60 px-1 py-0.5 rounded shadow-sm w-full">
               {icon.name}
             </div>
           </div>
@@ -251,12 +261,12 @@ const RetroDesktop: React.FC = () => {
         {user?.roles?.includes('admin') && adminIcons.map((icon) => (
           <div 
             key={icon.id}
-            className="desktop-icon flex flex-col items-center justify-center p-2 cursor-pointer hover:bg-yellow-200/40 active:bg-yellow-300/40 rounded"
+            className="desktop-icon flex flex-col items-center justify-center p-2 cursor-pointer hover:bg-purple-600/30 hover:scale-105 active:bg-purple-700/40 rounded transition-all duration-150"
             onClick={() => handleIconClick(icon)}
             onDoubleClick={() => navigate(icon.path)}
           >
-            <div className="text-4xl mb-1">{icon.icon}</div>
-            <div className="text-center text-sm font-bold text-red-900 bg-yellow-100/80 px-1 py-0.5 rounded shadow-sm w-full">
+            <div className="text-4xl mb-1 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">{icon.icon}</div>
+            <div className="text-center text-sm font-bold text-yellow-300 bg-purple-900/70 px-1 py-0.5 rounded shadow-sm w-full">
               {icon.name}
             </div>
           </div>
@@ -269,61 +279,64 @@ const RetroDesktop: React.FC = () => {
           <div 
             id={`window-${window.id}`}
             key={window.id}
-            className={`absolute rounded-md border-2 bg-gray-100 shadow-xl overflow-hidden ${
-              window.isActive ? 'border-blue-600 z-50' : 'border-gray-400 z-40'
+            className={`absolute rounded-md border-2 bg-gray-100 shadow-2xl overflow-hidden ${
+              window.isActive ? 'border-cyan-400 z-50' : 'border-blue-700 z-40'
             }`}
             style={{
               top: `${window.position.y}px`,
               left: `${window.position.x}px`,
               width: `${window.position.width}px`,
               height: `${window.position.height}px`,
+              boxShadow: '0 0 20px rgba(0, 0, 0, 0.5)'
             }}
             onClick={() => activateWindow(window.id)}
           >
             {/* Window Title Bar */}
             <div 
-              className={`flex items-center justify-between px-2 py-1 ${
-                window.isActive ? 'bg-gradient-to-r from-blue-700 to-blue-500' : 'bg-gradient-to-r from-gray-500 to-gray-400'
+              className={`flex items-center justify-between px-3 py-1.5 ${
+                window.isActive 
+                  ? 'bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500' 
+                  : 'bg-gradient-to-r from-gray-700 to-gray-600'
               } text-white`}
               onMouseDown={(e) => startDrag(e, window.id)}
             >
               <div className="flex items-center">
-                <span className="mr-2">{window.icon}</span>
+                <span className="mr-2 text-lg">{window.icon}</span>
                 <span className="font-bold text-sm truncate">{window.title}</span>
               </div>
-              <div className="flex space-x-1">
+              <div className="flex space-x-2">
                 <button 
-                  className="w-4 h-4 flex items-center justify-center bg-gray-200 hover:bg-gray-300 text-gray-700 rounded"
+                  className="w-5 h-5 flex items-center justify-center bg-blue-800 hover:bg-blue-700 text-white rounded-sm border border-blue-400"
                   onClick={(e) => {
                     e.stopPropagation();
                     minimizeWindow(window.id);
                   }}
                 >
-                  <Minimize2 size={12} />
+                  <Minimize2 size={14} />
                 </button>
                 <button 
-                  className="w-4 h-4 flex items-center justify-center bg-gray-200 hover:bg-gray-300 text-gray-700 rounded"
+                  className="w-5 h-5 flex items-center justify-center bg-blue-800 hover:bg-blue-700 text-white rounded-sm border border-blue-400"
                   onClick={(e) => {
                     e.stopPropagation();
                     // In a full implementation, this would maximize the window
                   }}
                 >
-                  <Maximize2 size={12} />
+                  <Maximize2 size={14} />
                 </button>
                 <button 
-                  className="w-4 h-4 flex items-center justify-center bg-red-500 hover:bg-red-600 text-white rounded"
+                  className="w-5 h-5 flex items-center justify-center bg-red-600 hover:bg-red-700 text-white rounded-sm border border-red-400"
                   onClick={(e) => {
                     e.stopPropagation();
                     closeWindow(window.id);
                   }}
                 >
-                  <X size={12} />
+                  <X size={14} />
                 </button>
               </div>
             </div>
             
             {/* Window Content */}
-            <div className="retro-window-body p-1 overflow-auto" style={{ height: 'calc(100% - 28px)' }}>
+            <div className="retro-window-body p-2 overflow-auto bg-gray-100" style={{ height: 'calc(100% - 36px)' }}>
               {window.content}
             </div>
           </div>
@@ -336,33 +349,33 @@ const RetroDesktop: React.FC = () => {
       )}
       
       {/* Start Bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-10 bg-gray-200 border-t border-gray-400 flex justify-between items-center px-2 shadow-md">
+      <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-r from-blue-900 to-purple-900 border-t-2 border-blue-400 flex justify-between items-center px-3 shadow-lg">
         <div className="flex">
           <button 
-            className="flex items-center bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-1 rounded-sm mr-3"
+            className="flex items-center bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold px-4 py-1.5 rounded-sm mr-4 border border-cyan-300 shadow-inner"
             onClick={() => setIsStartMenuOpen(!isStartMenuOpen)}
           >
-            <span className="mr-1">🚀</span>
+            <span className="mr-2 text-lg">🚀</span>
             <span>Start</span>
           </button>
           
           {/* Minimized Windows */}
-          <div className="flex space-x-1">
+          <div className="flex space-x-2">
             {windows.filter(w => w.isMinimized).map(window => (
               <button 
                 key={window.id}
-                className="flex items-center bg-gray-300 hover:bg-gray-400 border border-gray-500 px-2 py-1 text-xs"
+                className="flex items-center bg-blue-800 hover:bg-blue-700 border border-blue-500 px-3 py-1.5 text-xs text-white rounded-sm transition-colors"
                 onClick={() => activateWindow(window.id)}
               >
-                <span className="mr-1">{window.icon}</span>
-                <span className="truncate max-w-[80px]">{window.title}</span>
+                <span className="mr-2">{window.icon}</span>
+                <span className="truncate max-w-[100px]">{window.title}</span>
               </button>
             ))}
           </div>
         </div>
         
         {/* Clock */}
-        <div className="bg-gray-300 border border-gray-400 rounded-sm px-2 py-1 text-xs font-mono">
+        <div className="bg-blue-800 border border-blue-500 rounded-sm px-3 py-1.5 text-xs font-mono text-white">
           {currentTime.toLocaleTimeString()} | {currentTime.toLocaleDateString()}
         </div>
       </div>
