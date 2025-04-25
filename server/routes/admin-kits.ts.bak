@@ -492,11 +492,10 @@ router.post('/kits/:kitId/artwork', isAdmin, (req: Request, res: Response) => {
       }
       
       res.status(201).json(newArtwork);
-    } catch (error) {
-      console.error('Error uploading kit artwork:', error);
-      res.status(500).json({ message: 'Failed to upload kit artwork', error: String(error) });
-    }
-  });
+  } catch (error) {
+    console.error('Error uploading kit artwork:', error);
+    res.status(500).json({ message: 'Failed to upload kit artwork', error: String(error) });
+  }
 });
 
 // Delete artwork
@@ -534,4 +533,4 @@ router.delete('/artwork/:id', isAdmin, async (req: Request, res: Response) => {
   }
 });
 
-export default router;
+module.exports = router;
