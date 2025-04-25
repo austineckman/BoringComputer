@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import QuestCard from "@/components/quest-card/quest-card";
+import QuestCard from "@/components/quest-card";
 import PixelButton from "@/components/ui/pixel-button";
-import { useSounds } from "@/context/SoundContext";
+import { useSound } from "@/context/SoundContext";
 import { motion } from "framer-motion";
 
 // Import assets
@@ -43,25 +43,25 @@ const HomeRedesign: React.FC = () => {
   const [selectedAdventure, setSelectedAdventure] = useState<string | null>(null);
   
   // Sounds
-  const { sounds, loaded } = useSounds();
+  const { sounds } = useSound();
   
   // Sound effects
   const handleButtonClick = () => {
-    sounds.click?.();
+    sounds?.click?.();
   };
   
   const handleButtonHover = () => {
-    sounds.hover?.();
+    sounds?.hover?.();
   };
   
   const handleMapLocationHover = (adventureLine: string) => {
     setHoveredAdventure(adventureLine);
-    sounds.hover?.();
+    sounds?.hover?.();
   };
   
   const handleMapLocationClick = (adventureLine: string) => {
     setSelectedAdventure(selectedAdventure === adventureLine ? null : adventureLine);
-    sounds.click?.();
+    sounds?.click?.();
   };
   
   // Get user level (mock data for now, would come from user profile)
