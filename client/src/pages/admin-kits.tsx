@@ -656,16 +656,16 @@ const AdminKits = () => {
                         <span>Category: {kit.category}</span>
                       </div>
                     </CardContent>
-                    <CardFooter className="flex justify-between pt-0">
-                      <div className="flex gap-2">
-                        <Button variant="secondary" size="sm" onClick={() => handleSelectKit(kit)}>
+                    <CardFooter className="flex flex-col md:flex-row justify-between gap-2 pt-0">
+                      <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                        <Button variant="secondary" size="sm" className="flex-grow md:flex-grow-0" onClick={() => handleSelectKit(kit)}>
                           View Components <ChevronRight className="ml-1 h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleKitArtwork(kit)}>
+                        <Button variant="outline" size="sm" className="flex-grow md:flex-grow-0" onClick={() => handleKitArtwork(kit)}>
                           Artwork <ImageIcon className="ml-1 h-4 w-4" />
                         </Button>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 self-end">
                         <Button variant="ghost" size="icon" onClick={() => handleEditKit(kit)}>
                           <Edit className="h-4 w-4" />
                         </Button>
