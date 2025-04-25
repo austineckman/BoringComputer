@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, FilterX, Filter, ChevronRight, Clock, Award, Cpu, Loader2 } from 'lucide-react';
 import { useLocation } from 'wouter';
-import { useComponentKits } from '@/hooks/useComponentKits';
-import { useQuests, type Quest } from '@/hooks/useQuests';
+import { useComponentKits } from '../../hooks/useComponentKits';
+import { useQuests, type Quest } from '../../hooks/useQuests';
 import questImage from '@assets/01_Fire_Grimoire.png';
 import wallbg from '@assets/wallbg.png';
 
