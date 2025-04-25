@@ -20,10 +20,11 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { Wand2, Check, Save, X } from 'lucide-react';
+import { Wand2, Check, Save, X, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import PixelLoader from '@/components/ui/pixel-loader';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useLocation } from 'wouter';
 
 // Form schema
 const formSchema = z.object({
@@ -39,6 +40,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const AdminQuestGenerator = () => {
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [generatedQuest, setGeneratedQuest] = useState<{
     title: string;
     description: string;  // This is the flavor text/storytelling (lore)
