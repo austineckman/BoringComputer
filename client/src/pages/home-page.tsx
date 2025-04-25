@@ -7,10 +7,10 @@ import { Loader2 } from "lucide-react";
 import "@/components/retro-ui/retro-ui.css";
 
 const HomePage: React.FC = () => {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-border" />
@@ -24,9 +24,6 @@ const HomePage: React.FC = () => {
     <div className="min-h-screen flex flex-col">
       <div className="flex-grow">
         <RetroDesktop />
-        {isStartMenuOpen && (
-          <RetroStartMenu isOpen={isStartMenuOpen} onClose={() => setIsStartMenuOpen(false)} />
-        )}
       </div>
     </div>
   );

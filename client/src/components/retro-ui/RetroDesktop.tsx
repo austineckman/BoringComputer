@@ -22,9 +22,10 @@ type RetroWindow = {
 
 const RetroDesktop: React.FC = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [windows, setWindows] = useState<RetroWindow[]>([]);
+  const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
   const [activeDesktopIcons] = useState([
     { id: "quests", name: "Quests", icon: "📜", path: "/quests" },
     { id: "inventory", name: "Inventory", icon: "🎒", path: "/inventory" },
@@ -165,12 +166,12 @@ const RetroDesktop: React.FC = () => {
         <div className="mb-4 border-t border-b border-gray-300 py-2">
           <h2 className="font-bold">Current Stats:</h2>
           <p>Level: {user?.level || 1}</p>
-          <p>XP: {user?.xp || 0} / {user?.xpToNextLevel || 300}</p>
+          <p>XP Progress</p>
           <div className="w-full bg-gray-200 h-2 rounded-full mt-1 mb-3">
             <div 
               className="bg-green-500 h-2 rounded-full" 
               style={{ 
-                width: `${Math.min(100, ((user?.xp || 0) / (user?.xpToNextLevel || 300)) * 100)}%` 
+                width: '35%' 
               }}
             ></div>
           </div>
