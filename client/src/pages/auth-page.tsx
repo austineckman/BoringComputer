@@ -220,7 +220,7 @@ export default function AuthPage() {
                                 <input
                                   {...field}
                                   placeholder="Enter username"
-                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none retro-input"
+                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none"
                                 />
                               </FormControl>
                               <FormMessage className="text-xs text-red-600 mt-1" />
@@ -243,7 +243,7 @@ export default function AuthPage() {
                                   {...field}
                                   type="password"
                                   placeholder="Enter password"
-                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none retro-input"
+                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none"
                                 />
                               </FormControl>
                               <FormMessage className="text-xs text-red-600 mt-1" />
@@ -281,7 +281,7 @@ export default function AuthPage() {
                                 <input
                                   {...field}
                                   placeholder="Choose username"
-                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none retro-input"
+                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none"
                                 />
                               </FormControl>
                               <FormMessage className="text-xs text-red-600 mt-1" />
@@ -304,7 +304,7 @@ export default function AuthPage() {
                                   {...field}
                                   type="password"
                                   placeholder="Choose password"
-                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none retro-input"
+                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none"
                                 />
                               </FormControl>
                               <FormMessage className="text-xs text-red-600 mt-1" />

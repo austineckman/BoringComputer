@@ -195,3 +195,30 @@
 .retro-desktop::before {
   animation: scan 7.5s linear 0s infinite;
 }
+
+/* Input styles with flashing cursor effect */
+.retro-input {
+  position: relative;
+  z-index: 1;
+  color: black; 
+  caret-color: transparent;
+}
+
+/* Flashing cursor */
+.retro-input::after {
+  content: '';
+  position: absolute;
+  display: none; /* Disable the custom cursor - it's causing input problems */
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 16px;
+  background-color: black;
+  animation: cursor-blink 1s step-end infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
