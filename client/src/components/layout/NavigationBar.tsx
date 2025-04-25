@@ -44,7 +44,7 @@ const NavigationBar = () => {
   }, []);
   
   const navItems = [
-    { name: "Quests", path: "/" },
+    { name: "Quests", path: "/quests" },
     { name: "Inventory", path: "/inventory" },
     { name: "Character", path: "/character" },
     { name: "Gizbo's Forge", path: "/forge" },
