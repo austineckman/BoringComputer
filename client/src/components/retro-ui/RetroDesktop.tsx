@@ -7,6 +7,7 @@ import InventoryWindow from "./InventoryWindow";
 import ItemDetailsWindow from "./ItemDetailsWindow";
 import CraftingWindow from "./CraftingWindow";
 import TerminalWindow from "./TerminalWindow";
+import WebBrowserWindow from "./WebBrowserWindow";
 import wallpaperImage from "@assets/wallpaper.png";
 import backgroundMusic from "@assets/Fantasy Guild Hall.mp3";
 
@@ -100,15 +101,21 @@ const RetroDesktop: React.FC = () => {
       openWelcomeWindow();
     }, 800);
     
-    // Add event listener for terminal opening from Start Menu
+    // Add event listeners for windows that can be opened from Start Menu
     const handleOpenTerminal = () => {
       openTerminalWindow();
     };
     
+    const handleOpenBrowser = () => {
+      openShopWindow();
+    };
+    
     window.addEventListener('openTerminal', handleOpenTerminal);
+    window.addEventListener('openBrowser', handleOpenBrowser);
     
     return () => {
       window.removeEventListener('openTerminal', handleOpenTerminal);
+      window.removeEventListener('openBrowser', handleOpenBrowser);
     };
   }, []);
   
@@ -264,6 +271,8 @@ const RetroDesktop: React.FC = () => {
       openCraftingWindow();
     } else if (iconId === "terminal") {
       openTerminalWindow();
+    } else if (iconId === "shop") {
+      openShopWindow();
     } else if (iconId === "admin-folder") {
       toggleAdminFolder();
     } else if (iconPath) {
@@ -413,11 +422,15 @@ const RetroDesktop: React.FC = () => {
     openWindow("terminal", "Command Prompt", <TerminalWindow />, "💻");
   };
   
+  const openShopWindow = () => {
+    openWindow("shop", "Crafting Shop", <WebBrowserWindow initialUrl="https://craftingtable.com" title="Crafting Shop" />, "🛒");
+  };
+  
   const openWelcomeWindow = () => {
     const welcomeContent = (
       <div className="p-4 retro-window-content">
-        <h1 className="text-xl font-bold mb-4">Welcome to The Quest Giver!</h1>
-        <p className="mb-3">Your portal to exciting learning adventures with digital components.</p>
+        <h1 className="text-xl font-bold mb-4">Welcome to CraftingTable!</h1>
+        <p className="mb-3">Your adventure in crafting, exploration, and discovery begins here.</p>
         
         <div className="mb-4 border-t border-b border-gray-300 py-2">
           <h2 className="font-bold">Current Stats:</h2>
