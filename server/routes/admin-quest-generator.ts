@@ -97,18 +97,8 @@ router.post("/api/admin/generate-quest", async (req: Request, res: Response) => 
         let enhancedPrompt = imagePrompt || "";
         
         if (kitArtworks && kitArtworks.length > 0) {
-          // Add a note about component descriptions instead of trying to reference images
-          // DALL-E can't see the images by filepath reference
-          enhancedPrompt += `\n\nInclude these visual elements in the pixel art scene:\n`;
-          
-          // Describe components instead of trying to reference images directly
-          for (let i = 0; i < Math.min(kitArtworks.length, 3); i++) { 
-            // Since we don't have componentId in the kitArtwork table, we'll use kit name instead
-            enhancedPrompt += `- Electronic components from ${kit.name} with vibrant pixel art details\n`;
-          }
-          
-          // Add scene composition guidance
-          enhancedPrompt += `\nCreate a cohesive scene showing these components in action, with a character interacting with them.`;
+          // Just add the kit name to the theme for context
+          theme = `${theme} with ${kit.name} components`;
         }
         
         console.log("Generating image with enhanced prompt including kit artwork references");
@@ -259,18 +249,8 @@ async function generateQuestContent({
 
 async function generateQuestImage(title: string, description: string, theme: string, customPrompt: string = "") {
   try {
-    // Build a simpler, focused prompt for pixel art
-    let basePrompt = `Create a pixel art scene for a game about "${title}". The scene shows: "${description}". Setting: ${theme}.
-
-    Create pure pixel art in the style of classic 16-bit games like Legend of Zelda, Final Fantasy, or Stardew Valley.
-    
-    TECHNICAL REQUIREMENTS:
-    - Use a LIMITED COLOR PALETTE (maximum 16-32 colors)
-    - Create CLEAN PIXEL EDGES (no anti-aliasing)
-    - Use a CONSISTENT PIXEL SIZE throughout
-    - NO TEXT in the image
-    - STRONG SILHOUETTES and readable shapes
-    - Focus on VISUAL STORYTELLING`; 
+    // Simple, three-sentence prompt for pixel art
+    let basePrompt = `Create a 16-bit pixel art scene for a ${theme} adventure with no text. Use a limited color palette with clean pixel edges and consistent pixel size. Show a character interacting with technology in a vibrant environment.`; 
     
     // Add custom prompt if provided
     if (customPrompt && customPrompt.trim().length > 0) {
@@ -278,8 +258,7 @@ async function generateQuestImage(title: string, description: string, theme: str
       basePrompt += `\n\nStyle reference: ${customPrompt}`;
     }
     
-    // Add final reminder about the art style
-    basePrompt += `\n\nCreate authentic pixel art that looks like it belongs in a retro video game, with vibrant colors and clearly defined pixels.`;
+    // No additional reminders - keeping it to three sentences total
     
     console.log("Sending image generation request to OpenAI with prompt length:", basePrompt.length);
     
