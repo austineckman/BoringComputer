@@ -137,12 +137,18 @@ const RetroDesktop: React.FC = () => {
       openShopWindow();
     };
     
+    const handleOpenProfile = () => {
+      openProfileWindow();
+    };
+    
     window.addEventListener('openTerminal', handleOpenTerminal);
     window.addEventListener('openBrowser', handleOpenBrowser);
+    window.addEventListener('openProfile', handleOpenProfile);
     
     return () => {
       window.removeEventListener('openTerminal', handleOpenTerminal);
       window.removeEventListener('openBrowser', handleOpenBrowser);
+      window.removeEventListener('openProfile', handleOpenProfile);
     };
   }, []);
   
@@ -494,6 +500,16 @@ const RetroDesktop: React.FC = () => {
     );
   };
   
+  const openProfileWindow = () => {
+    openWindow(
+      "profile", 
+      "Profile Settings", 
+      <ProfileWindow onClose={() => closeWindow("profile")} />, 
+      "user",
+      { width: 600, height: 650 }
+    );
+  };
+
   const openWelcomeWindow = () => {
     const welcomeContent = (
       <div className="p-4 retro-window-content">
