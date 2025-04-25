@@ -1,6 +1,7 @@
 import { Route, Switch } from "wouter";
 import { useEffect, useState } from "react";
 import Home from "@/pages/home";
+import HomeRedesign from "@/pages/home-redesign";
 import AuthPage from "@/pages/auth-page";
 import Quests from "@/pages/quests";
 import QuestDetail from "@/pages/quest-detail";
@@ -98,6 +99,15 @@ function App() {
         {/* Protected routes */}
         <ProtectedRoute 
           path="/" 
+          component={() => (
+            <MainLayout>
+              <HomeRedesign />
+            </MainLayout>
+          )} 
+        />
+        
+        <ProtectedRoute 
+          path="/home-classic" 
           component={() => (
             <MainLayout>
               <Home />
