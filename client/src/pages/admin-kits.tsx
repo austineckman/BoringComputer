@@ -408,26 +408,33 @@ const AdminKits = () => {
   };
 
   const onAddComponent = (data: z.infer<typeof componentFormSchema>) => {
+    console.log("onAddComponent called with data:", data);
+    console.log("useExistingComponent:", useExistingComponent);
+    console.log("selectedExistingComponent:", selectedExistingComponent);
+    console.log("selectedKit:", selectedKit);
+    
     const formData = new FormData();
     
-    // If using an existing component
-    if (useExistingComponent && selectedExistingComponent) {
-      formData.append('fromExistingId', selectedExistingComponent.toString());
-      formData.append('quantity', data.quantity.toString());
-      formData.append('isRequired', data.isRequired.toString());
-    } else {
-      // Creating a new component from scratch
-      formData.append('name', data.name);
-      formData.append('description', data.description);
-      formData.append('partNumber', data.partNumber || '');
-      formData.append('isRequired', data.isRequired.toString());
-      formData.append('quantity', data.quantity.toString());
-      formData.append('category', data.category);
-      
-      if (componentImageFile) {
-        formData.append('image', componentImageFile);
-      }
+    // Creating a new component from scratch - this function is now only used for new components
+    console.log("Adding new component");
+    formData.append('name', data.name);
+    formData.append('description', data.description);
+    formData.append('partNumber', data.partNumber || '');
+    formData.append('isRequired', data.isRequired.toString());
+    formData.append('quantity', data.quantity.toString());
+    formData.append('category', data.category);
+    
+    if (componentImageFile) {
+      formData.append('image', componentImageFile);
     }
+    
+    console.log("Calling mutation to add component");
+    // Log values individually instead of using iterator
+    console.log("name:", formData.get('name'));
+    console.log("description:", formData.get('description'));
+    console.log("isRequired:", formData.get('isRequired'));
+    console.log("quantity:", formData.get('quantity'));
+    console.log("category:", formData.get('category'));
     
     addComponentMutation.mutate(formData);
   };
@@ -1057,141 +1064,145 @@ const AdminKits = () => {
             </div>
             
             {useExistingComponent ? (
-              // Existing Component Selection Form
-              <Form {...componentForm}>
-                <form onSubmit={componentForm.handleSubmit(onAddComponent)} className="space-y-4">
-                  <div className="space-y-4">
-                    <Label>Select an existing component</Label>
-                    {isLoadingAllComponents ? (
-                      <div className="flex justify-center p-4">
-                        <div className="animate-spin h-6 w-6 border-4 border-primary border-t-transparent rounded-full"></div>
-                      </div>
-                    ) : allComponents && allComponents.length > 0 ? (
-                      <div className="border rounded-md max-h-[300px] overflow-y-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Image</TableHead>
-                              <TableHead>Name</TableHead>
-                              <TableHead>Kit</TableHead>
-                              <TableHead>Select</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {allComponents
-                              ?.filter((c: ExtendedComponent) => c.kitId !== selectedKit?.id) // Don't show components from the current kit
-                              .map((component: ExtendedComponent) => (
-                                <TableRow key={component.id}>
-                                  <TableCell>
-                                    {component.imagePath ? (
-                                      <div className="relative w-10 h-10 bg-gray-100 rounded-md overflow-hidden">
-                                        <img 
-                                          src={component.imagePath} 
-                                          alt={component.name}
-                                          className="w-full h-full object-cover" 
-                                        />
-                                      </div>
-                                    ) : (
-                                      <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-md">
-                                        <Settings className="h-5 w-5 text-gray-300" />
-                                      </div>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>
-                                    <div>
-                                      <p className="font-medium">{component.name}</p>
-                                      <p className="text-xs text-muted-foreground line-clamp-1">{component.description}</p>
+              // Existing Component Selection Form - NO FORM WRAPPER
+              <div className="space-y-4">
+                <div className="space-y-4">
+                  <Label>Select an existing component</Label>
+                  {isLoadingAllComponents ? (
+                    <div className="flex justify-center p-4">
+                      <div className="animate-spin h-6 w-6 border-4 border-primary border-t-transparent rounded-full"></div>
+                    </div>
+                  ) : allComponents && allComponents.length > 0 ? (
+                    <div className="border rounded-md max-h-[300px] overflow-y-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Image</TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Kit</TableHead>
+                            <TableHead>Select</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {allComponents
+                            ?.filter((c: ExtendedComponent) => c.kitId !== selectedKit?.id) // Don't show components from the current kit
+                            .map((component: ExtendedComponent) => (
+                              <TableRow key={component.id}>
+                                <TableCell>
+                                  {component.imagePath ? (
+                                    <div className="relative w-10 h-10 bg-gray-100 rounded-md overflow-hidden">
+                                      <img 
+                                        src={component.imagePath} 
+                                        alt={component.name}
+                                        className="w-full h-full object-cover" 
+                                      />
                                     </div>
-                                  </TableCell>
-                                  <TableCell>{component.kitName}</TableCell>
-                                  <TableCell>
-                                    <Button 
-                                      type="button" 
-                                      variant={selectedExistingComponent === component.id ? "default" : "outline"}
-                                      size="sm"
-                                      onClick={() => setSelectedExistingComponent(component.id)}
-                                    >
-                                      {selectedExistingComponent === component.id ? "Selected" : "Select"}
-                                    </Button>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    ) : (
-                      <div className="p-4 border rounded-md text-center">
-                        <p>No components available from other kits.</p>
-                      </div>
+                                  ) : (
+                                    <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-md">
+                                      <Settings className="h-5 w-5 text-gray-300" />
+                                    </div>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <div>
+                                    <p className="font-medium">{component.name}</p>
+                                    <p className="text-xs text-muted-foreground line-clamp-1">{component.description}</p>
+                                  </div>
+                                </TableCell>
+                                <TableCell>{component.kitName}</TableCell>
+                                <TableCell>
+                                  <Button 
+                                    type="button" 
+                                    variant={selectedExistingComponent === component.id ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setSelectedExistingComponent(component.id)}
+                                  >
+                                    {selectedExistingComponent === component.id ? "Selected" : "Select"}
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="p-4 border rounded-md text-center">
+                      <p>No components available from other kits.</p>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="existing-quantity">Quantity</Label>
+                    <Input 
+                      id="existing-quantity"
+                      type="number" 
+                      min={1} 
+                      max={100}
+                      defaultValue={1}
+                      onChange={(e) => componentForm.setValue('quantity', parseInt(e.target.value) || 1)}
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      How many of this component come in the kit
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <Checkbox
+                      id="existing-required"
+                      defaultChecked={true}
+                      onCheckedChange={(checked) => componentForm.setValue('isRequired', !!checked)}
+                    />
+                    <div className="space-y-1 leading-none">
+                      <Label htmlFor="existing-required">Required Component</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Is this component required for kit completion?
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <DialogFooter>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsAddingComponent(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="button" 
+                    disabled={addComponentMutation.isPending || !selectedExistingComponent}
+                    onClick={() => {
+                      if (!selectedExistingComponent || !selectedKit) return;
+                      
+                      console.log("Adding existing component with direct click");
+                      const formData = new FormData();
+                      formData.append('fromExistingId', selectedExistingComponent.toString());
+                      // Use default values if not set
+                      const quantity = componentForm.getValues('quantity') || 1;
+                      const isRequired = componentForm.getValues('isRequired') !== false; // default to true
+                      
+                      formData.append('quantity', quantity.toString());
+                      formData.append('isRequired', isRequired.toString());
+                      
+                      console.log("FormData contents for existing component:");
+                      // Log the key values without iterator
+                      console.log("fromExistingId:", formData.get('fromExistingId'));
+                      console.log("quantity:", formData.get('quantity'));
+                      console.log("isRequired:", formData.get('isRequired'));
+                      
+                      addComponentMutation.mutate(formData);
+                    }}
+                  >
+                    {addComponentMutation.isPending && (
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                     )}
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={componentForm.control}
-                      name="quantity"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Quantity</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              min={1} 
-                              max={100} 
-                              {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            How many of this component come in the kit
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={componentForm.control}
-                      name="isRequired"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>Required Component</FormLabel>
-                            <FormDescription>
-                              Is this component required for kit completion?
-                            </FormDescription>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <DialogFooter>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={() => setIsAddingComponent(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={addComponentMutation.isPending || !selectedExistingComponent}
-                    >
-                      {addComponentMutation.isPending && (
-                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                      )}
-                      Add Existing Component
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
+                    Add Existing Component
+                  </Button>
+                </DialogFooter>
+              </div>
             ) : (
               // New Component Form
               <Form {...componentForm}>
