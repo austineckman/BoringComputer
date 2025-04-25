@@ -898,8 +898,16 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getAvailableQuestsForUser(userId: number): Promise<Quest[]> {
-    // For now, just return all active quests
-    return await db.select().from(quests).where(eq(quests.active, true));
+    console.log(`Getting available quests for user ${userId}`);
+    try {
+      // For now, just return all active quests
+      const availableQuests = await db.select().from(quests).where(eq(quests.active, true));
+      console.log(`Found ${availableQuests.length} available quests:`, availableQuests.map(q => q.title));
+      return availableQuests;
+    } catch (error) {
+      console.error('Error in getAvailableQuestsForUser:', error);
+      return [];
+    }
   }
 
   async getQuestsByAdventureLine(adventureLine: string): Promise<Quest[]> {
