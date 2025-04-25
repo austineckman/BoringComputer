@@ -170,9 +170,26 @@ export function useQuests() {
     queryFn: getQueryFn({ on401: 'returnNull' }),
   });
 
-  // If real data is available, use it; otherwise, use dummy data during development
-  const questsByAdventureLine: QuestsByLine = data?.questsByAdventureLine || groupQuestsByLine(dummyQuests);
-  const allQuests: Quest[] = data?.allQuests || dummyQuests;
+  // Use data from API if available
+  let questsByAdventureLine: QuestsByLine = {};
+  let allQuests: Quest[] = [];
+
+  if (data && Object.keys(data).length > 0) {
+    // If server returns data in the expected format (questsByAdventureLine and allQuests)
+    if (data.questsByAdventureLine && data.allQuests) {
+      questsByAdventureLine = data.questsByAdventureLine;
+      allQuests = data.allQuests;
+    } 
+    // Or if server returns just an array of quests
+    else if (Array.isArray(data)) {
+      allQuests = data;
+      questsByAdventureLine = groupQuestsByLine(data);
+    }
+  } else {
+    // Temporarily use dummy data during development
+    questsByAdventureLine = groupQuestsByLine(dummyQuests);
+    allQuests = dummyQuests;
+  }
   
   return {
     questsByAdventureLine,
