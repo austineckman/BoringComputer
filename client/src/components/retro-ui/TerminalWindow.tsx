@@ -5,8 +5,11 @@ interface TerminalWindowProps {
   startingDirectory?: string;
 }
 
-const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory = "C:\\QUESTOS" }) => {
+const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory }) => {
   const { user } = useAuth();
+  // Use user's name for the directory if available, otherwise use CRAFTINGTABLE
+  const userDir = user?.username ? user.username.toUpperCase() : "CRAFTINGTABLE";
+  startingDirectory = startingDirectory || `C:\\${userDir}`;
   const [currentDirectory, setCurrentDirectory] = useState(startingDirectory);
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -21,24 +24,25 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory = "C:
   const outputRef = useRef<HTMLDivElement>(null);
   const [terminalColor, setTerminalColor] = useState("green");
 
-  // Virtual file system structure
-  const fileSystem = {
-    "C:": {
-      "QUESTOS": {
-        "readme.txt": "Welcome to Quest OS!\nType 'help' to see available commands.\n\nHappy questing!",
-        "secrets.txt": "Hidden areas can be found in the most unexpected places.\nTry using 'secret' command to reveal one of them.",
-        "lore.txt": "The Quest Giver was founded in 2025 to help adventurers learn about technology through playful questing.",
-        "QUESTS": {
-          "active_quests.dat": "Quest_1: Circuit Basics\nQuest_2: LED Adventures\nQuest_3: Digital Logic",
-        },
-        "INVENTORY": {
-          "manifest.dat": "This folder contains information about your inventory items.",
-        },
-        "SYSTEM": {
-          "help.sys": "HELP SYSTEM FILE - DO NOT MODIFY",
-          "config.sys": "COLOR=GREEN\nUSER_LEVEL=1\nMUSIC=ON",
-        }
-      }
+  // Create a dynamic file system with the user's directory
+  const fileSystem: any = {
+    "C:": {}
+  };
+  
+  // Add user directory with common files
+  fileSystem["C:"][userDir] = {
+    "readme.txt": "Welcome to CraftingTableOS!\nType 'help' to see available commands.\n\nGood luck on your hunt for the three golden keys!",
+    "secrets.txt": "Hidden areas can be found in the most unexpected places.\nTry using 'secret' command to reveal one of them.",
+    "lore.txt": "CraftingTable was founded in 2025 to create adventures with crafting, exploration, and discovery.",
+    "QUESTS": {
+      "active_quests.dat": "Quest_1: Circuit Basics\nQuest_2: LED Adventures\nQuest_3: Digital Logic",
+    },
+    "INVENTORY": {
+      "manifest.dat": "This folder contains information about your inventory items.",
+    },
+    "SYSTEM": {
+      "help.sys": "HELP SYSTEM FILE - DO NOT MODIFY",
+      "config.sys": "COLOR=GREEN\nUSER_LEVEL=1\nMUSIC=ON",
     }
   };
 
