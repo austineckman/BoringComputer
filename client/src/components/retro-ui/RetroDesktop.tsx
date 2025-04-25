@@ -152,7 +152,13 @@ const RetroDesktop: React.FC = () => {
   }, []);
 
   // Window management functions
-  const openWindow = (id: string, title: string, content: React.ReactNode, icon: string) => {
+  const openWindow = (
+    id: string, 
+    title: string, 
+    content: React.ReactNode, 
+    icon: string,
+    customSize?: { width?: number, height?: number }
+  ) => {
     // Make all other windows inactive
     const updatedWindows = windows.map(window => ({
       ...window,
@@ -173,6 +179,10 @@ const RetroDesktop: React.FC = () => {
       return;
     }
     
+    // Use default or custom dimensions
+    const width = customSize?.width || 600;
+    const height = customSize?.height || 400;
+    
     // Create a new window with random position
     const newWindow: RetroWindow = {
       id,
@@ -182,8 +192,8 @@ const RetroDesktop: React.FC = () => {
       position: {
         x: 50 + Math.random() * 100,
         y: 50 + Math.random() * 100,
-        width: 600,
-        height: 400,
+        width,
+        height,
       },
       isMinimized: false,
       isActive: true,
@@ -402,11 +412,23 @@ const RetroDesktop: React.FC = () => {
 
   // Specific window content functions
   const openCraftingWindow = () => {
-    openWindow("crafting", "Crafting Station", <CraftingWindow />, "⚒️");
+    openWindow(
+      "crafting", 
+      "Crafting Station", 
+      <CraftingWindow />, 
+      "⚒️", 
+      { width: 700, height: 500 }
+    );
   };
   
   const openInventoryWindow = () => {
-    openWindow("inventory", "Inventory", <InventoryWindow openItemDetails={openItemDetailsWindow} />, "🎒");
+    openWindow(
+      "inventory", 
+      "Inventory", 
+      <InventoryWindow openItemDetails={openItemDetailsWindow} />, 
+      "🎒",
+      { width: 650, height: 520 }
+    );
   };
   
   const openItemDetailsWindow = (itemId: string, quantity: number) => {
@@ -414,16 +436,29 @@ const RetroDesktop: React.FC = () => {
       `item-${itemId}`, 
       `Item Details: ${itemId}`, 
       <ItemDetailsWindow itemId={itemId} quantity={quantity} />, 
-      "📦"
+      "📦",
+      { width: 500, height: 450 }
     );
   };
   
   const openTerminalWindow = () => {
-    openWindow("terminal", "Command Prompt", <TerminalWindow />, "💻");
+    openWindow(
+      "terminal", 
+      "Command Prompt", 
+      <TerminalWindow />, 
+      "💻",
+      { width: 650, height: 450 }
+    );
   };
   
   const openShopWindow = () => {
-    openWindow("shop", "Crafting Shop", <WebBrowserWindow initialUrl="https://craftingtable.com" title="Crafting Shop" />, "🛒");
+    openWindow(
+      "shop", 
+      "Crafting Shop", 
+      <WebBrowserWindow initialUrl="https://craftingtable.com" title="Crafting Shop" />, 
+      "🛒",
+      { width: 800, height: 600 }
+    );
   };
   
   const openWelcomeWindow = () => {
@@ -622,7 +657,43 @@ const RetroDesktop: React.FC = () => {
                   className="w-5 h-5 flex items-center justify-center bg-blue-800 hover:bg-blue-700 text-white rounded-sm border border-blue-400"
                   onClick={(e) => {
                     e.stopPropagation();
-                    // In a full implementation, this would maximize the window
+                    // Toggle between default size and large size
+                    const currentWidth = window.position.width;
+                    const currentHeight = window.position.height;
+                    
+                    if (currentWidth < 800) {
+                      // Maximize
+                      setWindows(
+                        windows.map(w => 
+                          w.id === window.id 
+                            ? { 
+                                ...w, 
+                                position: {
+                                  ...w.position,
+                                  width: 800,
+                                  height: 600
+                                } 
+                              } 
+                            : w
+                        )
+                      );
+                    } else {
+                      // Restore to default size
+                      setWindows(
+                        windows.map(w => 
+                          w.id === window.id 
+                            ? { 
+                                ...w, 
+                                position: {
+                                  ...w.position,
+                                  width: 600,
+                                  height: 400
+                                } 
+                              } 
+                            : w
+                        )
+                      );
+                    }
                   }}
                 >
                   <Maximize2 size={14} />
@@ -643,6 +714,54 @@ const RetroDesktop: React.FC = () => {
             <div className="retro-window-body p-2 overflow-auto bg-gray-100" style={{ height: 'calc(100% - 36px)' }}>
               {window.content}
             </div>
+            
+            {/* Resize Handle */}
+            <div 
+              className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-gray-400 hover:bg-gray-300"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Get initial mouse position and window dimensions
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const initialWidth = window.position.width;
+                const initialHeight = window.position.height;
+                
+                // Handle resize
+                const onMouseMove = (e: MouseEvent) => {
+                  // Calculate new dimensions based on mouse movement
+                  const newWidth = Math.max(300, initialWidth + (e.clientX - startX));
+                  const newHeight = Math.max(200, initialHeight + (e.clientY - startY));
+                  
+                  // Update window dimensions
+                  setWindows(
+                    windows.map(w => 
+                      w.id === window.id 
+                        ? { 
+                            ...w, 
+                            position: {
+                              ...w.position,
+                              width: newWidth,
+                              height: newHeight
+                            } 
+                          } 
+                        : w
+                    )
+                  );
+                };
+                
+                // Clean up resize event
+                const onMouseUp = () => {
+                  document.removeEventListener('mousemove', onMouseMove);
+                  document.removeEventListener('mouseup', onMouseUp);
+                };
+                
+                // Add resize event listeners
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+              }}
+            />
           </div>
         )
       ))}
