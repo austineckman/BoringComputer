@@ -180,10 +180,12 @@ async function generateQuestContent({
   
   // Parse the response
   const responseContent = completion.choices[0].message.content;
+  console.log("Raw OpenAI response:", responseContent); // Add logging
   const parsedContent = JSON.parse(responseContent);
+  console.log("Parsed content:", parsedContent); // Add logging
   
   // Ensure required fields are present
-  return {
+  const result = {
     title: parsedContent.title || `New ${kitName} Quest`,
     description: parsedContent.description || `A quest using the ${kitName} kit.`,
     missionBrief: parsedContent.missionBrief || `Build something using the ${kitName} components.`,
@@ -192,6 +194,9 @@ async function generateQuestContent({
     lootSuggestion: parsedContent.lootSuggestion || "Mystery Components x1",
     adventureLine: parsedContent.adventureLine || kitName
   };
+  
+  console.log("Final quest content being returned:", result); // Add logging
+  return result;
 }
 
 async function generateQuestImage(title: string, description: string, theme: string, customPrompt: string = "") {
