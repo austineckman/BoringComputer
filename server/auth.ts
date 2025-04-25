@@ -54,13 +54,13 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
   
   if (!req.isAuthenticated()) {
     if (BYPASS_AUTH) {
-      // Create a mock user for development
+      // Create a mock user for development with admin access
       (req as any).user = {
         id: 999,
-        username: isAdminRoute ? "devadmin" : "devuser",
+        username: "devadmin",
         email: "dev@example.com",
-        roles: isAdminRoute ? ["admin", "user"] : ["user"],
-        level: isAdminRoute ? 10 : 1,
+        roles: ["admin", "user"],
+        level: 10,
         inventory: {
           "copper": 10,
           "crystal": 5,

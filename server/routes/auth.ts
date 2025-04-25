@@ -115,13 +115,13 @@ router.get("/me", (req, res) => {
   // Check if user is authenticated
   if (!req.isAuthenticated()) {
     if (BYPASS_AUTH) {
-      // Create a mock user for development
+      // Create a mock user for development with admin access
       const mockUser = {
         id: 999,
         username: "devuser",
         email: "dev@example.com",
-        roles: ["user"],
-        level: 1,
+        roles: ["admin", "user"],
+        level: 10,
         inventory: {
           "copper": 10,
           "crystal": 5,
