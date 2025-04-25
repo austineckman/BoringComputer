@@ -21,12 +21,14 @@ export interface Quest {
   difficulty: number;
   orderInLine: number;
   xpReward: number;
-  status: 'locked' | 'available' | 'completed' | 'in-progress';
-  lootBoxRewards: {
+  status?: 'locked' | 'available' | 'completed' | 'in-progress';
+  // This field is in the database directly linking quests to kits
+  kitId?: string | null;
+  lootBoxRewards?: {
     type: string;
     quantity: number;
   }[];
-  content: {
+  content?: {
     videos: string[];
     images: string[];
     codeBlocks: {
@@ -182,17 +184,32 @@ export function useQuests() {
       // If API returns data in the expected format
       questsByAdventureLine = data.questsByAdventureLine;
       allQuests = data.allQuests;
+      console.log('Using data in expected format:',
+        `Adventure lines: ${Object.keys(questsByAdventureLine).length}`,
+        `Total quests: ${allQuests.length}`);
     } else if (Array.isArray(data)) {
       // If API returns an array of quests
       allQuests = data;
       questsByAdventureLine = groupQuestsByLine(data);
+      console.log('Using data as array:', `Total quests: ${allQuests.length}`);
     } else if (typeof data === 'object') {
       // If API returns some other object format, try to extract quests
       if (data.quests && Array.isArray(data.quests)) {
         allQuests = data.quests;
         questsByAdventureLine = groupQuestsByLine(data.quests);
+        console.log('Using data.quests:', `Total quests: ${allQuests.length}`);
+      } else {
+        console.warn('Unexpected data format from API:', data);
       }
+    } else {
+      console.warn('Unexpected data type from API:', typeof data);
     }
+  } else {
+    console.warn('No data received from API');
+    // For debugging, let's check what happens with dummy data
+    allQuests = dummyQuests;
+    questsByAdventureLine = groupQuestsByLine(dummyQuests);
+    console.log('FALLING BACK to dummy data for debugging - This should not happen in production');
   }
   
   // Log the processed data

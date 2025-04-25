@@ -100,12 +100,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Quests routes
   app.get('/api/quests', authenticate, async (req, res) => {
     try {
+      console.log('GET /api/quests - Request received');
       const user = (req as any).user;
+      console.log('User ID:', user.id, 'Username:', user.username);
       
       // Get available quests based on user's progression
+      console.log('Fetching available quests');
       const availableQuests = await storage.getAvailableQuestsForUser(user.id);
+      console.log('Fetching user quests');
       const userQuests = await storage.getUserQuests(user.id);
+      console.log('Fetching all quests');
       const allQuests = await storage.getQuests();
+      console.log(`Found ${allQuests.length} total quests in database`);
       
       // Group quests by adventure line to help with frontend organization
       const questsByAdventureLine: Record<string, any[]> = {};
@@ -135,11 +141,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status = 'completed';
         }
         
+        console.log(`Processing quest: ${quest.id} - ${quest.title} with status ${status}`);
+        
         questsByAdventureLine[adventureLine].push({
           id: quest.id.toString(),
           date: quest.date,
           title: quest.title,
           description: quest.description,
+          missionBrief: quest.missionBrief, // Make sure to include missionBrief
           adventureLine: quest.adventureLine,
           difficulty: quest.difficulty,
           orderInLine: quest.orderInLine,
@@ -155,16 +164,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Sort each adventure line by orderInLine
       for (const adventureLine in questsByAdventureLine) {
         questsByAdventureLine[adventureLine].sort((a, b) => a.orderInLine - b.orderInLine);
+        console.log(`Adventure line ${adventureLine} has ${questsByAdventureLine[adventureLine].length} quests`);
       }
       
-      return res.json({
+      const responseData = {
         questsByAdventureLine,
         // Also include a flat list for backward compatibility
         allQuests: Object.values(questsByAdventureLine).flat()
-      });
+      };
+      
+      console.log(`Sending response with ${responseData.allQuests.length} total quests in ${Object.keys(responseData.questsByAdventureLine).length} adventure lines`);
+      
+      return res.json(responseData);
     } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: "Failed to fetch quests" });
+      console.error('Error in /api/quests endpoint:', error);
+      return res.status(500).json({ message: "Failed to fetch quests", error: error.message });
     }
   });
   
