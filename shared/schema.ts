@@ -419,6 +419,14 @@ export const componentKits = pgTable("component_kits", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Kit Artwork table for storing reference images for AI generation
+export const kitArtwork = pgTable("kit_artwork", {
+  id: serial("id").primaryKey(),
+  kitId: text("kit_id").notNull().references(() => componentKits.id, { onDelete: 'cascade' }),
+  imagePath: text("image_path").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Kit Components table - components within each kit
 export const kitComponents = pgTable("kit_components", {
   id: serial("id").primaryKey(),
@@ -488,9 +496,18 @@ export const insertQuestComponentSchema = createInsertSchema(questComponents).pi
   isOptional: true,
 });
 
+// Insert schema for kit artwork
+export const insertKitArtworkSchema = createInsertSchema(kitArtwork).pick({
+  kitId: true,
+  imagePath: true,
+});
+
 // Types for new tables
 export type ComponentKit = typeof componentKits.$inferSelect;
 export type InsertComponentKit = z.infer<typeof insertComponentKitSchema>;
+
+export type KitArtwork = typeof kitArtwork.$inferSelect;
+export type InsertKitArtwork = z.infer<typeof insertKitArtworkSchema>;
 
 export type KitComponent = typeof kitComponents.$inferSelect;
 export type InsertKitComponent = z.infer<typeof insertKitComponentSchema>;
