@@ -83,6 +83,11 @@ type Component = {
   updatedAt: string;
 };
 
+// Extended component type that includes kit information for the component reuse feature
+interface ExtendedComponent extends Component {
+  kitName: string;
+}
+
 // Form validation schemas
 const kitFormSchema = z.object({
   id: z.string().min(2, "ID must be at least 2 characters").max(50),
@@ -136,7 +141,7 @@ const AdminKits = () => {
   });
   
   // Fetch all components across all kits for reuse
-  const { data: allComponents, isLoading: isLoadingAllComponents } = useQuery({
+  const { data: allComponents, isLoading: isLoadingAllComponents } = useQuery<ExtendedComponent[]>({
     queryKey: ['/api/admin/all-components'],
     queryFn: () => fetch('/api/admin/all-components', {
       method: 'GET',
@@ -1032,76 +1037,94 @@ const AdminKits = () => {
             <DialogHeader>
               <DialogTitle>Add Component to {selectedKit?.name}</DialogTitle>
               <DialogDescription>
-                Add a new component to this kit with detailed specifications.
+                Add a new component to this kit with detailed specifications or select an existing one.
               </DialogDescription>
             </DialogHeader>
-            <Form {...componentForm}>
-              <form onSubmit={componentForm.handleSubmit(onAddComponent)} className="space-y-4">
-                <FormField
-                  control={componentForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Component Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Arduino Uno R3 Board" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+            
+            <div className="mb-4">
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  id="use-existing" 
+                  checked={useExistingComponent}
+                  onCheckedChange={setUseExistingComponent}
                 />
-                <FormField
-                  control={componentForm.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="The Arduino Uno R3 is a microcontroller board based on the ATmega328P. It has 14 digital input/output pins, 6 analog inputs, a 16 MHz ceramic resonator, a USB connection, a power jack, an ICSP header, and a reset button." 
-                          {...field} 
-                          rows={3}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={componentForm.control}
-                    name="partNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Part Number</FormLabel>
-                        <FormControl>
-                          <Input placeholder="A000066" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Manufacturer's part number (optional)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
+                <Label htmlFor="use-existing">Use existing component from another kit</Label>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Reuse components that already exist in other kits to avoid duplication
+              </p>
+            </div>
+            
+            {useExistingComponent ? (
+              // Existing Component Selection Form
+              <Form {...componentForm}>
+                <form onSubmit={componentForm.handleSubmit(onAddComponent)} className="space-y-4">
+                  <div className="space-y-4">
+                    <Label>Select an existing component</Label>
+                    {isLoadingAllComponents ? (
+                      <div className="flex justify-center p-4">
+                        <div className="animate-spin h-6 w-6 border-4 border-primary border-t-transparent rounded-full"></div>
+                      </div>
+                    ) : allComponents && allComponents.length > 0 ? (
+                      <div className="border rounded-md max-h-[300px] overflow-y-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Image</TableHead>
+                              <TableHead>Name</TableHead>
+                              <TableHead>Kit</TableHead>
+                              <TableHead>Select</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {allComponents
+                              ?.filter((c: ExtendedComponent) => c.kitId !== selectedKit?.id) // Don't show components from the current kit
+                              .map((component: ExtendedComponent) => (
+                                <TableRow key={component.id}>
+                                  <TableCell>
+                                    {component.imagePath ? (
+                                      <div className="relative w-10 h-10 bg-gray-100 rounded-md overflow-hidden">
+                                        <img 
+                                          src={component.imagePath} 
+                                          alt={component.name}
+                                          className="w-full h-full object-cover" 
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-md">
+                                        <Settings className="h-5 w-5 text-gray-300" />
+                                      </div>
+                                    )}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div>
+                                      <p className="font-medium">{component.name}</p>
+                                      <p className="text-xs text-muted-foreground line-clamp-1">{component.description}</p>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>{component.kitName}</TableCell>
+                                  <TableCell>
+                                    <Button 
+                                      type="button" 
+                                      variant={selectedExistingComponent === component.id ? "default" : "outline"}
+                                      size="sm"
+                                      onClick={() => setSelectedExistingComponent(component.id)}
+                                    >
+                                      {selectedExistingComponent === component.id ? "Selected" : "Select"}
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    ) : (
+                      <div className="p-4 border rounded-md text-center">
+                        <p>No components available from other kits.</p>
+                      </div>
                     )}
-                  />
-                  <FormField
-                    control={componentForm.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Category</FormLabel>
-                        <FormControl>
-                          <Input placeholder="microcontroller" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Component category (e.g., sensor, actuator, connector)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+                  </div>
+                  
                   <FormField
                     control={componentForm.control}
                     name="quantity"
@@ -1118,67 +1141,179 @@ const AdminKits = () => {
                           />
                         </FormControl>
                         <FormDescription>
-                          How many come in the kit
+                          How many of this component come in the kit
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="component-image">Component Image</Label>
-                  <div className="flex items-center gap-4">
-                    {componentImageFile ? (
-                      <div className="relative w-24 h-24 bg-gray-100 rounded-md overflow-hidden">
-                        <img
-                          src={URL.createObjectURL(componentImageFile)}
-                          alt="Component preview"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center w-24 h-24 bg-gray-100 rounded-md">
-                        <ImagePlus className="h-8 w-8 text-gray-300" />
-                      </div>
+                  
+                  <DialogFooter>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setIsAddingComponent(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={addComponentMutation.isPending || !selectedExistingComponent}
+                    >
+                      {addComponentMutation.isPending && (
+                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      )}
+                      Add Existing Component
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            ) : (
+              // New Component Form
+              <Form {...componentForm}>
+                <form onSubmit={componentForm.handleSubmit(onAddComponent)} className="space-y-4">
+                  <FormField
+                    control={componentForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Component Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Arduino Uno R3 Board" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                    <div className="flex-1">
-                      <Input
-                        id="component-image"
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          if (e.target.files && e.target.files[0]) {
-                            setComponentImageFile(e.target.files[0]);
-                          }
-                        }}
-                      />
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Upload an image for this component (optional)
-                      </p>
+                  />
+                  <FormField
+                    control={componentForm.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="The Arduino Uno R3 is a microcontroller board based on the ATmega328P. It has 14 digital input/output pins, 6 analog inputs, a 16 MHz ceramic resonator, a USB connection, a power jack, an ICSP header, and a reset button." 
+                            {...field} 
+                            rows={3}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={componentForm.control}
+                      name="partNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Part Number</FormLabel>
+                          <FormControl>
+                            <Input placeholder="A000066" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Manufacturer's part number (optional)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={componentForm.control}
+                      name="category"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Category</FormLabel>
+                          <FormControl>
+                            <Input placeholder="microcontroller" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Component category (e.g., sensor, actuator, connector)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={componentForm.control}
+                      name="quantity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Quantity</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min={1} 
+                              max={100} 
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            How many come in the kit
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="component-image">Component Image</Label>
+                    <div className="flex items-center gap-4">
+                      {componentImageFile ? (
+                        <div className="relative w-24 h-24 bg-gray-100 rounded-md overflow-hidden">
+                          <img
+                            src={URL.createObjectURL(componentImageFile)}
+                            alt="Component preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center w-24 h-24 bg-gray-100 rounded-md">
+                          <ImagePlus className="h-8 w-8 text-gray-300" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <Input
+                          id="component-image"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              setComponentImageFile(e.target.files[0]);
+                            }
+                          }}
+                        />
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Upload an image for this component (optional)
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <DialogFooter>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setIsAddingComponent(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={addComponentMutation.isPending}
-                  >
-                    {addComponentMutation.isPending && (
-                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    )}
-                    Add Component
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
+                  <DialogFooter>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setIsAddingComponent(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={addComponentMutation.isPending}
+                    >
+                      {addComponentMutation.isPending && (
+                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      )}
+                      Add New Component
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            )}
           </DialogContent>
         </Dialog>
 

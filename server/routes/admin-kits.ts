@@ -196,16 +196,6 @@ router.post('/kits/:kitId/components', isAdmin, upload.single('image'), async (r
     console.log('Creating component for kit ID:', kitId);
     console.log('Request body:', req.body);
     
-    const componentData = { ...req.body, kitId };
-    
-    // Add image path if an image was uploaded
-    if (req.file) {
-      componentData.imagePath = `/uploads/kits/${req.file.filename}`;
-      console.log('Image uploaded:', req.file.filename);
-    } else {
-      console.log('No image uploaded');
-    }
-    
     // Check if kit exists
     const [kit] = await db.select().from(componentKits).where(eq(componentKits.id, kitId));
     if (!kit) {
@@ -214,18 +204,68 @@ router.post('/kits/:kitId/components', isAdmin, upload.single('image'), async (r
     }
     console.log('Found kit:', kit.name);
     
-    // Zod schema will handle type conversions
-    console.log('Component data before validation:', componentData);
-    
-    // Validate component data with our enhanced Zod schema
-    const validatedData = insertKitComponentSchema.parse(componentData);
-    console.log('Validated data:', validatedData);
-    
-    // Insert component into database
-    const [newComponent] = await db.insert(kitComponents).values(validatedData).returning();
-    console.log('New component created:', newComponent);
-    
-    res.status(201).json(newComponent);
+    // Check if request is for reusing an existing component
+    if (req.body.fromExistingId) {
+      const existingComponentId = parseInt(req.body.fromExistingId);
+      console.log('Reusing existing component with ID:', existingComponentId);
+      
+      // Get the existing component
+      const [existingComponent] = await db
+        .select()
+        .from(kitComponents)
+        .where(eq(kitComponents.id, existingComponentId));
+      
+      if (!existingComponent) {
+        return res.status(404).json({ message: 'Existing component not found' });
+      }
+      
+      // Create a new component based on the existing one
+      const newComponentData = {
+        kitId,
+        name: existingComponent.name,
+        description: existingComponent.description,
+        imagePath: existingComponent.imagePath,
+        partNumber: existingComponent.partNumber,
+        isRequired: req.body.isRequired === 'true',
+        quantity: parseInt(req.body.quantity) || 1,
+        category: existingComponent.category,
+      };
+      
+      console.log('Creating new component from existing one:', newComponentData);
+      
+      // Validate the new component data
+      const validatedData = insertKitComponentSchema.parse(newComponentData);
+      
+      // Insert into database
+      const [newComponent] = await db.insert(kitComponents).values(validatedData).returning();
+      console.log('Component reused successfully:', newComponent);
+      
+      return res.status(201).json(newComponent);
+    } else {
+      // Regular flow for creating a new component
+      const componentData = { ...req.body, kitId };
+      
+      // Add image path if an image was uploaded
+      if (req.file) {
+        componentData.imagePath = `/uploads/kits/${req.file.filename}`;
+        console.log('Image uploaded:', req.file.filename);
+      } else {
+        console.log('No image uploaded');
+      }
+      
+      // Zod schema will handle type conversions
+      console.log('Component data before validation:', componentData);
+      
+      // Validate component data with our enhanced Zod schema
+      const validatedData = insertKitComponentSchema.parse(componentData);
+      console.log('Validated data:', validatedData);
+      
+      // Insert component into database
+      const [newComponent] = await db.insert(kitComponents).values(validatedData).returning();
+      console.log('New component created:', newComponent);
+      
+      return res.status(201).json(newComponent);
+    }
   } catch (error) {
     console.error('Error creating kit component:', error);
     res.status(500).json({ message: 'Failed to create kit component', error: String(error) });
