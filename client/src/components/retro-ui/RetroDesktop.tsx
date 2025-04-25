@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Maximize2, Minimize2, Info, ChevronRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
+import RetroStartMenu from "./RetroStartMenu";
 
 type WindowPosition = {
   x: number;
@@ -292,12 +293,17 @@ const RetroDesktop: React.FC = () => {
         )
       ))}
       
+      {/* Start Menu */}
+      {isStartMenuOpen && (
+        <RetroStartMenu isOpen={isStartMenuOpen} onClose={() => setIsStartMenuOpen(false)} />
+      )}
+      
       {/* Start Bar */}
       <div className="absolute bottom-0 left-0 right-0 h-10 bg-gray-200 border-t border-gray-400 flex justify-between items-center px-2 shadow-md">
         <div className="flex">
           <button 
             className="flex items-center bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-1 rounded-sm mr-3"
-            onClick={openWelcomeWindow}
+            onClick={() => setIsStartMenuOpen(!isStartMenuOpen)}
           >
             <span className="mr-1">🚀</span>
             <span>Start</span>
