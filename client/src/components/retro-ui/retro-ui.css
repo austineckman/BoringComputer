@@ -222,3 +222,20 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
 }
+
+/* Auth form inputs */
+.retro-auth-input {
+  width: 100%;
+  border-width: 2px;
+  border-style: solid;
+  border-top-color: #4a5568;
+  border-left-color: #4a5568;
+  border-right-color: white;
+  border-bottom-color: white;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  background-color: white;
+  color: black !important;
+  outline: none;
+}
