@@ -17,7 +17,7 @@ const DesktopHome: React.FC = () => {
 
   // Return the RetroDesktop full screen without any wrappers
   return (
-    <div className="h-screen w-screen overflow-hidden">
+    <div className="h-screen w-screen overflow-hidden flex flex-col">
       <RetroDesktop />
     </div>
   );

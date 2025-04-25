@@ -409,7 +409,7 @@ const RetroDesktop: React.FC = () => {
   
   return (
     <div 
-      className="retro-desktop relative min-h-[80vh] overflow-hidden text-black"
+      className="retro-desktop relative flex-1 min-h-full h-full overflow-hidden text-black"
       style={{
         backgroundImage: `url(${wallpaperImage})`,
         backgroundSize: 'cover',
