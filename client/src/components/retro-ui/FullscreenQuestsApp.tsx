@@ -89,8 +89,8 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
   };
 
   const renderQuestsByAdventureLine = () => {
-    // Sort adventure lines
-    const adventureLines = Object.keys(questsByAdventureLine).sort();
+    // Sort adventure lines with null check
+    const adventureLines = questsByAdventureLine ? Object.keys(questsByAdventureLine).sort() : [];
     
     // If filtered quests is empty, show a message
     if (filteredQuests.length === 0 && !loadingQuests) {

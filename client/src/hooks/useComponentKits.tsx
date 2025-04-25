@@ -13,7 +13,7 @@ export interface ComponentKit {
 export function useComponentKits() {
   const { data: kits, isLoading, error } = useQuery({
     queryKey: ['/api/kits'],
-    queryFn: getQueryFn({ on401: 'throw' }),
+    queryFn: getQueryFn({ on401: 'returnNull' }),
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
