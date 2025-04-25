@@ -94,7 +94,7 @@ const PixelLoader: React.FC<PixelLoaderProps> = ({
       >
         {frames[frame].map((row, rowIndex) => (
           <div key={rowIndex} className="flex">
-            {[...row].map((cell, cellIndex) => (
+            {Array.from(row).map((cell, cellIndex) => (
               <div 
                 key={`${rowIndex}-${cellIndex}`}
                 style={{

@@ -22,7 +22,7 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Wand2, Check, Save, X, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import PixelLoader from '@/components/ui/pixel-loader';
+import PixelLoader from '../components/ui/pixel-loader';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useLocation } from 'wouter';
 
@@ -238,11 +238,11 @@ const AdminQuestGenerator = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {kits?.map((kit: any) => (
+                            {Array.isArray(kits) ? kits.map((kit: any) => (
                               <SelectItem key={kit.id} value={kit.id}>
                                 {kit.name}
                               </SelectItem>
-                            ))}
+                            )) : null}
                           </SelectContent>
                         </Select>
                         <FormDescription>
