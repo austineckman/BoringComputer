@@ -46,13 +46,22 @@ const RetroDesktop: React.FC = () => {
     { id: "terminal", name: "Command Prompt", icon: "💻", path: "/terminal", position: { x: 130, y: 20 } },
   ]);
   
-  // Admin icons only shown to admin users
+  // Folder icon for admin tools - only shown to admins 
+  const [adminFolder, setAdminFolder] = useState({
+    id: "admin-folder",
+    name: "Admin Tools", 
+    icon: "📁",
+    position: { x: 180, y: 20 },
+    isOpen: false
+  });
+  
+  // Admin icons contained within the folder
   const [adminIcons, setAdminIcons] = useState([
-    { id: "admin-quests", name: "Quest Admin", icon: "🧪", path: "/admin/quests", position: { x: 100, y: 20 } },
-    { id: "admin-items", name: "Item Database", icon: "💾", path: "/admin/items", position: { x: 100, y: 120 } },
-    { id: "admin-kits", name: "Component Kits", icon: "🔌", path: "/admin/kits", position: { x: 100, y: 220 } },
-    { id: "admin-users", name: "User Admin", icon: "👥", path: "/admin/users", position: { x: 100, y: 320 } },
-    { id: "admin-generator", name: "AI Generator", icon: "🤖", path: "/admin/quest-generator", position: { x: 100, y: 420 } },
+    { id: "admin-quests", name: "Quest Admin", icon: "🧪", path: "/admin/quests" },
+    { id: "admin-items", name: "Item Database", icon: "💾", path: "/admin/items" },
+    { id: "admin-kits", name: "Component Kits", icon: "🔌", path: "/admin/kits" },
+    { id: "admin-users", name: "User Admin", icon: "👥", path: "/admin/users" },
+    { id: "admin-generator", name: "AI Generator", icon: "🤖", path: "/admin/quest-generator" },
   ]);
   
   useEffect(() => {
@@ -172,7 +181,7 @@ const RetroDesktop: React.FC = () => {
   };
   
   // Handle double click on icons
-  const handleIconDoubleClick = (icon: { id: string, name: string, icon: string, path: string }) => {
+  const handleIconDoubleClick = (icon: { id: string, name: string, icon: string, path?: string }) => {
     // Handle specific icons with custom windows
     if (icon.id === "inventory") {
       openInventoryWindow();
@@ -180,8 +189,10 @@ const RetroDesktop: React.FC = () => {
       openCraftingWindow();
     } else if (icon.id === "terminal") {
       openTerminalWindow();
-    } else {
-      // For other icons, navigate to the path
+    } else if (icon.id === "admin-folder") {
+      toggleAdminFolder();
+    } else if (icon.path) {
+      // For other icons, navigate to the path if it exists
       navigate(icon.path);
     }
     
@@ -189,30 +200,82 @@ const RetroDesktop: React.FC = () => {
     setSelectedIcon(null);
   };
   
+  // Function to toggle the admin folder open/closed
+  const toggleAdminFolder = () => {
+    setAdminFolder(prev => ({
+      ...prev,
+      isOpen: !prev.isOpen
+    }));
+    
+    // If we're opening the folder, make sure to open the admin folder window
+    if (!adminFolder.isOpen) {
+      openAdminFolderWindow();
+    } else {
+      // If we're closing the folder, close the window if it's open
+      const folderWindow = windows.find(w => w.id === "admin-folder-window");
+      if (folderWindow) {
+        closeWindow("admin-folder-window");
+      }
+    }
+  };
+  
+  // Function to open the admin folder window
+  const openAdminFolderWindow = () => {
+    // Create folder content with the admin icons
+    const folderContent = (
+      <div className="p-4">
+        <h2 className="text-xl font-bold mb-4">Admin Tools</h2>
+        <div className="grid grid-cols-3 gap-4">
+          {adminIcons.map(icon => (
+            <div 
+              key={icon.id}
+              className="flex flex-col items-center justify-center p-2 cursor-pointer hover:bg-blue-100 rounded transition-colors"
+              onClick={() => {
+                if (icon.path) {
+                  navigate(icon.path);
+                  // Close the folder window after navigation
+                  closeWindow("admin-folder-window");
+                }
+              }}
+            >
+              <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-300 border border-purple-400 rounded-sm mb-2">
+                <span className="text-2xl">{icon.icon}</span>
+              </div>
+              <span className="text-center text-sm">{icon.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+    
+    openWindow("admin-folder-window", "Admin Tools", folderContent, "📁");
+  };
+  
   // Function to start dragging desktop icons
-  const startIconDrag = (e: React.MouseEvent, iconType: 'regular' | 'admin', iconId: string) => {
+  const startIconDrag = (e: React.MouseEvent, iconType: 'regular' | 'admin-folder', iconId: string) => {
     e.preventDefault();
     
-    // Find the icon being dragged
-    const iconList = iconType === 'regular' ? activeDesktopIcons : adminIcons;
-    const iconToMove = iconList.find(icon => icon.id === iconId);
+    let handleMouseMove: ((e: MouseEvent) => void) | null = null;
     
-    if (!iconToMove) return;
-    
-    // Get initial mouse position and icon position
-    const startMouseX = e.clientX;
-    const startMouseY = e.clientY;
-    const startIconX = iconToMove.position.x;
-    const startIconY = iconToMove.position.y;
-    
-    // Create a function to handle the mouse movement
-    const onMouseMove = (e: MouseEvent) => {
-      // Calculate the new position based on mouse movement
-      const newX = startIconX + (e.clientX - startMouseX);
-      const newY = startIconY + (e.clientY - startMouseY);
+    if (iconType === 'regular') {
+      // Find the regular icon being dragged
+      const iconToMove = activeDesktopIcons.find(icon => icon.id === iconId);
       
-      // Update the appropriate icon collection
-      if (iconType === 'regular') {
+      if (!iconToMove) return;
+      
+      // Get initial mouse position and icon position
+      const startMouseX = e.clientX;
+      const startMouseY = e.clientY;
+      const startIconX = iconToMove.position.x;
+      const startIconY = iconToMove.position.y;
+      
+      // Create a function to handle the mouse movement
+      handleMouseMove = (e: MouseEvent) => {
+        // Calculate the new position based on mouse movement
+        const newX = startIconX + (e.clientX - startMouseX);
+        const newY = startIconY + (e.clientY - startMouseY);
+        
+        // Update the appropriate icon collection
         setActiveDesktopIcons(
           activeDesktopIcons.map(icon => 
             icon.id === iconId 
@@ -226,31 +289,44 @@ const RetroDesktop: React.FC = () => {
               : icon
           )
         );
-      } else {
-        setAdminIcons(
-          adminIcons.map(icon => 
-            icon.id === iconId 
-              ? { 
-                  ...icon, 
-                  position: {
-                    x: newX,
-                    y: newY, 
-                  } 
-                } 
-              : icon
-          )
-        );
-      }
-    };
+      };
+    } else if (iconType === 'admin-folder' && iconId === 'admin-folder') {
+      // Get initial mouse position and folder position
+      const startMouseX = e.clientX;
+      const startMouseY = e.clientY;
+      const startIconX = adminFolder.position.x;
+      const startIconY = adminFolder.position.y;
+      
+      // Create a function to handle the mouse movement
+      handleMouseMove = (e: MouseEvent) => {
+        // Calculate the new position based on mouse movement
+        const newX = startIconX + (e.clientX - startMouseX);
+        const newY = startIconY + (e.clientY - startMouseY);
+        
+        // Update the folder position
+        setAdminFolder(prev => ({
+          ...prev,
+          position: {
+            x: newX,
+            y: newY
+          }
+        }));
+      };
+    }
+    
+    // If we don't have a mouse move handler, return early
+    if (!handleMouseMove) return;
     
     // Function to clean up event listeners when drag ends
     const onMouseUp = () => {
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
+      if (handleMouseMove) {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      }
     };
     
     // Add event listeners for mouse movement and release
-    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', onMouseUp);
   };
   
@@ -464,25 +540,25 @@ const RetroDesktop: React.FC = () => {
           </div>
         ))}
         
-        {/* Admin icons */}
-        {user?.roles?.includes('admin') && adminIcons.map((icon) => (
+        {/* Admin folder icon - only visible to admins */}
+        {user?.roles?.includes('admin') && (
           <div 
-            key={icon.id}
+            key={adminFolder.id}
             className={`desktop-icon absolute flex flex-col items-center justify-center p-2 cursor-pointer rounded transition-all duration-150 w-24 ${
-              selectedIcon === icon.id ? 'bg-purple-600/50 scale-105' : 'hover:bg-purple-600/30 hover:scale-105 active:bg-purple-700/40'
+              selectedIcon === adminFolder.id ? 'bg-purple-600/50 scale-105' : 'hover:bg-purple-600/30 hover:scale-105 active:bg-purple-700/40'
             }`}
             style={{
-              top: `${icon.position.y}px`,
-              left: `${icon.position.x}px`,
+              top: `${adminFolder.position.y}px`,
+              left: `${adminFolder.position.x}px`,
             }}
-            onClick={() => handleIconClick(icon)}
-            onDoubleClick={() => handleIconDoubleClick(icon)}
+            onClick={() => setSelectedIcon(adminFolder.id)}
+            onDoubleClick={() => handleIconDoubleClick(adminFolder)}
             onMouseDown={(e) => {
               // Allow single click for selection without starting drag
               if (e.button === 0 && e.detail === 1) {
                 // Don't allow the drag to start immediately to distinguish from click
                 const dragTimeout = setTimeout(() => {
-                  startIconDrag(e, 'admin', icon.id);
+                  startIconDrag(e, 'admin-folder', adminFolder.id);
                 }, 200);
                 
                 // Clear the timeout if they release before the drag starts
@@ -497,15 +573,15 @@ const RetroDesktop: React.FC = () => {
           >
             {/* Icon image - using a shadow box style for Windows-like appearance */}
             <div className="flex items-center justify-center w-12 h-12 rounded-sm bg-gradient-to-br from-purple-100 to-purple-300 border border-purple-400 shadow-md mb-1">
-              <span className="text-3xl drop-shadow-md">{icon.icon}</span>
+              <span className="text-3xl drop-shadow-md">{adminFolder.icon}</span>
             </div>
             
             {/* Icon label */}
             <div className="text-center text-sm font-bold text-yellow-300 bg-purple-900/70 px-1 py-0.5 rounded shadow-sm w-full">
-              {icon.name}
+              {adminFolder.name}
             </div>
           </div>
-        ))}
+        )}
       </div>
       
       {/* Windows */}
