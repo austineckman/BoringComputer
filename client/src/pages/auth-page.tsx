@@ -216,7 +216,7 @@ export default function AuthPage() {
                     onLoginSubmit({ username, password });
                   }
                 }}>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <div className="flex items-center">
                       <label htmlFor="login-username" className="w-24 text-sm text-black">Username:</label>
                       <div className="flex-1">
@@ -224,7 +224,7 @@ export default function AuthPage() {
                           id="login-username"
                           name="username"
                           placeholder="Enter username"
-                          className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none"
+                          className="retro-auth-input"
                         />
                         <div className="text-xs text-red-600 mt-1 min-h-[16px]">
                           {loginForm.formState.errors.username?.message}
@@ -240,7 +240,7 @@ export default function AuthPage() {
                           name="password"
                           type="password"
                           placeholder="Enter password"
-                          className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none"
+                          className="retro-auth-input"
                         />
                         <div className="text-xs text-red-600 mt-1 min-h-[16px]">
                           {loginForm.formState.errors.password?.message}
@@ -272,7 +272,7 @@ export default function AuthPage() {
                     onRegisterSubmit({ username, password });
                   }
                 }}>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <div className="flex items-center">
                       <label htmlFor="register-username" className="w-24 text-sm text-black">Username:</label>
                       <div className="flex-1">
