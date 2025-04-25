@@ -92,26 +92,26 @@ router.post("/api/admin/quests", async (req: Request, res: Response) => {
       }
     }
     
-    // Manually add all the required fields according to schema
+    // Create a quest that exactly matches the database schema
     const [newQuest] = await db.insert(quests).values({
-      title,
-      description,
-      imagePath: imageUrl || null,
-      xpReward: xpReward || 100,
-      adventureLine: adventureLine || null,
-      kitId,
+      title: title,
+      description: description,
+      adventure_line: adventureLine || 'Default Adventure',
+      difficulty: difficulty || 1,
+      order_in_line: 0,
+      xp_reward: xpReward || 100,
       date: new Date().toISOString().split('T')[0],
-      difficulty: 1, // Default difficulty
-      orderInLine: 0, // Default order in adventure line
-      // Convert our questRewards array to match the schema's expected format
-      rewards: questRewards.length > 0 ? questRewards.map(reward => {
-        // Always set type to 'item' since we're working with items from database
-        return {
-          type: 'item' as const,
-          id: reward.id,
-          quantity: reward.quantity
-        };
-      }) : [],
+      kit_id: kitId,
+      mission_brief: null,
+      active: true,
+      loot_box_rewards: [],
+      // Format the rewards exactly as they are in existing quests
+      rewards: questRewards.length > 0 ? questRewards.map(reward => ({
+        type: "item",
+        id: reward.id,
+        quantity: reward.quantity
+      })) : [],
+      // Format content exactly as expected
       content: {
         videos: [],
         images: imageUrl ? [imageUrl] : [],
