@@ -23,7 +23,8 @@ interface QuestGenRequest {
 
 interface GeneratedQuest {
   title: string;
-  description: string;
+  description: string;  // This is the flavor text/storytelling (lore)
+  missionBrief: string; // This is the clear classroom assignment
   imageUrl?: string;
   components: string[];
   xpReward: number;
@@ -126,6 +127,7 @@ async function generateQuestContent({
 }): Promise<{
   title: string;
   description: string;
+  missionBrief: string;
   components: string[];
   xpReward: number;
   lootSuggestion: string;
@@ -181,6 +183,7 @@ async function generateQuestContent({
   return {
     title: parsedContent.title || `New ${kitName} Quest`,
     description: parsedContent.description || `A quest using the ${kitName} kit.`,
+    missionBrief: parsedContent.missionBrief || `Build something using the ${kitName} components.`,
     components: Array.isArray(parsedContent.components) ? parsedContent.components : componentNames.slice(0, 3),
     xpReward: parsedContent.xpReward || difficulty * 75,
     lootSuggestion: parsedContent.lootSuggestion || "Mystery Components x1",

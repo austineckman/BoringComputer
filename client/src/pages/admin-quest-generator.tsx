@@ -39,7 +39,17 @@ type FormValues = z.infer<typeof formSchema>;
 
 const AdminQuestGenerator = () => {
   const { toast } = useToast();
-  const [generatedQuest, setGeneratedQuest] = useState<any>(null);
+  const [generatedQuest, setGeneratedQuest] = useState<{
+    title: string;
+    description: string;  // This is the flavor text/storytelling (lore)
+    missionBrief: string; // This is the clear classroom assignment
+    components: string[];
+    xpReward: number;
+    lootSuggestion: string;
+    kitId: string;
+    imageUrl: string;
+    adventureLine: string;
+  } | null>(null);
   const [saving, setSaving] = useState(false);
   
   // Fetch all kits
@@ -350,8 +360,13 @@ const AdminQuestGenerator = () => {
                   
                   <div className="space-y-4">
                     <div>
-                      <h3 className="font-bold text-sm uppercase tracking-wide text-muted-foreground">Description</h3>
-                      <p className="mt-1">{generatedQuest.description}</p>
+                      <h3 className="font-bold text-sm uppercase tracking-wide text-muted-foreground">Story/Lore</h3>
+                      <p className="mt-1 italic text-muted-foreground">{generatedQuest.description}</p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="font-bold text-sm uppercase tracking-wide text-muted-foreground">Mission Brief</h3>
+                      <p className="mt-1 font-medium">{generatedQuest.missionBrief}</p>
                     </div>
                     
                     <div>
