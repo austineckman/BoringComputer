@@ -96,7 +96,7 @@ router.post("/register", async (req, res, next) => {
   }
 });
 
-// Logout route
+// Logout routes
 router.post("/logout", (req, res) => {
   req.logout((err) => {
     if (err) {
@@ -104,6 +104,18 @@ router.post("/logout", (req, res) => {
     }
     
     res.json({ message: "Logout successful" });
+  });
+});
+
+// GET logout for easy browser access
+router.get("/logout", (req, res) => {
+  req.logout((err) => {
+    if (err) {
+      return res.status(500).json({ message: "Logout failed" });
+    }
+    
+    // Redirect to login page after logout
+    res.redirect("/auth");
   });
 });
 
@@ -115,19 +127,17 @@ router.get("/me", (req, res) => {
   // Check if user is authenticated
   if (!req.isAuthenticated()) {
     if (BYPASS_AUTH) {
-      // Create a mock user for development with admin access
+      // Create a mock user for development with regular user access (not admin)
       const mockUser = {
         id: 999,
         username: "devuser",
         email: "dev@example.com",
-        roles: ["admin", "user"],
-        level: 10,
+        roles: ["user"],  // Regular user, not admin
+        level: 5,
         inventory: {
-          "copper": 10,
-          "crystal": 5,
-          "techscrap": 3,
-          "circuit_board": 2,
-          "cloth": 8
+          "copper": 5,
+          "crystal": 2,
+          "techscrap": 1
         }
       };
       
