@@ -437,9 +437,9 @@ const RetroDesktop: React.FC = () => {
   const openCraftingWindow = () => {
     openWindow(
       "crafting", 
-      "Crafting Station", 
+      "crafting.exe", 
       <CraftingWindow />, 
-      "⚒️", 
+      "craftingarmor", 
       { width: 700, height: 500 }
     );
   };
@@ -477,9 +477,9 @@ const RetroDesktop: React.FC = () => {
   const openShopWindow = () => {
     openWindow(
       "shop", 
-      "Crafting Shop", 
+      "Shop", 
       <WebBrowserWindow initialUrl="https://craftingtable.com" title="Crafting Shop" />, 
-      "🛒",
+      "shopcoin",
       { width: 800, height: 600 }
     );
   };
@@ -714,6 +714,27 @@ const RetroDesktop: React.FC = () => {
                     className="mr-2 w-6 h-6 object-contain" 
                     style={{ imageRendering: 'pixelated' }}
                   />
+                ) : window.icon === "craftingarmor" ? (
+                  <img 
+                    src={craftingImage} 
+                    alt="Crafting Armor" 
+                    className="mr-2 w-6 h-6 object-contain" 
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                ) : window.icon === "questgrimoire" ? (
+                  <img 
+                    src={questImage} 
+                    alt="Quest Grimoire" 
+                    className="mr-2 w-6 h-6 object-contain" 
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                ) : window.icon === "shopcoin" ? (
+                  <img 
+                    src={shopCoinImage} 
+                    alt="Shop Coin" 
+                    className="mr-2 w-6 h-6 object-contain" 
+                    style={{ imageRendering: 'pixelated' }}
+                  />
                 ) : (
                   <span className="mr-2 text-lg">{window.icon}</span>
                 )}
@@ -882,6 +903,27 @@ const RetroDesktop: React.FC = () => {
                   <img 
                     src={goldCrateImage} 
                     alt="Gold Crate" 
+                    className="mr-2 w-4 h-4 object-contain" 
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                ) : window.icon === "craftingarmor" ? (
+                  <img 
+                    src={craftingImage} 
+                    alt="Crafting Armor" 
+                    className="mr-2 w-4 h-4 object-contain" 
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                ) : window.icon === "questgrimoire" ? (
+                  <img 
+                    src={questImage} 
+                    alt="Quest Grimoire" 
+                    className="mr-2 w-4 h-4 object-contain" 
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                ) : window.icon === "shopcoin" ? (
+                  <img 
+                    src={shopCoinImage} 
+                    alt="Shop Coin" 
                     className="mr-2 w-4 h-4 object-contain" 
                     style={{ imageRendering: 'pixelated' }}
                   />
