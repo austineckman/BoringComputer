@@ -40,8 +40,12 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
     // Filter by selected kit
     if (selectedKit) {
       filtered = filtered.filter(quest => {
+        // Make sure componentRequirements exists and is an array
         const components = quest.componentRequirements || [];
-        return components.some((comp: { kitId: string | null }) => comp.kitId === selectedKit);
+        return components.some(comp => 
+          // Type guard to avoid 'any' type warnings
+          typeof comp === 'object' && comp && 'kitId' in comp && comp.kitId === selectedKit
+        );
       });
     }
     
@@ -178,9 +182,9 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
       >
         <div className="absolute top-0 right-0 bottom-0 left-0 bg-gradient-to-t from-black to-transparent opacity-60 z-0"></div>
         
-        {/* Status badge */}
+        {/* Status badge - handle status property which might not exist in the database */}
         <div className="absolute top-3 right-3 z-10">
-          {quest.status === 'locked' && (
+          {(quest as any).status === 'locked' && (
             <span className="bg-red-900/80 text-white text-xs px-2 py-1 rounded-full flex items-center">
               <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -188,7 +192,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
               Locked
             </span>
           )}
-          {quest.status === 'available' && (
+          {(quest as any).status === 'available' && (
             <span className="bg-blue-900/80 text-white text-xs px-2 py-1 rounded-full flex items-center">
               <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -196,13 +200,13 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
               Available
             </span>
           )}
-          {quest.status === 'in-progress' && (
+          {(quest as any).status === 'in-progress' && (
             <span className="bg-yellow-700/80 text-white text-xs px-2 py-1 rounded-full flex items-center">
               <Clock className="w-3 h-3 mr-1" />
               In Progress
             </span>
           )}
-          {quest.status === 'completed' && (
+          {(quest as any).status === 'completed' && (
             <span className="bg-green-800/80 text-white text-xs px-2 py-1 rounded-full flex items-center">
               <Award className="w-3 h-3 mr-1" />
               Completed
@@ -224,15 +228,15 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
             </span>
           </div>
           
-          {/* Component requirements */}
-          {quest.componentRequirements && quest.componentRequirements.length > 0 && (
+          {/* Component requirements - handle potentially missing componentRequirements */}
+          {(quest as any).componentRequirements && (quest as any).componentRequirements.length > 0 && (
             <div className="mt-2">
               <h4 className="text-xs uppercase text-gray-400 mb-1 flex items-center">
                 <Cpu className="w-3 h-3 mr-1" />
                 Required Components
               </h4>
               <div className="flex flex-wrap gap-1">
-                {quest.componentRequirements.slice(0, 3).map(comp => (
+                {(quest as any).componentRequirements.slice(0, 3).map((comp: any) => (
                   <span 
                     key={comp.id} 
                     className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded"
@@ -241,9 +245,9 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                     {comp.name} {comp.quantity > 1 ? `(${comp.quantity})` : ''}
                   </span>
                 ))}
-                {quest.componentRequirements.length > 3 && (
+                {(quest as any).componentRequirements.length > 3 && (
                   <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded">
-                    +{quest.componentRequirements.length - 3} more
+                    +{(quest as any).componentRequirements.length - 3} more
                   </span>
                 )}
               </div>
