@@ -12,6 +12,9 @@ import wallpaperImage from "@assets/wallpaper.png";
 import backgroundMusic from "@assets/Fantasy Guild Hall.mp3";
 import goldCrateImage from "@assets/goldcrate.png";
 import ironBagImage from "@assets/506_Gold_Bag_Leather_B.png";
+import craftingImage from "@assets/62_Ice_Armor.png";
+import questImage from "@assets/01_Fire_Grimoire.png";
+import shopCoinImage from "@assets/22_Leperchaun_Coin.png";
 
 // Type definitions
 interface Position {
@@ -62,12 +65,11 @@ const RetroDesktop: React.FC = () => {
   
   // Desktop icons (regular icons visible to all users)
   const [desktopIcons, setDesktopIcons] = useState<DesktopIcon[]>([
-    { id: "quests", name: "Quests", icon: "📜", path: "/quests", position: { x: 20, y: 20 } },
+    { id: "quests", name: "Quests", icon: "questgrimoire", path: "/quests", position: { x: 20, y: 20 } },
     { id: "inventory", name: "loot.exe", icon: "ironbag", path: "/inventory", position: { x: 20, y: 120 } },
-    { id: "crafting", name: "Crafting", icon: "⚒️", path: "/crafting", position: { x: 20, y: 220 } },
+    { id: "crafting", name: "crafting.exe", icon: "craftingarmor", path: "/crafting", position: { x: 20, y: 220 } },
     { id: "lootboxes", name: "Loot Crates", icon: "goldcrate", path: "/lootboxes", position: { x: 20, y: 320 } },
-    { id: "shop", name: "Shop", icon: "🛒", path: "/shop", position: { x: 20, y: 420 } },
-    { id: "terminal", name: "Command Prompt", icon: "💻", path: "/terminal", position: { x: 130, y: 20 } },
+    { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 20, y: 420 } },
   ]);
   
   // Admin folder (only visible to admin users)
@@ -590,6 +592,27 @@ const RetroDesktop: React.FC = () => {
                 <img 
                   src={ironBagImage} 
                   alt="Inventory Bag" 
+                  className="w-10 h-10 object-contain" 
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              ) : icon.icon === "craftingarmor" ? (
+                <img 
+                  src={craftingImage} 
+                  alt="Crafting Armor" 
+                  className="w-10 h-10 object-contain" 
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              ) : icon.icon === "questgrimoire" ? (
+                <img 
+                  src={questImage} 
+                  alt="Quest Grimoire" 
+                  className="w-10 h-10 object-contain" 
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              ) : icon.icon === "shopcoin" ? (
+                <img 
+                  src={shopCoinImage} 
+                  alt="Shop Coin" 
                   className="w-10 h-10 object-contain" 
                   style={{ imageRendering: 'pixelated' }}
                 />
