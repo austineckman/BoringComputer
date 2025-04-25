@@ -14,11 +14,11 @@ const DesktopHome: React.FC = () => {
   useEffect(() => {
     // If authentication is still loading, we'll wait for that first
     if (!loading) {
-      // Once auth is done, show boot animation for at least 3 seconds
+      // Once auth is done, show boot animation for at least 1.5 seconds
       // This ensures users see the loading screen even if app loads quickly
       const minLoadingTime = setTimeout(() => {
         setIsLoading(false);
-      }, 3000);
+      }, 1500);
       
       return () => clearTimeout(minLoadingTime);
     }
