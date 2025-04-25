@@ -32,6 +32,7 @@ const formSchema = z.object({
   missionKeywords: z.string().optional(),
   difficulty: z.number().min(1).max(5).default(2),
   includeImage: z.boolean().default(true),
+  imagePrompt: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -265,6 +266,29 @@ const AdminQuestGenerator = () => {
                       </FormItem>
                     )}
                   />
+                  
+                  {form.watch("includeImage") && (
+                    <FormField
+                      control={form.control}
+                      name="imagePrompt"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Image Style Instructions</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="e.g., pixel art space station, 16-bit aesthetic, no text, vibrant colors"
+                              {...field}
+                              disabled={generateMutation.isPending}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Customize your image style (optional). <strong>Important:</strong> Add "no text" to prevent text in your image.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                   
                   <Button
                     type="submit"

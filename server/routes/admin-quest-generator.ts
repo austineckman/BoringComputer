@@ -18,6 +18,7 @@ interface QuestGenRequest {
   missionKeywords?: string;
   difficulty?: number;
   includeImage?: boolean;
+  imagePrompt?: string;
 }
 
 interface GeneratedQuest {
@@ -44,7 +45,7 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 // Endpoint to generate quest content using OpenAI API
 router.post("/api/admin/generate-quest", async (req: Request, res: Response) => {
   try {
-    const { kitId, theme, missionKeywords, difficulty = 2, includeImage = true } = req.body as QuestGenRequest;
+    const { kitId, theme, missionKeywords, difficulty = 2, includeImage = true, imagePrompt = "" } = req.body as QuestGenRequest;
     
     if (!kitId) {
       return res.status(400).json({ error: "Kit ID is required" });
@@ -82,7 +83,8 @@ router.post("/api/admin/generate-quest", async (req: Request, res: Response) => 
         imageUrl = await generateQuestImage(
           questContent.title,
           questContent.description,
-          theme || kit.name
+          theme || kit.name,
+          imagePrompt
         );
       } catch (imageError) {
         console.error("Error generating quest image:", imageError);
@@ -180,12 +182,31 @@ async function generateQuestContent({
   };
 }
 
-async function generateQuestImage(title: string, description: string, theme: string) {
+async function generateQuestImage(title: string, description: string, theme: string, customPrompt: string = "") {
   try {
-    // Generate a pixel art style image based on the quest
+    // Build base prompt with strong emphasis on no text
+    let basePrompt = `Create a pixel art style image for an educational STEM quest called "${title}". The quest description is: "${description}". Theme: ${theme}. 
+    
+    The image should be vibrant, educational, and in a retro pixel art style similar to games like Stardew Valley or Terraria, with 16-bit or 32-bit aesthetic. Include relevant STEM elements and make it suitable for children.
+    
+    IMPORTANT INSTRUCTIONS:
+    - DO NOT INCLUDE ANY TEXT WHATSOEVER IN THE IMAGE
+    - NO LABELS, NO CAPTIONS, NO SIGNS, NO WORDS
+    - FOCUS ONLY ON VISUAL STORYTELLING
+    - USE COLOR AND COMPOSITION INSTEAD OF TEXT`;
+    
+    // Add custom prompt if provided
+    if (customPrompt && customPrompt.trim().length > 0) {
+      basePrompt += `\n\nAdditional style instructions: ${customPrompt}`;
+    }
+    
+    // Add final reminder about text
+    basePrompt += `\n\nFinal reminder: This image must not contain any text, letters, numbers, or written elements of any kind.`;
+    
+    // Generate the image
     const response = await openai.images.generate({
       model: "dall-e-3",
-      prompt: `Create a pixel art style image for an educational STEM quest called "${title}". The quest description is: "${description}". Theme: ${theme}. The image should be vibrant, educational, and in a retro pixel art style similar to games like Stardew Valley or Terraria, with 16-bit or 32-bit aesthetic. Include relevant STEM elements and make it suitable for children. Do not include any text in the image.`,
+      prompt: basePrompt,
       n: 1,
       size: "1024x1024",
       quality: "standard",
