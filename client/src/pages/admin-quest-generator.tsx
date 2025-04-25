@@ -77,6 +77,9 @@ const AdminQuestGenerator = () => {
       return response.json();
     },
     onSuccess: (data) => {
+      console.log("Generated quest data:", data);
+      // Specifically log the mission brief to see if it's being received
+      console.log("Mission brief from API:", data.missionBrief);
       setGeneratedQuest(data);
       toast({
         title: 'Quest Generated',
@@ -417,9 +420,14 @@ const AdminQuestGenerator = () => {
                       <p className="mt-1 italic text-muted-foreground">{generatedQuest.description}</p>
                     </div>
                     
-                    <div>
-                      <h3 className="font-bold text-sm uppercase tracking-wide text-muted-foreground">Mission Brief</h3>
-                      <p className="mt-1 font-medium">{generatedQuest.missionBrief}</p>
+                    <div className="p-4 border border-green-300 rounded-md bg-green-50">
+                      <h3 className="font-bold text-sm uppercase tracking-wide text-green-700">Mission Brief</h3>
+                      <p className="mt-1 font-medium text-green-800">
+                        {generatedQuest.missionBrief || "No mission brief available."}
+                      </p>
+                      <div className="mt-2 text-xs text-green-600">
+                        Debug: mission_brief_length={generatedQuest.missionBrief ? generatedQuest.missionBrief.length : 0}
+                      </div>
                     </div>
                     
                     <div>
