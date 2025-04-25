@@ -1,17 +1,14 @@
-import React, { useState } from "react";
-import { useLocation, useRoute } from "wouter";
+import React, { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import wallpaper from "@assets/wallbg.png";
 import characterImage from "@assets/basecharacter.png";
+import bagImage from "@assets/506_Gold_Bag_Leather_B.png";
 
 // Auth validation schemas
 const loginSchema = z.object({
@@ -115,136 +112,250 @@ export default function AuthPage() {
     }
   };
 
+  // Get current time for the login screen
+  const [currentTime, setCurrentTime] = useState(new Date());
+  
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, []);
+  
   return (
-    <div className="flex min-h-screen bg-black">
-      {/* Left column: Auth forms */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-8">
-        <Card className="w-full max-w-md border-2 border-primary/20 bg-background/95 backdrop-blur">
-          <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-3xl font-bold tracking-tight">Welcome!</CardTitle>
-            <CardDescription>
-              Begin your adventure with us!
-            </CardDescription>
-          </CardHeader>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Register</TabsTrigger>
-            </TabsList>
-            <TabsContent value="login">
-              <CardContent className="pt-4">
-                <Form {...loginForm}>
-                  <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
-                    <FormField
-                      control={loginForm.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Username</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter your username" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={loginForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="Enter your password" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Logging in..." : "Login"}
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </TabsContent>
-            <TabsContent value="register">
-              <CardContent className="pt-4">
-                <Form {...registerForm}>
-                  <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
-                    <FormField
-                      control={registerForm.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Username</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Choose a username" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={registerForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="Choose a password" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Creating account..." : "Create account"}
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </TabsContent>
-          </Tabs>
-          <CardFooter className="flex flex-col space-y-4 pt-0">
-            <div className="text-sm text-muted-foreground text-center mt-4">
-              <p>By continuing, you agree to our Terms of Service and Privacy Policy.</p>
-            </div>
-          </CardFooter>
-        </Card>
-      </div>
-
-      {/* Right column: Hero section */}
-      <div 
-        className="hidden md:flex md:w-1/2 bg-cover bg-center flex-col justify-center items-center" 
-        style={{ backgroundImage: `url(${wallpaper})` }}
-      >
-        <div className="p-8 text-center">
-          <img 
-            src={characterImage} 
-            alt="Character" 
-            className="w-64 mx-auto mb-8 drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]" 
-          />
-          <h1 className="text-4xl font-bold text-white mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-            Craft. Quest. Conquer.
-          </h1>
-          <p className="text-xl text-white mb-6 max-w-md mx-auto drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)]">
-            Embark on adventures, learn real-world skills, and join a community of makers and explorers.
-          </p>
-          <div className="flex gap-4 justify-center">
-            <div className="bg-black/50 backdrop-blur-sm p-3 rounded-lg text-white text-center w-24">
-              <div className="text-2xl font-bold">100+</div>
-              <div className="text-xs">Quests</div>
-            </div>
-            <div className="bg-black/50 backdrop-blur-sm p-3 rounded-lg text-white text-center w-24">
-              <div className="text-2xl font-bold">50+</div>
-              <div className="text-xs">Projects</div>
-            </div>
-            <div className="bg-black/50 backdrop-blur-sm p-3 rounded-lg text-white text-center w-24">
-              <div className="text-2xl font-bold">5K+</div>
-              <div className="text-xs">Adventurers</div>
+    <div 
+      className="min-h-screen w-full flex flex-col justify-center items-center"
+      style={{
+        backgroundImage: `url(${wallpaper})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        imageRendering: 'pixelated'
+      }}
+    >
+      {/* Retro Windows Login Dialog */}
+      <div className="w-full max-w-lg mx-auto">
+        <div className="border-2 border-gray-400 rounded-md bg-gray-200 shadow-xl overflow-hidden">
+          {/* Title Bar */}
+          <div className="bg-gradient-to-r from-blue-700 to-blue-900 text-white py-1.5 px-2 flex justify-between items-center">
+            <div className="flex items-center">
+              <span className="mr-2 text-lg">💻</span>
+              <span className="font-bold">CraftingTableOS Login</span>
             </div>
           </div>
+          
+          {/* Login Content */}
+          <div className="p-6">
+            {/* Login Banner */}
+            <div className="flex items-center mb-6">
+              <img 
+                src={characterImage} 
+                alt="Character" 
+                className="w-32 h-32 rounded-full border-4 border-blue-600 mr-4 bg-blue-100 p-1 object-contain" 
+              />
+              <div>
+                <h1 className="text-2xl font-bold text-blue-800 mb-1">
+                  Welcome to CraftingTableOS
+                </h1>
+                <p className="text-gray-700">
+                  Craft. Quest. Conquer. Begin your adventure today!
+                </p>
+                <div className="text-sm text-gray-500 mt-2">
+                  {currentTime.toLocaleDateString()} | {currentTime.toLocaleTimeString()}
+                </div>
+              </div>
+            </div>
+            
+            {/* Login Tabs */}
+            <div className="border border-gray-400 mb-6">
+              <div className="flex">
+                <button 
+                  className={`px-4 py-2 font-medium ${activeTab === 'login' 
+                    ? 'bg-white border-b-0 border-r border-gray-400' 
+                    : 'bg-gray-300 border-b border-r border-gray-400'}`}
+                  onClick={() => setActiveTab('login')}
+                >
+                  Login
+                </button>
+                <button 
+                  className={`px-4 py-2 font-medium ${activeTab === 'register' 
+                    ? 'bg-white border-b-0 border-l border-gray-400' 
+                    : 'bg-gray-300 border-b border-l border-gray-400'}`}
+                  onClick={() => setActiveTab('register')}
+                >
+                  Register
+                </button>
+                <div className="flex-1 border-b border-gray-400 bg-gray-300"></div>
+              </div>
+              
+              <div className="bg-white p-4">
+                {activeTab === 'login' ? (
+                  <Form {...loginForm}>
+                    <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                      <div className="space-y-4">
+                        <div className="flex items-center">
+                          <img src={bagImage} alt="User" className="w-12 h-12 mr-3" />
+                          <div className="flex-1 space-y-4">
+                            <FormField
+                              control={loginForm.control}
+                              name="username"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <div className="flex justify-between mb-1">
+                                    <label className="text-sm font-medium">Username:</label>
+                                    <FormMessage className="text-xs text-red-600" />
+                                  </div>
+                                  <FormControl>
+                                    <input
+                                      {...field}
+                                      placeholder="Enter your username"
+                                      className="w-full border border-gray-500 px-2 py-1 text-sm bg-white focus:border-blue-500 focus:outline-none"
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={loginForm.control}
+                              name="password"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <div className="flex justify-between mb-1">
+                                    <label className="text-sm font-medium">Password:</label>
+                                    <FormMessage className="text-xs text-red-600" />
+                                  </div>
+                                  <FormControl>
+                                    <input
+                                      {...field}
+                                      type="password"
+                                      placeholder="Enter your password"
+                                      className="w-full border border-gray-500 px-2 py-1 text-sm bg-white focus:border-blue-500 focus:outline-none"
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-end space-x-2 mt-6">
+                          <button 
+                            type="submit" 
+                            disabled={isLoading} 
+                            className="px-4 py-1.5 bg-blue-700 hover:bg-blue-800 text-white font-medium text-sm border-2 border-gray-300 shadow-[2px_2px_2px_rgba(0,0,0,0.3)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]"
+                          >
+                            {isLoading ? "Logging in..." : "OK"}
+                          </button>
+                          <button 
+                            type="button" 
+                            className="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-medium text-sm border-2 border-gray-300 shadow-[2px_2px_2px_rgba(0,0,0,0.3)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]"
+                            onClick={() => {
+                              loginForm.reset();
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+                  </Form>
+                ) : (
+                  <Form {...registerForm}>
+                    <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
+                      <div className="space-y-4">
+                        <div className="flex items-center">
+                          <img src={bagImage} alt="User" className="w-12 h-12 mr-3" />
+                          <div className="flex-1 space-y-4">
+                            <FormField
+                              control={registerForm.control}
+                              name="username"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <div className="flex justify-between mb-1">
+                                    <label className="text-sm font-medium">New Username:</label>
+                                    <FormMessage className="text-xs text-red-600" />
+                                  </div>
+                                  <FormControl>
+                                    <input
+                                      {...field}
+                                      placeholder="Choose a username"
+                                      className="w-full border border-gray-500 px-2 py-1 text-sm bg-white focus:border-blue-500 focus:outline-none"
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={registerForm.control}
+                              name="password"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <div className="flex justify-between mb-1">
+                                    <label className="text-sm font-medium">New Password:</label>
+                                    <FormMessage className="text-xs text-red-600" />
+                                  </div>
+                                  <FormControl>
+                                    <input
+                                      {...field}
+                                      type="password"
+                                      placeholder="Choose a password"
+                                      className="w-full border border-gray-500 px-2 py-1 text-sm bg-white focus:border-blue-500 focus:outline-none"
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-end space-x-2 mt-6">
+                          <button 
+                            type="submit" 
+                            disabled={isLoading} 
+                            className="px-4 py-1.5 bg-blue-700 hover:bg-blue-800 text-white font-medium text-sm border-2 border-gray-300 shadow-[2px_2px_2px_rgba(0,0,0,0.3)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]"
+                          >
+                            {isLoading ? "Creating..." : "Create Account"}
+                          </button>
+                          <button 
+                            type="button" 
+                            className="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-medium text-sm border-2 border-gray-300 shadow-[2px_2px_2px_rgba(0,0,0,0.3)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]"
+                            onClick={() => {
+                              registerForm.reset();
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+                  </Form>
+                )}
+              </div>
+            </div>
+            
+            {/* Footer */}
+            <div className="text-sm text-gray-600 text-center">
+              <p>CraftingTableOS, © 2025 CraftingTable LLC.</p>
+              <p className="mt-1 text-xs">By continuing, you agree to our Terms of Service and Privacy Policy.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Stat Blocks - Only visible on larger screens */}
+      <div className="hidden lg:flex gap-4 justify-center mt-6">
+        <div className="bg-black/50 backdrop-blur-sm p-3 rounded-lg text-white text-center w-32 border border-white/20">
+          <div className="text-2xl font-bold">100+</div>
+          <div className="text-xs">Quests</div>
+        </div>
+        <div className="bg-black/50 backdrop-blur-sm p-3 rounded-lg text-white text-center w-32 border border-white/20">
+          <div className="text-2xl font-bold">50+</div>
+          <div className="text-xs">Projects</div>
+        </div>
+        <div className="bg-black/50 backdrop-blur-sm p-3 rounded-lg text-white text-center w-32 border border-white/20">
+          <div className="text-2xl font-bold">5K+</div>
+          <div className="text-xs">Adventurers</div>
         </div>
       </div>
     </div>
