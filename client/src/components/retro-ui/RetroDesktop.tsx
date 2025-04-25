@@ -73,7 +73,7 @@ const RetroDesktop: React.FC = () => {
     id: "admin-folder",
     name: "Admin Tools", 
     icon: "📁",
-    position: { x: 180, y: 20 },
+    position: { x: window.innerWidth - 100, y: 20 },
     isOpen: false
   });
   
@@ -96,6 +96,22 @@ const RetroDesktop: React.FC = () => {
     }, 1000);
     
     return () => clearInterval(interval);
+  }, []);
+  
+  // Handle window resize for admin folder position
+  useEffect(() => {
+    const handleResize = () => {
+      setAdminFolder(prev => ({
+        ...prev,
+        position: { ...prev.position, x: window.innerWidth - 100 }
+      }));
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   // Open Welcome window when component mounts
