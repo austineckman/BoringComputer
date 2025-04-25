@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Tool } from "lucide-react";
-import { useNavigate } from "wouter";
+import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Wrench } from "lucide-react";
+import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 
 type MenuItem = {
@@ -18,8 +18,8 @@ interface RetroStartMenuProps {
 }
 
 const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
-  const { user, logoutMutation } = useAuth();
-  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [, navigate] = useLocation();
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   
@@ -81,7 +81,7 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
         {
           id: "crafting",
           label: "Crafting Table",
-          icon: <Tool size={16} />,
+          icon: <Wrench size={16} />,
           path: "/crafting"
         }
       ]
@@ -134,7 +134,7 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
       label: "Log Out",
       icon: <LogOut size={16} />,
       onClick: () => {
-        logoutMutation.mutate();
+        logout();
         navigate("/auth");
         onClose();
       }
