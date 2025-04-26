@@ -153,7 +153,7 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
         {/* Track Info */}
         <div className="text-center mb-4 w-full">
           <h4 className="text-orange-400 text-lg font-bold truncate">{currentTrack.title}</h4>
-          <p className="text-gray-300 text-sm">{currentTrack.artist}</p>
+          <p className="text-gray-300 text-sm">Taverns, Terrors, and Tiny Victories</p>
           <p className="text-orange-300 text-xs mt-2 italic">Select a track below to play</p>
         </div>
         
@@ -185,7 +185,7 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
                   </div>
                   <div className="truncate">
                     <p className="text-xs text-white truncate">{track.title}</p>
-                    <p className="text-xs text-gray-400 truncate">{track.artist}</p>
+                    <p className="text-xs text-gray-400 truncate">Taverns, Terrors, and Tiny Victories</p>
                   </div>
                 </div>
               </div>
