@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX } from "lucide-react";
 import jukeboxImage from "@assets/jukebox.png";
-import chappyMusic from "@assets/Chappy.mp3";
-import pixelatedWarriorsMusic from "@assets/Pixelated Warriors.mp3";
 
 // Music track interface
 interface MusicTrack {
@@ -12,19 +10,19 @@ interface MusicTrack {
   src: string;
 }
 
-// Define available tracks with directly imported assets
+// Define available tracks using public folder paths
 const musicTracks: MusicTrack[] = [
   {
     id: "chappy",
     title: "Chappy",
     artist: "Pixel Composer",
-    src: chappyMusic
+    src: "/music/Chappy.mp3" // Path to public folder
   },
   {
     id: "pixelated-warriors",
     title: "Pixelated Warriors",
     artist: "Pixel Composer",
-    src: pixelatedWarriorsMusic
+    src: "/music/Pixelated Warriors.mp3" // Path to public folder
   }
 ];
 
@@ -88,25 +86,43 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
     };
   }, []);
   
+  // Effect that runs when track changes
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    // When track changes, set the source
+    audio.src = currentTrack.src;
+    
+    // Reset progress and duration
+    setProgress(0);
+    
+    // If we were already playing, try to play the new track
+    if (isPlaying) {
+      setIsLoading(true);
+      audio.play()
+        .then(() => {
+          setIsLoading(false);
+          // Dispatch event to update the main desktop UI
+          window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
+            detail: { isPlaying: true } 
+          }));
+        })
+        .catch(error => {
+          console.warn("Audio playback failed on track change:", error);
+          setIsPlaying(false);
+          setIsLoading(false);
+        });
+    }
+  }, [currentTrackIndex]);
+  
   // Effect to handle play/pause state changes
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
     
     if (isPlaying) {
-      const playPromise = audio.play();
-      
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.warn("Audio playback failed:", error);
-          setIsPlaying(false);
-        }).then(() => {
-          // Dispatch event to update the main desktop UI only if the play succeeded
-          window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
-            detail: { isPlaying: true } 
-          }));
-        });
-      }
+      // Play logic is now handled directly in togglePlayPause and track change effect
     } else {
       audio.pause();
       
@@ -115,11 +131,39 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
         detail: { isPlaying: false } 
       }));
     }
-  }, [isPlaying, currentTrackIndex]);
+  }, [isPlaying]);
   
-  // Play/Pause toggle
+  // Play/Pause toggle with autoplay workaround
   const togglePlayPause = () => {
-    setIsPlaying(!isPlaying);
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    if (!isPlaying) {
+      // Try to play with user interaction (should work around autoplay restrictions)
+      setIsLoading(true);
+      audio.play()
+        .then(() => {
+          setIsPlaying(true);
+          setIsLoading(false);
+          // Dispatch event to update the main desktop UI
+          window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
+            detail: { isPlaying: true } 
+          }));
+        })
+        .catch(error => {
+          console.warn("Audio playback failed:", error);
+          setIsPlaying(false);
+          setIsLoading(false);
+        });
+    } else {
+      // Pause case is simpler
+      audio.pause();
+      setIsPlaying(false);
+      // Dispatch event to update the main desktop UI
+      window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
+        detail: { isPlaying: false } 
+      }));
+    }
   };
   
   // Listen for toggle events from the desktop UI
@@ -148,14 +192,24 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
     setCurrentTrackIndex(prev => 
       prev === 0 ? musicTracks.length - 1 : prev - 1
     );
-    setIsPlaying(true);
+    
+    // We'll let the effect handle playback when currentTrackIndex changes
+    if (!isPlaying) {
+      // But if we're not already playing, we need to start
+      setTimeout(() => togglePlayPause(), 50);
+    }
   };
   
   const nextTrack = () => {
     setCurrentTrackIndex(prev => 
       prev === musicTracks.length - 1 ? 0 : prev + 1
     );
-    setIsPlaying(true);
+    
+    // We'll let the effect handle playback when currentTrackIndex changes
+    if (!isPlaying) {
+      // But if we're not already playing, we need to start
+      setTimeout(() => togglePlayPause(), 50);
+    }
   };
   
   // Volume control
@@ -214,14 +268,23 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
           {isPlaying && (
             <div className="absolute inset-0 bg-orange-500 opacity-20 animate-pulse rounded-lg"></div>
           )}
+          {/* Loading indicator */}
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
+              <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          )}
         </div>
         
         {/* Track Info */}
         <div className="text-center mb-4 w-full">
           <h4 className="text-orange-400 text-lg font-bold truncate">{currentTrack.title}</h4>
           <p className="text-gray-300 text-sm">{currentTrack.artist}</p>
-          {!isPlaying && (
+          {!isPlaying && !isLoading && (
             <p className="text-orange-300 text-xs mt-2 italic">Click play button to start music</p>
+          )}
+          {isLoading && (
+            <p className="text-orange-300 text-xs mt-2 italic">Loading music...</p>
           )}
         </div>
         
@@ -243,21 +306,24 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
         <div className="flex items-center justify-center space-x-4 mb-4">
           <button 
             onClick={prevTrack}
-            className="p-2 bg-gray-700 rounded-full hover:bg-gray-600 text-white transition"
+            disabled={isLoading}
+            className={`p-2 rounded-full text-white transition ${isLoading ? 'bg-gray-500 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'}`}
           >
             <SkipBack size={18} />
           </button>
           
           <button 
             onClick={togglePlayPause}
-            className="p-3 bg-orange-600 rounded-full hover:bg-orange-500 text-white transition"
+            disabled={isLoading}
+            className={`p-3 rounded-full text-white transition ${isLoading ? 'bg-gray-500 cursor-not-allowed' : (isPlaying ? 'bg-orange-600 hover:bg-orange-500' : 'bg-orange-600 hover:bg-orange-500')}`}
           >
             {isPlaying ? <Pause size={24} /> : <Play size={24} />}
           </button>
           
           <button 
             onClick={nextTrack}
-            className="p-2 bg-gray-700 rounded-full hover:bg-gray-600 text-white transition"
+            disabled={isLoading}
+            className={`p-2 rounded-full text-white transition ${isLoading ? 'bg-gray-500 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'}`}
           >
             <SkipForward size={18} />
           </button>
@@ -267,7 +333,8 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
         <div className="flex items-center space-x-2 w-full max-w-xs">
           <button 
             onClick={toggleMute}
-            className="p-1 text-gray-300 hover:text-white"
+            disabled={isLoading}
+            className={`p-1 ${isLoading ? 'text-gray-500 cursor-not-allowed' : 'text-gray-300 hover:text-white'}`}
           >
             {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
           </button>
@@ -279,7 +346,11 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
             step={0.01}
             value={volume}
             onChange={handleVolumeChange}
-            className="flex-1 h-1.5 appearance-none bg-gray-700 rounded-full outline-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-orange-500"
+            disabled={isLoading}
+            className={`flex-1 h-1.5 appearance-none rounded-full outline-none cursor-pointer 
+              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 
+              [&::-webkit-slider-thumb]:rounded-full 
+              ${isLoading ? 'bg-gray-500 [&::-webkit-slider-thumb]:bg-gray-400 cursor-not-allowed' : 'bg-gray-700 [&::-webkit-slider-thumb]:bg-orange-500'}`}
           />
         </div>
       </div>
