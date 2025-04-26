@@ -9,6 +9,7 @@ import CraftingWindow from "./CraftingWindow";
 import TerminalWindow from "./TerminalWindow";
 import WebBrowserWindow from "./WebBrowserWindow";
 import ProfileWindow from "./ProfileWindow";
+import PartyKittyWindow from "./PartyKittyWindow";
 import FullscreenQuestsApp from "./FullscreenQuestsApp";
 import QuestLoadingScreen from "./QuestLoadingScreen";
 import wallpaperImage from "@assets/wallpaper.png";
@@ -19,6 +20,7 @@ import craftingImage from "@assets/62_Ice_Armor.png";
 import questImage from "@assets/01_Fire_Grimoire.png";
 import shopCoinImage from "@assets/22_Leperchaun_Coin.png";
 import logoImage from "@assets/Asset 6@2x-8.png";
+import partyKittyImage from "@assets/partykitty.png";
 
 // Type definitions
 interface Position {
@@ -143,14 +145,20 @@ const RetroDesktop: React.FC = () => {
       openProfileWindow();
     };
     
+    const handleOpenPartyKitty = () => {
+      openPartyKittyWindow();
+    };
+    
     window.addEventListener('openTerminal', handleOpenTerminal);
     window.addEventListener('openBrowser', handleOpenBrowser);
     window.addEventListener('openProfile', handleOpenProfile);
+    window.addEventListener('openPartyKitty', handleOpenPartyKitty);
     
     return () => {
       window.removeEventListener('openTerminal', handleOpenTerminal);
       window.removeEventListener('openBrowser', handleOpenBrowser);
       window.removeEventListener('openProfile', handleOpenProfile);
+      window.removeEventListener('openPartyKitty', handleOpenPartyKitty);
     };
   }, []);
   
