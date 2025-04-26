@@ -28,9 +28,11 @@ interface Wire {
   color: string; // Wire color - can be used for indication (red for power, black for ground)
 }
 
+type ComponentType = 'battery' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor' | 'microcontroller';
+
 interface CircuitComponent {
   id: string;
-  type: 'battery' | 'wire' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor' | 'microcontroller';
+  type: ComponentType;
   position: Position;
   rotation: number; // 0, 90, 180, 270 degrees
   width: number;
@@ -44,7 +46,7 @@ interface CircuitComponent {
 }
 
 interface ComponentDefinition {
-  type: 'battery' | 'wire' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor' | 'microcontroller';
+  type: ComponentType;
   label: string;
   width: number;
   height: number;
@@ -302,7 +304,7 @@ const CircuitBuilderWindow: React.FC = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
   
   // Helper function to create a new component with connection points
-  const createComponent = (type: 'battery' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor' | 'microcontroller', position: Position): CircuitComponent => {
+  const createComponent = (type: ComponentType, position: Position): CircuitComponent => {
     // Make sure the type exists in componentDefinitions
     if (!componentDefinitions[type]) {
       console.error(`Component type "${type}" is not defined`);
@@ -373,7 +375,7 @@ while True:
   };
 
   // Handle starting to drag a component from the palette
-  const handleStartDragFromPalette = (e: React.MouseEvent, type: 'battery' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor' | 'microcontroller') => {
+  const handleStartDragFromPalette = (e: React.MouseEvent, type: ComponentType) => {
     e.preventDefault();
     
     if (!canvasRef.current) return;
@@ -1400,6 +1402,19 @@ while True:
                 
                 {/* Component Controls (visible on hover) */}
                 <div className="component-controls absolute -top-6 left-0 right-0 flex justify-center space-x-1 opacity-0 hover:opacity-100 transition-opacity">
+                  {/* Code editor button for microcontroller */}
+                  {component.type === 'microcontroller' && (
+                    <button 
+                      className="code-btn p-1 bg-green-600 text-white rounded-full hover:bg-green-700"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenCodeEditor(component);
+                      }}
+                      title="Open Code Editor"
+                    >
+                      <Code size={12} />
+                    </button>
+                  )}
                   <button 
                     className="rotate-btn p-1 bg-blue-600 text-white rounded-full hover:bg-blue-700"
                     onClick={(e) => {
