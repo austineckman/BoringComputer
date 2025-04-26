@@ -1,15 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Music } from "lucide-react";
 import jukeboxImage from "@assets/jukebox.png";
-
-// Track interface for the playlist
-interface Track {
-  id: string;
-  title: string;
-  artist: string;
-  path: string;
-  durationSeconds: number;
-}
+import { useAudioPlayer, Track } from "@/contexts/AudioPlayerContext";
 
 // Playlist with our music tracks from the "Taverns, Terrors, and Tiny Victories" album
 const initialPlaylist: Track[] = [
@@ -142,180 +134,51 @@ interface AudioContextState {
 }
 
 const JukeboxWindow: React.FC = () => {
-  // Refs
-  const audioRef = useRef<HTMLAudioElement>(null);
+  // Use our global audio player context
+  const {
+    isPlaying,
+    currentTrack,
+    currentTime,
+    duration,
+    volume,
+    isMuted,
+    playlist,
+    currentTrackIndex,
+    progress,
+    play,
+    pause,
+    togglePlay,
+    toggleMute,
+    setVolume,
+    playTrack,
+    nextTrack,
+    prevTrack,
+    seekTo,
+    setPlaylist
+  } = useAudioPlayer();
   
-  // State
-  const [playlist, setPlaylist] = useState<Track[]>(initialPlaylist);
-  const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(0);
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [volume, setVolume] = useState<number>(0.5); // 0 to 1
-  const [isMuted, setIsMuted] = useState<boolean>(false);
-  const [currentTime, setCurrentTime] = useState<number>(0);
-  const [playbackProgress, setPlaybackProgress] = useState<number>(0); // 0 to 100
-  const [prevVolume, setPrevVolume] = useState<number>(volume); // For mute toggle
-
-  // Get current track with safe fallback for when playlist is empty
-  const currentTrack = playlist.length > 0 ? playlist[currentTrackIndex] : {
-    id: "",
-    title: "No tracks available",
-    artist: "",
-    path: "",
-    durationSeconds: 0
-  };
-
-  // Play/pause track
-  const togglePlay = useCallback(() => {
-    console.log("Toggle play button clicked");
-    const audio = audioRef.current;
-    if (!audio) return;
-    
-    // Don't try to play if playlist is empty or no path provided
-    if (!currentTrack.path || playlist.length === 0) {
-      setIsPlaying(false);
-      return;
+  // Set playlist on component mount if empty
+  useEffect(() => {
+    if (playlist.length === 0) {
+      setPlaylist(initialPlaylist);
     }
-
-    if (isPlaying) {
-      audio.pause();
-    } else {
-      console.log("Trying to play audio");
-      audio.play().catch(err => {
-        console.error("Play failed:", err);
-        setIsPlaying(false);
-      });
-    }
-  }, [isPlaying, currentTrack.path, playlist.length]);
-
-  // Skip to next track
-  const playNextTrack = useCallback(() => {
-    setCurrentTrackIndex(prev => (prev + 1) % playlist.length);
-  }, [playlist.length]);
-
-  // Skip to previous track
-  const playPreviousTrack = useCallback(() => {
-    setCurrentTrackIndex(prev => (prev === 0 ? playlist.length - 1 : prev - 1));
-  }, [playlist.length]);
-
-  // Toggle mute
-  const toggleMute = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    if (isMuted) {
-      setVolume(prevVolume);
-      audio.volume = prevVolume;
-      setIsMuted(false);
-    } else {
-      setPrevVolume(volume);
-      setVolume(0);
-      audio.volume = 0;
-      setIsMuted(true);
-    }
-  }, [isMuted, volume, prevVolume]);
-
+  }, [playlist.length, setPlaylist]);
+  
+  // Convert progress (0-100) to currentTime for the progress bar
+  const playbackProgress = progress;
+  
   // Handle volume change
   const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
     setVolume(newVolume);
-    
-    const audio = audioRef.current;
-    if (audio) {
-      audio.volume = newVolume;
-    }
-    
-    if (newVolume === 0) {
-      setIsMuted(true);
-    } else if (isMuted) {
-      setIsMuted(false);
-    }
-  }, [isMuted]);
+  }, [setVolume]);
 
   // Handle progress bar change (seeking)
   const handleProgressChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const audio = audioRef.current;
-    if (!audio || !audio.duration) return;
-    
     const newProgress = parseFloat(e.target.value);
-    const newTime = (newProgress / 100) * audio.duration;
-    
-    audio.currentTime = newTime;
-    setPlaybackProgress(newProgress);
-    setCurrentTime(newTime);
-  }, []);
-
-  // Update state when audio ends to move to next track
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const handleEnded = () => {
-      playNextTrack();
-    };
-
-    const handleTimeUpdate = () => {
-      setCurrentTime(audio.currentTime);
-      if (audio.duration) {
-        setPlaybackProgress((audio.currentTime / audio.duration) * 100);
-      } else {
-        setPlaybackProgress(0);
-      }
-    };
-
-    const handlePlay = () => {
-      setIsPlaying(true);
-    };
-
-    const handlePause = () => {
-      setIsPlaying(false);
-    };
-
-    audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('play', handlePlay);
-    audio.addEventListener('pause', handlePause);
-
-    return () => {
-      audio.removeEventListener('ended', handleEnded);
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('play', handlePlay);
-      audio.removeEventListener('pause', handlePause);
-    };
-  }, [playNextTrack]);
-
-  // Effect to handle volume changes
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    
-    // Only update the volume, not reload the audio
-    audio.volume = volume;
-  }, [volume]);
-  
-  // Effect to handle source changes and autoplay
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    
-    // Don't try to load if no path is provided
-    if (!currentTrack.path) {
-      setIsPlaying(false);
-      return;
-    }
-    
-    // Set the audio source
-    audio.src = currentTrack.path;
-    audio.volume = volume;
-    audio.load();
-
-    // If we were already playing, start the new track
-    if (isPlaying) {
-      audio.play().catch(err => {
-        console.error("Play failed:", err);
-        setIsPlaying(false);
-      });
-    }
-  }, [currentTrack.path, currentTrackIndex, isPlaying, volume]);
+    const newTime = (newProgress / 100) * (duration || 0);
+    seekTo(newTime);
+  }, [duration, seekTo]);
   
   // Format seconds to mm:ss
   const formatTime = (seconds: number): string => {
@@ -363,13 +226,13 @@ const JukeboxWindow: React.FC = () => {
           
           {/* Controls below jukebox */}
           <div className="mt-4 flex flex-col items-center">
-            <div className="text-lg font-bold text-orange-400 mb-2">{currentTrack.title}</div>
-            <div className="text-sm text-gray-400 mb-4">{currentTrack.artist}</div>
+            <div className="text-lg font-bold text-orange-400 mb-2">{currentTrack?.title || "No track selected"}</div>
+            <div className="text-sm text-gray-400 mb-4">{currentTrack?.artist || ""}</div>
             
             {/* Playback controls */}
             <div className="flex items-center space-x-4 mb-4">
               <button 
-                onClick={playPreviousTrack}
+                onClick={prevTrack}
                 disabled={playlist.length === 0}
                 className={`p-2 rounded-full ${playlist.length === 0 
                   ? 'text-gray-600 cursor-not-allowed' 
@@ -389,7 +252,7 @@ const JukeboxWindow: React.FC = () => {
               </button>
               
               <button 
-                onClick={playNextTrack}
+                onClick={nextTrack}
                 disabled={playlist.length === 0}
                 className={`p-2 rounded-full ${playlist.length === 0 
                   ? 'text-gray-600 cursor-not-allowed' 
@@ -435,7 +298,7 @@ const JukeboxWindow: React.FC = () => {
           <div className="bg-gray-800 rounded-md p-3 mb-4">
             <div className="mb-2">
               <div className="text-sm text-gray-400">Now Playing</div>
-              <div className="text-orange-400 font-bold">{currentTrack.title}</div>
+              <div className="text-orange-400 font-bold">{currentTrack?.title || "No track selected"}</div>
             </div>
             
             {/* Progress bar */}
@@ -449,7 +312,7 @@ const JukeboxWindow: React.FC = () => {
                 onChange={handleProgressChange}
                 className="flex-grow h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
               />
-              <span className="text-xs w-8">{formatTime(currentTrack.durationSeconds)}</span>
+              <span className="text-xs w-8">{formatTime(currentTrack?.durationSeconds || 0)}</span>
             </div>
           </div>
           
@@ -464,8 +327,7 @@ const JukeboxWindow: React.FC = () => {
                     currentTrackIndex === index ? 'bg-gray-800 border-l-4 border-orange-500 pl-2' : ''
                   }`}
                   onClick={() => {
-                    setCurrentTrackIndex(index);
-                    setIsPlaying(true);
+                    playTrack(index);
                   }}
                 >
                   <div>
@@ -481,9 +343,6 @@ const JukeboxWindow: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Hidden audio element */}
-      <audio ref={audioRef} />
     </div>
   );
 };
