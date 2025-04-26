@@ -217,7 +217,7 @@ const RecycleBinWindow: React.FC<RecycleBinWindowProps> = ({ onClose }) => {
       toast({
         title: "XP Reward!",
         description: `You gained ${xpAmount} XP for your persistent searching.`,
-        variant: "success",
+        variant: "default",
       });
     }
     
@@ -230,7 +230,7 @@ const RecycleBinWindow: React.FC<RecycleBinWindowProps> = ({ onClose }) => {
       toast({
         title: "New Title Unlocked!",
         description: `You've earned the title: "${title}"`,
-        variant: "success",
+        variant: "default",
       });
     }
   };
@@ -290,7 +290,7 @@ const RecycleBinWindow: React.FC<RecycleBinWindowProps> = ({ onClose }) => {
         toast({
           title: "Data Recovered!",
           description: `Deleting that file revealed ${recoveredItem.name}!`,
-          variant: "success",
+          variant: "default",
         });
       }
     }, 500);
@@ -447,35 +447,7 @@ const RecycleBinWindow: React.FC<RecycleBinWindowProps> = ({ onClose }) => {
         </div>
       </div>
       
-      <style jsx global>{`
-        .glitch-text {
-          animation: glitch 0.5s linear infinite;
-          text-shadow: 2px 2px 0 rgba(255,0,0,0.7), -2px -2px 0 rgba(0,0,255,0.7);
-        }
-        
-        .glitch-content {
-          position: relative;
-          animation: glitch-content 0.3s linear infinite;
-          text-shadow: 1px 1px 0 rgba(255,0,0,0.5), -1px -1px 0 rgba(0,0,255,0.5);
-        }
-        
-        @keyframes glitch {
-          0% { transform: translate(0); }
-          20% { transform: translate(-2px, 2px); }
-          40% { transform: translate(-2px, -2px); }
-          60% { transform: translate(2px, 2px); }
-          80% { transform: translate(2px, -2px); }
-          100% { transform: translate(0); }
-        }
-        
-        @keyframes glitch-content {
-          0% { opacity: 1; }
-          30% { opacity: 0.9; }
-          50% { opacity: 0.5; }
-          70% { opacity: 0.9; }
-          100% { opacity: 1; }
-        }
-      `}</style>
+      {/* Glitch effect CSS */}
     </div>
   );
 };
