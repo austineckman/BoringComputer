@@ -862,7 +862,7 @@ const RetroDesktop: React.FC = () => {
             </div>
             
             {/* Window Content */}
-            <div className="retro-window-body p-2 overflow-auto bg-gray-800" style={{ height: 'calc(100% - 36px)' }}>
+            <div className="retro-window-body p-2 overflow-auto bg-gray-100" style={{ height: 'calc(100% - 36px)' }}>
               {window.content}
             </div>
             
