@@ -1488,3 +1488,4 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   return httpServer;
 }
+console.log("Testing endpoint: GET /api/admin/lootboxes");
