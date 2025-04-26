@@ -91,7 +91,7 @@ const componentDefinitions: Record<string, ComponentDefinition> = {
     height: 42,
     color: '#e0e0e0',
     icon: '💡',
-    svgPath: '/images/components/led.svg',
+    svgPath: '/images/wokwi/led.svg',
     connectionPoints: [
       // Anode (positive, left leg)
       { type: 'input', position: { x: 15, y: 42 } },
