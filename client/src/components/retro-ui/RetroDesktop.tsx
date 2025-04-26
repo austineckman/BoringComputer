@@ -10,7 +10,6 @@ import TerminalWindow from "./TerminalWindow";
 import WebBrowserWindow from "./WebBrowserWindow";
 import ProfileWindow from "./ProfileWindow";
 import FullscreenQuestsApp from "./FullscreenQuestsApp";
-import LoadingScreen from "./LoadingScreen";
 import wallpaperImage from "@assets/wallpaper.png";
 import backgroundMusic from "@assets/Fantasy Guild Hall.mp3";
 import goldCrateImage from "@assets/goldcrate.png";
@@ -66,7 +65,6 @@ const RetroDesktop: React.FC = () => {
   const [selectedIcon, setSelectedIcon] = useState<string | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [isQuestsAppOpen, setIsQuestsAppOpen] = useState(false);
-  const [isQuestsLoading, setIsQuestsLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   
   // Desktop icons (regular icons visible to all users)
@@ -319,9 +317,7 @@ const RetroDesktop: React.FC = () => {
     } else if (iconId === "shop") {
       openShopWindow();
     } else if (iconId === "quests") {
-      // Show loading screen first, then open quests app
-      setIsQuestsLoading(true);
-      
+      setIsQuestsAppOpen(true);
       // Play sound if available
       if (window.sounds) {
         window.sounds.click();
@@ -576,17 +572,6 @@ const RetroDesktop: React.FC = () => {
       }}
       onClick={handleDesktopClick}
     >
-      {/* Loading Screen */}
-      {isQuestsLoading && (
-        <LoadingScreen 
-          onComplete={() => {
-            setIsQuestsLoading(false);
-            setIsQuestsAppOpen(true);
-          }} 
-          duration={3000}
-        />
-      )}
-      
       {/* Fullscreen Quest Application */}
       {isQuestsAppOpen && (
         <FullscreenQuestsApp onClose={() => setIsQuestsAppOpen(false)} />
