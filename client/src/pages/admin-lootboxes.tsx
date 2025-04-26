@@ -81,10 +81,16 @@ const AdminLootBoxesPage: React.FC = () => {
   });
 
   // Fetch loot box configs
-  const { data: lootBoxConfigs, isLoading: isLoadingConfigs } = useQuery({
+  const { data: lootBoxConfigs, isLoading: isLoadingConfigs, error: lootBoxError } = useQuery({
     queryKey: ['/api/admin/lootboxes'],
     enabled: selectedTab === "list",
     // Use the default queryFn
+    onSuccess: (data) => {
+      console.log('Loot box configs loaded:', data);
+    },
+    onError: (error) => {
+      console.error('Error loading loot box configs:', error);
+    }
   });
 
   // Fetch items for dropdown
