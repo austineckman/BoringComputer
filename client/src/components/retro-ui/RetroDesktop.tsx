@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { X, Maximize2, Minimize2 } from "lucide-react";
+import { X, Maximize2, Minimize2, Volume2, VolumeX } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import RetroStartMenu from "./RetroStartMenu";
@@ -14,6 +14,7 @@ import JukeboxWindow from "./JukeboxWindow";
 import FullscreenQuestsApp from "./FullscreenQuestsApp";
 import QuestLoadingScreen from "./QuestLoadingScreen";
 import wallpaperImage from "@assets/wallpaper.png";
+import backgroundMusic from "@assets/Fantasy Guild Hall.mp3";
 import goldCrateImage from "@assets/goldcrate.png";
 import ironBagImage from "@assets/506_Gold_Bag_Leather_B.png";
 import craftingImage from "@assets/62_Ice_Armor.png";
@@ -67,8 +68,10 @@ const RetroDesktop: React.FC = () => {
   const [windows, setWindows] = useState<RetroWindow[]>([]);
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
   const [selectedIcon, setSelectedIcon] = useState<string | null>(null);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   // Single state to manage quests app status: 'closed', 'loading', or 'open'
   const [questsAppState, setQuestsAppState] = useState<'closed' | 'loading' | 'open'>('closed');
+  const audioRef = useRef<HTMLAudioElement>(null);
   
   // Desktop icons (regular icons visible to all users)
   const [desktopIcons, setDesktopIcons] = useState<DesktopIcon[]>([
@@ -77,7 +80,6 @@ const RetroDesktop: React.FC = () => {
     { id: "crafting", name: "crafting.exe", icon: "craftingarmor", path: "/crafting", position: { x: 20, y: 220 } },
     { id: "lootboxes", name: "Loot Crates", icon: "goldcrate", path: "/lootboxes", position: { x: 20, y: 320 } },
     { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 20, y: 420 } },
-    { id: "jukebox", name: "Music Player", icon: "music", position: { x: 20, y: 520 } },
   ]);
   
   // Admin folder (only visible to admin users)
@@ -168,7 +170,37 @@ const RetroDesktop: React.FC = () => {
     };
   }, []);
   
-  // No audio setup - we now use JukeboxWindow for all music playback
+  // Audio setup
+  useEffect(() => {
+    const audioElement = audioRef.current;
+    
+    if (audioElement) {
+      audioElement.pause();
+      audioElement.currentTime = 0;
+      audioElement.volume = 0.5;
+      
+      const handleAudioPlay = () => setIsMusicPlaying(true);
+      const handleAudioPause = () => setIsMusicPlaying(false);
+      const handleAudioEnded = () => {
+        if (audioElement.loop) {
+          audioElement.play().catch(err => console.warn("Auto-replay failed:", err));
+        } else {
+          setIsMusicPlaying(false);
+        }
+      };
+      
+      audioElement.addEventListener('play', handleAudioPlay);
+      audioElement.addEventListener('pause', handleAudioPause);
+      audioElement.addEventListener('ended', handleAudioEnded);
+      
+      return () => {
+        audioElement.removeEventListener('play', handleAudioPlay);
+        audioElement.removeEventListener('pause', handleAudioPause);
+        audioElement.removeEventListener('ended', handleAudioEnded);
+        audioElement.pause();
+      };
+    }
+  }, []);
 
   // Window management functions
   const openWindow = (
@@ -302,8 +334,6 @@ const RetroDesktop: React.FC = () => {
       openTerminalWindow();
     } else if (iconId === "shop") {
       openShopWindow();
-    } else if (iconId === "jukebox") {
-      openJukeboxWindow();
     } else if (iconId === "quests") {
       // Play sound if available
       if (window.sounds) {
@@ -514,6 +544,11 @@ const RetroDesktop: React.FC = () => {
   };
   
   const openJukeboxWindow = () => {
+    // If we're using Jukebox, we should pause any existing music 
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    
     openWindow(
       "jukebox", 
       "Music Player", 
@@ -557,7 +592,21 @@ const RetroDesktop: React.FC = () => {
     }
   };
   
-  // Music controls are now exclusively in the JukeboxWindow component
+  // Music controls
+  const toggleMusic = () => {
+    const audioElement = audioRef.current;
+    if (!audioElement) return;
+    
+    if (isMusicPlaying) {
+      audioElement.pause();
+    } else {
+      audioElement.currentTime = 0;
+      audioElement.play().catch(error => {
+        console.warn("Audio playback failed:", error);
+        setIsMusicPlaying(false);
+      });
+    }
+  };
   
   return (
     <div 
@@ -655,13 +704,6 @@ const RetroDesktop: React.FC = () => {
                 <img 
                   src={shopCoinImage} 
                   alt="Shop Coin" 
-                  className="w-10 h-10 object-contain" 
-                  style={{ imageRendering: 'pixelated' }}
-                />
-              ) : icon.icon === "music" ? (
-                <img 
-                  src={jukeboxIconImage} 
-                  alt="Jukebox" 
                   className="w-10 h-10 object-contain" 
                   style={{ imageRendering: 'pixelated' }}
                 />
@@ -999,11 +1041,24 @@ const RetroDesktop: React.FC = () => {
           </div>
         </div>
         
-        {/* Clock */}
+        {/* Clock and Sound Controls */}
         <div className="flex items-center space-x-3">
+          {/* Sound Control Button */}
+          <button 
+            className="bg-blue-800 border border-blue-500 rounded-sm px-2 py-1.5 text-white hover:bg-blue-700 transition-colors"
+            onClick={toggleMusic}
+            title={isMusicPlaying ? "Mute music" : "Play music"}
+          >
+            {isMusicPlaying ? <Volume2 size={16} /> : <VolumeX size={16} />}
+          </button>
+          
+          {/* Clock */}
           <div className="bg-blue-800 border border-blue-500 rounded-sm px-3 py-1.5 text-xs font-mono text-white">
             {currentTime.toLocaleTimeString()} | {currentTime.toLocaleDateString()}
           </div>
+          
+          {/* Hidden audio element */}
+          <audio ref={audioRef} src={backgroundMusic} loop preload="auto" />
         </div>
       </div>
     </div>

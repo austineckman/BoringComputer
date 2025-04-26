@@ -54,13 +54,6 @@ const JukeboxWindow: React.FC = () => {
 
   // Get current track
   const currentTrack = playlist[currentTrackIndex];
-  
-  // Initialize progress with default 0 to avoid NaN
-  useEffect(() => {
-    // Reset progress when changing tracks to prevent NaN values
-    setPlaybackProgress(0);
-    setCurrentTime(0);
-  }, [currentTrackIndex]);
 
   // Play/pause track
   const togglePlay = useCallback(() => {
@@ -181,10 +174,13 @@ const JukeboxWindow: React.FC = () => {
     audio.volume = volume;
     audio.load();
 
-    // If we were already playing, don't auto-start - this prevents unwanted autoplay
-    // We're intentionally not auto-playing even if isPlaying is true
-    // Music should only start when the user explicitly clicks play
-    setIsPlaying(false);
+    // If we were already playing, start the new track
+    if (isPlaying) {
+      audio.play().catch(err => {
+        console.error("Play failed:", err);
+        setIsPlaying(false);
+      });
+    }
   }, [currentTrack.path, currentTrackIndex, volume, isPlaying]);
   
   // Format seconds to mm:ss
@@ -326,8 +322,7 @@ const JukeboxWindow: React.FC = () => {
                   }`}
                   onClick={() => {
                     setCurrentTrackIndex(index);
-                    // Changed to not auto-play when selecting tracks
-                    setIsPlaying(false);
+                    setIsPlaying(true);
                   }}
                 >
                   <div>
