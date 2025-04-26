@@ -589,7 +589,11 @@ const RetroDesktop: React.FC = () => {
       
       {/* Fullscreen Quest Application */}
       {isQuestsAppOpen && (
-        <FullscreenQuestsApp onClose={() => setIsQuestsAppOpen(false)} />
+        <FullscreenQuestsApp onClose={() => {
+          // Make sure we properly clean up both states
+          setIsQuestsAppOpen(false);
+          setIsQuestsLoading(false);
+        }} />
       )}
       {/* Desktop Icons */}
       <div className="absolute top-0 left-0 right-0 bottom-0">
