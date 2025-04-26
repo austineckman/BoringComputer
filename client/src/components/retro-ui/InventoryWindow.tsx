@@ -125,21 +125,22 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
             </div>
           )}
           
-          {/* Enhanced WoW-style Tooltip - positioned in a fixed manner to avoid clipping */}
+          {/* Enhanced WoW-style Tooltip - positioned absolutely relative to viewport */}
           {item && hoveredItem === item.id && (
-            <div className="fixed z-[9999] p-3 border-2 
-              rounded-md shadow-2xl pointer-events-none"
+            <div 
+              className="fixed z-[99999] p-4 border-2 rounded-md shadow-2xl pointer-events-none w-64"
               style={{ 
-                backgroundColor: 'rgba(10, 10, 10, 0.95)',
+                backgroundColor: '#000000', /* Solid black background */
                 borderColor: itemDetails?.rarity 
                   ? getRarityTextColor(itemDetails.rarity)
                   : '#FFFFFF',
-                top: '30%',
-                left: '50%',
-                transform: 'translateX(-50%)'
+                position: 'fixed',
+                top: '20%',  /* Position at top of screen */
+                right: '20%', /* Position at right side */
+                boxShadow: '0 0 15px 5px rgba(0, 0, 0, 0.7)'
               }}
             >
-              <p className="font-bold text-sm" style={{ 
+              <p className="font-bold text-base mb-1" style={{ 
                 color: itemDetails?.rarity 
                   ? getRarityTextColor(itemDetails.rarity)
                   : '#FFFFFF'
@@ -147,18 +148,18 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
                 {itemDetails?.name || item.type}
               </p>
               
-              <p className="text-xs mt-1 text-gray-400 italic">
+              <p className="text-sm mb-2 text-gray-400 italic">
                 {itemDetails?.rarity 
                   ? `${itemDetails.rarity.charAt(0).toUpperCase()}${itemDetails.rarity.slice(1)}` 
                   : 'Unknown'}
               </p>
               
               {itemDetails?.description && (
-                <p className="text-xs mt-1 text-white">{itemDetails.description}</p>
+                <p className="text-sm mb-2 text-white">{itemDetails.description}</p>
               )}
               
               {itemDetails?.flavorText && (
-                <p className="text-xs mt-2 text-gray-400 italic">"{itemDetails.flavorText}"</p>
+                <p className="text-sm mt-2 text-gray-400 italic">"{itemDetails.flavorText}"</p>
               )}
             </div>
           )}
