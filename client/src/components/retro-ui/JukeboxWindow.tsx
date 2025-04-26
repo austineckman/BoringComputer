@@ -36,6 +36,12 @@ const musicTracks: MusicTrack[] = [
     title: "TAVERN.EXE",
     artist: "Digital Bard",
     src: "/music/TAVERN.EXE.mp3"
+  },
+  {
+    id: "guildbank",
+    title: "Guild Bank",
+    artist: "Epic Fantasy",
+    src: "/music/guildbank.mp3"
   }
 ];
 
@@ -52,186 +58,120 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
   const [duration, setDuration] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const animationRef = useRef<number>();
+  // Reference to the sound object
+  const soundRef = useRef<Howl | null>(null);
+  const intervalRef = useRef<number | null>(null);
   
   const currentTrack = musicTracks[currentTrackIndex];
   
-  // Initialize audio when component mounts
+  // Initialize sound when component mounts or when track changes
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    // Clean up previous sound instance
+    if (soundRef.current) {
+      soundRef.current.unload();
+    }
     
-    // Set initial volume
-    audio.volume = volume;
+    // Clean up previous interval
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+    }
     
-    // Event listeners
-    const setAudioData = () => {
-      setDuration(audio.duration);
-    };
-    
-    const setAudioTime = () => {
-      setProgress(audio.currentTime);
-    };
-    
-    const handleEnded = () => {
-      nextTrack();
-    };
-    
-    // Add event listeners
-    audio.addEventListener("loadeddata", setAudioData);
-    audio.addEventListener("timeupdate", setAudioTime);
-    audio.addEventListener("ended", handleEnded);
-    
-    // Clean up
-    return () => {
-      audio.removeEventListener("loadeddata", setAudioData);
-      audio.removeEventListener("timeupdate", setAudioTime);
-      audio.removeEventListener("ended", handleEnded);
-      
-      // Stop any animation
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-      
-      // Pause audio when component unmounts
-      audio.pause();
-    };
-  }, []);
-  
-  // Effect that runs when track changes
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    
-    // When track changes, set the source and load it
-    audio.src = currentTrack.src;
-    
-    // Log for debugging
-    console.log("Loading audio track:", currentTrack.src);
-    
-    // Add a specific load event handler
-    const handleCanPlayThrough = () => {
-      console.log("Audio can play through:", currentTrack.title);
-      setIsLoading(false);
-      
-      // If we were already playing, play the new track
-      if (isPlaying) {
-        audio.play()
-          .then(() => {
-            console.log("Playback started after track change");
-            // Dispatch event to update the main desktop UI
-            window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
-              detail: { isPlaying: true } 
-            }));
-          })
-          .catch(error => {
-            console.warn("Audio playback failed on track change:", error);
-            setIsPlaying(false);
-          });
-      }
-    };
-    
-    const handleLoadError = (e: Event) => {
-      console.error("Audio load error:", e);
-      setIsLoading(false);
-      setIsPlaying(false);
-    };
-    
-    // Set loading state and reset progress
     setIsLoading(true);
-    setProgress(0);
+    console.log("Loading track:", currentTrack.src);
     
-    // Add the event listeners
-    audio.addEventListener('canplaythrough', handleCanPlayThrough);
-    audio.addEventListener('error', handleLoadError);
+    // Create a new Howl instance
+    const sound = new Howl({
+      src: [currentTrack.src],
+      html5: true, // Use HTML5 Audio to help with mobile playback
+      volume: isMuted ? 0 : volume,
+      onload: () => {
+        console.log("Track loaded:", currentTrack.title);
+        setIsLoading(false);
+        setDuration(sound.duration());
+        
+        // If we were playing before, resume playback
+        if (isPlaying) {
+          sound.play();
+        }
+      },
+      onplay: () => {
+        setIsPlaying(true);
+        
+        // Set up an interval to update the progress
+        intervalRef.current = window.setInterval(() => {
+          setProgress(sound.seek());
+        }, 100);
+        
+        // Update the main desktop UI
+        window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
+          detail: { isPlaying: true } 
+        }));
+      },
+      onpause: () => {
+        setIsPlaying(false);
+        
+        // Clear the progress update interval
+        if (intervalRef.current) {
+          window.clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        
+        // Update the main desktop UI
+        window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
+          detail: { isPlaying: false } 
+        }));
+      },
+      onstop: () => {
+        setIsPlaying(false);
+        setProgress(0);
+        
+        // Clear the progress update interval
+        if (intervalRef.current) {
+          window.clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        
+        // Update the main desktop UI
+        window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
+          detail: { isPlaying: false } 
+        }));
+      },
+      onend: () => {
+        // Play the next track when current one ends
+        nextTrack();
+      },
+      onloaderror: (id, err) => {
+        console.error("Error loading sound:", err);
+        setIsLoading(false);
+      },
+      onplayerror: (id, err) => {
+        console.error("Error playing sound:", err);
+        setIsLoading(false);
+        setIsPlaying(false);
+      }
+    });
     
-    // Load the audio file
-    audio.load();
+    // Store the Howl instance
+    soundRef.current = sound;
     
     // Cleanup function
     return () => {
-      audio.removeEventListener('canplaythrough', handleCanPlayThrough);
-      audio.removeEventListener('error', handleLoadError);
-    };
-  }, [currentTrackIndex, isPlaying]);
-  
-  // Effect to handle play/pause state changes
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    
-    if (isPlaying) {
-      // Play logic is now handled directly in togglePlayPause and track change effect
-    } else {
-      audio.pause();
+      if (soundRef.current) {
+        soundRef.current.unload();
+      }
       
-      // Dispatch event to update the main desktop UI
-      window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
-        detail: { isPlaying: false } 
-      }));
-    }
-  }, [isPlaying]);
-  
-  // Play/Pause toggle function to play actual music files
-  const togglePlayPause = () => {
-    console.log("Toggle play button clicked");
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    // Create a simple audio context to unlock audio on iOS/Safari
-    const unlockAudio = () => {
-      try {
-        // Create a short silent sound
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        gainNode.gain.value = 0; // Silent
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        oscillator.start(0);
-        oscillator.stop(0.001);
-      } catch (e) {
-        console.log("Could not unlock audio, continuing anyway");
+      if (intervalRef.current) {
+        window.clearInterval(intervalRef.current);
       }
     };
-
-    if (!isPlaying) {
-      console.log("Trying to play audio");
-      setIsLoading(true);
-      
-      // Try to unlock audio if needed (for Safari/iOS)
-      unlockAudio();
-      
-      // Play the actual audio file
-      audio.play()
-        .then(() => {
-          console.log("Audio playback started successfully");
-          setIsPlaying(true);
-          setIsLoading(false);
-          
-          // Update the main desktop UI
-          window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
-            detail: { isPlaying: true } 
-          }));
-        })
-        .catch(error => {
-          console.warn("Audio playback failed:", error);
-          setIsPlaying(false);
-          setIsLoading(false);
-        });
-    } else {
-      // Pause case is simpler
-      console.log("Pausing audio");
-      audio.pause();
-      setIsPlaying(false);
-      
-      // Dispatch event to update the main desktop UI
-      window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
-        detail: { isPlaying: false } 
-      }));
+  }, [currentTrackIndex]);
+  
+  // Effect to handle volume/mute changes
+  useEffect(() => {
+    if (soundRef.current) {
+      soundRef.current.volume(isMuted ? 0 : volume);
     }
-  };
+  }, [volume, isMuted]);
   
   // Listen for toggle events from the desktop UI
   useEffect(() => {
@@ -246,37 +186,32 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
     };
   }, []);
   
-  // Effect to handle volume changes
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
+  // Play/Pause toggle function
+  const togglePlayPause = () => {
+    console.log("Toggle play button clicked");
     
-    audio.volume = isMuted ? 0 : volume;
-  }, [volume, isMuted]);
+    if (!soundRef.current) return;
+    
+    if (!isPlaying) {
+      console.log("Trying to play audio");
+      soundRef.current.play();
+    } else {
+      console.log("Pausing audio");
+      soundRef.current.pause();
+    }
+  };
   
   // Change track functions
   const prevTrack = () => {
     setCurrentTrackIndex(prev => 
       prev === 0 ? musicTracks.length - 1 : prev - 1
     );
-    
-    // We'll let the effect handle playback when currentTrackIndex changes
-    if (!isPlaying) {
-      // But if we're not already playing, we need to start
-      setTimeout(() => togglePlayPause(), 50);
-    }
   };
   
   const nextTrack = () => {
     setCurrentTrackIndex(prev => 
       prev === musicTracks.length - 1 ? 0 : prev + 1
     );
-    
-    // We'll let the effect handle playback when currentTrackIndex changes
-    if (!isPlaying) {
-      // But if we're not already playing, we need to start
-      setTimeout(() => togglePlayPause(), 50);
-    }
   };
   
   // Volume control
@@ -296,11 +231,10 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
   
   // Progress bar
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    if (!soundRef.current) return;
     
     const newTime = parseFloat(e.target.value);
-    audio.currentTime = newTime;
+    soundRef.current.seek(newTime);
     setProgress(newTime);
   };
   
@@ -421,15 +355,6 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
           />
         </div>
       </div>
-      
-      {/* Audio element with full controls for troubleshooting */}
-      <audio 
-        ref={audioRef} 
-        src={currentTrack.src} 
-        preload="auto"
-        muted={isMuted}
-        onError={(e) => console.error("Audio element error:", e)}
-      />
     </div>
   );
 };
