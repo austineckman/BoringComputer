@@ -126,10 +126,12 @@ export class ComponentKitRepository extends BaseRepository<
    * (components with isReusable = true)
    */
   async getReusableComponents() {
+    // Since there's no isReusable field in the schema,
+    // We'll consider all components reusable for now
+    // In a future enhancement, we could add an isReusable field to the schema
     return await db
       .select()
-      .from(schema.kitComponents)
-      .where(eq(schema.kitComponents.isReusable, true));
+      .from(schema.kitComponents);
   }
   
   /**
