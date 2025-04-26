@@ -98,8 +98,11 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
     // Play sound effect if available
     window.sounds?.click();
     
-    // Navigate to quest detail page
-    navigate(`/quests/${questId}`);
+    // For fullscreen mode, we won't navigate away and instead will 
+    // implement showing quest details in a modal or panel later
+    console.log('Selected quest:', questId);
+    // Don't navigate away from desktop - this was causing the reappearing issue
+    // navigate(`/quests/${questId}`);
   };
 
   const clearFilters = () => {
