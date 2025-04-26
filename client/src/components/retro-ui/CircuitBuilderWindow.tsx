@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Trash2, RotateCw, Grid, ZoomIn, ZoomOut, Move } from 'lucide-react';
+import { Trash2, RotateCw, Grid, ZoomIn, ZoomOut, Move, PlayCircle, AlertCircle, Zap } from 'lucide-react';
 import { ReactSVG } from 'react-svg';
 
 // Circuit Components Types
@@ -34,6 +34,8 @@ interface CircuitComponent {
   width: number;
   height: number;
   connectionPoints: ConnectionPoint[]; // Added connection points
+  isEnergized?: boolean; // Whether the component has power flowing through it
+  hasProblem?: boolean; // Whether there's an issue with this component in the circuit
 }
 
 interface ComponentDefinition {
@@ -264,6 +266,12 @@ const CircuitBuilderWindow: React.FC = () => {
   const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState<boolean>(false);
   const [panStart, setPanStart] = useState<Position>({ x: 0, y: 0 });
+  
+  // State for simulation
+  const [isSimulating, setIsSimulating] = useState<boolean>(false);
+  const [simulationStatus, setSimulationStatus] = useState<string | null>(null);
+  const [energizedComponentIds, setEnergizedComponentIds] = useState<Set<string>>(new Set());
+  const [problemComponentIds, setProblemComponentIds] = useState<Set<string>>(new Set());
   
   // Canvas ref for dimension calculations
   const canvasRef = useRef<HTMLDivElement>(null);
