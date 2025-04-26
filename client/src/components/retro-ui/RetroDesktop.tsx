@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { X, Maximize2, Minimize2, Volume2, VolumeX } from "lucide-react";
+import { X, Maximize2, Minimize2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import RetroStartMenu from "./RetroStartMenu";
@@ -14,7 +14,6 @@ import JukeboxWindow from "./JukeboxWindow";
 import FullscreenQuestsApp from "./FullscreenQuestsApp";
 import QuestLoadingScreen from "./QuestLoadingScreen";
 import wallpaperImage from "@assets/wallpaper.png";
-import backgroundMusic from "@assets/Fantasy Guild Hall.mp3";
 import goldCrateImage from "@assets/goldcrate.png";
 import ironBagImage from "@assets/506_Gold_Bag_Leather_B.png";
 import craftingImage from "@assets/62_Ice_Armor.png";
@@ -68,10 +67,8 @@ const RetroDesktop: React.FC = () => {
   const [windows, setWindows] = useState<RetroWindow[]>([]);
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
   const [selectedIcon, setSelectedIcon] = useState<string | null>(null);
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   // Single state to manage quests app status: 'closed', 'loading', or 'open'
   const [questsAppState, setQuestsAppState] = useState<'closed' | 'loading' | 'open'>('closed');
-  const audioRef = useRef<HTMLAudioElement>(null);
   
   // Desktop icons (regular icons visible to all users)
   const [desktopIcons, setDesktopIcons] = useState<DesktopIcon[]>([
@@ -171,38 +168,7 @@ const RetroDesktop: React.FC = () => {
     };
   }, []);
   
-  // Audio setup
-  useEffect(() => {
-    const audioElement = audioRef.current;
-    
-    if (audioElement) {
-      // Always initialize in paused state
-      audioElement.pause();
-      audioElement.currentTime = 0;
-      audioElement.volume = 0.5;
-      
-      const handleAudioPlay = () => setIsMusicPlaying(true);
-      const handleAudioPause = () => setIsMusicPlaying(false);
-      const handleAudioEnded = () => {
-        if (audioElement.loop) {
-          audioElement.play().catch(err => console.warn("Auto-replay failed:", err));
-        } else {
-          setIsMusicPlaying(false);
-        }
-      };
-      
-      audioElement.addEventListener('play', handleAudioPlay);
-      audioElement.addEventListener('pause', handleAudioPause);
-      audioElement.addEventListener('ended', handleAudioEnded);
-      
-      return () => {
-        audioElement.removeEventListener('play', handleAudioPlay);
-        audioElement.removeEventListener('pause', handleAudioPause);
-        audioElement.removeEventListener('ended', handleAudioEnded);
-        audioElement.pause();
-      };
-    }
-  }, []);
+  // No audio setup - we now use JukeboxWindow for all music playback
 
   // Window management functions
   const openWindow = (
@@ -548,12 +514,6 @@ const RetroDesktop: React.FC = () => {
   };
   
   const openJukeboxWindow = () => {
-    // If we're using Jukebox, we should pause any existing music 
-    if (audioRef.current) {
-      audioRef.current.pause();
-      setIsMusicPlaying(false);
-    }
-    
     openWindow(
       "jukebox", 
       "Music Player", 
@@ -597,21 +557,7 @@ const RetroDesktop: React.FC = () => {
     }
   };
   
-  // Music controls
-  const toggleMusic = () => {
-    const audioElement = audioRef.current;
-    if (!audioElement) return;
-    
-    if (isMusicPlaying) {
-      audioElement.pause();
-    } else {
-      audioElement.currentTime = 0;
-      audioElement.play().catch(error => {
-        console.warn("Audio playback failed:", error);
-        setIsMusicPlaying(false);
-      });
-    }
-  };
+  // Music controls are now exclusively in the JukeboxWindow component
   
   return (
     <div 
@@ -1053,24 +999,11 @@ const RetroDesktop: React.FC = () => {
           </div>
         </div>
         
-        {/* Clock and Sound Controls */}
+        {/* Clock */}
         <div className="flex items-center space-x-3">
-          {/* Sound Control Button */}
-          <button 
-            className="bg-blue-800 border border-blue-500 rounded-sm px-2 py-1.5 text-white hover:bg-blue-700 transition-colors"
-            onClick={toggleMusic}
-            title={isMusicPlaying ? "Mute music" : "Play music"}
-          >
-            {isMusicPlaying ? <Volume2 size={16} /> : <VolumeX size={16} />}
-          </button>
-          
-          {/* Clock */}
           <div className="bg-blue-800 border border-blue-500 rounded-sm px-3 py-1.5 text-xs font-mono text-white">
             {currentTime.toLocaleTimeString()} | {currentTime.toLocaleDateString()}
           </div>
-          
-          {/* Hidden audio element - setting preload to "none" to prevent auto-loading */}
-          <audio ref={audioRef} src={backgroundMusic} loop preload="none" />
         </div>
       </div>
     </div>
