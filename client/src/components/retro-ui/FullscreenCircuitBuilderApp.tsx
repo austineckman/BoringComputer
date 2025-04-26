@@ -75,6 +75,21 @@ const FullscreenCircuitBuilderApp: React.FC = () => {
       document.exitFullscreen();
     }
   };
+  
+  // Add keyboard event listener for F11 to toggle fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F11') {
+        e.preventDefault();
+        requestFullscreen();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   return (
     <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-indigo-950 z-50">
