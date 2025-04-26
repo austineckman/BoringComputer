@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, RefreshCw, Package, Sparkles, FileText, Settings, Users, PlusCircle, Loader2, Edit, Trash2 } from 'lucide-react';
+import { X, Search, RefreshCw, Package, Sparkles, Settings, Users, Loader2, Edit, Trash2, Star, Scroll, Book, Award, BarChart, Shield } from 'lucide-react';
 import wallbg from '@assets/wallbg.png';
-import oracleIconImage from '@assets/01_Fire_Grimoire.png'; // Using grimoire as placeholder for Oracle icon
+import oracleIconImage from '@assets/hooded-figure.png';
+import { useAuth } from '@/hooks/useAuth';
 
 // Define types for lootboxes and quests
 interface LootBox {
@@ -57,8 +58,11 @@ interface FullscreenOracleAppProps {
 }
 
 const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) => {
+  // Get user data from auth context
+  const { user, playSoundSafely } = useAuth();
+  
   // State for tabs
-  const [activeTab, setActiveTab] = useState<'lootboxes' | 'quests' | 'users' | 'settings'>('lootboxes');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'lootboxes' | 'quests' | 'users' | 'settings'>('dashboard');
   
   // State for data
   const [lootboxes, setLootboxes] = useState<LootBox[]>([]);
@@ -68,6 +72,10 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   // Loading states
   const [loadingLootboxes, setLoadingLootboxes] = useState(true);
   const [loadingQuests, setLoadingQuests] = useState(true);
+  
+  // State for personalized recommendations
+  const [recommendedQuests, setRecommendedQuests] = useState<Quest[]>([]);
+  const [recommendedItems, setRecommendedItems] = useState<string[]>([]);
   
   // Fetch lootboxes and quests
   useEffect(() => {
@@ -95,6 +103,17 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         if (response.ok) {
           const data = await response.json();
           setQuests(data);
+          
+          // Generate personalized quest recommendations
+          if (user) {
+            // In a real app, this would use an algorithm based on user's level, completed quests, etc.
+            // For now, we'll just pick some quests based on the user's level
+            const userLevel = user.level || 1;
+            const appropriateQuests = data.filter(
+              (quest: Quest) => quest.difficulty <= userLevel + 1 && quest.difficulty >= userLevel - 1
+            );
+            setRecommendedQuests(appropriateQuests.slice(0, 3));
+          }
         } else {
           console.error('Failed to fetch quests');
         }
@@ -107,7 +126,21 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
 
     fetchLootboxes();
     fetchQuests();
-  }, []);
+  }, [user]);
+
+  // Generate item recommendations based on user inventory
+  useEffect(() => {
+    if (user && user.inventory) {
+      // In a real application, this would be a more sophisticated recommendation system
+      // For now, let's recommend items that the user doesn't have or has few of
+      const itemsToRecommend = ['copper', 'crystal', 'circuit board', 'cloth'];
+      const filteredItems = itemsToRecommend.filter(item => 
+        !user.inventory[item] || user.inventory[item] < 5
+      );
+      
+      setRecommendedItems(filteredItems.slice(0, 3));
+    }
+  }, [user]);
 
   // Filter data based on search query
   const filteredLootboxes = lootboxes.filter(box => 
@@ -121,13 +154,22 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   );
 
   // Handlers
-  const handleTabChange = (tab: 'lootboxes' | 'quests' | 'users' | 'settings') => {
-    window.sounds?.click();
+  const handleTabChange = (tab: 'dashboard' | 'lootboxes' | 'quests' | 'users' | 'settings') => {
+    if (window.sounds) {
+      window.sounds.click();
+    } else {
+      playSoundSafely('click');
+    }
     setActiveTab(tab);
   };
 
   const handleRefresh = async () => {
-    window.sounds?.click();
+    if (window.sounds) {
+      window.sounds.click();
+    } else {
+      playSoundSafely('click');
+    }
+    
     if (activeTab === 'lootboxes') {
       setLoadingLootboxes(true);
       try {
@@ -155,6 +197,159 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         setLoadingQuests(false);
       }
     }
+  };
+
+  // Render user dashboard
+  const renderDashboard = () => {
+    if (!user) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+          <Book className="h-12 w-12 mb-3 opacity-50" />
+          <p className="text-lg mb-2">No user data available</p>
+          <p className="text-sm">Please log in to see your personalized recommendations</p>
+        </div>
+      );
+    }
+
+    // Calculate inventory count
+    const inventoryCount = user.inventory ? 
+      Object.values(user.inventory).reduce((sum, count) => sum + count, 0) : 0;
+    
+    // Generate a mysterious fortune message based on user level
+    const fortuneMessages = [
+      "The stars align for one who seeks knowledge in the realm of circuits.",
+      "A powerful creation lies waiting for your skilled hands to bring it to life.",
+      "Beware the path of the lone creator - seek allies in your quest for innovation.",
+      "The wisdom of the elders will guide your circuit designs to new heights.",
+      "What seems like failure is merely a step on the path to your greatest invention."
+    ];
+    
+    const fortuneIndex = (user.level || 1) % fortuneMessages.length;
+    const todaysFortune = fortuneMessages[fortuneIndex];
+
+    return (
+      <div className="p-4">
+        <h2 className="text-xl font-bold text-white mb-4">Welcome, {user.username}</h2>
+        
+        {/* User Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-space-dark/80 rounded-lg p-4 border border-purple-700/50 shadow-lg">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-purple-300 font-medium">Level</h3>
+              <Star className="h-5 w-5 text-purple-400" />
+            </div>
+            <p className="text-3xl font-bold text-white">{user.level || 1}</p>
+          </div>
+          
+          <div className="bg-space-dark/80 rounded-lg p-4 border border-green-700/50 shadow-lg">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-green-300 font-medium">Inventory</h3>
+              <Package className="h-5 w-5 text-green-400" />
+            </div>
+            <p className="text-3xl font-bold text-white">{inventoryCount}</p>
+            <p className="text-xs text-gray-400">items collected</p>
+          </div>
+          
+          <div className="bg-space-dark/80 rounded-lg p-4 border border-blue-700/50 shadow-lg">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-blue-300 font-medium">Quests</h3>
+              <Scroll className="h-5 w-5 text-blue-400" />
+            </div>
+            <p className="text-3xl font-bold text-white">{user.completedQuests?.length || 0}</p>
+            <p className="text-xs text-gray-400">completed</p>
+          </div>
+          
+          <div className="bg-space-dark/80 rounded-lg p-4 border border-amber-700/50 shadow-lg">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-amber-300 font-medium">Rank</h3>
+              <Award className="h-5 w-5 text-amber-400" />
+            </div>
+            <p className="text-3xl font-bold text-white">Circuit Novice</p>
+            <p className="text-xs text-gray-400">5 more levels to advance</p>
+          </div>
+        </div>
+        
+        {/* The Oracle's Wisdom */}
+        <div className="bg-gradient-to-br from-indigo-900/80 to-purple-900/80 rounded-lg p-5 mb-6 border border-purple-500/30 shadow-xl">
+          <h3 className="text-lg font-bold text-purple-200 mb-3 flex items-center">
+            <Book className="h-5 w-5 mr-2 text-purple-300" />
+            The Oracle's Wisdom
+          </h3>
+          <p className="text-white italic mb-4">"{todaysFortune}"</p>
+          
+          <div className="bg-black/40 p-3 rounded-md border border-purple-500/30">
+            <h4 className="text-purple-200 font-medium mb-2">Today's Guidance</h4>
+            <p className="text-gray-300 text-sm">
+              Your circuits show promise, but the oracle sees that you should focus on
+              gathering more materials. The path to mastery requires various components.
+            </p>
+          </div>
+        </div>
+        
+        {/* Recommended Quests */}
+        <div className="mb-6">
+          <h3 className="text-lg font-bold text-white mb-3 flex items-center">
+            <Sparkles className="h-5 w-5 mr-2 text-amber-400" />
+            Recommended Quests
+          </h3>
+          
+          {recommendedQuests.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {recommendedQuests.map(quest => (
+                <div 
+                  key={quest.id}
+                  className="border border-amber-700/30 rounded-lg bg-space-dark/80 p-4 hover:border-amber-500/60 transition-colors"
+                >
+                  <h4 className="text-white font-bold mb-2">{quest.title}</h4>
+                  <p className="text-gray-300 text-sm mb-3 line-clamp-2">{quest.description}</p>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-amber-400">{quest.xpReward} XP</span>
+                    <span className="text-gray-400">
+                      Difficulty: {Array(quest.difficulty).fill('★').join('')}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-space-dark/80 rounded-lg p-4 border border-gray-700/50 text-center">
+              <p className="text-gray-400">Loading recommended quests...</p>
+            </div>
+          )}
+        </div>
+        
+        {/* Recommended Materials */}
+        <div>
+          <h3 className="text-lg font-bold text-white mb-3 flex items-center">
+            <Package className="h-5 w-5 mr-2 text-cyan-400" />
+            Materials to Gather
+          </h3>
+          
+          {recommendedItems.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {recommendedItems.map(item => (
+                <div 
+                  key={item}
+                  className="border border-cyan-700/30 rounded-lg bg-space-dark/80 p-4 hover:border-cyan-500/60 transition-colors"
+                >
+                  <h4 className="text-white font-bold mb-2">{item}</h4>
+                  <p className="text-gray-300 text-sm mb-3">
+                    You currently have: {user.inventory[item] || 0}
+                  </p>
+                  <div className="flex items-center text-xs">
+                    <span className="text-cyan-400">Recommended for crafting</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-space-dark/80 rounded-lg p-4 border border-gray-700/50 text-center">
+              <p className="text-gray-400">Loading material recommendations...</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   // Render lootbox cards
@@ -269,7 +464,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     if (filteredQuests.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-          <FileText className="h-12 w-12 mb-3 opacity-50" />
+          <Scroll className="h-12 w-12 mb-3 opacity-50" />
           <p className="text-lg mb-2">No quests found</p>
           <p className="text-sm">Try adjusting your search or create a new quest</p>
         </div>
@@ -385,7 +580,12 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
             style={{ imageRendering: 'pixelated' }}
           />
           <h1 className="text-2xl font-bold text-brand-orange">The Oracle</h1>
-          <span className="text-xs bg-red-600/80 text-white px-2 py-0.5 rounded-full ml-3">Admin Only</span>
+          {user && (
+            <div className="ml-6 flex items-center">
+              <Shield className="h-4 w-4 text-purple-400 mr-2" />
+              <span className="text-sm text-purple-300">Level {user.level || 1} Adventurer</span>
+            </div>
+          )}
         </div>
         <button 
           className="text-white hover:text-brand-orange" 
@@ -399,6 +599,20 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       {/* Tab navigation */}
       <div className="bg-black/70 border-b border-brand-orange/30 px-4">
         <div className="flex space-x-1">
+          <button
+            className={`px-4 py-2 text-sm font-medium rounded-t-md ${
+              activeTab === 'dashboard' 
+                ? 'bg-brand-orange/20 text-brand-orange border-t border-l border-r border-brand-orange/30' 
+                : 'text-gray-400 hover:text-white'
+            }`}
+            onClick={() => handleTabChange('dashboard')}
+            onMouseEnter={() => window.sounds?.hover()}
+          >
+            <div className="flex items-center">
+              <BarChart className="h-4 w-4 mr-1" />
+              Dashboard
+            </div>
+          </button>
           <button
             className={`px-4 py-2 text-sm font-medium rounded-t-md ${
               activeTab === 'lootboxes' 
@@ -458,57 +672,40 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         </div>
       </div>
       
-      {/* Main content area */}
-      <div className="flex-1 overflow-y-auto p-4 bg-black/70">
-        {/* Action bar */}
-        <div className="flex justify-between items-center mb-4">
-          <div className="relative w-64">
+      {/* Search bar and action buttons */}
+      {(activeTab === 'lootboxes' || activeTab === 'quests') && (
+        <div className="bg-black/80 p-4 flex flex-wrap items-center space-x-4">
+          {/* Search input */}
+          <div className="relative flex-grow max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
               placeholder={`Search ${activeTab}...`}
-              className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md pl-9 focus:border-brand-orange focus:outline-none"
+              className="bg-gray-900 border border-gray-700 w-full pl-10 pr-4 py-2 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-orange/50"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
           </div>
           
-          <div className="flex space-x-3">
-            <button
-              className="px-3 py-2 bg-black/50 text-gray-300 border border-gray-700 rounded-md hover:border-brand-orange hover:text-brand-orange transition-colors flex items-center"
-              onClick={handleRefresh}
-              onMouseEnter={() => window.sounds?.hover()}
-            >
-              <RefreshCw className="h-4 w-4 mr-1" />
-              Refresh
-            </button>
-            
-            <button
-              className="px-3 py-2 bg-brand-orange/80 text-white rounded-md hover:bg-brand-orange transition-colors flex items-center"
-              onClick={() => console.log(`Create new ${activeTab.slice(0, -1)}`)}
-              onMouseEnter={() => window.sounds?.hover()}
-            >
-              <PlusCircle className="h-4 w-4 mr-1" />
-              Create {activeTab === 'lootboxes' ? 'Lootbox' : activeTab === 'quests' ? 'Quest' : 'Item'}
-            </button>
-          </div>
+          {/* Refresh button */}
+          <button
+            className="flex items-center px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-md transition-colors"
+            onClick={handleRefresh}
+            onMouseEnter={() => window.sounds?.hover()}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </button>
         </div>
-        
-        {/* Tab content */}
+      )}
+      
+      {/* Content area */}
+      <div className="flex-1 overflow-auto p-4">
+        {activeTab === 'dashboard' && renderDashboard()}
         {activeTab === 'lootboxes' && renderLootboxes()}
         {activeTab === 'quests' && renderQuests()}
         {activeTab === 'users' && renderUsers()}
         {activeTab === 'settings' && renderSettings()}
-      </div>
-      
-      {/* Status footer */}
-      <div className="bg-black/80 border-t border-brand-orange/30 px-4 py-2 text-xs text-gray-400 flex items-center justify-between">
-        <span>
-          The Oracle | Admin Control Panel
-        </span>
-        <span>
-          Last updated: {new Date().toLocaleTimeString()}
-        </span>
       </div>
     </div>
   );
