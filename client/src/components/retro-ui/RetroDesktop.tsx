@@ -163,7 +163,7 @@ const RetroDesktop: React.FC = () => {
     };
   }, []);
   
-  // Audio and Jukebox setup - we'll handle audio in the JukeboxWindow component now
+  // Jukebox setup - handle audio status changes from jukebox
   useEffect(() => {
     // Add event listeners for jukebox control
     const handleJukeboxStatusChange = (e: CustomEvent) => {
