@@ -518,6 +518,16 @@ const RetroDesktop: React.FC = () => {
       { width: 600, height: 650 }
     );
   };
+  
+  const openJukeboxWindow = () => {
+    openWindow(
+      "jukebox",
+      "Music Player",
+      <JukeboxWindow onClose={() => closeWindow("jukebox")} />,
+      "music",
+      { width: 400, height: 600 }
+    );
+  };
 
   const openWelcomeWindow = () => {
     const welcomeContent = (
@@ -555,17 +565,15 @@ const RetroDesktop: React.FC = () => {
   
   // Music controls
   const toggleMusic = () => {
-    const audioElement = audioRef.current;
-    if (!audioElement) return;
+    // Open the jukebox window if it's not already open
+    const isJukeboxOpen = windows.some(window => window.id === "jukebox");
     
-    if (isMusicPlaying) {
-      audioElement.pause();
+    if (!isJukeboxOpen) {
+      openJukeboxWindow();
     } else {
-      audioElement.currentTime = 0;
-      audioElement.play().catch(error => {
-        console.warn("Audio playback failed:", error);
-        setIsMusicPlaying(false);
-      });
+      // If the jukebox is already open, toggle play/pause state
+      // through the custom event that will be captured by the jukebox
+      window.dispatchEvent(new CustomEvent('jukeboxTogglePlayPause'));
     }
   };
   

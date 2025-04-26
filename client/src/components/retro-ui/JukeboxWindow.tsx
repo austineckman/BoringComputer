@@ -95,10 +95,38 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
         console.warn("Audio playback failed:", error);
         setIsPlaying(false);
       });
+      
+      // Dispatch event to update the main desktop UI
+      window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
+        detail: { isPlaying: true } 
+      }));
     } else {
       audio.pause();
+      
+      // Dispatch event to update the main desktop UI
+      window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
+        detail: { isPlaying: false } 
+      }));
     }
   }, [isPlaying, currentTrackIndex]);
+  
+  // Play/Pause toggle
+  const togglePlayPause = () => {
+    setIsPlaying(!isPlaying);
+  };
+  
+  // Listen for toggle events from the desktop UI
+  useEffect(() => {
+    const handleTogglePlayPause = () => {
+      togglePlayPause();
+    };
+    
+    window.addEventListener('jukeboxTogglePlayPause', handleTogglePlayPause);
+    
+    return () => {
+      window.removeEventListener('jukeboxTogglePlayPause', handleTogglePlayPause);
+    };
+  }, []);
   
   // Effect to handle volume changes
   useEffect(() => {
@@ -107,11 +135,6 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
     
     audio.volume = isMuted ? 0 : volume;
   }, [volume, isMuted]);
-  
-  // Play/Pause toggle
-  const togglePlayPause = () => {
-    setIsPlaying(!isPlaying);
-  };
   
   // Change track
   const prevTrack = () => {
