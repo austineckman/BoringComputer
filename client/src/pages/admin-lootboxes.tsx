@@ -81,24 +81,11 @@ const AdminLootBoxesPage: React.FC = () => {
   });
 
   // Fetch loot box configs
-  const { data: lootBoxConfigs, isLoading: isLoadingConfigs, error: lootBoxError } = useQuery({
+  const { data: lootBoxConfigs, isLoading: isLoadingConfigs } = useQuery({
     queryKey: ['/api/admin/lootboxes'],
     enabled: selectedTab === "list",
     // Use the default queryFn
   });
-
-  // Add effects for debugging
-  useEffect(() => {
-    if (lootBoxConfigs) {
-      console.log('Loot box configs loaded:', lootBoxConfigs);
-    }
-  }, [lootBoxConfigs]);
-
-  useEffect(() => {
-    if (lootBoxError) {
-      console.error('Error loading loot box configs:', lootBoxError);
-    }
-  }, [lootBoxError]);
 
   // Fetch items for dropdown
   const { data: items, isLoading: isLoadingItems } = useQuery({
@@ -109,7 +96,7 @@ const AdminLootBoxesPage: React.FC = () => {
   // Create mutation
   const createMutation = useMutation({
     mutationFn: (data: LootBoxConfig) => 
-      apiRequest('POST', '/api/admin/lootboxes', data),
+      apiRequest('/api/admin/lootboxes', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/lootboxes'] });
       toast({ title: "Success", description: "Loot box configuration created successfully" });
