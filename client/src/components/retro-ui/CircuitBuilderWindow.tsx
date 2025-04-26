@@ -7,6 +7,24 @@ interface Position {
   y: number;
 }
 
+// Connection point interface
+interface ConnectionPoint {
+  id: string;
+  type: 'input' | 'output' | 'both'; // Whether this is an input, output, or both
+  position: Position; // Relative to component
+  parentId: string; // ID of the component it belongs to
+}
+
+// Wire interface
+interface Wire {
+  id: string;
+  startPointId: string; // ID of the connection point where wire starts
+  endPointId: string; // ID of the connection point where wire ends
+  startPosition: Position; // Absolute position
+  endPosition: Position; // Absolute position
+  color: string; // Wire color - can be used for indication (red for power, black for ground)
+}
+
 interface CircuitComponent {
   id: string;
   type: 'battery' | 'wire' | 'led' | 'resistor' | 'breadboard';
@@ -14,6 +32,7 @@ interface CircuitComponent {
   rotation: number; // 0, 90, 180, 270 degrees
   width: number;
   height: number;
+  connectionPoints: ConnectionPoint[]; // Added connection points
 }
 
 interface ComponentDefinition {
@@ -23,9 +42,14 @@ interface ComponentDefinition {
   height: number;
   color: string;
   icon: string; // SVG or Unicode character representation
+  connectionPoints: Array<{
+    type: 'input' | 'output' | 'both';
+    position: Position; // Relative to component (0,0 is top-left)
+  }>;
 }
 
 const GRID_SIZE = 20;
+const CONNECTION_POINT_RADIUS = 4;
 
 // Component definitions
 const componentDefinitions: Record<string, ComponentDefinition> = {
@@ -35,7 +59,13 @@ const componentDefinitions: Record<string, ComponentDefinition> = {
     width: 3 * GRID_SIZE,
     height: 2 * GRID_SIZE,
     color: '#FFD700',
-    icon: '⚡'
+    icon: '⚡',
+    connectionPoints: [
+      // Positive terminal (right side)
+      { type: 'output', position: { x: 3 * GRID_SIZE, y: GRID_SIZE / 2 } },
+      // Negative terminal (left side)
+      { type: 'output', position: { x: 0, y: GRID_SIZE / 2 } }
+    ]
   },
   wire: {
     type: 'wire',
@@ -43,7 +73,12 @@ const componentDefinitions: Record<string, ComponentDefinition> = {
     width: 2 * GRID_SIZE,
     height: GRID_SIZE / 2,
     color: '#FF4500',
-    icon: '〰️'
+    icon: '〰️',
+    connectionPoints: [
+      // Both ends of the wire
+      { type: 'both', position: { x: 0, y: GRID_SIZE / 4 } },
+      { type: 'both', position: { x: 2 * GRID_SIZE, y: GRID_SIZE / 4 } }
+    ]
   },
   led: {
     type: 'led',
@@ -51,7 +86,13 @@ const componentDefinitions: Record<string, ComponentDefinition> = {
     width: 1.5 * GRID_SIZE,
     height: 1.5 * GRID_SIZE,
     color: '#00FF00',
-    icon: '💡'
+    icon: '💡',
+    connectionPoints: [
+      // Anode (positive, longer leg)
+      { type: 'input', position: { x: 1.5 * GRID_SIZE, y: 0.75 * GRID_SIZE } },
+      // Cathode (negative, shorter leg)
+      { type: 'input', position: { x: 0, y: 0.75 * GRID_SIZE } }
+    ]
   },
   resistor: {
     type: 'resistor',
@@ -59,7 +100,12 @@ const componentDefinitions: Record<string, ComponentDefinition> = {
     width: 2 * GRID_SIZE,
     height: GRID_SIZE,
     color: '#964B00',
-    icon: '⊡'
+    icon: '⊡',
+    connectionPoints: [
+      // Resistors can be connected from either end
+      { type: 'both', position: { x: 0, y: GRID_SIZE / 2 } },
+      { type: 'both', position: { x: 2 * GRID_SIZE, y: GRID_SIZE / 2 } }
+    ]
   },
   breadboard: {
     type: 'breadboard',
@@ -67,13 +113,50 @@ const componentDefinitions: Record<string, ComponentDefinition> = {
     width: 6 * GRID_SIZE,
     height: 4 * GRID_SIZE,
     color: '#FFFFFF',
-    icon: '▭'
+    icon: '▭',
+    connectionPoints: [
+      // Top power rail
+      { type: 'both', position: { x: GRID_SIZE, y: 0 } },
+      { type: 'both', position: { x: 2 * GRID_SIZE, y: 0 } },
+      { type: 'both', position: { x: 3 * GRID_SIZE, y: 0 } },
+      { type: 'both', position: { x: 4 * GRID_SIZE, y: 0 } },
+      { type: 'both', position: { x: 5 * GRID_SIZE, y: 0 } },
+      
+      // Bottom power rail
+      { type: 'both', position: { x: GRID_SIZE, y: 4 * GRID_SIZE } },
+      { type: 'both', position: { x: 2 * GRID_SIZE, y: 4 * GRID_SIZE } },
+      { type: 'both', position: { x: 3 * GRID_SIZE, y: 4 * GRID_SIZE } },
+      { type: 'both', position: { x: 4 * GRID_SIZE, y: 4 * GRID_SIZE } },
+      { type: 'both', position: { x: 5 * GRID_SIZE, y: 4 * GRID_SIZE } },
+      
+      // Central connection points (2 rows of 5)
+      { type: 'both', position: { x: GRID_SIZE, y: 1.5 * GRID_SIZE } },
+      { type: 'both', position: { x: 2 * GRID_SIZE, y: 1.5 * GRID_SIZE } },
+      { type: 'both', position: { x: 3 * GRID_SIZE, y: 1.5 * GRID_SIZE } },
+      { type: 'both', position: { x: 4 * GRID_SIZE, y: 1.5 * GRID_SIZE } },
+      { type: 'both', position: { x: 5 * GRID_SIZE, y: 1.5 * GRID_SIZE } },
+      
+      { type: 'both', position: { x: GRID_SIZE, y: 2.5 * GRID_SIZE } },
+      { type: 'both', position: { x: 2 * GRID_SIZE, y: 2.5 * GRID_SIZE } },
+      { type: 'both', position: { x: 3 * GRID_SIZE, y: 2.5 * GRID_SIZE } },
+      { type: 'both', position: { x: 4 * GRID_SIZE, y: 2.5 * GRID_SIZE } },
+      { type: 'both', position: { x: 5 * GRID_SIZE, y: 2.5 * GRID_SIZE } }
+    ]
   }
 };
 
 const CircuitBuilderWindow: React.FC = () => {
   // State for the circuit components on the canvas
   const [components, setComponents] = useState<CircuitComponent[]>([]);
+  
+  // State for wires in the circuit
+  const [wires, setWires] = useState<Wire[]>([]);
+  
+  // State for wire drawing
+  const [isDrawingWire, setIsDrawingWire] = useState<boolean>(false);
+  const [wireStartPoint, setWireStartPoint] = useState<ConnectionPoint | null>(null);
+  const [wireEndPosition, setWireEndPosition] = useState<Position | null>(null);
+  const [highlightedPoint, setHighlightedPoint] = useState<ConnectionPoint | null>(null);
   
   // State for canvas transform
   const [pan, setPan] = useState<Position>({ x: 0, y: 0 });
@@ -89,16 +172,29 @@ const CircuitBuilderWindow: React.FC = () => {
   // Canvas ref for dimension calculations
   const canvasRef = useRef<HTMLDivElement>(null);
   
-  // Helper function to create a new component
+  // Helper function to create a new component with connection points
   const createComponent = (type: 'battery' | 'wire' | 'led' | 'resistor' | 'breadboard', position: Position): CircuitComponent => {
     const definition = componentDefinitions[type];
+    const id = `${type}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    
+    // Create connection points for the component
+    const connectionPoints = definition.connectionPoints.map((cpDef, index) => {
+      return {
+        id: `${id}-cp-${index}`,
+        type: cpDef.type,
+        position: cpDef.position,
+        parentId: id
+      };
+    });
+    
     return {
-      id: `${type}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      id,
       type,
       position,
       rotation: 0,
       width: definition.width,
-      height: definition.height
+      height: definition.height,
+      connectionPoints
     };
   };
   
@@ -152,11 +248,120 @@ const CircuitBuilderWindow: React.FC = () => {
     });
   };
 
-  // Handle mouse movement during dragging
+  // Helper function to get the absolute position of a connection point
+  const getConnectionPointAbsolutePosition = (component: CircuitComponent, connectionPoint: ConnectionPoint): Position => {
+    // Apply component rotation to the connection point
+    let rotatedX = connectionPoint.position.x;
+    let rotatedY = connectionPoint.position.y;
+    
+    const centerX = component.width / 2;
+    const centerY = component.height / 2;
+    
+    if (component.rotation === 90) {
+      rotatedX = component.height - connectionPoint.position.y;
+      rotatedY = connectionPoint.position.x;
+    } else if (component.rotation === 180) {
+      rotatedX = component.width - connectionPoint.position.x;
+      rotatedY = component.height - connectionPoint.position.y;
+    } else if (component.rotation === 270) {
+      rotatedX = connectionPoint.position.y;
+      rotatedY = component.width - connectionPoint.position.x;
+    }
+    
+    return {
+      x: component.position.x + rotatedX,
+      y: component.position.y + rotatedY
+    };
+  };
+  
+  // Find a connection point near a position
+  const findNearbyConnectionPoint = (position: Position, excludePointId?: string): ConnectionPoint | null => {
+    const maxDistance = 15; // Maximum distance in pixels to consider "nearby"
+    let closestPoint: ConnectionPoint | null = null;
+    let minDistance = maxDistance;
+    
+    components.forEach(component => {
+      component.connectionPoints.forEach(point => {
+        if (excludePointId && point.id === excludePointId) return;
+        
+        const pointPosition = getConnectionPointAbsolutePosition(component, point);
+        const distance = Math.sqrt(
+          Math.pow(position.x - pointPosition.x, 2) + 
+          Math.pow(position.y - pointPosition.y, 2)
+        );
+        
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestPoint = { ...point };
+        }
+      });
+    });
+    
+    return closestPoint;
+  };
+  
+  // Handle connection point click to start drawing a wire
+  const handleConnectionPointClick = (e: React.MouseEvent, component: CircuitComponent, connectionPoint: ConnectionPoint) => {
+    e.stopPropagation();
+    
+    if (isDrawingWire) {
+      // We're already drawing a wire and clicked on a connection point - finish the wire
+      if (wireStartPoint && wireStartPoint.id !== connectionPoint.id) {
+        const startComponent = components.find(c => c.id === wireStartPoint.parentId);
+        
+        if (startComponent) {
+          // Get absolute positions of both connection points
+          const startPos = getConnectionPointAbsolutePosition(startComponent, wireStartPoint);
+          const endPos = getConnectionPointAbsolutePosition(component, connectionPoint);
+          
+          // Check if wire types are compatible
+          const isCompatible = (
+            wireStartPoint.type === 'both' || 
+            connectionPoint.type === 'both' ||
+            (wireStartPoint.type === 'output' && connectionPoint.type === 'input') ||
+            (wireStartPoint.type === 'input' && connectionPoint.type === 'output')
+          );
+          
+          if (isCompatible) {
+            // Create new wire and add it to the state
+            const newWire: Wire = {
+              id: `wire-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+              startPointId: wireStartPoint.id,
+              endPointId: connectionPoint.id,
+              startPosition: startPos,
+              endPosition: endPos,
+              color: '#888888' // Default gray color for now
+            };
+            
+            setWires([...wires, newWire]);
+          }
+        }
+      }
+      
+      // Reset wire drawing state whether successful or not
+      setIsDrawingWire(false);
+      setWireStartPoint(null);
+      setWireEndPosition(null);
+    } else {
+      // Start drawing a new wire
+      setIsDrawingWire(true);
+      setWireStartPoint(connectionPoint);
+      
+      // Set initial end position to the same as start position
+      const startPos = getConnectionPointAbsolutePosition(component, connectionPoint);
+      setWireEndPosition(startPos);
+    }
+  };
+  
+  // Handle mouse movement during dragging or wire drawing
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!canvasRef.current) return;
     
     const rect = canvasRef.current.getBoundingClientRect();
+    const mousePos = {
+      x: (e.clientX - rect.left - pan.x) / zoom,
+      y: (e.clientY - rect.top - pan.y) / zoom
+    };
     
     // Handle panning
     if (isPanning) {
@@ -176,13 +381,19 @@ const CircuitBuilderWindow: React.FC = () => {
       return;
     }
     
+    // Handle wire drawing
+    if (isDrawingWire) {
+      setWireEndPosition(mousePos);
+      
+      // Find nearby connection point for snapping
+      const nearbyPoint = findNearbyConnectionPoint(mousePos, wireStartPoint?.id);
+      setHighlightedPoint(nearbyPoint);
+      
+      return;
+    }
+    
     // Handle component dragging
     if (isDragging && draggedComponent) {
-      const mousePos = {
-        x: (e.clientX - rect.left - pan.x) / zoom,
-        y: (e.clientY - rect.top - pan.y) / zoom
-      };
-      
       const newPosition = {
         x: mousePos.x - dragOffset.x,
         y: mousePos.y - dragOffset.y
@@ -194,13 +405,102 @@ const CircuitBuilderWindow: React.FC = () => {
         ...draggedComponent,
         position: snappedPosition
       });
+      
+      // Update wires connected to this component in real-time
+      updateConnectedWires(draggedComponent.id, snappedPosition);
     }
   };
 
-  // Handle ending dragging
-  const handleMouseUp = () => {
+  // Update wires connected to a component that's being moved
+  const updateConnectedWires = (componentId: string, newPosition: Position) => {
+    // Find the component that's being moved
+    const component = components.find(c => c.id === componentId);
+    if (!component) return;
+    
+    // Update all wires connected to this component
+    const updatedWires = wires.map(wire => {
+      let updatedWire = { ...wire };
+      let needsUpdate = false;
+      
+      // Find the connection points this wire is connected to
+      const startPoint = components.flatMap(c => c.connectionPoints).find(cp => cp.id === wire.startPointId);
+      const endPoint = components.flatMap(c => c.connectionPoints).find(cp => cp.id === wire.endPointId);
+      
+      // If start point belongs to the moved component, update start position
+      if (startPoint && startPoint.parentId === componentId) {
+        const startComponent = { ...component, position: newPosition };
+        updatedWire.startPosition = getConnectionPointAbsolutePosition(startComponent, startPoint);
+        needsUpdate = true;
+      }
+      
+      // If end point belongs to the moved component, update end position
+      if (endPoint && endPoint.parentId === componentId) {
+        const endComponent = { ...component, position: newPosition };
+        updatedWire.endPosition = getConnectionPointAbsolutePosition(endComponent, endPoint);
+        needsUpdate = true;
+      }
+      
+      return needsUpdate ? updatedWire : wire;
+    });
+    
+    setWires(updatedWires);
+  };
+  
+  // Delete a wire
+  const deleteWire = (wireId: string) => {
+    setWires(wires.filter(wire => wire.id !== wireId));
+  };
+  
+  // Handle ending dragging or wire drawing
+  const handleMouseUp = (e: React.MouseEvent) => {
     if (isPanning) {
       setIsPanning(false);
+      return;
+    }
+    
+    if (isDrawingWire && wireStartPoint && wireEndPosition) {
+      // If we're drawing a wire and released on a highlighted point, complete the wire
+      if (highlightedPoint) {
+        const startComponent = components.find(c => c.id === wireStartPoint.parentId);
+        
+        if (startComponent) {
+          const endComponent = components.find(c => c.id === highlightedPoint.parentId);
+          
+          if (endComponent) {
+            // Get absolute positions of both connection points
+            const startPos = getConnectionPointAbsolutePosition(startComponent, wireStartPoint);
+            const endPos = getConnectionPointAbsolutePosition(endComponent, highlightedPoint);
+            
+            // Check if wire types are compatible
+            const isCompatible = (
+              wireStartPoint.type === 'both' || 
+              highlightedPoint.type === 'both' ||
+              (wireStartPoint.type === 'output' && highlightedPoint.type === 'input') ||
+              (wireStartPoint.type === 'input' && highlightedPoint.type === 'output')
+            );
+            
+            if (isCompatible) {
+              // Create new wire and add it to the state
+              const newWire: Wire = {
+                id: `wire-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+                startPointId: wireStartPoint.id,
+                endPointId: highlightedPoint.id,
+                startPosition: startPos,
+                endPosition: endPos,
+                color: '#888888' // Default gray color for now
+              };
+              
+              setWires([...wires, newWire]);
+            }
+          }
+        }
+      }
+      
+      // Reset wire drawing state
+      setIsDrawingWire(false);
+      setWireStartPoint(null);
+      setWireEndPosition(null);
+      setHighlightedPoint(null);
       return;
     }
     
@@ -213,6 +513,32 @@ const CircuitBuilderWindow: React.FC = () => {
         const updatedComponents = [...components];
         updatedComponents[existingComponentIndex] = draggedComponent;
         setComponents(updatedComponents);
+        
+        // Update connected wires' positions
+        const finalWires = wires.map(wire => {
+          let updatedWire = { ...wire };
+          let needsUpdate = false;
+          
+          // Find the connection points this wire is connected to
+          const startPoint = draggedComponent.connectionPoints.find(cp => cp.id === wire.startPointId);
+          const endPoint = draggedComponent.connectionPoints.find(cp => cp.id === wire.endPointId);
+          
+          // If start point belongs to the moved component, update start position
+          if (startPoint) {
+            updatedWire.startPosition = getConnectionPointAbsolutePosition(draggedComponent, startPoint);
+            needsUpdate = true;
+          }
+          
+          // If end point belongs to the moved component, update end position
+          if (endPoint) {
+            updatedWire.endPosition = getConnectionPointAbsolutePosition(draggedComponent, endPoint);
+            needsUpdate = true;
+          }
+          
+          return needsUpdate ? updatedWire : wire;
+        });
+        
+        setWires(finalWires);
       } else {
         // Add new component
         setComponents([...components, draggedComponent]);
@@ -261,16 +587,38 @@ const CircuitBuilderWindow: React.FC = () => {
 
   // Handle component deletion
   const deleteComponent = (id: string) => {
+    // Remove the component
     setComponents(components.filter(component => component.id !== id));
+    
+    // Find all connection points belonging to this component
+    const componentToDelete = components.find(c => c.id === id);
+    if (!componentToDelete) return;
+    
+    const pointIdsToRemove = componentToDelete.connectionPoints.map(cp => cp.id);
+    
+    // Remove all wires connected to this component
+    setWires(wires.filter(wire => 
+      !pointIdsToRemove.includes(wire.startPointId) && 
+      !pointIdsToRemove.includes(wire.endPointId)
+    ));
   };
 
   // Handle keyboard events (for delete key)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Delete component with Delete key
       if (e.key === 'Delete' && draggedComponent) {
         deleteComponent(draggedComponent.id);
         setIsDragging(false);
         setDraggedComponent(null);
+      }
+      
+      // Cancel wire drawing with Escape key
+      if (e.key === 'Escape' && isDrawingWire) {
+        setIsDrawingWire(false);
+        setWireStartPoint(null);
+        setWireEndPosition(null);
+        setHighlightedPoint(null);
       }
     };
     
@@ -278,7 +626,7 @@ const CircuitBuilderWindow: React.FC = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [draggedComponent]);
+  }, [draggedComponent, isDrawingWire]);
 
   return (
     <div className="circuit-builder h-full flex flex-col">
@@ -328,7 +676,17 @@ const CircuitBuilderWindow: React.FC = () => {
           <button 
             className="tool-btn p-1 hover:bg-red-700 rounded" 
             title="Clear All Components"
-            onClick={() => setComponents([])}
+            onClick={() => {
+              // Clear all components and wires
+              setComponents([]);
+              setWires([]);
+              
+              // Reset any active operations
+              setIsDrawingWire(false);
+              setWireStartPoint(null);
+              setWireEndPosition(null);
+              setHighlightedPoint(null);
+            }}
           >
             <Trash2 size={16} />
           </button>
@@ -403,6 +761,65 @@ const CircuitBuilderWindow: React.FC = () => {
               transformOrigin: '0 0',
             }}
           >
+            {/* Render Wires */}
+            <svg 
+              className="wires-layer absolute top-0 left-0 w-full h-full pointer-events-none" 
+              style={{ zIndex: 5 }}
+            >
+              {/* Existing Wires */}
+              {wires.map(wire => (
+                <g key={wire.id} className="wire-group" style={{ pointerEvents: 'auto' }}>
+                  <line
+                    x1={wire.startPosition.x}
+                    y1={wire.startPosition.y}
+                    x2={wire.endPosition.x}
+                    y2={wire.endPosition.y}
+                    stroke={wire.color}
+                    strokeWidth={2}
+                    style={{ cursor: 'pointer' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteWire(wire.id);
+                    }}
+                  />
+                </g>
+              ))}
+              
+              {/* Wire being drawn */}
+              {isDrawingWire && wireStartPoint && wireEndPosition && (
+                <line
+                  x1={wireStartPoint ? 
+                    getConnectionPointAbsolutePosition(
+                      components.find(c => c.id === wireStartPoint.parentId)!,
+                      wireStartPoint
+                    ).x : 0
+                  }
+                  y1={wireStartPoint ? 
+                    getConnectionPointAbsolutePosition(
+                      components.find(c => c.id === wireStartPoint.parentId)!,
+                      wireStartPoint
+                    ).y : 0
+                  }
+                  x2={highlightedPoint ? 
+                    getConnectionPointAbsolutePosition(
+                      components.find(c => c.id === highlightedPoint.parentId)!,
+                      highlightedPoint
+                    ).x : wireEndPosition.x
+                  }
+                  y2={highlightedPoint ? 
+                    getConnectionPointAbsolutePosition(
+                      components.find(c => c.id === highlightedPoint.parentId)!,
+                      highlightedPoint
+                    ).y : wireEndPosition.y
+                  }
+                  stroke={highlightedPoint ? '#00FF00' : '#888888'}
+                  strokeWidth={2}
+                  strokeDasharray={highlightedPoint ? '0' : '5,5'}
+                />
+              )}
+            </svg>
+            
+            {/* Circuit Components */}
             {components.map(component => (
               <div
                 key={component.id}
@@ -424,6 +841,34 @@ const CircuitBuilderWindow: React.FC = () => {
                 <span className="text-center text-2xl pointer-events-none">
                   {componentDefinitions[component.type].icon}
                 </span>
+                
+                {/* Connection Points */}
+                {component.connectionPoints.map((point, idx) => {
+                  // Determine if the point is highlighted
+                  const isHighlighted = highlightedPoint?.id === point.id;
+                  const isDrawingFrom = wireStartPoint?.id === point.id;
+                  
+                  return (
+                    <div 
+                      key={point.id} 
+                      className={`connection-point absolute rounded-full border 
+                        ${isHighlighted ? 'border-green-500 animate-pulse' : 'border-gray-400'} 
+                        ${isDrawingFrom ? 'border-blue-500' : ''}
+                        ${point.type === 'input' ? 'bg-blue-500' : point.type === 'output' ? 'bg-red-500' : 'bg-gray-300'}
+                      `}
+                      style={{
+                        left: `${point.position.x - CONNECTION_POINT_RADIUS}px`,
+                        top: `${point.position.y - CONNECTION_POINT_RADIUS}px`,
+                        width: `${CONNECTION_POINT_RADIUS * 2}px`,
+                        height: `${CONNECTION_POINT_RADIUS * 2}px`,
+                        cursor: 'crosshair',
+                        zIndex: 15,
+                        boxShadow: isHighlighted ? '0 0 8px #00FF00' : isDrawingFrom ? '0 0 8px #0088FF' : 'none'
+                      }}
+                      onClick={(e) => handleConnectionPointClick(e, component, point)}
+                    />
+                  );
+                })}
                 
                 {/* Component Controls (visible on hover) */}
                 <div className="component-controls absolute -top-6 left-0 right-0 flex justify-center space-x-1 opacity-0 hover:opacity-100 transition-opacity">
@@ -470,6 +915,24 @@ const CircuitBuilderWindow: React.FC = () => {
                 <span className="text-center text-2xl pointer-events-none">
                   {componentDefinitions[draggedComponent.type].icon}
                 </span>
+                
+                {/* Preview Connection Points */}
+                {draggedComponent.connectionPoints?.map((point, idx) => (
+                  <div 
+                    key={`preview-${point.id}`} 
+                    className="connection-point absolute rounded-full border border-gray-400"
+                    style={{
+                      left: `${point.position.x - CONNECTION_POINT_RADIUS}px`,
+                      top: `${point.position.y - CONNECTION_POINT_RADIUS}px`,
+                      width: `${CONNECTION_POINT_RADIUS * 2}px`,
+                      height: `${CONNECTION_POINT_RADIUS * 2}px`,
+                      backgroundColor: point.type === 'input' ? 'rgba(59, 130, 246, 0.5)' : 
+                                      point.type === 'output' ? 'rgba(239, 68, 68, 0.5)' : 
+                                      'rgba(209, 213, 219, 0.5)',
+                      zIndex: 15
+                    }}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -480,7 +943,12 @@ const CircuitBuilderWindow: React.FC = () => {
       <div className="status-bar bg-gray-800 text-white py-1 px-2 text-xs flex justify-between border-t border-gray-700">
         <div>Zoom: {Math.round(zoom * 100)}%</div>
         <div>Grid: {GRID_SIZE}px</div>
-        <div>Components: {components.length}</div>
+        <div>Components: {components.length} | Wires: {wires.length}</div>
+        {isDrawingWire && (
+          <div className="text-yellow-400">
+            Drawing wire... {highlightedPoint ? "Connection found" : "Click on a connection point to complete"}
+          </div>
+        )}
       </div>
     </div>
   );
