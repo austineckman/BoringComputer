@@ -53,7 +53,7 @@ const QuestsApp: React.FC<QuestsAppProps> = ({ onClose }) => {
 
   // Filter quests when dependencies change
   useEffect(() => {
-    if (allQuests.length === 0) return;
+    if (!allQuests || allQuests.length === 0) return;
 
     let filtered = [...allQuests];
     
@@ -257,7 +257,7 @@ const QuestsApp: React.FC<QuestsAppProps> = ({ onClose }) => {
       );
     }
 
-    if (allQuests.length === 0) {
+    if (!allQuests || allQuests.length === 0) {
       return (
         <div className="p-6 bg-black/30 rounded-lg border border-red-500/30 text-center">
           <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-3" />
@@ -267,7 +267,7 @@ const QuestsApp: React.FC<QuestsAppProps> = ({ onClose }) => {
     }
 
     // If filtered quests is empty but we have quests data, show no results message
-    if (filteredQuests.length === 0) {
+    if (!filteredQuests || filteredQuests.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center py-12 px-4 bg-space-dark/60 rounded-lg border border-brand-orange/30">
           <FilterX className="h-12 w-12 text-brand-orange mb-3" />
@@ -288,11 +288,11 @@ const QuestsApp: React.FC<QuestsAppProps> = ({ onClose }) => {
 
     // Display quests by adventure line
     if (!selectedAdventureLine) {
-      const adventureLines = Object.keys(questsByAdventureLine).sort();
+      const adventureLines = questsByAdventureLine ? Object.keys(questsByAdventureLine).sort() : [];
       
       return adventureLines.map(line => {
         // Get quests for this adventure line that also pass the filters
-        const lineQuests = filteredQuests.filter(q => q.adventureLine === line);
+        const lineQuests = filteredQuests ? filteredQuests.filter(q => q.adventureLine === line) : [];
         
         // Skip if no quests in this line pass the filters
         if (lineQuests.length === 0) return null;
@@ -319,7 +319,7 @@ const QuestsApp: React.FC<QuestsAppProps> = ({ onClose }) => {
     }
     
     // Display only quests from the selected adventure line
-    const lineQuests = filteredQuests.filter(q => q.adventureLine === selectedAdventureLine);
+    const lineQuests = filteredQuests ? filteredQuests.filter(q => q.adventureLine === selectedAdventureLine) : [];
     
     return (
       <div>
