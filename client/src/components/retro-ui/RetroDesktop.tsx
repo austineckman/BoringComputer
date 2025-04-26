@@ -80,6 +80,7 @@ const RetroDesktop: React.FC = () => {
     { id: "crafting", name: "crafting.exe", icon: "craftingarmor", path: "/crafting", position: { x: 20, y: 220 } },
     { id: "lootboxes", name: "Loot Crates", icon: "goldcrate", path: "/lootboxes", position: { x: 20, y: 320 } },
     { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 20, y: 420 } },
+    { id: "jukebox", name: "Music Player", icon: "music", position: { x: 20, y: 520 } },
   ]);
   
   // Admin folder (only visible to admin users)
@@ -175,6 +176,7 @@ const RetroDesktop: React.FC = () => {
     const audioElement = audioRef.current;
     
     if (audioElement) {
+      // Always initialize in paused state
       audioElement.pause();
       audioElement.currentTime = 0;
       audioElement.volume = 0.5;
@@ -334,6 +336,8 @@ const RetroDesktop: React.FC = () => {
       openTerminalWindow();
     } else if (iconId === "shop") {
       openShopWindow();
+    } else if (iconId === "jukebox") {
+      openJukeboxWindow();
     } else if (iconId === "quests") {
       // Play sound if available
       if (window.sounds) {
@@ -547,6 +551,7 @@ const RetroDesktop: React.FC = () => {
     // If we're using Jukebox, we should pause any existing music 
     if (audioRef.current) {
       audioRef.current.pause();
+      setIsMusicPlaying(false);
     }
     
     openWindow(
@@ -704,6 +709,13 @@ const RetroDesktop: React.FC = () => {
                 <img 
                   src={shopCoinImage} 
                   alt="Shop Coin" 
+                  className="w-10 h-10 object-contain" 
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              ) : icon.icon === "music" ? (
+                <img 
+                  src={jukeboxIconImage} 
+                  alt="Jukebox" 
                   className="w-10 h-10 object-contain" 
                   style={{ imageRendering: 'pixelated' }}
                 />
