@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX } from "lucide-react";
+import { Howl, Howler } from 'howler';
 import jukeboxImage from "@assets/jukebox.png";
 
 // Music track interface
@@ -10,7 +11,7 @@ interface MusicTrack {
   src: string;
 }
 
-// Define available tracks using the MP3 files in the public folder
+// Define available tracks with their URLs
 const musicTracks: MusicTrack[] = [
   {
     id: "chappy",
@@ -25,52 +26,16 @@ const musicTracks: MusicTrack[] = [
     src: "/music/Pixelated Warriors.mp3"
   },
   {
-    id: "fantasy-guild-hall",
-    title: "Fantasy Guild Hall",
-    artist: "Arcade Memories",
-    src: "/music/Fantasy Guild Hall.mp3"
-  },
-  {
-    id: "pixel-dreams",
-    title: "Pixel Dreams",
-    artist: "Arcade Memories",
-    src: "/music/Pixel Dreams.mp3"
-  },
-  {
-    id: "pixel-hearth",
-    title: "Pixel Hearth",
-    artist: "Arcade Memories",
-    src: "/music/Pixel Hearth.mp3"
-  },
-  {
-    id: "tavern-exe",
-    title: "TAVERN.EXE",
-    artist: "Digital Bard",
-    src: "/music/TAVERN.EXE.mp3"
-  },
-  {
     id: "spooky-cat",
     title: "Spooky Cat",
     artist: "Retro Wave",
     src: "/music/Spooky Cat.mp3"
   },
   {
-    id: "empty-arcade",
-    title: "Empty Arcade",
-    artist: "Pixel Composer",
-    src: "/music/Empty Arcade.mp3"
-  },
-  {
-    id: "factory-new",
-    title: "Factory New",
-    artist: "Synth Academy",
-    src: "/music/Factory New.mp3"
-  },
-  {
-    id: "lan-night-jamboree",
-    title: "LAN Night Jamboree",
-    artist: "Chip Tune Rebels",
-    src: "/music/LAN Night Jamboree.mp3"
+    id: "tavern-exe",
+    title: "TAVERN.EXE",
+    artist: "Digital Bard",
+    src: "/music/TAVERN.EXE.mp3"
   }
 ];
 
