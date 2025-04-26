@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Maximize2, Minimize2, Volume2, VolumeX } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
@@ -14,8 +14,8 @@ import JukeboxWindow from "./JukeboxWindow";
 import MiniPlayer from "./MiniPlayer";
 import FullscreenQuestsApp from "./FullscreenQuestsApp";
 import QuestLoadingScreen from "./QuestLoadingScreen";
+import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import wallpaperImage from "@assets/wallpaper.png";
-import backgroundMusic from "@assets/guildbank.mp3"; // Changed to available MP3
 import goldCrateImage from "@assets/goldcrate.png";
 import ironBagImage from "@assets/486_Iron_Bag_Leather_B.png"; // Fixed to match the available asset
 import craftingImage from "@assets/62_Ice_Armor.png";
@@ -69,10 +69,10 @@ const RetroDesktop: React.FC = () => {
   const [windows, setWindows] = useState<RetroWindow[]>([]);
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
   const [selectedIcon, setSelectedIcon] = useState<string | null>(null);
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   // Single state to manage quests app status: 'closed', 'loading', or 'open'
   const [questsAppState, setQuestsAppState] = useState<'closed' | 'loading' | 'open'>('closed');
-  const audioRef = useRef<HTMLAudioElement>(null);
+  // Use global audio player context
+  const { isPlaying: isMusicPlaying, toggleMute } = useAudioPlayer();
   
   // Desktop icons (regular icons visible to all users)
   const [desktopIcons, setDesktopIcons] = useState<DesktopIcon[]>([
@@ -171,37 +171,7 @@ const RetroDesktop: React.FC = () => {
     };
   }, []);
   
-  // Audio setup
-  useEffect(() => {
-    const audioElement = audioRef.current;
-    
-    if (audioElement) {
-      audioElement.pause();
-      audioElement.currentTime = 0;
-      audioElement.volume = 0.5;
-      
-      const handleAudioPlay = () => setIsMusicPlaying(true);
-      const handleAudioPause = () => setIsMusicPlaying(false);
-      const handleAudioEnded = () => {
-        if (audioElement.loop) {
-          audioElement.play().catch(err => console.warn("Auto-replay failed:", err));
-        } else {
-          setIsMusicPlaying(false);
-        }
-      };
-      
-      audioElement.addEventListener('play', handleAudioPlay);
-      audioElement.addEventListener('pause', handleAudioPause);
-      audioElement.addEventListener('ended', handleAudioEnded);
-      
-      return () => {
-        audioElement.removeEventListener('play', handleAudioPlay);
-        audioElement.removeEventListener('pause', handleAudioPause);
-        audioElement.removeEventListener('ended', handleAudioEnded);
-        audioElement.pause();
-      };
-    }
-  }, []);
+  // No separate audio setup needed as we're using the AudioPlayerContext
 
   // Window management functions
   const openWindow = (
@@ -545,11 +515,6 @@ const RetroDesktop: React.FC = () => {
   };
   
   const openJukeboxWindow = () => {
-    // If we're using Jukebox, we should pause any existing music 
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-    
     openWindow(
       "jukebox", 
       "Music Player", 
@@ -595,18 +560,8 @@ const RetroDesktop: React.FC = () => {
   
   // Music controls
   const toggleMusic = () => {
-    const audioElement = audioRef.current;
-    if (!audioElement) return;
-    
-    if (isMusicPlaying) {
-      audioElement.pause();
-    } else {
-      audioElement.currentTime = 0;
-      audioElement.play().catch(error => {
-        console.warn("Audio playback failed:", error);
-        setIsMusicPlaying(false);
-      });
-    }
+    // Use the toggleMute function from AudioPlayerContext
+    toggleMute();
   };
   
   return (
@@ -1060,9 +1015,6 @@ const RetroDesktop: React.FC = () => {
           <div className="bg-blue-800 border border-blue-500 rounded-sm px-3 py-1.5 text-xs font-mono text-white">
             {currentTime.toLocaleTimeString()} | {currentTime.toLocaleDateString()}
           </div>
-          
-          {/* Hidden audio element */}
-          <audio ref={audioRef} src={backgroundMusic} loop preload="auto" />
         </div>
       </div>
     </div>
