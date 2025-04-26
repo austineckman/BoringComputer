@@ -11,8 +11,128 @@ interface Track {
   durationSeconds: number;
 }
 
-// Initial empty playlist - will be updated with new tracks
-const initialPlaylist: Track[] = [];
+// Playlist with our music tracks from the "Taverns, Terrors, and Tiny Victories" album
+const initialPlaylist: Track[] = [
+  {
+    id: "alexs-tesla",
+    title: "Alex's Tesla",
+    artist: "Taverns, Terrors, and Tiny Victories",
+    path: "/sounds/Alex's Tesla.mp3",
+    durationSeconds: 180 // Approximate
+  },
+  {
+    id: "chappy",
+    title: "Chappy",
+    artist: "Taverns, Terrors, and Tiny Victories",
+    path: "/sounds/Chappy.mp3",
+    durationSeconds: 120 // Approximate
+  },
+  {
+    id: "empty-arcade",
+    title: "Empty Arcade",
+    artist: "Taverns, Terrors, and Tiny Victories",
+    path: "/sounds/Empty Arcade.mp3",
+    durationSeconds: 240 // Approximate
+  },
+  {
+    id: "factory-new",
+    title: "Factory New",
+    artist: "Taverns, Terrors, and Tiny Victories",
+    path: "/sounds/Factory New.mp3",
+    durationSeconds: 240 // Approximate
+  },
+  {
+    id: "glitched-grid",
+    title: "Glitched Grid",
+    artist: "Taverns, Terrors, and Tiny Victories",
+    path: "/sounds/Glitched Grid.mp3",
+    durationSeconds: 210 // Approximate
+  },
+  {
+    id: "guildbank",
+    title: "Guildbank",
+    artist: "Taverns, Terrors, and Tiny Victories",
+    path: "/sounds/guildbank.mp3",
+    durationSeconds: 150 // Approximate
+  },
+  {
+    id: "heavy-is-the-head",
+    title: "Heavy is the Head That Wears the Crown",
+    artist: "Taverns, Terrors, and Tiny Victories",
+    path: "/sounds/Heavy is the head that wears the crown.mp3",
+    durationSeconds: 240 // Approximate
+  },
+  {
+    id: "heros-anthem",
+    title: "HERO's Anthem",
+    artist: "Taverns, Terrors, and Tiny Victories",
+    path: "/sounds/HERO's Anthem.mp3",
+    durationSeconds: 160 // Approximate
+  },
+  {
+    id: "trouble-feeling",
+    title: "I Knew I Was In Trouble",
+    artist: "Taverns, Terrors, and Tiny Victories",
+    path: "/sounds/I knew I was in trouble when your name became more of a feeling than a word.mp3",
+    durationSeconds: 150 // Approximate
+  },
+  {
+    id: "miss-tomorrow",
+    title: "I Miss Tomorrow",
+    artist: "Taverns, Terrors, and Tiny Victories",
+    path: "/sounds/I miss tomorrow.mp3",
+    durationSeconds: 230 // Approximate
+  },
+  {
+    id: "going-to-be-okay",
+    title: "It's Going to Be Okay Stranger",
+    artist: "Taverns, Terrors, and Tiny Victories",
+    path: "/sounds/It's going to be okay stranger. You are loved..mp3",
+    durationSeconds: 170 // Approximate
+  },
+  {
+    id: "lan-night",
+    title: "LAN Night Jamboree",
+    artist: "Taverns, Terrors, and Tiny Victories",
+    path: "/sounds/LAN Night Jamboree.mp3",
+    durationSeconds: 240 // Approximate
+  },
+  {
+    id: "pixel-hearth",
+    title: "Pixel Hearth",
+    artist: "Taverns, Terrors, and Tiny Victories",
+    path: "/sounds/Pixel Hearth.mp3",
+    durationSeconds: 180 // Approximate
+  },
+  {
+    id: "pixelated-warriors",
+    title: "Pixelated Warriors",
+    artist: "Taverns, Terrors, and Tiny Victories",
+    path: "/sounds/Pixelated Warriors.mp3",
+    durationSeconds: 240 // Approximate
+  },
+  {
+    id: "spooky-cat",
+    title: "Spooky Cat",
+    artist: "Taverns, Terrors, and Tiny Victories",
+    path: "/sounds/Spooky Cat.mp3",
+    durationSeconds: 120 // Approximate
+  },
+  {
+    id: "tavern-exe",
+    title: "TAVERN.EXE",
+    artist: "Taverns, Terrors, and Tiny Victories",
+    path: "/sounds/TAVERN.EXE.mp3",
+    durationSeconds: 240 // Approximate
+  },
+  {
+    id: "thief-in-the-fog",
+    title: "Thief in the Fog",
+    artist: "Taverns, Terrors, and Tiny Victories",
+    path: "/sounds/Thief in the fog.mp3",
+    durationSeconds: 190 // Approximate
+  }
+];
 
 interface AudioContextState {
   instance: AudioContext | null;
@@ -35,14 +155,26 @@ const JukeboxWindow: React.FC = () => {
   const [playbackProgress, setPlaybackProgress] = useState<number>(0); // 0 to 100
   const [prevVolume, setPrevVolume] = useState<number>(volume); // For mute toggle
 
-  // Get current track
-  const currentTrack = playlist[currentTrackIndex];
+  // Get current track with safe fallback for when playlist is empty
+  const currentTrack = playlist.length > 0 ? playlist[currentTrackIndex] : {
+    id: "",
+    title: "No tracks available",
+    artist: "",
+    path: "",
+    durationSeconds: 0
+  };
 
   // Play/pause track
   const togglePlay = useCallback(() => {
     console.log("Toggle play button clicked");
     const audio = audioRef.current;
     if (!audio) return;
+    
+    // Don't try to play if playlist is empty or no path provided
+    if (!currentTrack.path || playlist.length === 0) {
+      setIsPlaying(false);
+      return;
+    }
 
     if (isPlaying) {
       audio.pause();
@@ -53,7 +185,7 @@ const JukeboxWindow: React.FC = () => {
         setIsPlaying(false);
       });
     }
-  }, [isPlaying]);
+  }, [isPlaying, currentTrack.path, playlist.length]);
 
   // Skip to next track
   const playNextTrack = useCallback(() => {
@@ -102,7 +234,7 @@ const JukeboxWindow: React.FC = () => {
   // Handle progress bar change (seeking)
   const handleProgressChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || !audio.duration) return;
     
     const newProgress = parseFloat(e.target.value);
     const newTime = (newProgress / 100) * audio.duration;
@@ -123,7 +255,11 @@ const JukeboxWindow: React.FC = () => {
 
     const handleTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
-      setPlaybackProgress((audio.currentTime / audio.duration) * 100);
+      if (audio.duration) {
+        setPlaybackProgress((audio.currentTime / audio.duration) * 100);
+      } else {
+        setPlaybackProgress(0);
+      }
     };
 
     const handlePlay = () => {
@@ -151,6 +287,12 @@ const JukeboxWindow: React.FC = () => {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+    
+    // Don't try to load if no path is provided
+    if (!currentTrack.path) {
+      setIsPlaying(false);
+      return;
+    }
     
     // Set the audio source
     audio.src = currentTrack.path;
@@ -219,21 +361,30 @@ const JukeboxWindow: React.FC = () => {
             <div className="flex items-center space-x-4 mb-4">
               <button 
                 onClick={playPreviousTrack}
-                className="text-gray-300 hover:text-white p-2 rounded-full hover:bg-gray-800"
+                disabled={playlist.length === 0}
+                className={`p-2 rounded-full ${playlist.length === 0 
+                  ? 'text-gray-600 cursor-not-allowed' 
+                  : 'text-gray-300 hover:text-white hover:bg-gray-800'}`}
               >
                 <SkipBack size={20} />
               </button>
               
               <button 
                 onClick={togglePlay}
-                className="bg-orange-500 text-white p-3 rounded-full hover:bg-orange-600"
+                disabled={playlist.length === 0}
+                className={`p-3 rounded-full ${playlist.length === 0 
+                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed' 
+                  : 'bg-orange-500 text-white hover:bg-orange-600'}`}
               >
                 {isPlaying ? <Pause size={24} /> : <Play size={24} />}
               </button>
               
               <button 
                 onClick={playNextTrack}
-                className="text-gray-300 hover:text-white p-2 rounded-full hover:bg-gray-800"
+                disabled={playlist.length === 0}
+                className={`p-2 rounded-full ${playlist.length === 0 
+                  ? 'text-gray-600 cursor-not-allowed' 
+                  : 'text-gray-300 hover:text-white hover:bg-gray-800'}`}
               >
                 <SkipForward size={20} />
               </button>
