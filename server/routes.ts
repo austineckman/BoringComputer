@@ -29,6 +29,9 @@ import { itemDatabase } from './itemDatabase';
 import questRoutes from './routes/quest-routes';
 import componentKitRoutes from './routes/component-kit-routes';
 
+// Import repositories
+import { questRepo, componentKitRepo } from './repositories';
+
 // Using Passport authentication instead of custom middleware
 
 // Admin-only middleware is now imported from ./middleware/adminAuth
