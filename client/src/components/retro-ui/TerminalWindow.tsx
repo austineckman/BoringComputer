@@ -66,6 +66,7 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory }) =>
     "fortune": "Shows a random fortune",
     "credits": "Shows game credits",
     "ascii-art": "Displays ASCII art (Usage: ascii-art robot|castle|dragon)",
+    "partykitty": "Shows the party kitty image in a popup window",
     "calc": "Simple calculator (Usage: calc 5+5)",
     "exit": "Closes the terminal window"
   };
@@ -448,6 +449,14 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory }) =>
         addToOutput("output", "Keep exploring to find them all!");
         addToOutput("output", "");
         addToOutput("output", "Hint: Try using the 'ascii-art' command with different arguments.");
+        break;
+        
+      case "partykitty":
+        // Display party kitty in a popup window
+        addToOutput("output", "🐱 Opening Party Kitty window! 🎉");
+        addToOutput("output", "The party cat has appeared!");
+        // Dispatch custom event to open the Party Kitty window
+        window.dispatchEvent(new Event('openPartyKitty'));
         break;
         
       case "fortune":
