@@ -163,7 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const questsByAdventureLine: Record<string, any[]> = {};
       
       // Process all quests to determine their status
-      questsWithComponents.forEach(quest => {
+      tempQuestsWithComponents.forEach(quest => {
         const adventureLine = quest.adventureLine;
         if (!questsByAdventureLine[adventureLine]) {
           questsByAdventureLine[adventureLine] = [];
