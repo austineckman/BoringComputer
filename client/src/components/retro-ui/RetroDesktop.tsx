@@ -10,6 +10,7 @@ import TerminalWindow from "./TerminalWindow";
 import WebBrowserWindow from "./WebBrowserWindow";
 import ProfileWindow from "./ProfileWindow";
 import PartyKittyWindow from "./PartyKittyWindow";
+import JukeboxWindow from "./JukeboxWindow";
 import FullscreenQuestsApp from "./FullscreenQuestsApp";
 import QuestLoadingScreen from "./QuestLoadingScreen";
 import wallpaperImage from "@assets/wallpaper.png";
@@ -18,6 +19,7 @@ import goldCrateImage from "@assets/goldcrate.png";
 import ironBagImage from "@assets/506_Gold_Bag_Leather_B.png";
 import craftingImage from "@assets/62_Ice_Armor.png";
 import questImage from "@assets/01_Fire_Grimoire.png";
+import jukeboxIconImage from "@assets/jukebox_icon.png";
 import shopCoinImage from "@assets/22_Leperchaun_Coin.png";
 import logoImage from "@assets/Asset 6@2x-8.png";
 import partyKittyImage from "@assets/partykitty.png";
@@ -149,16 +151,22 @@ const RetroDesktop: React.FC = () => {
       openPartyKittyWindow();
     };
     
+    const handleOpenJukebox = () => {
+      openJukeboxWindow();
+    };
+    
     window.addEventListener('openTerminal', handleOpenTerminal);
     window.addEventListener('openBrowser', handleOpenBrowser);
     window.addEventListener('openProfile', handleOpenProfile);
     window.addEventListener('openPartyKitty', handleOpenPartyKitty);
+    window.addEventListener('openJukebox', handleOpenJukebox);
     
     return () => {
       window.removeEventListener('openTerminal', handleOpenTerminal);
       window.removeEventListener('openBrowser', handleOpenBrowser);
       window.removeEventListener('openProfile', handleOpenProfile);
       window.removeEventListener('openPartyKitty', handleOpenPartyKitty);
+      window.removeEventListener('openJukebox', handleOpenJukebox);
     };
   }, []);
   

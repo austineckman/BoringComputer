@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Wrench, Terminal, Globe } from "lucide-react";
+import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Wrench, Terminal, Globe, Music } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import logoImage from "@assets/Asset 6@2x-8.png";
+import jukeboxIcon from "@assets/jukebox_icon.png";
 
 type MenuItem = {
   id: string;
@@ -79,6 +80,16 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
       onClick: () => {
         // Send event to open browser
         const event = new CustomEvent('openBrowser');
+        window.dispatchEvent(event);
+      }
+    },
+    {
+      id: "jukebox",
+      label: "Music Player",
+      icon: <Music size={16} />,
+      onClick: () => {
+        // Send event to open jukebox
+        const event = new CustomEvent('openJukebox');
         window.dispatchEvent(event);
       }
     },

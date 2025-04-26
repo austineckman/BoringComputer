@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Music } from "lucide-react";
 import bgMusicPath from "@assets/Fantasy Guild Hall.mp3";
 import pixelDreamsPath from "@assets/Pixel Dreams.mp3";
+import jukeboxImage from "@assets/jukebox.png";
 
 // Track interface for the playlist
 interface Track {
@@ -190,107 +191,152 @@ const JukeboxWindow: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 text-white p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-700">
-        <div className="flex items-center">
-          <Music className="mr-2 text-orange-400" />
-          <h2 className="text-lg font-bold">Retro Jukebox</h2>
-        </div>
-        <span className="text-xs text-gray-400">Playing {playlist.length} tracks</span>
-      </div>
-
-      {/* Now Playing */}
-      <div className="bg-gray-800 rounded-md p-4 mb-4">
-        <div className="mb-2">
-          <div className="text-sm text-gray-400">Now Playing</div>
-          <div className="text-lg font-bold">{currentTrack.title}</div>
-          <div className="text-sm text-orange-400">{currentTrack.artist}</div>
-        </div>
-        
-        {/* Progress bar */}
-        <div className="flex items-center space-x-2 mt-3">
-          <span className="text-xs w-10">{formatTime(currentTime)}</span>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={playbackProgress}
-            onChange={handleProgressChange}
-            className="flex-grow h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-          />
-          <span className="text-xs w-10">{formatTime(currentTrack.durationSeconds)}</span>
-        </div>
-        
-        {/* Playback controls */}
-        <div className="flex justify-center items-center space-x-4 mt-4">
-          <button 
-            onClick={playPreviousTrack}
-            className="text-gray-300 hover:text-white p-2 rounded-full hover:bg-gray-700"
-          >
-            <SkipBack size={20} />
-          </button>
-          
-          <button 
-            onClick={togglePlay}
-            className="bg-orange-500 text-white p-3 rounded-full hover:bg-orange-600"
-          >
-            {isPlaying ? <Pause size={24} /> : <Play size={24} />}
-          </button>
-          
-          <button 
-            onClick={playNextTrack}
-            className="text-gray-300 hover:text-white p-2 rounded-full hover:bg-gray-700"
-          >
-            <SkipForward size={20} />
-          </button>
-        </div>
-      </div>
-
-      {/* Volume control */}
-      <div className="flex items-center space-x-2 mb-4">
-        <button 
-          onClick={toggleMute} 
-          className="p-2 rounded-full hover:bg-gray-700"
-        >
-          {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-        </button>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={volume}
-          onChange={handleVolumeChange}
-          className="flex-grow h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-        />
-      </div>
-
-      {/* Playlist */}
-      <div className="flex-grow overflow-y-auto">
-        <h3 className="text-sm font-bold mb-2 text-gray-400">PLAYLIST</h3>
-        <ul className="divide-y divide-gray-700">
-          {playlist.map((track, index) => (
-            <li 
-              key={track.id}
-              className={`py-2 px-3 flex justify-between items-center hover:bg-gray-800 rounded cursor-pointer ${
-                currentTrackIndex === index ? 'bg-gray-800 border-l-4 border-orange-500 pl-2' : ''
-              }`}
-              onClick={() => {
-                setCurrentTrackIndex(index);
-                setIsPlaying(true);
-              }}
-            >
-              <div>
-                <div className={`font-medium ${currentTrackIndex === index ? 'text-orange-400' : 'text-white'}`}>
-                  {track.title}
-                </div>
-                <div className="text-xs text-gray-400">{track.artist}</div>
+    <div className="flex flex-col h-full bg-black text-white">
+      <div className="flex h-full">
+        {/* Left side - Jukebox image and controls */}
+        <div className="w-1/2 p-4 flex flex-col items-center justify-center relative">
+          <div className="relative">
+            <img 
+              src={jukeboxImage} 
+              alt="Vintage Jukebox" 
+              className="w-full h-auto max-w-[320px] mx-auto image-rendering-pixelated"
+              style={{ imageRendering: 'pixelated' }}
+            />
+            
+            {/* Light glow effect when playing */}
+            {isPlaying && (
+              <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-orange-500 rounded-full opacity-10 animate-pulse blur-lg"></div>
+            )}
+            
+            {/* Visualizer effect on jukebox display */}
+            <div className="absolute top-[35%] left-1/2 transform -translate-x-1/2 w-[40%] h-[8%] flex items-center justify-center">
+              <div className={`flex space-x-1 ${isPlaying ? 'animate-pulse' : ''}`}>
+                {[...Array(6)].map((_, i) => (
+                  <div 
+                    key={i} 
+                    className={`w-1 bg-orange-400 rounded-full ${
+                      isPlaying ? 'animate-visualizer' : 'h-1'
+                    }`}
+                    style={{ 
+                      height: isPlaying ? `${Math.random() * 12 + 3}px` : '2px',
+                      animationDelay: `${i * 0.1}s`
+                    }}
+                  ></div>
+                ))}
               </div>
-              <div className="text-xs text-gray-400">{formatTime(track.durationSeconds)}</div>
-            </li>
-          ))}
-        </ul>
+            </div>
+          </div>
+          
+          {/* Controls below jukebox */}
+          <div className="mt-4 flex flex-col items-center">
+            <div className="text-lg font-bold text-orange-400 mb-2">{currentTrack.title}</div>
+            <div className="text-sm text-gray-400 mb-4">{currentTrack.artist}</div>
+            
+            {/* Playback controls */}
+            <div className="flex items-center space-x-4 mb-4">
+              <button 
+                onClick={playPreviousTrack}
+                className="text-gray-300 hover:text-white p-2 rounded-full hover:bg-gray-800"
+              >
+                <SkipBack size={20} />
+              </button>
+              
+              <button 
+                onClick={togglePlay}
+                className="bg-orange-500 text-white p-3 rounded-full hover:bg-orange-600"
+              >
+                {isPlaying ? <Pause size={24} /> : <Play size={24} />}
+              </button>
+              
+              <button 
+                onClick={playNextTrack}
+                className="text-gray-300 hover:text-white p-2 rounded-full hover:bg-gray-800"
+              >
+                <SkipForward size={20} />
+              </button>
+            </div>
+            
+            {/* Volume control */}
+            <div className="flex items-center space-x-2 w-full max-w-[200px]">
+              <button 
+                onClick={toggleMute} 
+                className="p-1 rounded-full hover:bg-gray-800"
+              >
+                {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={volume}
+                onChange={handleVolumeChange}
+                className="flex-grow h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
+          </div>
+        </div>
+        
+        {/* Right side - Track information and playlist */}
+        <div className="w-1/2 bg-gray-900 p-4 flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-700">
+            <div className="flex items-center">
+              <Music className="mr-2 text-orange-400" />
+              <h2 className="text-lg font-bold">Retro Jukebox</h2>
+            </div>
+            <span className="text-xs text-gray-400">Playing {playlist.length} tracks</span>
+          </div>
+          
+          {/* Now Playing */}
+          <div className="bg-gray-800 rounded-md p-3 mb-4">
+            <div className="mb-2">
+              <div className="text-sm text-gray-400">Now Playing</div>
+              <div className="text-orange-400 font-bold">{currentTrack.title}</div>
+            </div>
+            
+            {/* Progress bar */}
+            <div className="flex items-center space-x-2">
+              <span className="text-xs w-8">{formatTime(currentTime)}</span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={playbackProgress}
+                onChange={handleProgressChange}
+                className="flex-grow h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+              />
+              <span className="text-xs w-8">{formatTime(currentTrack.durationSeconds)}</span>
+            </div>
+          </div>
+          
+          {/* Playlist */}
+          <div className="flex-grow overflow-y-auto">
+            <h3 className="text-sm font-bold mb-2 text-gray-400">PLAYLIST</h3>
+            <ul className="divide-y divide-gray-700">
+              {playlist.map((track, index) => (
+                <li 
+                  key={track.id}
+                  className={`py-2 px-3 flex justify-between items-center hover:bg-gray-800 rounded cursor-pointer ${
+                    currentTrackIndex === index ? 'bg-gray-800 border-l-4 border-orange-500 pl-2' : ''
+                  }`}
+                  onClick={() => {
+                    setCurrentTrackIndex(index);
+                    setIsPlaying(true);
+                  }}
+                >
+                  <div>
+                    <div className={`font-medium ${currentTrackIndex === index ? 'text-orange-400' : 'text-white'}`}>
+                      {track.title}
+                    </div>
+                    <div className="text-xs text-gray-400">{track.artist}</div>
+                  </div>
+                  <div className="text-xs text-gray-400">{formatTime(track.durationSeconds)}</div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </div>
 
       {/* Hidden audio element */}
