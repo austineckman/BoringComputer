@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="140" height="100" viewBox="0 0 140 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Leads -->
+  <line x1="0" y1="50" x2="30" y2="50" stroke="#999" stroke-width="4"/>
+  <line x1="110" y1="50" x2="140" y2="50" stroke="#999" stroke-width="4"/>
+  
+  <!-- Resistor body -->
+  <rect x="30" y="35" width="80" height="30" rx="2" ry="2" fill="#D4B78F" stroke="#333" stroke-width="1"/>
+  
+  <!-- Color bands (4-band resistor: brown-black-red-gold = 1k ohm ±5%) -->
+  <rect x="40" y="35" width="6" height="30" fill="#8B4513"/>  <!-- Brown (1) -->
+  <rect x="55" y="35" width="6" height="30" fill="#000000"/>  <!-- Black (0) -->
+  <rect x="70" y="35" width="6" height="30" fill="#FF0000"/>  <!-- Red (×100) -->
+  <rect x="95" y="35" width="6" height="30" fill="#FFD700"/>  <!-- Gold (±5%) -->
+</svg>

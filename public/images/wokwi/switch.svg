@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="140" height="80" viewBox="0 0 140 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- Leads -->
+  <line x1="0" y1="20" x2="18" y2="20" stroke="#999" stroke-width="4"/>
+  <line x1="0" y1="60" x2="18" y2="60" stroke="#999" stroke-width="4"/>
+  <line x1="122" y1="20" x2="140" y2="20" stroke="#999" stroke-width="4"/>
+  <line x1="122" y1="60" x2="140" y2="60" stroke="#999" stroke-width="4"/>
+  
+  <!-- Switch Base -->
+  <rect x="20" y="15" width="100" height="50" rx="4" ry="4" fill="#333333" stroke="#222" stroke-width="2"/>
+  
+  <!-- Switch Terminals -->
+  <circle cx="35" cy="20" r="5" fill="#ccc" stroke="#222" stroke-width="1"/>
+  <circle cx="35" cy="60" r="5" fill="#ccc" stroke="#222" stroke-width="1"/>
+  <circle cx="105" cy="20" r="5" fill="#ccc" stroke="#222" stroke-width="1"/>
+  <circle cx="105" cy="60" r="5" fill="#ccc" stroke="#222" stroke-width="1"/>
+  
+  <!-- Switch Lever Base -->
+  <rect x="55" y="25" width="30" height="30" rx="3" ry="3" fill="#222" stroke="#111" stroke-width="1"/>
+  
+  <!-- Switch Lever (in "on" position) -->
+  <rect x="60" y="30" width="20" height="20" rx="2" ry="2" fill="#bb0000" stroke="#222" stroke-width="1"/>
+  <rect x="67" y="32" width="6" height="16" fill="#ff5555" stroke="none"/>
+</svg>
