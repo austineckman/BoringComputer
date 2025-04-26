@@ -1,29 +1,25 @@
-import { Request, Response, Router } from 'express';
+import express from 'express';
 import { authenticate, requireAdmin } from '../auth';
-import { questRepository, componentKitRepository } from '../repositories';
-import { insertQuestSchema } from '@shared/schema';
+import { questRepository } from '../repositories';
 import { z } from 'zod';
 
-const router = Router();
+const router = express.Router();
 
 /**
- * Get all quests with component requirements and kit information
+ * GET /api/quests
+ * Get all quests with their component requirements
  */
-router.get('/quests', authenticate, async (req: Request, res: Response) => {
+router.get('/quests', authenticate, async (req, res) => {
   try {
-    const user = (req as any).user;
+    // Get all quests with their component requirements
+    const quests = await questRepository.getAllQuestsWithComponents();
     
-    // Get user's quests with status information
-    const quests = await questRepository.getQuestsForUser(user.id);
-    
-    // Get quests that are available to the user
-    const availableQuests = await questRepository.getAvailableQuestsForUser(user.id);
-    
-    // Group quests by adventure line
+    // Group quests by adventure line for frontend organization
     const questsByAdventureLine: Record<string, any[]> = {};
     
     quests.forEach(quest => {
       const adventureLine = quest.adventureLine;
+      
       if (!questsByAdventureLine[adventureLine]) {
         questsByAdventureLine[adventureLine] = [];
       }
@@ -34,253 +30,273 @@ router.get('/quests', authenticate, async (req: Request, res: Response) => {
     // Sort each adventure line by orderInLine
     for (const adventureLine in questsByAdventureLine) {
       questsByAdventureLine[adventureLine].sort((a, b) => a.orderInLine - b.orderInLine);
-      console.log(`Adventure line ${adventureLine} has ${questsByAdventureLine[adventureLine].length} quests`);
-    }
-    
-    // Log quests with kit associations
-    const questsWithKitId = quests.filter(q => q.kitId);
-    if (questsWithKitId.length > 0) {
-      console.log(`Found ${questsWithKitId.length} quests with direct kit associations:`, 
-        questsWithKitId.map(q => ({ id: q.id, title: q.title, kitId: q.kitId })));
-    } else {
-      console.log('No quests have direct kit associations via kitId field');
-    }
-    
-    // Log component requirements details
-    const questsWithComponentReq = quests.filter(q => 
-      q.componentRequirements && q.componentRequirements.length > 0);
-    
-    if (questsWithComponentReq.length > 0) {
-      console.log(`Found ${questsWithComponentReq.length} quests with component requirements`);
-      console.log('Component requirements summary:');
-      
-      for (const quest of questsWithComponentReq) {
-        console.log(`Quest ${quest.id} (${quest.title}) has ${quest.componentRequirements?.length || 0} components:`);
-        for (const qc of quest.componentRequirements) {
-          const component = qc.component;
-          console.log(`  - ${component.name} (kitId: ${component.kitId || 'none'})`);
-        }
-      }
-    } else {
-      console.log('No quests have component requirements');
     }
     
     const responseData = {
       questsByAdventureLine,
-      allQuests: Object.values(questsByAdventureLine).flat()
+      // Also include a flat list for backward compatibility
+      allQuests: quests
     };
-    
-    console.log(`Sending response with ${responseData.allQuests.length} total quests in ${Object.keys(responseData.questsByAdventureLine).length} adventure lines`);
     
     return res.json(responseData);
   } catch (error) {
-    console.error('Error in /api/quests endpoint:', error);
-    return res.status(500).json({ message: "Failed to fetch quests", error: (error as Error).message });
+    console.error('Error fetching quests:', error);
+    return res.status(500).json({ 
+      message: "Failed to fetch quests", 
+      error: error instanceof Error ? error.message : String(error) 
+    });
   }
 });
 
 /**
- * Get a specific quest by ID with its components
+ * GET /api/quests/:id
+ * Get a specific quest with its component requirements
  */
-router.get('/quests/:questId', authenticate, async (req: Request, res: Response) => {
+router.get('/quests/:id', authenticate, async (req, res) => {
   try {
-    const questId = parseInt(req.params.questId);
-    
-    if (isNaN(questId)) {
-      return res.status(400).json({ message: "Invalid quest ID" });
-    }
-    
-    const quest = await questRepository.getQuestWithComponents(questId);
+    const questId = parseInt(req.params.id);
+    const quest = await questRepository.findById(questId);
     
     if (!quest) {
-      return res.status(404).json({ message: "Quest not found" });
+      return res.status(404).json({ message: 'Quest not found' });
     }
     
-    return res.json({ quest });
+    // Get component requirements for this quest
+    const componentRequirements = await questRepository.getQuestComponentRequirements(questId);
+    
+    return res.json({
+      ...quest,
+      componentRequirements
+    });
   } catch (error) {
-    console.error('Error in /api/quests/:questId endpoint:', error);
-    return res.status(500).json({ message: "Failed to fetch quest", error: (error as Error).message });
+    console.error('Error fetching quest:', error);
+    return res.status(500).json({ 
+      message: "Failed to fetch quest", 
+      error: error instanceof Error ? error.message : String(error) 
+    });
   }
 });
 
 /**
- * Get the currently active quest for a user
+ * GET /api/quests/active
+ * Get the active quest for the current user
  */
-router.get('/quests/active', authenticate, async (req: Request, res: Response) => {
+router.get('/quests/active', authenticate, async (req, res) => {
   try {
     const user = (req as any).user;
-    const userQuests = await questRepository.getQuestsForUser(user.id);
-    const activeQuest = userQuests.find(q => q.status === 'active');
     
-    if (!activeQuest) {
+    // Get user quests
+    const userQuests = await questRepository.getUserQuests(user.id);
+    
+    // Find the active quest
+    const activeUserQuest = userQuests.find(uq => uq.status === 'active');
+    
+    if (!activeUserQuest) {
       return res.json(null);
     }
     
-    return res.json(activeQuest);
-  } catch (error) {
-    console.error('Error in /api/quests/active endpoint:', error);
-    return res.status(500).json({ message: "Failed to fetch active quest", error: (error as Error).message });
-  }
-});
-
-/**
- * Start a quest
- */
-router.post('/quests/:questId/start', authenticate, async (req: Request, res: Response) => {
-  try {
-    const user = (req as any).user;
-    const questId = parseInt(req.params.questId);
-    
-    if (isNaN(questId)) {
-      return res.status(400).json({ message: "Invalid quest ID" });
-    }
-    
-    // Verify the quest exists
-    const quest = await questRepository.findById(questId);
+    // Get quest details
+    const quest = await questRepository.findById(activeUserQuest.questId);
     
     if (!quest) {
-      return res.status(404).json({ message: "Quest not found" });
+      return res.json(null);
     }
     
-    // Implementation of starting a quest would go here
-    // This depends on how userQuests is handled in your application
+    // Get component requirements for this quest
+    const componentRequirements = await questRepository.getQuestComponentRequirements(quest.id);
     
-    return res.json({ success: true, message: "Quest started successfully" });
-  } catch (error) {
-    console.error('Error in /api/quests/:questId/start endpoint:', error);
-    return res.status(500).json({ message: "Failed to start quest", error: (error as Error).message });
-  }
-});
-
-/**
- * Complete a quest
- */
-router.post('/quests/:questId/complete', authenticate, async (req: Request, res: Response) => {
-  try {
-    const user = (req as any).user;
-    const questId = parseInt(req.params.questId);
-    const { submission, image } = req.body;
-    
-    if (isNaN(questId)) {
-      return res.status(400).json({ message: "Invalid quest ID" });
-    }
-    
-    if (!submission) {
-      return res.status(400).json({ message: "Submission text is required" });
-    }
-    
-    // Verify the quest exists
-    const quest = await questRepository.findById(questId);
-    
-    if (!quest) {
-      return res.status(404).json({ message: "Quest not found" });
-    }
-    
-    // Implementation of completing a quest would go here
-    // This depends on how submissions, userQuests, and rewards are handled
-    
-    return res.json({ 
-      success: true, 
-      message: "Quest completed successfully",
-      rewards: quest.rewards || [],
-      lootBoxRewards: quest.lootBoxRewards || [],
-      xpGained: quest.xpReward,
+    return res.json({
+      ...quest,
+      componentRequirements
     });
   } catch (error) {
-    console.error('Error in /api/quests/:questId/complete endpoint:', error);
-    return res.status(500).json({ message: "Failed to complete quest", error: (error as Error).message });
+    console.error('Error fetching active quest:', error);
+    return res.status(500).json({ 
+      message: "Failed to fetch active quest", 
+      error: error instanceof Error ? error.message : String(error) 
+    });
   }
 });
 
 /**
- * Create a new quest (admin only)
+ * POST /api/quests/:id/start
+ * Start a quest
  */
-router.post('/admin/quests', requireAdmin, async (req: Request, res: Response) => {
+router.post('/quests/:id/start', authenticate, async (req, res) => {
   try {
-    // Validate request body
-    const validatedData = insertQuestSchema.parse(req.body);
+    const user = (req as any).user;
+    const questId = parseInt(req.params.id);
     
-    // Create the quest
-    const quest = await questRepository.create(validatedData);
-    
-    return res.status(201).json(quest);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: "Invalid quest data", errors: error.flatten() });
-    }
-    
-    console.error('Error in POST /api/admin/quests endpoint:', error);
-    return res.status(500).json({ message: "Failed to create quest", error: (error as Error).message });
-  }
-});
-
-/**
- * Update a quest (admin only)
- */
-router.put('/admin/quests/:questId', requireAdmin, async (req: Request, res: Response) => {
-  try {
-    const questId = parseInt(req.params.questId);
-    
-    if (isNaN(questId)) {
-      return res.status(400).json({ message: "Invalid quest ID" });
-    }
-    
-    // Validate request body
-    const validatedData = insertQuestSchema.partial().parse(req.body);
-    
-    // Update the quest
-    const quest = await questRepository.update(questId, validatedData);
+    // Verify the quest exists
+    const quest = await questRepository.findById(questId);
     
     if (!quest) {
-      return res.status(404).json({ message: "Quest not found" });
+      return res.status(404).json({ message: 'Quest not found' });
     }
     
-    return res.json(quest);
+    // Start quest for user
+    await questRepository.startQuest(user.id, questId);
+    
+    return res.json({ success: true });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: "Invalid quest data", errors: error.flatten() });
-    }
-    
-    console.error('Error in PUT /api/admin/quests/:questId endpoint:', error);
-    return res.status(500).json({ message: "Failed to update quest", error: (error as Error).message });
+    console.error('Error starting quest:', error);
+    return res.status(500).json({ 
+      message: "Failed to start quest", 
+      error: error instanceof Error ? error.message : String(error) 
+    });
   }
 });
 
 /**
- * Delete a quest (admin only)
+ * POST /api/quests/:id/complete
+ * Complete a quest
  */
-router.delete('/admin/quests/:questId', requireAdmin, async (req: Request, res: Response) => {
+router.post('/quests/:id/complete', authenticate, async (req, res) => {
   try {
-    const questId = parseInt(req.params.questId);
+    const user = (req as any).user;
+    const questId = parseInt(req.params.id);
     
-    if (isNaN(questId)) {
-      return res.status(400).json({ message: "Invalid quest ID" });
-    }
-    
-    // Delete the quest
-    const quest = await questRepository.delete(questId);
+    // Verify the quest exists
+    const quest = await questRepository.findById(questId);
     
     if (!quest) {
-      return res.status(404).json({ message: "Quest not found" });
+      return res.status(404).json({ message: 'Quest not found' });
     }
     
-    return res.json({ message: "Quest deleted successfully" });
+    // Complete quest for user
+    await questRepository.completeQuest(user.id, questId);
+    
+    return res.json({ success: true });
   } catch (error) {
-    console.error('Error in DELETE /api/admin/quests/:questId endpoint:', error);
-    return res.status(500).json({ message: "Failed to delete quest", error: (error as Error).message });
+    console.error('Error completing quest:', error);
+    return res.status(500).json({ 
+      message: "Failed to complete quest", 
+      error: error instanceof Error ? error.message : String(error) 
+    });
   }
 });
 
 /**
- * Get quests for admin dashboard
+ * GET /api/quests/user
+ * Get all quests for the current user
  */
-router.get('/admin/quests', requireAdmin, async (req: Request, res: Response) => {
+router.get('/quests/user', authenticate, async (req, res) => {
   try {
-    const quests = await questRepository.getQuestsForAdmin();
+    const user = (req as any).user;
+    
+    // Get user quests
+    const userQuests = await questRepository.getUserQuests(user.id);
+    
+    // Get all quests
+    const allQuests = await questRepository.getAllQuestsWithComponents();
+    
+    // Get available quests
+    const availableQuests = await questRepository.getAvailableQuestsForUser(user.id);
+    
+    // Determine status for each quest
+    const quests = allQuests.map(quest => {
+      const userQuest = userQuests.find(uq => uq.questId === quest.id);
+      let status = 'locked';
+      
+      // If in available quests, mark as available
+      if (availableQuests.some(aq => aq.id === quest.id)) {
+        status = 'available';
+      }
+      
+      // If user has started/completed, use that status
+      if (userQuest) {
+        status = userQuest.status;
+      }
+      
+      return {
+        ...quest,
+        status
+      };
+    });
+    
     return res.json(quests);
   } catch (error) {
-    console.error('Error in GET /api/admin/quests endpoint:', error);
-    return res.status(500).json({ message: "Failed to fetch quests", error: (error as Error).message });
+    console.error('Error fetching user quests:', error);
+    return res.status(500).json({ 
+      message: "Failed to fetch user quests", 
+      error: error instanceof Error ? error.message : String(error) 
+    });
+  }
+});
+
+/**
+ * Admin Routes
+ */
+
+/**
+ * POST /api/admin/quests
+ * Create a new quest (admin)
+ */
+router.post('/admin/quests', authenticate, requireAdmin, async (req, res) => {
+  try {
+    // Validate request body
+    // Would validate with zod schema here
+    const questData = req.body;
+    
+    const quest = await questRepository.create(questData);
+    return res.status(201).json(quest);
+  } catch (error) {
+    console.error('Error creating quest:', error);
+    return res.status(500).json({ 
+      message: "Failed to create quest", 
+      error: error instanceof Error ? error.message : String(error) 
+    });
+  }
+});
+
+/**
+ * PUT /api/admin/quests/:id
+ * Update a quest (admin)
+ */
+router.put('/admin/quests/:id', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const questId = parseInt(req.params.id);
+    // Validate request body
+    // Would validate with zod schema here
+    const questData = req.body;
+    
+    const updatedQuest = await questRepository.update(questId, questData);
+    
+    if (!updatedQuest) {
+      return res.status(404).json({ message: "Quest not found" });
+    }
+    
+    return res.json(updatedQuest);
+  } catch (error) {
+    console.error('Error updating quest:', error);
+    return res.status(500).json({ 
+      message: "Failed to update quest", 
+      error: error instanceof Error ? error.message : String(error) 
+    });
+  }
+});
+
+/**
+ * DELETE /api/admin/quests/:id
+ * Delete a quest (admin)
+ */
+router.delete('/admin/quests/:id', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const questId = parseInt(req.params.id);
+    
+    const deletedQuest = await questRepository.delete(questId);
+    
+    if (!deletedQuest) {
+      return res.status(404).json({ message: "Quest not found" });
+    }
+    
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting quest:', error);
+    return res.status(500).json({ 
+      message: "Failed to delete quest", 
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
 });
 

@@ -1,100 +1,202 @@
-import { eq } from "drizzle-orm";
-import { db } from "../db";
-import { BaseRepository } from "./base-repository";
-import {
-  componentKits,
-  kitComponents,
-  ComponentKit,
-  InsertComponentKit,
-  KitComponent,
-  InsertKitComponent
-} from "@shared/schema";
+import { BaseRepository } from './base-repository';
+import * as schema from '@shared/schema';
+import { db } from '../db';
+import { and, eq, inArray, lt, lte, gte, desc, asc } from 'drizzle-orm';
 
 /**
- * Repository for component kits and their components
+ * Repository for component kit related operations
  */
-export class ComponentKitRepository extends BaseRepository<ComponentKit, InsertComponentKit> {
+export class ComponentKitRepository extends BaseRepository<
+  typeof schema.componentKits,
+  typeof schema.componentKits.$inferInsert,
+  typeof schema.componentKits.$inferSelect
+> {
   constructor() {
-    super(componentKits, {
-      components: true,
-      quests: true,
-    });
+    super('componentKits');
   }
-
+  
   /**
    * Get all component kits with their components
    */
   async getAllKitsWithComponents() {
-    return db.query.componentKits.findMany({
-      with: {
-        components: true,
-        quests: true,
-      },
-    });
+    const kits = await this.findAll();
+    const kitsWithComponents = [];
+    
+    for (const kit of kits) {
+      const components = await this.getKitComponents(kit.id);
+      kitsWithComponents.push({
+        ...kit,
+        components
+      });
+    }
+    
+    return kitsWithComponents;
   }
-
+  
   /**
-   * Get a specific kit with its components
+   * Get a specific component kit with its components
+   * 
+   * @param kitId The ID of the kit to retrieve
    */
   async getKitWithComponents(kitId: string) {
-    return db.query.componentKits.findFirst({
-      where: eq(componentKits.id, kitId),
-      with: {
-        components: true,
-        quests: true,
-      },
-    });
+    const kit = await this.findById(kitId);
+    
+    if (!kit) {
+      return null;
+    }
+    
+    const components = await this.getKitComponents(kitId);
+    
+    return {
+      ...kit,
+      components
+    };
   }
-
+  
+  /**
+   * Get all components for a specific component kit
+   * 
+   * @param kitId The ID of the kit to get components for
+   */
+  async getKitComponents(kitId: string) {
+    return await db
+      .select()
+      .from(schema.kitComponents)
+      .where(eq(schema.kitComponents.kitId, kitId));
+  }
+  
   /**
    * Add a component to a kit
+   * 
+   * @param kitId The ID of the kit to add a component to
+   * @param componentData The component data to add
    */
-  async addComponent(component: InsertKitComponent): Promise<KitComponent> {
-    const [created] = await db.insert(kitComponents).values(component).returning();
-    return created;
+  async addComponentToKit(kitId: string, componentData: Omit<typeof schema.kitComponents.$inferInsert, 'id'>) {
+    // Check if the kit exists
+    const kit = await this.findById(kitId);
+    
+    if (!kit) {
+      throw new Error(`Component kit with ID ${kitId} not found`);
+    }
+    
+    // Create the component
+    const [component] = await db
+      .insert(schema.kitComponents)
+      .values({
+        ...componentData,
+        kitId
+      })
+      .returning();
+      
+    return component;
   }
-
-  /**
-   * Get components by kit ID
-   */
-  async getComponentsByKitId(kitId: string) {
-    return db.query.kitComponents.findMany({
-      where: eq(kitComponents.kitId, kitId),
-    });
-  }
-
-  /**
-   * Find component by ID
-   */
-  async getComponentById(componentId: number) {
-    return db.query.kitComponents.findFirst({
-      where: eq(kitComponents.id, componentId),
-      with: {
-        kit: true,
-      }
-    });
-  }
-
+  
   /**
    * Update a component
+   * 
+   * @param componentId The ID of the component to update
+   * @param componentData The updated component data
    */
-  async updateComponent(id: number, data: Partial<InsertKitComponent>) {
-    const [updated] = await db
-      .update(kitComponents)
-      .set(data)
-      .where(eq(kitComponents.id, id))
+  async updateComponent(componentId: number, componentData: Partial<Omit<typeof schema.components.$inferInsert, 'id'>>) {
+    const [component] = await db
+      .update(schema.components)
+      .set(componentData)
+      .where(eq(schema.components.id, componentId))
       .returning();
-    return updated;
+      
+    return component;
   }
-
+  
   /**
    * Delete a component
+   * 
+   * @param componentId The ID of the component to delete
    */
-  async deleteComponent(id: number) {
-    const [deleted] = await db
-      .delete(kitComponents)
-      .where(eq(kitComponents.id, id))
+  async deleteComponent(componentId: number) {
+    const [component] = await db
+      .delete(schema.components)
+      .where(eq(schema.components.id, componentId))
       .returning();
-    return deleted;
+      
+    return component;
+  }
+  
+  /**
+   * Get components that can be reused across kits
+   * (components with isReusable = true)
+   */
+  async getReusableComponents() {
+    return await db
+      .select()
+      .from(schema.components)
+      .where(eq(schema.components.isReusable, true));
+  }
+  
+  /**
+   * Search for components by name or description
+   * 
+   * @param searchTerm The search term to look for
+   */
+  async searchComponents(searchTerm: string) {
+    // This is a simplistic implementation that would need to be
+    // enhanced with proper full-text search capabilities in a real app
+    const components = await db
+      .select()
+      .from(schema.components);
+      
+    return components.filter(component => 
+      component.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (component.description && component.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  }
+  
+  /**
+   * Get the total count of components across all kits
+   */
+  async getTotalComponentCount() {
+    const components = await db
+      .select()
+      .from(schema.components);
+      
+    return components.length;
+  }
+  
+  /**
+   * Add a component from one kit to another kit
+   * (for reusing components across kits)
+   * 
+   * @param componentId The ID of the component to copy
+   * @param toKitId The ID of the kit to copy to
+   */
+  async copyComponentToKit(componentId: number, toKitId: string) {
+    // Get the component
+    const [component] = await db
+      .select()
+      .from(schema.components)
+      .where(eq(schema.components.id, componentId));
+      
+    if (!component) {
+      throw new Error(`Component with ID ${componentId} not found`);
+    }
+    
+    // Check if the destination kit exists
+    const toKit = await this.findById(toKitId);
+    
+    if (!toKit) {
+      throw new Error(`Component kit with ID ${toKitId} not found`);
+    }
+    
+    // Create a new component in the destination kit
+    const { id, ...componentWithoutId } = component;
+    
+    const [newComponent] = await db
+      .insert(schema.components)
+      .values({
+        ...componentWithoutId,
+        kitId: toKitId
+      })
+      .returning();
+      
+    return newComponent;
   }
 }

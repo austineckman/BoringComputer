@@ -1,257 +1,260 @@
-import { and, eq, gt, isNull, or } from "drizzle-orm";
-import { db } from "../db";
-import { BaseRepository } from "./base-repository";
-import { 
-  quests, 
-  questComponents, 
-  kitComponents, 
-  componentKits,
-  userQuests,
-  InsertQuest,
-  Quest,
-  InsertQuestComponent,
-  QuestComponent
-} from "@shared/schema";
+import { BaseRepository } from './base-repository';
+import * as schema from '@shared/schema';
+import { db } from '../db';
+import { and, eq, inArray, lt, lte, gte, desc, asc } from 'drizzle-orm';
 
 /**
- * Quest repository for quest-related database operations
+ * Repository for quest-related operations
  */
-export class QuestRepository extends BaseRepository<Quest, InsertQuest> {
+export class QuestRepository extends BaseRepository<
+  typeof schema.quests,
+  typeof schema.quests.$inferInsert,
+  typeof schema.quests.$inferSelect
+> {
   constructor() {
-    super(quests, {
-      componentRequirements: true,
-      kit: true,
-    });
+    super('quests');
   }
-
+  
   /**
-   * Get all quests with their component requirements and related kit information
+   * Get all quests with their component requirements
    */
-  async getQuestsWithComponents() {
-    return db.query.quests.findMany({
-      with: {
-        componentRequirements: {
-          with: {
-            component: {
-              with: {
-                kit: true,
-              },
-            },
-          },
-        },
-        kit: true,
-      },
-    });
+  async getAllQuestsWithComponents() {
+    const quests = await this.findAll();
+    const questsWithComponents = [];
+    
+    for (const quest of quests) {
+      const componentRequirements = await this.getQuestComponentRequirements(quest.id);
+      
+      questsWithComponents.push({
+        ...quest,
+        componentRequirements
+      });
+    }
+    
+    return questsWithComponents;
   }
-
+  
   /**
-   * Get quests by kit ID with component requirements
+   * Get the component requirements for a specific quest
+   */
+  async getQuestComponentRequirements(questId: number) {
+    return await db
+      .select({
+        id: schema.questComponents.id,
+        questId: schema.questComponents.questId,
+        componentId: schema.questComponents.componentId,
+        name: schema.components.name,
+        description: schema.components.description,
+        image: schema.components.image,
+        kitId: schema.components.kitId,
+        quantity: schema.questComponents.quantity
+      })
+      .from(schema.questComponents)
+      .leftJoin(
+        schema.components,
+        eq(schema.questComponents.componentId, schema.components.id)
+      )
+      .where(eq(schema.questComponents.questId, questId));
+  }
+  
+  /**
+   * Get quests for a specific component kit
    */
   async getQuestsByKitId(kitId: string) {
-    return db.query.quests.findMany({
-      where: eq(quests.kitId, kitId),
-      with: {
-        componentRequirements: {
-          with: {
-            component: {
-              with: {
-                kit: true,
-              },
-            },
-          },
-        },
-        kit: true,
-      },
-    });
+    const quests = await db
+      .select()
+      .from(schema.quests)
+      .where(eq(schema.quests.kitId, kitId));
+      
+    return quests;
   }
-
+  
   /**
-   * Get quests by component requirements that reference components in a specific kit
+   * Get user quests (tracking user progress)
    */
-  async getQuestsByComponentKitId(kitId: string) {
-    // First, get all components for this kit
-    const kitComponentsList = await db.query.kitComponents.findMany({
-      where: eq(kitComponents.kitId, kitId),
-    });
-
-    if (kitComponentsList.length === 0) {
-      return [];
-    }
-
-    const componentIds = kitComponentsList.map(component => component.id);
-
-    // Now find quests that reference these components
-    return db.query.quests.findMany({
-      with: {
-        componentRequirements: {
-          where: (fields, { inArray }) => inArray(fields.componentId, componentIds),
-          with: {
-            component: {
-              with: {
-                kit: true,
-              },
-            },
-          },
-        },
-        kit: true,
-      },
-      // Only include quests that have matching component requirements
-      where: (fields, { exists }) =>
-        exists(
-          db.select().from(questComponents).where(
-            and(
-              eq(questComponents.questId, fields.id),
-              or(...componentIds.map(id => eq(questComponents.componentId, id)))
-            )
-          )
-        ),
-    });
+  async getUserQuests(userId: number) {
+    return await db
+      .select()
+      .from(schema.userQuests)
+      .where(eq(schema.userQuests.userId, userId));
   }
-
+  
   /**
-   * Get quests with their availability status for a specific user
-   */
-  async getQuestsForUser(userId: number) {
-    const userQuestStatuses = await db.query.userQuests.findMany({
-      where: eq(userQuests.userId, userId),
-    });
-
-    const allQuests = await this.getQuestsWithComponents();
-
-    // Map user quest statuses to quests
-    return allQuests.map(quest => {
-      const userStatus = userQuestStatuses.find(uq => uq.questId === quest.id);
-      return {
-        ...quest,
-        status: userStatus?.status || 'locked',
-      };
-    });
-  }
-
-  /**
-   * Get available quests for a user
+   * Get quests that are available for a user based on their progression
    */
   async getAvailableQuestsForUser(userId: number) {
-    // Get user's current quests
-    const userQuestStatuses = await db.query.userQuests.findMany({
-      where: eq(userQuests.userId, userId),
+    // Get user quests
+    const userQuests = await this.getUserQuests(userId);
+    
+    // Get completed quest IDs
+    const completedQuestIds = userQuests
+      .filter(uq => uq.status === 'completed')
+      .map(uq => uq.questId);
+    
+    // Get user from users table to check completedQuests array
+    const [user] = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, userId));
+    
+    // Combine completedQuestIds with user.completedQuests
+    let allCompletedQuestIds = [...completedQuestIds];
+    if (user && user.completedQuests) {
+      allCompletedQuestIds = [...allCompletedQuestIds, ...user.completedQuests];
+    }
+    
+    // Get all quests
+    const allQuests = await this.findAll();
+    
+    // Group quests by adventure line
+    const questsByAdventureLine: Record<string, typeof schema.quests.$inferSelect[]> = {};
+    allQuests.forEach(quest => {
+      if (!questsByAdventureLine[quest.adventureLine]) {
+        questsByAdventureLine[quest.adventureLine] = [];
+      }
+      questsByAdventureLine[quest.adventureLine].push(quest);
     });
-
-    // Get quests that are either marked as available or not yet in the user's quests
-    const availableQuests = await db.query.quests.findMany({
-      where: (fields, { notExists, and, eq }) =>
-        or(
-          // Quests marked as "available" in user_quests
-          exists(
-            db.select()
-              .from(userQuests)
-              .where(
-                and(
-                  eq(userQuests.userId, userId),
-                  eq(userQuests.questId, fields.id),
-                  eq(userQuests.status, 'available')
-                )
-              )
-          ),
-          // Quests not yet in user_quests (with some other conditions like ordered by adventure line)
-          and(
-            notExists(
-              db.select()
-                .from(userQuests)
-                .where(
-                  and(
-                    eq(userQuests.userId, userId),
-                    eq(userQuests.questId, fields.id)
-                  )
-                )
-            ),
-            // Is first quest in adventure line or previous quest is completed
-            or(
-              eq(fields.orderInLine, 1),
-              exists(
-                db.select()
-                  .from(quests)
-                  .innerJoin(
-                    userQuests,
-                    and(
-                      eq(userQuests.questId, quests.id),
-                      eq(userQuests.userId, userId),
-                      eq(userQuests.status, 'completed')
-                    )
-                  )
-                  .where(
-                    and(
-                      eq(quests.adventureLine, fields.adventureLine),
-                      eq(quests.orderInLine, fields.orderInLine - 1)
-                    )
-                  )
-              )
-            )
-          )
-        ),
-      with: {
-        componentRequirements: {
-          with: {
-            component: {
-              with: {
-                kit: true,
-              },
-            },
-          },
-        },
-        kit: true,
-      },
-    });
-
+    
+    // Sort each adventure line by orderInLine
+    for (const adventureLine in questsByAdventureLine) {
+      questsByAdventureLine[adventureLine].sort((a, b) => a.orderInLine - b.orderInLine);
+    }
+    
+    // For each adventure line, determine available quests
+    const availableQuests: typeof schema.quests.$inferSelect[] = [];
+    
+    for (const adventureLine in questsByAdventureLine) {
+      const questsInLine = questsByAdventureLine[adventureLine];
+      
+      // The first quest in each line is always available
+      if (questsInLine.length > 0) {
+        const firstQuest = questsInLine[0];
+        
+        // Check if it's not already completed
+        if (!allCompletedQuestIds.includes(firstQuest.id)) {
+          availableQuests.push(firstQuest);
+        }
+      }
+      
+      // If one quest is completed, the next one becomes available
+      for (let i = 0; i < questsInLine.length - 1; i++) {
+        const currentQuest = questsInLine[i];
+        const nextQuest = questsInLine[i + 1];
+        
+        if (
+          allCompletedQuestIds.includes(currentQuest.id) &&
+          !allCompletedQuestIds.includes(nextQuest.id)
+        ) {
+          availableQuests.push(nextQuest);
+        }
+      }
+    }
+    
     return availableQuests;
   }
-
+  
   /**
-   * Add a component requirement to a quest
+   * Start a quest for a user
    */
-  async addComponentRequirement(questComponent: InsertQuestComponent): Promise<QuestComponent> {
-    const [created] = await db.insert(questComponents).values(questComponent).returning();
-    return created;
+  async startQuest(userId: number, questId: number) {
+    // Check if the user already has this quest
+    const userQuests = await this.getUserQuests(userId);
+    const existingUserQuest = userQuests.find(uq => uq.questId === questId);
+    
+    if (existingUserQuest) {
+      // Update the existing user quest
+      return await db
+        .update(schema.userQuests)
+        .set({ status: 'active' })
+        .where(eq(schema.userQuests.id, existingUserQuest.id))
+        .returning();
+    } else {
+      // Create a new user quest
+      return await db
+        .insert(schema.userQuests)
+        .values({
+          userId,
+          questId,
+          status: 'active',
+          progress: 0,
+          startedAt: new Date()
+        })
+        .returning();
+    }
   }
-
+  
   /**
-   * Get a quest with its components by ID
+   * Complete a quest for a user
    */
-  async getQuestWithComponents(questId: number) {
-    return db.query.quests.findFirst({
-      where: eq(quests.id, questId),
-      with: {
-        componentRequirements: {
-          with: {
-            component: {
-              with: {
-                kit: true,
-              },
-            },
-          },
-        },
-        kit: true,
-      },
-    });
-  }
-
-  /**
-   * Get quests for the admin dashboard
-   */
-  async getQuestsForAdmin() {
-    return db.query.quests.findMany({
-      with: {
-        componentRequirements: {
-          with: {
-            component: true,
-          },
-        },
-        kit: true,
-      },
-      orderBy: (fields, { asc }) => [
-        asc(fields.adventureLine),
-        asc(fields.orderInLine)
-      ],
-    });
+  async completeQuest(userId: number, questId: number) {
+    // Check if the user has this quest
+    const userQuests = await this.getUserQuests(userId);
+    const existingUserQuest = userQuests.find(uq => uq.questId === questId);
+    
+    if (existingUserQuest) {
+      // Update the existing user quest
+      const [updatedUserQuest] = await db
+        .update(schema.userQuests)
+        .set({ 
+          status: 'completed',
+          progress: 100,
+          completedAt: new Date()
+        })
+        .where(eq(schema.userQuests.id, existingUserQuest.id))
+        .returning();
+      
+      // Also update the user's completedQuests array
+      const [user] = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.id, userId));
+      
+      if (user) {
+        const completedQuests = user.completedQuests || [];
+        if (!completedQuests.includes(questId)) {
+          await db
+            .update(schema.users)
+            .set({ 
+              completedQuests: [...completedQuests, questId]
+            })
+            .where(eq(schema.users.id, userId));
+        }
+      }
+      
+      return updatedUserQuest;
+    } else {
+      // Create a new completed user quest
+      const [newUserQuest] = await db
+        .insert(schema.userQuests)
+        .values({
+          userId,
+          questId,
+          status: 'completed',
+          progress: 100,
+          startedAt: new Date(),
+          completedAt: new Date()
+        })
+        .returning();
+      
+      // Also update the user's completedQuests array
+      const [user] = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.id, userId));
+      
+      if (user) {
+        const completedQuests = user.completedQuests || [];
+        if (!completedQuests.includes(questId)) {
+          await db
+            .update(schema.users)
+            .set({ 
+              completedQuests: [...completedQuests, questId]
+            })
+            .where(eq(schema.users.id, userId));
+        }
+      }
+      
+      return newUserQuest;
+    }
   }
 }
