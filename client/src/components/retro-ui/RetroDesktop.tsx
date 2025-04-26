@@ -10,7 +10,7 @@ import TerminalWindow from "./TerminalWindow";
 import WebBrowserWindow from "./WebBrowserWindow";
 import ProfileWindow from "./ProfileWindow";
 import PartyKittyWindow from "./PartyKittyWindow";
-import FullscreenQuestsApp from "./FullscreenQuestsApp";
+import QuestsApp from "./QuestsApp";
 import QuestLoadingScreen from "./QuestLoadingScreen";
 import wallpaperImage from "@assets/wallpaper.png";
 import backgroundMusic from "@assets/Fantasy Guild Hall.mp3";
@@ -609,7 +609,7 @@ const RetroDesktop: React.FC = () => {
       
       {/* Fullscreen Quest Application */}
       {questsAppState === 'open' && (
-        <FullscreenQuestsApp onClose={() => {
+        <QuestsApp onClose={() => {
           // Reset app state to closed
           setQuestsAppState('closed');
         }} />
