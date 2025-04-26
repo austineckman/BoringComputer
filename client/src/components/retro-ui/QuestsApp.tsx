@@ -31,31 +31,31 @@ const QuestsApp: React.FC<QuestsAppProps> = ({ onClose }) => {
   const [error, setError] = useState<string | null>(null);
 
   // Data fetching
-  const { data: kitsData, isLoading: kitsLoading, error: kitsError } = useComponentKits();
-  const { data: questsData, isLoading: questsLoading, error: questsError } = useQuests();
+  const { kits, loading: kitsLoading } = useComponentKits();
+  const { questsByAdventureLine, allQuests, loading: questsLoading } = useQuests();
 
   useEffect(() => {
     // Log data for debugging
-    console.log("Component Kits Data:", kitsData);
-    console.log("Quests Data:", questsData);
+    console.log("Component Kits Data:", kits);
+    console.log("Quests Data:", { questsByAdventureLine, allQuests });
 
-    // Handle errors
-    if (kitsError) {
-      console.error("Error fetching kits:", kitsError);
+    // For error handling, we'll use the general error state now
+    if (kitsLoading === false && kits.length === 0) {
+      console.error("No kits found");
       setError("Failed to load component kits. Please try again later.");
     }
 
-    if (questsError) {
-      console.error("Error fetching quests:", questsError);
+    if (questsLoading === false && allQuests.length === 0) {
+      console.error("No quests found");
       setError("Failed to load quests. Please try again later.");
     }
-  }, [kitsData, questsData, kitsError, questsError]);
+  }, [kits, questsByAdventureLine, allQuests, kitsLoading, questsLoading]);
 
   // Filter quests when dependencies change
   useEffect(() => {
-    if (!questsData) return;
+    if (allQuests.length === 0) return;
 
-    let filtered = [...questsData.allQuests];
+    let filtered = [...allQuests];
     
     // Filter by selected kit
     if (selectedKit) {
@@ -90,7 +90,7 @@ const QuestsApp: React.FC<QuestsAppProps> = ({ onClose }) => {
     }
     
     setFilteredQuests(filtered);
-  }, [questsData, selectedKit, searchQuery, selectedAdventureLine]);
+  }, [allQuests, selectedKit, searchQuery, selectedAdventureLine]);
 
   // Event handlers
   const handleKitSelect = (kitId: string) => {
@@ -115,7 +115,7 @@ const QuestsApp: React.FC<QuestsAppProps> = ({ onClose }) => {
       );
     }
 
-    if (!kitsData || kitsData.length === 0) {
+    if (kits.length === 0) {
       return (
         <div className="p-4 bg-black/30 rounded-lg border border-red-500/30 text-center">
           <AlertTriangle className="h-6 w-6 text-red-500 mx-auto mb-2" />
@@ -126,7 +126,7 @@ const QuestsApp: React.FC<QuestsAppProps> = ({ onClose }) => {
 
     return (
       <div className="space-y-2">
-        {kitsData.map((kit) => (
+        {kits.map((kit) => (
           <div 
             key={kit.id}
             className={`
@@ -257,7 +257,7 @@ const QuestsApp: React.FC<QuestsAppProps> = ({ onClose }) => {
       );
     }
 
-    if (!questsData || questsData.allQuests.length === 0) {
+    if (allQuests.length === 0) {
       return (
         <div className="p-6 bg-black/30 rounded-lg border border-red-500/30 text-center">
           <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-3" />
@@ -288,7 +288,7 @@ const QuestsApp: React.FC<QuestsAppProps> = ({ onClose }) => {
 
     // Display quests by adventure line
     if (!selectedAdventureLine) {
-      const adventureLines = Object.keys(questsData.questsByAdventureLine).sort();
+      const adventureLines = Object.keys(questsByAdventureLine).sort();
       
       return adventureLines.map(line => {
         // Get quests for this adventure line that also pass the filters
