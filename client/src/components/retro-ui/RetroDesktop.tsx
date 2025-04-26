@@ -1004,6 +1004,13 @@ const RetroDesktop: React.FC = () => {
                     className="mr-2 w-4 h-4 object-contain" 
                     style={{ imageRendering: 'pixelated' }}
                   />
+                ) : window.icon === "music" ? (
+                  <img 
+                    src={jukeboxImage} 
+                    alt="Jukebox" 
+                    className="mr-2 w-4 h-4 object-contain" 
+                    style={{ imageRendering: 'pixelated' }}
+                  />
                 ) : (
                   <span className="mr-2">{window.icon}</span>
                 )}
