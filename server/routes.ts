@@ -25,13 +25,6 @@ import { authenticate, hashPassword } from './auth';
 import { componentKits, items } from '@shared/schema';
 import { itemDatabase } from './itemDatabase';
 
-// Import modular routes directly
-import questRoutes from './routes/quest-routes';
-import componentKitRoutes from './routes/component-kit-routes';
-
-// Import repositories
-import { questRepository, componentKitRepository } from './repositories';
-
 // Using Passport authentication instead of custom middleware
 
 // Admin-only middleware is now imported from ./middleware/adminAuth
@@ -75,10 +68,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register the new auth routes
   app.use("/api/auth", authRoutes);
   
-  // Register our new modular routes
-  app.use("/api", questRoutes);
-  app.use("/api", componentKitRoutes);
-  
   // Auth routes have been moved to separate files
   // Using passport authentication with proper session handling
   // See routes/auth.ts for the implementation
@@ -120,45 +109,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const availableQuests = await storage.getAvailableQuestsForUser(user.id);
       console.log('Fetching user quests');
       const userQuests = await storage.getUserQuests(user.id);
-      console.log('Fetching all quests with component requirements');
-      // Use the repository to get quests with component requirements
-      const allQuests = await questRepository.getAllQuestsWithComponents();
+      console.log('Fetching all quests');
+      const allQuests = await storage.getQuests();
       console.log(`Found ${allQuests.length} total quests in database`);
       
-      // Debug endpoint to check specific quest kit association
-      // GET /api/quests?debugQuestId=1
-      const debugQuestId = req.query.debugQuestId;
-      if (debugQuestId) {
-        const questId = parseInt(debugQuestId as string);
-        const quest = await storage.getQuest(questId);
-        if (quest) {
-          console.log(`DEBUG - Quest ${questId} details:`, JSON.stringify(quest, null, 2));
-          console.log(`DEBUG - Quest ${questId} kitId:`, quest.kitId);
+      // Fetch component requirements for all quests
+      console.log('Fetching component requirements for all quests');
+      const questsWithComponents = [];
+      for (const quest of allQuests) {
+        try {
+          const components = await storage.getQuestComponentsWithDetails(quest.id);
+          console.log(`Quest ${quest.id} (${quest.title}) has ${components.length} components`);
           
-          const components = await storage.getQuestComponentsWithDetails(questId);
-          console.log(`DEBUG - Quest ${questId} has ${components.length} components:`, 
-            JSON.stringify(components, null, 2));
-          
-          return res.json({
-            quest: {
-              ...quest,
-              componentRequirements: components
-            }
-          });
-        } else {
-          return res.status(404).json({ message: 'Quest not found' });
+          // Add component requirements to quest object
+          const questWithComponents = {
+            ...quest,
+            componentRequirements: components
+          };
+          questsWithComponents.push(questWithComponents);
+        } catch (err) {
+          console.error(`Error fetching components for quest ${quest.id}:`, err);
+          questsWithComponents.push(quest); // Add quest without components
         }
       }
-      
-      // The quests already have their component requirements fetched by getAllQuestsWithComponents
-      console.log('Using quests with component requirements from repository');
-      const tempQuestsWithComponents = allQuests;
       
       // Group quests by adventure line to help with frontend organization
       const questsByAdventureLine: Record<string, any[]> = {};
       
       // Process all quests to determine their status
-      tempQuestsWithComponents.forEach(quest => {
+      questsWithComponents.forEach(quest => {
         const adventureLine = quest.adventureLine;
         if (!questsByAdventureLine[adventureLine]) {
           questsByAdventureLine[adventureLine] = [];
@@ -207,33 +186,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const adventureLine in questsByAdventureLine) {
         questsByAdventureLine[adventureLine].sort((a, b) => a.orderInLine - b.orderInLine);
         console.log(`Adventure line ${adventureLine} has ${questsByAdventureLine[adventureLine].length} quests`);
-      }
-      
-      // Log any quests directly associated with component kits
-      const questsWithKitId = allQuests.filter(q => q.kitId);
-      if (questsWithKitId.length > 0) {
-        console.log(`Found ${questsWithKitId.length} quests with direct kit associations:`, 
-          questsWithKitId.map(q => ({ id: q.id, title: q.title, kitId: q.kitId })));
-      } else {
-        console.log('No quests have direct kit associations via kitId field');
-      }
-      
-      // Log component requirements details for all quests
-      const questsWithComponentReq = allQuests.filter(q => 
-        q.componentRequirements && q.componentRequirements.length > 0);
-      
-      if (questsWithComponentReq.length > 0) {
-        console.log(`Found ${questsWithComponentReq.length} quests with component requirements`);
-        console.log('Component requirements summary:');
-        
-        for (const quest of questsWithComponentReq) {
-          console.log(`Quest ${quest.id} (${quest.title}) has ${quest.componentRequirements?.length || 0} components:`);
-          for (const comp of quest.componentRequirements || []) {
-            console.log(`  - ${comp.name} (kitId: ${comp.kitId || 'none'})`);
-          }
-        }
-      } else {
-        console.log('No quests have component requirements');
       }
       
       const responseData = {
