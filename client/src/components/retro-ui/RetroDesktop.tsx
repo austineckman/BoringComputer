@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { X, Maximize2, Minimize2, Volume2, VolumeX, Music } from "lucide-react";
+import { X, Maximize2, Minimize2, Volume2, VolumeX } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import RetroStartMenu from "./RetroStartMenu";
@@ -10,10 +10,10 @@ import TerminalWindow from "./TerminalWindow";
 import WebBrowserWindow from "./WebBrowserWindow";
 import ProfileWindow from "./ProfileWindow";
 import PartyKittyWindow from "./PartyKittyWindow";
-import JukeboxWindow from "./JukeboxWindow";
 import FullscreenQuestsApp from "./FullscreenQuestsApp";
 import QuestLoadingScreen from "./QuestLoadingScreen";
 import wallpaperImage from "@assets/wallpaper.png";
+import backgroundMusic from "@assets/Fantasy Guild Hall.mp3";
 import goldCrateImage from "@assets/goldcrate.png";
 import ironBagImage from "@assets/506_Gold_Bag_Leather_B.png";
 import craftingImage from "@assets/62_Ice_Armor.png";
@@ -21,7 +21,6 @@ import questImage from "@assets/01_Fire_Grimoire.png";
 import shopCoinImage from "@assets/22_Leperchaun_Coin.png";
 import logoImage from "@assets/Asset 6@2x-8.png";
 import partyKittyImage from "@assets/partykitty.png";
-import jukeboxImage from "@assets/jukebox.png";
 
 // Type definitions
 interface Position {
@@ -70,6 +69,7 @@ const RetroDesktop: React.FC = () => {
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   // Single state to manage quests app status: 'closed', 'loading', or 'open'
   const [questsAppState, setQuestsAppState] = useState<'closed' | 'loading' | 'open'>('closed');
+  const audioRef = useRef<HTMLAudioElement>(null);
   
   // Desktop icons (regular icons visible to all users)
   const [desktopIcons, setDesktopIcons] = useState<DesktopIcon[]>([
@@ -78,7 +78,6 @@ const RetroDesktop: React.FC = () => {
     { id: "crafting", name: "crafting.exe", icon: "craftingarmor", path: "/crafting", position: { x: 20, y: 220 } },
     { id: "lootboxes", name: "Loot Crates", icon: "goldcrate", path: "/lootboxes", position: { x: 20, y: 320 } },
     { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 20, y: 420 } },
-    { id: "jukebox", name: "Music", icon: "jukebox", position: { x: 20, y: 520 } },
   ]);
   
   // Admin folder (only visible to admin users)
@@ -163,19 +162,36 @@ const RetroDesktop: React.FC = () => {
     };
   }, []);
   
-  // Jukebox setup - handle audio status changes from jukebox
+  // Audio setup
   useEffect(() => {
-    // Add event listeners for jukebox control
-    const handleJukeboxStatusChange = (e: CustomEvent) => {
-      setIsMusicPlaying(e.detail.isPlaying);
-    };
+    const audioElement = audioRef.current;
     
-    // Use CustomEvent for type safety
-    window.addEventListener('jukeboxStatusChange', handleJukeboxStatusChange as EventListener);
-    
-    return () => {
-      window.removeEventListener('jukeboxStatusChange', handleJukeboxStatusChange as EventListener);
-    };
+    if (audioElement) {
+      audioElement.pause();
+      audioElement.currentTime = 0;
+      audioElement.volume = 0.5;
+      
+      const handleAudioPlay = () => setIsMusicPlaying(true);
+      const handleAudioPause = () => setIsMusicPlaying(false);
+      const handleAudioEnded = () => {
+        if (audioElement.loop) {
+          audioElement.play().catch(err => console.warn("Auto-replay failed:", err));
+        } else {
+          setIsMusicPlaying(false);
+        }
+      };
+      
+      audioElement.addEventListener('play', handleAudioPlay);
+      audioElement.addEventListener('pause', handleAudioPause);
+      audioElement.addEventListener('ended', handleAudioEnded);
+      
+      return () => {
+        audioElement.removeEventListener('play', handleAudioPlay);
+        audioElement.removeEventListener('pause', handleAudioPause);
+        audioElement.removeEventListener('ended', handleAudioEnded);
+        audioElement.pause();
+      };
+    }
   }, []);
 
   // Window management functions
@@ -310,8 +326,6 @@ const RetroDesktop: React.FC = () => {
       openTerminalWindow();
     } else if (iconId === "shop") {
       openShopWindow();
-    } else if (iconId === "jukebox") {
-      openJukeboxWindow();
     } else if (iconId === "quests") {
       // Play sound if available
       if (window.sounds) {
@@ -520,16 +534,6 @@ const RetroDesktop: React.FC = () => {
       { width: 600, height: 650 }
     );
   };
-  
-  const openJukeboxWindow = () => {
-    openWindow(
-      "jukebox",
-      "Music Player",
-      <JukeboxWindow onClose={() => closeWindow("jukebox")} />,
-      "music",
-      { width: 400, height: 600 }
-    );
-  };
 
   const openWelcomeWindow = () => {
     const welcomeContent = (
@@ -567,15 +571,17 @@ const RetroDesktop: React.FC = () => {
   
   // Music controls
   const toggleMusic = () => {
-    // Open the jukebox window if it's not already open
-    const isJukeboxOpen = windows.some(window => window.id === "jukebox");
+    const audioElement = audioRef.current;
+    if (!audioElement) return;
     
-    if (!isJukeboxOpen) {
-      openJukeboxWindow();
+    if (isMusicPlaying) {
+      audioElement.pause();
     } else {
-      // If the jukebox is already open, toggle play/pause state
-      // through the custom event that will be captured by the jukebox
-      window.dispatchEvent(new CustomEvent('jukeboxTogglePlayPause'));
+      audioElement.currentTime = 0;
+      audioElement.play().catch(error => {
+        console.warn("Audio playback failed:", error);
+        setIsMusicPlaying(false);
+      });
     }
   };
   
@@ -675,13 +681,6 @@ const RetroDesktop: React.FC = () => {
                 <img 
                   src={shopCoinImage} 
                   alt="Shop Coin" 
-                  className="w-10 h-10 object-contain" 
-                  style={{ imageRendering: 'pixelated' }}
-                />
-              ) : icon.icon === "jukebox" ? (
-                <img 
-                  src={jukeboxImage} 
-                  alt="Jukebox" 
                   className="w-10 h-10 object-contain" 
                   style={{ imageRendering: 'pixelated' }}
                 />
@@ -801,13 +800,6 @@ const RetroDesktop: React.FC = () => {
                   <img 
                     src={shopCoinImage} 
                     alt="Shop Coin" 
-                    className="mr-2 w-6 h-6 object-contain" 
-                    style={{ imageRendering: 'pixelated' }}
-                  />
-                ) : window.icon === "music" ? (
-                  <img 
-                    src={jukeboxImage} 
-                    alt="Jukebox" 
                     className="mr-2 w-6 h-6 object-contain" 
                     style={{ imageRendering: 'pixelated' }}
                   />
@@ -1003,13 +995,6 @@ const RetroDesktop: React.FC = () => {
                     className="mr-2 w-4 h-4 object-contain" 
                     style={{ imageRendering: 'pixelated' }}
                   />
-                ) : window.icon === "music" ? (
-                  <img 
-                    src={jukeboxImage} 
-                    alt="Jukebox" 
-                    className="mr-2 w-4 h-4 object-contain" 
-                    style={{ imageRendering: 'pixelated' }}
-                  />
                 ) : (
                   <span className="mr-2">{window.icon}</span>
                 )}
@@ -1035,7 +1020,8 @@ const RetroDesktop: React.FC = () => {
             {currentTime.toLocaleTimeString()} | {currentTime.toLocaleDateString()}
           </div>
           
-          {/* We no longer need the audio element here as it's handled by the JukeboxWindow */}
+          {/* Hidden audio element */}
+          <audio ref={audioRef} src={backgroundMusic} loop preload="auto" />
         </div>
       </div>
     </div>
