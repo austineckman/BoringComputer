@@ -68,10 +68,18 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [volume]);
   
-  // Effect to initialize background music once on mount - disabled because jukebox handles this now
+  // Effect to initialize background music once on mount
   useEffect(() => {
-    // No longer auto-playing music since the jukebox handles this
-    bgMusicInitialized.current = true;
+    // Only initialize background music once
+    if (!bgMusicInitialized.current) {
+      // Start playing background music if it should be playing and not muted
+      if (isBgMusicPlaying && !isMuted) {
+        bgMusicId.current = soundLibrary.backgroundMusic.play();
+        soundLibrary.backgroundMusic.volume(volume * 0.5); // Half the main volume
+      }
+      
+      bgMusicInitialized.current = true;
+    }
     
     // Cleanup function when app unmounts (rarely happens in SPA)
     return () => {
