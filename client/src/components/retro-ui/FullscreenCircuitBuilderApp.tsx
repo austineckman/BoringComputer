@@ -4,80 +4,11 @@ import { useLocation } from 'wouter';
 import { ArrowLeft, Cpu, Zap, BookOpen, HelpCircle, Volume2, VolumeX, Code, Maximize } from 'lucide-react';
 import { ReactSVG } from 'react-svg';
 
-// CSS for the truly full-screen mode
-const fullscreenStyle = `
-  .circuit-forge-fullscreen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 9999;
-    background-color: #1e1b4b;
-    overflow: hidden;
-  }
-
-  .circuit-forge-fullscreen body {
-    overflow: hidden;
-  }
-
-  @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 10px rgba(74, 222, 128, 0.5), 0 0 20px rgba(56, 189, 248, 0.3); }
-    50% { box-shadow: 0 0 20px rgba(74, 222, 128, 0.8), 0 0 40px rgba(56, 189, 248, 0.5); }
-  }
-
-  .animate-pulse-glow {
-    animation: pulse-glow 3s infinite;
-  }
-
-  .pixel-grid-bg {
-    background-image: 
-      linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px),
-      linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
-    background-size: 
-      10px 10px,
-      10px 10px,
-      50px 50px,
-      50px 50px;
-  }
-
-  .circuit-pattern {
-    background-image: radial-gradient(
-      circle at 15px 15px,
-      rgba(74, 222, 128, 0.1) 2px,
-      transparent 0
-    );
-    background-size: 50px 50px;
-  }
-`;
-
 const FullscreenCircuitBuilderApp: React.FC = () => {
   const [, navigate] = useLocation();
   const [showTutorial, setShowTutorial] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [currentTip, setCurrentTip] = useState(0);
-  const [isFullscreen, setIsFullscreen] = useState(true);
-  
-  // Apply fullscreen styles when component mounts
-  useEffect(() => {
-    // Inject the CSS for fullscreen mode
-    const styleElement = document.createElement('style');
-    styleElement.textContent = fullscreenStyle;
-    document.head.appendChild(styleElement);
-    
-    // Add fullscreen class to document body
-    document.documentElement.classList.add('circuit-forge-fullscreen');
-    
-    return () => {
-      // Clean up by removing the style and class when component unmounts
-      document.head.removeChild(styleElement);
-      document.documentElement.classList.remove('circuit-forge-fullscreen');
-    };
-  }, []);
   
   // Audio effects
   useEffect(() => {
@@ -94,8 +25,12 @@ const FullscreenCircuitBuilderApp: React.FC = () => {
       }
     }
     
+    // Force fullscreen styling
+    document.body.style.overflow = 'hidden';
+    
     return () => {
       bgMusic.pause();
+      document.body.style.overflow = '';
     };
   }, [soundEnabled]);
   
@@ -142,84 +77,105 @@ const FullscreenCircuitBuilderApp: React.FC = () => {
   };
 
   return (
-    <div className="circuit-forge-app absolute inset-0 overflow-hidden">
-      {/* Pixel Art Background */}
-      <div className="absolute inset-0 bg-indigo-950 pixel-grid-bg z-0" />
-      <div className="absolute inset-0 circuit-pattern z-0 opacity-30" />
+    <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-indigo-950 z-50">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-indigo-950">
+        <div className="absolute inset-0 opacity-10" 
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(59, 130, 246, 0.2) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(59, 130, 246, 0.2) 1px, transparent 1px)
+            `,
+            backgroundSize: '20px 20px'
+          }}
+        />
+        <div className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage: `radial-gradient(
+              circle at 15px 15px,
+              rgba(74, 222, 128, 1) 2px,
+              transparent 0
+            )`,
+            backgroundSize: '50px 50px'
+          }}
+        />
+      </div>
       
       {/* Main Content */}
-      <div className="relative z-10 flex flex-col h-full w-full">
-        {/* Header with back button */}
-        <div className="header px-4 py-2 flex items-center border-b-2 border-purple-600/50 bg-indigo-900/90 text-white backdrop-blur-sm">
-          <button 
-            className="back-btn p-2 mr-3 bg-purple-800 hover:bg-purple-700 rounded-md transition-colors duration-200 flex items-center space-x-2"
-            onClick={() => navigate('/')}
-          >
-            <ArrowLeft size={18} />
-            <span className="hidden sm:inline">Back to Hub</span>
-          </button>
-          
-          <div className="flex items-center">
-            <Cpu className="h-6 w-6 mr-2 text-green-400 animate-pulse" />
-            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-cyan-300 tracking-wider font-pixelated">CIRCUIT FORGE</h1>
-          </div>
-          
-          <div className="ml-auto flex space-x-3">
-            <button 
-              onClick={() => setSoundEnabled(!soundEnabled)} 
-              className="p-2 rounded-md bg-indigo-800 hover:bg-indigo-700 transition-colors"
-              title={soundEnabled ? "Mute sound" : "Enable sound"}
-            >
-              {soundEnabled ? <Volume2 size={18} className="text-green-400" /> : <VolumeX size={18} className="text-red-400" />}
-            </button>
+      <div className="relative flex flex-col h-full">
+        {/* Header */}
+        <div className="px-4 py-3 bg-indigo-900 border-b-2 border-indigo-700 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <button 
+                className="mr-4 p-2 bg-purple-800 hover:bg-purple-700 rounded-md transition-colors flex items-center"
+                onClick={() => navigate('/')}
+              >
+                <ArrowLeft size={18} className="text-white" />
+                <span className="ml-2 text-white hidden sm:inline">Back</span>
+              </button>
+              
+              <div className="flex items-center">
+                <Cpu className="h-7 w-7 mr-3 text-green-400 animate-pulse" />
+                <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-cyan-300 tracking-wider">
+                  CIRCUIT FORGE
+                </h1>
+              </div>
+            </div>
             
-            <button 
-              onClick={requestFullscreen} 
-              className="p-2 rounded-md bg-indigo-800 hover:bg-indigo-700 transition-colors"
-              title="Toggle fullscreen"
-            >
-              <Maximize size={18} className="text-cyan-300" />
-            </button>
-            
-            <button 
-              onClick={() => setShowTutorial(true)} 
-              className="p-2 rounded-md bg-indigo-800 hover:bg-indigo-700 transition-colors flex items-center space-x-1"
-            >
-              <HelpCircle size={18} className="text-cyan-300" />
-              <span className="hidden sm:inline text-cyan-100">Tutorial</span>
-            </button>
-            
-            <div className="hidden md:flex items-center px-3 py-1 rounded-md bg-indigo-800/50 text-xs border border-indigo-700/30">
-              <Zap className="h-4 w-4 mr-1 text-yellow-400" />
-              <span className="text-cyan-100 font-pixelated tracking-wider">BUILD • CONNECT • PROGRAM • SIMULATE</span>
+            <div className="flex items-center space-x-4">
+              <button 
+                onClick={() => setSoundEnabled(!soundEnabled)} 
+                className="p-2 rounded-md bg-indigo-800 hover:bg-indigo-700 transition-colors"
+              >
+                {soundEnabled ? 
+                  <Volume2 size={20} className="text-green-400" /> : 
+                  <VolumeX size={20} className="text-red-400" />
+                }
+              </button>
+              
+              <button 
+                onClick={requestFullscreen} 
+                className="p-2 rounded-md bg-indigo-800 hover:bg-indigo-700 transition-colors"
+              >
+                <Maximize size={20} className="text-cyan-300" />
+              </button>
+              
+              <button 
+                onClick={() => setShowTutorial(true)} 
+                className="p-2 rounded-md bg-indigo-800 hover:bg-indigo-700 transition-colors flex items-center"
+              >
+                <HelpCircle size={20} className="text-cyan-300" />
+                <span className="ml-2 text-cyan-100 hidden sm:inline">Tutorial</span>
+              </button>
             </div>
           </div>
         </div>
         
-        {/* Circuit Builder Interface */}
-        <div className="flex-grow overflow-hidden relative">
+        {/* Main Circuit Builder Area */}
+        <div className="flex-grow">
           <CircuitBuilderWindow />
         </div>
         
-        {/* Footer with pixel art style */}
-        <div className="footer py-2 px-4 bg-indigo-900/90 text-white text-sm border-t-2 border-purple-600/50 backdrop-blur-sm">
-          <div className="grid grid-cols-3 gap-2">
+        {/* Footer */}
+        <div className="py-2 px-4 bg-indigo-900 text-white border-t-2 border-indigo-700 shadow-lg">
+          <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <div className="w-3 h-3 rounded-full bg-blue-500 mr-2 shadow-glow"></div>
-              <span className="text-blue-200">Inputs</span>
-              <div className="w-3 h-3 rounded-full bg-red-500 mx-2 shadow-glow-red"></div>
+              <div className="w-3 h-3 rounded-full bg-blue-500 mr-2 shadow-md"></div>
+              <span className="text-blue-200 mr-4">Inputs</span>
+              <div className="w-3 h-3 rounded-full bg-red-500 mr-2 shadow-md"></div>
               <span className="text-red-200">Outputs</span>
             </div>
             
             <div className="text-center">
-              <span className="px-2 py-1 bg-indigo-800/60 rounded text-xs font-pixelated text-cyan-300 border border-indigo-700/50 animate-pulse-glow inline-block">
-                LEVEL 1: ELECTRONIC APPRENTICE
+              <span className="px-3 py-1 bg-indigo-800/60 rounded text-sm text-cyan-300 border border-indigo-700 shadow-lg">
+                ELECTRONIC WORKSHOP
               </span>
             </div>
             
-            <div className="flex justify-end text-xs items-center">
-              <Code size={14} className="mr-1 text-green-400" />
-              <span className="text-green-200">Microcontroller code editor available</span>
+            <div className="flex items-center">
+              <Code size={16} className="mr-2 text-green-400" />
+              <span className="text-green-200">MicroPython Editor</span>
             </div>
           </div>
         </div>
@@ -227,8 +183,8 @@ const FullscreenCircuitBuilderApp: React.FC = () => {
       
       {/* Tutorial Overlay */}
       {showTutorial && (
-        <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-indigo-900 border-2 border-purple-500 rounded-lg w-full max-w-2xl p-6 relative animate-pulse-glow">
+        <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
+          <div className="bg-indigo-900 border-2 border-purple-500 rounded-lg w-full max-w-2xl p-6 relative shadow-[0_0_15px_rgba(74,222,128,0.3)]">
             <button 
               className="absolute top-3 right-3 text-white hover:text-red-400"
               onClick={() => setShowTutorial(false)}
@@ -244,7 +200,6 @@ const FullscreenCircuitBuilderApp: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div className="flex items-center justify-center">
                 <div className="w-full h-48 bg-purple-800/50 rounded-lg flex items-center justify-center border border-purple-500">
-                  {/* Placeholder for tutorial images - these would need to be created */}
                   <div className="text-white text-center">
                     <Cpu size={48} className="mx-auto mb-2 text-green-400" />
                     <p className="text-sm">Tutorial Image</p>
@@ -269,7 +224,7 @@ const FullscreenCircuitBuilderApp: React.FC = () => {
                 {tutorialTips.map((_, index) => (
                   <div 
                     key={index}
-                    className={`w-2 h-2 rounded-full ${currentTip === index ? 'bg-green-400 animate-pulse' : 'bg-gray-600'}`}
+                    className={`w-2 h-2 rounded-full ${currentTip === index ? 'bg-green-400' : 'bg-gray-600'}`}
                   />
                 ))}
               </div>
