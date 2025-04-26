@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, Maximize2, Minimize2, Volume2, VolumeX } from "lucide-react";
+import { X, Maximize2, Minimize2, Volume2, VolumeX, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import RetroStartMenu from "./RetroStartMenu";
@@ -15,6 +15,7 @@ import MiniPlayer from "./MiniPlayer";
 import FullscreenQuestsApp from "./FullscreenQuestsApp";
 import FullscreenOracleApp from "./FullscreenOracleApp";
 import FullscreenCircuitBuilderApp from "./FullscreenCircuitBuilderApp";
+import RecycleBinWindow from "./RecycleBinWindow";
 import QuestLoadingScreen from "./QuestLoadingScreen";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import wallpaperImage from "@assets/wallpaper.png";
@@ -85,6 +86,7 @@ const RetroDesktop: React.FC = () => {
     { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 20, y: 420 } },
     { id: "oracle", name: "The Oracle", icon: "oracle", position: { x: 20, y: 520 } },
     { id: "circuitbuilder", name: "Circuit Builder", icon: "🔌", position: { x: 20, y: 620 } },
+    { id: "recyclebin", name: "Recycle Bin", icon: "trashIcon", position: { x: 140, y: 20 } },
   ]);
   
   // Admin icons (for reference only - no longer displayed in a folder)
@@ -281,6 +283,8 @@ const RetroDesktop: React.FC = () => {
       openTerminalWindow();
     } else if (iconId === "shop") {
       openShopWindow();
+    } else if (iconId === "recyclebin") {
+      openRecycleBinWindow();
     } else if (iconId === "quests") {
       // Play sound if available
       if (window.sounds) {
@@ -440,6 +444,16 @@ const RetroDesktop: React.FC = () => {
       <JukeboxWindow onClose={() => closeWindow("jukebox")} />, 
       "music",
       { width: 900, height: 600 }
+    );
+  };
+  
+  const openRecycleBinWindow = () => {
+    openWindow(
+      "recyclebin", 
+      "Recycle Bin", 
+      <RecycleBinWindow onClose={() => closeWindow("recyclebin")} />, 
+      "trashIcon",
+      { width: 800, height: 600 }
     );
   };
 
@@ -605,6 +619,8 @@ const RetroDesktop: React.FC = () => {
                   className="w-10 h-10 object-contain" 
                   style={{ imageRendering: 'pixelated' }}
                 />
+              ) : icon.icon === "trashIcon" ? (
+                <Trash2 size={24} className="text-gray-700" />
               ) : (
                 <span className="text-3xl drop-shadow-md">{icon.icon}</span>
               )}
@@ -697,6 +713,8 @@ const RetroDesktop: React.FC = () => {
                     className="mr-2 w-6 h-6 object-contain" 
                     style={{ imageRendering: 'pixelated' }}
                   />
+                ) : window.icon === "trashIcon" ? (
+                  <Trash2 size={18} className="mr-2 text-white" />
                 ) : (
                   <span className="mr-2 text-lg">{window.icon}</span>
                 )}
