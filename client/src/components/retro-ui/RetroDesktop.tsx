@@ -319,6 +319,14 @@ const RetroDesktop: React.FC = () => {
         // Show loading screen
         setQuestsAppState('loading');
       }
+    } else if (iconId === "admin") {
+      // Play sound if available
+      if (window.sounds) {
+        window.sounds.click();
+      }
+      
+      // Open admin app
+      setAdminAppState('open');
     } else if (iconId === "admin-folder") {
       toggleAdminFolder();
     } else if (iconPath) {
@@ -599,6 +607,14 @@ const RetroDesktop: React.FC = () => {
           setQuestsAppState('closed');
         }} />
       )}
+      
+      {/* Fullscreen Admin Application */}
+      {adminAppState === 'open' && (
+        <FullscreenAdminApp onClose={() => {
+          // Reset app state to closed
+          setAdminAppState('closed');
+        }} />
+      )}
       {/* Desktop Icons */}
       <div className="absolute top-0 left-0 right-0 bottom-0">
         {/* Regular icons */}
@@ -668,6 +684,12 @@ const RetroDesktop: React.FC = () => {
                   alt="Shop Coin" 
                   className="w-10 h-10 object-contain" 
                   style={{ imageRendering: 'pixelated' }}
+                />
+              ) : icon.icon === "admingear" ? (
+                <img 
+                  src={adminIconImage} 
+                  alt="Admin Tools" 
+                  className="w-10 h-10 object-contain" 
                 />
               ) : (
                 <span className="text-3xl drop-shadow-md">{icon.icon}</span>
