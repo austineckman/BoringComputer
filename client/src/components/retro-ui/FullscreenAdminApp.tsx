@@ -98,12 +98,24 @@ const FullscreenAdminApp: React.FC<FullscreenAdminAppProps> = ({ onClose }) => {
   const { data: lootBoxes, isLoading: isLoadingLootBoxes } = useQuery<LootBox[]>({
     queryKey: ['/api/admin/lootboxes'],
     enabled: activeTab === 'lootboxes',
+    onSuccess: (data) => {
+      console.log('Fetched lootboxes:', data);
+    },
+    onError: (error) => {
+      console.error('Error fetching lootboxes:', error);
+    }
   });
 
   // Fetch quests for the quests tab
   const { data: quests, isLoading: isLoadingQuests } = useQuery<any[]>({
     queryKey: ['/api/admin/quests'],
     enabled: activeTab === 'quests',
+    onSuccess: (data) => {
+      console.log('Fetched quests:', data);
+    },
+    onError: (error) => {
+      console.error('Error fetching quests:', error);
+    }
   });
 
   // Fetch items for the dropdown
