@@ -488,10 +488,17 @@ const RetroDesktop: React.FC = () => {
   };
   
   const openTerminalWindow = () => {
+    // Get the next zIndex value by counting current windows
+    const nextZIndex = windows.length + 10;
+
     openWindow(
       "terminal", 
       "Command Prompt", 
-      <TerminalWindow />, 
+      <TerminalWindow 
+        onClose={() => closeWindow("terminal")} 
+        onMinimize={() => minimizeWindow("terminal")} 
+        zIndex={nextZIndex}
+      />, 
       "💻",
       { width: 650, height: 450 }
     );
