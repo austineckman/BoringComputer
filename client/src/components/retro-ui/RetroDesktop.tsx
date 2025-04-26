@@ -56,13 +56,7 @@ interface DesktopIcon {
   position: Position;
 }
 
-interface AdminFolder {
-  id: string;
-  name: string;
-  icon: string;
-  position: Position;
-  isOpen: boolean;
-}
+// AdminFolder interface removed
 
 const RetroDesktop: React.FC = () => {
   const { user } = useAuth();
@@ -208,11 +202,6 @@ const RetroDesktop: React.FC = () => {
   
   const closeWindow = (id: string) => {
     setWindows(windows.filter(window => window.id !== id));
-    
-    // If we're closing the admin folder window, also set the folder to closed
-    if (id === "admin-folder-window") {
-      setAdminFolder(prev => ({ ...prev, isOpen: false }));
-    }
   };
   
   const minimizeWindow = (id: string) => {
@@ -356,51 +345,7 @@ const RetroDesktop: React.FC = () => {
     document.addEventListener('mouseup', handleMouseUp);
   };
 
-  // Admin folder functions
-  const toggleAdminFolder = () => {
-    const newIsOpen = !adminFolder.isOpen;
-    setAdminFolder(prev => ({ ...prev, isOpen: newIsOpen }));
-    
-    if (newIsOpen) {
-      openAdminFolderWindow();
-    } else {
-      // Close the admin folder window if it's open
-      const folderWindow = windows.find(w => w.id === "admin-folder-window");
-      if (folderWindow) {
-        closeWindow("admin-folder-window");
-      }
-    }
-  };
-  
-  const openAdminFolderWindow = () => {
-    const folderContent = (
-      <div className="p-4">
-        <h2 className="text-xl font-bold mb-4">Admin Tools</h2>
-        <div className="grid grid-cols-3 gap-4">
-          {adminIcons.map(icon => (
-            <div 
-              key={icon.id}
-              className="flex flex-col items-center justify-center p-2 cursor-pointer hover:bg-blue-100 rounded transition-colors"
-              onClick={() => {
-                if (icon.path) {
-                  navigate(icon.path);
-                  // Close the folder window after navigation
-                  closeWindow("admin-folder-window");
-                }
-              }}
-            >
-              <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-300 border border-purple-400 rounded-sm mb-2">
-                <span className="text-2xl">{icon.icon}</span>
-              </div>
-              <span className="text-center text-sm">{icon.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-    
-    openWindow("admin-folder-window", "Admin Tools", folderContent, "📁");
-  };
+  // Admin functions removed as requested
 
   // Specific window content functions
   const openPartyKittyWindow = () => {
