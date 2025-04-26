@@ -608,6 +608,14 @@ const RetroDesktop: React.FC = () => {
           setQuestsAppState('closed');
         }} />
       )}
+      
+      {/* Fullscreen Oracle Application */}
+      {oracleAppState === 'open' && (
+        <FullscreenOracleApp onClose={() => {
+          // Reset app state to closed
+          setOracleAppState('closed');
+        }} />
+      )}
       {/* Desktop Icons */}
       <div className="absolute top-0 left-0 right-0 bottom-0">
         {/* Regular icons */}
@@ -675,6 +683,13 @@ const RetroDesktop: React.FC = () => {
                 <img 
                   src={shopCoinImage} 
                   alt="Shop Coin" 
+                  className="w-10 h-10 object-contain" 
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              ) : icon.icon === "oracle" ? (
+                <img 
+                  src={oracleIconImage} 
+                  alt="The Oracle" 
                   className="w-10 h-10 object-contain" 
                   style={{ imageRendering: 'pixelated' }}
                 />
