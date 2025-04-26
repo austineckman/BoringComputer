@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Trash2, RotateCw, Grid, ZoomIn, ZoomOut, Move } from 'lucide-react';
+import { ReactSVG } from 'react-svg';
 
 // Circuit Components Types
 interface Position {
@@ -27,7 +28,7 @@ interface Wire {
 
 interface CircuitComponent {
   id: string;
-  type: 'battery' | 'wire' | 'led' | 'resistor' | 'breadboard';
+  type: 'battery' | 'wire' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor';
   position: Position;
   rotation: number; // 0, 90, 180, 270 degrees
   width: number;
@@ -36,12 +37,13 @@ interface CircuitComponent {
 }
 
 interface ComponentDefinition {
-  type: 'battery' | 'wire' | 'led' | 'resistor' | 'breadboard';
+  type: 'battery' | 'wire' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor';
   label: string;
   width: number;
   height: number;
   color: string;
-  icon: string; // SVG or Unicode character representation
+  icon: string; // Unicode character representation (fallback)
+  svgPath: string; // Path to SVG file
   connectionPoints: Array<{
     type: 'input' | 'output' | 'both';
     position: Position; // Relative to component (0,0 is top-left)
@@ -56,15 +58,16 @@ const componentDefinitions: Record<string, ComponentDefinition> = {
   battery: {
     type: 'battery',
     label: 'Battery',
-    width: 3 * GRID_SIZE,
-    height: 2 * GRID_SIZE,
-    color: '#FFD700',
+    width: 40,
+    height: 60,
+    color: '#f0f0f0',
     icon: '⚡',
+    svgPath: '/images/components/battery.svg',
     connectionPoints: [
-      // Positive terminal (right side)
-      { type: 'output', position: { x: 3 * GRID_SIZE, y: GRID_SIZE / 2 } },
-      // Negative terminal (left side)
-      { type: 'output', position: { x: 0, y: GRID_SIZE / 2 } }
+      // Positive terminal (top)
+      { type: 'output', position: { x: 20, y: 0 } },
+      // Negative terminal (bottom)
+      { type: 'output', position: { x: 20, y: 60 } }
     ]
   },
   wire: {
@@ -74,6 +77,7 @@ const componentDefinitions: Record<string, ComponentDefinition> = {
     height: GRID_SIZE / 2,
     color: '#FF4500',
     icon: '〰️',
+    svgPath: '',  // Wires are drawn directly as SVG paths
     connectionPoints: [
       // Both ends of the wire
       { type: 'both', position: { x: 0, y: GRID_SIZE / 4 } },
@@ -83,28 +87,78 @@ const componentDefinitions: Record<string, ComponentDefinition> = {
   led: {
     type: 'led',
     label: 'LED',
-    width: 1.5 * GRID_SIZE,
-    height: 1.5 * GRID_SIZE,
-    color: '#00FF00',
+    width: 40,
+    height: 42,
+    color: '#e0e0e0',
     icon: '💡',
+    svgPath: '/images/components/led.svg',
     connectionPoints: [
-      // Anode (positive, longer leg)
-      { type: 'input', position: { x: 1.5 * GRID_SIZE, y: 0.75 * GRID_SIZE } },
-      // Cathode (negative, shorter leg)
-      { type: 'input', position: { x: 0, y: 0.75 * GRID_SIZE } }
+      // Anode (positive, left leg)
+      { type: 'input', position: { x: 15, y: 42 } },
+      // Cathode (negative, right leg)
+      { type: 'input', position: { x: 25, y: 42 } }
     ]
   },
   resistor: {
     type: 'resistor',
     label: 'Resistor',
-    width: 2 * GRID_SIZE,
-    height: GRID_SIZE,
-    color: '#964B00',
+    width: 60,
+    height: 20,
+    color: '#d2d2b4',
     icon: '⊡',
+    svgPath: '/images/components/resistor.svg',
     connectionPoints: [
-      // Resistors can be connected from either end
-      { type: 'both', position: { x: 0, y: GRID_SIZE / 2 } },
-      { type: 'both', position: { x: 2 * GRID_SIZE, y: GRID_SIZE / 2 } }
+      // Left terminal
+      { type: 'both', position: { x: 0, y: 10 } },
+      // Right terminal
+      { type: 'both', position: { x: 60, y: 10 } }
+    ]
+  },
+  capacitor: {
+    type: 'capacitor',
+    label: 'Capacitor',
+    width: 60,
+    height: 30,
+    color: '#e0e0e0',
+    icon: '⌶',
+    svgPath: '/images/components/capacitor.svg',
+    connectionPoints: [
+      // Left terminal
+      { type: 'both', position: { x: 0, y: 15 } },
+      // Right terminal
+      { type: 'both', position: { x: 60, y: 15 } }
+    ]
+  },
+  switch: {
+    type: 'switch',
+    label: 'Switch',
+    width: 60,
+    height: 40,
+    color: '#e0e0e0',
+    icon: '⚙',
+    svgPath: '/images/components/switch.svg',
+    connectionPoints: [
+      // Left terminal
+      { type: 'both', position: { x: 0, y: 20 } },
+      // Right terminal
+      { type: 'both', position: { x: 60, y: 20 } }
+    ]
+  },
+  potentiometer: {
+    type: 'potentiometer',
+    label: 'Potentiometer',
+    width: 60,
+    height: 50,
+    color: '#c0c0c0',
+    icon: '◉',
+    svgPath: '/images/components/potentiometer.svg',
+    connectionPoints: [
+      // Left terminal
+      { type: 'both', position: { x: 0, y: 25 } },
+      // Right terminal
+      { type: 'both', position: { x: 60, y: 25 } },
+      // Wiper terminal (bottom)
+      { type: 'both', position: { x: 30, y: 50 } }
     ]
   },
   breadboard: {
@@ -114,6 +168,7 @@ const componentDefinitions: Record<string, ComponentDefinition> = {
     height: 4 * GRID_SIZE,
     color: '#FFFFFF',
     icon: '▭',
+    svgPath: '',  // TODO: Create a breadboard SVG
     connectionPoints: [
       // Top power rail
       { type: 'both', position: { x: GRID_SIZE, y: 0 } },
@@ -173,7 +228,7 @@ const CircuitBuilderWindow: React.FC = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
   
   // Helper function to create a new component with connection points
-  const createComponent = (type: 'battery' | 'wire' | 'led' | 'resistor' | 'breadboard', position: Position): CircuitComponent => {
+  const createComponent = (type: 'battery' | 'wire' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor', position: Position): CircuitComponent => {
     const definition = componentDefinitions[type];
     const id = `${type}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     
@@ -207,7 +262,7 @@ const CircuitBuilderWindow: React.FC = () => {
   };
 
   // Handle starting to drag a component from the palette
-  const handleStartDragFromPalette = (e: React.MouseEvent, type: 'battery' | 'wire' | 'led' | 'resistor' | 'breadboard') => {
+  const handleStartDragFromPalette = (e: React.MouseEvent, type: 'battery' | 'wire' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor') => {
     e.preventDefault();
     
     if (!canvasRef.current) return;
