@@ -62,7 +62,7 @@ const componentDefinitions: Record<string, ComponentDefinition> = {
     height: 60,
     color: '#f0f0f0',
     icon: '⚡',
-    svgPath: '/images/wokwi/battery.svg',
+    svgPath: '/images/components/battery.svg',
     connectionPoints: [
       // Positive terminal (top)
       { type: 'output', position: { x: 20, y: 0 } },
@@ -91,7 +91,7 @@ const componentDefinitions: Record<string, ComponentDefinition> = {
     height: 42,
     color: '#e0e0e0',
     icon: '💡',
-    svgPath: '/images/wokwi/led.svg',
+    svgPath: '/images/components/led.svg',
     connectionPoints: [
       // Anode (positive, left leg)
       { type: 'input', position: { x: 15, y: 42 } },
