@@ -1,0 +1,78 @@
+/* Pixel Art Game Aesthetic Classes */
+
+.font-pixelated {
+  font-family: monospace, 'Courier New', Courier;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.shadow-glow {
+  box-shadow: 0 0 10px rgba(79, 70, 229, 0.5), 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.shadow-glow-green {
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.5), 0 0 20px rgba(5, 150, 105, 0.3);
+}
+
+.shadow-glow-red {
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5), 0 0 20px rgba(185, 28, 28, 0.3);
+}
+
+.border-pixel {
+  border-style: solid;
+  image-rendering: pixelated;
+}
+
+.pixel-shadow {
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Energy pulse animation for energized components */
+@keyframes energy-pulse {
+  0% {
+    filter: drop-shadow(0 0 2px rgba(74, 222, 128, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 6px rgba(74, 222, 128, 0.8));
+  }
+  100% {
+    filter: drop-shadow(0 0 2px rgba(74, 222, 128, 0.5));
+  }
+}
+
+.energized {
+  animation: energy-pulse 2s infinite;
+}
+
+/* Wire glowing effect when energized */
+.wire-energized {
+  filter: drop-shadow(0 0 2px rgba(74, 222, 128, 0.7));
+}
+
+/* Connection point hover animation */
+@keyframes connection-point-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.connection-point-highlight {
+  animation: connection-point-pulse 1s infinite;
+}
+
+/* Button hover effect */
+.pixel-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+}
+
+.pixel-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+}

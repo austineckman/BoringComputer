@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Trash2, RotateCw, Grid, ZoomIn, ZoomOut, Move, PlayCircle, AlertCircle, Zap, Code } from 'lucide-react';
+import { Trash2, RotateCw, Grid, ZoomIn, ZoomOut, Move, PlayCircle, AlertCircle, AlertTriangle, AlertOctagon, Zap, Code, Cpu, Pause, Play } from 'lucide-react';
 import { ReactSVG } from 'react-svg';
 import CodeEditorModal from './CodeEditorModal';
 
