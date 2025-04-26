@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
 import PartyKittyPopup from './PartyKittyPopup';
-import { useDrag } from 'react-dnd';
-import { ItemTypes } from '../../lib/dndItemTypes';
 
 interface TerminalWindowProps {
   onClose: () => void;
@@ -27,13 +25,6 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ onClose, onMinimize, zI
   const inputRef = useRef<HTMLInputElement>(null);
   const outputRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
-
-  const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
-    type: ItemTypes.WINDOW,
-    collect: (monitor) => ({
-      isDragging: !!monitor.isDragging(),
-    }),
-  }));
 
   // Initial welcome message
   useEffect(() => {
@@ -230,7 +221,6 @@ home/
     >
       {/* Window bar */}
       <div 
-        ref={drag}
         className="bg-gray-800 px-2 py-1 flex justify-between items-center cursor-move"
         onMouseDown={startMoving}
       >
