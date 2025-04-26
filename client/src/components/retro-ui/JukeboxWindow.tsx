@@ -10,19 +10,67 @@ interface MusicTrack {
   src: string;
 }
 
-// Define available tracks with base64 encoded short audio samples to bypass network issues
+// Define available tracks using the MP3 files in the public folder
 const musicTracks: MusicTrack[] = [
   {
-    id: "beep",
-    title: "Test Beep",
-    artist: "System Audio",
-    src: "data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"
+    id: "chappy",
+    title: "Chappy",
+    artist: "Pixel Composer",
+    src: "/music/Chappy.mp3"
   },
   {
-    id: "tone",
-    title: "Basic Tone",
-    artist: "System Audio",
-    src: "data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"
+    id: "pixelated-warriors",
+    title: "Pixelated Warriors",
+    artist: "Pixel Composer",
+    src: "/music/Pixelated Warriors.mp3"
+  },
+  {
+    id: "fantasy-guild-hall",
+    title: "Fantasy Guild Hall",
+    artist: "Arcade Memories",
+    src: "/music/Fantasy Guild Hall.mp3"
+  },
+  {
+    id: "pixel-dreams",
+    title: "Pixel Dreams",
+    artist: "Arcade Memories",
+    src: "/music/Pixel Dreams.mp3"
+  },
+  {
+    id: "pixel-hearth",
+    title: "Pixel Hearth",
+    artist: "Arcade Memories",
+    src: "/music/Pixel Hearth.mp3"
+  },
+  {
+    id: "tavern-exe",
+    title: "TAVERN.EXE",
+    artist: "Digital Bard",
+    src: "/music/TAVERN.EXE.mp3"
+  },
+  {
+    id: "spooky-cat",
+    title: "Spooky Cat",
+    artist: "Retro Wave",
+    src: "/music/Spooky Cat.mp3"
+  },
+  {
+    id: "empty-arcade",
+    title: "Empty Arcade",
+    artist: "Pixel Composer",
+    src: "/music/Empty Arcade.mp3"
+  },
+  {
+    id: "factory-new",
+    title: "Factory New",
+    artist: "Synth Academy",
+    src: "/music/Factory New.mp3"
+  },
+  {
+    id: "lan-night-jamboree",
+    title: "LAN Night Jamboree",
+    artist: "Chip Tune Rebels",
+    src: "/music/LAN Night Jamboree.mp3"
   }
 ];
 
@@ -160,23 +208,27 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
     }
   }, [isPlaying]);
   
-  // Simplified Play/Pause toggle function
+  // Play/Pause toggle function to play actual music files
   const togglePlayPause = () => {
     console.log("Toggle play button clicked");
     const audio = audioRef.current;
     if (!audio) return;
 
-    // Create a simple audio context to unlock audio
+    // Create a simple audio context to unlock audio on iOS/Safari
     const unlockAudio = () => {
-      // Create a short silent sound
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      gainNode.gain.value = 0; // Silent
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      oscillator.start(0);
-      oscillator.stop(0.001);
+      try {
+        // Create a short silent sound
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        gainNode.gain.value = 0; // Silent
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        oscillator.start(0);
+        oscillator.stop(0.001);
+      } catch (e) {
+        console.log("Could not unlock audio, continuing anyway");
+      }
     };
 
     if (!isPlaying) {
@@ -184,43 +236,25 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
       setIsLoading(true);
       
       // Try to unlock audio if needed (for Safari/iOS)
-      try {
-        unlockAudio();
-      } catch (e) {
-        console.log("Could not unlock audio, continuing anyway");
-      }
+      unlockAudio();
       
-      // Then create a synthetic beep sound for demonstration
-      try {
-        const context = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const oscillator = context.createOscillator();
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(440, context.currentTime); // 440 Hz = A4
-        oscillator.connect(context.destination);
-        oscillator.start();
-        oscillator.stop(context.currentTime + 0.5); // Play for 0.5 seconds
-        
-        // Show this as playing in the UI
-        setIsPlaying(true);
-        setIsLoading(false);
-        
-        // Update the main desktop UI
-        window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
-          detail: { isPlaying: true } 
-        }));
-        
-        // Automatically "pause" after a short beep
-        setTimeout(() => {
-          setIsPlaying(false);
+      // Play the actual audio file
+      audio.play()
+        .then(() => {
+          console.log("Audio playback started successfully");
+          setIsPlaying(true);
+          setIsLoading(false);
+          
+          // Update the main desktop UI
           window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
-            detail: { isPlaying: false } 
+            detail: { isPlaying: true } 
           }));
-        }, 500);
-      } catch (error) {
-        console.warn("Audio playback failed:", error);
-        setIsPlaying(false);
-        setIsLoading(false);
-      }
+        })
+        .catch(error => {
+          console.warn("Audio playback failed:", error);
+          setIsPlaying(false);
+          setIsLoading(false);
+        });
     } else {
       // Pause case is simpler
       console.log("Pausing audio");
@@ -423,12 +457,13 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
         </div>
       </div>
       
-      {/* Audio element with muted attribute for autoplay policy */}
+      {/* Audio element with full controls for troubleshooting */}
       <audio 
         ref={audioRef} 
         src={currentTrack.src} 
-        preload="metadata"
+        preload="auto"
         muted={isMuted}
+        onError={(e) => console.error("Audio element error:", e)}
       />
     </div>
   );
