@@ -919,10 +919,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all loot box configs (for displaying in QuestCard and other components)
   app.get('/api/admin/lootboxes', authenticate, async (req, res) => {
     try {
-      console.log("🔍 DEBUG: API request received for /api/admin/lootboxes");
       // Get all loot box configurations
       const lootBoxConfigs = await storage.getLootBoxConfigs();
-      console.log("🔍 DEBUG: Loot box configs fetched:", JSON.stringify(lootBoxConfigs));
       return res.json(lootBoxConfigs);
     } catch (error) {
       console.error("Error getting loot box configs:", error);
