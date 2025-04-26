@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
-import { Key, Loader2, PackageOpen, ShoppingBag } from "lucide-react";
+import { Key, Loader2, PackageOpen } from "lucide-react";
 import { ItemDetails } from "@/types";
 import bagBackground from "@assets/bagbkg.png";
 
@@ -39,12 +39,6 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
   });
 
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-  const [mousePosition, setMousePosition] = useState<{x: number, y: number}>({ x: 0, y: 0 });
-  
-  // Track mouse position for tooltip placement
-  const handleMouseMove = (e: React.MouseEvent) => {
-    setMousePosition({ x: e.clientX, y: e.clientY });
-  };
 
   const handleItemClick = (itemId: string, quantity: number) => {
     openItemDetails(itemId, quantity);
@@ -65,10 +59,14 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
   };
 
   // Single large bag with 32 slots (8x4)
-  const slotsPerRow = 8;
   const totalSlots = 32;
   const itemsArray = Array.isArray(inventoryItems) ? inventoryItems : [];
   const itemCount = itemsArray.length;
+  
+  // Get the details of the currently hovered item
+  const hoveredItemDetails = hoveredItem 
+    ? getItemDetails(itemsArray.find(item => item.id === hoveredItem)?.type || "") 
+    : null;
 
   // WoW-style rarity classes combining border and glow effects
   const getRarityClasses = (rarity: string) => {
@@ -113,13 +111,7 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
             ${!item ? 'after:content-[""] after:absolute after:inset-0 after:bg-[url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%3E%3Crect%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23ffffff10%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23ffffff10%22%2F%3E%3C%2Fsvg%3E")] after:opacity-50' : ''}
           `}
           onClick={() => item && handleItemClick(item.type, item.quantity)}
-          onMouseEnter={(e) => {
-            if (item) {
-              setHoveredItem(item.id);
-              handleMouseMove(e);
-            }
-          }}
-          onMouseMove={handleMouseMove}
+          onMouseEnter={() => item && setHoveredItem(item.id)}
           onMouseLeave={() => setHoveredItem(null)}
         >
           {item && itemDetails?.imagePath && (
@@ -134,49 +126,6 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
           {item && (
             <div className="absolute bottom-0 right-0.5 bg-black/80 text-white text-xs px-1 rounded-sm font-bold">
               {item.quantity}
-            </div>
-          )}
-          
-          {/* Enhanced WoW-style Tooltip - positioned absolutely relative to viewport */}
-          {item && hoveredItem === item.id && (
-            <div 
-              className="fixed z-[99999] p-4 border-2 rounded-md shadow-2xl pointer-events-none w-64"
-              style={{ 
-                backgroundColor: '#000000', /* Solid black background */
-                borderColor: itemDetails?.rarity 
-                  ? getRarityTextColor(itemDetails.rarity)
-                  : '#FFFFFF',
-                position: 'fixed',
-                left: mousePosition.x + 20,
-                top: mousePosition.y + 10,
-                // Ensure tooltip doesn't go offscreen
-                maxWidth: `max(250px, calc(100vw - ${mousePosition.x + 40}px))`,
-                maxHeight: `max(200px, calc(100vh - ${mousePosition.y + 20}px))`,
-                overflow: 'auto',
-                boxShadow: '0 0 15px 5px rgba(0, 0, 0, 0.7)'
-              }}
-            >
-              <p className="font-bold text-base mb-1" style={{ 
-                color: itemDetails?.rarity 
-                  ? getRarityTextColor(itemDetails.rarity)
-                  : '#FFFFFF'
-              }}>
-                {itemDetails?.name || item.type}
-              </p>
-              
-              <p className="text-sm mb-2 text-gray-400 italic">
-                {itemDetails?.rarity 
-                  ? `${itemDetails.rarity.charAt(0).toUpperCase()}${itemDetails.rarity.slice(1)}` 
-                  : 'Unknown'}
-              </p>
-              
-              {itemDetails?.description && (
-                <p className="text-sm mb-2 text-white">{itemDetails.description}</p>
-              )}
-              
-              {itemDetails?.flavorText && (
-                <p className="text-sm mt-2 text-gray-400 italic">"{itemDetails.flavorText}"</p>
-              )}
             </div>
           )}
         </div>
@@ -216,6 +165,45 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
         boxShadow: '0 4px 8px rgba(0, 0, 0, 0.5)'
       }}
     >
+      {/* Item Tooltip Area - Fixed position above inventory */}
+      {hoveredItem && hoveredItemDetails && (
+        <div 
+          className="fixed z-50 p-4 border-2 rounded-md shadow-2xl pointer-events-none w-64"
+          style={{ 
+            backgroundColor: '#000000',
+            borderColor: hoveredItemDetails?.rarity 
+              ? getRarityTextColor(hoveredItemDetails.rarity)
+              : '#FFFFFF',
+            position: 'absolute',
+            top: '-110px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            boxShadow: '0 0 15px 5px rgba(0, 0, 0, 0.7)'
+          }}
+        >
+          <p className="font-bold text-base mb-1" style={{ 
+            color: hoveredItemDetails?.rarity 
+              ? getRarityTextColor(hoveredItemDetails.rarity)
+              : '#FFFFFF'
+          }}>
+            {hoveredItemDetails?.name || itemsArray.find(item => item.id === hoveredItem)?.type}
+          </p>
+          
+          <p className="text-sm mb-2 text-gray-400 italic">
+            {hoveredItemDetails?.rarity 
+              ? `${hoveredItemDetails.rarity.charAt(0).toUpperCase()}${hoveredItemDetails.rarity.slice(1)}` 
+              : 'Unknown'}
+          </p>
+          
+          {hoveredItemDetails?.description && (
+            <p className="text-sm mb-2 text-white">{hoveredItemDetails.description}</p>
+          )}
+          
+          {hoveredItemDetails?.flavorText && (
+            <p className="text-sm mt-2 text-gray-400 italic">"{hoveredItemDetails.flavorText}"</p>
+          )}
+        </div>
+      )}
       
       {/* Main Bag */}
       <div className="rounded-lg overflow-hidden">
