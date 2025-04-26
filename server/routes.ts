@@ -30,7 +30,7 @@ import questRoutes from './routes/quest-routes';
 import componentKitRoutes from './routes/component-kit-routes';
 
 // Import repositories
-import { questRepo, componentKitRepo } from './repositories';
+import { questRepository, componentKitRepository } from './repositories';
 
 // Using Passport authentication instead of custom middleware
 
@@ -122,7 +122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userQuests = await storage.getUserQuests(user.id);
       console.log('Fetching all quests with component requirements');
       // Use the repository to get quests with component requirements
-      const allQuests = await questRepo.getAllQuestsWithComponents();
+      const allQuests = await questRepository.getAllQuestsWithComponents();
       console.log(`Found ${allQuests.length} total quests in database`);
       
       // Debug endpoint to check specific quest kit association
