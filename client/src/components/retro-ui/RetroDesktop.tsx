@@ -13,7 +13,6 @@ import PartyKittyWindow from "./PartyKittyWindow";
 import JukeboxWindow from "./JukeboxWindow";
 import MiniPlayer from "./MiniPlayer";
 import FullscreenQuestsApp from "./FullscreenQuestsApp";
-import FullscreenAdminApp from "./FullscreenAdminApp";
 import QuestLoadingScreen from "./QuestLoadingScreen";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import wallpaperImage from "@assets/wallpaper.png";
@@ -25,7 +24,6 @@ import jukeboxIconImage from "@assets/jukebox_icon.png";
 import shopCoinImage from "@assets/22_Leperchaun_Coin.png";
 import logoImage from "@assets/Asset 6@2x-8.png";
 import partyKittyImage from "@assets/partykitty.png";
-import adminIconImage from "@assets/Asset 7@2x-8.png";
 
 // Type definitions
 interface Position {
@@ -83,7 +81,6 @@ const RetroDesktop: React.FC = () => {
     { id: "crafting", name: "crafting.exe", icon: "craftingarmor", path: "/crafting", position: { x: 20, y: 220 } },
     { id: "lootboxes", name: "Loot Crates", icon: "goldcrate", path: "/lootboxes", position: { x: 20, y: 320 } },
     { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 20, y: 420 } },
-    { id: "admin", name: "Admin Tools", icon: "admingear", position: { x: 20, y: 520 } },
   ]);
   
   // Admin folder (only visible to admin users)
@@ -319,14 +316,6 @@ const RetroDesktop: React.FC = () => {
         // Show loading screen
         setQuestsAppState('loading');
       }
-    } else if (iconId === "admin") {
-      // Play sound if available
-      if (window.sounds) {
-        window.sounds.click();
-      }
-      
-      // Open admin app
-      setAdminAppState('open');
     } else if (iconId === "admin-folder") {
       toggleAdminFolder();
     } else if (iconPath) {
@@ -407,9 +396,6 @@ const RetroDesktop: React.FC = () => {
       document.addEventListener('mouseup', handleMouseUp);
     }
   };
-
-  // Admin app state
-  const [adminAppState, setAdminAppState] = useState<'closed' | 'open'>('closed');
 
   // Admin folder functions
   const toggleAdminFolder = () => {
@@ -607,14 +593,6 @@ const RetroDesktop: React.FC = () => {
           setQuestsAppState('closed');
         }} />
       )}
-      
-      {/* Fullscreen Admin Application */}
-      {adminAppState === 'open' && (
-        <FullscreenAdminApp onClose={() => {
-          // Reset app state to closed
-          setAdminAppState('closed');
-        }} />
-      )}
       {/* Desktop Icons */}
       <div className="absolute top-0 left-0 right-0 bottom-0">
         {/* Regular icons */}
@@ -684,12 +662,6 @@ const RetroDesktop: React.FC = () => {
                   alt="Shop Coin" 
                   className="w-10 h-10 object-contain" 
                   style={{ imageRendering: 'pixelated' }}
-                />
-              ) : icon.icon === "admingear" ? (
-                <img 
-                  src={adminIconImage} 
-                  alt="Admin Tools" 
-                  className="w-10 h-10 object-contain" 
                 />
               ) : (
                 <span className="text-3xl drop-shadow-md">{icon.icon}</span>

@@ -19,7 +19,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trash2, Plus, Edit, X, Image, Upload, ChevronDown, ChevronUp, Package } from 'lucide-react';
+import { Trash2, Plus, Edit, X, Image, Upload, ChevronDown, ChevronUp } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -96,7 +96,7 @@ const AdminLootBoxesPage: React.FC = () => {
   // Create mutation
   const createMutation = useMutation({
     mutationFn: (data: LootBoxConfig) => 
-      apiRequest('POST', '/api/admin/lootboxes', data),
+      apiRequest('/api/admin/lootboxes', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/lootboxes'] });
       toast({ title: "Success", description: "Loot box configuration created successfully" });
@@ -374,47 +374,33 @@ const AdminLootBoxesPage: React.FC = () => {
             </div>
             
             {isLoadingConfigs ? (
-              <div className="flex justify-center items-center p-12">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-              </div>
+              <p>Loading loot box configurations...</p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Array.isArray(lootBoxConfigs) && lootBoxConfigs.length > 0 ? (
-                  lootBoxConfigs.map((lootBox: any) => (
-                    <Card key={lootBox.id} className="overflow-hidden border-2 hover:shadow-md transition-all flex flex-col h-full">
-                      <div className="h-48 bg-gray-900 relative overflow-hidden">
-                        {lootBox.image && (
-                          <img 
-                            src={lootBox.image} 
-                            alt={lootBox.name || "Loot box"} 
-                            className="w-full h-full object-contain p-2"
-                            onError={(e) => {
-                              e.currentTarget.src = "/images/loot-crate.png";
-                              e.currentTarget.onerror = null;
-                            }}
-                          />
-                        )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {lootBoxConfigs && lootBoxConfigs.length > 0 ? (
+                  lootBoxConfigs.map((lootBox: LootBoxConfig) => (
+                    <Card key={lootBox.id} className="overflow-hidden border-2 hover:shadow-md transition-all">
+                      <div className="h-48 bg-gray-800 relative overflow-hidden">
+                        <img 
+                          src={lootBox.image} 
+                          alt={lootBox.name} 
+                          className="w-full h-full object-contain p-2"
+                        />
                         <div className="absolute top-2 right-2 bg-black bg-opacity-70 px-2 py-1 rounded">
-                          <span className={`font-semibold ${getRarityColorClass(lootBox.rarity || "common")}`}>
-                            {lootBox.rarity ? lootBox.rarity.charAt(0).toUpperCase() + lootBox.rarity.slice(1) : "Common"}
+                          <span className={`font-semibold ${getRarityColorClass(lootBox.rarity)}`}>
+                            {lootBox.rarity.charAt(0).toUpperCase() + lootBox.rarity.slice(1)}
                           </span>
                         </div>
                       </div>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg leading-tight">{lootBox.name || "Unnamed Loot Box"}</CardTitle>
-                        <CardDescription className="line-clamp-2 h-10">{lootBox.description || "No description available"}</CardDescription>
+                      <CardHeader>
+                        <CardTitle>{lootBox.name}</CardTitle>
+                        <CardDescription>{lootBox.description}</CardDescription>
                       </CardHeader>
-                      <CardContent className="pb-2 flex-grow">
-                        <div className="space-y-1 text-sm text-muted-foreground">
-                          <p>
-                            Rewards: {lootBox.minRewards || 0} - {lootBox.maxRewards || 0} items
-                          </p>
-                          <p>
-                            Drop table: {Array.isArray(lootBox.itemDropTable) ? lootBox.itemDropTable.length : 0} items
-                          </p>
-                        </div>
+                      <CardContent>
+                        <p className="text-sm mb-2">Rewards: {lootBox.minRewards} - {lootBox.maxRewards} items</p>
+                        <p className="text-sm mb-4">Items in drop table: {lootBox.itemDropTable.length}</p>
                       </CardContent>
-                      <CardFooter className="flex justify-between pt-0">
+                      <CardFooter className="flex justify-between">
                         <Button 
                           variant="secondary" 
                           onClick={() => handleEdit(lootBox)}
@@ -434,18 +420,11 @@ const AdminLootBoxesPage: React.FC = () => {
                     </Card>
                   ))
                 ) : (
-                  <div className="col-span-3 py-16 flex flex-col items-center justify-center text-center">
-                    <div className="bg-muted rounded-full p-6 mb-4">
-                      <Package className="h-12 w-12 text-muted-foreground" />
-                    </div>
-                    <h3 className="text-2xl font-semibold mb-2">No Loot Boxes Available</h3>
-                    <p className="text-muted-foreground max-w-md mb-6">
-                      There are no loot box configurations in the system yet. Create your first loot box to get started.
-                    </p>
-                    <Button onClick={() => setSelectedTab("create")}>
-                      <Plus className="mr-2 h-4 w-4" /> Create First Loot Box
-                    </Button>
-                  </div>
+                  <Alert>
+                    <AlertDescription>
+                      No loot box configurations found. Create one to get started.
+                    </AlertDescription>
+                  </Alert>
                 )}
               </div>
             )}
