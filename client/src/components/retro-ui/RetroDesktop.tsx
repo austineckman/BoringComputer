@@ -14,6 +14,7 @@ import JukeboxWindow from "./JukeboxWindow";
 import MiniPlayer from "./MiniPlayer";
 import FullscreenQuestsApp from "./FullscreenQuestsApp";
 import FullscreenOracleApp from "./FullscreenOracleApp";
+import FullscreenCircuitBuilderApp from "./FullscreenCircuitBuilderApp";
 import QuestLoadingScreen from "./QuestLoadingScreen";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import wallpaperImage from "@assets/wallpaper.png";
@@ -70,6 +71,8 @@ const RetroDesktop: React.FC = () => {
   const [questsAppState, setQuestsAppState] = useState<'closed' | 'loading' | 'open'>('closed');
   // State to manage Oracle app: 'closed' or 'open'
   const [oracleAppState, setOracleAppState] = useState<'closed' | 'open'>('closed');
+  // State to manage Circuit Builder app: 'closed' or 'open'
+  const [circuitBuilderAppState, setCircuitBuilderAppState] = useState<'closed' | 'open'>('closed');
   // Use global audio player context
   const { isPlaying: isMusicPlaying, toggleMute } = useAudioPlayer();
   
@@ -81,6 +84,7 @@ const RetroDesktop: React.FC = () => {
     { id: "lootboxes", name: "PickLock.exe", icon: "picklock", path: "/lootboxes", position: { x: 20, y: 320 } },
     { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 20, y: 420 } },
     { id: "oracle", name: "The Oracle", icon: "oracle", position: { x: 20, y: 520 } },
+    { id: "circuitbuilder", name: "Circuit Builder", icon: "🔌", position: { x: 20, y: 620 } },
   ]);
   
   // Admin icons (for reference only - no longer displayed in a folder)
@@ -298,6 +302,16 @@ const RetroDesktop: React.FC = () => {
       if (oracleAppState === 'closed') {
         setOracleAppState('open');
       }
+    } else if (iconId === "circuitbuilder") {
+      // Play sound if available
+      if (window.sounds) {
+        window.sounds.click();
+      }
+      
+      // Open the Circuit Builder app if it's currently closed
+      if (circuitBuilderAppState === 'closed') {
+        setCircuitBuilderAppState('open');
+      }
     } else if (iconPath) {
       // For other icons, navigate to the path if it exists
       navigate(iconPath);
@@ -504,6 +518,14 @@ const RetroDesktop: React.FC = () => {
         <FullscreenOracleApp onClose={() => {
           // Reset app state to closed
           setOracleAppState('closed');
+        }} />
+      )}
+      
+      {/* Fullscreen Circuit Builder Application */}
+      {circuitBuilderAppState === 'open' && (
+        <FullscreenCircuitBuilderApp onClose={() => {
+          // Reset app state to closed
+          setCircuitBuilderAppState('closed');
         }} />
       )}
       {/* Desktop Icons */}
