@@ -542,6 +542,21 @@ const RetroDesktop: React.FC = () => {
       { width: 600, height: 650 }
     );
   };
+  
+  const openJukeboxWindow = () => {
+    // If we're using Jukebox, we should pause any existing music 
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    
+    openWindow(
+      "jukebox", 
+      "Music Player", 
+      <JukeboxWindow />, 
+      "music",
+      { width: 900, height: 600 }
+    );
+  };
 
   const openWelcomeWindow = () => {
     const welcomeContent = (
@@ -811,6 +826,13 @@ const RetroDesktop: React.FC = () => {
                     className="mr-2 w-6 h-6 object-contain" 
                     style={{ imageRendering: 'pixelated' }}
                   />
+                ) : window.icon === "music" ? (
+                  <img 
+                    src={jukeboxIconImage} 
+                    alt="Jukebox" 
+                    className="mr-2 w-6 h-6 object-contain" 
+                    style={{ imageRendering: 'pixelated' }}
+                  />
                 ) : (
                   <span className="mr-2 text-lg">{window.icon}</span>
                 )}
@@ -1000,6 +1022,13 @@ const RetroDesktop: React.FC = () => {
                   <img 
                     src={shopCoinImage} 
                     alt="Shop Coin" 
+                    className="mr-2 w-4 h-4 object-contain" 
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                ) : window.icon === "music" ? (
+                  <img 
+                    src={jukeboxIconImage} 
+                    alt="Jukebox" 
                     className="mr-2 w-4 h-4 object-contain" 
                     style={{ imageRendering: 'pixelated' }}
                   />
