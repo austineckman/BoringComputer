@@ -70,7 +70,6 @@ const RetroDesktop: React.FC = () => {
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   // Single state to manage quests app status: 'closed', 'loading', or 'open'
   const [questsAppState, setQuestsAppState] = useState<'closed' | 'loading' | 'open'>('closed');
-  const audioRef = useRef<HTMLAudioElement>(null);
   
   // Desktop icons (regular icons visible to all users)
   const [desktopIcons, setDesktopIcons] = useState<DesktopIcon[]>([
