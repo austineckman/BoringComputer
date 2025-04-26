@@ -1,16 +1,18 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg
-   width="60"
-   height="20"
-   viewBox="0 0 60 20"
-   fill="none"
-   xmlns="http://www.w3.org/2000/svg">
-  <path d="M 0,10 L 15,10" stroke="black" stroke-width="2" />
-  <path d="M 45,10 L 60,10" stroke="black" stroke-width="2" />
-  <rect x="15" y="5" width="30" height="10" fill="#d2d2b4" stroke="black" />
-  <!-- Colored bands -->
-  <rect x="18" y="5" width="3" height="10" fill="#8F4814" />
-  <rect x="23" y="5" width="3" height="10" fill="#000000" />
-  <rect x="28" y="5" width="3" height="10" fill="#FCF800" />
-  <rect x="33" y="5" width="3" height="10" fill="#F1D863" />
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="60" height="20" viewBox="0 0 60 20" xmlns="http://www.w3.org/2000/svg">
+  <!-- Resistor -->
+  <g transform="translate(0, 0)">
+    <!-- Leads -->
+    <line x1="0" y1="10" x2="10" y2="10" stroke="#555" stroke-width="2" />
+    <line x1="50" y1="10" x2="60" y2="10" stroke="#555" stroke-width="2" />
+    
+    <!-- Resistor Body -->
+    <rect x="10" y="5" width="40" height="10" fill="#d2d2b4" stroke="#333" stroke-width="1" />
+    
+    <!-- Color Bands (assuming a 4-band resistor) -->
+    <rect x="15" y="5" width="3" height="10" fill="#964B00" /> <!-- Brown -->
+    <rect x="25" y="5" width="3" height="10" fill="#000000" /> <!-- Black -->
+    <rect x="35" y="5" width="3" height="10" fill="#FF0000" /> <!-- Red -->
+    <rect x="45" y="5" width="3" height="10" fill="#FFD700" /> <!-- Gold -->
+  </g>
 </svg>

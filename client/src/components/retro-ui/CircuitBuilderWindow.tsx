@@ -761,7 +761,16 @@ const CircuitBuilderWindow: React.FC = () => {
                 className="icon-container w-10 h-10 flex items-center justify-center rounded border border-gray-600 hover:border-blue-500"
                 style={{ backgroundColor: component.color }}
               >
-                <span className="text-xl">{component.icon}</span>
+                {component.svgPath ? (
+                  <ReactSVG
+                    src={component.svgPath}
+                    className="w-8 h-8"
+                    loading={() => <span className="text-xl">{component.icon}</span>}
+                    fallback={() => <span className="text-xl">{component.icon}</span>}
+                  />
+                ) : (
+                  <span className="text-xl">{component.icon}</span>
+                )}
               </div>
               <span className="text-white text-xs mt-1">{component.label}</span>
             </div>
@@ -893,9 +902,18 @@ const CircuitBuilderWindow: React.FC = () => {
                 }}
                 onMouseDown={(e) => handleStartDragExisting(e, component)}
               >
-                <span className="text-center text-2xl pointer-events-none">
-                  {componentDefinitions[component.type].icon}
-                </span>
+                {componentDefinitions[component.type].svgPath ? (
+                  <ReactSVG
+                    src={componentDefinitions[component.type].svgPath}
+                    className="w-full h-full pointer-events-none p-1"
+                    loading={() => <span className="text-center text-2xl pointer-events-none">{componentDefinitions[component.type].icon}</span>}
+                    fallback={() => <span className="text-center text-2xl pointer-events-none">{componentDefinitions[component.type].icon}</span>}
+                  />
+                ) : (
+                  <span className="text-center text-2xl pointer-events-none">
+                    {componentDefinitions[component.type].icon}
+                  </span>
+                )}
                 
                 {/* Connection Points */}
                 {component.connectionPoints.map((point, idx) => {
@@ -967,9 +985,18 @@ const CircuitBuilderWindow: React.FC = () => {
                   boxShadow: '0 4px 8px rgba(0, 0, 0, 0.4)',
                 }}
               >
-                <span className="text-center text-2xl pointer-events-none">
-                  {componentDefinitions[draggedComponent.type].icon}
-                </span>
+                {componentDefinitions[draggedComponent.type].svgPath ? (
+                  <ReactSVG
+                    src={componentDefinitions[draggedComponent.type].svgPath}
+                    className="w-full h-full pointer-events-none p-1"
+                    loading={() => <span className="text-center text-2xl pointer-events-none">{componentDefinitions[draggedComponent.type].icon}</span>}
+                    fallback={() => <span className="text-center text-2xl pointer-events-none">{componentDefinitions[draggedComponent.type].icon}</span>}
+                  />
+                ) : (
+                  <span className="text-center text-2xl pointer-events-none">
+                    {componentDefinitions[draggedComponent.type].icon}
+                  </span>
+                )}
                 
                 {/* Preview Connection Points */}
                 {draggedComponent.connectionPoints?.map((point, idx) => (
