@@ -13,6 +13,7 @@ import PartyKittyWindow from "./PartyKittyWindow";
 import JukeboxWindow from "./JukeboxWindow";
 import MiniPlayer from "./MiniPlayer";
 import FullscreenQuestsApp from "./FullscreenQuestsApp";
+import FullscreenOracleApp from "./FullscreenOracleApp";
 import QuestLoadingScreen from "./QuestLoadingScreen";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import wallpaperImage from "@assets/wallpaper.png";
@@ -24,6 +25,7 @@ import jukeboxIconImage from "@assets/jukebox_icon.png";
 import shopCoinImage from "@assets/22_Leperchaun_Coin.png";
 import logoImage from "@assets/Asset 6@2x-8.png";
 import partyKittyImage from "@assets/partykitty.png";
+import oracleIconImage from "@assets/hooded-figure.png";
 
 // Type definitions
 interface Position {
@@ -71,6 +73,8 @@ const RetroDesktop: React.FC = () => {
   const [selectedIcon, setSelectedIcon] = useState<string | null>(null);
   // Single state to manage quests app status: 'closed', 'loading', or 'open'
   const [questsAppState, setQuestsAppState] = useState<'closed' | 'loading' | 'open'>('closed');
+  // State to manage Oracle app: 'closed' or 'open'
+  const [oracleAppState, setOracleAppState] = useState<'closed' | 'open'>('closed');
   // Use global audio player context
   const { isPlaying: isMusicPlaying, toggleMute } = useAudioPlayer();
   
@@ -81,6 +85,7 @@ const RetroDesktop: React.FC = () => {
     { id: "crafting", name: "crafting.exe", icon: "craftingarmor", path: "/crafting", position: { x: 20, y: 220 } },
     { id: "lootboxes", name: "Loot Crates", icon: "goldcrate", path: "/lootboxes", position: { x: 20, y: 320 } },
     { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 20, y: 420 } },
+    { id: "oracle", name: "The Oracle", icon: "oracle", position: { x: 20, y: 520 } },
   ]);
   
   // Admin folder (only visible to admin users)
@@ -315,6 +320,16 @@ const RetroDesktop: React.FC = () => {
       if (questsAppState === 'closed') {
         // Show loading screen
         setQuestsAppState('loading');
+      }
+    } else if (iconId === "oracle") {
+      // Play sound if available
+      if (window.sounds) {
+        window.sounds.click();
+      }
+      
+      // Open the Oracle app if it's currently closed
+      if (oracleAppState === 'closed') {
+        setOracleAppState('open');
       }
     } else if (iconId === "admin-folder") {
       toggleAdminFolder();
