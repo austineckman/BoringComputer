@@ -20,6 +20,7 @@ interface AudioPlayerContextType {
   playlist: Track[];
   currentTrackIndex: number;
   progress: number;
+  autoPlayEnabled: boolean;
   play: () => void;
   pause: () => void;
   stop: () => void;
@@ -31,6 +32,7 @@ interface AudioPlayerContextType {
   prevTrack: () => void;
   seekTo: (time: number) => void;
   setPlaylist: (tracks: Track[]) => void;
+  toggleAutoPlay: () => void;
 }
 
 // Create the context with default values
@@ -61,6 +63,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(0);
   const [progress, setProgress] = useState<number>(0);
   const [previousVolume, setPreviousVolume] = useState<number>(volume);
+  const [autoPlayEnabled, setAutoPlayEnabled] = useState<boolean>(true);
 
   // Forward declarations for functions that will be used in useEffect
   const play = () => {
@@ -102,7 +105,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
 
   const handleEnded = () => {
     console.log("Track ended, playing next track");
-    if (playlist.length > 0) {
+    if (playlist.length > 0 && autoPlayEnabled) {
       const nextIndex = (currentTrackIndex + 1) % playlist.length;
       playTrack(nextIndex);
     }
@@ -235,6 +238,11 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       }
     }
   };
+  
+  // Toggle auto-play setting
+  const toggleAutoPlay = () => {
+    setAutoPlayEnabled(!autoPlayEnabled);
+  };
 
   // When current track changes, load it
   useEffect(() => {
@@ -267,6 +275,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     playlist,
     currentTrackIndex,
     progress,
+    autoPlayEnabled,
     play,
     pause,
     stop,
@@ -278,6 +287,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     prevTrack,
     seekTo,
     setPlaylist,
+    toggleAutoPlay,
   };
 
   return (

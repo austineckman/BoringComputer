@@ -149,6 +149,7 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
     playlist,
     currentTrackIndex,
     progress,
+    autoPlayEnabled,
     play,
     pause,
     togglePlay,
@@ -158,7 +159,8 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
     nextTrack,
     prevTrack,
     seekTo,
-    setPlaylist
+    setPlaylist,
+    toggleAutoPlay
   } = useAudioPlayer();
   
   // Set playlist on component mount if empty
@@ -326,6 +328,21 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
                 className="flex-grow h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
               />
               <span className="text-xs w-8">{formatTime(currentTrack?.durationSeconds || 0)}</span>
+            </div>
+            
+            {/* Auto-play toggle */}
+            <div className="flex items-center justify-end mt-2">
+              <span className="text-xs text-gray-400 mr-2">Auto-play next</span>
+              <button 
+                onClick={toggleAutoPlay}
+                className={`px-2 py-1 text-xs rounded ${
+                  autoPlayEnabled 
+                    ? 'bg-green-600 hover:bg-green-700' 
+                    : 'bg-gray-600 hover:bg-gray-700'
+                }`}
+              >
+                {autoPlayEnabled ? 'ON' : 'OFF'}
+              </button>
             </div>
           </div>
           
