@@ -62,55 +62,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   const [progress, setProgress] = useState<number>(0);
   const [previousVolume, setPreviousVolume] = useState<number>(volume);
 
-  // Create audio element on mount
-  useEffect(() => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-      audioRef.current.volume = volume;
-      
-      // Add event listeners
-      audioRef.current.addEventListener('timeupdate', handleTimeUpdate);
-      audioRef.current.addEventListener('ended', handleEnded);
-      audioRef.current.addEventListener('loadedmetadata', handleLoaded);
-      audioRef.current.addEventListener('play', () => setIsPlaying(true));
-      audioRef.current.addEventListener('pause', () => setIsPlaying(false));
-      audioRef.current.addEventListener('error', (e) => console.error('Audio playback failed:', e));
-    }
-    
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.removeEventListener('timeupdate', handleTimeUpdate);
-        audioRef.current.removeEventListener('ended', handleEnded);
-        audioRef.current.removeEventListener('loadedmetadata', handleLoaded);
-        audioRef.current.removeEventListener('play', () => setIsPlaying(true));
-        audioRef.current.removeEventListener('pause', () => setIsPlaying(false));
-        audioRef.current.removeEventListener('error', (e) => console.error('Audio playback failed:', e));
-        audioRef.current.pause();
-      }
-    };
-  }, []);
-
-  // Event handlers
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-      if (audioRef.current.duration) {
-        setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
-      }
-    }
-  };
-
-  const handleEnded = () => {
-    nextTrack();
-  };
-
-  const handleLoaded = () => {
-    if (audioRef.current) {
-      setDuration(audioRef.current.duration);
-    }
-  };
-
-  // Player controls
+  // Forward declarations for functions that will be used in useEffect
   const play = () => {
     if (audioRef.current && currentTrack) {
       audioRef.current.play()
@@ -121,6 +73,83 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const playTrack = (index: number) => {
+    if (playlist.length === 0) return;
+    
+    // Ensure index is within bounds
+    const safeIndex = Math.max(0, Math.min(index, playlist.length - 1));
+    setCurrentTrackIndex(safeIndex);
+    setCurrentTrack(playlist[safeIndex]);
+    
+    if (audioRef.current) {
+      audioRef.current.src = playlist[safeIndex].path;
+      audioRef.current.load();
+      
+      // Auto-play when track is selected
+      play();
+    }
+  };
+
+  // Define event handlers
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+      if (audioRef.current.duration) {
+        setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
+      }
+    }
+  };
+
+  const handleEnded = () => {
+    console.log("Track ended, playing next track");
+    if (playlist.length > 0) {
+      const nextIndex = (currentTrackIndex + 1) % playlist.length;
+      playTrack(nextIndex);
+    }
+  };
+
+  const handleLoaded = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  const handlePlay = () => setIsPlaying(true);
+  const handlePause = () => setIsPlaying(false);
+  const handleError = (e: any) => console.error('Audio playback failed:', e);
+
+  // Create audio element on mount
+  useEffect(() => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+      audioRef.current.volume = volume;
+      
+      // Add event listeners
+      audioRef.current.addEventListener('timeupdate', handleTimeUpdate);
+      audioRef.current.addEventListener('ended', handleEnded);
+      audioRef.current.addEventListener('loadedmetadata', handleLoaded);
+      audioRef.current.addEventListener('play', handlePlay);
+      audioRef.current.addEventListener('pause', handlePause);
+      audioRef.current.addEventListener('error', handleError);
+    }
+    
+    return () => {
+      if (audioRef.current) {
+        // Properly remove event listeners
+        audioRef.current.removeEventListener('timeupdate', handleTimeUpdate);
+        audioRef.current.removeEventListener('ended', handleEnded);
+        audioRef.current.removeEventListener('loadedmetadata', handleLoaded);
+        audioRef.current.removeEventListener('play', handlePlay);
+        audioRef.current.removeEventListener('pause', handlePause);
+        audioRef.current.removeEventListener('error', handleError);
+        
+        // Stop any playing audio before cleanup
+        audioRef.current.pause();
+      }
+    };
+  }, []);
+
+  // Player controls
   const pause = () => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -168,23 +197,6 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       } else if (isMuted) {
         setIsMuted(false);
       }
-    }
-  };
-
-  const playTrack = (index: number) => {
-    if (playlist.length === 0) return;
-    
-    // Ensure index is within bounds
-    const safeIndex = Math.max(0, Math.min(index, playlist.length - 1));
-    setCurrentTrackIndex(safeIndex);
-    setCurrentTrack(playlist[safeIndex]);
-    
-    if (audioRef.current) {
-      audioRef.current.src = playlist[safeIndex].path;
-      audioRef.current.load();
-      
-      // Auto-play when track is selected
-      play();
     }
   };
 
