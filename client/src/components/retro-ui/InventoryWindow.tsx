@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
-import { Loader2, PackageOpen, ShoppingBag } from "lucide-react";
+import { Key, Loader2, PackageOpen, ShoppingBag } from "lucide-react";
 import { ItemDetails } from "@/types";
 import bagBackground from "@assets/bagbkg.png";
 
@@ -58,11 +58,11 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
     return (allItems as ItemDetails[]).find((item) => item.id === itemId);
   };
 
-  // Group items into bags with 16 slots each (4x4)
-  const itemsPerBag = 16;
+  // Single large bag with 32 slots (8x4)
+  const slotsPerRow = 8;
+  const totalSlots = 32;
   const itemsArray = Array.isArray(inventoryItems) ? inventoryItems : [];
-  const bags = Math.ceil(itemsArray.length / itemsPerBag) || 1;
-  const bagArray = Array.from({ length: bags }, (_, i) => i);
+  const itemCount = itemsArray.length;
 
   // WoW-style rarity classes combining border and glow effects
   const getRarityClasses = (rarity: string) => {
@@ -87,60 +87,17 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
     }
   };
 
-  // Render a single bag
-  const renderBag = (bagIndex: number) => {
-    // Determine bag type based on index (just for visual variety)
-    const bagTypes = ['Main Bag', 'Adventure Pouch', 'Material Satchel', 'Rare Finds'];
-    const bagType = bagTypes[bagIndex % bagTypes.length];
-    
-    // Count items in this specific bag
-    const bagItemCount = itemsArray
-      .slice(bagIndex * itemsPerBag, (bagIndex + 1) * itemsPerBag)
-      .length;
-    
-    return (
-      <div 
-        key={`bag-${bagIndex}`} 
-        className="mb-4 rounded-lg overflow-hidden"
-        style={{
-          backgroundImage: `url(${bagBackground})`,
-          backgroundSize: 'cover',
-          backgroundRepeat: 'no-repeat',
-          imageRendering: 'pixelated',
-          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.5)'
-        }}
-      >
-        <div className="p-3">
-          <div className="flex justify-between items-center mb-2">
-            <div className="flex items-center">
-              <ShoppingBag className="w-5 h-5 mr-2 text-amber-200" />
-              <h3 className="text-lg font-bold text-amber-200">{bagType}</h3>
-            </div>
-            <span className="text-xs text-amber-200 bg-black/30 px-2 py-1 rounded-full">
-              {bagItemCount} / {itemsPerBag} slots
-            </span>
-          </div>
-          
-          <div className="grid grid-cols-4 gap-2 p-2 bg-black/30 rounded-lg">
-            {renderBagSlots(bagIndex)}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Render the slots for a single bag
-  const renderBagSlots = (bagIndex: number) => {
-    return Array.from({ length: itemsPerBag }).map((_, slotIndex) => {
-      const itemIndex = bagIndex * itemsPerBag + slotIndex;
-      const item = itemsArray[itemIndex];
+  // Render main inventory slots
+  const renderInventorySlots = () => {
+    return Array.from({ length: totalSlots }).map((_, slotIndex) => {
+      const item = itemsArray[slotIndex];
       const itemDetails = item ? getItemDetails(item.type) : null;
     
       return (
         <div 
-          key={`slot-${bagIndex}-${slotIndex}`} 
+          key={`slot-${slotIndex}`} 
           className={`
-            relative w-14 h-14 rounded-md
+            relative w-12 h-12 rounded-md
             ${item ? 'bg-black/40' : 'bg-black/20'} 
             ${item && itemDetails?.rarity ? getRarityClasses(itemDetails.rarity) : 'border-gray-700'} 
             border-2 cursor-pointer 
@@ -168,16 +125,18 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
             </div>
           )}
           
-          {/* Enhanced WoW-style Tooltip */}
+          {/* Enhanced WoW-style Tooltip - positioned in a fixed manner to avoid clipping */}
           {item && hoveredItem === item.id && (
-            <div className="absolute z-50 p-3 border-2 
-              rounded-md shadow-2xl -top-2 left-16 w-48 pointer-events-none"
+            <div className="fixed z-[9999] p-3 border-2 
+              rounded-md shadow-2xl pointer-events-none"
               style={{ 
                 backgroundColor: 'rgba(10, 10, 10, 0.95)',
                 borderColor: itemDetails?.rarity 
                   ? getRarityTextColor(itemDetails.rarity)
                   : '#FFFFFF',
-                transform: 'translateY(-100%)'
+                top: '30%',
+                left: '50%',
+                transform: 'translateX(-50%)'
               }}
             >
               <p className="font-bold text-sm" style={{ 
@@ -208,6 +167,17 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
     });
   };
 
+  // Render keyring slots
+  const renderKeyringSlots = () => {
+    return Array.from({ length: 3 }).map((_, index) => (
+      <div 
+        key={`keyring-${index}`} 
+        className="relative w-10 h-10 rounded-md bg-black/20 border-2 border-amber-700
+          after:content-[''] after:absolute after:inset-0 after:bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%3E%3Crect%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23ffffff10%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23ffffff10%22%2F%3E%3C%2Fsvg%3E')] after:opacity-50"
+      />
+    ));
+  };
+
   // Render empty state
   const renderEmptyState = () => {
     return (
@@ -219,13 +189,51 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
   };
 
   return (
-    <div className="p-3 text-white">
-      <h2 className="text-xl font-bold mb-3 text-center text-amber-300 drop-shadow-md">Adventure Bags</h2>
+    <div className="p-3 text-white relative">
+      <h2 className="text-xl font-bold mb-3 text-center text-amber-300 drop-shadow-md">Adventure Bag</h2>
       
-      {itemsArray.length > 0 
-        ? bagArray.map(bagIndex => renderBag(bagIndex))
-        : renderEmptyState()
-      }
+      {/* Main Bag */}
+      <div 
+        className="rounded-lg overflow-hidden"
+        style={{
+          backgroundImage: `url(${bagBackground})`,
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat',
+          imageRendering: 'pixelated',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.5)'
+        }}
+      >
+        <div className="p-3">
+          <div className="flex justify-between items-center mb-2">
+            <div className="flex items-center">
+              <ShoppingBag className="w-5 h-5 mr-2 text-amber-200" />
+              <h3 className="text-lg font-bold text-amber-200">Adventurer's Backpack</h3>
+            </div>
+            <span className="text-xs text-amber-200 bg-black/30 px-2 py-1 rounded-full">
+              {itemCount} / {totalSlots} slots
+            </span>
+          </div>
+          
+          {itemsArray.length > 0 ? (
+            <div className="p-4" style={{ backgroundColor: 'rgba(20, 20, 20, 0.7)' }}>
+              <div className="grid grid-cols-8 gap-2 mb-4">
+                {renderInventorySlots()}
+              </div>
+              
+              {/* Keyring Section */}
+              <div className="mt-4 border-t border-amber-900/30 pt-3">
+                <div className="flex items-center mb-2">
+                  <Key className="w-4 h-4 mr-2 text-amber-500" />
+                  <h4 className="text-sm font-semibold text-amber-500">Keyring</h4>
+                </div>
+                <div className="flex gap-2 ml-2">
+                  {renderKeyringSlots()}
+                </div>
+              </div>
+            </div>
+          ) : renderEmptyState()}
+        </div>
+      </div>
     </div>
   );
 };
