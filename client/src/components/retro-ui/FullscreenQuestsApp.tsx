@@ -48,18 +48,20 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
           return true;
         }
         
-        // Debug info about component requirements
-        const components = quest.componentRequirements || [];
-        console.log(`Quest "${quest.title}" has ${components.length} component requirements`);
-        
-        // Check if any component from this kit is required for the quest
-        if (components.length > 0) {
-          for (const comp of components) {
+        // Check component requirements, ensuring they exist
+        if (quest.componentRequirements && quest.componentRequirements.length > 0) {
+          // Debug info about component requirements
+          console.log(`Quest "${quest.title}" has ${quest.componentRequirements.length} component requirements`);
+          
+          // Check if any component from this kit is required for the quest
+          for (const comp of quest.componentRequirements) {
             if (comp && comp.kitId === selectedKit) {
               console.log(`Quest "${quest.title}" requires component ${comp.name} from kit ${selectedKit}`);
               return true;
             }
           }
+        } else {
+          console.log(`Quest "${quest.title}" has no component requirements`);
         }
         
         return false;

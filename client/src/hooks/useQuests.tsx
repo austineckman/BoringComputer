@@ -22,7 +22,7 @@ export interface Quest {
   orderInLine: number;
   xpReward: number;
   status?: 'locked' | 'available' | 'completed' | 'in-progress';
-  // This field is in the database directly linking quests to kits
+  // This field in the database directly links quests to kits
   kitId?: string | null;
   lootBoxRewards?: {
     type: string;
@@ -37,128 +37,17 @@ export interface Quest {
     }[];
   };
   // Component requirements should have proper typing
-  componentRequirements: QuestComponent[];
+  componentRequirements?: QuestComponent[];
 }
 
 export interface QuestsByLine {
   [adventureLine: string]: Quest[];
 }
 
-// Sample dummy data for development
-const dummyQuests: Quest[] = [
-  {
-    id: '1',
-    title: 'Introduction to Electronics',
-    description: 'Begin your journey into electronics with this simple LED circuit project.',
-    missionBrief: 'Create a basic LED circuit and make it light up.',
-    adventureLine: 'Arduino',
-    difficulty: 1,
-    orderInLine: 1,
-    xpReward: 100,
-    status: 'available',
-    lootBoxRewards: [{ type: 'common', quantity: 1 }],
-    content: {
-      videos: [],
-      images: [],
-      codeBlocks: []
-    },
-    componentRequirements: [
-      {
-        id: 1,
-        name: 'Arduino Uno',
-        description: 'Microcontroller board based on the ATmega328P',
-        imagePath: null,
-        kitId: 'arduino',
-        kitName: 'Arduino Kit',
-        isRequired: true,
-        quantity: 1
-      },
-      {
-        id: 2,
-        name: 'LED',
-        description: 'Light-emitting diode',
-        imagePath: null,
-        kitId: 'arduino',
-        kitName: 'Arduino Kit',
-        isRequired: true,
-        quantity: 1
-      }
-    ]
-  },
-  {
-    id: '2',
-    title: 'Sensing Temperature',
-    description: 'Learn how to read temperature using a sensor and Arduino.',
-    missionBrief: 'Connect a temperature sensor to Arduino and display readings.',
-    adventureLine: 'Arduino',
-    difficulty: 2,
-    orderInLine: 2,
-    xpReward: 150,
-    status: 'locked',
-    lootBoxRewards: [{ type: 'common', quantity: 1 }],
-    content: {
-      videos: [],
-      images: [],
-      codeBlocks: []
-    },
-    componentRequirements: [
-      {
-        id: 1,
-        name: 'Arduino Uno',
-        description: 'Microcontroller board based on the ATmega328P',
-        imagePath: null,
-        kitId: 'arduino',
-        kitName: 'Arduino Kit',
-        isRequired: true,
-        quantity: 1
-      },
-      {
-        id: 3,
-        name: 'Temperature Sensor',
-        description: 'DHT11 or similar sensor',
-        imagePath: null,
-        kitId: 'arduino',
-        kitName: 'Arduino Kit',
-        isRequired: true,
-        quantity: 1
-      }
-    ]
-  },
-  {
-    id: '3',
-    title: 'Hello Raspberry Pi',
-    description: 'Get started with Raspberry Pi programming.',
-    missionBrief: 'Set up your Raspberry Pi and write your first Python script.',
-    adventureLine: 'Raspberry Pi',
-    difficulty: 1,
-    orderInLine: 1,
-    xpReward: 120,
-    status: 'available',
-    lootBoxRewards: [{ type: 'common', quantity: 1 }],
-    content: {
-      videos: [],
-      images: [],
-      codeBlocks: []
-    },
-    componentRequirements: [
-      {
-        id: 4,
-        name: 'Raspberry Pi',
-        description: 'Single-board computer',
-        imagePath: null,
-        kitId: 'raspi',
-        kitName: 'Raspberry Pi Kit',
-        isRequired: true,
-        quantity: 1
-      }
-    ]
-  }
-];
-
-// Group sample quests by adventure line
+// Group quests by adventure line
 const groupQuestsByLine = (quests: Quest[]): QuestsByLine => {
   return quests.reduce((acc, quest) => {
-    const line = quest.adventureLine;
+    const line = quest.adventureLine || 'Uncategorized';
     if (!acc[line]) {
       acc[line] = [];
     }
@@ -181,36 +70,58 @@ export function useQuests() {
   console.log('Raw quest data from API:', data);
 
   if (data) {
+    // Process data based on its structure
     if (data.questsByAdventureLine && data.allQuests) {
-      // If API returns data in the expected format
+      // If API returns data in the expected format with both grouped and all quests
       questsByAdventureLine = data.questsByAdventureLine;
       allQuests = data.allQuests;
       console.log('Using data in expected format:',
         `Adventure lines: ${Object.keys(questsByAdventureLine).length}`,
         `Total quests: ${allQuests.length}`);
     } else if (Array.isArray(data)) {
-      // If API returns an array of quests
-      allQuests = data;
-      questsByAdventureLine = groupQuestsByLine(data);
+      // If API returns a simple array of quests
+      allQuests = data.map(quest => ({
+        ...quest,
+        // Ensure componentRequirements exists even if not provided
+        componentRequirements: quest.componentRequirements || []
+      }));
+      questsByAdventureLine = groupQuestsByLine(allQuests);
       console.log('Using data as array:', `Total quests: ${allQuests.length}`);
     } else if (typeof data === 'object') {
       // If API returns some other object format, try to extract quests
       if (data.quests && Array.isArray(data.quests)) {
-        allQuests = data.quests;
-        questsByAdventureLine = groupQuestsByLine(data.quests);
+        allQuests = data.quests.map(quest => ({
+          ...quest,
+          componentRequirements: quest.componentRequirements || []
+        }));
+        questsByAdventureLine = groupQuestsByLine(allQuests);
         console.log('Using data.quests:', `Total quests: ${allQuests.length}`);
       } else {
         console.warn('Unexpected data format from API:', data);
+        // Try to extract any array that might contain quests
+        const potentialQuestArrays = Object.values(data).filter(
+          value => Array.isArray(value) && value.length > 0 && 
+            typeof value[0] === 'object' && value[0] !== null && 'title' in value[0]
+        ) as Array<any[]>;
+        
+        if (potentialQuestArrays.length > 0) {
+          // Use the largest array that looks like it contains quests
+          const largestArray = potentialQuestArrays.reduce<any[]>((a, b) => 
+            a.length > b.length ? a : b, []);
+          
+          allQuests = largestArray.map(quest => ({
+            ...quest,
+            componentRequirements: quest.componentRequirements || []
+          }));
+          questsByAdventureLine = groupQuestsByLine(allQuests);
+          console.log('Using extracted quest array:', `Total quests: ${allQuests.length}`);
+        }
       }
     } else {
       console.warn('Unexpected data type from API:', typeof data);
     }
   } else {
     console.warn('No data received from API');
-    // For debugging, let's check what happens with dummy data
-    allQuests = dummyQuests;
-    questsByAdventureLine = groupQuestsByLine(dummyQuests);
-    console.log('FALLING BACK to dummy data for debugging - This should not happen in production');
   }
   
   // Log the processed data
