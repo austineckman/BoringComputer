@@ -1069,8 +1069,8 @@ const RetroDesktop: React.FC = () => {
             {currentTime.toLocaleTimeString()} | {currentTime.toLocaleDateString()}
           </div>
           
-          {/* Hidden audio element */}
-          <audio ref={audioRef} src={backgroundMusic} loop preload="auto" />
+          {/* Hidden audio element - setting preload to "none" to prevent auto-loading */}
+          <audio ref={audioRef} src={backgroundMusic} loop preload="none" />
         </div>
       </div>
     </div>
