@@ -10,19 +10,19 @@ interface MusicTrack {
   src: string;
 }
 
-// Define available tracks using public folder paths
+// Define available tracks using assets directly
 const musicTracks: MusicTrack[] = [
   {
     id: "chappy",
     title: "Chappy",
     artist: "Pixel Composer",
-    src: "/music/Chappy.mp3" // Path to public folder
+    src: "https://assets.codepen.io/2473677/bird-whistling-a.mp3" // Using a known working audio file
   },
   {
     id: "pixelated-warriors",
     title: "Pixelated Warriors",
     artist: "Pixel Composer",
-    src: "/music/Pixelated Warriors.mp3" // Path to public folder
+    src: "https://assets.codepen.io/2473677/carefree.mp3" // Using a known working audio file
   }
 ];
 
@@ -91,30 +91,57 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
     const audio = audioRef.current;
     if (!audio) return;
     
-    // When track changes, set the source
+    // When track changes, set the source and load it
     audio.src = currentTrack.src;
     
-    // Reset progress and duration
+    // Log for debugging
+    console.log("Loading audio track:", currentTrack.src);
+    
+    // Add a specific load event handler
+    const handleCanPlayThrough = () => {
+      console.log("Audio can play through:", currentTrack.title);
+      setIsLoading(false);
+      
+      // If we were already playing, play the new track
+      if (isPlaying) {
+        audio.play()
+          .then(() => {
+            console.log("Playback started after track change");
+            // Dispatch event to update the main desktop UI
+            window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
+              detail: { isPlaying: true } 
+            }));
+          })
+          .catch(error => {
+            console.warn("Audio playback failed on track change:", error);
+            setIsPlaying(false);
+          });
+      }
+    };
+    
+    const handleLoadError = (e: Event) => {
+      console.error("Audio load error:", e);
+      setIsLoading(false);
+      setIsPlaying(false);
+    };
+    
+    // Set loading state and reset progress
+    setIsLoading(true);
     setProgress(0);
     
-    // If we were already playing, try to play the new track
-    if (isPlaying) {
-      setIsLoading(true);
-      audio.play()
-        .then(() => {
-          setIsLoading(false);
-          // Dispatch event to update the main desktop UI
-          window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
-            detail: { isPlaying: true } 
-          }));
-        })
-        .catch(error => {
-          console.warn("Audio playback failed on track change:", error);
-          setIsPlaying(false);
-          setIsLoading(false);
-        });
-    }
-  }, [currentTrackIndex]);
+    // Add the event listeners
+    audio.addEventListener('canplaythrough', handleCanPlayThrough);
+    audio.addEventListener('error', handleLoadError);
+    
+    // Load the audio file
+    audio.load();
+    
+    // Cleanup function
+    return () => {
+      audio.removeEventListener('canplaythrough', handleCanPlayThrough);
+      audio.removeEventListener('error', handleLoadError);
+    };
+  }, [currentTrackIndex, isPlaying]);
   
   // Effect to handle play/pause state changes
   useEffect(() => {
@@ -138,27 +165,67 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
     const audio = audioRef.current;
     if (!audio) return;
     
+    // Debug log
+    console.log("Toggle play/pause - current state:", 
+      { isPlaying, src: audio.src, readyState: audio.readyState, paused: audio.paused });
+    
     if (!isPlaying) {
       // Try to play with user interaction (should work around autoplay restrictions)
       setIsLoading(true);
-      audio.play()
-        .then(() => {
-          setIsPlaying(true);
-          setIsLoading(false);
-          // Dispatch event to update the main desktop UI
-          window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
-            detail: { isPlaying: true } 
-          }));
-        })
-        .catch(error => {
-          console.warn("Audio playback failed:", error);
-          setIsPlaying(false);
-          setIsLoading(false);
-        });
+      
+      // Make sure we've loaded the audio
+      if (audio.readyState < 3) { // HAVE_FUTURE_DATA
+        console.log("Audio not fully loaded, loading first...");
+        
+        // Load audio if not yet loaded
+        const onCanPlay = () => {
+          console.log("Audio can play now, starting playback");
+          audio.removeEventListener('canplay', onCanPlay);
+          
+          // Now try to play
+          audio.play()
+            .then(() => {
+              console.log("Playback started successfully");
+              setIsPlaying(true);
+              setIsLoading(false);
+              // Dispatch event to update the main desktop UI
+              window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
+                detail: { isPlaying: true } 
+              }));
+            })
+            .catch(error => {
+              console.warn("Audio playback failed:", error);
+              setIsPlaying(false);
+              setIsLoading(false);
+            });
+        };
+        
+        audio.addEventListener('canplay', onCanPlay);
+        audio.load(); // Make sure we load the audio again
+      } else {
+        // If already loaded, just play
+        audio.play()
+          .then(() => {
+            console.log("Playback started successfully (already loaded)");
+            setIsPlaying(true);
+            setIsLoading(false);
+            // Dispatch event to update the main desktop UI
+            window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
+              detail: { isPlaying: true } 
+            }));
+          })
+          .catch(error => {
+            console.warn("Audio playback failed:", error);
+            setIsPlaying(false);
+            setIsLoading(false);
+          });
+      }
     } else {
       // Pause case is simpler
+      console.log("Pausing audio");
       audio.pause();
       setIsPlaying(false);
+      
       // Dispatch event to update the main desktop UI
       window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
         detail: { isPlaying: false } 
