@@ -83,7 +83,15 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
     const sound = new Howl({
       src: [currentTrack.src],
       html5: true, // Use HTML5 Audio to help with mobile playback
+      format: ['mp3'],
       volume: isMuted ? 0 : volume,
+      xhr: {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+        withCredentials: false,
+      },
       onload: () => {
         console.log("Track loaded:", currentTrack.title);
         setIsLoading(false);
@@ -194,6 +202,11 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
     
     if (!isPlaying) {
       console.log("Trying to play audio");
+      // Unmute if muted when trying to play
+      if (isMuted) {
+        setIsMuted(false);
+        soundRef.current.volume(volume);
+      }
       soundRef.current.play();
     } else {
       console.log("Pausing audio");
