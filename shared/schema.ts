@@ -17,6 +17,8 @@ export const users = pgTable("users", {
   xpToNextLevel: integer("xp_to_next_level").default(300), // XP required for next level
   completedQuests: json("completed_quests").$type<number[]>().default([]), // Track completed quest IDs
   inventory: json("inventory").$type<Record<string, number>>().default({}),
+  titles: json("titles").$type<string[]>().default([]), // List of unlocked titles
+  activeTitle: text("active_title"), // Currently displayed title
   createdAt: timestamp("created_at").defaultNow(),
   lastLogin: timestamp("last_login").defaultNow(),
 });
@@ -228,6 +230,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
   xp: true,
   xpToNextLevel: true,
   completedQuests: true,
+  titles: true,
+  activeTitle: true,
 });
 
 export const insertQuestSchema = createInsertSchema(quests).pick({

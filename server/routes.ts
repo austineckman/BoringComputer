@@ -93,7 +93,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       avatar: user.avatar,
       roles: user.roles,
       level: user.level,
-      inventory: user.inventory
+      inventory: user.inventory,
+      titles: user.titles || [],
+      activeTitle: user.activeTitle
     });
   });
   
