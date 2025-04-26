@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Trash2, RotateCw, Grid, ZoomIn, ZoomOut, Move, PlayCircle, AlertCircle, AlertTriangle, AlertOctagon, Zap, Code, Cpu, Pause, Play } from 'lucide-react';
+import { 
+  Trash2, RotateCw, Grid, ZoomIn, ZoomOut, Move, PlayCircle, AlertCircle, AlertTriangle, 
+  AlertOctagon, Zap, Code, Cpu, Pause, Play, Search, Grid2X2, Layers, Pen, Maximize 
+} from 'lucide-react';
 import { ReactSVG } from 'react-svg';
 import CodeEditorModal from './CodeEditorModal';
 
@@ -1251,36 +1254,40 @@ while True:
       
       <div className="flex-grow flex">
         {/* Component Palette */}
-        <div className="component-palette w-16 bg-gray-700 flex flex-col items-center py-2 overflow-y-auto">
+        <div className="component-palette w-24 bg-indigo-950 flex flex-col items-center py-4 overflow-y-auto border-r border-indigo-800 shadow-lg">
+          <h3 className="text-xs uppercase tracking-wider text-cyan-300 mb-4 font-bold">Components</h3>
           {Object.entries(componentDefinitions).map(([key, component]) => (
             <div 
               key={key}
-              className="component-item mb-3 w-12 h-12 flex flex-col items-center justify-center cursor-grab"
+              className="component-item mb-4 w-20 flex flex-col items-center cursor-grab"
               onMouseDown={(e) => handleStartDragFromPalette(e, component.type)}
             >
               <div 
-                className="icon-container w-10 h-10 flex items-center justify-center rounded border border-gray-600 hover:border-blue-500"
-                style={{ backgroundColor: component.color }}
+                className="icon-container w-16 h-16 flex items-center justify-center rounded-md border border-indigo-600 hover:border-cyan-400 transition-colors bg-indigo-900/80 shadow-md hover:shadow-cyan-900/30"
+                style={{ 
+                  backgroundColor: component.color,
+                  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)'
+                }}
               >
                 {component.svgPath ? (
                   <ReactSVG
                     src={component.svgPath}
-                    className="w-8 h-8"
-                    loading={() => <span className="text-xl">{component.icon}</span>}
-                    fallback={() => <span className="text-xl">{component.icon}</span>}
+                    className="w-12 h-12"
+                    loading={() => <span className="text-2xl">{component.icon}</span>}
+                    fallback={() => <span className="text-2xl">{component.icon}</span>}
                   />
                 ) : (
-                  <span className="text-xl">{component.icon}</span>
+                  <span className="text-2xl">{component.icon}</span>
                 )}
               </div>
-              <span className="text-white text-xs mt-1">{component.label}</span>
+              <span className="text-cyan-100 text-xs mt-2 font-medium">{component.label}</span>
             </div>
           ))}
         </div>
         
         {/* Circuit Canvas */}
         <div 
-          className="circuit-canvas flex-grow bg-gray-900 relative overflow-hidden"
+          className="circuit-canvas flex-grow bg-indigo-950 relative overflow-hidden"
           ref={canvasRef}
           onMouseDown={handleCanvasMouseDown}
           onMouseMove={handleMouseMove}
@@ -1293,11 +1300,11 @@ while True:
             className="grid-container absolute pointer-events-none"
             style={{
               transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-              width: '2000px',
-              height: '2000px',
+              width: '4000px',
+              height: '4000px',
               backgroundImage: `
-                linear-gradient(to right, rgba(50, 50, 50, 0.1) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(50, 50, 50, 0.1) 1px, transparent 1px)
+                linear-gradient(to right, rgba(92, 92, 164, 0.1) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(92, 92, 164, 0.1) 1px, transparent 1px)
               `,
               backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
               transformOrigin: '0 0',
@@ -1310,8 +1317,8 @@ while True:
                 width: '100%',
                 height: '100%',
                 backgroundImage: `
-                  linear-gradient(to right, rgba(100, 100, 100, 0.2) 1px, transparent 1px),
-                  linear-gradient(to bottom, rgba(100, 100, 100, 0.2) 1px, transparent 1px)
+                  linear-gradient(to right, rgba(107, 114, 197, 0.2) 1px, transparent 1px),
+                  linear-gradient(to bottom, rgba(107, 114, 197, 0.2) 1px, transparent 1px)
                 `,
                 backgroundSize: `${GRID_SIZE * 5}px ${GRID_SIZE * 5}px`,
               }}
@@ -1558,15 +1565,49 @@ while True:
       </div>
       
       {/* Status Bar */}
-      <div className="status-bar bg-gray-800 text-white py-1 px-2 text-xs flex justify-between border-t border-gray-700">
-        <div>Zoom: {Math.round(zoom * 100)}%</div>
-        <div>Grid: {GRID_SIZE}px</div>
-        <div>Components: {components.length} | Wires: {wires.length}</div>
-        {isDrawingWire && (
-          <div className="text-yellow-400">
-            Drawing wire... {highlightedPoint ? "Connection found" : "Click on a connection point to complete"}
+      <div className="status-bar bg-indigo-950 text-white py-2 px-4 text-xs flex justify-between items-center border-t border-indigo-800">
+        <div className="flex space-x-4">
+          <div className="flex items-center">
+            <ZoomIn size={12} className="mr-1" />
+            <span>Zoom: {Math.round(zoom * 100)}%</span>
           </div>
-        )}
+          <div className="flex items-center">
+            <Grid size={12} className="mr-1" />
+            <span>Grid: {GRID_SIZE}px</span>
+          </div>
+          <div className="flex items-center">
+            <Cpu size={12} className="mr-1" />
+            <span>Components: {components.length} | Wires: {wires.length}</span>
+          </div>
+        </div>
+        
+        <div className="flex space-x-4 items-center">
+          {isDrawingWire && (
+            <div className="text-yellow-400 bg-yellow-950/50 px-2 py-1 rounded-md flex items-center">
+              <Zap size={12} className="mr-1" />
+              Drawing wire... {highlightedPoint ? "Connection found" : "Click on a connection point to complete"}
+            </div>
+          )}
+          <button 
+            className="flex items-center text-cyan-300 hover:text-cyan-100 transition-colors"
+            onClick={() => {
+              // Toggle fullscreen
+              if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(e => {
+                  console.error(`Error attempting to enable fullscreen: ${e.message}`);
+                });
+              } else {
+                if (document.exitFullscreen) {
+                  document.exitFullscreen();
+                }
+              }
+            }}
+            title="Toggle Fullscreen (F11)"
+          >
+            <ZoomIn size={12} className="mr-1" />
+            <span>Fullscreen</span>
+          </button>
+        </div>
       </div>
     </div>
   );
