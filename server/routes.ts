@@ -25,7 +25,7 @@ import { authenticate, hashPassword } from './auth';
 import { componentKits, items } from '@shared/schema';
 import { itemDatabase } from './itemDatabase';
 
-// Import new modular routes
+// Import modular routes directly
 import questRoutes from './routes/quest-routes';
 import componentKitRoutes from './routes/component-kit-routes';
 

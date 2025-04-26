@@ -1,59 +1,125 @@
-import { db } from "../db";
+import { db } from '../db';
+import * as schema from '@shared/schema';
+import { eq } from 'drizzle-orm';
 
 /**
- * Base repository class with common database operations
+ * Base repository class that provides common CRUD operations
+ * for any database table. This is used to create specialized
+ * repositories for each model.
+ * 
+ * @typeparam T The Drizzle schema table type
+ * @typeparam TInsert The insert type for the table
+ * @typeparam TSelect The select type for the table
  */
-export class BaseRepository<T, InsertT> {
-  constructor(
-    protected table: any,
-    protected relations: any = {}
-  ) {}
-
+export class BaseRepository<T extends { name: string }, TInsert, TSelect> {
   /**
-   * Find all records
+   * The table this repository operates on
    */
-  async findAll() {
-    return db.select().from(this.table);
-  }
-
+  protected table: T;
+  
   /**
-   * Find a record by ID
+   * Constructor for BaseRepository
+   * 
+   * @param tableName The name of the table in the schema
    */
-  async findById(id: number | string) {
-    return db.query[this.table.name].findFirst({
-      where: (fields, { eq }) => eq(fields.id, id),
-      with: this.relations,
-    });
+  constructor(tableName: string) {
+    this.table = this.getTableByName(tableName) as T;
   }
-
+  
+  /**
+   * Helper method to get a table from the schema by name
+   * 
+   * @param tableName The name of the table in the schema
+   * @returns The table object from the schema
+   */
+  private getTableByName(tableName: string): any {
+    return (schema as any)[tableName];
+  }
+  
+  /**
+   * Find a record by its ID
+   * 
+   * @param id The ID of the record to find
+   * @returns The record or undefined if not found
+   */
+  async findById(id: any): Promise<TSelect | undefined> {
+    const [record] = await db
+      .select()
+      .from(this.table as any)
+      .where(eq((this.table as any).id, id));
+      
+    return record;
+  }
+  
+  /**
+   * Find all records in the table
+   * 
+   * @returns Array of all records
+   */
+  async findAll(): Promise<TSelect[]> {
+    return await db
+      .select()
+      .from(this.table as any);
+  }
+  
   /**
    * Create a new record
+   * 
+   * @param data The data for the new record
+   * @returns The created record
    */
-  async create(data: InsertT) {
-    const [inserted] = await db.insert(this.table).values(data).returning();
-    return inserted as T;
-  }
-
-  /**
-   * Update a record
-   */
-  async update(id: number | string, data: Partial<InsertT>) {
-    const [updated] = await db
-      .update(this.table)
-      .set(data)
-      .where((fields: any, { eq }) => eq(fields.id, id))
+  async create(data: TInsert): Promise<TSelect> {
+    const [record] = await db
+      .insert(this.table as any)
+      .values(data as any)
       .returning();
-    return updated as T;
+      
+    return record;
   }
-
+  
   /**
-   * Delete a record
+   * Update a record by ID
+   * 
+   * @param id The ID of the record to update
+   * @param data The data to update
+   * @returns The updated record
    */
-  async delete(id: number | string) {
-    const [deleted] = await db
-      .delete(this.table)
-      .where((fields: any, { eq }) => eq(fields.id, id))
+  async update(id: any, data: Partial<TInsert>): Promise<TSelect | undefined> {
+    const [record] = await db
+      .update(this.table as any)
+      .set(data as any)
+      .where(eq((this.table as any).id, id))
       .returning();
-    return deleted as T;
+      
+    return record;
+  }
+  
+  /**
+   * Delete a record by ID
+   * 
+   * @param id The ID of the record to delete
+   * @returns The deleted record
+   */
+  async delete(id: any): Promise<TSelect | undefined> {
+    const [record] = await db
+      .delete(this.table as any)
+      .where(eq((this.table as any).id, id))
+      .returning();
+      
+    return record;
+  }
+  
+  /**
+   * Find records that match a condition
+   * 
+   * @param field The field to match on
+   * @param value The value to match
+   * @returns Array of matching records
+   */
+  async findBy(field: string, value: any): Promise<TSelect[]> {
+    return await db
+      .select()
+      .from(this.table as any)
+      .where(eq((this.table as any)[field], value));
   }
 }
