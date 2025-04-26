@@ -19,7 +19,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trash2, Plus, Edit, X, Image, Upload, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trash2, Plus, Edit, X, Image, Upload, ChevronDown, ChevronUp, Package } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
