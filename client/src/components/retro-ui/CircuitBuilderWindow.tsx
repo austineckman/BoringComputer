@@ -247,6 +247,12 @@ const CircuitBuilderWindow: React.FC = () => {
   // State for the circuit components on the canvas
   const [components, setComponents] = useState<CircuitComponent[]>([]);
   
+  // State for simulation
+  const [isSimulating, setIsSimulating] = useState<boolean>(false);
+  const [simulationStatus, setSimulationStatus] = useState<string | null>(null);
+  const [energizedComponentIds, setEnergizedComponentIds] = useState<Set<string>>(new Set());
+  const [problemComponentIds, setProblemComponentIds] = useState<Set<string>>(new Set());
+  
   // State for wires in the circuit
   const [wires, setWires] = useState<Wire[]>([]);
   
@@ -266,12 +272,6 @@ const CircuitBuilderWindow: React.FC = () => {
   const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState<boolean>(false);
   const [panStart, setPanStart] = useState<Position>({ x: 0, y: 0 });
-  
-  // State for simulation
-  const [isSimulating, setIsSimulating] = useState<boolean>(false);
-  const [simulationStatus, setSimulationStatus] = useState<string | null>(null);
-  const [energizedComponentIds, setEnergizedComponentIds] = useState<Set<string>>(new Set());
-  const [problemComponentIds, setProblemComponentIds] = useState<Set<string>>(new Set());
   
   // Canvas ref for dimension calculations
   const canvasRef = useRef<HTMLDivElement>(null);
