@@ -65,8 +65,8 @@ const RetroDesktop: React.FC = () => {
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
   const [selectedIcon, setSelectedIcon] = useState<string | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-  const [isQuestsAppOpen, setIsQuestsAppOpen] = useState(false);
-  const [isQuestsLoading, setIsQuestsLoading] = useState(false);
+  // Single state to manage quests app status: 'closed', 'loading', or 'open'
+  const [questsAppState, setQuestsAppState] = useState<'closed' | 'loading' | 'open'>('closed');
   const audioRef = useRef<HTMLAudioElement>(null);
   
   // Desktop icons (regular icons visible to all users)
@@ -324,9 +324,11 @@ const RetroDesktop: React.FC = () => {
         window.sounds.click();
       }
       
-      // Show loading screen before opening the quests app
-      setIsQuestsLoading(true);
-      // The QuestLoadingScreen component will handle the loading time and callback
+      // Only trigger loading state if quests app is currently closed
+      if (questsAppState === 'closed') {
+        // Show loading screen
+        setQuestsAppState('loading');
+      }
     } else if (iconId === "admin-folder") {
       toggleAdminFolder();
     } else if (iconPath) {
@@ -578,21 +580,20 @@ const RetroDesktop: React.FC = () => {
       onClick={handleDesktopClick}
     >
       {/* Quest Loading Screen */}
-      {isQuestsLoading && (
+      {questsAppState === 'loading' && (
         <QuestLoadingScreen 
           onLoadingComplete={() => {
-            setIsQuestsLoading(false);
-            setIsQuestsAppOpen(true);
+            // Move from loading to open state
+            setQuestsAppState('open');
           }}
         />
       )}
       
       {/* Fullscreen Quest Application */}
-      {isQuestsAppOpen && (
+      {questsAppState === 'open' && (
         <FullscreenQuestsApp onClose={() => {
-          // Make sure we properly clean up both states
-          setIsQuestsAppOpen(false);
-          setIsQuestsLoading(false);
+          // Reset app state to closed
+          setQuestsAppState('closed');
         }} />
       )}
       {/* Desktop Icons */}
