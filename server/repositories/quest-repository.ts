@@ -43,16 +43,16 @@ export class QuestRepository extends BaseRepository<
         id: schema.questComponents.id,
         questId: schema.questComponents.questId,
         componentId: schema.questComponents.componentId,
-        name: schema.components.name,
-        description: schema.components.description,
-        image: schema.components.image,
-        kitId: schema.components.kitId,
+        name: schema.kitComponents.name,
+        description: schema.kitComponents.description,
+        image: schema.kitComponents.imagePath,
+        kitId: schema.kitComponents.kitId,
         quantity: schema.questComponents.quantity
       })
       .from(schema.questComponents)
       .leftJoin(
-        schema.components,
-        eq(schema.questComponents.componentId, schema.components.id)
+        schema.kitComponents,
+        eq(schema.questComponents.componentId, schema.kitComponents.id)
       )
       .where(eq(schema.questComponents.questId, questId));
   }
