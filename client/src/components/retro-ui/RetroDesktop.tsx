@@ -465,6 +465,16 @@ const RetroDesktop: React.FC = () => {
   };
 
   // Specific window content functions
+  const openPartyKittyWindow = () => {
+    openWindow(
+      "partykitty", 
+      "Party Kitty", 
+      <PartyKittyWindow onClose={() => closeWindow("partykitty")} />, 
+      "🐱", 
+      { width: 500, height: 450 }
+    );
+  };
+  
   const openCraftingWindow = () => {
     openWindow(
       "crafting", 
