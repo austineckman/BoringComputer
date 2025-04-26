@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="320" height="200" viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Breadboard Base -->
+  <rect x="5" y="5" width="310" height="190" rx="5" ry="5" fill="#f8f8f8" stroke="#333" stroke-width="1.5"/>
+  
+  <!-- Power Rails (Top Positive) -->
+  <rect x="10" y="15" width="300" height="15" rx="2" ry="2" fill="#ff0000" stroke="#930000" stroke-width="1"/>
+  <text x="20" y="26" font-family="Arial" font-size="12" fill="#fff">+</text>
+  <text x="300" y="26" font-family="Arial" font-size="12" fill="#fff">+</text>
+  
+  <!-- Power Rails (Top Negative) -->
+  <rect x="10" y="35" width="300" height="15" rx="2" ry="2" fill="#0000ff" stroke="#000093" stroke-width="1"/>
+  <text x="20" y="46" font-family="Arial" font-size="12" fill="#fff">-</text>
+  <text x="300" y="46" font-family="Arial" font-size="12" fill="#fff">-</text>
+  
+  <!-- Main Board - Connection Matrix (top half) -->
+  <rect x="10" y="60" width="300" height="40" rx="2" ry="2" fill="#ddd" stroke="#bbb" stroke-width="1"/>
+  
+  <!-- Main Board - Center Divider -->
+  <rect x="10" y="105" width="300" height="5" rx="0" ry="0" fill="#f8f8f8" stroke="#eee" stroke-width="1"/>
+  
+  <!-- Main Board - Connection Matrix (bottom half) -->
+  <rect x="10" y="115" width="300" height="40" rx="2" ry="2" fill="#ddd" stroke="#bbb" stroke-width="1"/>
+  
+  <!-- Power Rails (Bottom Negative) -->
+  <rect x="10" y="165" width="300" height="15" rx="2" ry="2" fill="#0000ff" stroke="#000093" stroke-width="1"/>
+  <text x="20" y="176" font-family="Arial" font-size="12" fill="#fff">-</text>
+  <text x="300" y="176" font-family="Arial" font-size="12" fill="#fff">-</text>
+  
+  <!-- Power Rails (Bottom Positive) -->
+  <rect x="10" y="180" width="300" height="15" rx="2" ry="2" fill="#ff0000" stroke="#930000" stroke-width="1"/>
+  <text x="20" y="191" font-family="Arial" font-size="12" fill="#fff">+</text>
+  <text x="300" y="191" font-family="Arial" font-size="12" fill="#fff">+</text>
+  
+  <!-- Terminal Holes (Power Rails) -->
+  <g fill="#a0a0a0">
+    <!-- Top Positive Rail -->
+    <circle cx="30" cy="22.5" r="2"/>
+    <circle cx="60" cy="22.5" r="2"/>
+    <circle cx="90" cy="22.5" r="2"/>
+    <circle cx="120" cy="22.5" r="2"/>
+    <circle cx="150" cy="22.5" r="2"/>
+    <circle cx="180" cy="22.5" r="2"/>
+    <circle cx="210" cy="22.5" r="2"/>
+    <circle cx="240" cy="22.5" r="2"/>
+    <circle cx="270" cy="22.5" r="2"/>
+    
+    <!-- Top Negative Rail -->
+    <circle cx="30" cy="42.5" r="2"/>
+    <circle cx="60" cy="42.5" r="2"/>
+    <circle cx="90" cy="42.5" r="2"/>
+    <circle cx="120" cy="42.5" r="2"/>
+    <circle cx="150" cy="42.5" r="2"/>
+    <circle cx="180" cy="42.5" r="2"/>
+    <circle cx="210" cy="42.5" r="2"/>
+    <circle cx="240" cy="42.5" r="2"/>
+    <circle cx="270" cy="42.5" r="2"/>
+    
+    <!-- Bottom Negative Rail -->
+    <circle cx="30" cy="172.5" r="2"/>
+    <circle cx="60" cy="172.5" r="2"/>
+    <circle cx="90" cy="172.5" r="2"/>
+    <circle cx="120" cy="172.5" r="2"/>
+    <circle cx="150" cy="172.5" r="2"/>
+    <circle cx="180" cy="172.5" r="2"/>
+    <circle cx="210" cy="172.5" r="2"/>
+    <circle cx="240" cy="172.5" r="2"/>
+    <circle cx="270" cy="172.5" r="2"/>
+    
+    <!-- Bottom Positive Rail -->
+    <circle cx="30" cy="187.5" r="2"/>
+    <circle cx="60" cy="187.5" r="2"/>
+    <circle cx="90" cy="187.5" r="2"/>
+    <circle cx="120" cy="187.5" r="2"/>
+    <circle cx="150" cy="187.5" r="2"/>
+    <circle cx="180" cy="187.5" r="2"/>
+    <circle cx="210" cy="187.5" r="2"/>
+    <circle cx="240" cy="187.5" r="2"/>
+    <circle cx="270" cy="187.5" r="2"/>
+  </g>
+  
+  <!-- Terminal Holes (Main Board - Top Half) Row 1 & 2 -->
+  <g fill="#a0a0a0">
+    <!-- Row 1 -->
+    <circle cx="30" cy="70" r="2"/>
+    <circle cx="40" cy="70" r="2"/>
+    <circle cx="50" cy="70" r="2"/>
+    <circle cx="60" cy="70" r="2"/>
+    <circle cx="70" cy="70" r="2"/>
+    <circle cx="90" cy="70" r="2"/>
+    <circle cx="100" cy="70" r="2"/>
+    <circle cx="110" cy="70" r="2"/>
+    <circle cx="120" cy="70" r="2"/>
+    <circle cx="130" cy="70" r="2"/>
+    <circle cx="150" cy="70" r="2"/>
+    <circle cx="160" cy="70" r="2"/>
+    <circle cx="170" cy="70" r="2"/>
+    <circle cx="180" cy="70" r="2"/>
+    <circle cx="190" cy="70" r="2"/>
+    <circle cx="210" cy="70" r="2"/>
+    <circle cx="220" cy="70" r="2"/>
+    <circle cx="230" cy="70" r="2"/>
+    <circle cx="240" cy="70" r="2"/>
+    <circle cx="250" cy="70" r="2"/>
+    <circle cx="270" cy="70" r="2"/>
+    <circle cx="280" cy="70" r="2"/>
+    <circle cx="290" cy="70" r="2"/>
+    
+    <!-- Row 2 -->
+    <circle cx="30" cy="90" r="2"/>
+    <circle cx="40" cy="90" r="2"/>
+    <circle cx="50" cy="90" r="2"/>
+    <circle cx="60" cy="90" r="2"/>
+    <circle cx="70" cy="90" r="2"/>
+    <circle cx="90" cy="90" r="2"/>
+    <circle cx="100" cy="90" r="2"/>
+    <circle cx="110" cy="90" r="2"/>
+    <circle cx="120" cy="90" r="2"/>
+    <circle cx="130" cy="90" r="2"/>
+    <circle cx="150" cy="90" r="2"/>
+    <circle cx="160" cy="90" r="2"/>
+    <circle cx="170" cy="90" r="2"/>
+    <circle cx="180" cy="90" r="2"/>
+    <circle cx="190" cy="90" r="2"/>
+    <circle cx="210" cy="90" r="2"/>
+    <circle cx="220" cy="90" r="2"/>
+    <circle cx="230" cy="90" r="2"/>
+    <circle cx="240" cy="90" r="2"/>
+    <circle cx="250" cy="90" r="2"/>
+    <circle cx="270" cy="90" r="2"/>
+    <circle cx="280" cy="90" r="2"/>
+    <circle cx="290" cy="90" r="2"/>
+  </g>
+  
+  <!-- Terminal Holes (Main Board - Bottom Half) Row 3 & 4 -->
+  <g fill="#a0a0a0">
+    <!-- Row 3 -->
+    <circle cx="30" cy="125" r="2"/>
+    <circle cx="40" cy="125" r="2"/>
+    <circle cx="50" cy="125" r="2"/>
+    <circle cx="60" cy="125" r="2"/>
+    <circle cx="70" cy="125" r="2"/>
+    <circle cx="90" cy="125" r="2"/>
+    <circle cx="100" cy="125" r="2"/>
+    <circle cx="110" cy="125" r="2"/>
+    <circle cx="120" cy="125" r="2"/>
+    <circle cx="130" cy="125" r="2"/>
+    <circle cx="150" cy="125" r="2"/>
+    <circle cx="160" cy="125" r="2"/>
+    <circle cx="170" cy="125" r="2"/>
+    <circle cx="180" cy="125" r="2"/>
+    <circle cx="190" cy="125" r="2"/>
+    <circle cx="210" cy="125" r="2"/>
+    <circle cx="220" cy="125" r="2"/>
+    <circle cx="230" cy="125" r="2"/>
+    <circle cx="240" cy="125" r="2"/>
+    <circle cx="250" cy="125" r="2"/>
+    <circle cx="270" cy="125" r="2"/>
+    <circle cx="280" cy="125" r="2"/>
+    <circle cx="290" cy="125" r="2"/>
+    
+    <!-- Row 4 -->
+    <circle cx="30" cy="145" r="2"/>
+    <circle cx="40" cy="145" r="2"/>
+    <circle cx="50" cy="145" r="2"/>
+    <circle cx="60" cy="145" r="2"/>
+    <circle cx="70" cy="145" r="2"/>
+    <circle cx="90" cy="145" r="2"/>
+    <circle cx="100" cy="145" r="2"/>
+    <circle cx="110" cy="145" r="2"/>
+    <circle cx="120" cy="145" r="2"/>
+    <circle cx="130" cy="145" r="2"/>
+    <circle cx="150" cy="145" r="2"/>
+    <circle cx="160" cy="145" r="2"/>
+    <circle cx="170" cy="145" r="2"/>
+    <circle cx="180" cy="145" r="2"/>
+    <circle cx="190" cy="145" r="2"/>
+    <circle cx="210" cy="145" r="2"/>
+    <circle cx="220" cy="145" r="2"/>
+    <circle cx="230" cy="145" r="2"/>
+    <circle cx="240" cy="145" r="2"/>
+    <circle cx="250" cy="145" r="2"/>
+    <circle cx="270" cy="145" r="2"/>
+    <circle cx="280" cy="145" r="2"/>
+    <circle cx="290" cy="145" r="2"/>
+  </g>
+  
+  <!-- Row Labels -->
+  <g font-family="Arial" font-size="6" fill="#333">
+    <text x="5" y="72" text-anchor="start">1</text>
+    <text x="5" y="92" text-anchor="start">2</text>
+    <text x="5" y="127" text-anchor="start">3</text>
+    <text x="5" y="147" text-anchor="start">4</text>
+  </g>
+</svg>

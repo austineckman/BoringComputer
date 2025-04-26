@@ -62,7 +62,7 @@ const componentDefinitions: Record<string, ComponentDefinition> = {
     height: 60,
     color: '#f0f0f0',
     icon: '⚡',
-    svgPath: '/images/components/battery.svg',
+    svgPath: '/images/wokwi/battery.svg',
     connectionPoints: [
       // Positive terminal (top)
       { type: 'output', position: { x: 20, y: 0 } },
