@@ -786,7 +786,7 @@ while True:
     }
   };
   
-  // Handle saving code from the editor
+  // Handle saving code and running microcontroller code
   const handleSaveCode = (code: string) => {
     if (!selectedMicrocontroller) return;
     
@@ -801,41 +801,11 @@ while True:
     setIsCodeEditorOpen(false);
   };
   
-  // Handle running microcontroller code
   const handleRunCode = (code: string) => {
     if (!selectedMicrocontroller) return;
     
-    // Very simple code analysis for pin states
-    const pinStates: Record<string, 'HIGH' | 'LOW'> = {...(selectedMicrocontroller.pinStates || {})};
-    
-    // Look for patterns like: pin = Pin(0, Pin.OUT) and pin.value(1) or pin.on()
-    // This is a simple regex approach - a real implementation would use proper parsing
-    const pinDefinitions = Array.from(code.matchAll(/(\w+)\s*=\s*Pin\((\d+)/g));
-    const pinMap: Record<string, string> = {};
-    
-    // Map variable names to pin numbers
-    pinDefinitions.forEach(match => {
-      const [_, varName, pinNum] = match;
-      pinMap[varName] = `GP${pinNum}`;
-    });
-    
-    // Find HIGH settings (pin.value(1) or pin.on())
-    const highPins = Array.from(code.matchAll(/(\w+)\.(?:value\(1\)|on\(\))/g));
-    highPins.forEach(match => {
-      const [_, varName] = match;
-      if (pinMap[varName]) {
-        pinStates[pinMap[varName]] = 'HIGH';
-      }
-    });
-    
-    // Find LOW settings (pin.value(0) or pin.off())
-    const lowPins = Array.from(code.matchAll(/(\w+)\.(?:value\(0\)|off\(\))/g));
-    lowPins.forEach(match => {
-      const [_, varName] = match;
-      if (pinMap[varName]) {
-        pinStates[pinMap[varName]] = 'LOW';
-      }
-    });
+    // Use the analyzer to get pin states
+    const pinStates = analyzeMicroPythonCode(code);
     
     // Update the microcontroller with new pin states and code
     const updatedComponents = components.map(comp => 
@@ -847,7 +817,6 @@ while True:
     setComponents(updatedComponents);
     
     // Run simulation to update the circuit with new pin states
-    setSelectedMicrocontroller(null);
     simulateCircuit();
   };
 
