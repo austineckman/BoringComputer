@@ -164,38 +164,79 @@ const componentDefinitions: Record<string, ComponentDefinition> = {
   breadboard: {
     type: 'breadboard',
     label: 'Breadboard',
-    width: 6 * GRID_SIZE,
-    height: 4 * GRID_SIZE,
+    width: 120,
+    height: 80,
     color: '#FFFFFF',
     icon: '▭',
-    svgPath: '',  // TODO: Create a breadboard SVG
+    svgPath: '/images/components/breadboard.svg',
     connectionPoints: [
-      // Top power rail
-      { type: 'both', position: { x: GRID_SIZE, y: 0 } },
-      { type: 'both', position: { x: 2 * GRID_SIZE, y: 0 } },
-      { type: 'both', position: { x: 3 * GRID_SIZE, y: 0 } },
-      { type: 'both', position: { x: 4 * GRID_SIZE, y: 0 } },
-      { type: 'both', position: { x: 5 * GRID_SIZE, y: 0 } },
+      // Top power rail (5 points)
+      { type: 'both', position: { x: 10, y: 10 } },
+      { type: 'both', position: { x: 30, y: 10 } },
+      { type: 'both', position: { x: 50, y: 10 } },
+      { type: 'both', position: { x: 70, y: 10 } },
+      { type: 'both', position: { x: 90, y: 10 } },
+      { type: 'both', position: { x: 110, y: 10 } },
       
-      // Bottom power rail
-      { type: 'both', position: { x: GRID_SIZE, y: 4 * GRID_SIZE } },
-      { type: 'both', position: { x: 2 * GRID_SIZE, y: 4 * GRID_SIZE } },
-      { type: 'both', position: { x: 3 * GRID_SIZE, y: 4 * GRID_SIZE } },
-      { type: 'both', position: { x: 4 * GRID_SIZE, y: 4 * GRID_SIZE } },
-      { type: 'both', position: { x: 5 * GRID_SIZE, y: 4 * GRID_SIZE } },
+      // Bottom power rail (5 points)
+      { type: 'both', position: { x: 10, y: 70 } },
+      { type: 'both', position: { x: 30, y: 70 } },
+      { type: 'both', position: { x: 50, y: 70 } },
+      { type: 'both', position: { x: 70, y: 70 } },
+      { type: 'both', position: { x: 90, y: 70 } },
+      { type: 'both', position: { x: 110, y: 70 } },
       
-      // Central connection points (2 rows of 5)
-      { type: 'both', position: { x: GRID_SIZE, y: 1.5 * GRID_SIZE } },
-      { type: 'both', position: { x: 2 * GRID_SIZE, y: 1.5 * GRID_SIZE } },
-      { type: 'both', position: { x: 3 * GRID_SIZE, y: 1.5 * GRID_SIZE } },
-      { type: 'both', position: { x: 4 * GRID_SIZE, y: 1.5 * GRID_SIZE } },
-      { type: 'both', position: { x: 5 * GRID_SIZE, y: 1.5 * GRID_SIZE } },
+      // Top central connection points (row 1)
+      { type: 'both', position: { x: 10, y: 25 } },
+      { type: 'both', position: { x: 20, y: 25 } },
+      { type: 'both', position: { x: 30, y: 25 } },
+      { type: 'both', position: { x: 40, y: 25 } },
+      { type: 'both', position: { x: 50, y: 25 } },
+      { type: 'both', position: { x: 60, y: 25 } },
+      { type: 'both', position: { x: 70, y: 25 } },
+      { type: 'both', position: { x: 80, y: 25 } },
+      { type: 'both', position: { x: 90, y: 25 } },
+      { type: 'both', position: { x: 100, y: 25 } },
+      { type: 'both', position: { x: 110, y: 25 } },
       
-      { type: 'both', position: { x: GRID_SIZE, y: 2.5 * GRID_SIZE } },
-      { type: 'both', position: { x: 2 * GRID_SIZE, y: 2.5 * GRID_SIZE } },
-      { type: 'both', position: { x: 3 * GRID_SIZE, y: 2.5 * GRID_SIZE } },
-      { type: 'both', position: { x: 4 * GRID_SIZE, y: 2.5 * GRID_SIZE } },
-      { type: 'both', position: { x: 5 * GRID_SIZE, y: 2.5 * GRID_SIZE } }
+      // Top central connection points (row 2)
+      { type: 'both', position: { x: 10, y: 35 } },
+      { type: 'both', position: { x: 20, y: 35 } },
+      { type: 'both', position: { x: 30, y: 35 } },
+      { type: 'both', position: { x: 40, y: 35 } },
+      { type: 'both', position: { x: 50, y: 35 } },
+      { type: 'both', position: { x: 60, y: 35 } },
+      { type: 'both', position: { x: 70, y: 35 } },
+      { type: 'both', position: { x: 80, y: 35 } },
+      { type: 'both', position: { x: 90, y: 35 } },
+      { type: 'both', position: { x: 100, y: 35 } },
+      { type: 'both', position: { x: 110, y: 35 } },
+      
+      // Bottom central connection points (row 1)
+      { type: 'both', position: { x: 10, y: 47 } },
+      { type: 'both', position: { x: 20, y: 47 } },
+      { type: 'both', position: { x: 30, y: 47 } },
+      { type: 'both', position: { x: 40, y: 47 } },
+      { type: 'both', position: { x: 50, y: 47 } },
+      { type: 'both', position: { x: 60, y: 47 } },
+      { type: 'both', position: { x: 70, y: 47 } },
+      { type: 'both', position: { x: 80, y: 47 } },
+      { type: 'both', position: { x: 90, y: 47 } },
+      { type: 'both', position: { x: 100, y: 47 } },
+      { type: 'both', position: { x: 110, y: 47 } },
+      
+      // Bottom central connection points (row 2)
+      { type: 'both', position: { x: 10, y: 57 } },
+      { type: 'both', position: { x: 20, y: 57 } },
+      { type: 'both', position: { x: 30, y: 57 } },
+      { type: 'both', position: { x: 40, y: 57 } },
+      { type: 'both', position: { x: 50, y: 57 } },
+      { type: 'both', position: { x: 60, y: 57 } },
+      { type: 'both', position: { x: 70, y: 57 } },
+      { type: 'both', position: { x: 80, y: 57 } },
+      { type: 'both', position: { x: 90, y: 57 } },
+      { type: 'both', position: { x: 100, y: 57 } },
+      { type: 'both', position: { x: 110, y: 57 } }
     ]
   }
 };
