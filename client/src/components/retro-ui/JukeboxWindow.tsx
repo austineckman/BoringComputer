@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX } from "lucide-react";
+import React, { useState } from "react";
+import { Music } from "lucide-react";
 import jukeboxImage from "@assets/jukebox.png";
 
 // Music track interface
@@ -49,22 +49,76 @@ const musicTracks: MusicTrack[] = [
     src: "/music/guildbank.mp3"
   },
   {
+    id: "pixel-dreams",
+    title: "Pixel Dreams",
+    artist: "Pixel Composer",
+    src: "/music/Pixel Dreams.mp3"
+  },
+  {
+    id: "alex-tesla",
+    title: "Alex's Tesla",
+    artist: "Synth Wave",
+    src: "/music/Alex's Tesla.mp3"
+  },
+  {
+    id: "empty-arcade",
+    title: "Empty Arcade",
+    artist: "Retro Wave",
+    src: "/music/Empty Arcade.mp3"
+  },
+  {
+    id: "factory-new",
+    title: "Factory New",
+    artist: "Industrial Beat",
+    src: "/music/Factory New.mp3"
+  },
+  {
+    id: "fantasy-guild-hall",
+    title: "Fantasy Guild Hall",
+    artist: "Epic Fantasy",
+    src: "/music/Fantasy Guild Hall.mp3"
+  },
+  {
+    id: "heavy-crown",
+    title: "Heavy is the Head",
+    artist: "Royal Beats",
+    src: "/music/Heavy is the head that wears the crown.mp3"
+  },
+  {
+    id: "trouble-name",
+    title: "Your Name Became Feeling",
+    artist: "Emotional Beat",
+    src: "/music/I knew I was in trouble when your name became more of a feeling than a word.mp3"
+  },
+  {
+    id: "miss-tomorrow",
+    title: "I Miss Tomorrow",
+    artist: "Future Wave",
+    src: "/music/I miss tomorrow.mp3"
+  },
+  {
+    id: "okay-stranger",
+    title: "It's Going to Be Okay",
+    artist: "Comfort Beat",
+    src: "/music/It's going to be okay stranger. You are loved..mp3"
+  },
+  {
     id: "lan-night",
     title: "LAN Night Jamboree",
     artist: "Retro Beats",
     src: "/music/LAN Night Jamboree.mp3"
   },
   {
-    id: "thief-fog",
-    title: "Thief in the Fog",
-    artist: "Epic Fantasy",
-    src: "/music/Thief in the fog.mp3"
-  },
-  {
     id: "glitched-grid",
     title: "Glitched Grid",
     artist: "Cyber Core",
     src: "/music/Glitched Grid.mp3"
+  },
+  {
+    id: "thief-fog",
+    title: "Thief in the Fog",
+    artist: "Epic Fantasy",
+    src: "/music/Thief in the fog.mp3"
   }
 ];
 
@@ -73,210 +127,9 @@ interface JukeboxWindowProps {
 }
 
 const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
-  const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(0);
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [volume, setVolume] = useState<number>(0.7);
-  const [isMuted, setIsMuted] = useState<boolean>(false);
-  const [progress, setProgress] = useState<number>(0);
-  const [duration, setDuration] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [selectedTrackIndex, setSelectedTrackIndex] = useState<number>(0);
   
-  // Reference to audio element
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const intervalRef = useRef<number | null>(null);
-  
-  const currentTrack = musicTracks[currentTrackIndex];
-  
-  // Initialize audio when component mounts
-  useEffect(() => {
-    // Create audio element if it doesn't exist
-    if (!audioRef.current) {
-      const audio = new Audio();
-      audio.preload = "auto";
-      
-      // Set up event listeners
-      audio.addEventListener("loadstart", () => {
-        setIsLoading(true);
-        console.log("Loading track:", currentTrack.src);
-      });
-      
-      audio.addEventListener("canplay", () => {
-        setIsLoading(false);
-        setDuration(audio.duration);
-        console.log("Track ready to play:", currentTrack.title);
-        
-        // Auto-play if we were playing before
-        if (isPlaying) {
-          audio.play().catch(e => console.error("Auto-play failed:", e));
-        }
-      });
-      
-      audio.addEventListener("play", () => {
-        setIsPlaying(true);
-        
-        // Set up progress tracking
-        if (intervalRef.current) {
-          window.clearInterval(intervalRef.current);
-        }
-        
-        intervalRef.current = window.setInterval(() => {
-          setProgress(audio.currentTime);
-        }, 100);
-        
-        // Notify desktop UI
-        window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
-          detail: { isPlaying: true } 
-        }));
-      });
-      
-      audio.addEventListener("pause", () => {
-        setIsPlaying(false);
-        
-        if (intervalRef.current) {
-          window.clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-        
-        // Notify desktop UI
-        window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
-          detail: { isPlaying: false } 
-        }));
-      });
-      
-      audio.addEventListener("ended", () => {
-        nextTrack();
-      });
-      
-      audio.addEventListener("error", (e) => {
-        console.error("Audio error:", e);
-        setIsLoading(false);
-      });
-      
-      audioRef.current = audio;
-    }
-    
-    // Set initial volume
-    if (audioRef.current) {
-      audioRef.current.volume = isMuted ? 0 : volume;
-    }
-    
-    // Clean up on unmount
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = "";
-      }
-      
-      if (intervalRef.current) {
-        window.clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
-  
-  // Update audio source when track changes
-  useEffect(() => {
-    if (audioRef.current) {
-      // Save playing state
-      const wasPlaying = !audioRef.current.paused;
-      
-      // Update source
-      audioRef.current.src = currentTrack.src;
-      audioRef.current.load();
-      
-      // Resume playback if needed
-      if (wasPlaying) {
-        audioRef.current.play().catch(e => console.error("Failed to auto-play next track:", e));
-      }
-    }
-  }, [currentTrackIndex]);
-  
-  // Handle volume changes
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = isMuted ? 0 : volume;
-    }
-  }, [volume, isMuted]);
-  
-  // Listen for desktop UI events
-  useEffect(() => {
-    const handleTogglePlayPause = () => {
-      togglePlayPause();
-    };
-    
-    window.addEventListener('jukeboxTogglePlayPause', handleTogglePlayPause);
-    
-    return () => {
-      window.removeEventListener('jukeboxTogglePlayPause', handleTogglePlayPause);
-    };
-  }, []);
-  
-  // Play/Pause toggle function
-  const togglePlayPause = () => {
-    console.log("Toggle play button clicked");
-    
-    if (!audioRef.current) return;
-    
-    if (audioRef.current.paused) {
-      console.log("Trying to play audio");
-      // Unmute if muted
-      if (isMuted) {
-        setIsMuted(false);
-        audioRef.current.volume = volume;
-      }
-      
-      audioRef.current.play().catch(e => console.error("Play failed:", e));
-    } else {
-      console.log("Pausing audio");
-      audioRef.current.pause();
-    }
-  };
-  
-  // Track navigation
-  const prevTrack = () => {
-    setCurrentTrackIndex(prev => 
-      prev === 0 ? musicTracks.length - 1 : prev - 1
-    );
-  };
-  
-  const nextTrack = () => {
-    setCurrentTrackIndex(prev => 
-      prev === musicTracks.length - 1 ? 0 : prev + 1
-    );
-  };
-  
-  // Volume control
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVolume = parseFloat(e.target.value);
-    setVolume(newVolume);
-    
-    // Auto unmute if volume raised from zero
-    if (newVolume > 0 && isMuted) {
-      setIsMuted(false);
-    }
-  };
-  
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
-  };
-  
-  // Progress bar control
-  const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!audioRef.current) return;
-    
-    const newTime = parseFloat(e.target.value);
-    audioRef.current.currentTime = newTime;
-    setProgress(newTime);
-  };
-  
-  // Format time (seconds -> MM:SS)
-  const formatTime = (time: number) => {
-    if (isNaN(time)) return "00:00";
-    
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    
-    return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-  };
+  const currentTrack = musicTracks[selectedTrackIndex];
   
   return (
     <div className="flex flex-col h-full">
@@ -286,7 +139,7 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
       </div>
       
       {/* Jukebox Body */}
-      <div className="flex-1 bg-gray-800 p-4 flex flex-col items-center">
+      <div className="flex-1 bg-gray-800 p-4 flex flex-col items-center overflow-auto">
         {/* Jukebox Image */}
         <div className="w-64 h-64 mb-4 relative">
           <img 
@@ -295,94 +148,55 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
             className="w-full h-full object-contain"
             style={{ imageRendering: 'pixelated' }}
           />
-          {/* Overlay glow effect when playing */}
-          {isPlaying && (
-            <div className="absolute inset-0 bg-orange-500 opacity-20 animate-pulse rounded-lg"></div>
-          )}
-          {/* Loading indicator */}
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
-              <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          )}
         </div>
         
         {/* Track Info */}
         <div className="text-center mb-4 w-full">
           <h4 className="text-orange-400 text-lg font-bold truncate">{currentTrack.title}</h4>
           <p className="text-gray-300 text-sm">{currentTrack.artist}</p>
-          {!isPlaying && !isLoading && (
-            <p className="text-orange-300 text-xs mt-2 italic">Click play button to start music</p>
-          )}
-          {isLoading && (
-            <p className="text-orange-300 text-xs mt-2 italic">Loading music...</p>
-          )}
+          <p className="text-orange-300 text-xs mt-2 italic">Select a track below to play</p>
         </div>
         
-        {/* Progress Bar */}
-        <div className="w-full mb-4 flex items-center space-x-2">
-          <span className="text-gray-300 text-xs">{formatTime(progress)}</span>
-          <input
-            type="range"
-            min={0}
-            max={duration || 100}
-            value={progress}
-            onChange={handleProgressChange}
-            className="flex-1 h-2 appearance-none bg-gray-700 rounded-full outline-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-orange-500"
-          />
-          <span className="text-gray-300 text-xs">{formatTime(duration)}</span>
+        {/* Audio player for direct browser control */}
+        <div className="w-full mb-6">
+          <audio 
+            controls 
+            src={currentTrack.src}
+            className="w-full"
+            preload="auto"
+          >
+            Your browser does not support the audio element.
+          </audio>
         </div>
         
-        {/* Controls */}
-        <div className="flex items-center justify-center space-x-4 mb-4">
-          <button 
-            onClick={prevTrack}
-            disabled={isLoading}
-            className={`p-2 rounded-full text-white transition ${isLoading ? 'bg-gray-500 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'}`}
-          >
-            <SkipBack size={18} />
-          </button>
-          
-          <button 
-            onClick={togglePlayPause}
-            disabled={isLoading}
-            className={`p-3 rounded-full text-white transition ${isLoading ? 'bg-gray-500 cursor-not-allowed' : (isPlaying ? 'bg-orange-600 hover:bg-orange-500' : 'bg-orange-600 hover:bg-orange-500')}`}
-          >
-            {isPlaying ? <Pause size={24} /> : <Play size={24} />}
-          </button>
-          
-          <button 
-            onClick={nextTrack}
-            disabled={isLoading}
-            className={`p-2 rounded-full text-white transition ${isLoading ? 'bg-gray-500 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'}`}
-          >
-            <SkipForward size={18} />
-          </button>
+        {/* Track selector */}
+        <div className="w-full pb-2 bg-gray-700 rounded-md overflow-hidden">
+          <h4 className="text-white text-sm mb-2 p-2 bg-gray-800">Track Collection (18 tracks)</h4>
+          <div className="max-h-64 overflow-y-auto pr-2 pl-2 custom-scrollbar">
+            {musicTracks.map((track, index) => (
+              <div 
+                key={track.id}
+                onClick={() => setSelectedTrackIndex(index)}
+                className={`p-2 rounded mb-1 cursor-pointer hover:bg-gray-600 transition ${selectedTrackIndex === index ? 'bg-gray-600 border-l-4 border-orange-500' : 'bg-gray-700'}`}
+              >
+                <div className="flex items-center">
+                  <div className="mr-2 text-orange-400">
+                    <Music size={16} />
+                  </div>
+                  <div className="truncate">
+                    <p className="text-xs text-white truncate">{track.title}</p>
+                    <p className="text-xs text-gray-400 truncate">{track.artist}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
         
-        {/* Volume Controls */}
-        <div className="flex items-center space-x-2 w-full max-w-xs">
-          <button 
-            onClick={toggleMute}
-            disabled={isLoading}
-            className={`p-1 ${isLoading ? 'text-gray-500 cursor-not-allowed' : 'text-gray-300 hover:text-white'}`}
-          >
-            {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-          </button>
-          
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={volume}
-            onChange={handleVolumeChange}
-            disabled={isLoading}
-            className={`flex-1 h-1.5 appearance-none rounded-full outline-none cursor-pointer 
-              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 
-              [&::-webkit-slider-thumb]:rounded-full 
-              ${isLoading ? 'bg-gray-500 [&::-webkit-slider-thumb]:bg-gray-400 cursor-not-allowed' : 'bg-gray-700 [&::-webkit-slider-thumb]:bg-orange-500'}`}
-          />
+        {/* Instructions */}
+        <div className="mt-3 text-center text-gray-400 text-xs">
+          <p>Music playback may require user interaction due to browser security policies.</p>
+          <p>Use the native browser audio controls above for best results.</p>
         </div>
       </div>
     </div>
