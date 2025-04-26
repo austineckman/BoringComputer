@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Trash2, RotateCw, Grid, ZoomIn, ZoomOut, Move, PlayCircle, AlertCircle, Zap } from 'lucide-react';
+import { Trash2, RotateCw, Grid, ZoomIn, ZoomOut, Move, PlayCircle, AlertCircle, Zap, Code } from 'lucide-react';
 import { ReactSVG } from 'react-svg';
+import CodeEditorModal from './CodeEditorModal';
 
 // Circuit Components Types
 interface Position {
@@ -14,6 +15,7 @@ interface ConnectionPoint {
   type: 'input' | 'output' | 'both'; // Whether this is an input, output, or both
   position: Position; // Relative to component
   parentId: string; // ID of the component it belongs to
+  pinName?: string; // Name of the pin (for microcontroller pins)
 }
 
 // Wire interface
@@ -61,6 +63,34 @@ const CONNECTION_POINT_RADIUS = 4;
 
 // Component definitions
 const componentDefinitions: Record<string, ComponentDefinition> = {
+  microcontroller: {
+    type: 'microcontroller',
+    label: 'Pico W',
+    width: 160,
+    height: 100,
+    color: '#1e88e5',
+    icon: '🔌',
+    svgPath: '/images/components/microcontroller.svg',
+    connectionPoints: [
+      // Left side pins (GP0-GP5, GND)
+      { type: 'both', position: { x: 5, y: 17 }, pinName: 'GP0' },
+      { type: 'both', position: { x: 5, y: 27 }, pinName: 'GP1' },
+      { type: 'both', position: { x: 5, y: 37 }, pinName: 'GP2' },
+      { type: 'both', position: { x: 5, y: 47 }, pinName: 'GP3' },
+      { type: 'both', position: { x: 5, y: 57 }, pinName: 'GP4' },
+      { type: 'both', position: { x: 5, y: 67 }, pinName: 'GP5' },
+      { type: 'both', position: { x: 5, y: 77 }, pinName: 'GND' },
+      
+      // Right side pins (GP6-GP11, VSYS)
+      { type: 'both', position: { x: 155, y: 17 }, pinName: 'GP6' },
+      { type: 'both', position: { x: 155, y: 27 }, pinName: 'GP7' },
+      { type: 'both', position: { x: 155, y: 37 }, pinName: 'GP8' },
+      { type: 'both', position: { x: 155, y: 47 }, pinName: 'GP9' },
+      { type: 'both', position: { x: 155, y: 57 }, pinName: 'GP10' },
+      { type: 'both', position: { x: 155, y: 67 }, pinName: 'GP11' },
+      { type: 'both', position: { x: 155, y: 77 }, pinName: 'VSYS' }
+    ]
+  },
   battery: {
     type: 'battery',
     label: 'Battery',
@@ -264,11 +294,15 @@ const CircuitBuilderWindow: React.FC = () => {
   const [isPanning, setIsPanning] = useState<boolean>(false);
   const [panStart, setPanStart] = useState<Position>({ x: 0, y: 0 });
   
+  // State for code editor
+  const [isCodeEditorOpen, setIsCodeEditorOpen] = useState<boolean>(false);
+  const [selectedMicrocontroller, setSelectedMicrocontroller] = useState<CircuitComponent | null>(null);
+  
   // Canvas ref for dimension calculations
   const canvasRef = useRef<HTMLDivElement>(null);
   
   // Helper function to create a new component with connection points
-  const createComponent = (type: 'battery' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor', position: Position): CircuitComponent => {
+  const createComponent = (type: 'battery' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor' | 'microcontroller', position: Position): CircuitComponent => {
     // Make sure the type exists in componentDefinitions
     if (!componentDefinitions[type]) {
       console.error(`Component type "${type}" is not defined`);
@@ -285,11 +319,13 @@ const CircuitBuilderWindow: React.FC = () => {
         id: `${id}-cp-${index}`,
         type: cpDef.type,
         position: cpDef.position,
-        parentId: id
+        parentId: id,
+        pinName: cpDef.pinName
       };
     });
     
-    return {
+    // Create component with type-specific properties
+    let component: CircuitComponent = {
       id,
       type,
       position,
@@ -298,6 +334,34 @@ const CircuitBuilderWindow: React.FC = () => {
       height: definition.height,
       connectionPoints
     };
+    
+    // Add microcontroller-specific properties
+    if (type === 'microcontroller') {
+      component.code = `# MicroPython code for Pico W
+from machine import Pin
+import time
+
+# Example: Blink the onboard LED
+led = Pin(25, Pin.OUT)
+
+while True:
+    led.on()
+    time.sleep(0.5)
+    led.off()
+    time.sleep(0.5)
+`;
+      
+      // Initialize all pins to LOW by default
+      const pinStates: Record<string, 'HIGH' | 'LOW'> = {};
+      connectionPoints.forEach(cp => {
+        if (cp.pinName && cp.pinName !== 'GND' && cp.pinName !== 'VSYS') {
+          pinStates[cp.pinName] = 'LOW';
+        }
+      });
+      component.pinStates = pinStates;
+    }
+    
+    return component;
   };
   
   // Helper function to snap position to grid
@@ -309,7 +373,7 @@ const CircuitBuilderWindow: React.FC = () => {
   };
 
   // Handle starting to drag a component from the palette
-  const handleStartDragFromPalette = (e: React.MouseEvent, type: 'battery' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor') => {
+  const handleStartDragFromPalette = (e: React.MouseEvent, type: 'battery' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor' | 'microcontroller') => {
     e.preventDefault();
     
     if (!canvasRef.current) return;
