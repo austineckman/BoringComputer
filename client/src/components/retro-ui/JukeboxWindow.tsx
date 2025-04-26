@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Music } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Music, X } from "lucide-react";
 import jukeboxImage from "@assets/jukebox.png";
 import { useAudioPlayer, Track } from "@/contexts/AudioPlayerContext";
+
+interface JukeboxWindowProps {
+  onClose: () => void;
+}
 
 // Playlist with our music tracks from the "Taverns, Terrors, and Tiny Victories" album
 const initialPlaylist: Track[] = [
@@ -133,7 +137,7 @@ interface AudioContextState {
   buffer: AudioBuffer | null;
 }
 
-const JukeboxWindow: React.FC = () => {
+const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
   // Use our global audio player context
   const {
     isPlaying,
@@ -291,7 +295,16 @@ const JukeboxWindow: React.FC = () => {
               <Music className="mr-2 text-orange-400" />
               <h2 className="text-lg font-bold">Retro Jukebox</h2>
             </div>
-            <span className="text-xs text-gray-400">Playing {playlist.length} tracks</span>
+            <div className="flex items-center">
+              <span className="text-xs text-gray-400 mr-4">Playing {playlist.length} tracks</span>
+              <button 
+                onClick={onClose}
+                className="text-gray-400 hover:text-white hover:bg-red-700 rounded-full p-1"
+                title="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
           
           {/* Now Playing */}
