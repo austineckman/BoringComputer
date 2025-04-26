@@ -136,7 +136,7 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
     audio.volume = isMuted ? 0 : volume;
   }, [volume, isMuted]);
   
-  // Change track
+  // Change track functions
   const prevTrack = () => {
     setCurrentTrackIndex(prev => 
       prev === 0 ? musicTracks.length - 1 : prev - 1
