@@ -95,13 +95,19 @@ const FullscreenAdminApp: React.FC<FullscreenAdminAppProps> = ({ onClose }) => {
   });
 
   // Fetch loot boxes
-  const { data: lootBoxes, isLoading: isLoadingLootBoxes } = useQuery({
+  const { data: lootBoxes, isLoading: isLoadingLootBoxes } = useQuery<LootBox[]>({
     queryKey: ['/api/admin/lootboxes'],
     enabled: activeTab === 'lootboxes',
   });
 
+  // Fetch quests for the quests tab
+  const { data: quests, isLoading: isLoadingQuests } = useQuery<any[]>({
+    queryKey: ['/api/admin/quests'],
+    enabled: activeTab === 'quests',
+  });
+
   // Fetch items for the dropdown
-  const { data: items, isLoading: isLoadingItems } = useQuery({
+  const { data: items, isLoading: isLoadingItems } = useQuery<Item[]>({
     queryKey: ['/api/items'],
   });
 
@@ -450,12 +456,66 @@ const FullscreenAdminApp: React.FC<FullscreenAdminAppProps> = ({ onClose }) => {
           
           {/* Quests Tab - Placeholder for now */}
           {activeTab === 'quests' && (
-            <div className="text-center py-20">
-              <h2 className="text-2xl font-bold text-brand-orange mb-4">Quest Editor</h2>
-              <p className="text-gray-400 mb-6">Quest management features will be coming soon.</p>
-              <div className="flex justify-center">
-                <AlertTriangle className="h-20 w-20 text-brand-orange/60" />
+            <div>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-brand-orange">Quest Management</h2>
               </div>
+              
+              {/* Quests list */}
+              {isLoadingQuests ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-brand-orange" />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {Array.isArray(quests) && quests.length > 0 ? (
+                    quests.map((quest: any) => (
+                      <Card key={quest.id} className="overflow-hidden border-2 border-gray-700 bg-space-dark/80 hover:border-brand-orange/40 transition-all">
+                        <div className="flex flex-col md:flex-row">
+                          <div className="p-4 md:w-1/3">
+                            <h3 className="text-lg font-semibold text-brand-orange">{quest.title || "Untitled Quest"}</h3>
+                            <p className="text-sm text-gray-400 mt-1">Adventure Line: {quest.adventureLine || "Unknown"}</p>
+                            <div className="mt-2 flex items-center">
+                              <span className="bg-space-mid px-2 py-1 rounded text-xs mr-2">Difficulty: {quest.difficulty || "1"}</span>
+                              <span className="bg-space-mid px-2 py-1 rounded text-xs">Order: {quest.orderInLine || "1"}</span>
+                            </div>
+                          </div>
+                          <div className="p-4 md:w-2/3 border-t md:border-t-0 md:border-l border-gray-700">
+                            <p className="text-gray-300 text-sm mb-2">
+                              {quest.description || "No description available"}
+                            </p>
+                            <div className="mt-4 flex justify-end space-x-2">
+                              <Button 
+                                variant="outline" 
+                                className="border-gray-700 hover:bg-gray-800 hover:text-white text-gray-300 text-xs"
+                                onMouseEnter={() => window.sounds?.hover()}
+                              >
+                                <Edit className="h-3 w-3 mr-1" />
+                                Edit
+                              </Button>
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                className="text-xs"
+                                onMouseEnter={() => window.sounds?.hover()}
+                              >
+                                <Trash className="h-3 w-3 mr-1" />
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="text-center py-12 bg-space-dark/50 rounded-lg border border-gray-800">
+                      <AlertTriangle className="h-12 w-12 text-brand-orange/60 mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-brand-orange mb-2">No Quests Found</h3>
+                      <p className="text-gray-400">There are no quests in the database or there was an error fetching them.</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
           
