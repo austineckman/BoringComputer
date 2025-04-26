@@ -780,10 +780,10 @@ while True:
 
   // Handle opening the code editor for a microcontroller
   const handleOpenCodeEditor = (component: CircuitComponent) => {
-    if (component.type === 'microcontroller') {
-      setSelectedMicrocontroller(component);
-      setIsCodeEditorOpen(true);
-    }
+    if (component.type !== 'microcontroller') return;
+    
+    setSelectedMicrocontroller(component);
+    setIsCodeEditorOpen(true);
   };
   
   // Handle saving code from the editor
@@ -1047,7 +1047,42 @@ while True:
     return pinStates;
   };
   
-
+  // Handle saving code from the code editor
+  const handleSaveCode = (code: string) => {
+    if (selectedMicrocontroller) {
+      // Update the microcontroller's code
+      const updatedComponents = components.map(c => 
+        c.id === selectedMicrocontroller.id 
+          ? { ...c, code } 
+          : c
+      );
+      
+      setComponents(updatedComponents);
+      setIsCodeEditorOpen(false);
+    }
+  };
+  
+  // Handle running code from the code editor (simulate pin states)
+  const handleRunCode = (code: string) => {
+    if (selectedMicrocontroller) {
+      // Parse the code to determine pin states
+      const pinStates = analyzeMicroPythonCode(code);
+      
+      // Update the microcontroller with the new pin states
+      const updatedComponents = components.map(c => 
+        c.id === selectedMicrocontroller.id 
+          ? { ...c, code, pinStates } 
+          : c
+      );
+      
+      setComponents(updatedComponents);
+      
+      // Run the simulation to update the circuit with the new pin states
+      if (isSimulating) {
+        simulateCircuit();
+      }
+    }
+  };
   
   // Trace circuit from a starting point to see if it completes a loop back to negative terminal
   const traceCircuit = (
