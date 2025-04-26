@@ -28,7 +28,7 @@ interface Wire {
 
 interface CircuitComponent {
   id: string;
-  type: 'battery' | 'wire' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor';
+  type: 'battery' | 'wire' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor' | 'microcontroller';
   position: Position;
   rotation: number; // 0, 90, 180, 270 degrees
   width: number;
@@ -36,10 +36,13 @@ interface CircuitComponent {
   connectionPoints: ConnectionPoint[]; // Added connection points
   isEnergized?: boolean; // Whether the component has power flowing through it
   hasProblem?: boolean; // Whether there's an issue with this component in the circuit
+  // For microcontroller
+  pinStates?: Record<string, 'HIGH' | 'LOW'>; // Digital pin states for microcontroller
+  code?: string; // User's code for the microcontroller
 }
 
 interface ComponentDefinition {
-  type: 'battery' | 'wire' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor';
+  type: 'battery' | 'wire' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor' | 'microcontroller';
   label: string;
   width: number;
   height: number;
@@ -49,6 +52,7 @@ interface ComponentDefinition {
   connectionPoints: Array<{
     type: 'input' | 'output' | 'both';
     position: Position; // Relative to component (0,0 is top-left)
+    pinName?: string; // Pin name for microcontroller (e.g., "GP0", "GP1", etc.)
   }>;
 }
 
@@ -72,20 +76,7 @@ const componentDefinitions: Record<string, ComponentDefinition> = {
       { type: 'output', position: { x: 20, y: 60 } }
     ]
   },
-  wire: {
-    type: 'wire',
-    label: 'Wire',
-    width: 2 * GRID_SIZE,
-    height: GRID_SIZE / 2,
-    color: '#FF4500',
-    icon: '〰️',
-    svgPath: '',  // Wires are drawn directly as SVG paths
-    connectionPoints: [
-      // Both ends of the wire
-      { type: 'both', position: { x: 0, y: GRID_SIZE / 4 } },
-      { type: 'both', position: { x: 2 * GRID_SIZE, y: GRID_SIZE / 4 } }
-    ]
-  },
+  // Wire has been removed as a component - now using wire drawing tool
   led: {
     type: 'led',
     label: 'LED',
@@ -277,7 +268,14 @@ const CircuitBuilderWindow: React.FC = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
   
   // Helper function to create a new component with connection points
-  const createComponent = (type: 'battery' | 'wire' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor', position: Position): CircuitComponent => {
+  const createComponent = (type: 'battery' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor', position: Position): CircuitComponent => {
+    // Make sure the type exists in componentDefinitions
+    if (!componentDefinitions[type]) {
+      console.error(`Component type "${type}" is not defined`);
+      // Return a default component as fallback (battery)
+      return createComponent('battery', position);
+    }
+    
     const definition = componentDefinitions[type];
     const id = `${type}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     
@@ -311,7 +309,7 @@ const CircuitBuilderWindow: React.FC = () => {
   };
 
   // Handle starting to drag a component from the palette
-  const handleStartDragFromPalette = (e: React.MouseEvent, type: 'battery' | 'wire' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor') => {
+  const handleStartDragFromPalette = (e: React.MouseEvent, type: 'battery' | 'led' | 'resistor' | 'breadboard' | 'switch' | 'potentiometer' | 'capacitor') => {
     e.preventDefault();
     
     if (!canvasRef.current) return;
@@ -325,10 +323,17 @@ const CircuitBuilderWindow: React.FC = () => {
     const newComponent = createComponent(type, initialPosition);
     setDraggedComponent(newComponent);
     setIsDragging(true);
-    setDragOffset({
-      x: componentDefinitions[type].width / 2,
-      y: componentDefinitions[type].height / 2
-    });
+    
+    // Safely access componentDefinitions properties with a guard
+    if (componentDefinitions[type]) {
+      setDragOffset({
+        x: componentDefinitions[type].width / 2,
+        y: componentDefinitions[type].height / 2
+      });
+    } else {
+      // Default offset
+      setDragOffset({ x: 20, y: 20 });
+    }
   };
 
   // Handle starting to drag an existing component on the canvas
