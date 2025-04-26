@@ -776,6 +776,79 @@ while True:
     ));
   };
 
+  // Handle opening the code editor for a microcontroller
+  const handleOpenCodeEditor = (component: CircuitComponent) => {
+    if (component.type !== 'microcontroller') return;
+    
+    setSelectedMicrocontroller(component);
+    setIsCodeEditorOpen(true);
+  };
+  
+  // Handle saving code from the editor
+  const handleSaveCode = (code: string) => {
+    if (!selectedMicrocontroller) return;
+    
+    // Update the microcontroller's code
+    const updatedComponents = components.map(comp => 
+      comp.id === selectedMicrocontroller.id 
+        ? { ...comp, code } 
+        : comp
+    );
+    
+    setComponents(updatedComponents);
+    setIsCodeEditorOpen(false);
+  };
+  
+  // Handle running microcontroller code
+  const handleRunCode = (code: string) => {
+    if (!selectedMicrocontroller) return;
+    
+    // Very simple code analysis for pin states
+    const pinStates: Record<string, 'HIGH' | 'LOW'> = {...(selectedMicrocontroller.pinStates || {})};
+    
+    // Look for patterns like: pin = Pin(0, Pin.OUT) and pin.value(1) or pin.on()
+    // This is a simple regex approach - a real implementation would use proper parsing
+    const pinDefinitions = Array.from(code.matchAll(/(\w+)\s*=\s*Pin\((\d+)/g));
+    const pinMap: Record<string, string> = {};
+    
+    // Map variable names to pin numbers
+    pinDefinitions.forEach(match => {
+      const [_, varName, pinNum] = match;
+      pinMap[varName] = `GP${pinNum}`;
+    });
+    
+    // Find HIGH settings (pin.value(1) or pin.on())
+    const highPins = Array.from(code.matchAll(/(\w+)\.(?:value\(1\)|on\(\))/g));
+    highPins.forEach(match => {
+      const [_, varName] = match;
+      if (pinMap[varName]) {
+        pinStates[pinMap[varName]] = 'HIGH';
+      }
+    });
+    
+    // Find LOW settings (pin.value(0) or pin.off())
+    const lowPins = Array.from(code.matchAll(/(\w+)\.(?:value\(0\)|off\(\))/g));
+    lowPins.forEach(match => {
+      const [_, varName] = match;
+      if (pinMap[varName]) {
+        pinStates[pinMap[varName]] = 'LOW';
+      }
+    });
+    
+    // Update the microcontroller with new pin states and code
+    const updatedComponents = components.map(comp => 
+      comp.id === selectedMicrocontroller.id 
+        ? { ...comp, pinStates, code } 
+        : comp
+    );
+    
+    setComponents(updatedComponents);
+    
+    // Run simulation to update the circuit with new pin states
+    setSelectedMicrocontroller(null);
+    simulateCircuit();
+  };
+
   // Circuit simulation function
   const simulateCircuit = () => {
     // Reset simulation state
@@ -784,11 +857,18 @@ while True:
     const newEnergizedIds = new Set<string>();
     const newProblemIds = new Set<string>();
     
-    // Find all battery components in the circuit
+    // Find all power sources in the circuit (batteries and microcontrollers with HIGH pins)
     const batteries = components.filter(c => c.type === 'battery');
+    const microcontrollers = components.filter(c => 
+      c.type === 'microcontroller' && 
+      c.pinStates && 
+      Object.values(c.pinStates).includes('HIGH')
+    );
     
-    if (batteries.length === 0) {
-      setSimulationStatus("No power source found. Add a battery to your circuit.");
+    const powerSources = [...batteries, ...microcontrollers];
+    
+    if (powerSources.length === 0) {
+      setSimulationStatus("No power source found. Add a battery or a microcontroller with HIGH pins to your circuit.");
       setIsSimulating(false);
       return;
     }
@@ -797,9 +877,10 @@ while True:
     const visitedComponentIds = new Set<string>();
     const visitedConnectionPointIds = new Set<string>();
     
-    // For each battery, trace the circuit starting from its positive terminal
+    // For each power source, trace the circuit
     let anyCircuitCompleted = false;
     
+    // Process batteries
     batteries.forEach(battery => {
       // Find the positive terminal (first connection point is positive)
       const positiveTerminal = battery.connectionPoints[0];
@@ -822,6 +903,49 @@ while True:
       if (circuitCompleted) {
         anyCircuitCompleted = true;
       }
+    });
+    
+    // Process microcontrollers
+    microcontrollers.forEach(microcontroller => {
+      // Mark microcontroller as energized
+      newEnergizedIds.add(microcontroller.id);
+      
+      // Find connection points for pins that are set to HIGH
+      const highPinPoints = microcontroller.connectionPoints.filter(cp => 
+        cp.pinName && 
+        microcontroller.pinStates && 
+        microcontroller.pinStates[cp.pinName] === 'HIGH'
+      );
+      
+      // Find ground connection points
+      const groundPoints = microcontroller.connectionPoints.filter(cp => 
+        cp.pinName === 'GND'
+      );
+      
+      if (groundPoints.length === 0) {
+        // No ground pin found
+        setSimulationStatus("Microcontroller missing ground connection");
+        return;
+      }
+      
+      // Trace circuit from each HIGH pin to GND
+      highPinPoints.forEach(highPin => {
+        groundPoints.forEach(groundPin => {
+          const circuitCompleted = traceCircuit(
+            highPin,
+            groundPin,
+            microcontroller,
+            visitedComponentIds,
+            visitedConnectionPointIds,
+            newEnergizedIds,
+            newProblemIds
+          );
+          
+          if (circuitCompleted) {
+            anyCircuitCompleted = true;
+          }
+        });
+      });
     });
     
     if (!anyCircuitCompleted) {
@@ -959,6 +1083,17 @@ while True:
 
   return (
     <div className="circuit-builder h-full flex flex-col">
+      {/* Code Editor Modal */}
+      {isCodeEditorOpen && selectedMicrocontroller && (
+        <CodeEditorModal
+          isOpen={isCodeEditorOpen}
+          onClose={() => setIsCodeEditorOpen(false)}
+          initialCode={selectedMicrocontroller.code || ''}
+          onSaveCode={handleSaveCode}
+          onRunCode={handleRunCode}
+        />
+      )}
+      
       <div className="toolbar flex justify-between items-center bg-gray-800 text-white p-2 border-b border-gray-700">
         <div className="left-tools flex space-x-2">
           <button 
