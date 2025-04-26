@@ -16,13 +16,13 @@ const musicTracks: MusicTrack[] = [
     id: "chappy",
     title: "Chappy",
     artist: "Pixel Composer",
-    src: "/music/Chappy.mp3" // Path will be in the public folder
+    src: "/music/Chappy.mp3" // Path is in the public folder
   },
   {
     id: "pixelated-warriors",
     title: "Pixelated Warriors",
     artist: "Pixel Composer",
-    src: "/music/Pixelated Warriors.mp3" // Path will be in the public folder
+    src: "/music/Pixelated Warriors.mp3" // Path is in the public folder
   }
 ];
 
@@ -32,7 +32,7 @@ interface JukeboxWindowProps {
 
 const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
   const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(0);
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [volume, setVolume] = useState<number>(0.7);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
