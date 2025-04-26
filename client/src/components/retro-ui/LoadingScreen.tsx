@@ -1,10 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 
-// ASCII art - much smaller version
+// ASCII art - mountains with sunset
 const SMALL_ASCII_ART = `
-  _______ ______  _     _  _____  _______ _______
-  |       |_____] |     | |     | |______ |______
-  |_____  |_____] |_____| |_____| ______| |______
+       ^    /\\         /\\                       
+      /\\   /  \\_     _/  \\        /\\            
+     /  \\_/     \\___/     \\_     /  \\___        
+    /                        \\___/       \\       
+   /                                      \\      
+  /                                        \\     
+ /_________________________________________ \\    
+            CRAFTING TABLE OS                    
 `;
 
 // List of loading messages for the terminal
