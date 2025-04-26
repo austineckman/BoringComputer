@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Music } from "lucide-react";
-import bgMusicPath from "@assets/Fantasy Guild Hall.mp3";
-import pixelDreamsPath from "@assets/Pixel Dreams.mp3";
 import jukeboxImage from "@assets/jukebox.png";
 
 // Track interface for the playlist
@@ -13,23 +11,8 @@ interface Track {
   durationSeconds: number;
 }
 
-// Initial playlist with our current music files
-const initialPlaylist: Track[] = [
-  {
-    id: "fantasy-guild-hall",
-    title: "Fantasy Guild Hall",
-    artist: "ChipTune Music",
-    path: bgMusicPath,
-    durationSeconds: 193
-  },
-  {
-    id: "pixel-dreams",
-    title: "Pixel Dreams",
-    artist: "ChipTune Music",
-    path: pixelDreamsPath,
-    durationSeconds: 190
-  }
-];
+// Initial empty playlist - will be updated with new tracks
+const initialPlaylist: Track[] = [];
 
 interface AudioContextState {
   instance: AudioContext | null;
