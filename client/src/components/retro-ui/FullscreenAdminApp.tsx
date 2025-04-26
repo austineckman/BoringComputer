@@ -374,8 +374,8 @@ const FullscreenAdminApp: React.FC<FullscreenAdminAppProps> = ({ onClose }) => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {Array.isArray(filteredLootBoxes) && filteredLootBoxes.length > 0 ? (
-                    filteredLootBoxes.map((lootBox: any) => (
+                  {Array.isArray(lootBoxes) && lootBoxes.length > 0 ? (
+                    lootBoxes.map((lootBox: any) => (
                       <Card key={lootBox.id} className="overflow-hidden border-2 border-gray-700 bg-space-dark/80 hover:border-brand-orange/40 transition-all flex flex-col h-full">
                         <div className="h-48 bg-black/50 relative overflow-hidden">
                           {lootBox.image && (
