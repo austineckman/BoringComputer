@@ -117,8 +117,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const availableQuests = await storage.getAvailableQuestsForUser(user.id);
       console.log('Fetching user quests');
       const userQuests = await storage.getUserQuests(user.id);
-      console.log('Fetching all quests');
-      const allQuests = await storage.getQuests();
+      console.log('Fetching all quests with component requirements');
+      // Use the repository to get quests with component requirements
+      const allQuests = await questRepo.getAllQuestsWithComponents();
       console.log(`Found ${allQuests.length} total quests in database`);
       
       // Debug endpoint to check specific quest kit association
@@ -146,26 +147,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Fetch component requirements for all quests
-      console.log('Fetching component requirements for all quests');
-      const tempQuestsWithComponents = [];
-      for (const quest of allQuests) {
-        try {
-          const components = await storage.getQuestComponentsWithDetails(quest.id);
-          console.log(`Quest ${quest.id} (${quest.title}) has ${components.length} components`);
-          console.log(`Quest ${quest.id} kitId: ${quest.kitId}`);
-          
-          // Add component requirements to quest object
-          const questWithComponents = {
-            ...quest,
-            componentRequirements: components
-          };
-          tempQuestsWithComponents.push(questWithComponents);
-        } catch (err) {
-          console.error(`Error fetching components for quest ${quest.id}:`, err);
-          tempQuestsWithComponents.push(quest); // Add quest without components
-        }
-      }
+      // The quests already have their component requirements fetched by getAllQuestsWithComponents
+      console.log('Using quests with component requirements from repository');
+      const tempQuestsWithComponents = allQuests;
       
       // Group quests by adventure line to help with frontend organization
       const questsByAdventureLine: Record<string, any[]> = {};
