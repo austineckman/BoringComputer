@@ -88,16 +88,7 @@ const RetroDesktop: React.FC = () => {
     { id: "oracle", name: "The Oracle", icon: "oracle", position: { x: 20, y: 520 } },
   ]);
   
-  // Admin folder (only visible to admin users)
-  const [adminFolder, setAdminFolder] = useState<AdminFolder>({
-    id: "admin-folder",
-    name: "Admin Tools", 
-    icon: "📁",
-    position: { x: window.innerWidth - 100, y: 20 },
-    isOpen: false
-  });
-  
-  // Admin icons within the folder (not displayed directly on desktop)
+  // Admin icons (for reference only - no longer displayed in a folder)
   const adminIcons: DesktopIcon[] = [
     { id: "admin-quests", name: "Quest Admin", icon: "🧪", path: "/admin-quests", position: { x: 0, y: 0 } },
     { id: "admin-items", name: "Item Database", icon: "💾", path: "/admin-items", position: { x: 0, y: 0 } },
@@ -118,21 +109,7 @@ const RetroDesktop: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
   
-  // Handle window resize for admin folder position
-  useEffect(() => {
-    const handleResize = () => {
-      setAdminFolder(prev => ({
-        ...prev,
-        position: { ...prev.position, x: window.innerWidth - 100 }
-      }));
-    };
-    
-    window.addEventListener('resize', handleResize);
-    
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
+  // No resize handlers needed for admin folder anymore
 
   // Open Welcome window when component mounts
   useEffect(() => {
@@ -331,8 +308,6 @@ const RetroDesktop: React.FC = () => {
       if (oracleAppState === 'closed') {
         setOracleAppState('open');
       }
-    } else if (iconId === "admin-folder") {
-      toggleAdminFolder();
     } else if (iconPath) {
       // For other icons, navigate to the path if it exists
       navigate(iconPath);
@@ -342,7 +317,7 @@ const RetroDesktop: React.FC = () => {
     setSelectedIcon(null);
   };
   
-  const startIconDrag = (e: React.MouseEvent, iconId: string, isAdminFolder: boolean) => {
+  const startIconDrag = (e: React.MouseEvent, iconId: string) => {
     e.preventDefault();
     
     // Function to handle the mouse movement for desktop icons
@@ -359,57 +334,26 @@ const RetroDesktop: React.FC = () => {
       );
     };
     
-    // Function to handle the mouse movement for the admin folder
-    const dragAdminFolder = (e: MouseEvent, startX: number, startY: number, initialX: number, initialY: number) => {
-      const newX = initialX + (e.clientX - startX);
-      const newY = initialY + (e.clientY - startY);
-      
-      setAdminFolder(prev => ({
-        ...prev,
-        position: { x: newX, y: newY }
-      }));
+    // Regular desktop icon drag
+    const icon = desktopIcons.find(icon => icon.id === iconId);
+    if (!icon) return;
+    
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const initialX = icon.position.x;
+    const initialY = icon.position.y;
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      dragDesktopIcon(e, startX, startY, initialX, initialY);
     };
     
-    if (isAdminFolder) {
-      // Admin folder drag
-      const startX = e.clientX;
-      const startY = e.clientY;
-      const initialX = adminFolder.position.x;
-      const initialY = adminFolder.position.y;
-      
-      const handleMouseMove = (e: MouseEvent) => {
-        dragAdminFolder(e, startX, startY, initialX, initialY);
-      };
-      
-      const handleMouseUp = () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-      
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    } else {
-      // Regular desktop icon drag
-      const icon = desktopIcons.find(icon => icon.id === iconId);
-      if (!icon) return;
-      
-      const startX = e.clientX;
-      const startY = e.clientY;
-      const initialX = icon.position.x;
-      const initialY = icon.position.y;
-      
-      const handleMouseMove = (e: MouseEvent) => {
-        dragDesktopIcon(e, startX, startY, initialX, initialY);
-      };
-      
-      const handleMouseUp = () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-      
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    }
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
   };
 
   // Admin folder functions
@@ -636,7 +580,7 @@ const RetroDesktop: React.FC = () => {
               if (e.button === 0 && e.detail === 1) {
                 // Don't allow the drag to start immediately to distinguish from click
                 const dragTimeout = setTimeout(() => {
-                  startIconDrag(e, icon.id, false);
+                  startIconDrag(e, icon.id);
                 }, 200);
                 
                 // Clear the timeout if they release before the drag starts
@@ -705,48 +649,7 @@ const RetroDesktop: React.FC = () => {
           </div>
         ))}
         
-        {/* Admin folder icon - only visible to admins */}
-        {user?.roles?.includes('admin') && (
-          <div 
-            key={adminFolder.id}
-            className={`desktop-icon absolute flex flex-col items-center justify-center p-2 cursor-pointer rounded transition-all duration-150 w-24 ${
-              selectedIcon === adminFolder.id ? 'bg-purple-600/50 scale-105' : 'hover:bg-purple-600/30 hover:scale-105 active:bg-purple-700/40'
-            }`}
-            style={{
-              top: `${adminFolder.position.y}px`,
-              left: `${adminFolder.position.x}px`,
-            }}
-            onClick={() => handleIconClick(adminFolder.id)}
-            onDoubleClick={() => handleIconDoubleClick(adminFolder.id)}
-            onMouseDown={(e) => {
-              // Allow single click for selection without starting drag
-              if (e.button === 0 && e.detail === 1) {
-                // Don't allow the drag to start immediately to distinguish from click
-                const dragTimeout = setTimeout(() => {
-                  startIconDrag(e, adminFolder.id, true);
-                }, 200);
-                
-                // Clear the timeout if they release before the drag starts
-                const clearDragStart = () => {
-                  clearTimeout(dragTimeout);
-                  window.removeEventListener('mouseup', clearDragStart);
-                };
-                
-                window.addEventListener('mouseup', clearDragStart, { once: true });
-              }
-            }}
-          >
-            {/* Icon image */}
-            <div className="flex items-center justify-center w-12 h-12 rounded-sm bg-gradient-to-br from-purple-100 to-purple-300 border border-purple-400 shadow-md mb-1">
-              <span className="text-3xl drop-shadow-md">{adminFolder.icon}</span>
-            </div>
-            
-            {/* Icon label */}
-            <div className="text-center text-sm font-bold text-yellow-300 bg-purple-900/70 px-1 py-0.5 rounded shadow-sm w-full">
-              {adminFolder.name}
-            </div>
-          </div>
-        )}
+        {/* Admin folder has been removed as requested */}
       </div>
       
       {/* Windows */}
