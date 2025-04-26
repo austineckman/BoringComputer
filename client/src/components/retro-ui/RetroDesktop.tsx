@@ -27,8 +27,6 @@ import partyKittyImage from "@assets/partykitty.png";
 import oracleIconImage from "@assets/hooded-figure.png";
 import picklockImage from "@assets/Untitled design - 2025-04-26T171551.402.png";
 import craftingImage from "@assets/Untitled design - 2025-04-26T171858.770.png";
-// Import the CircuitBuilder component
-import CircuitBuilderWindow from "./CircuitBuilderWindow";
 
 // Type definitions
 interface Position {
@@ -83,7 +81,6 @@ const RetroDesktop: React.FC = () => {
     { id: "lootboxes", name: "PickLock.exe", icon: "picklock", path: "/lootboxes", position: { x: 20, y: 320 } },
     { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 20, y: 420 } },
     { id: "oracle", name: "The Oracle", icon: "oracle", position: { x: 20, y: 520 } },
-    { id: "circuit", name: "Circuit Builder", icon: "circuit", position: { x: 120, y: 20 } },
   ]);
   
   // Admin icons (for reference only - no longer displayed in a folder)
@@ -280,8 +277,6 @@ const RetroDesktop: React.FC = () => {
       openTerminalWindow();
     } else if (iconId === "shop") {
       openShopWindow();
-    } else if (iconId === "circuit") {
-      openCircuitBuilderWindow();
     } else if (iconId === "quests") {
       // Play sound if available
       if (window.sounds) {
@@ -431,16 +426,6 @@ const RetroDesktop: React.FC = () => {
       <JukeboxWindow onClose={() => closeWindow("jukebox")} />, 
       "music",
       { width: 900, height: 600 }
-    );
-  };
-  
-  const openCircuitBuilderWindow = () => {
-    openWindow(
-      "circuit", 
-      "Circuit Builder", 
-      <CircuitBuilderWindow />, 
-      "circuit",
-      { width: 900, height: 700 }
     );
   };
 
@@ -598,12 +583,6 @@ const RetroDesktop: React.FC = () => {
                   className="w-10 h-10 object-contain" 
                   style={{ imageRendering: 'pixelated' }}
                 />
-              ) : icon.icon === "circuit" ? (
-                <img 
-                  src="/images/circuit.svg" 
-                  alt="Circuit Builder" 
-                  className="w-10 h-10 object-contain" 
-                />
               ) : (
                 <span className="text-3xl drop-shadow-md">{icon.icon}</span>
               )}
@@ -695,12 +674,6 @@ const RetroDesktop: React.FC = () => {
                     alt="Jukebox" 
                     className="mr-2 w-6 h-6 object-contain" 
                     style={{ imageRendering: 'pixelated' }}
-                  />
-                ) : window.icon === "circuit" ? (
-                  <img 
-                    src="/images/circuit.svg" 
-                    alt="Circuit Builder" 
-                    className="mr-2 w-6 h-6 object-contain" 
                   />
                 ) : (
                   <span className="mr-2 text-lg">{window.icon}</span>
@@ -907,12 +880,6 @@ const RetroDesktop: React.FC = () => {
                     alt="Jukebox" 
                     className="mr-2 w-4 h-4 object-contain" 
                     style={{ imageRendering: 'pixelated' }}
-                  />
-                ) : window.icon === "circuit" ? (
-                  <img 
-                    src="/images/circuit.svg" 
-                    alt="Circuit Builder" 
-                    className="mr-2 w-4 h-4 object-contain" 
                   />
                 ) : (
                   <span className="mr-2">{window.icon}</span>

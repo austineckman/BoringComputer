@@ -13,7 +13,6 @@ import Forge from "@/pages/forge";
 import Achievements from "@/pages/achievements";
 import Settings from "@/pages/settings";
 import Logout from "@/pages/logout";
-import CircuitBuilderPage from "@/pages/circuit-builder-page";
 import Admin from "@/pages/admin";
 import AdminItems from "@/pages/admin-items";
 import AdminRecipes from "@/pages/admin-recipes";
@@ -263,11 +262,6 @@ function App() {
               <Settings />
             </MainLayout>
           )} 
-        />
-
-        <ProtectedRoute 
-          path="/circuit-builder" 
-          component={CircuitBuilderPage} 
         />
         
         <Route>
