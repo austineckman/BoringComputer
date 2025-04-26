@@ -190,26 +190,21 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
   };
 
   return (
-    <div className="p-3 text-white relative">
-      <h2 className="text-xl font-bold mb-3 text-center text-amber-300 drop-shadow-md">Adventure Bag</h2>
+    <div 
+      className="p-3 text-white relative rounded-lg overflow-hidden"
+      style={{
+        backgroundImage: `url(${bagBackground})`,
+        backgroundSize: 'cover',
+        backgroundRepeat: 'no-repeat',
+        imageRendering: 'pixelated',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.5)'
+      }}
+    >
       
       {/* Main Bag */}
-      <div 
-        className="rounded-lg overflow-hidden"
-        style={{
-          backgroundImage: `url(${bagBackground})`,
-          backgroundSize: 'cover',
-          backgroundRepeat: 'no-repeat',
-          imageRendering: 'pixelated',
-          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.5)'
-        }}
-      >
+      <div className="rounded-lg overflow-hidden">
         <div className="p-3">
-          <div className="flex justify-between items-center mb-2">
-            <div className="flex items-center">
-              <ShoppingBag className="w-5 h-5 mr-2 text-amber-200" />
-              <h3 className="text-lg font-bold text-amber-200">Adventurer's Backpack</h3>
-            </div>
+          <div className="flex justify-end items-center mb-2">
             <span className="text-xs text-amber-200 bg-black/30 px-2 py-1 rounded-full">
               {itemCount} / {totalSlots} slots
             </span>
