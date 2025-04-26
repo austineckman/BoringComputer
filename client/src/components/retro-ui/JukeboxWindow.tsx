@@ -283,6 +283,15 @@ const JukeboxWindow: React.FC = () => {
     };
   }, [playNextTrack]);
 
+  // Effect to handle volume changes
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    // Only update the volume, not reload the audio
+    audio.volume = volume;
+  }, [volume]);
+  
   // Effect to handle source changes and autoplay
   useEffect(() => {
     const audio = audioRef.current;
@@ -306,7 +315,7 @@ const JukeboxWindow: React.FC = () => {
         setIsPlaying(false);
       });
     }
-  }, [currentTrack.path, currentTrackIndex, volume, isPlaying]);
+  }, [currentTrack.path, currentTrackIndex, isPlaying, volume]);
   
   // Format seconds to mm:ss
   const formatTime = (seconds: number): string => {
