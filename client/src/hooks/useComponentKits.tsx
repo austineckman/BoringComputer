@@ -27,9 +27,15 @@ export interface ComponentKit {
 
 // Hook to fetch all component kits
 export const useComponentKits = () => {
-  return useQuery<ComponentKit[]>({
+  const result = useQuery<ComponentKit[]>({
     queryKey: ['/api/kits'],
   });
+  
+  return {
+    ...result,
+    kits: result.data || [],
+    loading: result.isLoading
+  };
 };
 
 // Hook to fetch a specific component kit

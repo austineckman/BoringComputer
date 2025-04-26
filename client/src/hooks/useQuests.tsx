@@ -26,8 +26,8 @@ export interface Quest {
   orderInLine: number;
   xpReward: number;
   status?: 'locked' | 'available' | 'completed' | 'in-progress';
-  kitId?: string | null;
-  componentRequirements?: QuestRequirement[];
+  kitId: string | null;
+  componentRequirements: QuestRequirement[];
   kit?: {
     id: string;
     name: string;
@@ -45,9 +45,16 @@ export interface QuestData {
 
 // Hook to fetch all quests
 export const useQuests = () => {
-  return useQuery<QuestData>({
+  const result = useQuery<QuestData>({
     queryKey: ['/api/quests'],
   });
+  
+  return {
+    ...result,
+    questsByAdventureLine: result.data?.questsByAdventureLine || {},
+    allQuests: result.data?.allQuests || [],
+    loading: result.isLoading
+  };
 };
 
 // Hook to fetch a specific quest
