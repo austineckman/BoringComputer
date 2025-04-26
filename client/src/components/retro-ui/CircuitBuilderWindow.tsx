@@ -707,6 +707,162 @@ const CircuitBuilderWindow: React.FC = () => {
     ));
   };
 
+  // Circuit simulation function
+  const simulateCircuit = () => {
+    // Reset simulation state
+    setIsSimulating(true);
+    setSimulationStatus(null);
+    const newEnergizedIds = new Set<string>();
+    const newProblemIds = new Set<string>();
+    
+    // Find all battery components in the circuit
+    const batteries = components.filter(c => c.type === 'battery');
+    
+    if (batteries.length === 0) {
+      setSimulationStatus("No power source found. Add a battery to your circuit.");
+      setIsSimulating(false);
+      return;
+    }
+    
+    // Set for tracking already visited components and connection points
+    const visitedComponentIds = new Set<string>();
+    const visitedConnectionPointIds = new Set<string>();
+    
+    // For each battery, trace the circuit starting from its positive terminal
+    let anyCircuitCompleted = false;
+    
+    batteries.forEach(battery => {
+      // Find the positive terminal (first connection point is positive)
+      const positiveTerminal = battery.connectionPoints[0];
+      const negativeTerminal = battery.connectionPoints[1];
+      
+      // Mark battery as energized
+      newEnergizedIds.add(battery.id);
+      
+      // Start tracing from positive terminal
+      const circuitCompleted = traceCircuit(
+        positiveTerminal, 
+        negativeTerminal, 
+        battery,
+        visitedComponentIds,
+        visitedConnectionPointIds,
+        newEnergizedIds,
+        newProblemIds
+      );
+      
+      if (circuitCompleted) {
+        anyCircuitCompleted = true;
+      }
+    });
+    
+    if (!anyCircuitCompleted) {
+      setSimulationStatus("Open circuit detected. Check your connections.");
+    } else {
+      setSimulationStatus("Circuit successfully energized!");
+    }
+    
+    // Update component states
+    setEnergizedComponentIds(newEnergizedIds);
+    setProblemComponentIds(newProblemIds);
+    setIsSimulating(false);
+  };
+  
+  // Trace circuit from a starting point to see if it completes a loop back to negative terminal
+  const traceCircuit = (
+    currentPoint: ConnectionPoint,
+    targetPoint: ConnectionPoint,
+    startComponent: CircuitComponent,
+    visitedComponentIds: Set<string>,
+    visitedConnectionPointIds: Set<string>,
+    energizedIds: Set<string>,
+    problemIds: Set<string>,
+    depth = 0
+  ): boolean => {
+    // Prevent infinite recursion
+    if (depth > 50) return false;
+    
+    // Mark this point as visited
+    visitedConnectionPointIds.add(currentPoint.id);
+    
+    // If we've reached the target point, we've completed the circuit
+    if (currentPoint.id === targetPoint.id) {
+      return true;
+    }
+    
+    // Find all wires connected to this point
+    const connectedWires = wires.filter(w => 
+      w.startPointId === currentPoint.id || w.endPointId === currentPoint.id
+    );
+    
+    // If no connected wires, this is an open circuit
+    if (connectedWires.length === 0) {
+      // Find the component this connection point belongs to
+      const component = components.find(c => c.id === currentPoint.parentId);
+      if (component && component.id !== startComponent.id) {
+        problemIds.add(component.id);
+      }
+      return false;
+    }
+    
+    // Try each connected wire
+    for (const wire of connectedWires) {
+      // Determine the other end of the wire
+      const otherPointId = wire.startPointId === currentPoint.id ? wire.endPointId : wire.startPointId;
+      
+      // Skip if we've already visited this point
+      if (visitedConnectionPointIds.has(otherPointId)) continue;
+      
+      // Find the connection point at the other end
+      const otherPoint = components.flatMap(c => c.connectionPoints).find(cp => cp.id === otherPointId);
+      if (!otherPoint) continue;
+      
+      // Find the component this connection point belongs to
+      const component = components.find(c => c.id === otherPoint.parentId);
+      if (!component) continue;
+      
+      // Skip if we've already visited this component (except for the target/battery)
+      if (visitedComponentIds.has(component.id) && component.id !== startComponent.id) continue;
+      
+      // Mark component as energized
+      energizedIds.add(component.id);
+      // Mark the wire as energized too
+      energizedIds.add(wire.id);
+      
+      // Special case for LED - only allow current flow in the correct direction
+      if (component.type === 'led') {
+        const anodePoint = component.connectionPoints[0]; // Left leg of LED is anode (+)
+        const cathodePoint = component.connectionPoints[1]; // Right leg of LED is cathode (-)
+        
+        // If current is flowing in the wrong direction through LED, mark as problem
+        if (otherPoint.id === cathodePoint.id && currentPoint.parentId !== startComponent.id) {
+          problemIds.add(component.id);
+          continue; // Skip this path
+        }
+      }
+      
+      // Mark this component as visited
+      visitedComponentIds.add(component.id);
+      
+      // Continue tracing from this point
+      const completed = traceCircuit(
+        otherPoint,
+        targetPoint,
+        startComponent,
+        visitedComponentIds,
+        visitedConnectionPointIds,
+        energizedIds,
+        problemIds,
+        depth + 1
+      );
+      
+      // If we completed the circuit, bubble up the success
+      if (completed) return true;
+    }
+    
+    // If we tried all paths and none completed the circuit, return false
+    return false;
+  };
+  
   // Handle keyboard events (for delete key)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -763,8 +919,32 @@ const CircuitBuilderWindow: React.FC = () => {
             <Grid size={16} />
           </button>
         </div>
-        <div className="center-tools">
+        <div className="center-tools flex items-center space-x-3">
           <span className="text-xs">Circuit Builder</span>
+          <button 
+            className={`px-3 py-1 rounded flex items-center space-x-1 ${isSimulating ? 'bg-gray-600 cursor-wait' : 'bg-green-700 hover:bg-green-600'}`}
+            onClick={simulateCircuit}
+            disabled={isSimulating}
+            title="Simulate Circuit"
+          >
+            <PlayCircle size={16} />
+            <span className="text-xs">Simulate Circuit</span>
+          </button>
+          {simulationStatus && (
+            <div className="flex items-center">
+              {simulationStatus.includes('success') ? (
+                <div className="text-green-400 text-xs flex items-center">
+                  <Zap size={14} className="mr-1" />
+                  {simulationStatus}
+                </div>
+              ) : (
+                <div className="text-red-400 text-xs flex items-center">
+                  <AlertCircle size={14} className="mr-1" />
+                  {simulationStatus}
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <div className="right-tools flex space-x-2">
           <button 
@@ -887,9 +1067,12 @@ const CircuitBuilderWindow: React.FC = () => {
                     y1={wire.startPosition.y}
                     x2={wire.endPosition.x}
                     y2={wire.endPosition.y}
-                    stroke={wire.color}
-                    strokeWidth={2}
-                    style={{ cursor: 'pointer' }}
+                    stroke={energizedComponentIds.has(wire.id) ? '#4ADE80' : wire.color}
+                    strokeWidth={energizedComponentIds.has(wire.id) ? 3 : 2}
+                    style={{ 
+                      cursor: 'pointer',
+                      filter: energizedComponentIds.has(wire.id) ? 'drop-shadow(0 0 2px rgba(0, 255, 0, 0.7))' : 'none'
+                    }}
                     onClick={(e) => {
                       e.stopPropagation();
                       deleteWire(wire.id);
@@ -936,7 +1119,10 @@ const CircuitBuilderWindow: React.FC = () => {
             {components.map(component => (
               <div
                 key={component.id}
-                className="circuit-component absolute select-none cursor-move flex items-center justify-center"
+                className={`circuit-component absolute select-none cursor-move flex items-center justify-center
+                  ${problemComponentIds.has(component.id) ? 'animate-pulse' : ''}
+                  ${energizedComponentIds.has(component.id) ? 'energized' : ''}
+                `}
                 style={{
                   left: `${component.position.x}px`,
                   top: `${component.position.y}px`,
@@ -944,17 +1130,33 @@ const CircuitBuilderWindow: React.FC = () => {
                   height: `${component.height}px`,
                   backgroundColor: componentDefinitions[component.type].color,
                   transform: `rotate(${component.rotation}deg)`,
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  border: problemComponentIds.has(component.id) 
+                    ? '2px solid rgba(255, 50, 50, 0.8)'
+                    : energizedComponentIds.has(component.id)
+                    ? '1px solid rgba(100, 255, 100, 0.5)'
+                    : '1px solid rgba(255, 255, 255, 0.3)',
                   borderRadius: '4px',
                   zIndex: draggedComponent?.id === component.id ? 100 : 10,
-                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+                  boxShadow: problemComponentIds.has(component.id)
+                    ? '0 0 8px rgba(255, 0, 0, 0.5)'
+                    : energizedComponentIds.has(component.id)
+                    ? '0 0 8px rgba(0, 255, 0, 0.3)'
+                    : '0 2px 4px rgba(0, 0, 0, 0.3)',
                 }}
                 onMouseDown={(e) => handleStartDragExisting(e, component)}
               >
-                {componentDefinitions[component.type].svgPath ? (
+                {/* Display LED lit version when energized, otherwise normal SVG */}
+                {component.type === 'led' && energizedComponentIds.has(component.id) ? (
+                  <ReactSVG
+                    src="/images/components/led_lit.svg"
+                    className="w-full h-full pointer-events-none p-1"
+                    loading={() => <span className="text-center text-2xl pointer-events-none">💡</span>}
+                    fallback={() => <span className="text-center text-2xl pointer-events-none">💡</span>}
+                  />
+                ) : componentDefinitions[component.type].svgPath ? (
                   <ReactSVG
                     src={componentDefinitions[component.type].svgPath}
-                    className="w-full h-full pointer-events-none p-1"
+                    className={`w-full h-full pointer-events-none p-1 ${energizedComponentIds.has(component.id) ? 'filter-active' : ''}`}
                     loading={() => <span className="text-center text-2xl pointer-events-none">{componentDefinitions[component.type].icon}</span>}
                     fallback={() => <span className="text-center text-2xl pointer-events-none">{componentDefinitions[component.type].icon}</span>}
                   />
