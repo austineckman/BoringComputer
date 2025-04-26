@@ -11,7 +11,7 @@ import { eq } from 'drizzle-orm';
  * @typeparam TInsert The insert type for the table
  * @typeparam TSelect The select type for the table
  */
-export class BaseRepository<T extends { name: string }, TInsert, TSelect> {
+export class BaseRepository<T, TInsert, TSelect> {
   /**
    * The table this repository operates on
    */
