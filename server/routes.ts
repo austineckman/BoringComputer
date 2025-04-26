@@ -113,6 +113,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allQuests = await storage.getQuests();
       console.log(`Found ${allQuests.length} total quests in database`);
       
+      // Debug endpoint to check specific quest kit association
+      // GET /api/quests?debugQuestId=1
+      const debugQuestId = req.query.debugQuestId;
+      if (debugQuestId) {
+        const questId = parseInt(debugQuestId as string);
+        const quest = await storage.getQuest(questId);
+        if (quest) {
+          console.log(`DEBUG - Quest ${questId} details:`, JSON.stringify(quest, null, 2));
+          console.log(`DEBUG - Quest ${questId} kitId:`, quest.kitId);
+          
+          const components = await storage.getQuestComponentsWithDetails(questId);
+          console.log(`DEBUG - Quest ${questId} has ${components.length} components:`, 
+            JSON.stringify(components, null, 2));
+          
+          return res.json({
+            quest: {
+              ...quest,
+              componentRequirements: components
+            }
+          });
+        } else {
+          return res.status(404).json({ message: 'Quest not found' });
+        }
+      }
+      
       // Fetch component requirements for all quests
       console.log('Fetching component requirements for all quests');
       const questsWithComponents = [];
@@ -120,6 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const components = await storage.getQuestComponentsWithDetails(quest.id);
           console.log(`Quest ${quest.id} (${quest.title}) has ${components.length} components`);
+          console.log(`Quest ${quest.id} kitId: ${quest.kitId}`);
           
           // Add component requirements to quest object
           const questWithComponents = {
