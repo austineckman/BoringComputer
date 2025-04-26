@@ -96,7 +96,7 @@ const AdminLootBoxesPage: React.FC = () => {
   // Create mutation
   const createMutation = useMutation({
     mutationFn: (data: LootBoxConfig) => 
-      apiRequest('/api/admin/lootboxes', 'POST', data),
+      apiRequest('POST', '/api/admin/lootboxes', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/lootboxes'] });
       toast({ title: "Success", description: "Loot box configuration created successfully" });
@@ -377,28 +377,34 @@ const AdminLootBoxesPage: React.FC = () => {
               <p>Loading loot box configurations...</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {lootBoxConfigs && lootBoxConfigs.length > 0 ? (
-                  lootBoxConfigs.map((lootBox: LootBoxConfig) => (
+                {Array.isArray(lootBoxConfigs) && lootBoxConfigs.length > 0 ? (
+                  lootBoxConfigs.map((lootBox: any) => (
                     <Card key={lootBox.id} className="overflow-hidden border-2 hover:shadow-md transition-all">
                       <div className="h-48 bg-gray-800 relative overflow-hidden">
-                        <img 
-                          src={lootBox.image} 
-                          alt={lootBox.name} 
-                          className="w-full h-full object-contain p-2"
-                        />
+                        {lootBox.image && (
+                          <img 
+                            src={lootBox.image} 
+                            alt={lootBox.name || "Loot box"} 
+                            className="w-full h-full object-contain p-2"
+                          />
+                        )}
                         <div className="absolute top-2 right-2 bg-black bg-opacity-70 px-2 py-1 rounded">
-                          <span className={`font-semibold ${getRarityColorClass(lootBox.rarity)}`}>
-                            {lootBox.rarity.charAt(0).toUpperCase() + lootBox.rarity.slice(1)}
+                          <span className={`font-semibold ${getRarityColorClass(lootBox.rarity || "common")}`}>
+                            {lootBox.rarity ? lootBox.rarity.charAt(0).toUpperCase() + lootBox.rarity.slice(1) : "Common"}
                           </span>
                         </div>
                       </div>
                       <CardHeader>
-                        <CardTitle>{lootBox.name}</CardTitle>
-                        <CardDescription>{lootBox.description}</CardDescription>
+                        <CardTitle>{lootBox.name || "Unnamed Loot Box"}</CardTitle>
+                        <CardDescription>{lootBox.description || "No description available"}</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-sm mb-2">Rewards: {lootBox.minRewards} - {lootBox.maxRewards} items</p>
-                        <p className="text-sm mb-4">Items in drop table: {lootBox.itemDropTable.length}</p>
+                        <p className="text-sm mb-2">
+                          Rewards: {lootBox.minRewards || 0} - {lootBox.maxRewards || 0} items
+                        </p>
+                        <p className="text-sm mb-4">
+                          Items in drop table: {Array.isArray(lootBox.itemDropTable) ? lootBox.itemDropTable.length : 0}
+                        </p>
                       </CardContent>
                       <CardFooter className="flex justify-between">
                         <Button 
