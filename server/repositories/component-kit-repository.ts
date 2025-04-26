@@ -97,11 +97,11 @@ export class ComponentKitRepository extends BaseRepository<
    * @param componentId The ID of the component to update
    * @param componentData The updated component data
    */
-  async updateComponent(componentId: number, componentData: Partial<Omit<typeof schema.components.$inferInsert, 'id'>>) {
+  async updateComponent(componentId: number, componentData: Partial<Omit<typeof schema.kitComponents.$inferInsert, 'id'>>) {
     const [component] = await db
-      .update(schema.components)
+      .update(schema.kitComponents)
       .set(componentData)
-      .where(eq(schema.components.id, componentId))
+      .where(eq(schema.kitComponents.id, componentId))
       .returning();
       
     return component;
@@ -114,8 +114,8 @@ export class ComponentKitRepository extends BaseRepository<
    */
   async deleteComponent(componentId: number) {
     const [component] = await db
-      .delete(schema.components)
-      .where(eq(schema.components.id, componentId))
+      .delete(schema.kitComponents)
+      .where(eq(schema.kitComponents.id, componentId))
       .returning();
       
     return component;
@@ -128,8 +128,8 @@ export class ComponentKitRepository extends BaseRepository<
   async getReusableComponents() {
     return await db
       .select()
-      .from(schema.components)
-      .where(eq(schema.components.isReusable, true));
+      .from(schema.kitComponents)
+      .where(eq(schema.kitComponents.isReusable, true));
   }
   
   /**
@@ -142,7 +142,7 @@ export class ComponentKitRepository extends BaseRepository<
     // enhanced with proper full-text search capabilities in a real app
     const components = await db
       .select()
-      .from(schema.components);
+      .from(schema.kitComponents);
       
     return components.filter(component => 
       component.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -156,7 +156,7 @@ export class ComponentKitRepository extends BaseRepository<
   async getTotalComponentCount() {
     const components = await db
       .select()
-      .from(schema.components);
+      .from(schema.kitComponents);
       
     return components.length;
   }
@@ -172,8 +172,8 @@ export class ComponentKitRepository extends BaseRepository<
     // Get the component
     const [component] = await db
       .select()
-      .from(schema.components)
-      .where(eq(schema.components.id, componentId));
+      .from(schema.kitComponents)
+      .where(eq(schema.kitComponents.id, componentId));
       
     if (!component) {
       throw new Error(`Component with ID ${componentId} not found`);
@@ -190,7 +190,7 @@ export class ComponentKitRepository extends BaseRepository<
     const { id, ...componentWithoutId } = component;
     
     const [newComponent] = await db
-      .insert(schema.components)
+      .insert(schema.kitComponents)
       .values({
         ...componentWithoutId,
         kitId: toKitId
