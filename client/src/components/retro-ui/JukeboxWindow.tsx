@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX } from "lucide-react";
 import jukeboxImage from "@assets/jukebox.png";
+import chappyMusic from "@assets/Chappy.mp3";
+import pixelatedWarriorsMusic from "@assets/Pixelated Warriors.mp3";
 
 // Music track interface
 interface MusicTrack {
@@ -10,19 +12,19 @@ interface MusicTrack {
   src: string;
 }
 
-// Define available tracks
+// Define available tracks with directly imported assets
 const musicTracks: MusicTrack[] = [
   {
     id: "chappy",
     title: "Chappy",
     artist: "Pixel Composer",
-    src: "/music/Chappy.mp3" // Path is in the public folder
+    src: chappyMusic
   },
   {
     id: "pixelated-warriors",
     title: "Pixelated Warriors",
     artist: "Pixel Composer",
-    src: "/music/Pixelated Warriors.mp3" // Path is in the public folder
+    src: pixelatedWarriorsMusic
   }
 ];
 
@@ -32,11 +34,12 @@ interface JukeboxWindowProps {
 
 const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
   const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(0);
-  const [isPlaying, setIsPlaying] = useState<boolean>(true);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [volume, setVolume] = useState<number>(0.7);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const animationRef = useRef<number>();
@@ -91,15 +94,19 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
     if (!audio) return;
     
     if (isPlaying) {
-      audio.play().catch(error => {
-        console.warn("Audio playback failed:", error);
-        setIsPlaying(false);
-      });
+      const playPromise = audio.play();
       
-      // Dispatch event to update the main desktop UI
-      window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
-        detail: { isPlaying: true } 
-      }));
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.warn("Audio playback failed:", error);
+          setIsPlaying(false);
+        }).then(() => {
+          // Dispatch event to update the main desktop UI only if the play succeeded
+          window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
+            detail: { isPlaying: true } 
+          }));
+        });
+      }
     } else {
       audio.pause();
       
@@ -213,6 +220,9 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
         <div className="text-center mb-4 w-full">
           <h4 className="text-orange-400 text-lg font-bold truncate">{currentTrack.title}</h4>
           <p className="text-gray-300 text-sm">{currentTrack.artist}</p>
+          {!isPlaying && (
+            <p className="text-orange-300 text-xs mt-2 italic">Click play button to start music</p>
+          )}
         </div>
         
         {/* Progress Bar */}
@@ -274,11 +284,12 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
         </div>
       </div>
       
-      {/* Hidden audio element */}
+      {/* Audio element with muted attribute for autoplay policy */}
       <audio 
         ref={audioRef} 
         src={currentTrack.src} 
         preload="metadata"
+        muted={isMuted}
       />
     </div>
   );
