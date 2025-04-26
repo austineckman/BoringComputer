@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
-import PartyKittyPopup from './PartyKittyPopup';
+import partyKittyImage from '@assets/partykitty.png';
 
 interface TerminalWindowProps {
   onClose: () => void;
@@ -15,16 +15,75 @@ type CommandResponse = {
   isSpecial?: boolean;
 };
 
+const PartyKittyPopup = ({ position, onClose }: { position: { x: number, y: number }, onClose: () => void }) => {
+  const [currentPosition, setCurrentPosition] = useState(position);
+  const [rotation, setRotation] = useState(Math.random() * 10 - 5);
+  
+  // Add a little animation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentPosition(prev => ({
+        x: prev.x + (Math.random() * 6 - 3),
+        y: prev.y + (Math.random() * 6 - 3),
+      }));
+      setRotation(prev => prev + (Math.random() * 4 - 2));
+    }, 500);
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  return (
+    <div 
+      className="absolute bg-black border-2 border-yellow-400 rounded-md overflow-hidden shadow-lg"
+      style={{ 
+        width: 300, 
+        height: 280, 
+        left: currentPosition.x, 
+        top: currentPosition.y,
+        transform: `rotate(${rotation}deg)`,
+        transition: 'transform 0.3s ease',
+        zIndex: 9999
+      }}
+    >
+      {/* Window bar */}
+      <div 
+        className="bg-gradient-to-r from-yellow-500 to-yellow-400 px-2 py-1 flex justify-between items-center"
+      >
+        <div className="text-black font-bold text-sm">PARTY KITTY!</div>
+        <button 
+          className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600"
+          onClick={onClose}
+        >
+          <X className="text-white w-3 h-3" />
+        </button>
+      </div>
+      
+      {/* Party Kitty Image */}
+      <div className="flex flex-col items-center justify-center p-2 h-[calc(100%-50px)]">
+        <img 
+          src={partyKittyImage}
+          alt="Party Kitty" 
+          className="max-w-full max-h-full object-contain"
+          style={{ imageRendering: 'pixelated' }}
+        />
+        <div className="text-yellow-400 text-center mt-2 text-sm font-bold">
+          🎉 PARTY TIME! 🎉
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const TerminalWindow: React.FC<TerminalWindowProps> = ({ onClose, onMinimize, zIndex }) => {
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [responses, setResponses] = useState<CommandResponse[]>([]);
   const [currentCommand, setCurrentCommand] = useState('');
   const [position, setPosition] = useState({ x: 100, y: 100 });
-  const [isMoving, setIsMoving] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [showKittyPopups, setShowKittyPopups] = useState<Array<{ id: number, x: number, y: number }>>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const outputRef = useRef<HTMLDivElement>(null);
-  const terminalRef = useRef<HTMLDivElement>(null);
 
   // Initial welcome message
   useEffect(() => {
@@ -54,19 +113,19 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ onClose, onMinimize, zI
     focusInput();
   }, []);
 
-  // Move window with mouse
+  // Handle window dragging
   useEffect(() => {
+    if (!isDragging) return;
+
     const handleMouseMove = (e: MouseEvent) => {
-      if (isMoving && terminalRef.current) {
-        setPosition({
-          x: e.clientX - terminalRef.current.offsetWidth / 2,
-          y: e.clientY - 20,
-        });
-      }
+      setPosition({
+        x: e.clientX - dragOffset.x,
+        y: e.clientY - dragOffset.y
+      });
     };
 
     const handleMouseUp = () => {
-      setIsMoving(false);
+      setIsDragging(false);
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -76,11 +135,15 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ onClose, onMinimize, zI
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isMoving]);
+  }, [isDragging, dragOffset]);
 
-  const startMoving = (e: React.MouseEvent) => {
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setIsMoving(true);
+    setIsDragging(true);
+    setDragOffset({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    });
   };
 
   const triggerPartyKitty = () => {
@@ -89,7 +152,7 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ onClose, onMinimize, zI
     for (let i = 0; i < 5; i++) {
       popups.push({
         id: Date.now() + i,
-        x: Math.random() * (window.innerWidth - 300),
+        x: Math.random() * (window.innerWidth - 350),
         y: Math.random() * (window.innerHeight - 300),
       });
     }
@@ -101,6 +164,8 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ onClose, onMinimize, zI
   };
 
   const handleCommand = (command: string) => {
+    if (!command.trim()) return;
+    
     // Add command to history
     setCommandHistory(prev => [...prev, command]);
     
@@ -208,7 +273,6 @@ home/
 
   return (
     <div
-      ref={terminalRef}
       className="absolute bg-black border-2 border-gray-700 rounded-md overflow-hidden shadow-lg"
       style={{ 
         width: 600, 
@@ -222,7 +286,7 @@ home/
       {/* Window bar */}
       <div 
         className="bg-gray-800 px-2 py-1 flex justify-between items-center cursor-move"
-        onMouseDown={startMoving}
+        onMouseDown={handleMouseDown}
       >
         <div className="text-white font-mono text-sm">Terminal</div>
         <div className="flex gap-2">
