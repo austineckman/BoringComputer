@@ -917,18 +917,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // defined earlier in the file at line ~574.
   
   // Get all loot box configs (for displaying in QuestCard and other components)
-  app.get('/api/admin/loot-boxes/configs', authenticate, async (req, res) => {
-    try {
-      // Get all loot box configurations
-      const lootBoxConfigs = await storage.getLootBoxConfigs();
-      return res.json(lootBoxConfigs);
-    } catch (error) {
-      console.error("Error getting loot box configs:", error);
-      return res.status(500).json({ message: "Internal server error" });
-    }
-  });
-  
-  // Keep backwards compatibility
   app.get('/api/admin/lootboxes', authenticate, async (req, res) => {
     try {
       // Get all loot box configurations
@@ -937,59 +925,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting loot box configs:", error);
       return res.status(500).json({ message: "Internal server error" });
-    }
-  });
-  
-  // Create loot box config
-  app.post('/api/admin/loot-boxes/configs', authenticate, adminAuth, async (req, res) => {
-    try {
-      const config = req.body;
-      const createdConfig = await storage.createLootBoxConfig(config);
-      return res.status(201).json(createdConfig);
-    } catch (error) {
-      console.error("Error creating loot box config:", error);
-      return res.status(500).json({ message: "Failed to create loot box configuration" });
-    }
-  });
-  
-  // Update loot box config
-  app.put('/api/admin/loot-boxes/configs/:id', authenticate, adminAuth, async (req, res) => {
-    try {
-      const id = req.params.id;
-      const config = req.body;
-      
-      // Verify the config exists
-      const existingConfig = await storage.getLootBoxConfig(id);
-      if (!existingConfig) {
-        return res.status(404).json({ message: "Loot box configuration not found" });
-      }
-      
-      // Update the configuration
-      const updatedConfig = await storage.updateLootBoxConfig(id, config);
-      return res.json(updatedConfig);
-    } catch (error) {
-      console.error("Error updating loot box config:", error);
-      return res.status(500).json({ message: "Failed to update loot box configuration" });
-    }
-  });
-  
-  // Delete loot box config
-  app.delete('/api/admin/loot-boxes/configs/:id', authenticate, adminAuth, async (req, res) => {
-    try {
-      const id = req.params.id;
-      
-      // Verify the config exists
-      const existingConfig = await storage.getLootBoxConfig(id);
-      if (!existingConfig) {
-        return res.status(404).json({ message: "Loot box configuration not found" });
-      }
-      
-      // Delete the configuration
-      await storage.deleteLootBoxConfig(id);
-      return res.status(200).json({ message: "Loot box configuration deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting loot box config:", error);
-      return res.status(500).json({ message: "Failed to delete loot box configuration" });
     }
   });
   
@@ -1553,4 +1488,3 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   return httpServer;
 }
-

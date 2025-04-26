@@ -82,7 +82,7 @@ const AdminLootBoxesPage: React.FC = () => {
 
   // Fetch loot box configs
   const { data: lootBoxConfigs, isLoading: isLoadingConfigs } = useQuery({
-    queryKey: ['/api/admin/loot-boxes/configs'],
+    queryKey: ['/api/admin/lootboxes'],
     enabled: selectedTab === "list",
     // Use the default queryFn
   });
@@ -96,9 +96,9 @@ const AdminLootBoxesPage: React.FC = () => {
   // Create mutation
   const createMutation = useMutation({
     mutationFn: (data: LootBoxConfig) => 
-      apiRequest('POST', '/api/admin/loot-boxes/configs', data),
+      apiRequest('/api/admin/lootboxes', 'POST', data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/loot-boxes/configs'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/lootboxes'] });
       toast({ title: "Success", description: "Loot box configuration created successfully" });
       setIsCreateDialogOpen(false);
       setSelectedTab("list");
@@ -116,9 +116,9 @@ const AdminLootBoxesPage: React.FC = () => {
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: (data: LootBoxConfig) => 
-      apiRequest('PUT', `/api/admin/loot-boxes/configs/${data.id}`, data),
+      apiRequest('PUT', `/api/admin/lootboxes/${data.id}`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/loot-boxes/configs'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/lootboxes'] });
       toast({ title: "Success", description: "Loot box configuration updated successfully" });
       setSelectedTab("list");
       setIsEditMode(false);
@@ -136,9 +136,9 @@ const AdminLootBoxesPage: React.FC = () => {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: (id: string) => 
-      apiRequest('DELETE', `/api/admin/loot-boxes/configs/${id}`),
+      apiRequest('DELETE', `/api/admin/lootboxes/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/loot-boxes/configs'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/lootboxes'] });
       toast({ title: "Success", description: "Loot box configuration deleted successfully" });
       setIsDeleteDialogOpen(false);
       setCurrentLootBox(null);

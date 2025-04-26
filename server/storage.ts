@@ -437,7 +437,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return config;
   }
-  
+
   async updateLootBoxConfig(id: string, configData: Partial<LootBoxConfig>): Promise<LootBoxConfig | undefined> {
     // Always update the timestamp
     const dataWithTimestamp = {
@@ -464,10 +464,6 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
-  
-
-
-
   
   // Inventory History methods
   async getInventoryHistory(userId: number): Promise<InventoryHistory[]> {
