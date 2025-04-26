@@ -25,6 +25,10 @@ import { authenticate, hashPassword } from './auth';
 import { componentKits, items } from '@shared/schema';
 import { itemDatabase } from './itemDatabase';
 
+// Import new modular routes
+import questRoutes from './routes/quest-routes';
+import componentKitRoutes from './routes/component-kit-routes';
+
 // Using Passport authentication instead of custom middleware
 
 // Admin-only middleware is now imported from ./middleware/adminAuth
@@ -67,6 +71,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register the new auth routes
   app.use("/api/auth", authRoutes);
+  
+  // Register our new modular routes
+  app.use("/api", questRoutes);
+  app.use("/api", componentKitRoutes);
   
   // Auth routes have been moved to separate files
   // Using passport authentication with proper session handling
