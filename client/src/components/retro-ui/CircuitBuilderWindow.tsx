@@ -1140,7 +1140,7 @@ while True:
   }, [draggedComponent, isDrawingWire]);
 
   return (
-    <div className="circuit-builder h-full flex flex-col">
+    <div className="circuit-builder h-full flex flex-col overflow-hidden">
       {/* Code Editor Modal */}
       {isCodeEditorOpen && selectedMicrocontroller && (
         <CodeEditorModal
@@ -1152,75 +1152,84 @@ while True:
         />
       )}
       
-      <div className="toolbar flex justify-between items-center bg-gray-800 text-white p-2 border-b border-gray-700">
-        <div className="left-tools flex space-x-2">
+      <div className="toolbar flex justify-between items-center bg-indigo-950 text-white p-3 border-b border-indigo-800">
+        <div className="left-tools flex space-x-3">
           <button 
-            className="tool-btn p-1 hover:bg-gray-700 rounded" 
+            className="tool-btn p-2 bg-indigo-800 hover:bg-indigo-700 transition-colors rounded-md flex items-center" 
             title="Pan Canvas"
           >
-            <Move size={16} />
+            <Move size={16} className="mr-1" />
+            <span className="text-xs">Pan</span>
           </button>
+          <div className="flex space-x-1">
+            <button 
+              className="tool-btn p-2 bg-indigo-800 hover:bg-indigo-700 transition-colors rounded-md" 
+              title="Zoom In"
+              onClick={() => setZoom(Math.min(2, zoom + 0.1))}
+            >
+              <ZoomIn size={16} />
+            </button>
+            <button 
+              className="tool-btn p-2 bg-indigo-800 hover:bg-indigo-700 transition-colors rounded-md" 
+              title="Zoom Out"
+              onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
+            >
+              <ZoomOut size={16} />
+            </button>
+          </div>
           <button 
-            className="tool-btn p-1 hover:bg-gray-700 rounded" 
-            title="Zoom In"
-            onClick={() => setZoom(Math.min(2, zoom + 0.1))}
-          >
-            <ZoomIn size={16} />
-          </button>
-          <button 
-            className="tool-btn p-1 hover:bg-gray-700 rounded" 
-            title="Zoom Out"
-            onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
-          >
-            <ZoomOut size={16} />
-          </button>
-          <button 
-            className="tool-btn p-1 hover:bg-gray-700 rounded" 
+            className="tool-btn p-2 bg-indigo-800 hover:bg-indigo-700 transition-colors rounded-md flex items-center" 
             title="Toggle Grid"
           >
-            <Grid size={16} />
+            <Grid size={16} className="mr-1" />
+            <span className="text-xs">Grid</span>
           </button>
         </div>
-        <div className="center-tools flex items-center space-x-3">
-          <span className="text-xs">Circuit Builder</span>
+        <div className="center-tools flex items-center">
           <button 
-            className={`px-3 py-1 rounded flex items-center space-x-1 ${isSimulating ? 'bg-gray-600 cursor-wait' : 'bg-green-700 hover:bg-green-600'}`}
+            className={`px-4 py-2 rounded-md flex items-center space-x-2 shadow-lg ${
+              isSimulating 
+                ? 'bg-purple-700 cursor-wait shadow-purple-900/50' 
+                : 'bg-green-600 hover:bg-green-500 shadow-green-900/50'
+            }`}
             onClick={simulateCircuit}
             disabled={isSimulating}
             title="Simulate Circuit"
           >
-            <PlayCircle size={16} />
-            <span className="text-xs">Simulate Circuit</span>
+            {isSimulating ? <Pause size={18} /> : <Play size={18} />}
+            <span>{isSimulating ? "Stop Simulation" : "Run Simulation"}</span>
           </button>
+          
           {simulationStatus && (
-            <div className="flex items-center">
+            <div className="flex items-center ml-4 px-3 py-1 rounded-md border border-indigo-700 bg-indigo-900/50">
               {simulationStatus.includes('success') ? (
-                <div className="text-green-400 text-xs flex items-center">
-                  <Zap size={14} className="mr-1" />
+                <div className="text-green-400 flex items-center">
+                  <Zap size={16} className="mr-2" />
                   {simulationStatus}
                 </div>
               ) : (
-                <div className="text-red-400 text-xs flex items-center">
-                  <AlertCircle size={14} className="mr-1" />
+                <div className="text-red-400 flex items-center">
+                  <AlertCircle size={16} className="mr-2" />
                   {simulationStatus}
                 </div>
               )}
             </div>
           )}
         </div>
-        <div className="right-tools flex space-x-2">
+        <div className="right-tools flex space-x-3">
           <button 
-            className="tool-btn p-1 hover:bg-gray-700 rounded" 
+            className="tool-btn p-2 bg-indigo-800 hover:bg-indigo-700 transition-colors rounded-md flex items-center" 
             title="Reset Canvas"
             onClick={() => {
               setPan({ x: 0, y: 0 });
               setZoom(1);
             }}
           >
-            <RotateCw size={16} />
+            <RotateCw size={16} className="mr-1" />
+            <span className="text-xs">Reset</span>
           </button>
           <button 
-            className="tool-btn p-1 hover:bg-red-700 rounded" 
+            className="tool-btn p-2 bg-red-800 hover:bg-red-700 transition-colors rounded-md flex items-center" 
             title="Clear All Components"
             onClick={() => {
               // Clear all components and wires
@@ -1234,7 +1243,8 @@ while True:
               setHighlightedPoint(null);
             }}
           >
-            <Trash2 size={16} />
+            <Trash2 size={16} className="mr-1" />
+            <span className="text-xs">Clear</span>
           </button>
         </div>
       </div>
