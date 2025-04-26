@@ -25,6 +25,8 @@ import shopCoinImage from "@assets/22_Leperchaun_Coin.png";
 import logoImage from "@assets/Asset 6@2x-8.png";
 import partyKittyImage from "@assets/partykitty.png";
 import oracleIconImage from "@assets/hooded-figure.png";
+import picklockImage from "@assets/Untitled design - 2025-04-26T171551.402.png";
+import craftingImage from "@assets/Untitled design - 2025-04-26T171858.770.png";
 
 // Type definitions
 interface Position {
@@ -541,7 +543,7 @@ const RetroDesktop: React.FC = () => {
             <div className="flex items-center justify-center w-12 h-12 rounded-sm bg-gradient-to-br from-blue-100 to-blue-300 border border-blue-400 shadow-md mb-1">
               {icon.icon === "picklock" ? (
                 <img 
-                  src="/images/picklock.png" 
+                  src={picklockImage} 
                   alt="PickLock" 
                   className="w-10 h-10 object-contain" 
                   style={{ imageRendering: 'pixelated' }}
@@ -555,7 +557,7 @@ const RetroDesktop: React.FC = () => {
                 />
               ) : icon.icon === "craftingarmor" ? (
                 <img 
-                  src="/images/crafting.png" 
+                  src={craftingImage} 
                   alt="Crafting Armor" 
                   className="w-10 h-10 object-contain" 
                   style={{ imageRendering: 'pixelated' }}
@@ -633,7 +635,7 @@ const RetroDesktop: React.FC = () => {
                   />
                 ) : window.icon === "picklock" ? (
                   <img 
-                    src="/images/picklock.png" 
+                    src={picklockImage} 
                     alt="PickLock" 
                     className="mr-2 w-6 h-6 object-contain" 
                     style={{ imageRendering: 'pixelated' }}
@@ -647,7 +649,7 @@ const RetroDesktop: React.FC = () => {
                   />
                 ) : window.icon === "craftingarmor" ? (
                   <img 
-                    src="/images/crafting.png" 
+                    src={craftingImage} 
                     alt="Crafting Armor" 
                     className="mr-2 w-6 h-6 object-contain" 
                     style={{ imageRendering: 'pixelated' }}
@@ -839,7 +841,7 @@ const RetroDesktop: React.FC = () => {
                   />
                 ) : window.icon === "picklock" ? (
                   <img 
-                    src="/images/picklock.png" 
+                    src={picklockImage} 
                     alt="PickLock" 
                     className="mr-2 w-4 h-4 object-contain" 
                     style={{ imageRendering: 'pixelated' }}
@@ -853,7 +855,7 @@ const RetroDesktop: React.FC = () => {
                   />
                 ) : window.icon === "craftingarmor" ? (
                   <img 
-                    src="/images/crafting.png" 
+                    src={craftingImage} 
                     alt="Crafting Armor" 
                     className="mr-2 w-4 h-4 object-contain" 
                     style={{ imageRendering: 'pixelated' }}
