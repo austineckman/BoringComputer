@@ -295,7 +295,7 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
           <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-700">
             <div className="flex items-center">
               <Music className="mr-2 text-orange-400" />
-              <h2 className="text-lg font-bold">Retro Jukebox</h2>
+              <h2 className="text-lg font-bold">Taverns, Terrors, and Tiny Victories</h2>
             </div>
             <div className="flex items-center">
               <span className="text-xs text-gray-400 mr-4">Playing {playlist.length} tracks</span>
