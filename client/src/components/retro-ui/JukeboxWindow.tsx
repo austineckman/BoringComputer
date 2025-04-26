@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX } from "lucide-react";
-import { Howl, Howler } from 'howler';
 import jukeboxImage from "@assets/jukebox.png";
 
 // Music track interface
@@ -38,10 +37,34 @@ const musicTracks: MusicTrack[] = [
     src: "/music/TAVERN.EXE.mp3"
   },
   {
+    id: "pixel-hearth",
+    title: "Pixel Hearth",
+    artist: "Digital Bard",
+    src: "/music/Pixel Hearth.mp3"
+  },
+  {
     id: "guildbank",
     title: "Guild Bank",
     artist: "Epic Fantasy",
     src: "/music/guildbank.mp3"
+  },
+  {
+    id: "lan-night",
+    title: "LAN Night Jamboree",
+    artist: "Retro Beats",
+    src: "/music/LAN Night Jamboree.mp3"
+  },
+  {
+    id: "thief-fog",
+    title: "Thief in the Fog",
+    artist: "Epic Fantasy",
+    src: "/music/Thief in the fog.mp3"
+  },
+  {
+    id: "glitched-grid",
+    title: "Glitched Grid",
+    artist: "Cyber Core",
+    src: "/music/Glitched Grid.mp3"
   }
 ];
 
@@ -58,130 +81,123 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
   const [duration, setDuration] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
-  // Reference to the sound object
-  const soundRef = useRef<Howl | null>(null);
+  // Reference to audio element
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<number | null>(null);
   
   const currentTrack = musicTracks[currentTrackIndex];
   
-  // Initialize sound when component mounts or when track changes
+  // Initialize audio when component mounts
   useEffect(() => {
-    // Clean up previous sound instance
-    if (soundRef.current) {
-      soundRef.current.unload();
-    }
-    
-    // Clean up previous interval
-    if (intervalRef.current) {
-      window.clearInterval(intervalRef.current);
-    }
-    
-    setIsLoading(true);
-    console.log("Loading track:", currentTrack.src);
-    
-    // Create a new Howl instance
-    const sound = new Howl({
-      src: [currentTrack.src],
-      html5: true, // Use HTML5 Audio to help with mobile playback
-      format: ['mp3'],
-      volume: isMuted ? 0 : volume,
-      xhr: {
-        method: 'GET',
-        headers: {
-          'Cache-Control': 'no-cache',
-        },
-        withCredentials: false,
-      },
-      onload: () => {
-        console.log("Track loaded:", currentTrack.title);
+    // Create audio element if it doesn't exist
+    if (!audioRef.current) {
+      const audio = new Audio();
+      audio.preload = "auto";
+      
+      // Set up event listeners
+      audio.addEventListener("loadstart", () => {
+        setIsLoading(true);
+        console.log("Loading track:", currentTrack.src);
+      });
+      
+      audio.addEventListener("canplay", () => {
         setIsLoading(false);
-        setDuration(sound.duration());
+        setDuration(audio.duration);
+        console.log("Track ready to play:", currentTrack.title);
         
-        // If we were playing before, resume playback
+        // Auto-play if we were playing before
         if (isPlaying) {
-          sound.play();
+          audio.play().catch(e => console.error("Auto-play failed:", e));
         }
-      },
-      onplay: () => {
+      });
+      
+      audio.addEventListener("play", () => {
         setIsPlaying(true);
         
-        // Set up an interval to update the progress
+        // Set up progress tracking
+        if (intervalRef.current) {
+          window.clearInterval(intervalRef.current);
+        }
+        
         intervalRef.current = window.setInterval(() => {
-          setProgress(sound.seek());
+          setProgress(audio.currentTime);
         }, 100);
         
-        // Update the main desktop UI
+        // Notify desktop UI
         window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
           detail: { isPlaying: true } 
         }));
-      },
-      onpause: () => {
+      });
+      
+      audio.addEventListener("pause", () => {
         setIsPlaying(false);
         
-        // Clear the progress update interval
         if (intervalRef.current) {
           window.clearInterval(intervalRef.current);
           intervalRef.current = null;
         }
         
-        // Update the main desktop UI
+        // Notify desktop UI
         window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
           detail: { isPlaying: false } 
         }));
-      },
-      onstop: () => {
-        setIsPlaying(false);
-        setProgress(0);
-        
-        // Clear the progress update interval
-        if (intervalRef.current) {
-          window.clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-        
-        // Update the main desktop UI
-        window.dispatchEvent(new CustomEvent('jukeboxStatusChange', { 
-          detail: { isPlaying: false } 
-        }));
-      },
-      onend: () => {
-        // Play the next track when current one ends
+      });
+      
+      audio.addEventListener("ended", () => {
         nextTrack();
-      },
-      onloaderror: (id, err) => {
-        console.error("Error loading sound:", err);
+      });
+      
+      audio.addEventListener("error", (e) => {
+        console.error("Audio error:", e);
         setIsLoading(false);
-      },
-      onplayerror: (id, err) => {
-        console.error("Error playing sound:", err);
-        setIsLoading(false);
-        setIsPlaying(false);
-      }
-    });
+      });
+      
+      audioRef.current = audio;
+    }
     
-    // Store the Howl instance
-    soundRef.current = sound;
+    // Set initial volume
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : volume;
+    }
     
-    // Cleanup function
+    // Clean up on unmount
     return () => {
-      if (soundRef.current) {
-        soundRef.current.unload();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
       }
       
       if (intervalRef.current) {
         window.clearInterval(intervalRef.current);
       }
     };
+  }, []);
+  
+  // Update audio source when track changes
+  useEffect(() => {
+    if (audioRef.current) {
+      // Save playing state
+      const wasPlaying = !audioRef.current.paused;
+      
+      // Update source
+      audioRef.current.src = currentTrack.src;
+      audioRef.current.load();
+      
+      // Resume playback if needed
+      if (wasPlaying) {
+        audioRef.current.play().catch(e => console.error("Failed to auto-play next track:", e));
+      }
+    }
   }, [currentTrackIndex]);
   
-  // Effect to handle volume/mute changes
+  // Handle volume changes
   useEffect(() => {
-    if (soundRef.current) {
-      soundRef.current.volume(isMuted ? 0 : volume);
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : volume;
     }
   }, [volume, isMuted]);
   
-  // Listen for toggle events from the desktop UI
+  // Listen for desktop UI events
   useEffect(() => {
     const handleTogglePlayPause = () => {
       togglePlayPause();
@@ -198,23 +214,24 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
   const togglePlayPause = () => {
     console.log("Toggle play button clicked");
     
-    if (!soundRef.current) return;
+    if (!audioRef.current) return;
     
-    if (!isPlaying) {
+    if (audioRef.current.paused) {
       console.log("Trying to play audio");
-      // Unmute if muted when trying to play
+      // Unmute if muted
       if (isMuted) {
         setIsMuted(false);
-        soundRef.current.volume(volume);
+        audioRef.current.volume = volume;
       }
-      soundRef.current.play();
+      
+      audioRef.current.play().catch(e => console.error("Play failed:", e));
     } else {
       console.log("Pausing audio");
-      soundRef.current.pause();
+      audioRef.current.pause();
     }
   };
   
-  // Change track functions
+  // Track navigation
   const prevTrack = () => {
     setCurrentTrackIndex(prev => 
       prev === 0 ? musicTracks.length - 1 : prev - 1
@@ -232,7 +249,7 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
     const newVolume = parseFloat(e.target.value);
     setVolume(newVolume);
     
-    // If we change volume from 0, unmute
+    // Auto unmute if volume raised from zero
     if (newVolume > 0 && isMuted) {
       setIsMuted(false);
     }
@@ -242,12 +259,12 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
     setIsMuted(!isMuted);
   };
   
-  // Progress bar
+  // Progress bar control
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!soundRef.current) return;
+    if (!audioRef.current) return;
     
     const newTime = parseFloat(e.target.value);
-    soundRef.current.seek(newTime);
+    audioRef.current.currentTime = newTime;
     setProgress(newTime);
   };
   
