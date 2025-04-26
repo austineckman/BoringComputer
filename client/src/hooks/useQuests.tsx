@@ -36,7 +36,7 @@ export interface Quest {
       code: string;
     }[];
   };
-  // Component requirements should have proper typing
+  // Component requirements with typing from IStorage interface
   componentRequirements?: QuestComponent[];
 }
 
@@ -68,6 +68,37 @@ export function useQuests() {
 
   // Log the raw data for debugging
   console.log('Raw quest data from API:', data);
+  
+  // More detailed debugging for quests with component requirements or kitId
+  if (data && data.allQuests && Array.isArray(data.allQuests)) {
+    const questsWithKitId = data.allQuests.filter(q => q.kitId);
+    const questsWithComponents = data.allQuests.filter(q => q.componentRequirements && q.componentRequirements.length > 0);
+    
+    if (questsWithKitId.length > 0) {
+      console.log('Quests with direct kitId:', questsWithKitId.map(q => ({
+        id: q.id,
+        title: q.title,
+        kitId: q.kitId
+      })));
+    } else {
+      console.warn('No quests found with direct kitId');
+    }
+    
+    if (questsWithComponents.length > 0) {
+      console.log('Quests with component requirements:', questsWithComponents.map(q => ({
+        id: q.id,
+        title: q.title,
+        componentCount: q.componentRequirements?.length || 0,
+        components: q.componentRequirements?.map(c => ({
+          id: c.id,
+          name: c.name,
+          kitId: c.kitId
+        }))
+      })));
+    } else {
+      console.warn('No quests found with component requirements');
+    }
+  }
 
   if (data) {
     // Process data based on its structure

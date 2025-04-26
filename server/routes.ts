@@ -140,7 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Fetch component requirements for all quests
       console.log('Fetching component requirements for all quests');
-      const questsWithComponents = [];
+      const tempQuestsWithComponents = [];
       for (const quest of allQuests) {
         try {
           const components = await storage.getQuestComponentsWithDetails(quest.id);
@@ -152,10 +152,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ...quest,
             componentRequirements: components
           };
-          questsWithComponents.push(questWithComponents);
+          tempQuestsWithComponents.push(questWithComponents);
         } catch (err) {
           console.error(`Error fetching components for quest ${quest.id}:`, err);
-          questsWithComponents.push(quest); // Add quest without components
+          tempQuestsWithComponents.push(quest); // Add quest without components
         }
       }
       
@@ -212,6 +212,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const adventureLine in questsByAdventureLine) {
         questsByAdventureLine[adventureLine].sort((a, b) => a.orderInLine - b.orderInLine);
         console.log(`Adventure line ${adventureLine} has ${questsByAdventureLine[adventureLine].length} quests`);
+      }
+      
+      // Log any quests directly associated with component kits
+      const questsWithKitId = allQuests.filter(q => q.kitId);
+      if (questsWithKitId.length > 0) {
+        console.log(`Found ${questsWithKitId.length} quests with direct kit associations:`, 
+          questsWithKitId.map(q => ({ id: q.id, title: q.title, kitId: q.kitId })));
+      } else {
+        console.log('No quests have direct kit associations via kitId field');
+      }
+      
+      // Log component requirements details for all quests
+      const questsWithComponentReq = allQuests.filter(q => 
+        q.componentRequirements && q.componentRequirements.length > 0);
+      
+      if (questsWithComponentReq.length > 0) {
+        console.log(`Found ${questsWithComponentReq.length} quests with component requirements`);
+        console.log('Component requirements summary:');
+        
+        for (const quest of questsWithComponentReq) {
+          console.log(`Quest ${quest.id} (${quest.title}) has ${quest.componentRequirements?.length || 0} components:`);
+          for (const comp of quest.componentRequirements || []) {
+            console.log(`  - ${comp.name} (kitId: ${comp.kitId || 'none'})`);
+          }
+        }
+      } else {
+        console.log('No quests have component requirements');
       }
       
       const responseData = {
