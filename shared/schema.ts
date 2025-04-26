@@ -528,11 +528,34 @@ export type InsertSystemSettings = z.infer<typeof insertSystemSettingsSchema>;
 // Define relations between tables
 export const componentKitsRelations = relations(componentKits, ({ many }) => ({
   components: many(kitComponents),
+  quests: many(quests, { relationName: "kit_quests" }),
 }));
 
-export const kitComponentsRelations = relations(kitComponents, ({ one }) => ({
+export const kitComponentsRelations = relations(kitComponents, ({ one, many }) => ({
   kit: one(componentKits, {
     fields: [kitComponents.kitId],
     references: [componentKits.id],
+  }),
+  questRequirements: many(questComponents),
+}));
+
+export const questsRelations = relations(quests, ({ one, many }) => ({
+  kit: one(componentKits, {
+    fields: [quests.kitId],
+    references: [componentKits.id],
+    relationName: "kit_quests"
+  }),
+  componentRequirements: many(questComponents),
+  userStatus: many(userQuests)
+}));
+
+export const questComponentsRelations = relations(questComponents, ({ one }) => ({
+  quest: one(quests, {
+    fields: [questComponents.questId],
+    references: [quests.id],
+  }),
+  component: one(kitComponents, {
+    fields: [questComponents.componentId],
+    references: [kitComponents.id],
   }),
 }));
