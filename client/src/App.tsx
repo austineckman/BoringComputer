@@ -33,6 +33,7 @@ import { getQueryFn } from "@/lib/queryClient";
 import { ProtectedRoute, AdminRoute } from "@/lib/protected-route";
 import { SoundProvider } from "@/context/SoundContext";
 import { AuthProvider } from "@/hooks/use-auth";
+import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
 
 function App() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -82,8 +83,9 @@ function App() {
   }
 
   return (
-    <AuthProvider>
-      <Switch>
+    <AudioPlayerProvider>
+      <AuthProvider>
+        <Switch>
         <Route path="/login">
           <AuthPage />
         </Route>
@@ -267,6 +269,7 @@ function App() {
         </Route>
       </Switch>
     </AuthProvider>
+    </AudioPlayerProvider>
   );
 }
 

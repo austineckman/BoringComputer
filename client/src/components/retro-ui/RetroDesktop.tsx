@@ -11,12 +11,13 @@ import WebBrowserWindow from "./WebBrowserWindow";
 import ProfileWindow from "./ProfileWindow";
 import PartyKittyWindow from "./PartyKittyWindow";
 import JukeboxWindow from "./JukeboxWindow";
+import MiniPlayer from "./MiniPlayer";
 import FullscreenQuestsApp from "./FullscreenQuestsApp";
 import QuestLoadingScreen from "./QuestLoadingScreen";
 import wallpaperImage from "@assets/wallpaper.png";
-import backgroundMusic from "@assets/Fantasy Guild Hall.mp3";
+import backgroundMusic from "@assets/guildbank.mp3"; // Changed to available MP3
 import goldCrateImage from "@assets/goldcrate.png";
-import ironBagImage from "@assets/506_Gold_Bag_Leather_B.png";
+import ironBagImage from "@assets/486_Iron_Bag_Leather_B.png"; // Fixed to match the available asset
 import craftingImage from "@assets/62_Ice_Armor.png";
 import questImage from "@assets/01_Fire_Grimoire.png";
 import jukeboxIconImage from "@assets/jukebox_icon.png";
@@ -552,7 +553,7 @@ const RetroDesktop: React.FC = () => {
     openWindow(
       "jukebox", 
       "Music Player", 
-      <JukeboxWindow />, 
+      <JukeboxWindow onClose={() => closeWindow("jukebox")} />, 
       "music",
       { width: 900, height: 600 }
     );
@@ -1040,6 +1041,9 @@ const RetroDesktop: React.FC = () => {
             ))}
           </div>
         </div>
+
+        {/* MiniPlayer */}
+        <MiniPlayer onOpenJukebox={openJukeboxWindow} />
         
         {/* Clock and Sound Controls */}
         <div className="flex items-center space-x-3">
