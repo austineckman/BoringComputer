@@ -1,215 +1,242 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { queryClient, apiRequest } from '../lib/queryClient';
+import { getQueryFn, apiRequest, queryClient } from '../lib/queryClient';
 
-// Types
-export interface QuestRequirement {
+export interface QuestComponent {
   id: number;
-  questId: number;
-  componentId: number;
+  name: string;
+  description: string;
+  imagePath: string | null;
+  kitId: string | null;
+  kitName: string | null;
+  isRequired: boolean;
   quantity: number;
-  component: {
-    id: number;
-    name: string;
-    description: string;
-    imagePath: string | null;
-    kitId: string;
-  };
 }
 
 export interface Quest {
   id: string;
-  title: string; 
+  title: string;
   description: string;
-  missionBrief: string | null;
+  missionBrief?: string | null;
   adventureLine: string;
   difficulty: number;
   orderInLine: number;
   xpReward: number;
   status?: 'locked' | 'available' | 'completed' | 'in-progress';
-  kitId: string | null;
-  componentRequirements: QuestRequirement[];
-  kit?: {
-    id: string;
-    name: string;
-    description: string;
-    imagePath: string | null;
-    category: string;
-    difficulty: string;
-  } | null;
+  // This field is in the database directly linking quests to kits
+  kitId?: string | null;
+  lootBoxRewards?: {
+    type: string;
+    quantity: number;
+  }[];
+  content?: {
+    videos: string[];
+    images: string[];
+    codeBlocks: {
+      language: string;
+      code: string;
+    }[];
+  };
+  // Component requirements should have proper typing
+  componentRequirements: QuestComponent[];
 }
 
-export interface QuestData {
-  questsByAdventureLine: Record<string, Quest[]>;
-  allQuests: Quest[];
+export interface QuestsByLine {
+  [adventureLine: string]: Quest[];
 }
 
-// Hook to fetch all quests
-export const useQuests = () => {
-  const result = useQuery<QuestData>({
+// Sample dummy data for development
+const dummyQuests: Quest[] = [
+  {
+    id: '1',
+    title: 'Introduction to Electronics',
+    description: 'Begin your journey into electronics with this simple LED circuit project.',
+    missionBrief: 'Create a basic LED circuit and make it light up.',
+    adventureLine: 'Arduino',
+    difficulty: 1,
+    orderInLine: 1,
+    xpReward: 100,
+    status: 'available',
+    lootBoxRewards: [{ type: 'common', quantity: 1 }],
+    content: {
+      videos: [],
+      images: [],
+      codeBlocks: []
+    },
+    componentRequirements: [
+      {
+        id: 1,
+        name: 'Arduino Uno',
+        description: 'Microcontroller board based on the ATmega328P',
+        imagePath: null,
+        kitId: 'arduino',
+        kitName: 'Arduino Kit',
+        isRequired: true,
+        quantity: 1
+      },
+      {
+        id: 2,
+        name: 'LED',
+        description: 'Light-emitting diode',
+        imagePath: null,
+        kitId: 'arduino',
+        kitName: 'Arduino Kit',
+        isRequired: true,
+        quantity: 1
+      }
+    ]
+  },
+  {
+    id: '2',
+    title: 'Sensing Temperature',
+    description: 'Learn how to read temperature using a sensor and Arduino.',
+    missionBrief: 'Connect a temperature sensor to Arduino and display readings.',
+    adventureLine: 'Arduino',
+    difficulty: 2,
+    orderInLine: 2,
+    xpReward: 150,
+    status: 'locked',
+    lootBoxRewards: [{ type: 'common', quantity: 1 }],
+    content: {
+      videos: [],
+      images: [],
+      codeBlocks: []
+    },
+    componentRequirements: [
+      {
+        id: 1,
+        name: 'Arduino Uno',
+        description: 'Microcontroller board based on the ATmega328P',
+        imagePath: null,
+        kitId: 'arduino',
+        kitName: 'Arduino Kit',
+        isRequired: true,
+        quantity: 1
+      },
+      {
+        id: 3,
+        name: 'Temperature Sensor',
+        description: 'DHT11 or similar sensor',
+        imagePath: null,
+        kitId: 'arduino',
+        kitName: 'Arduino Kit',
+        isRequired: true,
+        quantity: 1
+      }
+    ]
+  },
+  {
+    id: '3',
+    title: 'Hello Raspberry Pi',
+    description: 'Get started with Raspberry Pi programming.',
+    missionBrief: 'Set up your Raspberry Pi and write your first Python script.',
+    adventureLine: 'Raspberry Pi',
+    difficulty: 1,
+    orderInLine: 1,
+    xpReward: 120,
+    status: 'available',
+    lootBoxRewards: [{ type: 'common', quantity: 1 }],
+    content: {
+      videos: [],
+      images: [],
+      codeBlocks: []
+    },
+    componentRequirements: [
+      {
+        id: 4,
+        name: 'Raspberry Pi',
+        description: 'Single-board computer',
+        imagePath: null,
+        kitId: 'raspi',
+        kitName: 'Raspberry Pi Kit',
+        isRequired: true,
+        quantity: 1
+      }
+    ]
+  }
+];
+
+// Group sample quests by adventure line
+const groupQuestsByLine = (quests: Quest[]): QuestsByLine => {
+  return quests.reduce((acc, quest) => {
+    const line = quest.adventureLine;
+    if (!acc[line]) {
+      acc[line] = [];
+    }
+    acc[line].push(quest);
+    return acc;
+  }, {} as QuestsByLine);
+};
+
+export function useQuests() {
+  const { data, isLoading, error } = useQuery({
     queryKey: ['/api/quests'],
+    queryFn: getQueryFn({ on401: 'returnNull' }),
+  });
+
+  // Process the data from the API
+  let questsByAdventureLine: QuestsByLine = {};
+  let allQuests: Quest[] = [];
+
+  // Log the raw data for debugging
+  console.log('Raw quest data from API:', data);
+
+  if (data) {
+    if (data.questsByAdventureLine && data.allQuests) {
+      // If API returns data in the expected format
+      questsByAdventureLine = data.questsByAdventureLine;
+      allQuests = data.allQuests;
+      console.log('Using data in expected format:',
+        `Adventure lines: ${Object.keys(questsByAdventureLine).length}`,
+        `Total quests: ${allQuests.length}`);
+    } else if (Array.isArray(data)) {
+      // If API returns an array of quests
+      allQuests = data;
+      questsByAdventureLine = groupQuestsByLine(data);
+      console.log('Using data as array:', `Total quests: ${allQuests.length}`);
+    } else if (typeof data === 'object') {
+      // If API returns some other object format, try to extract quests
+      if (data.quests && Array.isArray(data.quests)) {
+        allQuests = data.quests;
+        questsByAdventureLine = groupQuestsByLine(data.quests);
+        console.log('Using data.quests:', `Total quests: ${allQuests.length}`);
+      } else {
+        console.warn('Unexpected data format from API:', data);
+      }
+    } else {
+      console.warn('Unexpected data type from API:', typeof data);
+    }
+  } else {
+    console.warn('No data received from API');
+    // For debugging, let's check what happens with dummy data
+    allQuests = dummyQuests;
+    questsByAdventureLine = groupQuestsByLine(dummyQuests);
+    console.log('FALLING BACK to dummy data for debugging - This should not happen in production');
+  }
+  
+  // Log the processed data
+  console.log('Processed quest data:', { 
+    quests: allQuests.length, 
+    adventureLines: Object.keys(questsByAdventureLine)
   });
   
   return {
-    ...result,
-    questsByAdventureLine: result.data?.questsByAdventureLine || {},
-    allQuests: result.data?.allQuests || [],
-    loading: result.isLoading
+    questsByAdventureLine,
+    allQuests,
+    loading: isLoading,
+    error
   };
-};
+}
 
-// Hook to fetch a specific quest
-export const useQuest = (questId: string) => {
-  return useQuery<{ quest: Quest }>({
+export function useQuestDetail(questId: string | null) {
+  const { data, isLoading, error } = useQuery({
     queryKey: ['/api/quests', questId],
+    queryFn: getQueryFn({ on401: 'returnNull' }),
     enabled: !!questId,
   });
-};
 
-// Hook to fetch active quest
-export const useActiveQuest = () => {
-  return useQuery<Quest>({
-    queryKey: ['/api/quests/active'],
-  });
-};
-
-// Hook to start a quest
-export const useStartQuest = () => {
-  const mutation = useMutation({
-    mutationFn: async ({ questId }: { questId: string }) => {
-      const response = await fetch(`/api/quests/${questId}/start`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to start quest');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ['/api/quests'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/quests/active'] });
-    },
-  });
-  
-  return mutation;
-};
-
-// Hook to complete a quest
-export const useCompleteQuest = () => {
-  const mutation = useMutation({
-    mutationFn: async ({ questId, submission, image }: { questId: string, submission: string, image?: string }) => {
-      const response = await fetch(`/api/quests/${questId}/complete`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ submission, image }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to complete quest');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ['/api/quests'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/quests/active'] });
-    },
-  });
-  
-  return mutation;
-};
-
-// For admin functionalities
-export const useAdminQuests = () => {
-  return useQuery<Quest[]>({
-    queryKey: ['/api/admin/quests'],
-  });
-};
-
-// Create a new quest (admin)
-export const useCreateQuest = () => {
-  const mutation = useMutation({
-    mutationFn: async (questData: Omit<Quest, 'id'>) => {
-      const response = await fetch('/api/admin/quests', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(questData),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create quest');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/quests'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/quests'] });
-    },
-  });
-  
-  return mutation;
-};
-
-// Update an existing quest (admin)
-export const useUpdateQuest = () => {
-  const mutation = useMutation({
-    mutationFn: async ({ questId, questData }: { questId: string, questData: Partial<Quest> }) => {
-      const response = await fetch(`/api/admin/quests/${questId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(questData),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to update quest');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/quests'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/quests'] });
-    },
-  });
-  
-  return mutation;
-};
-
-// Delete a quest (admin)
-export const useDeleteQuest = () => {
-  const mutation = useMutation({
-    mutationFn: async (questId: string) => {
-      const response = await fetch(`/api/admin/quests/${questId}`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to delete quest');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/quests'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/quests'] });
-    },
-  });
-  
-  return mutation;
-};
+  return {
+    quest: data as Quest | null,
+    loading: isLoading,
+    error
+  };
+}

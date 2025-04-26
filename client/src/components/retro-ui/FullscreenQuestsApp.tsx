@@ -1,20 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, FilterX, Filter, ChevronRight, Clock, Award, Cpu, Loader2, AlertTriangle } from 'lucide-react';
+import { X, Search, FilterX, Filter, ChevronRight, Clock, Award, Cpu, Loader2 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useComponentKits } from '../../hooks/useComponentKits';
 import { useQuests, type Quest } from '../../hooks/useQuests';
 import questImage from '@assets/01_Fire_Grimoire.png';
 import wallbg from '@assets/wallbg.png';
-
-// Debug function to help inspect quest data
-function debugQuestData(quest: Quest): void {
-  console.log('Quest debug info:', {
-    id: quest.id,
-    title: quest.title,
-    kitId: quest.kitId,
-    componentRequirements: quest.componentRequirements || []
-  });
-}
 
 // For sounds
 declare global {
@@ -51,27 +41,6 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
     if (selectedKit) {
       console.log('Filtering by kit ID:', selectedKit);
       
-      // First debug the kits to see if there are any issues
-      const kitInfo = kits.find(k => k.id === selectedKit);
-      console.log('Selected kit details:', kitInfo);
-      
-      // Log all quests to diagnose if componentRequirements exist
-      const questsWithComponents = filtered.filter(q => q.componentRequirements && q.componentRequirements.length > 0);
-      const questsWithDirectKit = filtered.filter(q => q.kitId === selectedKit);
-      
-      console.log(`Found ${questsWithComponents.length} quests with components and ${questsWithDirectKit.length} with direct kit match`);
-      
-      if (questsWithDirectKit.length > 0) {
-        console.log('Quests with direct kit match:', questsWithDirectKit.map(q => q.title));
-      }
-      
-      if (questsWithComponents.length > 0) {
-        console.log('Component requirements in quests:', questsWithComponents.map(q => ({
-          title: q.title,
-          components: q.componentRequirements?.map(c => ({name: c.name, kitId: c.kitId}))
-        })));
-      }
-      
       filtered = filtered.filter(quest => {
         // First check if the quest directly belongs to this kit
         if (quest.kitId === selectedKit) {
@@ -79,10 +48,13 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
           return true;
         }
         
-        // Check component requirements, ensuring they exist
-        if (quest.componentRequirements && quest.componentRequirements.length > 0) {
-          // Check if any component from this kit is required for the quest
-          for (const comp of quest.componentRequirements) {
+        // Debug info about component requirements
+        const components = quest.componentRequirements || [];
+        console.log(`Quest "${quest.title}" has ${components.length} component requirements`);
+        
+        // Check if any component from this kit is required for the quest
+        if (components.length > 0) {
+          for (const comp of components) {
             if (comp && comp.kitId === selectedKit) {
               console.log(`Quest "${quest.title}" requires component ${comp.name} from kit ${selectedKit}`);
               return true;
@@ -92,13 +64,6 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
         
         return false;
       });
-      
-      if (filtered.length === 0) {
-        // Fallback to showing all quests with component requirements if we don't find any matching the selected kit
-        // This is just for debugging - can be removed in production
-        filtered = allQuests ? allQuests.filter(q => q.componentRequirements && q.componentRequirements.length > 0) : [];
-        console.log(`No quests found for kit ${selectedKit}. Showing all quests with components (${filtered.length})`);
-      }
       
       console.log(`After filtering by kit ${selectedKit}, ${filtered.length} quests remain`);
     }
