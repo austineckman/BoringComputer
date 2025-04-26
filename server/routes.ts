@@ -20,8 +20,6 @@ import adminKitsRoutes from './routes/admin-kits';
 import adminRecipesRoutes from './routes/admin-recipes';
 import adminQuestGeneratorRoutes from './routes/admin-quest-generator';
 import adminQuestsSaveRoutes from './routes/admin-quests-save';
-import adminLootboxesRoutes from './routes/admin-lootboxes';
-import adminQuestsRoutes from './routes/admin-quests';
 import adventureLinesRoutes from './routes/adventure-lines';
 import { authenticate, hashPassword } from './auth';
 import { componentKits, items } from '@shared/schema';
@@ -1476,12 +1474,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Admin recipes routes - ensure we also apply admin authorization
   app.use('/api/admin/recipes', authenticate, adminAuth, adminRecipesRoutes);
-  
-  // Register admin lootboxes routes
-  app.use('/api/admin/lootboxes', authenticate, adminAuth, adminLootboxesRoutes);
-  
-  // Register admin quests routes
-  app.use('/api/admin/quests', authenticate, adminAuth, adminQuestsRoutes);
   
   // Register the admin routes for quest generator
   app.use('/', authenticate, adminAuth, adminQuestGeneratorRoutes);
