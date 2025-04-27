@@ -3,7 +3,7 @@ import {
   X, Search, RefreshCw, Package, Sparkles, FileText, Settings, Users, 
   PlusCircle, Loader2, Edit, Trash2, AlertTriangle, Upload, 
   Shield, ShieldCheck, ShieldX, Star, CalendarClock, LineChart,
-  Database, Eye, FileImage, Box, Plus
+  Database, Eye, FileImage, Box, Plus, CircuitBoard
 } from 'lucide-react';
 import wallbg from '@assets/wallbg.png';
 import oracleIconImage from '@assets/01_Fire_Grimoire.png'; // Using grimoire as placeholder for Oracle icon
@@ -1556,42 +1556,64 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                       key={component.id}
                       className="border border-gray-700 rounded-lg p-3 hover:border-gray-500 transition-colors"
                     >
-                      <div className="flex justify-between">
-                        <div>
-                          <h4 className="font-medium text-white">{component.name}</h4>
-                          <p className="text-sm text-gray-400 truncate">{component.description}</p>
-                          {component.partNumber && (
-                            <span className="inline-block mt-1 text-xs px-2 py-0.5 bg-gray-800 text-gray-300 rounded">
-                              Part #{component.partNumber}
-                            </span>
+                      <div className="flex gap-3">
+                        {/* Component image */}
+                        <div className="flex-shrink-0 w-20 h-20 bg-black/30 rounded flex items-center justify-center overflow-hidden">
+                          {component.imagePath ? (
+                            <img
+                              src={component.imagePath}
+                              alt={component.name}
+                              className="w-full h-full object-contain p-1"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                                (e.target as HTMLImageElement).className = 'w-10 h-10 opacity-30';
+                              }}
+                            />
+                          ) : (
+                            <Database className="w-10 h-10 text-gray-700" />
                           )}
                         </div>
-                        <div className="flex space-x-1">
-                          <button 
-                            className="p-1 rounded-full hover:bg-gray-700 transition-colors"
-                            title="Edit component"
-                            onClick={() => handleEditComponentClick(component)}
-                            onMouseEnter={() => window.sounds?.hover()}
-                          >
-                            <Edit className="h-4 w-4 text-gray-400 hover:text-white" />
-                          </button>
-                          <button 
-                            className="p-1 rounded-full hover:bg-gray-700 transition-colors"
-                            title="Delete component"
-                            onClick={() => handleDeleteClick('component', component.id.toString(), component.name, component.kitId)}
-                            onMouseEnter={() => window.sounds?.hover()}
-                          >
-                            <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
-                          </button>
+                        
+                        {/* Component details */}
+                        <div className="flex-1">
+                          <div className="flex justify-between">
+                            <div>
+                              <h4 className="font-medium text-white">{component.name}</h4>
+                              <p className="text-sm text-gray-400 line-clamp-2">{component.description}</p>
+                              {component.partNumber && (
+                                <span className="inline-block mt-1 text-xs px-2 py-0.5 bg-gray-800 text-gray-300 rounded">
+                                  Part #{component.partNumber}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex space-x-1">
+                              <button 
+                                className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                                title="Edit component"
+                                onClick={() => handleEditComponentClick(component)}
+                                onMouseEnter={() => window.sounds?.hover()}
+                              >
+                                <Edit className="h-4 w-4 text-gray-400 hover:text-white" />
+                              </button>
+                              <button 
+                                className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                                title="Delete component"
+                                onClick={() => handleDeleteClick('component', component.id.toString(), component.name, component.kitId)}
+                                onMouseEnter={() => window.sounds?.hover()}
+                              >
+                                <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex justify-between mt-2">
+                            <span className="text-xs bg-blue-900/30 text-blue-300 px-2 py-0.5 rounded">
+                              {component.category || 'Uncategorized'}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              Qty: {component.quantity}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex justify-between mt-2">
-                        <span className="text-xs bg-blue-900/30 text-blue-300 px-2 py-0.5 rounded">
-                          {component.category || 'Uncategorized'}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          Qty: {component.quantity}
-                        </span>
                       </div>
                     </div>
                   ))
