@@ -6,6 +6,7 @@ import RetroStartMenu from "./RetroStartMenu";
 import InventoryWindow from "./InventoryWindow";
 import ItemDetailsWindow from "./ItemDetailsWindow";
 import CraftingWindow from "./CraftingWindow";
+import LockpickWindow from "./LockpickWindow";
 import TerminalWindow from "./TerminalWindow";
 import WebBrowserWindow from "./WebBrowserWindow";
 import ProfileWindow from "./ProfileWindow";
@@ -279,6 +280,8 @@ const RetroDesktop: React.FC = () => {
       openInventoryWindow();
     } else if (iconId === "crafting") {
       openCraftingWindow();
+    } else if (iconId === "lootboxes") {
+      openLockpickWindow();
     } else if (iconId === "terminal") {
       openTerminalWindow();
     } else if (iconId === "shop") {
@@ -384,6 +387,16 @@ const RetroDesktop: React.FC = () => {
       <CraftingWindow />, 
       "craftingarmor", 
       { width: 700, height: 500 }
+    );
+  };
+  
+  const openLockpickWindow = () => {
+    openWindow(
+      "lockpick", 
+      "PickLock.exe", 
+      <LockpickWindow onClose={() => closeWindow("lockpick")} />, 
+      "picklock", 
+      { width: 600, height: 450 }
     );
   };
   
