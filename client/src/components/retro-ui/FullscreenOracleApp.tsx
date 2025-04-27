@@ -715,20 +715,27 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     );
   };
 
-  // Render users tab with table
-  const renderUsers = () => {
-    // Create a filtered list of users based on search query
-    const filteredUsers = users.filter(user => {
-      if (!searchQuery) return true;
-      
-      return (
-        user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (user.roles && user.roles.some(role => 
-          role.toLowerCase().includes(searchQuery.toLowerCase()))
-        )
-      );
-    });
+  // Filter users based on search query
+  const filteredUsers = users.filter(user => {
+    // If search query is empty, show all
+    if (!searchQuery) return true;
     
+    // Check username
+    const usernameMatches = user.username.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Check user ID (as string)
+    const idMatches = user.id.toString().includes(searchQuery);
+    
+    // Check roles
+    const rolesMatch = user.roles?.some(role => 
+      role.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    
+    return usernameMatches || idMatches || (rolesMatch || false);
+  });
+
+  // Render user management section
+  const renderUsers = () => {
     if (loadingUsers) {
       return (
         <div className="flex flex-col items-center justify-center h-64">
@@ -737,135 +744,194 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         </div>
       );
     }
-    
-    if (filteredUsers.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-          <Users className="h-12 w-12 mb-3 opacity-50" />
-          <p className="text-lg mb-2">No users found</p>
-          <p className="text-sm">Try adjusting your search</p>
-        </div>
-      );
-    }
-    
+
+    // Calculate user stats
+    const totalUsers = users.length;
+    const adminCount = users.filter(user => user.roles?.includes('admin')).length;
+    const totalItems = users.reduce((sum, user) => sum + user.totalItems, 0);
+    const avgLevel = users.length > 0 ? 
+      (users.reduce((sum, user) => sum + user.level, 0) / users.length).toFixed(1) : '0';
+
     return (
-      <div className="mt-4 overflow-x-auto">
-        <table className="w-full text-sm text-left text-gray-300">
-          <thead className="text-xs text-gray-400 uppercase bg-gray-800/50">
-            <tr>
-              <th scope="col" className="px-4 py-3">Username</th>
-              <th scope="col" className="px-4 py-3">Roles</th>
-              <th scope="col" className="px-4 py-3">Level</th>
-              <th scope="col" className="px-4 py-3">XP</th>
-              <th scope="col" className="px-4 py-3">Total Items</th>
-              <th scope="col" className="px-4 py-3">Created</th>
-              <th scope="col" className="px-4 py-3">Last Login</th>
-              <th scope="col" className="px-4 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUsers.map(user => (
-              <tr key={user.id} className="border-b border-gray-700 bg-gray-900/30 hover:bg-gray-700/30">
-                <td className="px-4 py-3 font-medium text-white">
-                  {user.username}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-1">
-                    {user.roles && user.roles.map((role, index) => (
-                      <span 
-                        key={index} 
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          role === 'admin' 
-                            ? 'bg-red-900/70 text-red-200' 
-                            : role === 'moderator'
-                              ? 'bg-purple-900/70 text-purple-200' 
-                              : 'bg-blue-900/70 text-blue-200'
-                        }`}
-                      >
-                        {role}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <span className="px-2 py-1 bg-brand-orange/20 text-brand-orange rounded-full">
-                    {user.level}
-                  </span>
-                </td>
-                <td className="px-4 py-3">{user.xp}</td>
-                <td className="px-4 py-3">{user.totalItems}</td>
-                <td className="px-4 py-3">
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </td>
-                <td className="px-4 py-3">
-                  {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex space-x-2">
-                    <button 
-                      className="p-1 rounded-full hover:bg-gray-700 transition-colors"
-                      title="Edit user"
-                      onMouseEnter={() => window.sounds?.hover()}
-                    >
-                      <Edit className="h-4 w-4 text-gray-400 hover:text-white" />
-                    </button>
-                    <button 
-                      className="p-1 rounded-full hover:bg-gray-700 transition-colors"
-                      title="Delete user"
-                      onMouseEnter={() => window.sounds?.hover()}
-                    >
-                      <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="space-y-6">
+        {/* Stats cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-black/50 border border-gray-700 rounded-lg p-4 hover:border-brand-orange/40 transition-colors">
+            <div className="flex items-center">
+              <Users className="h-8 w-8 text-brand-orange mr-3 flex-shrink-0" />
+              <div>
+                <p className="text-sm text-gray-400">Total Users</p>
+                <p className="text-2xl font-bold text-white">{totalUsers}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-black/50 border border-gray-700 rounded-lg p-4 hover:border-brand-orange/40 transition-colors">
+            <div className="flex items-center">
+              <ShieldCheck className="h-8 w-8 text-red-500 mr-3 flex-shrink-0" />
+              <div>
+                <p className="text-sm text-gray-400">Admins</p>
+                <p className="text-2xl font-bold text-white">{adminCount}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-black/50 border border-gray-700 rounded-lg p-4 hover:border-brand-orange/40 transition-colors">
+            <div className="flex items-center">
+              <Star className="h-8 w-8 text-yellow-500 mr-3 flex-shrink-0" />
+              <div>
+                <p className="text-sm text-gray-400">Avg. Level</p>
+                <p className="text-2xl font-bold text-white">{avgLevel}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-black/50 border border-gray-700 rounded-lg p-4 hover:border-brand-orange/40 transition-colors">
+            <div className="flex items-center">
+              <Package className="h-8 w-8 text-blue-500 mr-3 flex-shrink-0" />
+              <div>
+                <p className="text-sm text-gray-400">Total Items</p>
+                <p className="text-2xl font-bold text-white">{totalItems.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+        </div>
         
-        {/* User stats summary */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
-            <div className="flex items-center justify-between">
-              <h3 className="text-gray-400 text-sm">Total Users</h3>
-              <Users className="h-5 w-5 text-brand-orange" />
-            </div>
-            <p className="text-2xl font-bold text-white mt-2">{users.length}</p>
+        {/* Users table */}
+        <div className="bg-black/50 border border-gray-700 rounded-lg overflow-hidden">
+          <div className="p-4 border-b border-gray-700">
+            <h3 className="text-lg font-bold text-white">All Users</h3>
+            <p className="text-sm text-gray-400">{filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''} registered in the system</p>
           </div>
           
-          <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
-            <div className="flex items-center justify-between">
-              <h3 className="text-gray-400 text-sm">Admins</h3>
-              <Shield className="h-5 w-5 text-red-400" />
-            </div>
-            <p className="text-2xl font-bold text-white mt-2">
-              {users.filter(u => u.roles && u.roles.includes('admin')).length}
-            </p>
-          </div>
-          
-          <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
-            <div className="flex items-center justify-between">
-              <h3 className="text-gray-400 text-sm">Average Level</h3>
-              <LineChart className="h-5 w-5 text-green-400" />
-            </div>
-            <p className="text-2xl font-bold text-white mt-2">
-              {Math.round(users.reduce((sum, user) => sum + user.level, 0) / users.length) || 0}
-            </p>
-          </div>
-          
-          <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
-            <div className="flex items-center justify-between">
-              <h3 className="text-gray-400 text-sm">New This Month</h3>
-              <CalendarClock className="h-5 w-5 text-blue-400" />
-            </div>
-            <p className="text-2xl font-bold text-white mt-2">
-              {users.filter(u => {
-                const createdDate = new Date(u.createdAt);
-                const now = new Date();
-                return createdDate.getMonth() === now.getMonth() && 
-                       createdDate.getFullYear() === now.getFullYear();
-              }).length}
-            </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-900">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">ID</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Username</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Roles</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Level</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">XP</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Items</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Created</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Last Login</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800">
+                {filteredUsers.map(user => (
+                  <tr key={user.id} className="hover:bg-gray-900/50">
+                    <td className="px-4 py-3 font-mono text-gray-300">{user.id}</td>
+                    <td className="px-4 py-3 font-semibold text-white">{user.username}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        {user.roles?.map(role => (
+                          <span 
+                            key={role}
+                            className={`inline-flex px-2 py-0.5 rounded-full text-xs ${
+                              role === 'admin' 
+                                ? 'bg-red-500/20 text-red-400' 
+                                : 'bg-gray-700 text-gray-300'
+                            }`}
+                          >
+                            {role}
+                          </span>
+                        )) || <span className="text-gray-500">None</span>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center">
+                        <Star className="h-3 w-3 text-yellow-500 mr-1" />
+                        <span className="text-yellow-500">{user.level}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-300">{user.xp.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-gray-300">{user.totalItems.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-gray-400">{new Date(user.createdAt).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-gray-400">
+                      {user.lastLogin 
+                        ? new Date(user.lastLogin).toLocaleDateString() 
+                        : 'Never'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        className={`
+                          text-xs px-2 py-1 rounded flex items-center gap-1 
+                          ${user.roles?.includes('admin') 
+                            ? 'text-red-500 hover:text-red-400' 
+                            : 'text-green-500 hover:text-green-400'}
+                        `}
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(`/api/admin/users/${user.id}/toggle-admin`, {
+                              method: 'PUT'
+                            });
+                            
+                            if (response.ok) {
+                              window.sounds?.success();
+                              // Refresh user data
+                              const updatedUsers = await fetch('/api/admin/users').then(res => res.json());
+                              setUsers(updatedUsers);
+                              
+                              setNotificationMessage({
+                                type: 'success',
+                                message: `User role updated successfully`
+                              });
+                              
+                              setTimeout(() => {
+                                setNotificationMessage(null);
+                              }, 3000);
+                            } else {
+                              window.sounds?.error();
+                              const errorData = await response.json();
+                              setNotificationMessage({
+                                type: 'error',
+                                message: `Error: ${errorData.message || 'Failed to update role'}`
+                              });
+                              setTimeout(() => {
+                                setNotificationMessage(null);
+                              }, 3000);
+                            }
+                          } catch (err) {
+                            window.sounds?.error();
+                            const error = err as Error;
+                            setNotificationMessage({
+                              type: 'error',
+                              message: `Error: ${error.message || 'Failed to update role'}`
+                            });
+                            setTimeout(() => {
+                              setNotificationMessage(null);
+                            }, 3000);
+                          }
+                        }}
+                        onMouseEnter={() => window.sounds?.hover()}
+                      >
+                        {user.roles?.includes('admin') ? (
+                          <>
+                            <ShieldX className="h-3.5 w-3.5" />
+                            <span>Revoke Admin</span>
+                          </>
+                        ) : (
+                          <>
+                            <ShieldCheck className="h-3.5 w-3.5" />
+                            <span>Grant Admin</span>
+                          </>
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                
+                {filteredUsers.length === 0 && (
+                  <tr className="h-32">
+                    <td colSpan={9} className="text-center text-gray-400">
+                      No users found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
