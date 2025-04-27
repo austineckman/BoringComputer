@@ -1478,6 +1478,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get user's titles
+  app.get('/api/titles', authenticate, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      
+      return res.json({
+        titles: user.titles || [],
+        activeTitle: user.activeTitle || null
+      });
+    } catch (error) {
+      console.error('Error fetching titles:', error);
+      return res.status(500).json({ message: 'Failed to fetch titles' });
+    }
+  });
+  
   app.put('/api/titles/active', authenticate, async (req, res) => {
     try {
       const user = (req as any).user;
