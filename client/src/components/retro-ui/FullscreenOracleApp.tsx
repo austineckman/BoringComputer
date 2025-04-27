@@ -125,13 +125,17 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
 
   // Filter data based on search query
   const filteredLootboxes = lootboxes.filter(box => 
-    box.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    box.description.toLowerCase().includes(searchQuery.toLowerCase())
+    box && typeof box.name === 'string' && typeof box.description === 'string' && (
+      box.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      box.description.toLowerCase().includes(searchQuery.toLowerCase())
+    )
   );
 
   const filteredQuests = quests.filter(quest => 
-    quest.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    quest.description.toLowerCase().includes(searchQuery.toLowerCase())
+    quest && typeof quest.title === 'string' && typeof quest.description === 'string' && (
+      quest.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      quest.description.toLowerCase().includes(searchQuery.toLowerCase())
+    )
   );
 
   // Handlers
@@ -985,19 +989,22 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                       }}
                     />
                   </div>
-                  <div>
-                    <label className="block text-gray-300 text-sm mb-1">Order in Line</label>
-                    <input
-                      type="number"
-                      min="1"
-                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                      value={(editingItem as Quest).orderInLine || 1}
-                      onChange={(e) => {
-                        const updatedQuest = {...editingItem as Quest, orderInLine: parseInt(e.target.value)};
-                        setEditingItem(updatedQuest);
-                      }}
-                    />
-                  </div>
+                  {/* orderInLine field - only rendered if property exists */}
+                  {(editingItem as any).orderInLine !== undefined && (
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Order in Line</label>
+                      <input
+                        type="number"
+                        min="1"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as any).orderInLine || 1}
+                        onChange={(e) => {
+                          const updatedQuest = {...editingItem as any, orderInLine: parseInt(e.target.value)};
+                          setEditingItem(updatedQuest);
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
                 
                 <div>
