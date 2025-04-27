@@ -3338,6 +3338,302 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 </div>
               </div>
             )}
+            
+            {editingType === 'recipe' && (
+              <div className="space-y-4">
+                {/* Basic Info Section */}
+                <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
+                  <h3 className="text-md font-semibold text-brand-orange mb-4">Recipe Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Recipe ID</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as Recipe).id || ''}
+                        readOnly={true}
+                        disabled={true}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">ID cannot be changed</p>
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Recipe Name</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as Recipe).name || ''}
+                        onChange={(e) => {
+                          const updatedRecipe = {...editingItem as Recipe, name: e.target.value};
+                          setEditingItem(updatedRecipe);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <label className="block text-gray-300 text-sm mb-1">Description</label>
+                    <textarea
+                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none min-h-[80px]"
+                      value={(editingItem as Recipe).description || ''}
+                      onChange={(e) => {
+                        const updatedRecipe = {...editingItem as Recipe, description: e.target.value};
+                        setEditingItem(updatedRecipe);
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="mt-4">
+                    <label className="block text-gray-300 text-sm mb-1">Flavor Text (Optional)</label>
+                    <textarea
+                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none min-h-[60px]"
+                      value={(editingItem as Recipe).flavorText || ''}
+                      onChange={(e) => {
+                        const updatedRecipe = {...editingItem as Recipe, flavorText: e.target.value};
+                        setEditingItem(updatedRecipe);
+                      }}
+                      placeholder="Add some flavor text to make this recipe more interesting..."
+                    />
+                  </div>
+                  
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Result Item</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as Recipe).resultItem || ''}
+                        onChange={(e) => {
+                          const updatedRecipe = {...editingItem as Recipe, resultItem: e.target.value};
+                          setEditingItem(updatedRecipe);
+                        }}
+                        placeholder="Item ID to create"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Result Quantity</label>
+                      <input
+                        type="number"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as Recipe).resultQuantity || 1}
+                        min={1}
+                        onChange={(e) => {
+                          const updatedRecipe = {...editingItem as Recipe, resultQuantity: parseInt(e.target.value) || 1};
+                          setEditingItem(updatedRecipe);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Grid Size</label>
+                      <input
+                        type="number"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as Recipe).gridSize || 3}
+                        min={2}
+                        max={5}
+                        onChange={(e) => {
+                          const updatedRecipe = {...editingItem as Recipe, gridSize: parseInt(e.target.value) || 3};
+                          setEditingItem(updatedRecipe);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Category</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as Recipe).category || ''}
+                        onChange={(e) => {
+                          const updatedRecipe = {...editingItem as Recipe, category: e.target.value};
+                          setEditingItem(updatedRecipe);
+                        }}
+                        placeholder="e.g. weapons, armor, consumables"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Difficulty</label>
+                      <select
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as Recipe).difficulty || 'easy'}
+                        onChange={(e) => {
+                          const updatedRecipe = {
+                            ...editingItem as Recipe, 
+                            difficulty: e.target.value as 'easy' | 'medium' | 'hard'
+                          };
+                          setEditingItem(updatedRecipe);
+                        }}
+                      >
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Unlocked</label>
+                      <select
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as Recipe).unlocked ? 'true' : 'false'}
+                        onChange={(e) => {
+                          const updatedRecipe = {...editingItem as Recipe, unlocked: e.target.value === 'true'};
+                          setEditingItem(updatedRecipe);
+                        }}
+                      >
+                        <option value="true">Yes (Available to players)</option>
+                        <option value="false">No (Hidden)</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <label className="block text-gray-300 text-sm mb-1">Image Path</label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                      value={(editingItem as Recipe).image || ''}
+                      onChange={(e) => {
+                        const updatedRecipe = {...editingItem as Recipe, image: e.target.value};
+                        setEditingItem(updatedRecipe);
+                      }}
+                      placeholder="/assets/recipes/recipe-name.png"
+                    />
+                  </div>
+                  
+                  <div className="mt-4">
+                    <label className="block text-gray-300 text-sm mb-1">Hero Image (Optional)</label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                      value={(editingItem as Recipe).heroImage || ''}
+                      onChange={(e) => {
+                        const updatedRecipe = {...editingItem as Recipe, heroImage: e.target.value};
+                        setEditingItem(updatedRecipe);
+                      }}
+                      placeholder="/assets/recipe-heroes/recipe-name.png"
+                    />
+                  </div>
+                </div>
+                
+                {/* Required Items Section */}
+                <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
+                  <h3 className="text-md font-semibold text-brand-orange mb-4">Required Items</h3>
+                  <div className="text-sm text-gray-400 mb-4">
+                    Add or modify the items required for this recipe. Enter in format: item-id:quantity (separated by commas).
+                  </div>
+                  
+                  <textarea
+                    className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none min-h-[100px]"
+                    value={Object.entries((editingItem as Recipe).requiredItems || {}).map(([item, quantity]) => `${item}:${quantity}`).join(', ')}
+                    onChange={(e) => {
+                      // Parse the text input into a requiredItems object
+                      const itemsText = e.target.value;
+                      const requiredItems: Record<string, number> = {};
+                      
+                      // Split by commas and process each item:quantity pair
+                      itemsText.split(',').forEach(pair => {
+                        const trimmedPair = pair.trim();
+                        if (trimmedPair) {
+                          const [item, quantityStr] = trimmedPair.split(':').map(s => s.trim());
+                          if (item && quantityStr) {
+                            const quantity = parseInt(quantityStr);
+                            if (!isNaN(quantity) && quantity > 0) {
+                              requiredItems[item] = quantity;
+                            }
+                          }
+                        }
+                      });
+                      
+                      const updatedRecipe = {...editingItem as Recipe, requiredItems};
+                      setEditingItem(updatedRecipe);
+                    }}
+                    placeholder="copper:2, iron:1, crystal:3"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Format: item-id:quantity, item-id:quantity, etc.</p>
+                </div>
+                
+                {/* Pattern Section */}
+                <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
+                  <h3 className="text-md font-semibold text-brand-orange mb-4">Crafting Pattern</h3>
+                  <div className="text-sm text-gray-400 mb-4">
+                    Define the crafting grid pattern. Enter item IDs in a grid format, use 'null' or leave empty for empty slots.
+                  </div>
+                  
+                  <textarea
+                    className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none min-h-[120px] font-mono"
+                    value={
+                      (editingItem as Recipe).pattern ? 
+                      JSON.stringify((editingItem as Recipe).pattern, null, 2) :
+                      JSON.stringify([["", "", ""], ["", "", ""], ["", "", ""]], null, 2)
+                    }
+                    onChange={(e) => {
+                      try {
+                        const pattern = JSON.parse(e.target.value);
+                        if (Array.isArray(pattern)) {
+                          const updatedRecipe = {...editingItem as Recipe, pattern};
+                          setEditingItem(updatedRecipe);
+                        }
+                      } catch (error) {
+                        // Don't update if JSON is invalid
+                        console.error("Invalid JSON for pattern:", error);
+                      }
+                    }}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Enter a valid JSON array of arrays representing the crafting grid</p>
+                </div>
+                
+                {/* Preview Section */}
+                <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
+                  <h3 className="text-md font-semibold text-brand-orange mb-4">Recipe Preview</h3>
+                  <div className="flex items-center">
+                    <div className="w-24 h-24 bg-black/30 rounded flex items-center justify-center overflow-hidden mr-4">
+                      {(editingItem as Recipe).image ? (
+                        <img
+                          src={(editingItem as Recipe).image}
+                          alt={(editingItem as Recipe).name}
+                          className="w-full h-full object-contain p-1"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                            (e.target as HTMLImageElement).className = 'w-10 h-10 opacity-30';
+                          }}
+                        />
+                      ) : (
+                        <ClipboardList className="w-10 h-10 text-gray-700" />
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-white text-lg">{(editingItem as Recipe).name}</h4>
+                      <div className="flex items-center mt-1">
+                        <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full mr-2">
+                          {(editingItem as Recipe).category || 'Uncategorized'}
+                        </span>
+                        <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full">
+                          {(editingItem as Recipe).difficulty || 'easy'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-white mt-1">
+                        Creates: {(editingItem as Recipe).resultQuantity || 1}x {(editingItem as Recipe).resultItem || 'item'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-700">
+                  <button
+                    className="px-4 py-2 bg-gray-800 text-gray-300 rounded hover:bg-gray-700"
+                    onClick={closeEditDialog}
+                    onMouseEnter={() => window.sounds?.hover()}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-brand-orange text-white rounded hover:bg-brand-orange/80"
+                    onClick={() => handleEditSubmit(editingItem)}
+                    onMouseEnter={() => window.sounds?.hover()}
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
