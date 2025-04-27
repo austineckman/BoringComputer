@@ -152,9 +152,29 @@ interface KitComponent {
   updatedAt?: string;
 }
 
+// Recipe interface for crafting.exe
+interface Recipe {
+  id: number;
+  name: string;
+  description: string;
+  flavorText?: string;
+  resultItem: string;
+  resultQuantity: number;
+  gridSize: number;
+  pattern: (string | null)[][];
+  requiredItems: Record<string, number>;
+  difficulty: 'easy' | 'medium' | 'hard';
+  category: string;
+  unlocked: boolean;
+  image: string;
+  heroImage?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) => {
-  // State for tabs - add 'kits' to the available tabs
-  const [activeTab, setActiveTab] = useState<'lootboxes' | 'quests' | 'users' | 'items' | 'kits' | 'settings'>('lootboxes');
+  // State for tabs - include 'recipes' for crafting management
+  const [activeTab, setActiveTab] = useState<'lootboxes' | 'quests' | 'users' | 'items' | 'kits' | 'recipes' | 'settings'>('lootboxes');
   
   // State for data
   const [lootboxes, setLootboxes] = useState<LootBox[]>([]);
@@ -163,6 +183,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [items, setItems] = useState<GameItem[]>([]);
   const [componentKits, setComponentKits] = useState<ComponentKit[]>([]);
   const [kitComponents, setKitComponents] = useState<Record<string, KitComponent[]>>({});
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [activeKitId, setActiveKitId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -186,6 +207,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [loadingItems, setLoadingItems] = useState(true);
   const [loadingKits, setLoadingKits] = useState(true);
+  const [loadingRecipes, setLoadingRecipes] = useState(true);
   const [loadingComponents, setLoadingComponents] = useState(false);
   
   // Fetch lootboxes, quests, users, items, and component kits using Oracle API
