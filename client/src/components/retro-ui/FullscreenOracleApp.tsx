@@ -90,9 +90,21 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           const data = await response.json();
           console.log('Raw lootbox data from API:', data);
           
-          // Make sure we have an array
+          // Make sure we have an array and deduplicate by ID
           if (Array.isArray(data)) {
-            setLootboxes(data);
+            // Use a Map to deduplicate by ID
+            const uniqueMap = new Map();
+            data.forEach(box => {
+              if (!uniqueMap.has(box.id)) {
+                uniqueMap.set(box.id, box);
+              }
+            });
+            
+            // Convert Map back to array
+            const uniqueData = Array.from(uniqueMap.values());
+            console.log(`Filtered ${data.length} lootboxes down to ${uniqueData.length} unique items`);
+            
+            setLootboxes(uniqueData);
           } else {
             console.error('Expected array for lootboxes but got:', typeof data);
             setLootboxes([]);
