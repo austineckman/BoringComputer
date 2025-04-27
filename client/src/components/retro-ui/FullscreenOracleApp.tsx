@@ -85,35 +85,25 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     const fetchLootboxes = async () => {
       try {
         setLoadingLootboxes(true);
-        const response = await fetch('/api/oracle/entities/lootBoxes');
+        // Change to fetch lootbox configs (definitions) instead of instances
+        const response = await fetch('/api/admin/lootboxes');
         if (response.ok) {
           const data = await response.json();
-          console.log('Raw lootbox data from API:', data);
+          console.log('Raw lootbox config data from API:', data);
           
-          // Make sure we have an array and deduplicate by ID
+          // Make sure we have an array
           if (Array.isArray(data)) {
-            // Use a Map to deduplicate by ID
-            const uniqueMap = new Map();
-            data.forEach(box => {
-              if (!uniqueMap.has(box.id)) {
-                uniqueMap.set(box.id, box);
-              }
-            });
-            
-            // Convert Map back to array
-            const uniqueData = Array.from(uniqueMap.values());
-            console.log(`Filtered ${data.length} lootboxes down to ${uniqueData.length} unique items`);
-            
-            setLootboxes(uniqueData);
+            setLootboxes(data);
+            console.log(`Loaded ${data.length} lootbox configurations`);
           } else {
-            console.error('Expected array for lootboxes but got:', typeof data);
+            console.error('Expected array for lootbox configs but got:', typeof data);
             setLootboxes([]);
           }
         } else {
-          console.error('Failed to fetch lootboxes, status:', response.status);
+          console.error('Failed to fetch lootbox configs, status:', response.status);
         }
       } catch (error) {
-        console.error('Error fetching lootboxes:', error);
+        console.error('Error fetching lootbox configs:', error);
       } finally {
         setLoadingLootboxes(false);
       }
@@ -196,7 +186,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     if (activeTab === 'lootboxes') {
       setLoadingLootboxes(true);
       try {
-        const response = await fetch('/api/oracle/entities/lootBoxes');
+        const response = await fetch('/api/admin/lootboxes');
         if (response.ok) {
           const data = await response.json();
           setLootboxes(data);
@@ -414,7 +404,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
             className="border border-gray-700 rounded-lg bg-space-dark/80 p-4 hover:border-brand-orange/60 transition-colors"
           >
             <div className="flex items-start justify-between mb-3">
-              <h3 className="text-lg font-bold text-white">{lootbox.type || 'Unnamed Lootbox'}</h3>
+              <h3 className="text-lg font-bold text-white">{lootbox.name || lootbox.id || 'Unnamed Lootbox'}</h3>
               <div className="flex space-x-1">
                 <button 
                   className="p-1 rounded-full hover:bg-gray-700 transition-colors"
@@ -427,7 +417,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 <button 
                   className="p-1 rounded-full hover:bg-gray-700 transition-colors"
                   title="Delete lootbox"
-                  onClick={() => handleDeleteClick('lootbox', lootbox.id.toString(), lootbox.type || 'Unnamed Lootbox')}
+                  onClick={() => handleDeleteClick('lootbox', lootbox.id.toString(), lootbox.name || lootbox.id || 'Unnamed Lootbox')}
                   onMouseEnter={() => window.sounds?.hover()}
                 >
                   <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
@@ -435,37 +425,50 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
               </div>
             </div>
             
+            {lootbox.image && (
+              <div className="relative h-32 mb-3 rounded overflow-hidden">
+                <img 
+                  src={lootbox.image} 
+                  alt={lootbox.name} 
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              </div>
+            )}
+            
             <p className="text-gray-300 text-sm mb-3 line-clamp-2">
-              {lootbox.source || 'No description available'}
+              {lootbox.description || 'No description available'}
             </p>
             
             <div className="flex items-center justify-between mb-3">
               <span className={`
                 text-xs px-2 py-1 rounded-full 
-                ${lootbox.opened ? 'bg-gray-600/50 text-gray-200' : 'bg-green-600/50 text-green-200'}
+                ${rarityColorClass(lootbox.rarity)}
               `}>
-                {lootbox.opened ? 'Opened' : 'Unopened'}
+                {lootbox.rarity || 'common'}
               </span>
-              <span className="text-xs text-gray-400">
-                {new Date(lootbox.acquiredAt).toLocaleDateString()}
-              </span>
+              {lootbox.createdAt && (
+                <span className="text-xs text-gray-400">
+                  Added: {new Date(lootbox.createdAt).toLocaleDateString()}
+                </span>
+              )}
             </div>
             
-            {lootbox.rewards && Array.isArray(lootbox.rewards) && lootbox.rewards.length > 0 && (
+            {lootbox.itemDropTable && Array.isArray(lootbox.itemDropTable) && lootbox.itemDropTable.length > 0 && (
               <div className="text-xs">
-                <h4 className="text-gray-400 mb-1">Rewards:</h4>
+                <h4 className="text-gray-400 mb-1">Possible Items:</h4>
                 <div className="flex flex-wrap gap-1">
-                  {lootbox.rewards.slice(0, 3).map((reward, index) => (
+                  {lootbox.itemDropTable.slice(0, 3).map((item, index) => (
                     <span 
                       key={index}
-                      className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded"
+                      className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded flex items-center"
                     >
-                      {typeof reward === 'object' ? (reward.id || reward.type || 'Unknown') : 'Unknown reward'}
+                      <span>{item.itemId}</span>
+                      <span className="ml-1 text-gray-400">({item.weight}%)</span>
                     </span>
                   ))}
-                  {lootbox.rewards.length > 3 && (
+                  {lootbox.itemDropTable.length > 3 && (
                     <span className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded">
-                      +{lootbox.rewards.length - 3} more
+                      +{lootbox.itemDropTable.length - 3} more
                     </span>
                   )}
                 </div>
