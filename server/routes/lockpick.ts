@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../auth';
 import { storage } from '../storage';
-import { openLootBox } from '../lootBoxSystem';
+import { openLootBox, LootBoxType } from '../lootBoxSystem';
 
 const router = Router();
 
@@ -59,6 +59,51 @@ router.post('/:id/open', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Error opening lootbox:', error);
     return res.status(500).json({ error: 'Failed to open lootbox', message: (error as Error).message });
+  }
+});
+
+// Test endpoint to generate lootboxes for development
+router.post('/generate-test', authenticate, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    if (!user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    // Get the types and quantities from the request, or use defaults
+    const { types = ["common", "uncommon", "rare", "epic", "legendary"] } = req.body;
+    const count = req.body.count || 1;
+    
+    const createdLootBoxes = [];
+    
+    // Create the specified number of each type of lootbox
+    for (const type of types) {
+      for (let i = 0; i < count; i++) {
+        const lootBox = await storage.createLootBox({
+          userId: user.id,
+          type: type as LootBoxType,
+          opened: false,
+          rewards: [],
+          source: 'test',
+          sourceId: null
+        });
+        
+        createdLootBoxes.push(lootBox);
+      }
+    }
+    
+    return res.json({ 
+      success: true, 
+      message: `Created ${createdLootBoxes.length} lootboxes`, 
+      lootBoxes: createdLootBoxes 
+    });
+  } catch (error) {
+    console.error('Error generating test lootboxes:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Failed to generate test lootboxes", 
+      error: (error as Error).message 
+    });
   }
 });
 
