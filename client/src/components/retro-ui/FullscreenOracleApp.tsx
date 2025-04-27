@@ -5,17 +5,15 @@ import oracleIconImage from '@assets/01_Fire_Grimoire.png'; // Using grimoire as
 
 // Define types for lootboxes and quests
 interface LootBox {
-  id: string;
-  name: string;
-  description: string;
-  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'welcome' | 'quest' | 'event';
-  possibleItems: Array<{
-    itemId: string;
-    chance: number;
-    minQuantity: number;
-    maxQuantity: number;
-  }>;
-  imagePath?: string;
+  id: number;
+  userId: number;
+  type: string;  // Name of the lootbox
+  opened: boolean;
+  acquiredAt: string;
+  openedAt?: string | null;
+  rewards: any[] | null;
+  source: string;  // Description of the lootbox
+  sourceId: string | null;
 }
 
 interface Quest {
@@ -90,9 +88,17 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         const response = await fetch('/api/oracle/entities/lootBoxes');
         if (response.ok) {
           const data = await response.json();
-          setLootboxes(data);
+          console.log('Raw lootbox data from API:', data);
+          
+          // Make sure we have an array
+          if (Array.isArray(data)) {
+            setLootboxes(data);
+          } else {
+            console.error('Expected array for lootboxes but got:', typeof data);
+            setLootboxes([]);
+          }
         } else {
-          console.error('Failed to fetch lootboxes');
+          console.error('Failed to fetch lootboxes, status:', response.status);
         }
       } catch (error) {
         console.error('Error fetching lootboxes:', error);
@@ -123,20 +129,49 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     fetchQuests();
   }, []);
 
-  // Filter data based on search query
-  const filteredLootboxes = lootboxes.filter(box => 
-    box && typeof box.name === 'string' && typeof box.description === 'string' && (
-      box.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      box.description.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  );
+  // Add debug logging to see what we're getting from the API
+  useEffect(() => {
+    if (lootboxes.length > 0) {
+      console.log("Lootboxes data:", lootboxes);
+    }
+  }, [lootboxes]);
 
-  const filteredQuests = quests.filter(quest => 
-    quest && typeof quest.title === 'string' && typeof quest.description === 'string' && (
-      quest.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      quest.description.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  );
+  // Filter data based on search query with looser conditions
+  const filteredLootboxes = lootboxes.filter(box => {
+    // Make sure box exists
+    if (!box) return false;
+    
+    // If search query is empty, show all
+    if (!searchQuery) return true;
+    
+    // Check for 'type' field (actual name in the database)
+    const nameMatches = typeof box.type === 'string' && 
+      box.type.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Check for 'source' field (closest to description)
+    const descMatches = typeof box.source === 'string' && 
+      box.source.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return nameMatches || descMatches;
+  });
+
+  const filteredQuests = quests.filter(quest => {
+    // Make sure quest exists
+    if (!quest) return false;
+    
+    // If search query is empty, show all
+    if (!searchQuery) return true;
+    
+    // If title exists, check it
+    const titleMatches = typeof quest.title === 'string' && 
+      quest.title.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // If description exists, check it
+    const descMatches = typeof quest.description === 'string' && 
+      quest.description.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return titleMatches || descMatches;
+  });
 
   // Handlers
   const handleTabChange = (tab: 'lootboxes' | 'quests' | 'users' | 'settings') => {
@@ -367,7 +402,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
             className="border border-gray-700 rounded-lg bg-space-dark/80 p-4 hover:border-brand-orange/60 transition-colors"
           >
             <div className="flex items-start justify-between mb-3">
-              <h3 className="text-lg font-bold text-white">{lootbox.name}</h3>
+              <h3 className="text-lg font-bold text-white">{lootbox.type || 'Unnamed Lootbox'}</h3>
               <div className="flex space-x-1">
                 <button 
                   className="p-1 rounded-full hover:bg-gray-700 transition-colors"
@@ -380,7 +415,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 <button 
                   className="p-1 rounded-full hover:bg-gray-700 transition-colors"
                   title="Delete lootbox"
-                  onClick={() => handleDeleteClick('lootbox', lootbox.id, lootbox.name)}
+                  onClick={() => handleDeleteClick('lootbox', lootbox.id.toString(), lootbox.type || 'Unnamed Lootbox')}
                   onMouseEnter={() => window.sounds?.hover()}
                 >
                   <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
@@ -388,43 +423,37 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
               </div>
             </div>
             
-            <p className="text-gray-300 text-sm mb-3 line-clamp-2">{lootbox.description}</p>
+            <p className="text-gray-300 text-sm mb-3 line-clamp-2">
+              {lootbox.source || 'No description available'}
+            </p>
             
             <div className="flex items-center justify-between mb-3">
               <span className={`
                 text-xs px-2 py-1 rounded-full 
-                ${lootbox.rarity === 'legendary' ? 'bg-yellow-600/50 text-yellow-200' : ''}
-                ${lootbox.rarity === 'epic' ? 'bg-purple-600/50 text-purple-200' : ''}
-                ${lootbox.rarity === 'rare' ? 'bg-blue-600/50 text-blue-200' : ''}
-                ${lootbox.rarity === 'uncommon' ? 'bg-green-600/50 text-green-200' : ''}
-                ${lootbox.rarity === 'common' ? 'bg-gray-600/50 text-gray-200' : ''}
-                ${lootbox.rarity === 'welcome' ? 'bg-teal-600/50 text-teal-200' : ''}
-                ${lootbox.rarity === 'quest' ? 'bg-amber-600/50 text-amber-200' : ''}
-                ${lootbox.rarity === 'event' ? 'bg-pink-600/50 text-pink-200' : ''}
+                ${lootbox.opened ? 'bg-gray-600/50 text-gray-200' : 'bg-green-600/50 text-green-200'}
               `}>
-                {lootbox.rarity.charAt(0).toUpperCase() + lootbox.rarity.slice(1)}
+                {lootbox.opened ? 'Opened' : 'Unopened'}
               </span>
               <span className="text-xs text-gray-400">
-                {lootbox.possibleItems?.length || 0} items
+                {new Date(lootbox.acquiredAt).toLocaleDateString()}
               </span>
             </div>
             
-            {lootbox.possibleItems && lootbox.possibleItems.length > 0 && (
+            {lootbox.rewards && Array.isArray(lootbox.rewards) && lootbox.rewards.length > 0 && (
               <div className="text-xs">
-                <h4 className="text-gray-400 mb-1">Possible items:</h4>
+                <h4 className="text-gray-400 mb-1">Rewards:</h4>
                 <div className="flex flex-wrap gap-1">
-                  {lootbox.possibleItems.slice(0, 3).map((item, index) => (
+                  {lootbox.rewards.slice(0, 3).map((reward, index) => (
                     <span 
                       key={index}
                       className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded"
-                      title={`Chance: ${item.chance}%, Quantity: ${item.minQuantity}-${item.maxQuantity}`}
                     >
-                      {item.itemId}
+                      {typeof reward === 'object' ? (reward.id || reward.type || 'Unknown') : 'Unknown reward'}
                     </span>
                   ))}
-                  {lootbox.possibleItems.length > 3 && (
+                  {lootbox.rewards.length > 3 && (
                     <span className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded">
-                      +{lootbox.possibleItems.length - 3} more
+                      +{lootbox.rewards.length - 3} more
                     </span>
                   )}
                 </div>
