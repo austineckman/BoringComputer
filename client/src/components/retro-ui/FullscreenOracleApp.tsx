@@ -215,8 +215,27 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           const data = await response.json();
           console.log('Items data from API:', data);
           if (Array.isArray(data)) {
-            setItems(data);
-            console.log(`Loaded ${data.length} game items`);
+            // Log sample item to inspect structure
+            if (data.length > 0) {
+              console.log('Example item structure:', data[0]);
+            }
+            
+            // Deduplicate items based on ID
+            const uniqueIds = new Set();
+            const uniqueItems = data.filter(item => {
+              if (!uniqueIds.has(item.id)) {
+                uniqueIds.add(item.id);
+                return true;
+              }
+              return false;
+            });
+            
+            if (uniqueItems.length < data.length) {
+              console.warn(`Filtered out ${data.length - uniqueItems.length} duplicate items`);
+            }
+            
+            setItems(uniqueItems);
+            console.log(`Loaded ${uniqueItems.length} game items`);
           } else {
             console.error('Expected array for items but got:', typeof data);
             setItems([]);
@@ -380,6 +399,13 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     setEditingItem(item);
   };
   
+  // Handle editing an item
+  const handleEditItemClick = (item: GameItem) => {
+    window.sounds?.click();
+    setEditingType('item');
+    setEditingItem(item);
+  };
+  
   const closeEditDialog = () => {
     setEditingType(null);
     setEditingItem(null);
@@ -481,17 +507,34 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     
     window.sounds?.click();
     try {
-      // Also update delete to use lootBoxConfigs instead of lootBoxes
-      const tableName = confirmDelete.type === 'lootbox' ? 'lootBoxConfigs' : 'quests';
-      const response = await fetch('/api/oracle/entities', {
-        method: 'DELETE',
+      let endpoint = '';
+      let method = 'DELETE';
+      let body: any = {};
+      
+      if (confirmDelete.type === 'lootbox') {
+        endpoint = '/api/oracle/entities';
+        body = {
+          tableName: 'lootBoxConfigs',
+          id: confirmDelete.id
+        };
+      } else if (confirmDelete.type === 'quest') {
+        endpoint = '/api/oracle/entities';
+        body = {
+          tableName: 'quests',
+          id: confirmDelete.id
+        };
+      } else if (confirmDelete.type === 'item') {
+        endpoint = '/api/items/' + confirmDelete.id;
+        method = 'DELETE';
+        body = null; // No body needed for REST-style item deletion
+      }
+      
+      const response = await fetch(endpoint, {
+        method,
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          tableName,
-          id: confirmDelete.id
-        })
+        body: body ? JSON.stringify(body) : undefined
       });
       
       if (response.ok) {
@@ -506,6 +549,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           setLootboxes(prevBoxes => prevBoxes.filter(box => box.id !== confirmDelete.id));
         } else if (confirmDelete.type === 'quest') {
           setQuests(prevQuests => prevQuests.filter(quest => quest.id !== confirmDelete.id));
+        } else if (confirmDelete.type === 'item') {
+          setItems(prevItems => prevItems.filter(item => item.id !== confirmDelete.id));
         }
         
         setTimeout(() => {
@@ -513,10 +558,20 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         }, 3000);
       } else {
         window.sounds?.error();
-        const errorData = await response.json();
+        const errorText = await response.text();
+        let errorMessage = 'Failed to delete';
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          // If the response isn't JSON, use the text directly
+          errorMessage = errorText || errorMessage;
+        }
+        
         setNotificationMessage({
           type: 'error',
-          message: `Error: ${errorData.message || 'Failed to delete'}`
+          message: `Error: ${errorMessage}`
         });
         setTimeout(() => {
           setNotificationMessage(null);
@@ -1043,6 +1098,22 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
             <div className="flex items-start justify-between mb-3">
               <h3 className="text-lg font-bold text-white">{item.name}</h3>
               <div className="flex space-x-1">
+                <button 
+                  className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                  title="Edit item"
+                  onClick={() => handleEditItemClick(item)}
+                  onMouseEnter={() => window.sounds?.hover()}
+                >
+                  <Edit className="h-4 w-4 text-gray-400 hover:text-white" />
+                </button>
+                <button 
+                  className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                  title="Delete item"
+                  onClick={() => handleDeleteClick('item', item.id, item.name)}
+                  onMouseEnter={() => window.sounds?.hover()}
+                >
+                  <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-400" />
+                </button>
                 <button 
                   className="p-1 rounded-full hover:bg-gray-700 transition-colors"
                   title="View item details"
