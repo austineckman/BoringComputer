@@ -101,6 +101,18 @@ interface UserData {
   lastLogin: string | null;
 }
 
+// Game item interface
+interface GameItem {
+  id: string;
+  name: string;
+  description: string;
+  flavorText: string;
+  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  craftingUses: string[];
+  imagePath: string;
+  category?: string;
+}
+
 // Game item interface based on the itemDatabase.ts in the server
 interface GameItem {
   id: string;
@@ -134,8 +146,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [notificationMessage, setNotificationMessage] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   
   // State for editing
-  const [editingItem, setEditingItem] = useState<LootBox | Quest | null>(null);
-  const [editingType, setEditingType] = useState<'lootbox' | 'quest' | null>(null);
+  const [editingItem, setEditingItem] = useState<LootBox | Quest | GameItem | null>(null);
+  const [editingType, setEditingType] = useState<'lootbox' | 'quest' | 'item' | null>(null);
   
   // Loading states
   const [loadingLootboxes, setLoadingLootboxes] = useState(true);
@@ -416,20 +428,36 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     
     window.sounds?.click();
     try {
-      // Important: Use lootBoxConfigs instead of lootBoxes for lootbox configurations
-      const tableName = editingType === 'lootbox' ? 'lootBoxConfigs' : 'quests';
+      let endpoint = '';
+      let method = 'PUT';
+      let body: any = {};
       const id = (editingItem as any).id;
       
-      const response = await fetch('/api/oracle/entities', {
-        method: 'PUT',
+      if (editingType === 'lootbox') {
+        endpoint = '/api/oracle/entities';
+        body = {
+          tableName: 'lootBoxConfigs',
+          id,
+          data
+        };
+      } else if (editingType === 'quest') {
+        endpoint = '/api/oracle/entities';
+        body = {
+          tableName: 'quests',
+          id,
+          data
+        };
+      } else if (editingType === 'item') {
+        endpoint = `/api/items/${id}`;
+        body = data;
+      }
+      
+      const response = await fetch(endpoint, {
+        method,
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          tableName,
-          id,
-          data
-        })
+        body: JSON.stringify(body)
       });
       
       if (response.ok) {
@@ -445,6 +473,10 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           setQuests(prevQuests => 
             prevQuests.map(quest => quest.id === updatedItem.id ? updatedItem : quest)
           );
+        } else if (editingType === 'item') {
+          setItems(prevItems => 
+            prevItems.map(item => item.id === updatedItem.id ? updatedItem : item)
+          );
         }
         
         setNotificationMessage({
@@ -459,10 +491,20 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         closeEditDialog();
       } else {
         window.sounds?.error();
-        const errorData = await response.json();
+        const errorText = await response.text();
+        let errorMessage = 'Failed to update';
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          // If the response isn't JSON, use the text directly
+          errorMessage = errorText || errorMessage;
+        }
+        
         setNotificationMessage({
           type: 'error',
-          message: `Error: ${errorData.message || 'Failed to update'}`
+          message: `Error: ${errorMessage}`
         });
         setTimeout(() => {
           setNotificationMessage(null);
