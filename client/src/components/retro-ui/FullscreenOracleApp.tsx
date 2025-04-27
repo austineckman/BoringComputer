@@ -267,7 +267,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     
     window.sounds?.click();
     try {
-      const tableName = editingType === 'lootbox' ? 'lootBoxes' : 'quests';
+      // Important: Use lootBoxConfigs instead of lootBoxes for lootbox configurations
+      const tableName = editingType === 'lootbox' ? 'lootBoxConfigs' : 'quests';
       const id = (editingItem as any).id;
       
       const response = await fetch('/api/oracle/entities', {
@@ -357,7 +358,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     
     window.sounds?.click();
     try {
-      const tableName = confirmDelete.type === 'lootbox' ? 'lootBoxes' : 'quests';
+      // Also update delete to use lootBoxConfigs instead of lootBoxes
+      const tableName = confirmDelete.type === 'lootbox' ? 'lootBoxConfigs' : 'quests';
       const response = await fetch('/api/oracle/entities', {
         method: 'DELETE',
         headers: {
@@ -830,99 +832,482 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
             
             {editingType === 'lootbox' && (
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-gray-300 text-sm mb-1">Type (Name)</label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                      value={(editingItem as LootBox).type || ''}
-                      onChange={(e) => {
-                        const updatedLootbox = {...editingItem as LootBox, type: e.target.value};
-                        setEditingItem(updatedLootbox);
-                      }}
-                    />
+                {/* Basic Info Section */}
+                <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
+                  <h3 className="text-md font-semibold text-brand-orange mb-4">Basic Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Loot Box ID</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as LootBox).id || ''}
+                        readOnly={true} // ID should not be editable
+                        disabled={true}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">ID cannot be changed</p>
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Display Name</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as LootBox).name || ''}
+                        onChange={(e) => {
+                          const updatedLootbox = {...editingItem as LootBox, name: e.target.value};
+                          setEditingItem(updatedLootbox);
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-gray-300 text-sm mb-1">Status</label>
-                    <select
-                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                      value={(editingItem as LootBox).opened ? 'opened' : 'unopened'}
+                  
+                  <div className="mt-4">
+                    <label className="block text-gray-300 text-sm mb-1">Description</label>
+                    <textarea
+                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none min-h-[100px]"
+                      value={(editingItem as LootBox).description || ''}
                       onChange={(e) => {
-                        const updatedLootbox = {
-                          ...editingItem as LootBox, 
-                          opened: e.target.value === 'opened'
-                        };
-                        setEditingItem(updatedLootbox);
-                      }}
-                    >
-                      <option value="unopened">Unopened</option>
-                      <option value="opened">Opened</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-gray-300 text-sm mb-1">Source (Description)</label>
-                  <textarea
-                    className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none min-h-[100px]"
-                    value={(editingItem as LootBox).source || ''}
-                    onChange={(e) => {
-                      const updatedLootbox = {...editingItem as LootBox, source: e.target.value};
-                      setEditingItem(updatedLootbox);
-                    }}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-gray-300 text-sm mb-1">Acquired At</label>
-                    <input
-                      type="datetime-local"
-                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                      value={(editingItem as LootBox).acquiredAt ? new Date((editingItem as LootBox).acquiredAt).toISOString().slice(0, 16) : ''}
-                      onChange={(e) => {
-                        const updatedLootbox = {
-                          ...editingItem as LootBox, 
-                          acquiredAt: e.target.value
-                        };
+                        const updatedLootbox = {...editingItem as LootBox, description: e.target.value};
                         setEditingItem(updatedLootbox);
                       }}
                     />
                   </div>
                   
-                  <div>
-                    <label className="block text-gray-300 text-sm mb-1">Source ID (Optional)</label>
-                    <input
-                      type="text"
+                  <div className="mt-4">
+                    <label className="block text-gray-300 text-sm mb-1">Rarity</label>
+                    <select
                       className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                      value={(editingItem as LootBox).sourceId || ''}
+                      value={(editingItem as LootBox).rarity || 'common'}
                       onChange={(e) => {
                         const updatedLootbox = {
                           ...editingItem as LootBox, 
-                          sourceId: e.target.value
+                          rarity: e.target.value as 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
                         };
                         setEditingItem(updatedLootbox);
                       }}
-                    />
+                    >
+                      <option value="common" className="text-gray-300">Common</option>
+                      <option value="uncommon" className="text-green-400">Uncommon</option>
+                      <option value="rare" className="text-blue-400">Rare</option>
+                      <option value="epic" className="text-purple-400">Epic</option>
+                      <option value="legendary" className="text-amber-400">Legendary</option>
+                    </select>
                   </div>
                 </div>
                 
-                {(editingItem as LootBox).rewards && Array.isArray((editingItem as LootBox).rewards) && (editingItem as LootBox).rewards.length > 0 && (
-                  <div>
-                    <label className="block text-gray-300 text-sm mb-1">Rewards</label>
-                    <div className="bg-black/50 border border-gray-700 rounded-md p-3">
-                      <div className="text-gray-400 text-sm">
-                        This lootbox has {(editingItem as LootBox).rewards.length} rewards.
-                        <br />
-                        <span className="text-xs text-yellow-400/70">
-                          Note: Direct reward editing is not supported through this interface.
-                        </span>
-                      </div>
+                {/* Reward Settings Section */}
+                <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
+                  <h3 className="text-md font-semibold text-brand-orange mb-4">Reward Settings</h3>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Min Rewards</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={10}
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as LootBox).minRewards || 1}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          const updatedLootbox = {
+                            ...editingItem as LootBox,
+                            minRewards: isNaN(value) ? 1 : value
+                          };
+                          setEditingItem(updatedLootbox);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Max Rewards</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={20}
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as LootBox).maxRewards || 1}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          const updatedLootbox = {
+                            ...editingItem as LootBox,
+                            maxRewards: isNaN(value) ? 1 : value
+                          };
+                          setEditingItem(updatedLootbox);
+                        }}
+                      />
                     </div>
                   </div>
-                )}
+                </div>
                 
+                {/* Lootbox Image Section */}
+                <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
+                  <h3 className="text-md font-semibold text-brand-orange mb-4">Loot Box Image</h3>
+                  
+                  <div className="flex flex-col space-y-4">
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Current Image URL</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as LootBox).image || ''}
+                        readOnly
+                      />
+                    </div>
+                    
+                    <div className="text-sm text-gray-400">
+                      To change the image, use the Upload button below:
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        accept="image/png, image/jpeg, image/gif, image/webp"
+                        className="hidden"
+                        id="image-upload"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          
+                          // Create a FormData object
+                          const formData = new FormData();
+                          formData.append('image', file);
+                          
+                          try {
+                            // Upload the image
+                            const response = await fetch(`/api/admin/lootboxes/${(editingItem as LootBox).id}/upload`, {
+                              method: 'POST',
+                              body: formData,
+                              credentials: 'include'
+                            });
+                            
+                            if (!response.ok) {
+                              throw new Error(`Upload failed: ${response.statusText}`);
+                            }
+                            
+                            const data = await response.json();
+                            
+                            // Update the form with the new image path
+                            const updatedLootbox = {
+                              ...editingItem as LootBox,
+                              image: data.imagePath
+                            };
+                            setEditingItem(updatedLootbox);
+                            
+                            setNotificationMessage({
+                              type: 'success',
+                              message: 'Image uploaded successfully'
+                            });
+                            
+                            setTimeout(() => {
+                              setNotificationMessage(null);
+                            }, 3000);
+                          } catch (err) {
+                            const error = err as Error;
+                            console.error('Error uploading image:', error);
+                            
+                            setNotificationMessage({
+                              type: 'error',
+                              message: `Failed to upload image: ${error.message}`
+                            });
+                            
+                            setTimeout(() => {
+                              setNotificationMessage(null);
+                            }, 3000);
+                          }
+                        }}
+                      />
+                      <button
+                        className="px-4 py-2 bg-gray-800 text-gray-300 rounded hover:bg-gray-700 flex items-center"
+                        onClick={() => document.getElementById('image-upload')?.click()}
+                        onMouseEnter={() => window.sounds?.hover()}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload New Image
+                      </button>
+                    </div>
+                    
+                    {(editingItem as LootBox).image && (
+                      <div className="bg-gray-800 rounded-md overflow-hidden">
+                        <div className="text-xs text-gray-400 p-2">Current Image</div>
+                        <div className="h-48 flex items-center justify-center p-4">
+                          <img 
+                            src={(editingItem as LootBox).image} 
+                            alt="Loot Box Preview" 
+                            className="max-h-full max-w-full object-contain"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Item Drop Table Section */}
+                <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
+                  <h3 className="text-md font-semibold text-brand-orange mb-4">Item Drop Table</h3>
+                  
+                  <div className="text-sm text-gray-400 mb-4">
+                    Configure which items can drop from this loot box and their chances.
+                    Total weight should equal 100%.
+                  </div>
+                  
+                  {/* Item Drop Table */}
+                  {(editingItem as LootBox).itemDropTable && Array.isArray((editingItem as LootBox).itemDropTable) && (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-700">
+                            <th className="text-left py-2 text-gray-400">Item ID</th>
+                            <th className="text-left py-2 text-gray-400">Weight (%)</th>
+                            <th className="text-left py-2 text-gray-400">Min Qty</th>
+                            <th className="text-left py-2 text-gray-400">Max Qty</th>
+                            <th className="py-2 text-gray-400"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(editingItem as LootBox).itemDropTable.map((item, index) => (
+                            <tr key={index} className="border-b border-gray-700">
+                              <td className="py-2">{item.itemId}</td>
+                              <td className="py-2">
+                                <input
+                                  type="number"
+                                  min={1}
+                                  max={100}
+                                  className="w-16 px-2 py-1 bg-black/50 text-white border border-gray-700 rounded-md"
+                                  value={item.weight}
+                                  onChange={(e) => {
+                                    const value = parseInt(e.target.value);
+                                    if (isNaN(value)) return;
+                                    
+                                    const updatedTable = [...(editingItem as LootBox).itemDropTable];
+                                    updatedTable[index] = { ...item, weight: value };
+                                    
+                                    const updatedLootbox = {
+                                      ...editingItem as LootBox,
+                                      itemDropTable: updatedTable
+                                    };
+                                    setEditingItem(updatedLootbox);
+                                  }}
+                                />
+                              </td>
+                              <td className="py-2">
+                                <input
+                                  type="number"
+                                  min={1}
+                                  max={99}
+                                  className="w-16 px-2 py-1 bg-black/50 text-white border border-gray-700 rounded-md"
+                                  value={item.minQuantity}
+                                  onChange={(e) => {
+                                    const value = parseInt(e.target.value);
+                                    if (isNaN(value)) return;
+                                    
+                                    const updatedTable = [...(editingItem as LootBox).itemDropTable];
+                                    updatedTable[index] = { ...item, minQuantity: value };
+                                    
+                                    const updatedLootbox = {
+                                      ...editingItem as LootBox,
+                                      itemDropTable: updatedTable
+                                    };
+                                    setEditingItem(updatedLootbox);
+                                  }}
+                                />
+                              </td>
+                              <td className="py-2">
+                                <input
+                                  type="number"
+                                  min={1}
+                                  max={99}
+                                  className="w-16 px-2 py-1 bg-black/50 text-white border border-gray-700 rounded-md"
+                                  value={item.maxQuantity}
+                                  onChange={(e) => {
+                                    const value = parseInt(e.target.value);
+                                    if (isNaN(value)) return;
+                                    
+                                    const updatedTable = [...(editingItem as LootBox).itemDropTable];
+                                    updatedTable[index] = { ...item, maxQuantity: value };
+                                    
+                                    const updatedLootbox = {
+                                      ...editingItem as LootBox,
+                                      itemDropTable: updatedTable
+                                    };
+                                    setEditingItem(updatedLootbox);
+                                  }}
+                                />
+                              </td>
+                              <td className="py-2">
+                                <button
+                                  className="p-1 text-gray-400 hover:text-red-500"
+                                  onClick={() => {
+                                    const updatedTable = [...(editingItem as LootBox).itemDropTable];
+                                    updatedTable.splice(index, 1);
+                                    
+                                    const updatedLootbox = {
+                                      ...editingItem as LootBox,
+                                      itemDropTable: updatedTable
+                                    };
+                                    setEditingItem(updatedLootbox);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  
+                  {/* Add New Item Row */}
+                  <div className="mt-4 mb-4 p-3 border border-gray-700 rounded-md bg-black/20">
+                    <h4 className="text-sm font-medium text-brand-orange mb-3">Add New Item</h4>
+                    <div className="grid grid-cols-4 gap-2">
+                      <div>
+                        <label className="block text-gray-400 text-xs mb-1">Item ID</label>
+                        <input
+                          type="text"
+                          className="w-full px-2 py-1 bg-black/50 text-white border border-gray-700 rounded-md"
+                          placeholder="e.g. metal"
+                          id="new-item-id"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-400 text-xs mb-1">Weight (%)</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={100}
+                          defaultValue={10}
+                          className="w-full px-2 py-1 bg-black/50 text-white border border-gray-700 rounded-md"
+                          id="new-item-weight"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-400 text-xs mb-1">Min Qty</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={99}
+                          defaultValue={1}
+                          className="w-full px-2 py-1 bg-black/50 text-white border border-gray-700 rounded-md"
+                          id="new-item-min"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-400 text-xs mb-1">Max Qty</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={99}
+                          defaultValue={1}
+                          className="w-full px-2 py-1 bg-black/50 text-white border border-gray-700 rounded-md"
+                          id="new-item-max"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      className="mt-3 px-3 py-1 bg-green-800/60 text-white border border-green-700/40 rounded-md hover:bg-green-700/60 flex items-center"
+                      onClick={() => {
+                        const itemId = (document.getElementById('new-item-id') as HTMLInputElement)?.value;
+                        const weight = parseInt((document.getElementById('new-item-weight') as HTMLInputElement)?.value || '10');
+                        const minQty = parseInt((document.getElementById('new-item-min') as HTMLInputElement)?.value || '1');
+                        const maxQty = parseInt((document.getElementById('new-item-max') as HTMLInputElement)?.value || '1');
+                        
+                        if (!itemId) {
+                          setNotificationMessage({
+                            type: 'error',
+                            message: 'Item ID is required'
+                          });
+                          setTimeout(() => setNotificationMessage(null), 3000);
+                          return;
+                        }
+                        
+                        // Add the new item
+                        const newItem = {
+                          itemId,
+                          weight: isNaN(weight) ? 10 : weight,
+                          minQuantity: isNaN(minQty) ? 1 : minQty,
+                          maxQuantity: isNaN(maxQty) ? 1 : Math.max(maxQty, minQty)
+                        };
+                        
+                        const updatedTable = [
+                          ...(editingItem as LootBox).itemDropTable || [],
+                          newItem
+                        ];
+                        
+                        const updatedLootbox = {
+                          ...editingItem as LootBox,
+                          itemDropTable: updatedTable
+                        };
+                        
+                        setEditingItem(updatedLootbox);
+                        
+                        // Clear the form
+                        (document.getElementById('new-item-id') as HTMLInputElement).value = '';
+                        (document.getElementById('new-item-weight') as HTMLInputElement).value = '10';
+                        (document.getElementById('new-item-min') as HTMLInputElement).value = '1';
+                        (document.getElementById('new-item-max') as HTMLInputElement).value = '1';
+                      }}
+                    >
+                      <PlusCircle className="h-4 w-4 mr-1" />
+                      Add Item
+                    </button>
+                  </div>
+                  
+                  {/* Calculate Total Weight */}
+                  {(editingItem as LootBox).itemDropTable && Array.isArray((editingItem as LootBox).itemDropTable) && (
+                    <div className="mt-4">
+                      <div className={
+                        (editingItem as LootBox).itemDropTable.reduce((sum, item) => sum + item.weight, 0) === 100
+                          ? "text-green-500"
+                          : "text-red-500"
+                      }>
+                        Total Weight: {(editingItem as LootBox).itemDropTable.reduce((sum, item) => sum + item.weight, 0)}%
+                        {(editingItem as LootBox).itemDropTable.reduce((sum, item) => sum + item.weight, 0) !== 100 && (
+                          <span> (Should be 100%)</span>
+                        )}
+                        {(editingItem as LootBox).itemDropTable.reduce((sum, item) => sum + item.weight, 0) === 100 && (
+                          <span> ✓</span>
+                        )}
+                      </div>
+                      
+                      {/* Normalize Weights Button */}
+                      {(editingItem as LootBox).itemDropTable.reduce((sum, item) => sum + item.weight, 0) !== 100 && (
+                        <button
+                          className="mt-2 px-3 py-1 bg-gray-800 text-gray-300 border border-gray-700 rounded-md hover:border-brand-orange hover:text-brand-orange transition-colors text-sm"
+                          onClick={() => {
+                            const items = [...(editingItem as LootBox).itemDropTable];
+                            if (items.length === 0) return;
+                            
+                            const currentTotal = items.reduce((sum, item) => sum + item.weight, 0);
+                            if (currentTotal === 0) return;
+                            
+                            const normalizedItems = items.map(item => ({
+                              ...item,
+                              weight: Math.round((item.weight / currentTotal) * 100)
+                            }));
+                            
+                            // Adjust to exactly 100 by adding/subtracting from the last item
+                            const newTotal = normalizedItems.reduce((sum, item) => sum + item.weight, 0);
+                            const diff = 100 - newTotal;
+                            if (diff !== 0 && normalizedItems.length > 0) {
+                              normalizedItems[normalizedItems.length - 1].weight += diff;
+                            }
+                            
+                            const updatedLootbox = {
+                              ...editingItem as LootBox,
+                              itemDropTable: normalizedItems
+                            };
+                            setEditingItem(updatedLootbox);
+                          }}
+                        >
+                          Normalize Weights to 100%
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Action Buttons */}
                 <div className="flex justify-end space-x-3 pt-4 border-t border-gray-700">
                   <button
                     className="px-4 py-2 bg-gray-800 text-gray-300 rounded hover:bg-gray-700"
@@ -934,9 +1319,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   <button
                     className="px-4 py-2 bg-brand-orange text-white rounded hover:bg-brand-orange/80"
                     onClick={() => {
-                      // Omit the componentRequirements as it's handled separately in the backend
-                      const { componentRequirements, ...data } = editingItem as any;
-                      handleEditSubmit(data);
+                      handleEditSubmit(editingItem);
                     }}
                     onMouseEnter={() => window.sounds?.hover()}
                   >
