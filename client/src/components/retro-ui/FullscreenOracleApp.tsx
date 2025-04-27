@@ -69,12 +69,12 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [loadingLootboxes, setLoadingLootboxes] = useState(true);
   const [loadingQuests, setLoadingQuests] = useState(true);
   
-  // Fetch lootboxes and quests
+  // Fetch lootboxes and quests using Oracle API
   useEffect(() => {
     const fetchLootboxes = async () => {
       try {
         setLoadingLootboxes(true);
-        const response = await fetch('/api/admin/lootboxes');
+        const response = await fetch('/api/oracle/entities/lootBoxes');
         if (response.ok) {
           const data = await response.json();
           setLootboxes(data);
@@ -91,7 +91,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     const fetchQuests = async () => {
       try {
         setLoadingQuests(true);
-        const response = await fetch('/api/admin/quests');
+        // Use the specialized endpoint that includes component requirements
+        const response = await fetch('/api/oracle/quests-with-components');
         if (response.ok) {
           const data = await response.json();
           setQuests(data);
