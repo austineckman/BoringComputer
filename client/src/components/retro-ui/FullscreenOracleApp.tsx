@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Search, RefreshCw, Package, Sparkles, FileText, Settings, Users, PlusCircle, Loader2, Edit, Trash2, AlertTriangle, Upload } from 'lucide-react';
+import { 
+  X, Search, RefreshCw, Package, Sparkles, FileText, Settings, Users, 
+  PlusCircle, Loader2, Edit, Trash2, AlertTriangle, Upload, 
+  Shield, ShieldCheck, ShieldX, Star, CalendarClock, LineChart
+} from 'lucide-react';
 import wallbg from '@assets/wallbg.png';
 import oracleIconImage from '@assets/01_Fire_Grimoire.png'; // Using grimoire as placeholder for Oracle icon
 
@@ -84,6 +88,18 @@ interface FullscreenOracleAppProps {
   onClose: () => void;
 }
 
+// User interface based on admin panel
+interface UserData {
+  id: number;
+  username: string;
+  roles: string[] | null;
+  level: number;
+  xp: number;
+  totalItems: number;
+  createdAt: string;
+  lastLogin: string | null;
+}
+
 const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) => {
   // State for tabs
   const [activeTab, setActiveTab] = useState<'lootboxes' | 'quests' | 'users' | 'settings'>('lootboxes');
@@ -91,6 +107,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   // State for data
   const [lootboxes, setLootboxes] = useState<LootBox[]>([]);
   const [quests, setQuests] = useState<Quest[]>([]);
+  const [users, setUsers] = useState<UserData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   
   // State for modals and actions
@@ -109,8 +126,9 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   // Loading states
   const [loadingLootboxes, setLoadingLootboxes] = useState(true);
   const [loadingQuests, setLoadingQuests] = useState(true);
+  const [loadingUsers, setLoadingUsers] = useState(true);
   
-  // Fetch lootboxes and quests using Oracle API
+  // Fetch lootboxes, quests, and users using Oracle API
   useEffect(() => {
     const fetchLootboxes = async () => {
       try {
@@ -157,8 +175,26 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       }
     };
 
+    const fetchUsers = async () => {
+      try {
+        setLoadingUsers(true);
+        const response = await fetch('/api/admin/users');
+        if (response.ok) {
+          const data = await response.json();
+          setUsers(data);
+        } else {
+          console.error('Failed to fetch users');
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
     fetchLootboxes();
     fetchQuests();
+    fetchUsers();
   }, []);
 
   // Add debug logging to see what we're getting from the API
@@ -246,6 +282,19 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         console.error('Error refreshing quests:', error);
       } finally {
         setLoadingQuests(false);
+      }
+    } else if (activeTab === 'users') {
+      setLoadingUsers(true);
+      try {
+        const response = await fetch('/api/admin/users');
+        if (response.ok) {
+          const data = await response.json();
+          setUsers(data);
+        }
+      } catch (error) {
+        console.error('Error refreshing users:', error);
+      } finally {
+        setLoadingUsers(false);
       }
     }
   };
@@ -666,14 +715,162 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     );
   };
 
-  // Render placeholder for users and settings tabs
-  const renderUsers = () => (
-    <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-      <Users className="h-12 w-12 mb-3 opacity-50" />
-      <p className="text-lg mb-2">User Management</p>
-      <p className="text-sm">This feature is coming soon</p>
-    </div>
-  );
+  // Render users tab with table
+  const renderUsers = () => {
+    // Create a filtered list of users based on search query
+    const filteredUsers = users.filter(user => {
+      if (!searchQuery) return true;
+      
+      return (
+        user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (user.roles && user.roles.some(role => 
+          role.toLowerCase().includes(searchQuery.toLowerCase()))
+        )
+      );
+    });
+    
+    if (loadingUsers) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64">
+          <Loader2 className="h-10 w-10 animate-spin text-brand-orange mb-3" />
+          <p className="text-brand-orange">Loading users...</p>
+        </div>
+      );
+    }
+    
+    if (filteredUsers.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+          <Users className="h-12 w-12 mb-3 opacity-50" />
+          <p className="text-lg mb-2">No users found</p>
+          <p className="text-sm">Try adjusting your search</p>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full text-sm text-left text-gray-300">
+          <thead className="text-xs text-gray-400 uppercase bg-gray-800/50">
+            <tr>
+              <th scope="col" className="px-4 py-3">Username</th>
+              <th scope="col" className="px-4 py-3">Roles</th>
+              <th scope="col" className="px-4 py-3">Level</th>
+              <th scope="col" className="px-4 py-3">XP</th>
+              <th scope="col" className="px-4 py-3">Total Items</th>
+              <th scope="col" className="px-4 py-3">Created</th>
+              <th scope="col" className="px-4 py-3">Last Login</th>
+              <th scope="col" className="px-4 py-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredUsers.map(user => (
+              <tr key={user.id} className="border-b border-gray-700 bg-gray-900/30 hover:bg-gray-700/30">
+                <td className="px-4 py-3 font-medium text-white">
+                  {user.username}
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap gap-1">
+                    {user.roles && user.roles.map((role, index) => (
+                      <span 
+                        key={index} 
+                        className={`px-2 py-1 text-xs rounded-full ${
+                          role === 'admin' 
+                            ? 'bg-red-900/70 text-red-200' 
+                            : role === 'moderator'
+                              ? 'bg-purple-900/70 text-purple-200' 
+                              : 'bg-blue-900/70 text-blue-200'
+                        }`}
+                      >
+                        {role}
+                      </span>
+                    ))}
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <span className="px-2 py-1 bg-brand-orange/20 text-brand-orange rounded-full">
+                    {user.level}
+                  </span>
+                </td>
+                <td className="px-4 py-3">{user.xp}</td>
+                <td className="px-4 py-3">{user.totalItems}</td>
+                <td className="px-4 py-3">
+                  {new Date(user.createdAt).toLocaleDateString()}
+                </td>
+                <td className="px-4 py-3">
+                  {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex space-x-2">
+                    <button 
+                      className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                      title="Edit user"
+                      onMouseEnter={() => window.sounds?.hover()}
+                    >
+                      <Edit className="h-4 w-4 text-gray-400 hover:text-white" />
+                    </button>
+                    <button 
+                      className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                      title="Delete user"
+                      onMouseEnter={() => window.sounds?.hover()}
+                    >
+                      <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        
+        {/* User stats summary */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
+            <div className="flex items-center justify-between">
+              <h3 className="text-gray-400 text-sm">Total Users</h3>
+              <Users className="h-5 w-5 text-brand-orange" />
+            </div>
+            <p className="text-2xl font-bold text-white mt-2">{users.length}</p>
+          </div>
+          
+          <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
+            <div className="flex items-center justify-between">
+              <h3 className="text-gray-400 text-sm">Admins</h3>
+              <Shield className="h-5 w-5 text-red-400" />
+            </div>
+            <p className="text-2xl font-bold text-white mt-2">
+              {users.filter(u => u.roles && u.roles.includes('admin')).length}
+            </p>
+          </div>
+          
+          <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
+            <div className="flex items-center justify-between">
+              <h3 className="text-gray-400 text-sm">Average Level</h3>
+              <LineChart className="h-5 w-5 text-green-400" />
+            </div>
+            <p className="text-2xl font-bold text-white mt-2">
+              {Math.round(users.reduce((sum, user) => sum + user.level, 0) / users.length) || 0}
+            </p>
+          </div>
+          
+          <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
+            <div className="flex items-center justify-between">
+              <h3 className="text-gray-400 text-sm">New This Month</h3>
+              <CalendarClock className="h-5 w-5 text-blue-400" />
+            </div>
+            <p className="text-2xl font-bold text-white mt-2">
+              {users.filter(u => {
+                const createdDate = new Date(u.createdAt);
+                const now = new Date();
+                return createdDate.getMonth() === now.getMonth() && 
+                       createdDate.getFullYear() === now.getFullYear();
+              }).length}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderSettings = () => (
     <div className="flex flex-col items-center justify-center h-64 text-gray-400">
