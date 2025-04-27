@@ -1445,6 +1445,203 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
               </button>
             </div>
             
+            {editingType === 'item' && (
+              <div className="space-y-4">
+                {/* Basic Info Section */}
+                <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
+                  <h3 className="text-md font-semibold text-brand-orange mb-4">Basic Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Item ID</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as GameItem).id || ''}
+                        readOnly={true} // ID should not be editable
+                        disabled={true}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">ID cannot be changed</p>
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Display Name</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as GameItem).name || ''}
+                        onChange={(e) => {
+                          const updatedItem = {...editingItem as GameItem, name: e.target.value};
+                          setEditingItem(updatedItem);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <label className="block text-gray-300 text-sm mb-1">Description</label>
+                    <textarea
+                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none min-h-[80px]"
+                      value={(editingItem as GameItem).description || ''}
+                      onChange={(e) => {
+                        const updatedItem = {...editingItem as GameItem, description: e.target.value};
+                        setEditingItem(updatedItem);
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="mt-4">
+                    <label className="block text-gray-300 text-sm mb-1">Flavor Text</label>
+                    <textarea
+                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none min-h-[80px]"
+                      value={(editingItem as GameItem).flavorText || ''}
+                      onChange={(e) => {
+                        const updatedItem = {...editingItem as GameItem, flavorText: e.target.value};
+                        setEditingItem(updatedItem);
+                      }}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Flavor text adds character to the item description</p>
+                  </div>
+                  
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Rarity</label>
+                      <select
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as GameItem).rarity}
+                        onChange={(e) => {
+                          const updatedItem = {
+                            ...editingItem as GameItem, 
+                            rarity: e.target.value as 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
+                          };
+                          setEditingItem(updatedItem);
+                        }}
+                      >
+                        <option value="common">Common</option>
+                        <option value="uncommon">Uncommon</option>
+                        <option value="rare">Rare</option>
+                        <option value="epic">Epic</option>
+                        <option value="legendary">Legendary</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Category</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as GameItem).category || ''}
+                        onChange={(e) => {
+                          const updatedItem = {...editingItem as GameItem, category: e.target.value};
+                          setEditingItem(updatedItem);
+                        }}
+                        placeholder="e.g. materials, equipment, consumable"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <label className="block text-gray-300 text-sm mb-1">Image Path</label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                      value={(editingItem as GameItem).imagePath || ''}
+                      onChange={(e) => {
+                        const updatedItem = {...editingItem as GameItem, imagePath: e.target.value};
+                        setEditingItem(updatedItem);
+                      }}
+                      placeholder="/assets/item-name.png"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Path to the item image (relative to the server or full URL)</p>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <label className="block text-gray-300 text-sm mb-1">Crafting Uses</label>
+                    <div className="flex">
+                      <input
+                        type="text"
+                        className="flex-1 px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as GameItem).craftingUses ? (editingItem as GameItem).craftingUses.join(',') : ''}
+                        onChange={(e) => {
+                          const uses = e.target.value.split(',').map(use => use.trim()).filter(Boolean);
+                          const updatedItem = {...editingItem as GameItem, craftingUses: uses};
+                          setEditingItem(updatedItem);
+                        }}
+                        placeholder="wiring,circuits,conductors"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Comma-separated list of crafting uses</p>
+                  </div>
+                </div>
+                
+                {/* Preview Section */}
+                <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
+                  <h3 className="text-md font-semibold text-brand-orange mb-4">Item Preview</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3">
+                    <div className="flex justify-center items-center">
+                      {(editingItem as GameItem).imagePath ? (
+                        <img 
+                          src={(editingItem as GameItem).imagePath} 
+                          alt={(editingItem as GameItem).name}
+                          className="w-24 h-24 object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                            (e.target as HTMLImageElement).className = 'w-24 h-24 p-6 opacity-30';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-24 h-24 flex items-center justify-center border border-gray-700 rounded bg-black/50">
+                          <FileImage className="w-12 h-12 text-gray-600" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="md:col-span-2 flex flex-col justify-center">
+                      <h3 className="text-lg font-bold text-white">{(editingItem as GameItem).name}</h3>
+                      <div className="flex my-1">
+                        <span className={`px-2 py-0.5 text-xs rounded-full ${rarityColorClass((editingItem as GameItem).rarity)}`}>
+                          {(editingItem as GameItem).rarity}
+                        </span>
+                        {(editingItem as GameItem).category && (
+                          <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-800 text-gray-300">
+                            {(editingItem as GameItem).category}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-300 mt-1">{(editingItem as GameItem).description}</p>
+                      {(editingItem as GameItem).flavorText && (
+                        <p className="text-xs italic text-gray-400 mt-1">"{(editingItem as GameItem).flavorText}"</p>
+                      )}
+                      
+                      {(editingItem as GameItem).craftingUses && (editingItem as GameItem).craftingUses.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {(editingItem as GameItem).craftingUses.map((use, i) => (
+                            <span key={i} className="px-2 py-0.5 text-xs bg-gray-800 text-gray-300 rounded">
+                              {use}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-700">
+                  <button
+                    className="px-4 py-2 bg-gray-800 text-gray-300 rounded hover:bg-gray-700"
+                    onClick={closeEditDialog}
+                    onMouseEnter={() => window.sounds?.hover()}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-brand-orange text-white rounded hover:bg-brand-orange/80"
+                    onClick={() => handleEditSubmit(editingItem)}
+                    onMouseEnter={() => window.sounds?.hover()}
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            )}
+            
             {editingType === 'lootbox' && (
               <div className="space-y-4">
                 {/* Basic Info Section */}
