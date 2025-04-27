@@ -1686,19 +1686,42 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
               
               <div className="flex items-center mb-2">
                 <div className="w-16 h-16 mr-3 bg-gray-800 rounded-md flex items-center justify-center overflow-hidden">
-                  {recipe.image ? (
-                    <img 
-                      src={recipe.image} 
-                      alt={recipe.name}
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
-                        (e.target as HTMLImageElement).className = 'w-8 h-8 opacity-30';
-                      }}
-                    />
-                  ) : (
-                    <ClipboardList className="w-8 h-8 text-gray-600" />
-                  )}
+                  {/* Find the result item in the items array to display its image */}
+                  {(() => {
+                    // Look for image in recipe.image first
+                    if (recipe.image) {
+                      return (
+                        <img 
+                          src={recipe.image}
+                          alt={recipe.name}
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                            (e.target as HTMLImageElement).className = 'w-8 h-8 opacity-30';
+                          }}
+                        />
+                      );
+                    }
+                    
+                    // Otherwise, look for the result item's image in the items array
+                    const resultItem = items.find(item => item.id === recipe.resultItem);
+                    if (resultItem?.imagePath) {
+                      return (
+                        <img 
+                          src={resultItem.imagePath}
+                          alt={recipe.name}
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                            (e.target as HTMLImageElement).className = 'w-8 h-8 opacity-30';
+                          }}
+                        />
+                      );
+                    }
+                    
+                    // Fallback if no image is found
+                    return <ClipboardList className="w-8 h-8 text-gray-600" />;
+                  })()}
                 </div>
                 <div>
                   <div className="flex items-center mb-1">
