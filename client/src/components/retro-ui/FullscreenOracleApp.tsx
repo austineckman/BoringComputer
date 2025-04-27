@@ -5,15 +5,45 @@ import oracleIconImage from '@assets/01_Fire_Grimoire.png'; // Using grimoire as
 
 // Define types for lootboxes and quests
 interface LootBox {
-  id: number;
-  userId: number;
-  type: string;  // Name of the lootbox
-  opened: boolean;
-  acquiredAt: string;
-  openedAt?: string | null;
-  rewards: any[] | null;
-  source: string;  // Description of the lootbox
-  sourceId: string | null;
+  id: string;
+  name: string;
+  description: string;
+  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'welcome' | 'quest' | 'event';
+  image: string;
+  itemDropTable: Array<{
+    itemId: string;
+    weight: number;
+    minQuantity: number;
+    maxQuantity: number;
+  }>;
+  minRewards: number;
+  maxRewards: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Helper function to determine color class based on rarity
+function rarityColorClass(rarity?: string): string {
+  switch (rarity?.toLowerCase()) {
+    case 'common':
+      return 'bg-gray-600/50 text-gray-200';
+    case 'uncommon':
+      return 'bg-green-600/50 text-green-200';
+    case 'rare':
+      return 'bg-blue-600/50 text-blue-200';
+    case 'epic':
+      return 'bg-purple-600/50 text-purple-200';
+    case 'legendary':
+      return 'bg-yellow-600/50 text-yellow-200';
+    case 'welcome':
+      return 'bg-teal-600/50 text-teal-200';
+    case 'quest':
+      return 'bg-brand-orange/50 text-orange-200';
+    case 'event':
+      return 'bg-pink-600/50 text-pink-200';
+    default:
+      return 'bg-gray-600/50 text-gray-200';
+  }
 }
 
 interface Quest {
@@ -146,15 +176,23 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     // If search query is empty, show all
     if (!searchQuery) return true;
     
-    // Check for 'type' field (actual name in the database)
-    const nameMatches = typeof box.type === 'string' && 
-      box.type.toLowerCase().includes(searchQuery.toLowerCase());
+    // Check for name field
+    const nameMatches = typeof box.name === 'string' && 
+      box.name.toLowerCase().includes(searchQuery.toLowerCase());
     
-    // Check for 'source' field (closest to description)
-    const descMatches = typeof box.source === 'string' && 
-      box.source.toLowerCase().includes(searchQuery.toLowerCase());
+    // Check for id field (might be used as an identifier)
+    const idMatches = typeof box.id === 'string' && 
+      box.id.toLowerCase().includes(searchQuery.toLowerCase());
     
-    return nameMatches || descMatches;
+    // Check for description field
+    const descMatches = typeof box.description === 'string' && 
+      box.description.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Check for rarity field
+    const rarityMatches = typeof box.rarity === 'string' && 
+      box.rarity.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return nameMatches || idMatches || descMatches || rarityMatches;
   });
 
   const filteredQuests = quests.filter(quest => {
