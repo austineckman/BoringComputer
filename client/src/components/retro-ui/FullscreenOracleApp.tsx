@@ -100,14 +100,27 @@ interface UserData {
   lastLogin: string | null;
 }
 
+// Game item interface based on the itemDatabase.ts in the server
+interface GameItem {
+  id: string;
+  name: string;
+  description: string;
+  flavorText: string;
+  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  craftingUses: string[];
+  imagePath: string;
+  category?: string;
+}
+
 const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) => {
   // State for tabs
-  const [activeTab, setActiveTab] = useState<'lootboxes' | 'quests' | 'users' | 'settings'>('lootboxes');
+  const [activeTab, setActiveTab] = useState<'lootboxes' | 'quests' | 'users' | 'items' | 'settings'>('lootboxes');
   
   // State for data
   const [lootboxes, setLootboxes] = useState<LootBox[]>([]);
   const [quests, setQuests] = useState<Quest[]>([]);
   const [users, setUsers] = useState<UserData[]>([]);
+  const [items, setItems] = useState<GameItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   
   // State for modals and actions
@@ -127,8 +140,9 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [loadingLootboxes, setLoadingLootboxes] = useState(true);
   const [loadingQuests, setLoadingQuests] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(true);
+  const [loadingItems, setLoadingItems] = useState(true);
   
-  // Fetch lootboxes, quests, and users using Oracle API
+  // Fetch lootboxes, quests, users, and items using Oracle API
   useEffect(() => {
     const fetchLootboxes = async () => {
       try {
@@ -191,10 +205,35 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         setLoadingUsers(false);
       }
     };
+    
+    const fetchItems = async () => {
+      try {
+        setLoadingItems(true);
+        const response = await fetch('/api/items');
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Items data from API:', data);
+          if (Array.isArray(data)) {
+            setItems(data);
+            console.log(`Loaded ${data.length} game items`);
+          } else {
+            console.error('Expected array for items but got:', typeof data);
+            setItems([]);
+          }
+        } else {
+          console.error('Failed to fetch items');
+        }
+      } catch (error) {
+        console.error('Error fetching items:', error);
+      } finally {
+        setLoadingItems(false);
+      }
+    };
 
     fetchLootboxes();
     fetchQuests();
     fetchUsers();
+    fetchItems();
   }, []);
 
   // Add debug logging to see what we're getting from the API
@@ -248,9 +287,29 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     
     return titleMatches || descMatches;
   });
+  
+  // Filter items based on search query
+  const filteredItems = items.filter(item => {
+    // Make sure item exists
+    if (!item) return false;
+    
+    // If search query is empty, show all
+    if (!searchQuery) return true;
+    
+    // Check various properties
+    const nameMatches = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const idMatches = item.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const descMatches = item.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const flavorMatches = item.flavorText?.toLowerCase().includes(searchQuery.toLowerCase());
+    const rarityMatches = item.rarity.toLowerCase().includes(searchQuery.toLowerCase());
+    const categoryMatches = item.category?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return nameMatches || idMatches || descMatches || 
+           flavorMatches || rarityMatches || (categoryMatches || false);
+  });
 
   // Handlers
-  const handleTabChange = (tab: 'lootboxes' | 'quests' | 'users' | 'settings') => {
+  const handleTabChange = (tab: 'lootboxes' | 'quests' | 'users' | 'items' | 'settings') => {
     window.sounds?.click();
     setActiveTab(tab);
   };
@@ -295,6 +354,20 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         console.error('Error refreshing users:', error);
       } finally {
         setLoadingUsers(false);
+      }
+    } else if (activeTab === 'items') {
+      setLoadingItems(true);
+      try {
+        const response = await fetch('/api/items');
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Refreshed items data:', data);
+          setItems(data);
+        }
+      } catch (error) {
+        console.error('Error refreshing items:', error);
+      } finally {
+        setLoadingItems(false);
       }
     }
   };
