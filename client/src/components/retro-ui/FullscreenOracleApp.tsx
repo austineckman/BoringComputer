@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Search, RefreshCw, Package, Sparkles, FileText, Settings, Users, PlusCircle, Loader2, Edit, Trash2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Search, RefreshCw, Package, Sparkles, FileText, Settings, Users, PlusCircle, Loader2, Edit, Trash2, AlertTriangle } from 'lucide-react';
 import wallbg from '@assets/wallbg.png';
 import oracleIconImage from '@assets/01_Fire_Grimoire.png'; // Using grimoire as placeholder for Oracle icon
 
@@ -64,6 +64,15 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [lootboxes, setLootboxes] = useState<LootBox[]>([]);
   const [quests, setQuests] = useState<Quest[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // State for modals and actions
+  const [confirmDelete, setConfirmDelete] = useState<{ show: boolean; type: string; id: string | null; name: string }>({
+    show: false,
+    type: '',
+    id: null,
+    name: ''
+  });
+  const [notificationMessage, setNotificationMessage] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   
   // Loading states
   const [loadingLootboxes, setLoadingLootboxes] = useState(true);
@@ -132,7 +141,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     if (activeTab === 'lootboxes') {
       setLoadingLootboxes(true);
       try {
-        const response = await fetch('/api/admin/lootboxes');
+        const response = await fetch('/api/oracle/entities/lootBoxes');
         if (response.ok) {
           const data = await response.json();
           setLootboxes(data);
@@ -145,7 +154,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     } else if (activeTab === 'quests') {
       setLoadingQuests(true);
       try {
-        const response = await fetch('/api/admin/quests');
+        const response = await fetch('/api/oracle/quests-with-components');
         if (response.ok) {
           const data = await response.json();
           setQuests(data);
@@ -156,6 +165,87 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         setLoadingQuests(false);
       }
     }
+  };
+  
+  // Delete handlers
+  const handleDeleteClick = (type: string, id: string, name: string) => {
+    window.sounds?.click();
+    setConfirmDelete({
+      show: true,
+      type,
+      id,
+      name
+    });
+  };
+  
+  const closeDeleteDialog = () => {
+    setConfirmDelete({
+      show: false,
+      type: '',
+      id: null,
+      name: ''
+    });
+  };
+  
+  const confirmDeleteItem = async () => {
+    if (!confirmDelete.id || !confirmDelete.type) return;
+    
+    window.sounds?.click();
+    try {
+      const tableName = confirmDelete.type === 'lootbox' ? 'lootBoxes' : 'quests';
+      const response = await fetch('/api/oracle/entities', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          tableName,
+          id: confirmDelete.id
+        })
+      });
+      
+      if (response.ok) {
+        window.sounds?.success();
+        setNotificationMessage({
+          type: 'success',
+          message: `${confirmDelete.type.charAt(0).toUpperCase() + confirmDelete.type.slice(1)} deleted successfully!`
+        });
+        
+        // Update the state to remove the deleted item
+        if (confirmDelete.type === 'lootbox') {
+          setLootboxes(prevBoxes => prevBoxes.filter(box => box.id !== confirmDelete.id));
+        } else if (confirmDelete.type === 'quest') {
+          setQuests(prevQuests => prevQuests.filter(quest => quest.id !== confirmDelete.id));
+        }
+        
+        setTimeout(() => {
+          setNotificationMessage(null);
+        }, 3000);
+      } else {
+        window.sounds?.error();
+        const errorData = await response.json();
+        setNotificationMessage({
+          type: 'error',
+          message: `Error: ${errorData.message || 'Failed to delete'}`
+        });
+        setTimeout(() => {
+          setNotificationMessage(null);
+        }, 3000);
+      }
+    } catch (err) {
+      window.sounds?.error();
+      const error = err as Error;
+      console.error(`Error deleting ${confirmDelete.type}:`, error);
+      setNotificationMessage({
+        type: 'error',
+        message: `Error: ${error.message || 'Failed to delete'}`
+      });
+      setTimeout(() => {
+        setNotificationMessage(null);
+      }, 3000);
+    }
+    
+    closeDeleteDialog();
   };
 
   // Render lootbox cards
@@ -200,7 +290,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 <button 
                   className="p-1 rounded-full hover:bg-gray-700 transition-colors"
                   title="Delete lootbox"
-                  onClick={() => console.log('Delete lootbox', lootbox.id)}
+                  onClick={() => handleDeleteClick('lootbox', lootbox.id, lootbox.name)}
                   onMouseEnter={() => window.sounds?.hover()}
                 >
                   <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
@@ -298,7 +388,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 <button 
                   className="p-1 rounded-full hover:bg-gray-700 transition-colors"
                   title="Delete quest"
-                  onClick={() => console.log('Delete quest', quest.id)}
+                  onClick={() => handleDeleteClick('quest', quest.id.toString(), quest.title)}
                   onMouseEnter={() => window.sounds?.hover()}
                 >
                   <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
@@ -511,6 +601,54 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           Last updated: {new Date().toLocaleTimeString()}
         </span>
       </div>
+      
+      {/* Confirmation Dialog */}
+      {confirmDelete.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="bg-gray-900 border border-red-500 rounded-lg shadow-lg p-6 max-w-md w-full">
+            <div className="flex items-center mb-4 text-red-500">
+              <AlertTriangle className="h-6 w-6 mr-2" />
+              <h3 className="text-xl font-bold">Confirm Delete</h3>
+            </div>
+            <p className="mb-6 text-gray-300">
+              Are you sure you want to delete this {confirmDelete.type}?<br />
+              <span className="font-bold">{confirmDelete.name}</span>
+              <br /><br />
+              This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                className="px-4 py-2 bg-gray-800 text-gray-300 rounded hover:bg-gray-700"
+                onClick={closeDeleteDialog}
+                onMouseEnter={() => window.sounds?.hover()}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                onClick={confirmDeleteItem}
+                onMouseEnter={() => window.sounds?.hover()}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Notification Message */}
+      {notificationMessage && (
+        <div className={`fixed bottom-4 right-4 p-4 rounded-lg shadow-lg ${
+          notificationMessage.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+        } text-white flex items-center`}>
+          {notificationMessage.type === 'success' ? (
+            <div className="mr-2">✓</div>
+          ) : (
+            <AlertTriangle className="h-5 w-5 mr-2" />
+          )}
+          <p>{notificationMessage.message}</p>
+        </div>
+      )}
     </div>
   );
 };
