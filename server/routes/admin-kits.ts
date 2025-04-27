@@ -363,6 +363,90 @@ router.delete('/components/:id', isAdmin, async (req: Request, res: Response) =>
   }
 });
 
+// POST upload an image for a component kit
+router.post('/kits/:id/image', isAdmin, upload.single('image'), async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    // Check if kit exists
+    const [existingKit] = await db.select().from(componentKits).where(eq(componentKits.id, id));
+    if (!existingKit) {
+      return res.status(404).json({ message: 'Component kit not found' });
+    }
+    
+    // Check if an image was uploaded
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file provided' });
+    }
+    
+    // Generate image path
+    const imagePath = `/uploads/kits/${req.file.filename}`;
+    
+    // Update the kit with the new image path
+    const [updatedKit] = await db
+      .update(componentKits)
+      .set({ 
+        imagePath,
+        updatedAt: new Date()
+      })
+      .where(eq(componentKits.id, id))
+      .returning();
+    
+    // Return the updated image path
+    res.status(200).json({ 
+      message: 'Image uploaded successfully',
+      imagePath: updatedKit.imagePath
+    });
+  } catch (error) {
+    console.error('Error uploading kit image:', error);
+    res.status(500).json({ message: 'Failed to upload kit image', error: String(error) });
+  }
+});
+
+// POST upload an image for a component
+router.post('/components/:id/image', isAdmin, upload.single('image'), async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    // Check if component exists
+    const [existingComponent] = await db
+      .select()
+      .from(kitComponents)
+      .where(eq(kitComponents.id, parseInt(id)));
+      
+    if (!existingComponent) {
+      return res.status(404).json({ message: 'Component not found' });
+    }
+    
+    // Check if an image was uploaded
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file provided' });
+    }
+    
+    // Generate image path
+    const imagePath = `/uploads/kits/${req.file.filename}`;
+    
+    // Update the component with the new image path
+    const [updatedComponent] = await db
+      .update(kitComponents)
+      .set({ 
+        imagePath,
+        updatedAt: new Date()
+      })
+      .where(eq(kitComponents.id, parseInt(id)))
+      .returning();
+    
+    // Return the updated image path
+    res.status(200).json({ 
+      message: 'Image uploaded successfully',
+      imagePath: updatedComponent.imagePath
+    });
+  } catch (error) {
+    console.error('Error uploading component image:', error);
+    res.status(500).json({ message: 'Failed to upload component image', error: String(error) });
+  }
+});
+
 // GET available components for quest selection (used by admin-quests)
 router.get('/components-for-quest', isAdmin, async (req: Request, res: Response) => {
   try {
