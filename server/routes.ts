@@ -1481,6 +1481,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Special endpoint for recycle bin titles - returns alreadyUnlocked flag instead of error
+  app.post('/api/titles/recycle-bin', authenticate, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const { title } = req.body;
+      
+      if (!title) {
+        return res.status(400).json({ message: 'Title is required' });
+      }
+      
+      // Get current titles
+      const titles = [...(user.titles || [])];
+      
+      // Check if title is already unlocked - but don't return error
+      const alreadyUnlocked = titles.includes(title);
+      
+      if (!alreadyUnlocked) {
+        // Add the new title if not already unlocked
+        titles.push(title);
+      }
+      
+      // Special case for mock user (ID 999)
+      if (user.id === 999) {
+        // For the mock user, just update the in-memory object
+        user.titles = titles;
+        console.log('Development mode: Updated mock user titles from recycle bin:', titles);
+        return res.json({
+          alreadyUnlocked,
+          titles: titles,
+          activeTitle: user.activeTitle || null
+        });
+      }
+      
+      // Only update database if we added a new title
+      let updatedUser = user;
+      if (!alreadyUnlocked) {
+        updatedUser = await storage.updateUser(user.id, { titles });
+        
+        if (!updatedUser) {
+          return res.status(500).json({ message: 'Failed to update user' });
+        }
+      }
+      
+      return res.json({
+        alreadyUnlocked,
+        titles: updatedUser.titles || [],
+        activeTitle: updatedUser.activeTitle || null
+      });
+    } catch (error) {
+      console.error('Error unlocking title from recycle bin:', error);
+      return res.status(500).json({ message: 'Failed to unlock title' });
+    }
+  });
+  
   // Get user's titles
   app.get('/api/titles', authenticate, async (req, res) => {
     try {
@@ -1501,9 +1555,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = (req as any).user;
       const { title } = req.body;
       
-      // Special case for development mode with mock user
-      const BYPASS_AUTH = process.env.NODE_ENV === 'development';
-      if (BYPASS_AUTH && user.id === 999) {
+      // Special case for mock user (ID 999)
+      if (user.id === 999) {
         // For the mock user, just update the in-memory object
         user.activeTitle = title;
         console.log('Development mode: Updated mock user active title:', title);

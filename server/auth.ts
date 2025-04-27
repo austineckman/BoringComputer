@@ -46,6 +46,24 @@ export async function comparePasswords(supplied: string, stored: string): Promis
   }
 }
 
+// Persistent mock user for development
+const mockUser = {
+  id: 999,
+  username: "devuser",
+  email: "dev@example.com",
+  roles: ["admin", "user"],
+  level: 10,
+  inventory: {
+    "copper": 10,
+    "crystal": 5,
+    "techscrap": 3,
+    "circuit_board": 2,
+    "cloth": 8
+  },
+  titles: [],
+  activeTitle: null
+};
+
 // Authentication middleware
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   // For development purposes, temporarily skip authentication
@@ -53,23 +71,8 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
   
   if (!req.isAuthenticated()) {
     if (BYPASS_AUTH) {
-      // Create a mock user for development
-      (req as any).user = {
-        id: 999,
-        username: "devuser",
-        email: "dev@example.com",
-        roles: ["admin", "user"],
-        level: 10,
-        inventory: {
-          "copper": 10,
-          "crystal": 5,
-          "techscrap": 3,
-          "circuit_board": 2,
-          "cloth": 8
-        },
-        titles: [],
-        activeTitle: null
-      };
+      // Use the persistent mock user
+      (req as any).user = mockUser;
       console.log("⚠️ Development mode: Authentication bypassed with mock user");
       return next();
     }
@@ -86,21 +89,8 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction) =>
   
   if (!req.isAuthenticated()) {
     if (BYPASS_AUTH) {
-      // Create a mock admin user for development
-      (req as any).user = {
-        id: 999,
-        username: "devadmin",
-        email: "dev@example.com",
-        roles: ["admin", "user"],
-        level: 10,
-        inventory: {
-          "copper": 10,
-          "crystal": 5,
-          "techscrap": 3,
-          "circuit_board": 2,
-          "cloth": 8
-        }
-      };
+      // Use the same persistent mock user for admin routes
+      (req as any).user = mockUser;
       console.log("⚠️ Development mode: Admin authentication bypassed with mock admin user");
       return next();
     }
