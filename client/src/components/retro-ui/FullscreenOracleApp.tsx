@@ -2394,17 +2394,81 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   
                   <div className="mt-4">
                     <label className="block text-gray-300 text-sm mb-1">Image Path</label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                      value={(editingItem as GameItem).imagePath || ''}
-                      onChange={(e) => {
-                        const updatedItem = {...editingItem as GameItem, imagePath: e.target.value};
-                        setEditingItem(updatedItem);
-                      }}
-                      placeholder="/assets/item-name.png"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Path to the item image (relative to the server or full URL)</p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        className="flex-1 px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as GameItem).imagePath || ''}
+                        readOnly
+                        placeholder="/assets/item-name.png"
+                      />
+                      <input
+                        type="file"
+                        accept="image/png, image/jpeg, image/gif, image/webp"
+                        className="hidden"
+                        id="item-image-upload"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          
+                          // Create a FormData object
+                          const formData = new FormData();
+                          formData.append('image', file);
+                          
+                          try {
+                            // Upload the image
+                            const response = await fetch(`/api/admin/items/${(editingItem as GameItem).id}/image`, {
+                              method: 'POST',
+                              body: formData,
+                              credentials: 'include'
+                            });
+                            
+                            if (!response.ok) {
+                              throw new Error(`Upload failed: ${response.statusText}`);
+                            }
+                            
+                            const data = await response.json();
+                            
+                            // Update the form with the new image path
+                            const updatedItem = {
+                              ...editingItem as GameItem,
+                              imagePath: data.imagePath
+                            };
+                            setEditingItem(updatedItem);
+                            
+                            setNotificationMessage({
+                              type: 'success',
+                              message: 'Image uploaded successfully'
+                            });
+                            
+                            setTimeout(() => {
+                              setNotificationMessage(null);
+                            }, 3000);
+                          } catch (err) {
+                            const error = err as Error;
+                            console.error('Error uploading image:', error);
+                            
+                            setNotificationMessage({
+                              type: 'error',
+                              message: `Failed to upload image: ${error.message}`
+                            });
+                            
+                            setTimeout(() => {
+                              setNotificationMessage(null);
+                            }, 3000);
+                          }
+                        }}
+                      />
+                      <button
+                        className="px-4 py-2 bg-gray-800 text-gray-300 rounded hover:bg-gray-700 flex items-center"
+                        onClick={() => document.getElementById('item-image-upload')?.click()}
+                        onMouseEnter={() => window.sounds?.hover()}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Image
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Upload a new image or use an existing image path</p>
                   </div>
                   
                   <div className="mt-4">
@@ -3153,17 +3217,81 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   
                   {/* Hero Image */}
                   <div className="mb-4">
-                    <label className="block text-gray-300 text-sm mb-1">Hero Image URL</label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                      value={(editingItem as any).heroImage || ''}
-                      onChange={(e) => {
-                        const updatedQuest = {...editingItem as any, heroImage: e.target.value};
-                        setEditingItem(updatedQuest);
-                      }}
-                      placeholder="Enter URL for the main quest image"
-                    />
+                    <label className="block text-gray-300 text-sm mb-1">Hero Image</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        className="flex-1 px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as any).heroImage || ''}
+                        readOnly
+                        placeholder="Hero image URL will appear here after upload"
+                      />
+                      <input
+                        type="file"
+                        accept="image/png, image/jpeg, image/gif, image/webp"
+                        className="hidden"
+                        id="quest-hero-upload"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          
+                          // Create a FormData object
+                          const formData = new FormData();
+                          formData.append('image', file);
+                          
+                          try {
+                            // Upload the image
+                            const response = await fetch('/api/admin/upload-image', {
+                              method: 'POST',
+                              body: formData,
+                              credentials: 'include'
+                            });
+                            
+                            if (!response.ok) {
+                              throw new Error(`Upload failed: ${response.statusText}`);
+                            }
+                            
+                            const data = await response.json();
+                            
+                            // Update the form with the new image path
+                            const updatedQuest = {
+                              ...editingItem as any,
+                              heroImage: data.url
+                            };
+                            setEditingItem(updatedQuest);
+                            
+                            setNotificationMessage({
+                              type: 'success',
+                              message: 'Hero image uploaded successfully'
+                            });
+                            
+                            setTimeout(() => {
+                              setNotificationMessage(null);
+                            }, 3000);
+                          } catch (err) {
+                            const error = err as Error;
+                            console.error('Error uploading image:', error);
+                            
+                            setNotificationMessage({
+                              type: 'error',
+                              message: `Failed to upload hero image: ${error.message}`
+                            });
+                            
+                            setTimeout(() => {
+                              setNotificationMessage(null);
+                            }, 3000);
+                          }
+                        }}
+                      />
+                      <button
+                        className="px-4 py-2 bg-gray-800 text-gray-300 rounded hover:bg-gray-700 flex items-center"
+                        onClick={() => document.getElementById('quest-hero-upload')?.click()}
+                        onMouseEnter={() => window.sounds?.hover()}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Hero Image
+                      </button>
+                    </div>
                     {(editingItem as any).heroImage && (
                       <div className="mt-2 bg-gray-800 rounded-md overflow-hidden">
                         <div className="text-xs text-gray-400 p-2">Hero Image Preview</div>
