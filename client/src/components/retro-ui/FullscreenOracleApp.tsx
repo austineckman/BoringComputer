@@ -3,7 +3,7 @@ import {
   X, Search, RefreshCw, Package, Sparkles, FileText, Settings, Users, 
   PlusCircle, Loader2, Edit, Trash2, AlertTriangle, Upload, 
   Shield, ShieldCheck, ShieldX, Star, CalendarClock, LineChart,
-  Database, Eye, FileImage, Box
+  Database, Eye, FileImage, Box, Plus
 } from 'lucide-react';
 import wallbg from '@assets/wallbg.png';
 import oracleIconImage from '@assets/01_Fire_Grimoire.png'; // Using grimoire as placeholder for Oracle icon
@@ -1435,6 +1435,176 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       </div>
     );
   };
+  
+  // Render component kits
+  const renderComponentKits = () => {
+    if (loadingKits) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64">
+          <Loader2 className="h-10 w-10 animate-spin text-brand-orange mb-3" />
+          <p className="text-brand-orange">Loading component kits...</p>
+        </div>
+      );
+    }
+
+    if (componentKits.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+          <Box className="h-12 w-12 mb-3 opacity-50" />
+          <p className="text-lg mb-2">No component kits found</p>
+          <p className="text-sm">Try creating a new component kit</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 gap-6">
+        {/* Kit selector sidebar and component display */}
+        <div className="flex">
+          {/* Component kit list */}
+          <div className="w-1/3 pr-4 overflow-y-auto max-h-[calc(100vh-250px)]">
+            <h3 className="text-lg font-bold text-white mb-3">Component Kits</h3>
+            <div className="space-y-2">
+              {componentKits.map(kit => (
+                <div 
+                  key={kit.id}
+                  className={`border rounded-lg p-3 cursor-pointer ${
+                    activeKitId === kit.id 
+                      ? 'border-brand-orange bg-gray-800' 
+                      : 'border-gray-700 bg-gray-900 hover:border-gray-500'
+                  }`}
+                  onClick={() => handleKitSelect(kit.id)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-bold text-white">{kit.name}</h4>
+                      <p className="text-sm text-gray-400 mb-2">{kit.category || 'Uncategorized'}</p>
+                    </div>
+                    <div className="flex space-x-1">
+                      <button 
+                        className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                        title="Edit kit"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditKitClick(kit);
+                        }}
+                        onMouseEnter={() => window.sounds?.hover()}
+                      >
+                        <Edit className="h-4 w-4 text-gray-400 hover:text-white" />
+                      </button>
+                      <button 
+                        className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                        title="Delete kit"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteClick('kit', kit.id, kit.name);
+                        }}
+                        onMouseEnter={() => window.sounds?.hover()}
+                      >
+                        <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      kit.difficulty === 'beginner' ? 'bg-green-900/50 text-green-300' :
+                      kit.difficulty === 'intermediate' ? 'bg-yellow-900/50 text-yellow-300' :
+                      'bg-red-900/50 text-red-300'
+                    }`}>
+                      {kit.difficulty || 'beginner'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Components list */}
+          <div className="w-2/3 pl-4 border-l border-gray-700">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-white">Components</h3>
+              <button
+                className="flex items-center px-3 py-1 rounded-md bg-brand-orange text-white hover:bg-brand-orange/90 transition-colors"
+                onClick={() => window.sounds?.click()}
+                onMouseEnter={() => window.sounds?.hover()}
+                disabled={!activeKitId}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                <span>Add Component</span>
+              </button>
+            </div>
+            
+            {!activeKitId ? (
+              <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+                <Box className="h-12 w-12 mb-3 opacity-50" />
+                <p className="text-lg mb-2">No kit selected</p>
+                <p className="text-sm">Select a kit from the list to view its components</p>
+              </div>
+            ) : loadingComponents ? (
+              <div className="flex flex-col items-center justify-center h-64">
+                <Loader2 className="h-10 w-10 animate-spin text-brand-orange mb-3" />
+                <p className="text-brand-orange">Loading components...</p>
+              </div>
+            ) : (
+              <div className="space-y-3 overflow-y-auto max-h-[calc(100vh-300px)]">
+                {kitComponents[activeKitId]?.length > 0 ? (
+                  kitComponents[activeKitId].map(component => (
+                    <div 
+                      key={component.id}
+                      className="border border-gray-700 rounded-lg p-3 hover:border-gray-500 transition-colors"
+                    >
+                      <div className="flex justify-between">
+                        <div>
+                          <h4 className="font-medium text-white">{component.name}</h4>
+                          <p className="text-sm text-gray-400 truncate">{component.description}</p>
+                          {component.partNumber && (
+                            <span className="inline-block mt-1 text-xs px-2 py-0.5 bg-gray-800 text-gray-300 rounded">
+                              Part #{component.partNumber}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex space-x-1">
+                          <button 
+                            className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                            title="Edit component"
+                            onClick={() => handleEditComponentClick(component)}
+                            onMouseEnter={() => window.sounds?.hover()}
+                          >
+                            <Edit className="h-4 w-4 text-gray-400 hover:text-white" />
+                          </button>
+                          <button 
+                            className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                            title="Delete component"
+                            onClick={() => handleDeleteClick('component', component.id.toString(), component.name)}
+                            onMouseEnter={() => window.sounds?.hover()}
+                          >
+                            <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex justify-between mt-2">
+                        <span className="text-xs bg-blue-900/30 text-blue-300 px-2 py-0.5 rounded">
+                          {component.category || 'Uncategorized'}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          Qty: {component.quantity}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+                    <p className="text-lg mb-2">No components found</p>
+                    <p className="text-sm">Add components to this kit</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderSettings = () => (
     <div className="flex flex-col items-center justify-center h-64 text-gray-400">
@@ -1596,7 +1766,12 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
               onMouseEnter={() => window.sounds?.hover()}
             >
               <PlusCircle className="h-4 w-4 mr-1" />
-              Create {activeTab === 'lootboxes' ? 'Lootbox' : activeTab === 'quests' ? 'Quest' : 'Item'}
+              Create {
+                activeTab === 'lootboxes' ? 'Lootbox' : 
+                activeTab === 'quests' ? 'Quest' : 
+                activeTab === 'kits' ? 'Kit' : 
+                'Item'
+              }
             </button>
           </div>
         </div>
