@@ -187,7 +187,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [loadingKits, setLoadingKits] = useState(true);
   const [loadingComponents, setLoadingComponents] = useState(false);
   
-  // Fetch lootboxes, quests, users, and items using Oracle API
+  // Fetch lootboxes, quests, users, items, and component kits using Oracle API
   useEffect(() => {
     const fetchLootboxes = async () => {
       try {
@@ -293,11 +293,41 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         setLoadingItems(false);
       }
     };
+    
+    const fetchComponentKits = async () => {
+      try {
+        setLoadingKits(true);
+        const response = await fetch('/api/admin/kits');
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Component kits data from API:', data);
+          if (Array.isArray(data)) {
+            setComponentKits(data);
+            console.log(`Loaded ${data.length} component kits`);
+            
+            // If there are kits, fetch components for the first kit
+            if (data.length > 0) {
+              setActiveKitId(data[0].id);
+            }
+          } else {
+            console.error('Expected array for component kits but got:', typeof data);
+            setComponentKits([]);
+          }
+        } else {
+          console.error('Failed to fetch component kits, status:', response.status);
+        }
+      } catch (error) {
+        console.error('Error fetching component kits:', error);
+      } finally {
+        setLoadingKits(false);
+      }
+    };
 
     fetchLootboxes();
     fetchQuests();
     fetchUsers();
     fetchItems();
+    fetchComponentKits();
   }, []);
 
   // Add debug logging to see what we're getting from the API
@@ -306,6 +336,36 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       console.log("Lootboxes data:", lootboxes);
     }
   }, [lootboxes]);
+  
+  // Fetch components when activeKitId changes
+  useEffect(() => {
+    if (activeKitId) {
+      const fetchComponentsForKit = async () => {
+        try {
+          setLoadingComponents(true);
+          const response = await fetch(`/api/admin/kits/${activeKitId}/components`);
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`Components for kit ${activeKitId}:`, data);
+            
+            // Update the components for this kit
+            setKitComponents(prev => ({
+              ...prev,
+              [activeKitId]: data
+            }));
+          } else {
+            console.error(`Failed to fetch components for kit ${activeKitId}, status:`, response.status);
+          }
+        } catch (error) {
+          console.error(`Error fetching components for kit ${activeKitId}:`, error);
+        } finally {
+          setLoadingComponents(false);
+        }
+      };
+      
+      fetchComponentsForKit();
+    }
+  }, [activeKitId]);
 
   // Filter data based on search query with looser conditions
   const filteredLootboxes = lootboxes.filter(box => {
@@ -373,9 +433,15 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   });
 
   // Handlers
-  const handleTabChange = (tab: 'lootboxes' | 'quests' | 'users' | 'items' | 'settings') => {
+  const handleTabChange = (tab: 'lootboxes' | 'quests' | 'users' | 'items' | 'kits' | 'settings') => {
     window.sounds?.click();
     setActiveTab(tab);
+  };
+  
+  // Handle kit selection
+  const handleKitSelect = (kitId: string) => {
+    window.sounds?.click();
+    setActiveKitId(kitId);
   };
 
   const handleRefresh = async () => {
@@ -433,6 +499,38 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       } finally {
         setLoadingItems(false);
       }
+    } else if (activeTab === 'kits') {
+      setLoadingKits(true);
+      try {
+        const response = await fetch('/api/admin/kits');
+        if (response.ok) {
+          const data = await response.json();
+          setComponentKits(data);
+          
+          // If we have an active kit, refresh its components too
+          if (activeKitId) {
+            setLoadingComponents(true);
+            try {
+              const componentResponse = await fetch(`/api/admin/kits/${activeKitId}/components`);
+              if (componentResponse.ok) {
+                const componentData = await componentResponse.json();
+                setKitComponents(prev => ({
+                  ...prev,
+                  [activeKitId]: componentData
+                }));
+              }
+            } catch (compError) {
+              console.error(`Error refreshing components for kit ${activeKitId}:`, compError);
+            } finally {
+              setLoadingComponents(false);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error refreshing component kits:', error);
+      } finally {
+        setLoadingKits(false);
+      }
     }
   };
   
@@ -448,6 +546,20 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     window.sounds?.click();
     setEditingType('item');
     setEditingItem(item);
+  };
+  
+  // Handle editing a component kit
+  const handleEditKitClick = (kit: ComponentKit) => {
+    window.sounds?.click();
+    setEditingType('kit');
+    setEditingItem(kit);
+  };
+  
+  // Handle editing a component within a kit
+  const handleEditComponentClick = (component: KitComponent) => {
+    window.sounds?.click();
+    setEditingType('component');
+    setEditingItem(component);
   };
   
   const closeEditDialog = () => {
@@ -482,6 +594,12 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       } else if (editingType === 'item') {
         endpoint = `/api/items/${id}`;
         body = data;
+      } else if (editingType === 'kit') {
+        endpoint = `/api/admin/kits/${id}`;
+        body = data;
+      } else if (editingType === 'component') {
+        endpoint = `/api/admin/components/${id}`;
+        body = data;
       }
       
       const response = await fetch(endpoint, {
@@ -509,6 +627,22 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           setItems(prevItems => 
             prevItems.map(item => item.id === updatedItem.id ? updatedItem : item)
           );
+        } else if (editingType === 'kit') {
+          setComponentKits(prevKits => 
+            prevKits.map(kit => kit.id === updatedItem.id ? updatedItem : kit)
+          );
+        } else if (editingType === 'component') {
+          const kitId = (editingItem as KitComponent).kitId;
+          setKitComponents(prev => {
+            if (!prev[kitId]) return prev;
+            
+            return {
+              ...prev,
+              [kitId]: prev[kitId].map(comp => 
+                comp.id === updatedItem.id ? updatedItem : comp
+              )
+            };
+          });
         }
         
         setNotificationMessage({
@@ -601,6 +735,14 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         endpoint = '/api/items/' + confirmDelete.id;
         method = 'DELETE';
         body = null; // No body needed for REST-style item deletion
+      } else if (confirmDelete.type === 'kit') {
+        endpoint = '/api/admin/kits/' + confirmDelete.id;
+        method = 'DELETE';
+        body = null;
+      } else if (confirmDelete.type === 'component') {
+        endpoint = '/api/admin/components/' + confirmDelete.id;
+        method = 'DELETE';
+        body = null;
       }
       
       const response = await fetch(endpoint, {
@@ -625,6 +767,46 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           setQuests(prevQuests => prevQuests.filter(quest => quest.id !== confirmDelete.id));
         } else if (confirmDelete.type === 'item') {
           setItems(prevItems => prevItems.filter(item => item.id !== confirmDelete.id));
+        } else if (confirmDelete.type === 'kit') {
+          setComponentKits(prevKits => prevKits.filter(kit => kit.id !== confirmDelete.id));
+          
+          // Also clean up kit components from state
+          setKitComponents(prev => {
+            const newComponents = { ...prev };
+            delete newComponents[confirmDelete.id];
+            return newComponents;
+          });
+          
+          // If this was the active kit, set a new active kit if possible
+          if (activeKitId === confirmDelete.id) {
+            setComponentKits(prevKits => {
+              const remainingKits = prevKits.filter(kit => kit.id !== confirmDelete.id);
+              if (remainingKits.length > 0) {
+                setActiveKitId(remainingKits[0].id);
+              } else {
+                setActiveKitId(null);
+              }
+              return prevKits;
+            });
+          }
+        } else if (confirmDelete.type === 'component') {
+          // For component deletion, we need to identify which kit it belongs to
+          // This would ideally be passed in with the deletion request or stored
+          // temporarily when confirming deletion
+          const componentKitId = confirmDelete.kitId || activeKitId;
+          
+          if (componentKitId) {
+            setKitComponents(prev => {
+              if (!prev[componentKitId]) return prev;
+              
+              return {
+                ...prev,
+                [componentKitId]: prev[componentKitId].filter(
+                  comp => comp.id.toString() !== confirmDelete.id
+                )
+              };
+            });
+          }
         }
         
         setTimeout(() => {
