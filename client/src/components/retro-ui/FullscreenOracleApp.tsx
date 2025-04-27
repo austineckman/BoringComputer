@@ -125,15 +125,45 @@ interface GameItem {
   category?: string;
 }
 
+// Component Kit interfaces for educational kits
+interface ComponentKit {
+  id: string;
+  name: string;
+  description: string;
+  imagePath: string | null;
+  category: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Kit Component interface
+interface KitComponent {
+  id: number;
+  kitId: string;
+  name: string;
+  description: string;
+  imagePath: string | null;
+  partNumber?: string;
+  isRequired: boolean;
+  quantity: number;
+  category: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) => {
-  // State for tabs
-  const [activeTab, setActiveTab] = useState<'lootboxes' | 'quests' | 'users' | 'items' | 'settings'>('lootboxes');
+  // State for tabs - add 'kits' to the available tabs
+  const [activeTab, setActiveTab] = useState<'lootboxes' | 'quests' | 'users' | 'items' | 'kits' | 'settings'>('lootboxes');
   
   // State for data
   const [lootboxes, setLootboxes] = useState<LootBox[]>([]);
   const [quests, setQuests] = useState<Quest[]>([]);
   const [users, setUsers] = useState<UserData[]>([]);
   const [items, setItems] = useState<GameItem[]>([]);
+  const [componentKits, setComponentKits] = useState<ComponentKit[]>([]);
+  const [kitComponents, setKitComponents] = useState<Record<string, KitComponent[]>>({});
+  const [activeKitId, setActiveKitId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
   // State for modals and actions
@@ -146,14 +176,16 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [notificationMessage, setNotificationMessage] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   
   // State for editing
-  const [editingItem, setEditingItem] = useState<LootBox | Quest | GameItem | null>(null);
-  const [editingType, setEditingType] = useState<'lootbox' | 'quest' | 'item' | null>(null);
+  const [editingItem, setEditingItem] = useState<LootBox | Quest | GameItem | ComponentKit | KitComponent | null>(null);
+  const [editingType, setEditingType] = useState<'lootbox' | 'quest' | 'item' | 'kit' | 'component' | null>(null);
   
   // Loading states
   const [loadingLootboxes, setLoadingLootboxes] = useState(true);
   const [loadingQuests, setLoadingQuests] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [loadingItems, setLoadingItems] = useState(true);
+  const [loadingKits, setLoadingKits] = useState(true);
+  const [loadingComponents, setLoadingComponents] = useState(false);
   
   // Fetch lootboxes, quests, users, and items using Oracle API
   useEffect(() => {
