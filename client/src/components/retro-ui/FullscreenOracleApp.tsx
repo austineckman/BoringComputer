@@ -3,7 +3,8 @@ import {
   X, Search, RefreshCw, Package, Sparkles, FileText, Settings, Users, 
   PlusCircle, Loader2, Edit, Trash2, AlertTriangle, Upload, 
   Shield, ShieldCheck, ShieldX, Star, CalendarClock, LineChart,
-  Database, Eye, FileImage, Box, Plus, CircuitBoard
+  Database, Eye, FileImage, Box, Plus, CircuitBoard, Clipboard,
+  ClipboardList
 } from 'lucide-react';
 import wallbg from '@assets/wallbg.png';
 import oracleIconImage from '@assets/01_Fire_Grimoire.png'; // Using grimoire as placeholder for Oracle icon
@@ -1540,6 +1541,112 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     );
   };
   
+  // Render Recipes for crafting.exe
+  const renderRecipes = () => {
+    if (loadingRecipes) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64">
+          <Loader2 className="h-10 w-10 animate-spin text-brand-orange mb-3" />
+          <p className="text-brand-orange">Loading recipes...</p>
+        </div>
+      );
+    }
+
+    if (filteredRecipes.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+          <ClipboardList className="h-12 w-12 mb-3 opacity-50" />
+          <p className="text-lg mb-2">No recipes found</p>
+          <p className="text-sm">Try creating a new recipe or adjusting your search</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredRecipes.map(recipe => (
+          <div 
+            key={recipe.id}
+            className="border border-gray-700 bg-black/40 rounded-lg p-4 hover:border-brand-orange/50 transition-colors"
+          >
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="text-white font-bold truncate">{recipe.name}</h3>
+              <div className="flex space-x-1">
+                <button 
+                  className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                  title="Edit recipe"
+                  onClick={() => handleEditRecipeClick(recipe)}
+                  onMouseEnter={() => window.sounds?.hover()}
+                >
+                  <Edit className="h-4 w-4 text-gray-400 hover:text-white" />
+                </button>
+                <button 
+                  className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                  title="Delete recipe"
+                  onClick={() => handleDeleteClick('recipe', recipe.id.toString(), recipe.name)}
+                  onMouseEnter={() => window.sounds?.hover()}
+                >
+                  <Trash2 className="h-4 w-4 text-gray-400 hover:text-white" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="flex items-center mb-2">
+              <div className="w-16 h-16 mr-3 bg-gray-800 rounded-md flex items-center justify-center overflow-hidden">
+                {recipe.image ? (
+                  <img 
+                    src={recipe.image} 
+                    alt={recipe.name}
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                      (e.target as HTMLImageElement).className = 'w-8 h-8 opacity-30';
+                    }}
+                  />
+                ) : (
+                  <ClipboardList className="w-8 h-8 text-gray-600" />
+                )}
+              </div>
+              <div>
+                <div className="flex items-center mb-1">
+                  <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full mr-2">
+                    {recipe.category || 'Uncategorized'}
+                  </span>
+                  <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full">
+                    {recipe.difficulty}
+                  </span>
+                </div>
+                <div className="text-sm text-white">
+                  <span className="font-medium">Result:</span> {recipe.resultQuantity}x {recipe.resultItem}
+                </div>
+              </div>
+            </div>
+            
+            <p className="text-xs text-gray-400 line-clamp-2 mb-2">{recipe.description}</p>
+            
+            {recipe.flavorText && (
+              <p className="text-xs text-gray-500 italic mb-2">"{recipe.flavorText}"</p>
+            )}
+            
+            <div>
+              <p className="text-xs text-gray-400 mb-1">Required Items:</p>
+              <div className="flex flex-wrap gap-1">
+                {Object.entries(recipe.requiredItems).map(([item, quantity], index) => (
+                  <span 
+                    key={index}
+                    className="bg-gray-800 text-gray-300 text-xs px-2 py-0.5 rounded"
+                  >
+                    {quantity}x {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   // Render component kits
   const renderComponentKits = () => {
     if (loadingKits) {
@@ -1846,6 +1953,20 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           </button>
           <button
             className={`px-4 py-2 text-sm font-medium rounded-t-md ${
+              activeTab === 'recipes' 
+                ? 'bg-brand-orange/20 text-brand-orange border-t border-l border-r border-brand-orange/30' 
+                : 'text-gray-400 hover:text-white'
+            }`}
+            onClick={() => handleTabChange('recipes')}
+            onMouseEnter={() => window.sounds?.hover()}
+          >
+            <div className="flex items-center">
+              <ClipboardList className="h-4 w-4 mr-1" />
+              Recipes
+            </div>
+          </button>
+          <button
+            className={`px-4 py-2 text-sm font-medium rounded-t-md ${
               activeTab === 'settings' 
                 ? 'bg-brand-orange/20 text-brand-orange border-t border-l border-r border-brand-orange/30' 
                 : 'text-gray-400 hover:text-white'
@@ -1908,6 +2029,93 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         {activeTab === 'users' && renderUsers()}
         {activeTab === 'items' && renderItems()}
         {activeTab === 'kits' && renderComponentKits()}
+        {activeTab === 'recipes' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredRecipes.map(recipe => (
+              <div 
+                key={recipe.id}
+                className="border border-gray-700 bg-black/40 rounded-lg p-4 hover:border-brand-orange/50 transition-colors"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-white font-bold truncate">{recipe.name}</h3>
+                  <div className="flex space-x-1">
+                    <button 
+                      className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                      title="Edit recipe"
+                      onClick={() => {
+                        window.sounds?.click();
+                        setEditingItem(recipe);
+                        setEditingType('recipe');
+                      }}
+                      onMouseEnter={() => window.sounds?.hover()}
+                    >
+                      <Edit className="h-4 w-4 text-gray-400 hover:text-white" />
+                    </button>
+                    <button 
+                      className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                      title="Delete recipe"
+                      onClick={() => handleDeleteClick('recipe', recipe.id.toString(), recipe.name)}
+                      onMouseEnter={() => window.sounds?.hover()}
+                    >
+                      <Trash2 className="h-4 w-4 text-gray-400 hover:text-white" />
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="flex items-center mb-2">
+                  <div className="w-16 h-16 mr-3 bg-gray-800 rounded-md flex items-center justify-center overflow-hidden">
+                    {recipe.image ? (
+                      <img 
+                        src={recipe.image} 
+                        alt={recipe.name}
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                          (e.target as HTMLImageElement).className = 'w-8 h-8 opacity-30';
+                        }}
+                      />
+                    ) : (
+                      <ClipboardList className="w-8 h-8 text-gray-600" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center mb-1">
+                      <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full mr-2">
+                        {recipe.category || 'Uncategorized'}
+                      </span>
+                      <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full">
+                        {recipe.difficulty}
+                      </span>
+                    </div>
+                    <div className="text-sm text-white">
+                      <span className="font-medium">Result:</span> {recipe.resultQuantity}x {recipe.resultItem}
+                    </div>
+                  </div>
+                </div>
+                
+                <p className="text-xs text-gray-400 line-clamp-2 mb-2">{recipe.description}</p>
+                
+                {recipe.flavorText && (
+                  <p className="text-xs text-gray-500 italic mb-2">"{recipe.flavorText}"</p>
+                )}
+                
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Required Items:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {Object.entries(recipe.requiredItems).map(([item, quantity], index) => (
+                      <span 
+                        key={index}
+                        className="bg-gray-800 text-gray-300 text-xs px-2 py-0.5 rounded"
+                      >
+                        {quantity}x {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         {activeTab === 'settings' && renderSettings()}
       </div>
       
