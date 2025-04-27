@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Search, RefreshCw, Package, Sparkles, FileText, Settings, Users, 
   PlusCircle, Loader2, Edit, Trash2, AlertTriangle, Upload, 
-  Shield, ShieldCheck, ShieldX, Star, CalendarClock, LineChart
+  Shield, ShieldCheck, ShieldX, Star, CalendarClock, LineChart,
+  Database, Eye
 } from 'lucide-react';
 import wallbg from '@assets/wallbg.png';
 import oracleIconImage from '@assets/01_Fire_Grimoire.png'; // Using grimoire as placeholder for Oracle icon
@@ -1011,6 +1012,103 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     );
   };
 
+  // Render items grid
+  const renderItems = () => {
+    if (loadingItems) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64">
+          <Loader2 className="h-10 w-10 animate-spin text-brand-orange mb-3" />
+          <p className="text-brand-orange">Loading items...</p>
+        </div>
+      );
+    }
+
+    if (filteredItems.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+          <Database className="h-12 w-12 mb-3 opacity-50" />
+          <p className="text-lg mb-2">No items found</p>
+          <p className="text-sm">Try adjusting your search</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+        {filteredItems.map(item => (
+          <div 
+            key={item.id}
+            className="border border-gray-700 rounded-lg bg-space-dark/80 p-4 hover:border-brand-orange/60 transition-colors"
+          >
+            <div className="flex items-start justify-between mb-3">
+              <h3 className="text-lg font-bold text-white">{item.name}</h3>
+              <div className="flex space-x-1">
+                <button 
+                  className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                  title="View item details"
+                  onClick={() => {}} // Future feature: view item details
+                  onMouseEnter={() => window.sounds?.hover()}
+                >
+                  <Eye className="h-4 w-4 text-gray-400 hover:text-white" />
+                </button>
+              </div>
+            </div>
+            
+            {item.imagePath && (
+              <div className="relative h-32 mb-3 rounded overflow-hidden flex items-center justify-center bg-gray-900/50">
+                <img 
+                  src={item.imagePath} 
+                  alt={item.name} 
+                  className="h-full object-contain"
+                />
+              </div>
+            )}
+            
+            <p className="text-gray-300 text-sm mb-3 line-clamp-2">
+              {item.description}
+            </p>
+            
+            {item.flavorText && (
+              <p className="text-gray-400 text-xs italic mb-3">
+                "{item.flavorText}"
+              </p>
+            )}
+            
+            <div className="flex items-center justify-between mb-3">
+              <span className={`
+                text-xs px-2 py-1 rounded-full 
+                ${rarityColorClass(item.rarity)}
+              `}>
+                {item.rarity}
+              </span>
+              {item.category && (
+                <span className="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded-full">
+                  {item.category}
+                </span>
+              )}
+            </div>
+            
+            {item.craftingUses && item.craftingUses.length > 0 && (
+              <div className="text-xs">
+                <h4 className="text-gray-400 mb-1">Crafting Uses:</h4>
+                <div className="flex flex-wrap gap-1">
+                  {item.craftingUses.map((use, index) => (
+                    <span 
+                      key={index}
+                      className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded"
+                    >
+                      {use}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const renderSettings = () => (
     <div className="flex flex-col items-center justify-center h-64 text-gray-400">
       <Settings className="h-12 w-12 mb-3 opacity-50" />
@@ -1097,6 +1195,20 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           </button>
           <button
             className={`px-4 py-2 text-sm font-medium rounded-t-md ${
+              activeTab === 'items' 
+                ? 'bg-brand-orange/20 text-brand-orange border-t border-l border-r border-brand-orange/30' 
+                : 'text-gray-400 hover:text-white'
+            }`}
+            onClick={() => handleTabChange('items')}
+            onMouseEnter={() => window.sounds?.hover()}
+          >
+            <div className="flex items-center">
+              <Database className="h-4 w-4 mr-1" />
+              Items
+            </div>
+          </button>
+          <button
+            className={`px-4 py-2 text-sm font-medium rounded-t-md ${
               activeTab === 'settings' 
                 ? 'bg-brand-orange/20 text-brand-orange border-t border-l border-r border-brand-orange/30' 
                 : 'text-gray-400 hover:text-white'
@@ -1152,6 +1264,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         {activeTab === 'lootboxes' && renderLootboxes()}
         {activeTab === 'quests' && renderQuests()}
         {activeTab === 'users' && renderUsers()}
+        {activeTab === 'items' && renderItems()}
         {activeTab === 'settings' && renderSettings()}
       </div>
       
