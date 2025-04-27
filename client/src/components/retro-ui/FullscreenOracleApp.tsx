@@ -167,11 +167,12 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [searchQuery, setSearchQuery] = useState('');
   
   // State for modals and actions
-  const [confirmDelete, setConfirmDelete] = useState<{ show: boolean; type: string; id: string | null; name: string }>({
+  const [confirmDelete, setConfirmDelete] = useState<{ show: boolean; type: string; id: string | null; name: string; kitId?: string }>({
     show: false,
     type: '',
     id: null,
-    name: ''
+    name: '',
+    kitId: undefined
   });
   const [notificationMessage, setNotificationMessage] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   
@@ -691,13 +692,14 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   };
   
   // Delete handlers
-  const handleDeleteClick = (type: string, id: string, name: string) => {
+  const handleDeleteClick = (type: string, id: string, name: string, kitId?: string) => {
     window.sounds?.click();
     setConfirmDelete({
       show: true,
       type,
       id,
-      name
+      name,
+      kitId
     });
   };
   
@@ -706,7 +708,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       show: false,
       type: '',
       id: null,
-      name: ''
+      name: '',
+      kitId: undefined
     });
   };
   
@@ -1575,7 +1578,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                           <button 
                             className="p-1 rounded-full hover:bg-gray-700 transition-colors"
                             title="Delete component"
-                            onClick={() => handleDeleteClick('component', component.id.toString(), component.name)}
+                            onClick={() => handleDeleteClick('component', component.id.toString(), component.name, component.kitId)}
                             onMouseEnter={() => window.sounds?.hover()}
                           >
                             <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
