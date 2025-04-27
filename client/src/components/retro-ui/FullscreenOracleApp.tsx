@@ -3669,31 +3669,146 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 {/* Pattern Section */}
                 <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
                   <h3 className="text-md font-semibold text-brand-orange mb-4">Crafting Pattern</h3>
-                  <div className="text-sm text-gray-400 mb-4">
-                    Define the crafting grid pattern. Enter item IDs in a grid format, use 'null' or leave empty for empty slots.
-                  </div>
                   
-                  <textarea
-                    className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none min-h-[120px] font-mono"
-                    value={
-                      (editingItem as Recipe).pattern ? 
-                      JSON.stringify((editingItem as Recipe).pattern, null, 2) :
-                      JSON.stringify([["", "", ""], ["", "", ""], ["", "", ""]], null, 2)
-                    }
-                    onChange={(e) => {
-                      try {
-                        const pattern = JSON.parse(e.target.value);
-                        if (Array.isArray(pattern)) {
-                          const updatedRecipe = {...editingItem as Recipe, pattern};
+                  <div className="flex flex-col gap-4">
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-gray-400">
+                        Click to place selected item in the crafting grid. Click again to remove.
+                      </div>
+                      
+                      {/* Item selector for pattern */}
+                      <div className="flex gap-2 items-center">
+                        <label className="text-gray-300 text-sm">Selected Item:</label>
+                        <select
+                          className="px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                          onChange={(e) => {
+                            // Store the selected item ID in a recipe-specific attribute
+                            const recipe = editingItem as Recipe;
+                            const updatedRecipe = {...recipe, _selectedItemId: e.target.value};
+                            setEditingItem(updatedRecipe);
+                          }}
+                          value={(editingItem as any)._selectedItemId || ""}
+                        >
+                          <option value="">Select an item</option>
+                          {items.map(item => (
+                            <option key={item.id} value={item.id}>{item.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    
+                    {/* Visual crafting grid */}
+                    <div className="flex justify-center">
+                      <div 
+                        className="grid gap-1 p-2 bg-gray-900 border border-gray-700 rounded"
+                        style={{ 
+                          gridTemplateColumns: `repeat(${(editingItem as Recipe).gridSize || 3}, 1fr)`,
+                        }}
+                      >
+                        {/* Create grid cells */}
+                        {(() => {
+                          // Use a self-executing function to properly handle the grid creation
+                          const gridSize = (editingItem as Recipe).gridSize || 3;
+                          const cells = [];
+                          
+                          for (let rowIndex = 0; rowIndex < gridSize; rowIndex++) {
+                            for (let colIndex = 0; colIndex < gridSize; colIndex++) {
+                              // Get the item ID at this position
+                              const pattern = (editingItem as Recipe).pattern || [];
+                              const itemId = pattern[rowIndex]?.[colIndex] || null;
+                              
+                              // Find the item details if an item is in this cell
+                              const item = itemId ? items.find(i => i.id === itemId) : null;
+                              
+                              cells.push(
+                                <div 
+                                  key={`${rowIndex}-${colIndex}`}
+                                  className="w-16 h-16 bg-black/30 border border-gray-700 rounded flex items-center justify-center cursor-pointer hover:border-brand-orange/70 transition-colors"
+                                  onClick={() => {
+                                    // Initialize pattern if it doesn't exist
+                                    const recipe = editingItem as Recipe;
+                                    const selectedItemId = (recipe as any)._selectedItemId || null;
+                                    
+                                    // Create a deep copy of the pattern
+                                    const pattern = Array.isArray(recipe.pattern) 
+                                      ? JSON.parse(JSON.stringify(recipe.pattern)) 
+                                      : Array(recipe.gridSize || 3).fill(null).map(() => Array(recipe.gridSize || 3).fill(null));
+                                    
+                                    // Toggle the item at this position - add if not already there, remove if it is
+                                    if (pattern[rowIndex]?.[colIndex] === selectedItemId) {
+                                      pattern[rowIndex][colIndex] = null;
+                                    } else {
+                                      // Create rows if they don't exist
+                                      while (pattern.length <= rowIndex) {
+                                        pattern.push(Array(recipe.gridSize || 3).fill(null));
+                                      }
+                                      
+                                      // Create columns if they don't exist
+                                      while (pattern[rowIndex].length <= colIndex) {
+                                        pattern[rowIndex].push(null);
+                                      }
+                                      
+                                      // Set the item
+                                      pattern[rowIndex][colIndex] = selectedItemId;
+                                    }
+                                    
+                                    // Calculate required items based on pattern
+                                    const requiredItems: Record<string, number> = {};
+                                    pattern.forEach(row => {
+                                      row.forEach(cellItemId => {
+                                        if (cellItemId) {
+                                          requiredItems[cellItemId] = (requiredItems[cellItemId] || 0) + 1;
+                                        }
+                                      });
+                                    });
+                                    
+                                    // Update the recipe
+                                    const updatedRecipe = {...recipe, pattern, requiredItems};
+                                    setEditingItem(updatedRecipe);
+                                  }}
+                                >
+                                  {item ? (
+                                    <div className="relative w-full h-full p-1">
+                                      <img 
+                                        src={item.imagePath || ''}
+                                        alt={item.name}
+                                        className="w-full h-full object-contain"
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                                          (e.target as HTMLImageElement).className = 'w-8 h-8 opacity-30';
+                                        }}
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="text-gray-700 text-xs">Empty</div>
+                                  )}
+                                </div>
+                              );
+                            }
+                          }
+                          
+                          return cells;
+                        })()}
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end">
+                      <button
+                        className="px-3 py-1 text-xs bg-gray-800 text-gray-300 rounded hover:bg-gray-700"
+                        onClick={() => {
+                          // Reset the pattern
+                          const recipe = editingItem as Recipe;
+                          const gridSize = recipe.gridSize || 3;
+                          const pattern = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
+                          const updatedRecipe = {...recipe, pattern, requiredItems: {}};
                           setEditingItem(updatedRecipe);
-                        }
-                      } catch (error) {
-                        // Don't update if JSON is invalid
-                        console.error("Invalid JSON for pattern:", error);
-                      }
-                    }}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Enter a valid JSON array of arrays representing the crafting grid</p>
+                        }}
+                        onMouseEnter={() => window.sounds?.hover()}
+                      >
+                        Clear Grid
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 
                 {/* Preview Section */}
