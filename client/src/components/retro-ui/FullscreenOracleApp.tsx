@@ -1543,106 +1543,200 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   
   // Render Recipes for crafting.exe
   const renderRecipes = () => {
+    const actionBar = (
+      <div className="flex flex-col sm:flex-row justify-between gap-4 mb-4">
+        <div className="flex items-center space-x-2">
+          <button
+            className="flex items-center px-3 py-2 bg-brand-orange hover:bg-brand-orange/80 text-white rounded-md transition-colors"
+            onClick={() => refreshData('recipes')}
+            onMouseEnter={() => window.sounds?.hover()}
+            disabled={loadingRecipes}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${loadingRecipes ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+          
+          <button
+            className="flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
+            onClick={() => {
+              // Create a new recipe with default values
+              const newRecipe = {
+                id: Math.floor(Math.random() * 1000000).toString(),
+                name: "New Recipe",
+                description: "Description of this new recipe",
+                flavorText: "",
+                resultItem: "item-id",
+                resultQuantity: 1,
+                gridSize: 3,
+                pattern: [["", "", ""], ["", "", ""], ["", "", ""]],
+                requiredItems: { "copper": 1 },
+                difficulty: "easy" as const,
+                category: "general",
+                unlocked: false,
+                image: "",
+                createdAt: new Date().toISOString()
+              };
+              
+              // Open the edit dialog for the new recipe
+              setEditingItem(newRecipe);
+              setEditingType('recipe');
+              window.sounds?.click();
+            }}
+            onMouseEnter={() => window.sounds?.hover()}
+          >
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Create New Recipe
+          </button>
+        </div>
+        
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input 
+            type="text" 
+            className="w-full pl-10 pr-4 py-2 bg-black/40 border border-gray-700 rounded-md text-white focus:border-brand-orange focus:outline-none"
+            placeholder="Search recipes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button 
+              className="absolute right-3 top-1/2 -translate-y-1/2"
+              onClick={() => setSearchQuery('')}
+              onMouseEnter={() => window.sounds?.hover()}
+            >
+              <X className="h-4 w-4 text-gray-400 hover:text-white" />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+    
+    // Show loading state
     if (loadingRecipes) {
       return (
-        <div className="flex flex-col items-center justify-center h-64">
-          <Loader2 className="h-10 w-10 animate-spin text-brand-orange mb-3" />
-          <p className="text-brand-orange">Loading recipes...</p>
+        <div>
+          {actionBar}
+          <div className="flex flex-col items-center justify-center p-12 text-gray-400">
+            <Loader2 className="h-12 w-12 animate-spin mb-4" />
+            <p>Loading recipes...</p>
+          </div>
         </div>
       );
     }
-
-    if (filteredRecipes.length === 0) {
+    
+    // Show empty state
+    if (recipes.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-          <ClipboardList className="h-12 w-12 mb-3 opacity-50" />
-          <p className="text-lg mb-2">No recipes found</p>
-          <p className="text-sm">Try creating a new recipe or adjusting your search</p>
+        <div>
+          {actionBar}
+          <div className="text-center p-12 bg-black/20 rounded-lg border border-gray-800">
+            <ClipboardList className="h-12 w-12 mx-auto mb-4 text-gray-600" />
+            <p className="text-lg mb-2">No recipes found</p>
+            <p className="text-sm text-gray-400">Get started by creating your first recipe</p>
+          </div>
+        </div>
+      );
+    }
+    
+    // Show no results for search
+    if (filteredRecipes.length === 0 && searchQuery) {
+      return (
+        <div>
+          {actionBar}
+          <div className="text-center p-12 bg-black/20 rounded-lg border border-gray-800">
+            <Search className="h-12 w-12 mx-auto mb-4 text-gray-600" />
+            <p className="text-lg mb-2">No matching recipes</p>
+            <p className="text-sm text-gray-400">Try a different search term or clear your search</p>
+          </div>
         </div>
       );
     }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredRecipes.map(recipe => (
-          <div 
-            key={recipe.id}
-            className="border border-gray-700 bg-black/40 rounded-lg p-4 hover:border-brand-orange/50 transition-colors"
-          >
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-white font-bold truncate">{recipe.name}</h3>
-              <div className="flex space-x-1">
-                <button 
-                  className="p-1 rounded-full hover:bg-gray-700 transition-colors"
-                  title="Edit recipe"
-                  onClick={() => handleEditRecipeClick(recipe)}
-                  onMouseEnter={() => window.sounds?.hover()}
-                >
-                  <Edit className="h-4 w-4 text-gray-400 hover:text-white" />
-                </button>
-                <button 
-                  className="p-1 rounded-full hover:bg-gray-700 transition-colors"
-                  title="Delete recipe"
-                  onClick={() => handleDeleteClick('recipe', recipe.id.toString(), recipe.name)}
-                  onMouseEnter={() => window.sounds?.hover()}
-                >
-                  <Trash2 className="h-4 w-4 text-gray-400 hover:text-white" />
-                </button>
-              </div>
-            </div>
-            
-            <div className="flex items-center mb-2">
-              <div className="w-16 h-16 mr-3 bg-gray-800 rounded-md flex items-center justify-center overflow-hidden">
-                {recipe.image ? (
-                  <img 
-                    src={recipe.image} 
-                    alt={recipe.name}
-                    className="w-full h-full object-contain"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
-                      (e.target as HTMLImageElement).className = 'w-8 h-8 opacity-30';
-                    }}
-                  />
-                ) : (
-                  <ClipboardList className="w-8 h-8 text-gray-600" />
-                )}
-              </div>
-              <div>
-                <div className="flex items-center mb-1">
-                  <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full mr-2">
-                    {recipe.category || 'Uncategorized'}
-                  </span>
-                  <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full">
-                    {recipe.difficulty}
-                  </span>
-                </div>
-                <div className="text-sm text-white">
-                  <span className="font-medium">Result:</span> {recipe.resultQuantity}x {recipe.resultItem}
-                </div>
-              </div>
-            </div>
-            
-            <p className="text-xs text-gray-400 line-clamp-2 mb-2">{recipe.description}</p>
-            
-            {recipe.flavorText && (
-              <p className="text-xs text-gray-500 italic mb-2">"{recipe.flavorText}"</p>
-            )}
-            
-            <div>
-              <p className="text-xs text-gray-400 mb-1">Required Items:</p>
-              <div className="flex flex-wrap gap-1">
-                {Object.entries(recipe.requiredItems).map(([item, quantity], index) => (
-                  <span 
-                    key={index}
-                    className="bg-gray-800 text-gray-300 text-xs px-2 py-0.5 rounded"
+      <div>
+        {actionBar}
+      
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredRecipes.map(recipe => (
+            <div 
+              key={recipe.id}
+              className="border border-gray-700 bg-black/40 rounded-lg p-4 hover:border-brand-orange/50 transition-colors"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="text-white font-bold truncate">{recipe.name}</h3>
+                <div className="flex space-x-1">
+                  <button 
+                    className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                    title="Edit recipe"
+                    onClick={() => handleEditRecipeClick(recipe)}
+                    onMouseEnter={() => window.sounds?.hover()}
                   >
-                    {quantity}x {item}
-                  </span>
-                ))}
+                    <Edit className="h-4 w-4 text-gray-400 hover:text-white" />
+                  </button>
+                  <button 
+                    className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                    title="Delete recipe"
+                    onClick={() => handleDeleteClick('recipe', recipe.id.toString(), recipe.name)}
+                    onMouseEnter={() => window.sounds?.hover()}
+                  >
+                    <Trash2 className="h-4 w-4 text-gray-400 hover:text-white" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="flex items-center mb-2">
+                <div className="w-16 h-16 mr-3 bg-gray-800 rounded-md flex items-center justify-center overflow-hidden">
+                  {recipe.image ? (
+                    <img 
+                      src={recipe.image} 
+                      alt={recipe.name}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                        (e.target as HTMLImageElement).className = 'w-8 h-8 opacity-30';
+                      }}
+                    />
+                  ) : (
+                    <ClipboardList className="w-8 h-8 text-gray-600" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center mb-1">
+                    <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full mr-2">
+                      {recipe.category || 'Uncategorized'}
+                    </span>
+                    <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full">
+                      {recipe.difficulty}
+                    </span>
+                  </div>
+                  <div className="text-sm text-white">
+                    <span className="font-medium">Result:</span> {recipe.resultQuantity}x {recipe.resultItem}
+                  </div>
+                </div>
+              </div>
+              
+              <p className="text-xs text-gray-400 line-clamp-2 mb-2">{recipe.description}</p>
+              
+              {recipe.flavorText && (
+                <p className="text-xs text-gray-500 italic mb-2">"{recipe.flavorText}"</p>
+              )}
+              
+              <div>
+                <p className="text-xs text-gray-400 mb-1">Required Items:</p>
+                <div className="flex flex-wrap gap-1">
+                  {Object.entries(recipe.requiredItems).map(([item, quantity], index) => (
+                    <span 
+                      key={index}
+                      className="bg-gray-800 text-gray-300 text-xs px-2 py-0.5 rounded"
+                    >
+                      {quantity}x {item}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     );
   };
