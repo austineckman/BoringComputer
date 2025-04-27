@@ -69,7 +69,7 @@ router.get('/entities/:tableName/:id', authenticate, async (req, res) => {
     }
     
     const table = tableMap[tableName];
-    const idField = table.id || table[$id];
+    const idField = table.id;
     
     const [entity] = await db
       .select()
@@ -118,7 +118,7 @@ router.put('/entities', authenticate, async (req, res) => {
     }
     
     const table = tableMap[tableName];
-    const idField = table.id || table[$id];
+    const idField = table.id;
     
     // Update entity
     const [updatedEntity] = await db
@@ -148,7 +148,7 @@ router.delete('/entities', authenticate, async (req, res) => {
     }
     
     const table = tableMap[tableName];
-    const idField = table.id || table[$id];
+    const idField = table.id;
     
     // Delete entity
     const [deletedEntity] = await db

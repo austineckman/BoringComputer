@@ -1660,6 +1660,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register adventure lines routes
   app.use('/', adventureLinesRoutes);
   
+  // Register Oracle routes (with full CRUD access to database)
+  app.use('/api/oracle', authenticate, oracleRoutes);
+  
   // Routes for admin recipes and crafting were already registered above
   
   return httpServer;
