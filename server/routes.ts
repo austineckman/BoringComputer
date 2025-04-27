@@ -1431,19 +1431,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/character', authenticate, characterRoutes);
   
   // Title management routes
-  app.get('/api/titles', authenticate, async (req, res) => {
-    try {
-      const user = (req as any).user;
-      // Return the user's titles and active title
-      return res.json({
-        titles: user.titles || [],
-        activeTitle: user.activeTitle || null
-      });
-    } catch (error) {
-      console.error('Error fetching titles:', error);
-      return res.status(500).json({ message: 'Failed to fetch titles' });
-    }
-  });
+  // This route is now defined below
   
   app.post('/api/titles/unlock', authenticate, async (req, res) => {
     try {
@@ -1468,9 +1456,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update user
       const updatedUser = await storage.updateUser(user.id, { titles });
       
+      if (!updatedUser) {
+        return res.status(500).json({ message: 'Failed to update user' });
+      }
+      
       return res.json({
-        titles: updatedUser.titles,
-        activeTitle: updatedUser.activeTitle
+        titles: updatedUser.titles || [],
+        activeTitle: updatedUser.activeTitle || null
       });
     } catch (error) {
       console.error('Error unlocking title:', error);
@@ -1501,8 +1493,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If title is null, unequip the current title
       if (title === null) {
         const updatedUser = await storage.updateUser(user.id, { activeTitle: null });
+        
+        if (!updatedUser) {
+          return res.status(500).json({ message: 'Failed to update user' });
+        }
+        
         return res.json({
-          titles: updatedUser.titles,
+          titles: updatedUser.titles || [],
           activeTitle: null
         });
       }
@@ -1516,9 +1513,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update user's active title
       const updatedUser = await storage.updateUser(user.id, { activeTitle: title });
       
+      if (!updatedUser) {
+        return res.status(500).json({ message: 'Failed to update user' });
+      }
+      
       return res.json({
-        titles: updatedUser.titles,
-        activeTitle: updatedUser.activeTitle
+        titles: updatedUser.titles || [],
+        activeTitle: updatedUser.activeTitle || null
       });
     } catch (error) {
       console.error('Error setting active title:', error);
