@@ -3584,6 +3584,446 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
               </div>
             )}
             
+            {editingType === 'kit' && (
+              <div className="space-y-4">
+                {/* Basic Info Section */}
+                <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
+                  <h3 className="text-md font-semibold text-brand-orange mb-4">Kit Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Kit ID</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as ComponentKit).id || ''}
+                        readOnly={true}
+                        disabled={true}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">ID cannot be changed</p>
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Kit Name</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as ComponentKit).name || ''}
+                        onChange={(e) => {
+                          const updatedKit = {...editingItem as ComponentKit, name: e.target.value};
+                          setEditingItem(updatedKit);
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="block text-gray-300 text-sm mb-1">Description</label>
+                    <textarea
+                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none min-h-[80px]"
+                      value={(editingItem as ComponentKit).description || ''}
+                      onChange={(e) => {
+                        const updatedKit = {...editingItem as ComponentKit, description: e.target.value};
+                        setEditingItem(updatedKit);
+                      }}
+                    />
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Category</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as ComponentKit).category || ''}
+                        onChange={(e) => {
+                          const updatedKit = {...editingItem as ComponentKit, category: e.target.value};
+                          setEditingItem(updatedKit);
+                        }}
+                        placeholder="e.g. arduino, raspberry-pi, electronics"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Difficulty</label>
+                      <select
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as ComponentKit).difficulty || 'beginner'}
+                        onChange={(e) => {
+                          const updatedKit = {
+                            ...editingItem as ComponentKit, 
+                            difficulty: e.target.value as 'beginner' | 'intermediate' | 'advanced'
+                          };
+                          setEditingItem(updatedKit);
+                        }}
+                      >
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="block text-gray-300 text-sm mb-1">Kit Image</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        className="flex-1 px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as ComponentKit).imagePath || ''}
+                        readOnly
+                        placeholder="/assets/kits/kit-name.png"
+                      />
+                      <input
+                        type="file"
+                        accept="image/png, image/jpeg, image/gif, image/webp"
+                        className="hidden"
+                        id="kit-image-upload"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          
+                          // Create a FormData object
+                          const formData = new FormData();
+                          formData.append('image', file);
+                          
+                          try {
+                            // Upload the image
+                            const response = await fetch(`/api/admin/kits/${(editingItem as ComponentKit).id}/image`, {
+                              method: 'POST',
+                              body: formData,
+                              credentials: 'include'
+                            });
+                            
+                            if (!response.ok) {
+                              throw new Error(`Upload failed: ${response.statusText}`);
+                            }
+                            
+                            const data = await response.json();
+                            
+                            // Update the item with the new image path
+                            const updatedKit = {
+                              ...editingItem as ComponentKit,
+                              imagePath: data.imagePath
+                            };
+                            setEditingItem(updatedKit);
+                            
+                            setNotificationMessage({
+                              type: 'success',
+                              message: 'Kit image uploaded successfully!'
+                            });
+                            
+                            setTimeout(() => {
+                              setNotificationMessage(null);
+                            }, 3000);
+                          } catch (error) {
+                            console.error('Error uploading image:', error);
+                            window.sounds?.error();
+                            
+                            setNotificationMessage({
+                              type: 'error',
+                              message: 'Failed to upload image. Please try again.'
+                            });
+                            
+                            setTimeout(() => {
+                              setNotificationMessage(null);
+                            }, 3000);
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor="kit-image-upload"
+                        className="px-3 py-2 bg-gray-800 text-gray-300 rounded hover:bg-gray-700 cursor-pointer"
+                        onMouseEnter={() => window.sounds?.hover()}
+                      >
+                        Upload
+                      </label>
+                    </div>
+                    
+                    {/* Preview */}
+                    <div className="mt-3">
+                      <span className="text-xs text-gray-400">Preview:</span>
+                      <div className="mt-1 border border-gray-700 rounded bg-black/30 p-3 flex justify-center">
+                        {(editingItem as ComponentKit).imagePath ? (
+                          <img 
+                            src={(editingItem as ComponentKit).imagePath} 
+                            alt={(editingItem as ComponentKit).name}
+                            className="max-h-48 object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                              (e.target as HTMLImageElement).className = 'max-h-48 p-6 opacity-30';
+                            }}
+                          />
+                        ) : (
+                          <div className="h-32 flex items-center justify-center opacity-50">
+                            <FileImage className="w-16 h-16 text-gray-600" />
+                            <span className="ml-2 text-gray-500">No image uploaded</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-700">
+                  <button
+                    className="px-4 py-2 bg-gray-800 text-gray-300 rounded hover:bg-gray-700"
+                    onClick={closeEditDialog}
+                    onMouseEnter={() => window.sounds?.hover()}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-brand-orange text-white rounded hover:bg-orange-600"
+                    onClick={() => {
+                      const data = {...editingItem as ComponentKit};
+                      handleEditSubmit(data);
+                    }}
+                    onMouseEnter={() => window.sounds?.hover()}
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {editingType === 'component' && (
+              <div className="space-y-4">
+                {/* Basic Info Section */}
+                <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
+                  <h3 className="text-md font-semibold text-brand-orange mb-4">Component Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Component ID</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as KitComponent).id.toString() || ''}
+                        readOnly={true}
+                        disabled={true}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">ID cannot be changed</p>
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Kit ID</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as KitComponent).kitId || ''}
+                        readOnly={true}
+                        disabled={true}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Cannot change parent kit</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Component Name</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as KitComponent).name || ''}
+                        onChange={(e) => {
+                          const updatedComponent = {...editingItem as KitComponent, name: e.target.value};
+                          setEditingItem(updatedComponent);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Part Number (Optional)</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as KitComponent).partNumber || ''}
+                        onChange={(e) => {
+                          const updatedComponent = {...editingItem as KitComponent, partNumber: e.target.value};
+                          setEditingItem(updatedComponent);
+                        }}
+                        placeholder="e.g. ABC123-45X"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="block text-gray-300 text-sm mb-1">Description</label>
+                    <textarea
+                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none min-h-[80px]"
+                      value={(editingItem as KitComponent).description || ''}
+                      onChange={(e) => {
+                        const updatedComponent = {...editingItem as KitComponent, description: e.target.value};
+                        setEditingItem(updatedComponent);
+                      }}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Category</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as KitComponent).category || ''}
+                        onChange={(e) => {
+                          const updatedComponent = {...editingItem as KitComponent, category: e.target.value};
+                          setEditingItem(updatedComponent);
+                        }}
+                        placeholder="e.g. resistor, capacitor, sensor"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-1">Quantity</label>
+                      <input
+                        type="number"
+                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as KitComponent).quantity || 1}
+                        min={1}
+                        onChange={(e) => {
+                          const updatedComponent = {...editingItem as KitComponent, quantity: parseInt(e.target.value) || 1};
+                          setEditingItem(updatedComponent);
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 mt-4">
+                    <input
+                      type="checkbox"
+                      id="required-component"
+                      className="w-4 h-4 bg-black/50 text-brand-orange border border-gray-700 rounded focus:border-brand-orange focus:outline-none"
+                      checked={(editingItem as KitComponent).isRequired || false}
+                      onChange={(e) => {
+                        const updatedComponent = {...editingItem as KitComponent, isRequired: e.target.checked};
+                        setEditingItem(updatedComponent);
+                      }}
+                    />
+                    <label htmlFor="required-component" className="text-gray-300 text-sm">
+                      Required Component (must be included in the kit)
+                    </label>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="block text-gray-300 text-sm mb-1">Component Image</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        className="flex-1 px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as KitComponent).imagePath || ''}
+                        readOnly
+                        placeholder="/assets/components/component-name.png"
+                      />
+                      <input
+                        type="file"
+                        accept="image/png, image/jpeg, image/gif, image/webp"
+                        className="hidden"
+                        id="component-image-upload"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          
+                          // Create a FormData object
+                          const formData = new FormData();
+                          formData.append('image', file);
+                          
+                          try {
+                            // Upload the image
+                            const response = await fetch(`/api/admin/components/${(editingItem as KitComponent).id}/image`, {
+                              method: 'POST',
+                              body: formData,
+                              credentials: 'include'
+                            });
+                            
+                            if (!response.ok) {
+                              throw new Error(`Upload failed: ${response.statusText}`);
+                            }
+                            
+                            const data = await response.json();
+                            
+                            // Update the component with the new image path
+                            const updatedComponent = {
+                              ...editingItem as KitComponent,
+                              imagePath: data.imagePath
+                            };
+                            setEditingItem(updatedComponent);
+                            
+                            setNotificationMessage({
+                              type: 'success',
+                              message: 'Component image uploaded successfully!'
+                            });
+                            
+                            setTimeout(() => {
+                              setNotificationMessage(null);
+                            }, 3000);
+                          } catch (error) {
+                            console.error('Error uploading image:', error);
+                            window.sounds?.error();
+                            
+                            setNotificationMessage({
+                              type: 'error',
+                              message: 'Failed to upload image. Please try again.'
+                            });
+                            
+                            setTimeout(() => {
+                              setNotificationMessage(null);
+                            }, 3000);
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor="component-image-upload"
+                        className="px-3 py-2 bg-gray-800 text-gray-300 rounded hover:bg-gray-700 cursor-pointer"
+                        onMouseEnter={() => window.sounds?.hover()}
+                      >
+                        Upload
+                      </label>
+                    </div>
+                    
+                    {/* Preview */}
+                    <div className="mt-3">
+                      <span className="text-xs text-gray-400">Preview:</span>
+                      <div className="mt-1 border border-gray-700 rounded bg-black/30 p-3 flex justify-center">
+                        {(editingItem as KitComponent).imagePath ? (
+                          <img 
+                            src={(editingItem as KitComponent).imagePath} 
+                            alt={(editingItem as KitComponent).name}
+                            className="max-h-48 object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                              (e.target as HTMLImageElement).className = 'max-h-48 p-6 opacity-30';
+                            }}
+                          />
+                        ) : (
+                          <div className="h-32 flex items-center justify-center opacity-50">
+                            <FileImage className="w-16 h-16 text-gray-600" />
+                            <span className="ml-2 text-gray-500">No image uploaded</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-700">
+                  <button
+                    className="px-4 py-2 bg-gray-800 text-gray-300 rounded hover:bg-gray-700"
+                    onClick={closeEditDialog}
+                    onMouseEnter={() => window.sounds?.hover()}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-brand-orange text-white rounded hover:bg-orange-600"
+                    onClick={() => {
+                      const data = {...editingItem as KitComponent};
+                      handleEditSubmit(data);
+                    }}
+                    onMouseEnter={() => window.sounds?.hover()}
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            )}
+            
             {editingType === 'recipe' && (
               <div className="space-y-4">
                 {/* Basic Info Section */}
