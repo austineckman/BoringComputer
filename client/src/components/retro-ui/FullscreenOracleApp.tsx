@@ -198,8 +198,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [notificationMessage, setNotificationMessage] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   
   // State for editing
-  const [editingItem, setEditingItem] = useState<LootBox | Quest | GameItem | ComponentKit | KitComponent | null>(null);
-  const [editingType, setEditingType] = useState<'lootbox' | 'quest' | 'item' | 'kit' | 'component' | null>(null);
+  const [editingItem, setEditingItem] = useState<LootBox | Quest | GameItem | ComponentKit | KitComponent | Recipe | null>(null);
+  const [editingType, setEditingType] = useState<'lootbox' | 'quest' | 'item' | 'kit' | 'component' | 'recipe' | null>(null);
   
   // Loading states
   const [loadingLootboxes, setLoadingLootboxes] = useState(true);
@@ -210,7 +210,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [loadingRecipes, setLoadingRecipes] = useState(true);
   const [loadingComponents, setLoadingComponents] = useState(false);
   
-  // Fetch lootboxes, quests, users, items, and component kits using Oracle API
+  // Fetch lootboxes, quests, users, items, recipes, and component kits using Oracle API
   useEffect(() => {
     const fetchLootboxes = async () => {
       try {
@@ -345,12 +345,37 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         setLoadingKits(false);
       }
     };
+    
+    const fetchRecipes = async () => {
+      try {
+        setLoadingRecipes(true);
+        const response = await fetch('/api/admin/recipes');
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Recipes data from API:', data);
+          if (Array.isArray(data)) {
+            setRecipes(data);
+            console.log(`Loaded ${data.length} crafting recipes`);
+          } else {
+            console.error('Expected array for recipes but got:', typeof data);
+            setRecipes([]);
+          }
+        } else {
+          console.error('Failed to fetch recipes, status:', response.status);
+        }
+      } catch (error) {
+        console.error('Error fetching recipes:', error);
+      } finally {
+        setLoadingRecipes(false);
+      }
+    };
 
     fetchLootboxes();
     fetchQuests();
     fetchUsers();
     fetchItems();
     fetchComponentKits();
+    fetchRecipes();
   }, []);
 
   // Add debug logging to see what we're getting from the API
@@ -454,9 +479,29 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     return nameMatches || idMatches || descMatches || 
            flavorMatches || rarityMatches || (categoryMatches || false);
   });
+  
+  // Filter recipes based on search query
+  const filteredRecipes = recipes.filter(recipe => {
+    // Make sure recipe exists
+    if (!recipe) return false;
+    
+    // If search query is empty, show all
+    if (!searchQuery) return true;
+    
+    // Check various properties
+    const nameMatches = recipe.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const descMatches = recipe.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const flavorMatches = recipe.flavorText?.toLowerCase().includes(searchQuery.toLowerCase());
+    const resultItemMatches = recipe.resultItem.toLowerCase().includes(searchQuery.toLowerCase());
+    const categoryMatches = recipe.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const difficultyMatches = recipe.difficulty.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return nameMatches || descMatches || flavorMatches || 
+           resultItemMatches || categoryMatches || difficultyMatches;
+  });
 
   // Handlers
-  const handleTabChange = (tab: 'lootboxes' | 'quests' | 'users' | 'items' | 'kits' | 'settings') => {
+  const handleTabChange = (tab: 'lootboxes' | 'quests' | 'users' | 'items' | 'kits' | 'recipes' | 'settings') => {
     window.sounds?.click();
     setActiveTab(tab);
   };
@@ -554,6 +599,20 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       } finally {
         setLoadingKits(false);
       }
+    } else if (activeTab === 'recipes') {
+      setLoadingRecipes(true);
+      try {
+        const response = await fetch('/api/admin/recipes');
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Refreshed recipes data:', data);
+          setRecipes(data);
+        }
+      } catch (error) {
+        console.error('Error refreshing recipes:', error);
+      } finally {
+        setLoadingRecipes(false);
+      }
     }
   };
   
@@ -583,6 +642,13 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     window.sounds?.click();
     setEditingType('component');
     setEditingItem(component);
+  };
+  
+  // Handle editing a recipe
+  const handleEditRecipeClick = (recipe: Recipe) => {
+    window.sounds?.click();
+    setEditingType('recipe');
+    setEditingItem(recipe);
   };
   
   const closeEditDialog = () => {
@@ -622,6 +688,9 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         body = data;
       } else if (editingType === 'component') {
         endpoint = `/api/admin/components/${id}`;
+        body = data;
+      } else if (editingType === 'recipe') {
+        endpoint = `/api/admin/recipes/${id}`;
         body = data;
       }
       
@@ -666,6 +735,10 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
               )
             };
           });
+        } else if (editingType === 'recipe') {
+          setRecipes(prevRecipes => 
+            prevRecipes.map(recipe => recipe.id === updatedItem.id ? updatedItem : recipe)
+          );
         }
         
         setNotificationMessage({
@@ -768,6 +841,10 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         endpoint = '/api/admin/components/' + confirmDelete.id;
         method = 'DELETE';
         body = null;
+      } else if (confirmDelete.type === 'recipe') {
+        endpoint = '/api/admin/recipes/' + confirmDelete.id;
+        method = 'DELETE';
+        body = null;
       }
       
       const response = await fetch(endpoint, {
@@ -832,6 +909,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
               };
             });
           }
+        } else if (confirmDelete.type === 'recipe') {
+          setRecipes(prevRecipes => prevRecipes.filter(recipe => recipe.id.toString() !== confirmDelete.id));
         }
         
         setTimeout(() => {
