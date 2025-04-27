@@ -3,7 +3,7 @@ import {
   X, Search, RefreshCw, Package, Sparkles, FileText, Settings, Users, 
   PlusCircle, Loader2, Edit, Trash2, AlertTriangle, Upload, 
   Shield, ShieldCheck, ShieldX, Star, CalendarClock, LineChart,
-  Database, Eye, FileImage
+  Database, Eye, FileImage, Box
 } from 'lucide-react';
 import wallbg from '@assets/wallbg.png';
 import oracleIconImage from '@assets/01_Fire_Grimoire.png'; // Using grimoire as placeholder for Oracle icon
@@ -1536,6 +1536,20 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           </button>
           <button
             className={`px-4 py-2 text-sm font-medium rounded-t-md ${
+              activeTab === 'kits' 
+                ? 'bg-brand-orange/20 text-brand-orange border-t border-l border-r border-brand-orange/30' 
+                : 'text-gray-400 hover:text-white'
+            }`}
+            onClick={() => handleTabChange('kits')}
+            onMouseEnter={() => window.sounds?.hover()}
+          >
+            <div className="flex items-center">
+              <Box className="h-4 w-4 mr-1" />
+              Component Kits
+            </div>
+          </button>
+          <button
+            className={`px-4 py-2 text-sm font-medium rounded-t-md ${
               activeTab === 'settings' 
                 ? 'bg-brand-orange/20 text-brand-orange border-t border-l border-r border-brand-orange/30' 
                 : 'text-gray-400 hover:text-white'
@@ -1592,6 +1606,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         {activeTab === 'quests' && renderQuests()}
         {activeTab === 'users' && renderUsers()}
         {activeTab === 'items' && renderItems()}
+        {activeTab === 'kits' && renderComponentKits()}
         {activeTab === 'settings' && renderSettings()}
       </div>
       
