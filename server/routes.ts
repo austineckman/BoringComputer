@@ -1453,7 +1453,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add the new title
       titles.push(title);
       
-      // Update user
+      // Special case for mock user (ID 999)
+      if (user.id === 999) {
+        // For the mock user, just update the in-memory object
+        user.titles = titles;
+        console.log('Development mode: Updated mock user titles:', titles);
+        return res.json({
+          titles: titles,
+          activeTitle: user.activeTitle || null
+        });
+      }
+      
+      // Update user in database
       const updatedUser = await storage.updateUser(user.id, { titles });
       
       if (!updatedUser) {
@@ -1489,6 +1500,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const { title } = req.body;
+      
+      // Special case for development mode with mock user
+      const BYPASS_AUTH = process.env.NODE_ENV === 'development';
+      if (BYPASS_AUTH && user.id === 999) {
+        // For the mock user, just update the in-memory object
+        user.activeTitle = title;
+        console.log('Development mode: Updated mock user active title:', title);
+        return res.json({
+          titles: user.titles || [],
+          activeTitle: title
+        });
+      }
       
       // If title is null, unequip the current title
       if (title === null) {
