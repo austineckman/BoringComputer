@@ -66,7 +66,9 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
           "techscrap": 3,
           "circuit_board": 2,
           "cloth": 8
-        }
+        },
+        titles: [],
+        activeTitle: null
       };
       console.log("⚠️ Development mode: Authentication bypassed with mock user");
       return next();
