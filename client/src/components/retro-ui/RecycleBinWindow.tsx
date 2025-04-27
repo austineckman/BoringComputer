@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, File, AlertCircle, Zap, FileText, Info, Code, Star, Gift, Search } from 'lucide-react';
+import { Trash2, File, AlertCircle, Zap, FileText, Info, Code, Star, Gift, Search, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useTitles } from '@/hooks/useTitles';
@@ -456,7 +456,7 @@ const RecycleBinWindow: React.FC<RecycleBinWindowProps> = ({ onClose }) => {
                     {titles.includes(selectedItem.titleUnlock) ? (
                       <div className="flex items-center">
                         <p>You already unlocked "{selectedItem.titleUnlock}"</p>
-                        <CheckCircle className="h-4 w-4 ml-2 text-green-500" />
+                        <div className="h-4 w-4 ml-2 text-green-500">✓</div>
                       </div>
                     ) : (
                       <p>Could unlock the "{selectedItem.titleUnlock}" title</p>
