@@ -1803,44 +1803,66 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   }`}
                   onClick={() => handleKitSelect(kit.id)}
                 >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-bold text-white">{kit.name}</h4>
-                      <p className="text-sm text-gray-400 mb-2">{kit.category || 'Uncategorized'}</p>
+                  <div className="flex items-start gap-3">
+                    {/* Kit image */}
+                    <div className="flex-shrink-0 w-16 h-16 bg-black/30 rounded flex items-center justify-center overflow-hidden">
+                      {kit.imagePath ? (
+                        <img
+                          src={kit.imagePath}
+                          alt={kit.name}
+                          className="w-full h-full object-contain p-1"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                            (e.target as HTMLImageElement).className = 'w-10 h-10 opacity-30';
+                          }}
+                        />
+                      ) : (
+                        <Box className="w-10 h-10 text-gray-700" />
+                      )}
                     </div>
-                    <div className="flex space-x-1">
-                      <button 
-                        className="p-1 rounded-full hover:bg-gray-700 transition-colors"
-                        title="Edit kit"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditKitClick(kit);
-                        }}
-                        onMouseEnter={() => window.sounds?.hover()}
-                      >
-                        <Edit className="h-4 w-4 text-gray-400 hover:text-white" />
-                      </button>
-                      <button 
-                        className="p-1 rounded-full hover:bg-gray-700 transition-colors"
-                        title="Delete kit"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteClick('kit', kit.id, kit.name);
-                        }}
-                        onMouseEnter={() => window.sounds?.hover()}
-                      >
-                        <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
-                      </button>
+                    
+                    {/* Kit details */}
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h4 className="font-bold text-white">{kit.name}</h4>
+                          <p className="text-sm text-gray-400 mb-2">{kit.category || 'Uncategorized'}</p>
+                        </div>
+                        <div className="flex space-x-1">
+                          <button 
+                            className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                            title="Edit kit"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditKitClick(kit);
+                            }}
+                            onMouseEnter={() => window.sounds?.hover()}
+                          >
+                            <Edit className="h-4 w-4 text-gray-400 hover:text-white" />
+                          </button>
+                          <button 
+                            className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                            title="Delete kit"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClick('kit', kit.id, kit.name);
+                            }}
+                            onMouseEnter={() => window.sounds?.hover()}
+                          >
+                            <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          kit.difficulty === 'beginner' ? 'bg-green-900/50 text-green-300' :
+                          kit.difficulty === 'intermediate' ? 'bg-yellow-900/50 text-yellow-300' :
+                          'bg-red-900/50 text-red-300'
+                        }`}>
+                          {kit.difficulty || 'beginner'}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      kit.difficulty === 'beginner' ? 'bg-green-900/50 text-green-300' :
-                      kit.difficulty === 'intermediate' ? 'bg-yellow-900/50 text-yellow-300' :
-                      'bg-red-900/50 text-red-300'
-                    }`}>
-                      {kit.difficulty || 'beginner'}
-                    </span>
                   </div>
                 </div>
               ))}
