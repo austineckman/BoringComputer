@@ -779,164 +779,96 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-gray-300 text-sm mb-1">Name</label>
+                    <label className="block text-gray-300 text-sm mb-1">Type (Name)</label>
                     <input
                       type="text"
                       className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                      value={(editingItem as LootBox).name}
+                      value={(editingItem as LootBox).type || ''}
                       onChange={(e) => {
-                        const updatedLootbox = {...editingItem as LootBox, name: e.target.value};
+                        const updatedLootbox = {...editingItem as LootBox, type: e.target.value};
                         setEditingItem(updatedLootbox);
                       }}
                     />
                   </div>
                   <div>
-                    <label className="block text-gray-300 text-sm mb-1">Rarity</label>
+                    <label className="block text-gray-300 text-sm mb-1">Status</label>
                     <select
                       className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                      value={(editingItem as LootBox).rarity}
+                      value={(editingItem as LootBox).opened ? 'opened' : 'unopened'}
                       onChange={(e) => {
                         const updatedLootbox = {
                           ...editingItem as LootBox, 
-                          rarity: e.target.value as 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'welcome' | 'quest' | 'event'
+                          opened: e.target.value === 'opened'
                         };
                         setEditingItem(updatedLootbox);
                       }}
                     >
-                      <option value="common">Common</option>
-                      <option value="uncommon">Uncommon</option>
-                      <option value="rare">Rare</option>
-                      <option value="epic">Epic</option>
-                      <option value="legendary">Legendary</option>
-                      <option value="welcome">Welcome</option>
-                      <option value="quest">Quest</option>
-                      <option value="event">Event</option>
+                      <option value="unopened">Unopened</option>
+                      <option value="opened">Opened</option>
                     </select>
                   </div>
                 </div>
                 
                 <div>
-                  <label className="block text-gray-300 text-sm mb-1">Description</label>
+                  <label className="block text-gray-300 text-sm mb-1">Source (Description)</label>
                   <textarea
                     className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none min-h-[100px]"
-                    value={(editingItem as LootBox).description}
+                    value={(editingItem as LootBox).source || ''}
                     onChange={(e) => {
-                      const updatedLootbox = {...editingItem as LootBox, description: e.target.value};
+                      const updatedLootbox = {...editingItem as LootBox, source: e.target.value};
                       setEditingItem(updatedLootbox);
                     }}
                   />
                 </div>
-                
-                <div>
-                  <label className="block text-gray-300 text-sm mb-1">Image Path (optional)</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                    value={(editingItem as LootBox).imagePath || ''}
-                    onChange={(e) => {
-                      const updatedLootbox = {...editingItem as LootBox, imagePath: e.target.value};
-                      setEditingItem(updatedLootbox);
-                    }}
-                  />
-                </div>
-                
-                <div>
-                  <label className="flex items-center justify-between text-gray-300 text-sm mb-1">
-                    <span>Possible Items</span>
-                    <button 
-                      className="text-xs bg-brand-orange/80 text-white px-2 py-1 rounded hover:bg-brand-orange"
-                      onMouseEnter={() => window.sounds?.hover()}
-                      onClick={() => {
-                        const updatedLootbox = {...editingItem as LootBox};
-                        const possibleItems = updatedLootbox.possibleItems || [];
-                        possibleItems.push({
-                          itemId: '',
-                          chance: 10,
-                          minQuantity: 1,
-                          maxQuantity: 1
-                        });
-                        updatedLootbox.possibleItems = possibleItems;
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-300 text-sm mb-1">Acquired At</label>
+                    <input
+                      type="datetime-local"
+                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                      value={(editingItem as LootBox).acquiredAt ? new Date((editingItem as LootBox).acquiredAt).toISOString().slice(0, 16) : ''}
+                      onChange={(e) => {
+                        const updatedLootbox = {
+                          ...editingItem as LootBox, 
+                          acquiredAt: e.target.value
+                        };
                         setEditingItem(updatedLootbox);
                       }}
-                    >
-                      + Add Item
-                    </button>
-                  </label>
+                    />
+                  </div>
                   
-                  <div className="space-y-2">
-                    {(editingItem as LootBox).possibleItems && (editingItem as LootBox).possibleItems.map((item, index) => (
-                      <div key={index} className="bg-black/50 border border-gray-700 rounded-md p-3 flex flex-wrap gap-2 items-center">
-                        <div className="flex-1 min-w-[200px]">
-                          <label className="block text-gray-400 text-xs mb-1">Item ID</label>
-                          <input
-                            type="text"
-                            className="w-full px-2 py-1 bg-black/80 text-white border border-gray-600 rounded-md focus:border-brand-orange focus:outline-none text-sm"
-                            value={item.itemId}
-                            onChange={(e) => {
-                              const updatedLootbox = {...editingItem as LootBox};
-                              updatedLootbox.possibleItems[index].itemId = e.target.value;
-                              setEditingItem(updatedLootbox);
-                            }}
-                          />
-                        </div>
-                        <div className="w-20">
-                          <label className="block text-gray-400 text-xs mb-1">Chance (%)</label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="100"
-                            className="w-full px-2 py-1 bg-black/80 text-white border border-gray-600 rounded-md focus:border-brand-orange focus:outline-none text-sm"
-                            value={item.chance}
-                            onChange={(e) => {
-                              const updatedLootbox = {...editingItem as LootBox};
-                              updatedLootbox.possibleItems[index].chance = parseInt(e.target.value);
-                              setEditingItem(updatedLootbox);
-                            }}
-                          />
-                        </div>
-                        <div className="w-[70px]">
-                          <label className="block text-gray-400 text-xs mb-1">Min Qty</label>
-                          <input
-                            type="number"
-                            min="1"
-                            className="w-full px-2 py-1 bg-black/80 text-white border border-gray-600 rounded-md focus:border-brand-orange focus:outline-none text-sm"
-                            value={item.minQuantity}
-                            onChange={(e) => {
-                              const updatedLootbox = {...editingItem as LootBox};
-                              updatedLootbox.possibleItems[index].minQuantity = parseInt(e.target.value);
-                              setEditingItem(updatedLootbox);
-                            }}
-                          />
-                        </div>
-                        <div className="w-[70px]">
-                          <label className="block text-gray-400 text-xs mb-1">Max Qty</label>
-                          <input
-                            type="number"
-                            min="1"
-                            className="w-full px-2 py-1 bg-black/80 text-white border border-gray-600 rounded-md focus:border-brand-orange focus:outline-none text-sm"
-                            value={item.maxQuantity}
-                            onChange={(e) => {
-                              const updatedLootbox = {...editingItem as LootBox};
-                              updatedLootbox.possibleItems[index].maxQuantity = parseInt(e.target.value);
-                              setEditingItem(updatedLootbox);
-                            }}
-                          />
-                        </div>
-                        <button
-                          className="text-red-400 hover:text-red-600 p-1 h-8 w-8 flex items-center justify-center rounded-full hover:bg-black/30 mt-5"
-                          onClick={() => {
-                            const updatedLootbox = {...editingItem as LootBox};
-                            updatedLootbox.possibleItems = updatedLootbox.possibleItems.filter((_, i) => i !== index);
-                            setEditingItem(updatedLootbox);
-                          }}
-                          onMouseEnter={() => window.sounds?.hover()}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
+                  <div>
+                    <label className="block text-gray-300 text-sm mb-1">Source ID (Optional)</label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                      value={(editingItem as LootBox).sourceId || ''}
+                      onChange={(e) => {
+                        const updatedLootbox = {
+                          ...editingItem as LootBox, 
+                          sourceId: e.target.value
+                        };
+                        setEditingItem(updatedLootbox);
+                      }}
+                    />
                   </div>
                 </div>
+                
+                {(editingItem as LootBox).rewards && Array.isArray((editingItem as LootBox).rewards) && (editingItem as LootBox).rewards.length > 0 && (
+                  <div>
+                    <label className="block text-gray-300 text-sm mb-1">Rewards</label>
+                    <div className="bg-black/50 border border-gray-700 rounded-md p-3">
+                      <div className="text-gray-400 text-sm">
+                        This lootbox has {(editingItem as LootBox).rewards.length} rewards.
+                        <br />
+                        <span className="text-xs text-yellow-400/70">
+                          Note: Direct reward editing is not supported through this interface.
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 
                 <div className="flex justify-end space-x-3 pt-4 border-t border-gray-700">
                   <button
