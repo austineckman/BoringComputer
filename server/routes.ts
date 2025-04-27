@@ -10,7 +10,7 @@ import { createHash } from "crypto";
 import { adminAuth } from "./middleware/adminAuth";
 import path from 'path';
 import { openLootBox, generateLootBoxRewards, LootBoxType } from './lootBoxSystem';
-import { getItemDetails } from './itemDatabase';
+import { getItemDetails, removeItem } from './itemDatabase';
 import * as craftingRecipeRoutes from './routes/craftingRecipes';
 import adminRoutes from './routes/admin';
 import authRoutes from './routes/auth';
@@ -25,6 +25,7 @@ import oracleRoutes from './routes/oracle';
 import { authenticate, hashPassword } from './auth';
 import { componentKits, items } from '@shared/schema';
 import { itemDatabase } from './itemDatabase';
+import { eq } from 'drizzle-orm';
 
 // Using Passport authentication instead of custom middleware
 
@@ -1636,6 +1637,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching items:', error);
       res.status(500).json({ message: 'Failed to fetch items' });
+    }
+  });
+  
+  // DELETE an item by ID (for Oracle and Admin interfaces)
+  app.delete('/api/items/:id', async (req, res) => {
+    try {
+      const itemId = req.params.id;
+      console.log(`Attempting to delete item with ID: ${itemId}`);
+      
+      // First attempt to delete from the itemDatabase
+      const itemRemoved = removeItem(itemId);
+      console.log(`Item removed from itemDatabase: ${itemRemoved}`);
+      
+      // Also try to delete from the database if it exists there
+      try {
+        const deletedItems = await db
+          .delete(items)
+          .where(eq(items.id, itemId))
+          .returning();
+        
+        console.log(`Items deleted from database: ${deletedItems.length}`);
+        
+        // Return success if either operation was successful
+        if (itemRemoved || deletedItems.length > 0) {
+          return res.json({ 
+            success: true, 
+            message: 'Item deleted successfully'
+          });
+        }
+      } catch (dbError) {
+        console.error('Error deleting item from database:', dbError);
+        // If we deleted from itemDatabase but failed with the DB, still return success
+        if (itemRemoved) {
+          return res.json({ 
+            success: true, 
+            message: 'Item deleted from memory but encountered database error',
+            error: dbError.message
+          });
+        }
+      }
+      
+      // If we reached here, both operations failed or found no items
+      res.status(404).json({ 
+        success: false, 
+        message: 'Item not found'
+      });
+    } catch (error) {
+      console.error('Error in item deletion:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to delete item', 
+        error: error.message 
+      });
     }
   });
 
