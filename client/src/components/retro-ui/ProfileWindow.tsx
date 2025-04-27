@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { User, Save, Loader2 } from 'lucide-react';
+import { User, Save, Loader2, Award, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useTitles } from '@/hooks/useTitles';
 import logoImage from "@assets/Asset 6@2x-8.png";
 
 interface ProfileWindowProps {
@@ -11,6 +12,12 @@ interface ProfileWindowProps {
 const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { 
+    titles, 
+    activeTitle, 
+    setActiveTitle, 
+    isSetting 
+  } = useTitles();
   const [isLoading, setIsLoading] = useState(false);
   const [username, setUsername] = useState(user?.username || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -173,6 +180,57 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
                 <span className="text-gray-600">Experience:</span>
                 <span className="font-medium">0 XP</span>
               </div>
+            </div>
+          </div>
+          
+          {/* Titles Section */}
+          <div className="bg-white rounded-md border border-gray-300 p-3 mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-medium text-blue-900">Your Titles</h3>
+              {activeTitle && (
+                <button
+                  type="button"
+                  className="text-xs text-gray-500 hover:text-red-500"
+                  onClick={() => setActiveTitle(null)}
+                  disabled={isSetting}
+                >
+                  Clear Active Title
+                </button>
+              )}
+            </div>
+            
+            {titles.length === 0 ? (
+              <div className="p-3 bg-gray-50 rounded-md text-center text-gray-500 text-sm">
+                <Award className="h-10 w-10 mx-auto mb-2 text-gray-400" />
+                <p>You haven't unlocked any titles yet.</p>
+                <p className="text-xs mt-1">Explore the world to discover hidden titles!</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {titles.map((title) => (
+                  <div 
+                    key={title}
+                    className={`p-2 border rounded-md flex items-center justify-between cursor-pointer transition-colors ${activeTitle === title ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+                    onClick={() => activeTitle !== title && setActiveTitle(title)}
+                  >
+                    <div className="flex items-center">
+                      <Award className={`h-4 w-4 mr-2 ${activeTitle === title ? 'text-blue-500' : 'text-gray-400'}`} />
+                      <span className={`${activeTitle === title ? 'font-medium text-blue-700' : 'text-gray-700'}`}>
+                        {title}
+                      </span>
+                    </div>
+                    {activeTitle === title && (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <div className="mt-3 pt-2 border-t border-gray-200">
+              <p className="text-xs text-gray-500">
+                Titles are displayed next to your username and show off your achievements and special discoveries.
+              </p>
             </div>
           </div>
           

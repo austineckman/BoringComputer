@@ -1430,6 +1430,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Character equipment routes
   app.use('/api/character', authenticate, characterRoutes);
   
+  // Title management routes
+  app.get('/api/titles', authenticate, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      // Return the user's titles and active title
+      return res.json({
+        titles: user.titles || [],
+        activeTitle: user.activeTitle || null
+      });
+    } catch (error) {
+      console.error('Error fetching titles:', error);
+      return res.status(500).json({ message: 'Failed to fetch titles' });
+    }
+  });
+  
+  app.post('/api/titles/unlock', authenticate, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const { title } = req.body;
+      
+      if (!title) {
+        return res.status(400).json({ message: 'Title is required' });
+      }
+      
+      // Get current titles
+      const titles = [...(user.titles || [])];
+      
+      // Check if title is already unlocked
+      if (titles.includes(title)) {
+        return res.status(400).json({ message: 'Title is already unlocked' });
+      }
+      
+      // Add the new title
+      titles.push(title);
+      
+      // Update user
+      const updatedUser = await storage.updateUser(user.id, { titles });
+      
+      return res.json({
+        titles: updatedUser.titles,
+        activeTitle: updatedUser.activeTitle
+      });
+    } catch (error) {
+      console.error('Error unlocking title:', error);
+      return res.status(500).json({ message: 'Failed to unlock title' });
+    }
+  });
+  
+  app.put('/api/titles/active', authenticate, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const { title } = req.body;
+      
+      // If title is null, unequip the current title
+      if (title === null) {
+        const updatedUser = await storage.updateUser(user.id, { activeTitle: null });
+        return res.json({
+          titles: updatedUser.titles,
+          activeTitle: null
+        });
+      }
+      
+      // Check if the user has this title
+      const titles = user.titles || [];
+      if (!titles.includes(title)) {
+        return res.status(400).json({ message: 'You do not have this title' });
+      }
+      
+      // Update user's active title
+      const updatedUser = await storage.updateUser(user.id, { activeTitle: title });
+      
+      return res.json({
+        titles: updatedUser.titles,
+        activeTitle: updatedUser.activeTitle
+      });
+    } catch (error) {
+      console.error('Error setting active title:', error);
+      return res.status(500).json({ message: 'Failed to set active title' });
+    }
+  });
+  
   // Public component kits endpoint - available to all users without authentication
   app.get('/api/kits', async (req, res) => {
     try {

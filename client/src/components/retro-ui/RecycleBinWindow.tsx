@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, File, AlertCircle, Zap, FileText, Info, Code, Star, Gift } from 'lucide-react';
+import { Trash2, File, AlertCircle, Zap, FileText, Info, Code, Star, Gift, Search } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { useTitles } from '@/hooks/useTitles';
 import axios from 'axios';
 
 interface RecycleBinWindowProps {
@@ -130,6 +131,7 @@ const RecycleBinWindow: React.FC<RecycleBinWindowProps> = ({ onClose }) => {
   
   const { user } = useAuth();
   const { toast } = useToast();
+  const { titles, unlockTitle, setActiveTitle } = useTitles();
 
   // Populate bin with random items on load
   useEffect(() => {
@@ -224,20 +226,43 @@ const RecycleBinWindow: React.FC<RecycleBinWindowProps> = ({ onClose }) => {
     if (interactionCount % 10 === 0) { // Every 10 interactions
       const title = secretTitles[Math.floor(Math.random() * secretTitles.length)];
       
-      // In a real implementation, this would call an API to give the user a title
-      setRewardMessage(`You've earned the title: "${title}"`);
-      
-      toast({
-        title: "New Title Unlocked!",
-        description: `You've earned the title: "${title}"`,
-        variant: "default",
-      });
+      // Check if user already has this title before awarding it
+      if (!titles.includes(title)) {
+        // Call API to unlock the title
+        unlockTitle(title);
+        
+        setRewardMessage(`You've earned the title: "${title}"`);
+      } else {
+        // If they already have it, give them an alternate message
+        setRewardMessage("Your digital archaeology skills are improving!");
+        
+        toast({
+          title: "Skills Improved!",
+          description: "Your investigation abilities are growing stronger.",
+          variant: "default",
+        });
+      }
     }
   };
 
   // Select an item to view
   const handleSelectItem = (item: RecyclableItem) => {
     setSelectedItem(item);
+    
+    // Check if the item has a title to unlock
+    if (item.titleUnlock && !titles.includes(item.titleUnlock)) {
+      // Unlock the title if user doesn't already have it
+      unlockTitle(item.titleUnlock);
+      
+      // Show a special message
+      setRewardMessage(`You've earned the title: "${item.titleUnlock}"`);
+      
+      toast({
+        title: "New Title Unlocked!",
+        description: `You've earned the title: "${item.titleUnlock}"`,
+        variant: "default",
+      });
+    }
     
     // Chance for file to become corrupted when viewed
     if (!item.isCorrupted && Math.random() > 0.8) {
@@ -366,7 +391,7 @@ const RecycleBinWindow: React.FC<RecycleBinWindowProps> = ({ onClose }) => {
                 </span>
               ) : (
                 <span className="flex items-center">
-                  <Search className="mr-2" size={18} />
+                  <SearchIcon className="mr-2" size={18} />
                   Rummage Through Bin
                 </span>
               )}
@@ -426,9 +451,16 @@ const RecycleBinWindow: React.FC<RecycleBinWindowProps> = ({ onClose }) => {
                 )}
                 
                 {selectedItem.titleUnlock && (
-                  <div className="mt-4 p-3 bg-purple-100 border border-purple-300 rounded text-sm">
+                  <div className={`mt-4 p-3 rounded text-sm ${titles.includes(selectedItem.titleUnlock) ? 'bg-green-100 border border-green-300' : 'bg-purple-100 border border-purple-300'}`}>
                     <p className="font-semibold">Secret Title:</p>
-                    <p>Could unlock the "{selectedItem.titleUnlock}" title</p>
+                    {titles.includes(selectedItem.titleUnlock) ? (
+                      <div className="flex items-center">
+                        <p>You already unlocked "{selectedItem.titleUnlock}"</p>
+                        <CheckCircle className="h-4 w-4 ml-2 text-green-500" />
+                      </div>
+                    ) : (
+                      <p>Could unlock the "{selectedItem.titleUnlock}" title</p>
+                    )}
                   </div>
                 )}
               </div>
@@ -452,7 +484,7 @@ const RecycleBinWindow: React.FC<RecycleBinWindowProps> = ({ onClose }) => {
   );
 };
 
-function Search(props: any) {
+function SearchIcon(props: any) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <circle cx="11" cy="11" r="8"></circle>
