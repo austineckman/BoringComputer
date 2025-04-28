@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Package, ChevronRight, AlertCircle, Sparkles, Loader2 } from "lucide-react";
 import wallbg from "@assets/wallbg.png";
 import picklockIconImage from "@assets/Untitled design - 2025-04-26T171551.402.png";
+import hacklockLogo from "@assets/Untitled design - 2025-04-28T131146.641.png";
 import lootCrateImg from "@assets/loot crate.png"; // Fallback image only
 import axios from "axios";
 
@@ -286,16 +287,15 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
         backgroundRepeat: 'no-repeat'
       }}
     >
-      {/* Header with title and close button */}
+      {/* Header with logo and close button */}
       <div className="bg-black/80 p-4 flex items-center justify-between">
         <div className="flex items-center">
           <img 
-            src={picklockIconImage} 
-            alt="HackLock" 
-            className="w-8 h-8 mr-3" 
+            src={hacklockLogo} 
+            alt="HackLock.exe" 
+            className="h-12 object-contain" 
             style={{ imageRendering: 'pixelated' }}
           />
-          <h1 className="text-2xl font-bold text-blue-400">HackLock.exe</h1>
         </div>
         <button 
           className="text-white hover:text-blue-400" 
