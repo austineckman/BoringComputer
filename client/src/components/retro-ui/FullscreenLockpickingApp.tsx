@@ -2,14 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Package, ChevronRight, AlertCircle, Sparkles, Loader2 } from "lucide-react";
 import wallbg from "@assets/wallbg.png";
 import picklockIconImage from "@assets/Untitled design - 2025-04-26T171551.402.png";
-import lootCrateImg from "@assets/loot crate.png";
-import copperImg from "@assets/copper.png";
-import clothImg from "@assets/cloth.png";
-import crystalImg from "@assets/crystal.png";
-import techscrapImg from "@assets/techscrap.png";
-import inkImg from "@assets/ink.png";
-import fireGrimoireImg from "@assets/01_Fire_Grimoire.png"; 
-import iceArmorImg from "@assets/62_Ice_Armor.png";
+import lootCrateImg from "@assets/loot crate.png"; // Fallback image only
 import axios from "axios";
 
 interface FullscreenLockpickingAppProps {
@@ -430,7 +423,12 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
                       </div>
                     ) : (
                       <img
-                        src={lootCrateImg}
+                        src={
+                          // Use the image from the lootbox configuration if available
+                          (selectedLootbox.type && lootboxConfigs[selectedLootbox.type]?.image) 
+                            ? lootboxConfigs[selectedLootbox.type].image 
+                            : lootCrateImg
+                        }
                         alt={selectedLootbox.name || selectedLootbox.type}
                         className="w-full h-full object-contain pixelated"
                         style={{ 
@@ -492,16 +490,7 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
                         >
                           <div className="w-12 h-12 bg-black/50 rounded-md flex items-center justify-center mb-2">
                             <img
-                              src={
-                                item.id === "copper" ? copperImg : 
-                                item.id === "cloth" ? clothImg :
-                                item.id === "crystal" ? crystalImg :
-                                item.id === "techscrap" ? techscrapImg :
-                                item.id === "ink" ? inkImg :
-                                item.rarity === "legendary" ? fireGrimoireImg :
-                                item.rarity === "epic" ? iceArmorImg :
-                                item.imagePath
-                              }
+                              src={item.imagePath}
                               alt={item.name}
                               className="w-10 h-10 object-contain"
                               style={{ imageRendering: 'pixelated' }}
@@ -546,16 +535,7 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
                           >
                             <div className="w-12 h-12 bg-black/30 rounded-md flex items-center justify-center overflow-hidden">
                               <img
-                                src={
-                                  reward.id === "copper" ? copperImg : 
-                                  reward.id === "cloth" ? clothImg :
-                                  reward.id === "crystal" ? crystalImg :
-                                  reward.id === "techscrap" ? techscrapImg :
-                                  reward.id === "ink" ? inkImg :
-                                  item?.rarity === "legendary" ? fireGrimoireImg :
-                                  item?.rarity === "epic" ? iceArmorImg :
-                                  item?.imagePath
-                                }
+                                src={item?.imagePath}
                                 alt={item?.name || reward.id}
                                 className="w-full h-full object-contain"
                                 style={{ imageRendering: 'pixelated' }}
