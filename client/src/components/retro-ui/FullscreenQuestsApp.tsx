@@ -8,10 +8,9 @@ import { useLocation } from 'wouter';
 import { useComponentKits } from '../../hooks/useComponentKits';
 import { useQuests, type Quest } from '../../hooks/useQuests';
 import { useItems } from '../../hooks/useItems';
-import { useLootBoxConfigs, getLootBoxConfigById } from '../../hooks/useLootBoxConfigs';
+import { useLootBoxConfigs, getLootBoxConfigById, getRarityColorClass } from '../../hooks/useLootBoxConfigs';
 import questImage from '@assets/01_Fire_Grimoire.png';
 import wallbg from '@assets/wallbg.png';
-import lootCrateImage from '@assets/loot crate.png'; // Fallback image
 
 // For sounds
 declare global {
@@ -321,13 +320,10 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                           style={{ imageRendering: 'pixelated' }}
                         />
                       ) : (
-                        // Fallback to default loot crate image
-                        <img 
-                          src={lootCrateImage} 
-                          alt="Loot Crate" 
-                          className="w-4 h-4 mr-1 object-contain"
-                          style={{ imageRendering: 'pixelated' }}
-                        />
+                        // Show a generic box icon if no image found
+                        <div className={`w-5 h-5 mr-1 flex items-center justify-center rounded ${isLootbox ? getRarityColorClass(lootboxConfig?.rarity) : 'bg-gray-700'}`}>
+                          <Package className="w-4 h-4" />
+                        </div>
                       )}
                       <span className="text-xs text-gray-300">{reward.quantity}x {reward.id}</span>
                     </div>
@@ -470,13 +466,10 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                           style={{ imageRendering: 'pixelated' }}
                         />
                       ) : (
-                        // Fallback to default loot crate image
-                        <img 
-                          src={lootCrateImage} 
-                          alt="Loot Crate"
-                          className="w-10 h-10 object-contain"
-                          style={{ imageRendering: 'pixelated' }}
-                        />
+                        // Show generic package icon with appropriate styling based on rarity
+                        <div className={`w-16 h-16 flex items-center justify-center rounded ${isLootbox ? getRarityColorClass(lootboxConfig?.rarity) : 'bg-gray-700'}`}>
+                          <Package className="w-10 h-10" />
+                        </div>
                       )}
                     </div>
                     <h3 className="text-white font-medium text-center mb-1">
