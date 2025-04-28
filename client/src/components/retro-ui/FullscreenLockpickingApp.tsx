@@ -296,25 +296,6 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
             style={{ imageRendering: 'pixelated' }}
           />
           <h1 className="text-2xl font-bold text-blue-400">PickLock.exe</h1>
-          <button
-            onClick={async () => {
-              try {
-                const userResponse = await axios.get('/api/user');
-                console.log('DEBUG - Current user data:', userResponse.data);
-                console.log('DEBUG - Current user inventory:', userResponse.data.inventory);
-                const inventoryResponse = await axios.get('/api/inventory');
-                console.log('DEBUG - Current inventory data:', inventoryResponse.data);
-                alert('User and inventory data logged to console');
-              } catch (err) {
-                console.error('Error fetching user/inventory data:', err);
-                alert('Error fetching data. Check console.');
-              }
-            }}
-            className="ml-4 bg-blue-800 hover:bg-blue-700 text-xs text-white px-2 py-1 rounded"
-            onMouseEnter={() => window.sounds?.hover()}
-          >
-            Debug
-          </button>
         </div>
         <button 
           className="text-white hover:text-blue-400" 
@@ -488,11 +469,11 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
                           key={item.id} 
                           className="bg-black/40 border border-gray-700 rounded p-3 flex flex-col items-center"
                         >
-                          <div className="w-12 h-12 bg-black/50 rounded-md flex items-center justify-center mb-2">
+                          <div className="w-24 h-24 bg-black/50 rounded-md flex items-center justify-center mb-2">
                             <img
                               src={item.imagePath}
                               alt={item.name}
-                              className="w-10 h-10 object-contain"
+                              className="w-20 h-20 object-contain"
                               style={{ imageRendering: 'pixelated' }}
                               onError={(e) => {
                                 // Fall back to a colored square based on rarity
@@ -533,11 +514,11 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
                             className="flex items-center gap-3 bg-gray-900/50 border border-gray-700 rounded-lg p-3 animate-fadeInUp"
                             style={{ animationDelay: `${index * 0.1}s` }}
                           >
-                            <div className="w-12 h-12 bg-black/30 rounded-md flex items-center justify-center overflow-hidden">
+                            <div className="w-24 h-24 bg-black/30 rounded-md flex items-center justify-center overflow-hidden">
                               <img
                                 src={item?.imagePath}
                                 alt={item?.name || reward.id}
-                                className="w-full h-full object-contain"
+                                className="w-20 h-20 object-contain"
                                 style={{ imageRendering: 'pixelated' }}
                                 onError={(e) => {
                                   // Fall back to a colored square based on rarity
