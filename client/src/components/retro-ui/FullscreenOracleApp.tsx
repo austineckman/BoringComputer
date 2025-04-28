@@ -2386,13 +2386,567 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     );
   };
 
-  const renderSettings = () => (
-    <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-      <Settings className="h-12 w-12 mb-3 opacity-50" />
-      <p className="text-lg mb-2">Oracle Settings</p>
-      <p className="text-sm">This feature is coming soon</p>
-    </div>
-  );
+  // Render settings tab with game statistics dashboard
+  const renderSettings = () => {
+    if (loadingStats || !gameStats) {
+      return (
+        <div className="p-4 text-center">
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <Loader2 className="animate-spin h-6 w-6" />
+            <p>Loading game statistics...</p>
+          </div>
+        </div>
+      );
+    }
+    
+    // Color palette for charts
+    const COLORS = {
+      common: '#888888',
+      uncommon: '#4ade80',
+      rare: '#60a5fa', 
+      epic: '#a855f7',
+      legendary: '#fcd34d',
+      welcome: '#2dd4bf',
+      quest: '#fb923c',
+      event: '#f472b6',
+      primary: '#2563eb',
+      success: '#16a34a',
+      danger: '#dc2626',
+      warning: '#f59e0b',
+      info: '#3b82f6'
+    };
+    
+    // Helper function to format numbers with commas
+    const formatNumber = (num: number) => {
+      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    };
+
+    // Converting inventory distribution to chart data
+    const inventoryDistData = gameStats.inventory.distribution;
+    
+    return (
+      <div className="p-4 text-white">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold">Game Statistics</h2>
+          <div className="flex items-center text-sm">
+            <Clock className="h-4 w-4 mr-1" />
+            <span>Last updated: {new Date(gameStats.lastUpdated).toLocaleString()}</span>
+            <button 
+              onClick={generateGameStatistics} 
+              className="ml-3 flex items-center bg-blue-600 hover:bg-blue-700 rounded px-2 py-1"
+            >
+              <RefreshCw className="h-4 w-4 mr-1" /> Refresh
+            </button>
+          </div>
+        </div>
+        
+        {/* Main dashboard grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          
+          {/* Top stats cards */}
+          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg shadow-lg p-4">
+            <div className="flex items-center mb-3">
+              <UserCheck className="h-5 w-5 mr-2 text-blue-400" />
+              <h3 className="text-lg font-bold">User Activity</h3>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-gray-900/70 rounded p-2 text-center">
+                <p className="text-xs text-gray-400">Daily Active</p>
+                <p className="text-2xl font-bold text-blue-400">{gameStats.users.activeUsers.daily}</p>
+              </div>
+              <div className="bg-gray-900/70 rounded p-2 text-center">
+                <p className="text-xs text-gray-400">Weekly Active</p>
+                <p className="text-2xl font-bold text-blue-400">{gameStats.users.activeUsers.weekly}</p>
+              </div>
+              <div className="bg-gray-900/70 rounded p-2 text-center">
+                <p className="text-xs text-gray-400">Monthly Active</p>
+                <p className="text-2xl font-bold text-blue-400">{gameStats.users.activeUsers.monthly}</p>
+              </div>
+            </div>
+            <div className="mt-3">
+              <p className="text-sm">User Growth Rate: 
+                <span className="text-green-400 ml-1 font-bold">
+                  +{gameStats.users.userGrowth.rate}%
+                </span>
+              </p>
+              <div className="bg-gray-900/70 h-24 mt-2 rounded-lg overflow-hidden">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={gameStats.users.userGrowth.data}
+                    margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+                  >
+                    <defs>
+                      <linearGradient id="userGrowthGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{fontSize: 10, fill: '#9ca3af'}} 
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip
+                      contentStyle={{ 
+                        backgroundColor: '#1f2937', 
+                        borderColor: '#374151',
+                        color: '#f3f4f6',
+                        borderRadius: '0.25rem'
+                      }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="value" 
+                      stroke="#3b82f6" 
+                      fillOpacity={1} 
+                      fill="url(#userGrowthGradient)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg shadow-lg p-4">
+            <div className="flex items-center mb-3">
+              <Box className="h-5 w-5 mr-2 text-purple-400" />
+              <h3 className="text-lg font-bold">Lootbox Activity</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="bg-gray-900/70 rounded p-2 text-center">
+                <p className="text-xs text-gray-400">Total Opened</p>
+                <p className="text-2xl font-bold text-purple-400">{formatNumber(gameStats.lootboxes.opened.total)}</p>
+              </div>
+              <div className="bg-gray-900/70 rounded p-2 text-center">
+                <p className="text-xs text-gray-400">Types Available</p>
+                <p className="text-2xl font-bold text-purple-400">{Object.keys(gameStats.lootboxes.opened.byType).length}</p>
+              </div>
+            </div>
+            <div className="bg-gray-900/70 h-36 rounded-lg overflow-hidden">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={Object.entries(gameStats.lootboxes.opened.byType).map(([type, count]) => ({
+                    type,
+                    count
+                  }))}
+                  margin={{ top: 10, right: 5, left: 5, bottom: 5 }}
+                >
+                  <XAxis 
+                    dataKey="type" 
+                    tick={{fontSize: 10, fill: '#9ca3af'}} 
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{ 
+                      backgroundColor: '#1f2937', 
+                      borderColor: '#374151',
+                      color: '#f3f4f6',
+                      borderRadius: '0.25rem'
+                    }}
+                  />
+                  <Bar dataKey="count" fill="#a855f7" radius={[4, 4, 0, 0]}>
+                    {Object.entries(gameStats.lootboxes.opened.byType).map(([type, count], index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[type as keyof typeof COLORS] || '#a855f7'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          
+          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg shadow-lg p-4">
+            <div className="flex items-center mb-3">
+              <Database className="h-5 w-5 mr-2 text-green-400" />
+              <h3 className="text-lg font-bold">Inventory Overview</h3>
+            </div>
+            <div className="flex justify-between mb-3">
+              <div className="bg-gray-900/70 rounded p-2 text-center flex-1 mr-2">
+                <p className="text-xs text-gray-400">Total Items</p>
+                <p className="text-2xl font-bold text-green-400">{formatNumber(items.length)}</p>
+              </div>
+              <div className="bg-gray-900/70 rounded p-2 text-center flex-1">
+                <p className="text-xs text-gray-400">Avg. Items/User</p>
+                <p className="text-2xl font-bold text-green-400">{gameStats.inventory.averageSize}</p>
+              </div>
+            </div>
+            <div className="bg-gray-900/70 h-36 rounded-lg overflow-hidden">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={inventoryDistData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={30}
+                    outerRadius={60}
+                    paddingAngle={2}
+                    dataKey="count"
+                    label={({ rarity, percentage }) => `${rarity}: ${percentage}%`}
+                    labelLine={false}
+                  >
+                    {inventoryDistData.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={COLORS[entry.rarity as keyof typeof COLORS] || '#888888'} 
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ 
+                      backgroundColor: '#1f2937', 
+                      borderColor: '#374151',
+                      color: '#f3f4f6',
+                      borderRadius: '0.25rem'
+                    }}
+                    formatter={(value, name, props) => [
+                      `${value} items (${props.payload.percentage}%)`,
+                      `Rarity: ${props.payload.rarity}`
+                    ]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+        
+        {/* Quest and component stats */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg shadow-lg p-4">
+            <div className="flex items-center mb-3">
+              <FileText className="h-5 w-5 mr-2 text-orange-400" />
+              <h3 className="text-lg font-bold">Quest Statistics</h3>
+            </div>
+            <div className="flex flex-col h-80">
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                <div className="bg-gray-900/70 rounded p-2 text-center">
+                  <p className="text-xs text-gray-400">Total Quests</p>
+                  <p className="text-2xl font-bold text-orange-400">{quests.length}</p>
+                </div>
+                <div className="bg-gray-900/70 rounded p-2 text-center">
+                  <p className="text-xs text-gray-400">Completion Rate</p>
+                  <p className="text-2xl font-bold text-orange-400">{gameStats.users.completionRates.quests}%</p>
+                </div>
+                <div className="bg-gray-900/70 rounded p-2 text-center">
+                  <p className="text-xs text-gray-400">Active Quests</p>
+                  <p className="text-2xl font-bold text-orange-400">
+                    {gameStats.quests.popularity.reduce((sum, q) => sum + (q.started - q.completed), 0)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex-1 bg-gray-900/70 rounded-lg overflow-hidden">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={gameStats.quests.popularity.slice(0, 5)}
+                    margin={{ top: 10, right: 10, left: 10, bottom: 40 }}
+                    layout="vertical"
+                  >
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis 
+                      type="number" 
+                      tick={{fontSize: 10, fill: '#9ca3af'}} 
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      dataKey="title" 
+                      type="category" 
+                      tick={{fontSize: 10, fill: '#9ca3af'}} 
+                      width={100}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip
+                      contentStyle={{ 
+                        backgroundColor: '#1f2937', 
+                        borderColor: '#374151',
+                        color: '#f3f4f6',
+                        borderRadius: '0.25rem'
+                      }}
+                    />
+                    <Legend />
+                    <Bar dataKey="started" name="Started" fill="#fb923c" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="completed" name="Completed" fill="#f97316" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg shadow-lg p-4">
+            <div className="flex items-center mb-3">
+              <CircuitBoard className="h-5 w-5 mr-2 text-cyan-400" />
+              <h3 className="text-lg font-bold">Component Kits Usage</h3>
+            </div>
+            <div className="flex flex-col h-80">
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                <div className="bg-gray-900/70 rounded p-2 text-center">
+                  <p className="text-xs text-gray-400">Component Kits</p>
+                  <p className="text-2xl font-bold text-cyan-400">{componentKits.length}</p>
+                </div>
+                <div className="bg-gray-900/70 rounded p-2 text-center">
+                  <p className="text-xs text-gray-400">Total Components</p>
+                  <p className="text-2xl font-bold text-cyan-400">
+                    {Object.values(kitComponents).reduce((sum, comps) => sum + comps.length, 0)}
+                  </p>
+                </div>
+                <div className="bg-gray-900/70 rounded p-2 text-center">
+                  <p className="text-xs text-gray-400">Success Rate</p>
+                  <p className="text-2xl font-bold text-cyan-400">{gameStats.users.completionRates.components}%</p>
+                </div>
+              </div>
+              <div className="flex-1 bg-gray-900/70 rounded-lg overflow-hidden">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart 
+                    outerRadius={90} 
+                    width={500} 
+                    height={500} 
+                    data={gameStats.quests.difficultySuccess}
+                  >
+                    <PolarGrid stroke="#4b5563" />
+                    <PolarAngleAxis 
+                      dataKey="difficulty" 
+                      tick={{fontSize: 10, fill: '#9ca3af'}}
+                      tickFormatter={(value) => `Level ${value}`}
+                    />
+                    <PolarRadiusAxis 
+                      angle={30} 
+                      domain={[0, 100]} 
+                      tick={{fontSize: 10, fill: '#9ca3af'}}
+                      tickFormatter={(value) => `${value}%`}
+                    />
+                    <Radar 
+                      name="Success Rate" 
+                      dataKey="successRate" 
+                      stroke="#06b6d4" 
+                      fill="#06b6d4" 
+                      fillOpacity={0.5} 
+                    />
+                    <Tooltip
+                      contentStyle={{ 
+                        backgroundColor: '#1f2937', 
+                        borderColor: '#374151',
+                        color: '#f3f4f6',
+                        borderRadius: '0.25rem'
+                      }}
+                      formatter={(value) => [`${value}%`, 'Success Rate']}
+                      labelFormatter={(difficulty) => `Difficulty Level ${difficulty}`}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* System performance */}
+        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg shadow-lg p-4 mb-6">
+          <div className="flex items-center mb-3">
+            <Server className="h-5 w-5 mr-2 text-red-400" />
+            <h3 className="text-lg font-bold">System Performance</h3>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 mb-4">
+            <div className="bg-gray-900/70 rounded p-3">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-gray-400">Uptime</p>
+                  <p className="text-xl font-bold text-green-400">{gameStats.system.uptime} hrs</p>
+                </div>
+                <Clock className="h-8 w-8 text-green-700" />
+              </div>
+            </div>
+            <div className="bg-gray-900/70 rounded p-3">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-gray-400">Avg Response</p>
+                  <p className="text-xl font-bold text-yellow-400">{gameStats.system.responseTime} ms</p>
+                </div>
+                <Activity className="h-8 w-8 text-yellow-700" />
+              </div>
+            </div>
+            <div className="bg-gray-900/70 rounded p-3">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-gray-400">Error Rate</p>
+                  <p className="text-xl font-bold text-red-400">{gameStats.system.errors.rate}%</p>
+                </div>
+                <AlertTriangle className="h-8 w-8 text-red-700" />
+              </div>
+            </div>
+            <div className="bg-gray-900/70 rounded p-3">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-gray-400">DB Storage</p>
+                  <p className="text-xl font-bold text-blue-400">{gameStats.system.database.storage} MB</p>
+                </div>
+                <HardDrive className="h-8 w-8 text-blue-700" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-gray-900/70 rounded-lg p-3 h-64">
+            <h4 className="text-md font-semibold mb-2">API Endpoint Performance</h4>
+            <ResponsiveContainer width="100%" height="90%">
+              <BarChart
+                data={gameStats.system.apiCalls}
+                margin={{ top: 10, right: 30, left: 0, bottom: 30 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#4b5563" />
+                <XAxis 
+                  dataKey="endpoint" 
+                  tick={{fontSize: 10, fill: '#9ca3af'}} 
+                  angle={-45}
+                  textAnchor="end"
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis 
+                  tick={{fontSize: 10, fill: '#9ca3af'}} 
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  contentStyle={{ 
+                    backgroundColor: '#1f2937', 
+                    borderColor: '#374151',
+                    color: '#f3f4f6', 
+                    borderRadius: '0.25rem'
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="calls" name="Total Calls" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="success" name="Successful" fill="#10b981" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        
+        {/* Most used resources and items */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg shadow-lg p-4">
+            <div className="flex items-center mb-3">
+              <Database className="h-5 w-5 mr-2 text-yellow-400" />
+              <h3 className="text-lg font-bold">Most Used Resources</h3>
+            </div>
+            <div className="bg-gray-900/70 rounded-lg p-3 h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={gameStats.inventory.resourcesUsed}
+                  margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
+                  layout="vertical"
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#4b5563" />
+                  <XAxis 
+                    type="number" 
+                    tick={{fontSize: 10, fill: '#9ca3af'}} 
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis 
+                    dataKey="name" 
+                    type="category" 
+                    tick={{fontSize: 10, fill: '#9ca3af'}} 
+                    width={120}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{ 
+                      backgroundColor: '#1f2937', 
+                      borderColor: '#374151',
+                      color: '#f3f4f6',
+                      borderRadius: '0.25rem'
+                    }}
+                    formatter={(value) => [`${value} units`, 'Usage Count']}
+                  />
+                  <Bar dataKey="count" fill="#eab308" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          
+          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg shadow-lg p-4">
+            <div className="flex items-center mb-3">
+              <Package className="h-5 w-5 mr-2 text-purple-400" />
+              <h3 className="text-lg font-bold">Most Common Drops</h3>
+            </div>
+            <div className="bg-gray-900/70 rounded-lg p-3 h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={gameStats.lootboxes.topDrops}
+                  margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
+                  layout="vertical"
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#4b5563" />
+                  <XAxis 
+                    type="number" 
+                    tick={{fontSize: 10, fill: '#9ca3af'}} 
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis 
+                    dataKey="itemName" 
+                    type="category" 
+                    tick={{fontSize: 10, fill: '#9ca3af'}} 
+                    width={120}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{ 
+                      backgroundColor: '#1f2937', 
+                      borderColor: '#374151',
+                      color: '#f3f4f6',
+                      borderRadius: '0.25rem'
+                    }}
+                    formatter={(value) => [`${value} drops`, 'Total Drops']}
+                  />
+                  <Bar dataKey="count" fill="#a855f7" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+        
+        {/* Admin actions */}
+        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg shadow-lg p-4 mb-6">
+          <div className="flex items-center mb-3">
+            <Settings className="h-5 w-5 mr-2 text-gray-400" />
+            <h3 className="text-lg font-bold">Administration Actions</h3>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div>
+              <h4 className="text-md font-semibold mb-2">Data Management</h4>
+              <div className="space-y-2">
+                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded flex items-center justify-center">
+                  <Download className="h-4 w-4 mr-2" /> Export All Statistics
+                </button>
+                <button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded flex items-center justify-center">
+                  <Database className="h-4 w-4 mr-2" /> Database Backup
+                </button>
+                <button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded flex items-center justify-center">
+                  <Users className="h-4 w-4 mr-2" /> User Management
+                </button>
+              </div>
+            </div>
+            <div>
+              <h4 className="text-md font-semibold mb-2">System Maintenance</h4>
+              <div className="space-y-2">
+                <button className="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded flex items-center justify-center">
+                  <GitBranch className="h-4 w-4 mr-2" /> System Updates
+                </button>
+                <button className="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded flex items-center justify-center">
+                  <AlertTriangle className="h-4 w-4 mr-2" /> Error Logs
+                </button>
+                <button className="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded flex items-center justify-center">
+                  <Settings className="h-4 w-4 mr-2" /> Advanced Settings
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // Function to generate test lootboxes
   const handleGenerateTestLootboxes = async () => {
