@@ -135,7 +135,9 @@ const LockpickWindow: React.FC<LockpickWindowProps> = ({ onClose }) => {
   };
   
   // Filter unopened lootboxes
-  const unopenedLootBoxes = lootBoxes.filter((box: LootBox) => !box.opened);
+  const unopenedLootBoxes = Array.isArray(lootBoxes) 
+    ? lootBoxes.filter((box: LootBox) => !box.opened) 
+    : [];
   
   // Render rarity color
   const getRarityColor = (rarity: string) => {
