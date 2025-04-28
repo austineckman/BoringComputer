@@ -214,18 +214,6 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
         {/* Background gradient */}
         <div className="absolute top-0 right-0 bottom-0 left-0 bg-gradient-to-t from-black to-transparent opacity-60 z-0"></div>
         
-        {/* Quest image as background if available */}
-        {questImage && (
-          <div 
-            className="absolute top-0 right-0 bottom-0 left-0 z-0 opacity-30"
-            style={{
-              backgroundImage: `url(${questImage})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
-          />
-        )}
-        
         {/* Status badge - handle status property which might not exist in the database */}
         <div className="absolute top-3 right-3 z-10">
           {(quest as any).status === 'locked' && (
