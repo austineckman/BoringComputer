@@ -1,5 +1,8 @@
 // Centralized item database for the server
-// This mirrors the client-side itemDatabase.ts to ensure consistency
+// This connects to the database for persistent storage
+
+import { db } from './db';
+import { items } from '../shared/schema';
 
 export interface ItemDetails {
   id: string;
@@ -12,63 +15,45 @@ export interface ItemDetails {
   category?: string; // Optional category for filtering
 }
 
-// Create a mutable database that can be modified at runtime by admin operations
-export let itemDatabase: Record<string, ItemDetails> = {
-  'copper': {
-    id: 'copper',
-    name: 'Copper',
-    description: 'A conductive metal used in basic circuits and components.',
-    flavorText: 'The foundation of all electronics. Shiny and malleable.',
-    rarity: 'common',
-    craftingUses: ['circuits', 'wiring', 'conductors'],
-    imagePath: '/assets/copper.png'
-  },
-  'cloth': {
-    id: 'cloth',
-    name: 'Cloth',
-    description: 'Soft fabric material used for insulation and wrapping.',
-    flavorText: 'Carefully woven threads create a versatile material.',
-    rarity: 'common',
-    craftingUses: ['insulation', 'wrapping', 'padding'],
-    imagePath: '/assets/cloth.png'
-  },
-  'crystal': {
-    id: 'crystal',
-    name: 'Crystal',
-    description: 'A rare energy-focusing crystal with unique properties.',
-    flavorText: 'It hums with an inner energy when held up to the light.',
-    rarity: 'rare',
-    craftingUses: ['energy', 'focusing', 'amplification'],
-    imagePath: '/assets/crystal.png'
-  },
-  'techscrap': {
-    id: 'techscrap',
-    name: 'Tech Scrap',
-    description: 'Salvaged remnants of advanced technology.',
-    flavorText: 'One machine\'s trash is an inventor\'s treasure.',
-    rarity: 'uncommon',
-    craftingUses: ['recycling', 'components', 'rare materials'],
-    imagePath: '/assets/techscrap.png'
-  },
-  'circuit-board': {
-    id: 'circuit-board',
-    name: 'Circuit Board',
-    description: 'The foundation of electronic devices.',
-    flavorText: 'A maze of pathways for electricity to travel.',
-    rarity: 'uncommon',
-    craftingUses: ['electronics', 'computers', 'devices'],
-    imagePath: '/assets/circuit board.png'
-  },
-  'loot-crate': {
-    id: 'loot-crate',
-    name: 'Loot Crate',
-    description: 'A mysterious box containing random resources.',
-    flavorText: 'What treasures await inside?',
-    rarity: 'common',
-    craftingUses: [],
-    imagePath: '/assets/loot crate.png'
+// This will be populated from the database
+export let itemDatabase: Record<string, ItemDetails> = {};
+
+// Function to initialize the database from PostgreSQL
+export async function initializeItemDatabase() {
+  try {
+    // Query all items from the database
+    const dbItems = await db.select().from(items);
+    console.log(`Loaded ${dbItems.length} items from database`);
+    
+    // Clear existing items
+    itemDatabase = {};
+    
+    // Add all items to the in-memory cache
+    for (const item of dbItems) {
+      itemDatabase[item.id] = {
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        flavorText: item.flavorText || '',
+        rarity: item.rarity,
+        craftingUses: item.craftingUses || [],
+        imagePath: item.imagePath || '',
+        category: item.category || undefined
+      };
+    }
+    
+    console.log(`Item database initialized with ${Object.keys(itemDatabase).length} items`);
+    return itemDatabase;
+  } catch (error) {
+    console.error('Error initializing item database:', error);
+    return {};
   }
-};
+}
+
+// Call initialization on module load
+initializeItemDatabase().catch(error => {
+  console.error('Failed to initialize item database:', error);
+});
 
 export function getItemDetails(itemId: string): ItemDetails {
   // Return the item details or a default if the item doesn't exist
@@ -84,33 +69,92 @@ export function getItemDetails(itemId: string): ItemDetails {
 }
 
 // Add an item to the database (create or update)
-export function addOrUpdateItem(item: ItemDetails): ItemDetails {
+export async function addOrUpdateItem(item: ItemDetails): Promise<ItemDetails> {
   if (!item.id) {
     throw new Error('Item ID is required');
   }
   
-  // Store the item in the database
-  itemDatabase[item.id] = {
-    ...item,
-    // Ensure all required fields are present
-    craftingUses: item.craftingUses || [],
-    // Convert any non-array craftingUses to array format
-    ...(item.craftingUses && !Array.isArray(item.craftingUses) 
-        ? { craftingUses: String(item.craftingUses).split(',').map(s => s.trim()) } 
-        : {})
-  };
-  
-  return itemDatabase[item.id];
+  try {
+    // First, clean up the item data
+    const cleanItem = {
+      ...item,
+      flavorText: item.flavorText || '',
+      craftingUses: item.craftingUses || [],
+      // Convert any non-array craftingUses to array format
+      ...(item.craftingUses && !Array.isArray(item.craftingUses) 
+          ? { craftingUses: String(item.craftingUses).split(',').map(s => s.trim()) } 
+          : {})
+    };
+    
+    // Check if item exists in the database
+    const existingItem = await db.select().from(items).where(eq(items.id, item.id));
+    
+    if (existingItem.length > 0) {
+      // Update existing item
+      const [updatedItem] = await db
+        .update(items)
+        .set(cleanItem)
+        .where(eq(items.id, item.id))
+        .returning();
+      
+      // Update the in-memory cache
+      itemDatabase[updatedItem.id] = {
+        id: updatedItem.id,
+        name: updatedItem.name,
+        description: updatedItem.description,
+        flavorText: updatedItem.flavorText || '',
+        rarity: updatedItem.rarity,
+        craftingUses: updatedItem.craftingUses || [],
+        imagePath: updatedItem.imagePath || '',
+        category: updatedItem.category || undefined
+      };
+      
+      return itemDatabase[updatedItem.id];
+    } else {
+      // Insert new item
+      const [newItem] = await db
+        .insert(items)
+        .values(cleanItem)
+        .returning();
+      
+      // Update the in-memory cache
+      itemDatabase[newItem.id] = {
+        id: newItem.id,
+        name: newItem.name,
+        description: newItem.description,
+        flavorText: newItem.flavorText || '',
+        rarity: newItem.rarity,
+        craftingUses: newItem.craftingUses || [],
+        imagePath: newItem.imagePath || '',
+        category: newItem.category || undefined
+      };
+      
+      return itemDatabase[newItem.id];
+    }
+  } catch (error) {
+    console.error('Error adding/updating item in database:', error);
+    throw error;
+  }
 }
 
 // Remove an item from the database
-export function removeItem(itemId: string): boolean {
-  if (!itemDatabase[itemId]) {
+export async function removeItem(itemId: string): Promise<boolean> {
+  try {
+    // Remove from the database
+    const result = await db.delete(items).where(eq(items.id, itemId));
+    
+    // If successful, also remove from in-memory cache
+    if (result) {
+      delete itemDatabase[itemId];
+      console.log(`Item ${itemId} deleted from database and cache`);
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error(`Error removing item ${itemId} from database:`, error);
     return false;
   }
-  
-  delete itemDatabase[itemId];
-  return true;
 }
 
 // Get all items in the database
