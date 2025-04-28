@@ -71,6 +71,8 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
   const [showRewards, setShowRewards] = useState(false);
   const [itemsInfo, setItemsInfo] = useState<Record<string, ItemInfo>>({});
   const [animatingReward, setAnimatingReward] = useState(false);
+  const [lootboxConfigs, setLootboxConfigs] = useState<Record<string, LootBoxConfig>>({});
+  const [potentialRewards, setPotentialRewards] = useState<ItemInfo[]>([]);
 
   // Fetch lootboxes from API
   useEffect(() => {
@@ -120,7 +122,7 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
       try {
         // In a real app, we would have an endpoint to fetch these directly
         // Since we don't have direct access to that endpoint without auth, we'll use the lootbox system data
-        const lootboxConfigData: Record<string, any> = {
+        const lootboxConfigData: Record<string, LootBoxConfig> = {
           "common": {
             id: "common",
             name: "Common Lootbox",
@@ -132,7 +134,10 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
               { itemId: "techscrap", weight: 20, minQuantity: 1, maxQuantity: 1 }
             ],
             minRewards: 1,
-            maxRewards: 2
+            maxRewards: 2,
+            image: "/images/loot-crate.png",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           },
           "Oozing-Crate": {
             id: "Oozing-Crate",
@@ -146,7 +151,10 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
               { itemId: "techscrap", weight: 20, minQuantity: 1, maxQuantity: 2 }
             ],
             minRewards: 2,
-            maxRewards: 3
+            maxRewards: 3,
+            image: "/images/loot-crate.png",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           },
           "basic": {
             id: "basic",
@@ -158,12 +166,15 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
               { itemId: "cloth", weight: 40, minQuantity: 1, maxQuantity: 1 }
             ],
             minRewards: 1,
-            maxRewards: 2
+            maxRewards: 2,
+            image: "/images/loot-crate.png",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           }
         };
         
         console.log("Loaded lootbox configurations:", lootboxConfigData);
-        // setLootboxConfigs(lootboxConfigData);
+        setLootboxConfigs(lootboxConfigData);
       } catch (err) {
         console.error('Error loading lootbox configurations:', err);
       }
@@ -181,6 +192,36 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
     setSelectedLootbox(lootbox);
     setShowRewards(false);
     setLootboxRewards([]);
+    
+    // Get potential rewards from the lootbox config
+    if (lootbox.type && lootboxConfigs[lootbox.type]) {
+      const config = lootboxConfigs[lootbox.type];
+      const potentialItems: ItemInfo[] = [];
+      
+      // Gather all items from the drop table that have item info
+      config.itemDropTable.forEach(entry => {
+        if (itemsInfo[entry.itemId]) {
+          potentialItems.push(itemsInfo[entry.itemId]);
+        }
+      });
+      
+      // Sort by rarity (legendary to common)
+      const rarityOrder: Record<string, number> = {
+        'legendary': 5,
+        'epic': 4,
+        'rare': 3,
+        'uncommon': 2,
+        'common': 1
+      };
+      
+      potentialItems.sort((a, b) => {
+        return (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
+      });
+      
+      setPotentialRewards(potentialItems);
+    } else {
+      setPotentialRewards([]);
+    }
   };
 
   // Handle opening the lootbox
@@ -416,14 +457,52 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
                 <div className="h-full">
                   {/* Lootbox Header */}
                   <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-blue-300 mb-2">{selectedLootbox.name}</h2>
+                    <h2 className="text-2xl font-bold text-blue-300 mb-2">{selectedLootbox.name || selectedLootbox.type}</h2>
                     <div className="flex items-center space-x-3 mb-4">
                       {renderRarityBadge(selectedLootbox.rarity)}
                       <span className="text-sm text-gray-400">
                         ID: {selectedLootbox.id}
                       </span>
                     </div>
-                    <p className="text-gray-300">{selectedLootbox.description}</p>
+                    <p className="text-gray-300">{selectedLootbox.description || 'A mysterious lootbox with unknown treasures inside.'}</p>
+                    
+                    {/* Potential rewards section - showing the actual drop table data */}
+                    {potentialRewards.length > 0 && (
+                      <div className="mt-6">
+                        <h3 className="text-lg font-bold text-blue-300 mb-3">Potential Rewards:</h3>
+                        <p className="text-sm text-gray-400 mb-3">
+                          This crate may contain the following items. Rewards are randomized based on rarity.
+                        </p>
+                        <div className="grid grid-cols-4 gap-2">
+                          {potentialRewards.map((item) => (
+                            <div 
+                              key={item.id} 
+                              className="bg-black/40 border border-gray-700 rounded p-2 flex flex-col items-center"
+                              title={`${item.name} - ${item.description}`}
+                            >
+                              <div className="w-10 h-10 bg-black/50 rounded-md flex items-center justify-center mb-1.5">
+                                <img
+                                  src={item.imagePath}
+                                  alt={item.name}
+                                  className="w-8 h-8 object-contain"
+                                  style={{ imageRendering: 'pixelated' }}
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                                    (e.target as HTMLImageElement).className = 'w-6 h-6 opacity-30';
+                                  }}
+                                />
+                              </div>
+                              <span className="text-xs text-center whitespace-nowrap overflow-hidden text-ellipsis w-full">
+                                {item.name}
+                              </span>
+                              <span className="text-xs mt-0.5">
+                                {renderRarityBadge(item.rarity)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Lootbox Display */}
@@ -567,26 +646,8 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
                 
                 {/* Display potential rewards based on lootbox type and sorted by rarity */}
                 <div className="grid grid-cols-5 gap-3">
-                  {/* Sort all possible items by rarity (common, uncommon, rare, epic, legendary) */}
-                  {Object.values(itemsInfo)
-                    .sort((a, b) => {
-                      const rarityOrder = {
-                        'common': 1,
-                        'uncommon': 2,
-                        'rare': 3,
-                        'epic': 4,
-                        'legendary': 5
-                      };
-                      return rarityOrder[a.rarity] - rarityOrder[b.rarity];
-                    })
-                    .filter(item => {
-                      // For basic lootboxes, show only common and uncommon items
-                      if (selectedLootbox.type === 'basic') {
-                        return item.rarity === 'common' || item.rarity === 'uncommon';
-                      }
-                      // For Oozing-Crate, show items of all rarities
-                      return true;
-                    })
+                  {/* Show items from the actual drop table of the lootbox config */}
+                  {potentialRewards
                     .slice(0, 5) // Show up to 5 items total
                     .map(item => (
                       <div key={item.id} className="bg-black/30 p-2 rounded border border-gray-700 flex flex-col items-center">
