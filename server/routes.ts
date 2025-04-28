@@ -1662,6 +1662,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // DELETE an item by ID (for Oracle and Admin interfaces)
+  // Update an existing item
+  app.put('/api/items/:id', async (req, res) => {
+    try {
+      const itemId = req.params.id;
+      const itemData = req.body;
+      console.log(`Attempting to update item with ID: ${itemId}`);
+      
+      // Ensure the ID in the body matches the URL path
+      if (itemData.id !== itemId) {
+        itemData.id = itemId;
+      }
+      
+      // Update the item
+      const updatedItem = await addOrUpdateItem(itemData);
+      console.log(`Item updated: ${updatedItem.id}`);
+      
+      return res.json(updatedItem);
+    } catch (error) {
+      console.error('Error updating item:', error);
+      return res.status(500).json({
+        message: 'Failed to update item',
+        error: (error as Error).message
+      });
+    }
+  });
+
   app.delete('/api/items/:id', async (req, res) => {
     try {
       const itemId = req.params.id;
