@@ -4,7 +4,7 @@ import {
   PlusCircle, Loader2, Edit, Trash2, AlertTriangle, Upload, 
   Shield, ShieldCheck, ShieldX, Star, CalendarClock, LineChart,
   Database, Eye, FileImage, Box, Plus, CircuitBoard, Clipboard,
-  ClipboardList, Grid3X3 
+  ClipboardList, Grid3X3, ArrowRight, AlertCircle, Clock, User
 } from 'lucide-react';
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
