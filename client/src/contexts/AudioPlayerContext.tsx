@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useRef, useEffect, ReactNode } from 'react';
+import { Howl } from 'howler';
 
 // Define the Track interface
 export interface Track {
@@ -50,7 +51,9 @@ const emptyTrack: Track = {
 // Provider component
 export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   // Refs
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const soundRef = useRef<Howl | null>(null);
+  const soundIdRef = useRef<number | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // State
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -65,28 +68,62 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   const [previousVolume, setPreviousVolume] = useState<number>(volume);
   const [autoPlayEnabled, setAutoPlayEnabled] = useState<boolean>(true);
 
+  // Clear time update interval
+  const clearTimeUpdateInterval = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
+  // Start time update interval
+  const startTimeUpdateInterval = () => {
+    clearTimeUpdateInterval();
+    
+    if (soundRef.current && soundIdRef.current) {
+      intervalRef.current = setInterval(() => {
+        if (soundRef.current && soundIdRef.current) {
+          const time = soundRef.current.seek() as number;
+          setCurrentTime(time);
+          
+          if (duration > 0) {
+            setProgress((time / duration) * 100);
+          }
+        }
+      }, 100);
+    }
+  };
+
   // Player controls
   const play = () => {
-    if (audioRef.current && currentTrack) {
-      audioRef.current.play()
-        .catch(err => {
-          console.error('Play failed:', err);
-          setIsPlaying(false);
-        });
+    console.log("Play called");
+    if (soundRef.current) {
+      if (soundIdRef.current === null) {
+        soundIdRef.current = soundRef.current.play();
+      } else {
+        soundRef.current.play(soundIdRef.current);
+      }
+      setIsPlaying(true);
+      startTimeUpdateInterval();
     }
   };
 
   const pause = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
+    if (soundRef.current && soundIdRef.current !== null) {
+      soundRef.current.pause(soundIdRef.current);
+      setIsPlaying(false);
+      clearTimeUpdateInterval();
     }
   };
 
   const stop = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+    if (soundRef.current && soundIdRef.current !== null) {
+      soundRef.current.stop(soundIdRef.current);
+      soundIdRef.current = null;
       setIsPlaying(false);
+      setCurrentTime(0);
+      setProgress(0);
+      clearTimeUpdateInterval();
     }
   };
 
@@ -99,20 +136,91 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const playTrack = (index: number) => {
+    console.log("PlayTrack called with index:", index);
     if (playlist.length === 0) return;
+    
+    // Stop current track if it exists
+    if (soundRef.current) {
+      soundRef.current.stop();
+      soundRef.current.unload();
+      soundRef.current = null;
+      soundIdRef.current = null;
+      clearTimeUpdateInterval();
+    }
     
     // Ensure index is within bounds
     const safeIndex = Math.max(0, Math.min(index, playlist.length - 1));
     setCurrentTrackIndex(safeIndex);
     setCurrentTrack(playlist[safeIndex]);
     
-    if (audioRef.current) {
-      audioRef.current.src = playlist[safeIndex].path;
-      audioRef.current.load();
-      
-      // Auto-play when track is selected
-      play();
-    }
+    // Create new Howl instance
+    const trackPath = playlist[safeIndex].path;
+    console.log("Creating new Howl for track:", trackPath);
+    
+    const newSound = new Howl({
+      src: [trackPath],
+      html5: true,
+      volume: volume,
+      onplay: () => {
+        console.log('Track started playing');
+        setIsPlaying(true);
+        startTimeUpdateInterval();
+      },
+      onpause: () => {
+        console.log('Track paused');
+        setIsPlaying(false);
+        clearTimeUpdateInterval();
+      },
+      onstop: () => {
+        console.log('Track stopped');
+        setIsPlaying(false);
+        setCurrentTime(0);
+        setProgress(0);
+        clearTimeUpdateInterval();
+      },
+      onend: () => {
+        console.log('Track ended, autoPlayEnabled:', autoPlayEnabled);
+        clearTimeUpdateInterval();
+        
+        if (autoPlayEnabled) {
+          console.log('Auto-playing next track...');
+          // Use setTimeout to ensure we don't have timing issues
+          setTimeout(() => {
+            const nextIndex = (safeIndex + 1) % playlist.length;
+            console.log(`Playing next track at index ${nextIndex}`);
+            playTrack(nextIndex);
+          }, 100);
+        } else {
+          console.log('Autoplay is disabled');
+        }
+      },
+      onload: () => {
+        console.log('Track loaded');
+        setDuration(newSound.duration());
+      },
+      onloaderror: (id, error) => {
+        console.error('Error loading track:', error);
+      },
+      onplayerror: (id, error) => {
+        console.error('Error playing track:', error);
+        
+        // Try to recover by creating a new instance
+        setTimeout(() => {
+          if (soundRef.current) {
+            soundRef.current.stop();
+            soundRef.current.unload();
+            soundRef.current = null;
+            soundIdRef.current = null;
+            playTrack(safeIndex);
+          }
+        }, 300);
+      }
+    });
+    
+    soundRef.current = newSound;
+    
+    // Auto-play when track is selected
+    soundIdRef.current = newSound.play();
   };
 
   const nextTrack = () => {
@@ -130,37 +238,41 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const toggleMute = () => {
-    if (audioRef.current) {
+    if (soundRef.current) {
       if (isMuted) {
+        soundRef.current.volume(previousVolume);
         setVolumeState(previousVolume);
-        audioRef.current.volume = previousVolume;
         setIsMuted(false);
       } else {
         setPreviousVolume(volume);
+        soundRef.current.volume(0);
         setVolumeState(0);
-        audioRef.current.volume = 0;
         setIsMuted(true);
       }
     }
   };
 
   const setVolume = (newVolume: number) => {
-    if (audioRef.current) {
-      audioRef.current.volume = newVolume;
-      setVolumeState(newVolume);
-      
-      if (newVolume === 0) {
-        setIsMuted(true);
-      } else if (isMuted) {
-        setIsMuted(false);
-      }
+    if (soundRef.current) {
+      soundRef.current.volume(newVolume);
+    }
+    setVolumeState(newVolume);
+    
+    if (newVolume === 0) {
+      setIsMuted(true);
+    } else if (isMuted) {
+      setIsMuted(false);
     }
   };
 
   const seekTo = (time: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
+    if (soundRef.current && soundIdRef.current !== null) {
+      soundRef.current.seek(time, soundIdRef.current);
       setCurrentTime(time);
+      
+      if (duration > 0) {
+        setProgress((time / duration) * 100);
+      }
     }
   };
 
@@ -171,99 +283,28 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     if (tracks.length > 0 && !currentTrack) {
       setCurrentTrack(tracks[0]);
       setCurrentTrackIndex(0);
-      
-      if (audioRef.current) {
-        audioRef.current.src = tracks[0].path;
-        audioRef.current.load();
-      }
     }
   };
   
   // Toggle auto-play setting
   const toggleAutoPlay = () => {
+    console.log("Toggling autoplay from", autoPlayEnabled, "to", !autoPlayEnabled);
     setAutoPlayEnabled(!autoPlayEnabled);
   };
 
-  // Define event handlers
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-      if (audioRef.current.duration) {
-        setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
-      }
-    }
-  };
-
-  const handleEnded = () => {
-    console.log("Track ended, autoPlayEnabled:", autoPlayEnabled);
-    if (playlist.length > 0 && autoPlayEnabled) {
-      console.log("Auto-playing next track...");
-      nextTrack();
-    } else {
-      console.log("Autoplay is disabled or playlist is empty");
-    }
-  };
-
-  const handleLoaded = () => {
-    if (audioRef.current) {
-      setDuration(audioRef.current.duration);
-    }
-  };
-
-  const handlePlay = () => setIsPlaying(true);
-  const handlePause = () => setIsPlaying(false);
-  const handleError = (e: any) => console.error('Audio playback failed:', e);
-
-  // Create audio element on mount and handle event listeners
+  // When component unmounts, clean up
   useEffect(() => {
-    // Create audio element if it doesn't exist
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-      audioRef.current.volume = volume;
-    }
-    
-    // Set up all event listeners
-    const audio = audioRef.current;
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('loadedmetadata', handleLoaded);
-    audio.addEventListener('play', handlePlay);
-    audio.addEventListener('pause', handlePause);
-    audio.addEventListener('error', handleError);
-    
-    // Clean up function
     return () => {
-      if (audio) {
-        audio.removeEventListener('timeupdate', handleTimeUpdate);
-        audio.removeEventListener('ended', handleEnded);
-        audio.removeEventListener('loadedmetadata', handleLoaded);
-        audio.removeEventListener('play', handlePlay);
-        audio.removeEventListener('pause', handlePause);
-        audio.removeEventListener('error', handleError);
-        audio.pause();
+      clearTimeUpdateInterval();
+      
+      if (soundRef.current) {
+        soundRef.current.stop();
+        soundRef.current.unload();
+        soundRef.current = null;
+        soundIdRef.current = null;
       }
     };
-  }, [autoPlayEnabled]); // Re-add listeners when autoPlayEnabled changes
-
-  // When current track changes, load it
-  useEffect(() => {
-    if (audioRef.current && currentTrack && currentTrack.path) {
-      audioRef.current.src = currentTrack.path;
-      audioRef.current.volume = volume;
-      audioRef.current.load();
-      
-      if (isPlaying) {
-        play();
-      }
-    }
-  }, [currentTrack, isPlaying, volume]);
-
-  // When volume changes
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume;
-    }
-  }, [volume]);
+  }, []);
 
   // Create context value
   const value: AudioPlayerContextType = {
