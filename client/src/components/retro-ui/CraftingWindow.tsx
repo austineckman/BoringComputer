@@ -82,14 +82,14 @@ const DraggableInventoryItem: React.FC<{
 }> = ({ item, itemDetails, index }) => {
   // Get access to the usedItems state from the context
   const { usedItems } = React.useContext(CraftingContext);
-  
+
   // Calculate the effective quantity (accounting for items in the crafting grid)
   const usedQuantity = usedItems[item.type] || 0;
   const effectiveQuantity = Math.max(0, item.quantity - usedQuantity);
-  
+
   // Disable dragging if all items of this type are used
   const canDrag = effectiveQuantity > 0;
-  
+
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'INVENTORY_ITEM',
     item: {
@@ -179,7 +179,7 @@ const CraftingGridCell: React.FC<{
   }));
 
   const cellRef = useRef<HTMLDivElement>(null);
-  
+
   // Set the drag ref on the cell content if there's an item, otherwise on the cell itself
   const dragDropRef = cell.itemId ? drag(drop(cellRef)) : drop(cellRef);
 
@@ -196,7 +196,7 @@ const CraftingGridCell: React.FC<{
       {!cell.itemId && (
         <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%3E%3Crect%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23ffffff10%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23ffffff10%22%2F%3E%3C%2Fsvg%3E')] opacity-30"></div>
       )}
-      
+
       {cell.itemId && cell.itemDetails && (
         <>
           <img 
@@ -259,20 +259,20 @@ const CraftingWindow: React.FC = () => {
       Array(3).fill(null).map(() => ({ itemId: null, quantity: 0 }))
     )
   );
-  
+
   // Track items placed in grid to manage inventory
   const [usedItems, setUsedItems] = useState<Record<string, number>>({});
-  
+
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [craftMessage, setCraftMessage] = useState<{text: string, type: 'success' | 'error' | 'info'} | null>(null);
   const [difficultyFilter, setDifficultyFilter] = useState<string | null>(null);
-  
+
   // Animation state
   const [craftSuccess, setCraftSuccess] = useState({
     isVisible: false,
     position: { x: 0, y: 0 }
   });
-  
+
   const outputRef = useRef<HTMLDivElement>(null);
 
   // Fetch inventory items
@@ -305,11 +305,11 @@ const CraftingWindow: React.FC = () => {
   // Transform server recipes to client format
   const recipes: Recipe[] = React.useMemo(() => {
     if (!serverRecipes) return [];
-    
+
     return serverRecipes.map(recipe => {
       // Extract inputs from pattern and requiredItems
       const inputs: { itemId: string; quantity: number; position: [number, number] }[] = [];
-      
+
       if (recipe.pattern) {
         for (let row = 0; row < recipe.pattern.length; row++) {
           for (let col = 0; col < recipe.pattern[row].length; col++) {
@@ -326,7 +326,7 @@ const CraftingWindow: React.FC = () => {
           }
         }
       }
-      
+
       return {
         id: recipe.id.toString(),
         name: recipe.name,
@@ -355,7 +355,7 @@ const CraftingWindow: React.FC = () => {
       const gridPattern = craftingGrid.map(row => 
         row.map(cell => cell.itemId)
       );
-      
+
       const res = await apiRequest("POST", "/api/crafting/craft", { 
         recipeId: parseInt(recipeId, 10),
         gridPattern 
@@ -374,24 +374,24 @@ const CraftingWindow: React.FC = () => {
           }
         });
       }
-      
+
       // Clear grid
       setCraftingGrid(Array(3).fill(null).map(() => 
         Array(3).fill(null).map(() => ({ itemId: null, quantity: 0 }))
       ));
-      
+
       // Show success message
       setCraftMessage({
         text: "Item crafted successfully!",
         type: "success"
       });
-      
+
       // Clear used items tracking
       setUsedItems({});
-      
+
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
-      
+
       // Clear message after a delay
       setTimeout(() => {
         setCraftMessage(null);
@@ -416,17 +416,17 @@ const CraftingWindow: React.FC = () => {
     if (!inventoryItems || !Array.isArray(inventoryItems)) return 0;
     const item = inventoryItems.find((item: any) => item.type === itemId);
     const baseQuantity = item ? item.quantity : 0;
-    
+
     // Subtract any items that are already used in the crafting grid
     const usedQuantity = usedItems[itemId] || 0;
-    
+
     return Math.max(0, baseQuantity - usedQuantity);
   };
 
   // Helper to update used items tracking
   const trackUsedItem = (itemId: string | null, add: boolean) => {
     if (!itemId) return; // Skip null items
-    
+
     setUsedItems(prev => {
       const newUsed = { ...prev };
       if (add) {
@@ -442,56 +442,59 @@ const CraftingWindow: React.FC = () => {
       return newUsed;
     });
   };
-  
+
   // Handle drop on crafting grid
   const handleItemDrop = (item: DragItem, row: number, col: number) => {
     // Debug - log the current grid and the drop operation
     console.log(`Drop operation: Item ${item.itemId} at cell ${row},${col}. Source: ${item.source}`, 
       item.source === 'grid' ? `from position ${item.position}` : '');
-    
+
     // Create a copy of the current grid
-    const updatedGrid = [...craftingGrid.map(r => [...r])];
-    
+    const updatedGrid = craftingGrid.map(r => r.map(c => ({...c})));
+
+
     // Track if this is just moving an item to a different cell
     let isMovingItem = false;
     let sourceCell: {row: number, col: number} | null = null;
-    
+
     // If the item is coming from another grid cell, clear that cell and return item to inventory
     if (item.source === 'grid' && item.position) {
       const [sourceRow, sourceCol] = item.position;
       sourceCell = {row: sourceRow, col: sourceCol};
-      
+
       // If dropping onto itself, don't do anything
       if (sourceRow === row && sourceCol === col) {
         console.log('Dropping item onto itself, ignoring');
         return;
       }
-      
+
       isMovingItem = true;
       const removedItemId = updatedGrid[sourceRow][sourceCol].itemId;
       console.log(`Moving item ${removedItemId} from [${sourceRow},${sourceCol}] to [${row},${col}]`);
-      
+
       // Clear the source cell
       updatedGrid[sourceRow][sourceCol] = { itemId: null, quantity: 0 };
-      
+
       // When moving within the grid, we don't change the total number of used items,
       // so we don't need to call trackUsedItem here
     }
-    
+
     // Get the current item in the target cell (if any)
     const currentItemId = updatedGrid[row][col].itemId;
-    
+
     // If there's already an item in this cell
     if (currentItemId) {
       // If we're moving from another cell and the target cell has an item too,
       // we need to swap them
       if (isMovingItem) {
         console.log(`Target cell [${row},${col}] already has item ${currentItemId}, swapping items`);
-        
+
         // If source and target have different items, swap them
         if (sourceCell && item.itemId !== currentItemId) {
           console.log(`Placing ${item.itemId} in cell [${row},${col}] and returning ${currentItemId} to inventory`);
           // We're replacing the item, no need to track usage changes as we're just swapping
+          updatedGrid[row][col] = {itemId: item.itemId, quantity: 1, itemDetails: getItemDetails(item.itemId)};
+          trackUsedItem(currentItemId, false);
         } else {
           // If the item being moved is the same as what's already in the target, just remove from source
           console.log(`Target already has same item ${item.itemId}, keeping it as is`);
@@ -505,41 +508,44 @@ const CraftingWindow: React.FC = () => {
           console.log(`Cell [${row},${col}] already has ${item.itemId}, ignoring drop`);
           return;
         }
-        
+
         console.log(`Replacing ${currentItemId} in cell [${row},${col}] with ${item.itemId} from inventory`);
         // Return the current item to inventory
         trackUsedItem(currentItemId, false);
+        updatedGrid[row][col] = {itemId: item.itemId, quantity: 1, itemDetails: getItemDetails(item.itemId)};
       }
     }
-    
+
     // Add the item to the target cell
-    const itemDetails = getItemDetails(item.itemId);
-    updatedGrid[row][col] = {
-      itemId: item.itemId,
-      quantity: 1, // Grid cells always have quantity 1
-      itemDetails
-    };
-    
+    else {
+      const itemDetails = getItemDetails(item.itemId);
+      updatedGrid[row][col] = {
+        itemId: item.itemId,
+        quantity: 1, // Grid cells always have quantity 1
+        itemDetails
+      };
+    }
+
     // Only track as used if coming from inventory (not when moving within the grid)
     if (item.source === 'inventory') {
       console.log(`Tracking ${item.itemId} as used from inventory`);
       trackUsedItem(item.itemId, true);
     }
-    
+
     // Update the grid
     setCraftingGrid(updatedGrid);
-    
+
     // Check if this matches any recipe
     const matchingRecipe = recipes.find(recipe => {
       const pattern = Array(3).fill(null).map(() => Array(3).fill(null));
-      
+
       // Fill the pattern based on our grid
       updatedGrid.forEach((row, rowIdx) => {
         row.forEach((cell, colIdx) => {
           pattern[rowIdx][colIdx] = cell.itemId;
         });
       });
-      
+
       // Check if this matches the recipe pattern
       for (const input of recipe.inputs) {
         const [r, c] = input.position;
@@ -547,23 +553,23 @@ const CraftingWindow: React.FC = () => {
           return false;
         }
       }
-      
+
       // Also check that empty cells in the recipe are empty in our pattern
       for (let r = 0; r < 3; r++) {
         for (let c = 0; c < 3; c++) {
           const hasInput = recipe.inputs.some(input => 
             input.position[0] === r && input.position[1] === c
           );
-          
+
           if (!hasInput && pattern[r][c] !== null) {
             return false;
           }
         }
       }
-      
+
       return true;
     });
-    
+
     if (matchingRecipe) {
       setSelectedRecipeId(matchingRecipe.id);
     }
@@ -571,17 +577,17 @@ const CraftingWindow: React.FC = () => {
 
   // Handle removing items from the grid
   const handleRemoveItem = (row: number, col: number) => {
-    const updatedGrid = [...craftingGrid.map(r => [...r])];
+    const updatedGrid = craftingGrid.map(r => r.map(c => ({...c})));
     const removedItemId = updatedGrid[row][col].itemId;
-    
+
     // Return the item to inventory
     trackUsedItem(removedItemId, false);
-    
+
     // Clear the cell
     updatedGrid[row][col] = { itemId: null, quantity: 0 };
     setCraftingGrid(updatedGrid);
   };
-  
+
   // Clear the entire crafting grid
   const handleClearGrid = () => {
     // Return all items to inventory
@@ -592,12 +598,12 @@ const CraftingWindow: React.FC = () => {
         }
       });
     });
-    
+
     // Reset the grid
     setCraftingGrid(Array(3).fill(null).map(() => 
       Array(3).fill(null).map(() => ({ itemId: null, quantity: 0 }))
     ));
-    
+
     setSelectedRecipeId(null);
   };
 
@@ -610,17 +616,17 @@ const CraftingWindow: React.FC = () => {
         }
       });
     });
-    
+
     // Clear the grid
     const newGrid = Array(3).fill(null).map(() => 
       Array(3).fill(null).map(() => ({ itemId: null, quantity: 0 }))
     );
-    
+
     // Place items according to recipe
     recipe.inputs.forEach(input => {
       const [row, col] = input.position;
       const itemDetails = getItemDetails(input.itemId);
-      
+
       // Create a new grid cell with the item
       // Grid cells always have a quantity of 1
       newGrid[row][col] = { 
@@ -628,11 +634,11 @@ const CraftingWindow: React.FC = () => {
         quantity: 1, // Always 1 for grid positions
         itemDetails
       };
-      
+
       // Mark item as used in inventory
       trackUsedItem(input.itemId, true);
     });
-    
+
     // Update the grid and selected recipe
     setCraftingGrid(newGrid);
     setSelectedRecipeId(recipe.id);
@@ -646,21 +652,21 @@ const CraftingWindow: React.FC = () => {
       });
       return;
     }
-    
+
     // Check if player has the required items
     const recipe = recipes?.find(r => r.id === selectedRecipeId);
     if (!recipe) return;
-    
+
     // Find the original server recipe to get total quantities needed
     const serverRecipe = serverRecipes?.find(
       (sr: any) => sr.id.toString() === selectedRecipeId
     );
-    
+
     if (!serverRecipe) {
       console.error("Could not find server recipe:", selectedRecipeId);
       return;
     }
-    
+
     // Check inventory quantities against total requirements (not grid positions)
     for (const [itemId, quantity] of Object.entries(serverRecipe.requiredItems)) {
       const inventoryQuantity = getInventoryQuantity(itemId);
@@ -672,7 +678,7 @@ const CraftingWindow: React.FC = () => {
         return;
       }
     }
-    
+
     // All checks passed, craft the item
     craftMutation.mutate(selectedRecipeId);
   };
@@ -700,7 +706,7 @@ const CraftingWindow: React.FC = () => {
     usedItems,
     getInventoryQuantity
   };
-  
+
   return (
     <DndProvider backend={HTML5Backend}>
       <CraftingContext.Provider value={contextValue}>
@@ -762,7 +768,7 @@ const CraftingWindow: React.FC = () => {
               )}
             </div>
           </div>
-          
+
           {/* Three-column layout with recipes, crafting grid, and output */}
           <div className="flex flex-1 overflow-hidden p-4 gap-4">
             {/* Left column - Recipes */}
@@ -770,7 +776,7 @@ const CraftingWindow: React.FC = () => {
               <div className="px-3 py-2 bg-gradient-to-r from-amber-900/80 to-amber-800/50 border-b border-amber-700/50">
                 <h3 className="font-medium text-amber-200">Available Recipes</h3>
               </div>
-              
+
               <div className="flex-1 overflow-y-auto p-2 space-y-2">
                 {recipesLoading ? (
                   <div className="flex items-center justify-center p-4">
@@ -780,7 +786,7 @@ const CraftingWindow: React.FC = () => {
                   <div className="space-y-2">
                     {filteredRecipes.map((recipe) => {
                       const outputItem = getItemDetails(recipe.output.itemId);
-                      
+
                       return (
                         <div 
                           key={recipe.id}
@@ -798,7 +804,7 @@ const CraftingWindow: React.FC = () => {
                                 outputItem.rarity === 'epic' ? 'border-purple-500' :
                                 outputItem.rarity === 'rare' ? 'border-blue-500' :
                                 outputItem.rarity === 'uncommon' ? 'border-green-500' :
-                                'border-gray-600'
+                               'border-gray-600'
                               }`}>
                                 <img 
                                   src={outputItem.imagePath} 
@@ -818,7 +824,7 @@ const CraftingWindow: React.FC = () => {
                             </div>
                             <ChevronRight className="h-4 w-4 text-amber-500" />
                           </div>
-                          
+
                           {/* Show recipe ingredients */}
                           <div className="mt-2 pt-2 border-t border-gray-700/50">
                             <div className="text-xs text-gray-400 mb-1">Requires:</div>
@@ -826,18 +832,18 @@ const CraftingWindow: React.FC = () => {
                               {(() => {
                                 // For each recipe, the server already provides the total quantities needed
                                 // in the requiredItems field. We can use that directly.
-                                
+
                                 // Most efficient approach: just use the requiredItems directly from the server recipe
                                 // First, we need to find the original server recipe data
                                 const serverRecipe = serverRecipes?.find(
                                   (sr: any) => sr.id.toString() === recipe.id
                                 );
-                                
+
                                 if (!serverRecipe) {
                                   console.error("Could not find server recipe for:", recipe.id);
                                   return null;
                                 }
-                                
+
                                 // Create a new array for displaying the requirements
                                 // with proper typing that TS will understand
                                 const displayItems = Object.entries(serverRecipe.requiredItems).map(
@@ -849,11 +855,11 @@ const CraftingWindow: React.FC = () => {
                                     };
                                   }
                                 );
-                                
+
                                 // Display the consolidated requirements
                                 return displayItems.map((requirement, idx) => {
                                   const hasEnough = getInventoryQuantity(requirement.itemId) >= requirement.totalQuantity;
-                                  
+
                                   return (
                                     <div 
                                       key={idx}
@@ -890,14 +896,14 @@ const CraftingWindow: React.FC = () => {
                 )}
               </div>
             </div>
-            
+
             {/* Middle column - Crafting grid */}
             <div className="w-1/3 bg-black/60 border border-amber-900/50 rounded-lg overflow-hidden flex flex-col">
               <div className="px-3 py-2 bg-gradient-to-r from-amber-900/80 to-amber-800/50 border-b border-amber-700/50 flex items-center">
                 <Hammer className="h-4 w-4 mr-2 text-amber-300" />
                 <h3 className="font-medium text-amber-200">Crafting Grid</h3>
               </div>
-              
+
               <div className="flex-1 p-6 flex flex-col items-center justify-center">
                 {/* Clear Grid Button */}
                 <div className="w-full flex justify-end mb-3">
@@ -914,7 +920,7 @@ const CraftingWindow: React.FC = () => {
                     Clear Crafting Grid
                   </button>
                 </div>
-                
+
                 {/* Crafting Grid */}
                 <div className="grid grid-cols-3 gap-2 p-3 bg-black/40 border-2 border-amber-900/70 rounded-lg shadow-[0_0_20px_rgba(0,0,0,0.4)]">
                   {craftingGrid.map((row, rowIndex) => (
@@ -930,7 +936,7 @@ const CraftingWindow: React.FC = () => {
                     ))
                   ))}
                 </div>
-                
+
                 {/* Animation overlay */}
                 <CraftingSuccess 
                   position={craftSuccess.position}
@@ -938,13 +944,13 @@ const CraftingWindow: React.FC = () => {
                   onAnimationEnd={() => setCraftSuccess({ ...craftSuccess, isVisible: false })}
                 />
               </div>
-              
+
               {/* Crafting instructions */}
               <div className="px-4 py-2 bg-black/40 text-xs text-gray-400 border-t border-amber-900/30">
                 <p>Drag items from your inventory to the grid. Click items to remove them.</p>
               </div>
             </div>
-            
+
             {/* Right column - Output and inventory */}
             <div className="w-1/3 flex flex-col gap-3">
               {/* Output section */}
@@ -952,7 +958,7 @@ const CraftingWindow: React.FC = () => {
                 <div className="px-3 py-2 bg-gradient-to-r from-amber-900/80 to-amber-800/50 border-b border-amber-700/50">
                   <h3 className="font-medium text-amber-200">Output</h3>
                 </div>
-                
+
                 <div className="flex-1 flex items-center justify-center p-4">
                   {selectedRecipeId ? (
                     <div className="flex flex-col items-center">
@@ -964,10 +970,10 @@ const CraftingWindow: React.FC = () => {
                           {(() => {
                             const recipe = recipes?.find(r => r.id === selectedRecipeId);
                             if (!recipe) return null;
-                            
+
                             const outputItem = getItemDetails(recipe.output.itemId);
                             if (!outputItem) return null;
-                            
+
                             // Add a subtle glow based on rarity
                             const glowColor = 
                               outputItem.rarity === 'legendary' ? 'rgba(255, 215, 0, 0.3)' :
@@ -975,7 +981,7 @@ const CraftingWindow: React.FC = () => {
                               outputItem.rarity === 'rare' ? 'rgba(0, 112, 221, 0.3)' :
                               outputItem.rarity === 'uncommon' ? 'rgba(30, 255, 0, 0.3)' :
                               'rgba(255, 255, 255, 0.2)';
-                            
+
                             return (
                               <>
                                 <div className="absolute inset-0 animate-pulse" style={{ 
@@ -998,7 +1004,7 @@ const CraftingWindow: React.FC = () => {
                           })()}
                         </div>
                       </div>
-                      
+
                       <button 
                         className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 
                                  text-white rounded-md border border-amber-800 shadow-md transition-colors
@@ -1015,7 +1021,7 @@ const CraftingWindow: React.FC = () => {
                           </>
                         )}
                       </button>
-                      
+
                       {/* Crafting Messages */}
                       {craftMessage && (
                         <div className={`mt-3 p-2 rounded ${
@@ -1039,18 +1045,18 @@ const CraftingWindow: React.FC = () => {
                   )}
                 </div>
               </div>
-              
+
               {/* Inventory section */}
               <div className="bg-black/60 border border-amber-900/50 rounded-lg overflow-hidden flex flex-col h-1/2">
                 <div className="px-3 py-2 bg-gradient-to-r from-amber-900/80 to-amber-800/50 border-b border-amber-700/50">
                   <h3 className="font-medium text-amber-200">Materials & Inventory</h3>
                 </div>
-                
+
                 <div className="flex-1 overflow-y-auto p-3">
                   <div className="grid grid-cols-5 gap-2">
                     {inventoryItems && Array.isArray(inventoryItems) && inventoryItems.map((item: any, index) => {
                       const itemDetails = getItemDetails(item.type);
-                      
+
                       return (
                         <DraggableInventoryItem 
                           key={item.id} 
@@ -1061,7 +1067,7 @@ const CraftingWindow: React.FC = () => {
                       );
                     })}
                   </div>
-                  
+
                   {(!inventoryItems || !Array.isArray(inventoryItems) || inventoryItems.length === 0) && (
                     <div className="text-center py-6 text-gray-400">
                       <p>Your inventory is empty</p>
