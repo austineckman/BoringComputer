@@ -178,11 +178,7 @@ const CraftingGridCell: React.FC<{
             style={{ imageRendering: 'pixelated' }}
             draggable={false}
           />
-          {cell.quantity > 1 && (
-            <div className="absolute bottom-0 right-0 bg-black/80 text-amber-300 text-xs px-1 rounded-tl font-pixel">
-              {cell.quantity}
-            </div>
-          )}
+          {/* We don't show quantity on grid cells */}
         </>
       )}
     </div>
@@ -288,12 +284,11 @@ const CraftingWindow: React.FC = () => {
           for (let col = 0; col < recipe.pattern[row].length; col++) {
             const itemId = recipe.pattern[row][col];
             if (itemId) {
-              // Find quantity from requiredItems
-              const quantity = recipe.requiredItems[itemId] || 1; 
-              
+              // For grid positions, quantity is always 1
+              // The total quantity needed is stored in requiredItems
               inputs.push({
                 itemId,
-                quantity, 
+                quantity: 1, // Grid positions always have quantity 1
                 position: [row, col]
               });
             }
@@ -472,9 +467,10 @@ const CraftingWindow: React.FC = () => {
       const itemDetails = getItemDetails(input.itemId);
       
       // Create a new grid cell with the item
+      // Grid cells always have a quantity of 1
       newGrid[row][col] = { 
         itemId: input.itemId, 
-        quantity: input.quantity,
+        quantity: 1, // Always 1 for grid positions
         itemDetails
       };
     });
@@ -497,12 +493,22 @@ const CraftingWindow: React.FC = () => {
     const recipe = recipes?.find(r => r.id === selectedRecipeId);
     if (!recipe) return;
     
-    // Check inventory quantities
-    for (const input of recipe.inputs) {
-      const inventoryQuantity = getInventoryQuantity(input.itemId);
-      if (inventoryQuantity < input.quantity) {
+    // Find the original server recipe to get total quantities needed
+    const serverRecipe = serverRecipes?.find(
+      (sr: any) => sr.id.toString() === selectedRecipeId
+    );
+    
+    if (!serverRecipe) {
+      console.error("Could not find server recipe:", selectedRecipeId);
+      return;
+    }
+    
+    // Check inventory quantities against total requirements (not grid positions)
+    for (const [itemId, quantity] of Object.entries(serverRecipe.requiredItems)) {
+      const inventoryQuantity = getInventoryQuantity(itemId);
+      if (inventoryQuantity < quantity) {
         setCraftMessage({
-          text: `Not enough ${getItemDetails(input.itemId)?.name || input.itemId}`,
+          text: `Not enough ${getItemDetails(itemId)?.name || itemId}`,
           type: "error"
         });
         return;
