@@ -4,8 +4,10 @@ import {
   PlusCircle, Loader2, Edit, Trash2, AlertTriangle, Upload, 
   Shield, ShieldCheck, ShieldX, Star, CalendarClock, LineChart,
   Database, Eye, FileImage, Box, Plus, CircuitBoard, Clipboard,
-  ClipboardList
+  ClipboardList, Grid3X3 
 } from 'lucide-react';
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import wallbg from '@assets/wallbg.png';
 import oracleIconImage from '@assets/01_Fire_Grimoire.png'; // Using grimoire as placeholder for Oracle icon
 
@@ -4284,18 +4286,16 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-300 text-sm mb-1">Grid Size</label>
+                      <div className="flex items-center">
+                        <Grid3X3 className="w-5 h-5 mr-2 text-gray-300" />
+                        <label className="block text-gray-300 text-sm">Grid Size: 3×3</label>
+                      </div>
                       <input
-                        type="number"
-                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                        value={(editingItem as Recipe).gridSize || 3}
-                        min={2}
-                        max={5}
-                        onChange={(e) => {
-                          const updatedRecipe = {...editingItem as Recipe, gridSize: parseInt(e.target.value) || 3};
-                          setEditingItem(updatedRecipe);
-                        }}
+                        type="hidden"
+                        value={3}
+                        readOnly
                       />
+                      <p className="text-xs text-gray-500 mt-1">All crafting recipes use a standard 3×3 grid.</p>
                     </div>
                     <div>
                       <label className="block text-gray-300 text-sm mb-1">Category</label>
@@ -4441,14 +4441,52 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                       </div>
                     </div>
                     
+                    {/* Available items panel - drag from here */}
+                    <div className="flex justify-center mb-4">
+                      <div className="bg-black/50 border border-gray-700 rounded p-3">
+                        <h4 className="text-sm text-brand-orange mb-2">Available Items</h4>
+                        <div className="grid grid-cols-5 gap-2">
+                          {items.slice(0, 10).map(item => (
+                            <div 
+                              key={item.id}
+                              className={`w-12 h-12 bg-black/30 border border-gray-700 rounded flex items-center justify-center cursor-pointer hover:border-brand-orange/70 transition-colors ${rarityColorClass(item.rarity).replace('text-', 'border-')}`}
+                              onClick={() => {
+                                // Set as the selected item
+                                const recipe = editingItem as Recipe;
+                                const updatedRecipe = {...recipe, _selectedItemId: item.id};
+                                setEditingItem(updatedRecipe);
+                                
+                                if (window.sounds?.click) {
+                                  window.sounds.click();
+                                }
+                              }}
+                              style={{
+                                boxShadow: (editingItem as any)._selectedItemId === item.id ? '0 0 8px #ff7b00' : 'none'
+                              }}
+                            >
+                              <div className="relative w-10 h-10 flex items-center justify-center">
+                                <img 
+                                  src={item.imagePath} 
+                                  alt={item.name}
+                                  className="max-w-full max-h-full object-contain"
+                                  style={{imageRendering: 'pixelated'}}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    
                     {/* Visual crafting grid */}
                     <div className="flex justify-center">
                       <div 
-                        className="grid gap-1 p-2 bg-gray-900 border border-gray-700 rounded"
+                        className="grid gap-1 p-3 bg-black/70 border-2 border-gray-700 rounded"
                         style={{ 
-                          gridTemplateColumns: `repeat(${(editingItem as Recipe).gridSize || 3}, 1fr)`,
-                        }}
-                      >
+                          gridTemplateColumns: `repeat(3, 1fr)`,
+                          backgroundImage: 'radial-gradient(circle, rgba(50, 50, 50, 0.2) 1px, transparent 1px)',
+                          backgroundSize: '10px 10px'
+                        }}>
                         {/* Create grid cells */}
                         {(() => {
                           // Use a self-executing function to properly handle the grid creation
