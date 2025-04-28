@@ -598,7 +598,7 @@ const RetroDesktop: React.FC = () => {
           >
             {/* Icon image */}
             <div className={`flex items-center justify-center w-12 h-12 rounded-sm shadow-md mb-1 ${
-              icon.icon === "ironbag" 
+              icon.icon === "oracle" 
                 ? "bg-gradient-to-br from-amber-200 to-yellow-500 border border-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.6)]" 
                 : "bg-gradient-to-br from-blue-100 to-blue-300 border border-blue-400"
             }`}>
