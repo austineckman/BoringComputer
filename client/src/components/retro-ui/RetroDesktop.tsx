@@ -406,7 +406,7 @@ const RetroDesktop: React.FC = () => {
       "loot.exe", 
       <InventoryWindow openItemDetails={openItemDetailsWindow} />, 
       "ironbag",
-      { width: 650, height: 520 }
+      { width: 845, height: 676 } // Increased by 30% from 650x520
     );
   };
   
