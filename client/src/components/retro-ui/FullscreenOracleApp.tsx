@@ -4463,46 +4463,35 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                       </div>
                     </div>
                     
-                    {/* Available items panel - select items from here */}
+                    {/* Selected item preview */}
                     <div className="flex justify-center mb-6">
-                      <div className="bg-black/60 border-2 border-gray-700 rounded-lg p-4" style={{boxShadow: 'inset 0 0 15px rgba(0, 0, 0, 0.6)'}}>
-                        <h4 className="text-sm font-semibold text-brand-orange mb-3">Available Crafting Materials</h4>
-                        <div className="grid grid-cols-5 gap-3">
-                          {items.slice(0, 10).map(item => (
-                            <div 
-                              key={item.id}
-                              className={`w-14 h-14 bg-black/40 border-2 ${
-                                (editingItem as any)._selectedItemId === item.id 
-                                  ? 'border-brand-orange' 
-                                  : `border-gray-600 hover:border-gray-400`
-                              } rounded-md flex items-center justify-center cursor-pointer transition-all`}
-                              onClick={() => {
-                                // Set as the selected item
-                                const recipe = editingItem as Recipe;
-                                const updatedRecipe = {...recipe, _selectedItemId: item.id};
-                                setEditingItem(updatedRecipe);
-                                
-                                if (window.sounds?.click) {
-                                  window.sounds.click();
-                                }
-                              }}
-                              style={{
-                                boxShadow: (editingItem as any)._selectedItemId === item.id ? '0 0 12px #ff7b00' : 'none',
-                                transform: (editingItem as any)._selectedItemId === item.id ? 'scale(1.05)' : 'scale(1)'
-                              }}
-                            >
-                              <div className="relative w-12 h-12 flex items-center justify-center">
-                                <img 
-                                  src={item.imagePath} 
-                                  alt={item.name}
-                                  className="max-w-full max-h-full object-contain"
-                                  style={{imageRendering: 'pixelated'}}
-                                />
+                      {(editingItem as any)._selectedItemId && (
+                        <div className="bg-black/60 border-2 border-gray-700 rounded-lg p-4 flex flex-col items-center" style={{boxShadow: 'inset 0 0 15px rgba(0, 0, 0, 0.6)'}}>
+                          <h4 className="text-sm font-semibold text-brand-orange mb-3">Selected Material</h4>
+                          {(() => {
+                            const selectedItem = items.find(i => i.id === (editingItem as any)._selectedItemId);
+                            if (!selectedItem) return null;
+                            
+                            return (
+                              <div className="flex flex-col items-center">
+                                <div className={`w-20 h-20 bg-black/40 border-2 border-brand-orange rounded-md flex items-center justify-center mb-2`}
+                                  style={{boxShadow: '0 0 12px #ff7b00'}}>
+                                  <img 
+                                    src={selectedItem.imagePath} 
+                                    alt={selectedItem.name}
+                                    className="max-w-full max-h-full object-contain p-2"
+                                    style={{imageRendering: 'pixelated'}}
+                                  />
+                                </div>
+                                <div className="text-white font-semibold">{selectedItem.name}</div>
+                                <div className={`text-xs mt-1 ${rarityColorClass(selectedItem.rarity)}`}>
+                                  {selectedItem.rarity.charAt(0).toUpperCase() + selectedItem.rarity.slice(1)}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })()}
                         </div>
-                      </div>
+                      )}
                     </div>
                     
                     {/* Visual crafting grid */}
