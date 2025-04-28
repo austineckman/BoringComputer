@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, FilterX, Filter, ChevronRight, Clock, Award, Cpu, Loader2, AlertCircle } from 'lucide-react';
+import { X, Search, FilterX, Filter, ChevronRight, Clock, Award, Cpu, Loader2, AlertCircle, Package, Gift } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useComponentKits } from '../../hooks/useComponentKits';
 import { useQuests, type Quest } from '../../hooks/useQuests';
+import { useItems } from '../../hooks/useItems';
 import questImage from '@assets/01_Fire_Grimoire.png';
 import wallbg from '@assets/wallbg.png';
 
@@ -27,6 +28,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
   const [, navigate] = useLocation();
   const { kits, loading: loadingKits } = useComponentKits();
   const { questsByAdventureLine, allQuests, loading: loadingQuests, error: questsError } = useQuests();
+  const { items, loading: loadingItems } = useItems();
   
   const [selectedKit, setSelectedKit] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -199,6 +201,9 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
   };
 
   const renderQuestCard = (quest: Quest) => {
+    // Get the quest image if available
+    const questImage = quest.content?.images?.[0];
+
     return (
       <div 
         key={quest.id} 
@@ -206,7 +211,20 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
         onClick={() => handleQuestClick(quest.id)}
         onMouseEnter={() => window.sounds?.hover()}
       >
+        {/* Background gradient */}
         <div className="absolute top-0 right-0 bottom-0 left-0 bg-gradient-to-t from-black to-transparent opacity-60 z-0"></div>
+        
+        {/* Quest image as background if available */}
+        {questImage && (
+          <div 
+            className="absolute top-0 right-0 bottom-0 left-0 z-0 opacity-30"
+            style={{
+              backgroundImage: `url(${questImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          />
+        )}
         
         {/* Status badge - handle status property which might not exist in the database */}
         <div className="absolute top-3 right-3 z-10">
@@ -241,6 +259,17 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
         </div>
         
         <div className="z-10">
+          {/* Show a direct image preview if exists */}
+          {questImage && (
+            <div className="mb-3 w-full h-32 overflow-hidden rounded-md flex items-center justify-center">
+              <img 
+                src={questImage} 
+                alt={quest.title} 
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+          
           <h3 className="text-lg font-bold text-white mb-1">{quest.title}</h3>
           <p className="text-gray-300 text-sm line-clamp-2 mb-3">{quest.description}</p>
           
@@ -253,6 +282,41 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
               {quest.xpReward} XP
             </span>
           </div>
+          
+          {/* Quest rewards */}
+          {quest.rewards && quest.rewards.length > 0 && (
+            <div className="mt-2 mb-3">
+              <h4 className="text-xs uppercase text-gray-400 mb-1 flex items-center">
+                <Gift className="w-3 h-3 mr-1 text-green-400" />
+                Rewards
+              </h4>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {quest.rewards.map((reward, idx) => {
+                  // Try to find the item in the items list to get its image
+                  const item = items?.find(i => i.id === reward.id);
+                  return (
+                    <div
+                      key={`${reward.id}-${idx}`}
+                      className="flex items-center px-2 py-1 bg-gray-800/80 rounded-md"
+                      title={`${reward.quantity}x ${reward.id}`}
+                    >
+                      {item?.imagePath ? (
+                        <img 
+                          src={item.imagePath} 
+                          alt={reward.id} 
+                          className="w-5 h-5 mr-1"
+                          style={{ objectFit: 'contain' }}
+                        />
+                      ) : (
+                        <Package className="w-3 h-3 mr-1 text-brand-orange" />
+                      )}
+                      <span className="text-xs text-gray-300">{reward.quantity}x {reward.id}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           
           {/* Component requirements */}
           {quest.componentRequirements && quest.componentRequirements.length > 0 && (
