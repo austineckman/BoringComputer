@@ -22,7 +22,6 @@ import adminQuestGeneratorRoutes from './routes/admin-quest-generator';
 import adminQuestsSaveRoutes from './routes/admin-quests-save';
 import adventureLinesRoutes from './routes/adventure-lines';
 import oracleRoutes from './routes/oracle';
-import lockpickRoutes from './routes/lockpick';
 import { authenticate, hashPassword } from './auth';
 import { componentKits, items } from '@shared/schema';
 import { itemDatabase } from './itemDatabase';
@@ -1715,9 +1714,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register adventure lines routes
   app.use('/', adventureLinesRoutes);
   
-  // Register Lockpick routes for lootbox management
-  app.use('/api/lootboxes', authenticate, lockpickRoutes);
-
   // Register Oracle routes (with full CRUD access to database)
   app.use('/api/oracle', authenticate, oracleRoutes);
   
