@@ -5,6 +5,7 @@ import { Loader2, AlertTriangle, Check, Flame, Hammer, Sparkles, ChevronRight, F
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import forgeBackground from "@assets/forgebg.png";
+import gizboForgelogo from "@assets/Untitled design - 2025-04-28T124406.948.png";
 
 // Create a context for sharing usedItems state across components
 interface CraftingContextType {
@@ -807,7 +808,7 @@ const CraftingWindow: React.FC = () => {
           <div className="bg-gradient-to-r from-amber-900/90 to-amber-800/70 px-4 py-3 border-b border-amber-700/70 flex justify-between items-center">
             <div className="flex items-center">
               <img 
-                src="/images/gizbos-forge-logo.png" 
+                src={gizboForgelogo} 
                 alt="Gizbo's Forge" 
                 className="h-12 object-contain"
                 style={{ imageRendering: 'pixelated' }}
