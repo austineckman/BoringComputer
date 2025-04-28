@@ -449,9 +449,8 @@ const CraftingWindow: React.FC = () => {
     console.log(`Drop operation: Item ${item.itemId} at cell ${row},${col}. Source: ${item.source}`, 
       item.source === 'grid' ? `from position ${item.position}` : '');
 
-    // Create a copy of the current grid
-    const updatedGrid = craftingGrid.map(r => r.map(c => ({...c})));
-
+    // Create a DEEP copy of the current grid to avoid partial updates
+    const updatedGrid = JSON.parse(JSON.stringify(craftingGrid));
 
     // Track if this is just moving an item to a different cell
     let isMovingItem = false;
@@ -515,8 +514,7 @@ const CraftingWindow: React.FC = () => {
         updatedGrid[row][col] = {itemId: item.itemId, quantity: 1, itemDetails: getItemDetails(item.itemId)};
       }
     }
-
-    // Add the item to the target cell
+    // Add the item to an empty cell
     else {
       const itemDetails = getItemDetails(item.itemId);
       updatedGrid[row][col] = {
@@ -532,7 +530,9 @@ const CraftingWindow: React.FC = () => {
       trackUsedItem(item.itemId, true);
     }
 
-    // Update the grid
+    console.log('Updated grid before state update:', JSON.stringify(updatedGrid));
+    
+    // Update the grid state with the complete new grid
     setCraftingGrid(updatedGrid);
 
     // Check if this matches any recipe
@@ -577,19 +577,37 @@ const CraftingWindow: React.FC = () => {
 
   // Handle removing items from the grid
   const handleRemoveItem = (row: number, col: number) => {
-    const updatedGrid = craftingGrid.map(r => r.map(c => ({...c})));
+    // Create deep copy of the grid
+    const updatedGrid = JSON.parse(JSON.stringify(craftingGrid));
     const removedItemId = updatedGrid[row][col].itemId;
 
-    // Return the item to inventory
-    trackUsedItem(removedItemId, false);
+    if (removedItemId) {
+      // Return the item to inventory
+      trackUsedItem(removedItemId, false);
 
-    // Clear the cell
-    updatedGrid[row][col] = { itemId: null, quantity: 0 };
-    setCraftingGrid(updatedGrid);
+      // Clear the cell
+      updatedGrid[row][col] = { itemId: null, quantity: 0 };
+      
+      console.log('Updated grid after removal:', JSON.stringify(updatedGrid));
+      
+      // Update the grid
+      setCraftingGrid(updatedGrid);
+    }
   };
 
   // Clear the entire crafting grid
   const handleClearGrid = () => {
+    // First check if there's anything to clear
+    const hasItems = craftingGrid.some(row => 
+      row.some(cell => cell.itemId !== null)
+    );
+    
+    if (!hasItems) {
+      return; // Nothing to clear
+    }
+    
+    console.log('Clearing entire crafting grid');
+    
     // Return all items to inventory
     craftingGrid.forEach(row => {
       row.forEach(cell => {
@@ -599,15 +617,21 @@ const CraftingWindow: React.FC = () => {
       });
     });
 
-    // Reset the grid
-    setCraftingGrid(Array(3).fill(null).map(() => 
+    // Create a new empty grid
+    const emptyGrid = Array(3).fill(null).map(() => 
       Array(3).fill(null).map(() => ({ itemId: null, quantity: 0 }))
-    ));
-
+    );
+    
+    console.log('Reset grid to empty state');
+    
+    // Reset the grid and selected recipe
+    setCraftingGrid(emptyGrid);
     setSelectedRecipeId(null);
   };
 
   const handleRecipeClick = (recipe: Recipe) => {
+    console.log('Recipe click with recipe ID:', recipe.id);
+    
     // First, return all items currently in the grid to inventory
     craftingGrid.forEach(row => {
       row.forEach(cell => {
@@ -617,29 +641,49 @@ const CraftingWindow: React.FC = () => {
       });
     });
 
-    // Clear the grid
+    // Create a new empty grid
     const newGrid = Array(3).fill(null).map(() => 
       Array(3).fill(null).map(() => ({ itemId: null, quantity: 0 }))
     );
 
+    console.log('Recipe inputs:', recipe.inputs);
+    
     // Place items according to recipe
     recipe.inputs.forEach(input => {
       const [row, col] = input.position;
-      const itemDetails = getItemDetails(input.itemId);
+      
+      // Validate position bounds
+      if (row < 0 || row >= 3 || col < 0 || col >= 3) {
+        console.error(`Invalid position in recipe: [${row},${col}]`);
+        return;
+      }
+      
+      const itemId = input.itemId;
+      const itemDetails = getItemDetails(itemId);
+      
+      console.log(`Placing ${itemId} at [${row},${col}]`);
+
+      // Check if user has this item in inventory
+      const inventoryQty = getInventoryQuantity(itemId);
+      if (inventoryQty <= 0) {
+        console.warn(`User doesn't have enough ${itemId} in inventory`);
+        // Still place it in the grid, but it will show as "missing"
+      }
 
       // Create a new grid cell with the item
-      // Grid cells always have a quantity of 1
       newGrid[row][col] = { 
-        itemId: input.itemId, 
+        itemId: itemId, 
         quantity: 1, // Always 1 for grid positions
         itemDetails
       };
 
-      // Mark item as used in inventory
-      trackUsedItem(input.itemId, true);
+      // Track item as used in inventory
+      trackUsedItem(itemId, true);
     });
 
-    // Update the grid and selected recipe
+    console.log('New grid after recipe placement:', JSON.stringify(newGrid));
+    
+    // Update the grid state and selected recipe
     setCraftingGrid(newGrid);
     setSelectedRecipeId(recipe.id);
   };
