@@ -203,6 +203,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   // State for editing
   const [editingItem, setEditingItem] = useState<LootBox | Quest | GameItem | ComponentKit | KitComponent | Recipe | null>(null);
   const [editingType, setEditingType] = useState<'lootbox' | 'quest' | 'item' | 'kit' | 'component' | 'recipe' | null>(null);
+  const [isCreatingNewItem, setIsCreatingNewItem] = useState(false);
   
   // Loading states
   const [loadingLootboxes, setLoadingLootboxes] = useState(true);
@@ -665,17 +666,22 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     window.sounds?.click();
     try {
       let endpoint = '';
-      let method = 'PUT';
+      let method = isCreatingNewItem ? 'POST' : 'PUT';
       let body: any = {};
       const id = (editingItem as any).id;
       
       if (editingType === 'lootbox') {
-        endpoint = '/api/oracle/entities';
-        body = {
-          tableName: 'lootBoxConfigs',
-          id,
-          data
-        };
+        if (isCreatingNewItem) {
+          endpoint = '/api/admin/lootboxes';
+          body = data;
+        } else {
+          endpoint = '/api/oracle/entities';
+          body = {
+            tableName: 'lootBoxConfigs',
+            id,
+            data
+          };
+        }
       } else if (editingType === 'quest') {
         endpoint = '/api/oracle/entities';
         body = {
@@ -684,8 +690,13 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           data
         };
       } else if (editingType === 'item') {
-        endpoint = `/api/items/${id}`;
-        body = data;
+        if (isCreatingNewItem) {
+          endpoint = '/api/items';
+          body = data;
+        } else {
+          endpoint = `/api/items/${id}`;
+          body = data;
+        }
       } else if (editingType === 'kit') {
         endpoint = `/api/admin/kits/${id}`;
         body = data;
@@ -693,8 +704,13 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         endpoint = `/api/admin/components/${id}`;
         body = data;
       } else if (editingType === 'recipe') {
-        endpoint = `/api/admin/recipes/${id}`;
-        body = data;
+        if (isCreatingNewItem) {
+          endpoint = '/api/admin/recipes';
+          body = data;
+        } else {
+          endpoint = `/api/admin/recipes/${id}`;
+          body = data;
+        }
       }
       
       const response = await fetch(endpoint, {
@@ -709,50 +725,79 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         window.sounds?.success();
         const updatedItem = await response.json();
         
-        // Update the state with the edited item
+        // Update the state with the edited/created item
         if (editingType === 'lootbox') {
-          setLootboxes(prevBoxes => 
-            prevBoxes.map(box => box.id === updatedItem.id ? updatedItem : box)
-          );
+          if (isCreatingNewItem) {
+            setLootboxes(prevBoxes => [...prevBoxes, updatedItem]);
+          } else {
+            setLootboxes(prevBoxes => 
+              prevBoxes.map(box => box.id === updatedItem.id ? updatedItem : box)
+            );
+          }
         } else if (editingType === 'quest') {
-          setQuests(prevQuests => 
-            prevQuests.map(quest => quest.id === updatedItem.id ? updatedItem : quest)
-          );
+          if (isCreatingNewItem) {
+            setQuests(prevQuests => [...prevQuests, updatedItem]);
+          } else {
+            setQuests(prevQuests => 
+              prevQuests.map(quest => quest.id === updatedItem.id ? updatedItem : quest)
+            );
+          }
         } else if (editingType === 'item') {
-          setItems(prevItems => 
-            prevItems.map(item => item.id === updatedItem.id ? updatedItem : item)
-          );
+          if (isCreatingNewItem) {
+            setItems(prevItems => [...prevItems, updatedItem]);
+          } else {
+            setItems(prevItems => 
+              prevItems.map(item => item.id === updatedItem.id ? updatedItem : item)
+            );
+          }
         } else if (editingType === 'kit') {
-          setComponentKits(prevKits => 
-            prevKits.map(kit => kit.id === updatedItem.id ? updatedItem : kit)
-          );
+          if (isCreatingNewItem) {
+            setComponentKits(prevKits => [...prevKits, updatedItem]);
+          } else {
+            setComponentKits(prevKits => 
+              prevKits.map(kit => kit.id === updatedItem.id ? updatedItem : kit)
+            );
+          }
         } else if (editingType === 'component') {
           const kitId = (editingItem as KitComponent).kitId;
           setKitComponents(prev => {
             if (!prev[kitId]) return prev;
             
-            return {
-              ...prev,
-              [kitId]: prev[kitId].map(comp => 
-                comp.id === updatedItem.id ? updatedItem : comp
-              )
-            };
+            if (isCreatingNewItem) {
+              return {
+                ...prev,
+                [kitId]: [...prev[kitId], updatedItem]
+              };
+            } else {
+              return {
+                ...prev,
+                [kitId]: prev[kitId].map(comp => 
+                  comp.id === updatedItem.id ? updatedItem : comp
+                )
+              };
+            }
           });
         } else if (editingType === 'recipe') {
-          setRecipes(prevRecipes => 
-            prevRecipes.map(recipe => recipe.id === updatedItem.id ? updatedItem : recipe)
-          );
+          if (isCreatingNewItem) {
+            setRecipes(prevRecipes => [...prevRecipes, updatedItem]);
+          } else {
+            setRecipes(prevRecipes => 
+              prevRecipes.map(recipe => recipe.id === updatedItem.id ? updatedItem : recipe)
+            );
+          }
         }
         
+        const actionText = isCreatingNewItem ? 'created' : 'updated';
         setNotificationMessage({
           type: 'success',
-          message: `${editingType.charAt(0).toUpperCase() + editingType.slice(1)} updated successfully!`
+          message: `${editingType.charAt(0).toUpperCase() + editingType.slice(1)} ${actionText} successfully!`
         });
         
         setTimeout(() => {
           setNotificationMessage(null);
         }, 3000);
         
+        setIsCreatingNewItem(false);
         closeEditDialog();
       } else {
         window.sounds?.error();
@@ -2304,7 +2349,82 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
             
             <button
               className="px-3 py-2 bg-brand-orange/80 text-white rounded-md hover:bg-brand-orange transition-colors flex items-center"
-              onClick={() => console.log(`Create new ${activeTab.slice(0, -1)}`)}
+              onClick={() => {
+                // Create a new item based on the active tab
+                if (activeTab === 'lootboxes') {
+                  // Create a new lootbox with default values
+                  const newLootbox: LootBox = {
+                    id: `new-box-${Date.now()}`,
+                    name: 'New Lootbox',
+                    description: 'A mysterious container full of potential treasures',
+                    rarity: 'common',
+                    itemDropTable: [
+                      {
+                        itemId: 'copper',
+                        weight: 100,
+                        minQuantity: 1,
+                        maxQuantity: 3
+                      }
+                    ],
+                    minRewards: 1,
+                    maxRewards: 3,
+                    image: '',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                  };
+                  setEditingItem(newLootbox);
+                  setEditingType('lootbox');
+                  setIsCreatingNewItem(true);
+                } else if (activeTab === 'items') {
+                  // Create a new item with default values
+                  const newItem: GameItem = {
+                    id: `new-item-${Date.now()}`,
+                    name: 'New Item',
+                    description: 'A newly created item',
+                    flavorText: '',
+                    rarity: 'common',
+                    craftingUses: [],
+                    imagePath: '',
+                    category: '',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                  };
+                  setEditingItem(newItem);
+                  setEditingType('item');
+                  setIsCreatingNewItem(true);
+                } else if (activeTab === 'recipes') {
+                  // Create a new recipe with default values
+                  const newRecipe: Recipe = {
+                    id: -1, // Will be replaced by server on save
+                    name: 'New Recipe',
+                    description: 'A new crafting recipe',
+                    flavorText: '',
+                    resultItem: '',
+                    resultQuantity: 1,
+                    gridSize: 3,
+                    pattern: [
+                      [null, null, null],
+                      [null, null, null],
+                      [null, null, null]
+                    ],
+                    requiredItems: {},
+                    difficulty: 'easy',
+                    category: 'general',
+                    unlocked: true,
+                    image: '',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    heroImage: ''
+                  };
+                  setEditingItem(newRecipe);
+                  setEditingType('recipe');
+                  setIsCreatingNewItem(true);
+                } else {
+                  console.log(`Create new ${activeTab.slice(0, -1)}`);
+                }
+                
+                window.sounds?.click();
+              }}
               onMouseEnter={() => window.sounds?.hover()}
             >
               <PlusCircle className="h-4 w-4 mr-1" />
