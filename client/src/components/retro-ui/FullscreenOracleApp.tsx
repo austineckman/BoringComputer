@@ -10,6 +10,7 @@ import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import wallbg from '@assets/wallbg.png';
 import oracleIconImage from '@assets/01_Fire_Grimoire.png'; // Using grimoire as placeholder for Oracle icon
+import theOracleLogo from '@assets/TheOracleLogo.png';
 
 // Define types for lootboxes and quests
 interface LootBox {
@@ -2228,16 +2229,15 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         backgroundRepeat: 'no-repeat'
       }}
     >
-      {/* Header with title and close button */}
+      {/* Header with logo and close button */}
       <div className="bg-black/80 border-b border-brand-orange/30 p-4 flex items-center justify-between">
         <div className="flex items-center">
           <img 
-            src={oracleIconImage} 
+            src={theOracleLogo} 
             alt="The Oracle" 
-            className="w-8 h-8 mr-3" 
+            className="h-12 object-contain" 
             style={{ imageRendering: 'pixelated' }}
           />
-          <h1 className="text-2xl font-bold text-brand-orange">The Oracle</h1>
           <span className="text-xs bg-red-600/80 text-white px-2 py-0.5 rounded-full ml-3">Admin Only</span>
           
           {/* Admin Action Buttons */}
