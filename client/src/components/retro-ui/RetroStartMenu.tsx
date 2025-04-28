@@ -186,9 +186,8 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
       <div className="max-h-[70vh] overflow-y-auto">
         {filteredMenuItems.map((item) => (
           <div key={item.id}>
-            {/* Menu item row */}
-            <button 
-              className="w-full flex items-center justify-between p-2 hover:bg-blue-100 cursor-pointer border-b border-gray-300 text-left"
+            <div 
+              className="flex items-center justify-between p-2 hover:bg-blue-100 cursor-pointer border-b border-gray-300"
               onClick={() => handleMenuItemClick(item)}
             >
               <div className="flex items-center">
@@ -201,15 +200,15 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
                   className={`transform transition-transform ${activeSubmenu === item.id ? 'rotate-90' : ''}`} 
                 />
               )}
-            </button>
+            </div>
             
             {/* Submenu */}
             {activeSubmenu === item.id && item.submenu && (
               <div className="bg-gray-100 pl-4">
                 {item.submenu.map((subItem) => (
-                  <button 
+                  <div 
                     key={subItem.id}
-                    className="w-full flex items-center p-2 hover:bg-blue-50 cursor-pointer border-b border-gray-200 text-left"
+                    className="flex items-center p-2 hover:bg-blue-50 cursor-pointer border-b border-gray-200"
                     onClick={() => {
                       if (subItem.onClick) {
                         subItem.onClick();
@@ -222,7 +221,7 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
                   >
                     <span className="text-gray-600 mr-2">{subItem.icon}</span>
                     <span className="text-sm">{subItem.label}</span>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}
