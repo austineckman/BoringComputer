@@ -18,10 +18,10 @@ interface Lootbox {
   rewards: Reward[];
   source: string;
   sourceId: string | null;
-  image: string;
-  description: string;
-  name: string;
-  rarity: string;
+  image: string | null;
+  description: string | null;
+  name: string | null;
+  rarity: string | null;
 }
 
 interface Reward {
@@ -144,9 +144,24 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
   };
 
   // Render rarity badge with appropriate colors
-  const renderRarityBadge = (rarity: string) => {
+  const renderRarityBadge = (rarity: string | null) => {
     let bgColor = '';
     let textColor = '';
+    let displayRarity = 'Common'; // Default value
+    
+    // Handle null or undefined rarity
+    if (!rarity) {
+      bgColor = 'bg-gray-600/70';
+      textColor = 'text-gray-200';
+      
+      return (
+        <span className={`text-xs px-2 py-1 rounded-full ${bgColor} ${textColor}`}>
+          {displayRarity}
+        </span>
+      );
+    }
+    
+    displayRarity = rarity; // Use the actual rarity if it exists
     
     switch (rarity.toLowerCase()) {
       case 'common':
@@ -176,7 +191,7 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
     
     return (
       <span className={`text-xs px-2 py-1 rounded-full ${bgColor} ${textColor}`}>
-        {rarity}
+        {displayRarity}
       </span>
     );
   };
