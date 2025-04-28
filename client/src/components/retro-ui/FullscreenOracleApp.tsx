@@ -2235,7 +2235,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           <img 
             src={theOracleLogo} 
             alt="The Oracle" 
-            className="h-12 object-contain" 
+            className="h-[67px] object-contain" 
             style={{ imageRendering: 'pixelated' }}
           />
           <span className="text-xs bg-red-600/80 text-white px-2 py-0.5 rounded-full ml-3">Admin Only</span>
