@@ -63,8 +63,61 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
         }
       ]
     },
-    // Tools (terminal, browser, jukebox) removed as they're now available in Oracle
-    // Inventory & Crafting section removed as it's now available in Oracle
+    {
+      id: "terminal",
+      label: "Command Prompt",
+      icon: <Terminal size={16} />,
+      onClick: () => {
+        // We'll handle this in RetroDesktop
+        const event = new CustomEvent('openTerminal');
+        window.dispatchEvent(event);
+      }
+    },
+    {
+      id: "browser",
+      label: "Web Browser",
+      icon: <Globe size={16} />,
+      onClick: () => {
+        // Send event to open browser
+        const event = new CustomEvent('openBrowser');
+        window.dispatchEvent(event);
+      }
+    },
+    {
+      id: "jukebox",
+      label: "Music Player",
+      icon: <Music size={16} />,
+      onClick: () => {
+        // Send event to open jukebox
+        const event = new CustomEvent('openJukebox');
+        window.dispatchEvent(event);
+      }
+    },
+    {
+      id: "inventory",
+      label: "Inventory & Crafting",
+      icon: <ShoppingBag size={16} />,
+      submenu: [
+        {
+          id: "inventory",
+          label: "View Inventory",
+          icon: <ShoppingBag size={16} />,
+          path: "/inventory"
+        },
+        {
+          id: "loot-crates",
+          label: "Loot Crates",
+          icon: <ShoppingBag size={16} />,
+          path: "/lootboxes"
+        },
+        {
+          id: "crafting",
+          label: "Crafting Table",
+          icon: <Wrench size={16} />,
+          path: "/crafting"
+        }
+      ]
+    },
     {
       id: "admin",
       label: "Admin Tools",
