@@ -33,10 +33,18 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
   const [selectedAdventureLine, setSelectedAdventureLine] = useState<string | null>(null);
   const [filteredQuests, setFilteredQuests] = useState<Quest[]>([]);
   
-  // Filter quests based on selected kit, search query, and adventure line
+  // Initialize filtered quests when allQuests changes
   useEffect(() => {
-    // Only run this effect if allQuests is actually populated to avoid infinite loops
-    if (!allQuests?.length) {
+    if (!allQuests) {
+      setFilteredQuests([]);
+      return;
+    }
+    setFilteredQuests(allQuests);
+  }, [allQuests]);
+  
+  // Apply filters separately to avoid dependency loop
+  useEffect(() => {
+    if (!allQuests || !allQuests.length) {
       return;
     }
     
@@ -44,19 +52,14 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
     
     // Filter by selected kit
     if (selectedKit) {
-      console.log('Filtering by kit ID:', selectedKit);
-      
       filtered = filtered.filter(quest => {
         // First check if the quest directly belongs to this kit
         if (quest.kitId === selectedKit) {
-          console.log(`Quest "${quest.title}" matches kit ${selectedKit} by direct kitId`);
           return true;
         }
         
-        // Debug info about component requirements
-        const components = quest.componentRequirements || [];
-        
         // Check if any component from this kit is required for the quest
+        const components = quest.componentRequirements || [];
         if (components.length > 0) {
           for (const comp of components) {
             if (comp && comp.kitId === selectedKit) {
@@ -85,7 +88,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
     }
     
     setFilteredQuests(filtered);
-  }, [allQuests, selectedKit, searchQuery, selectedAdventureLine]);
+  }, [selectedKit, searchQuery, selectedAdventureLine, allQuests]);
 
   const handleKitSelect = (kitId: string) => {
     // Play sound effect if available
