@@ -1,23 +1,13 @@
 import React from 'react';
+import { cn } from '@/lib/utils';
 
 interface RetroDividerProps {
   className?: string;
-  orientation?: 'horizontal' | 'vertical';
 }
 
-const RetroDivider: React.FC<RetroDividerProps> = ({ 
-  className = '',
-  orientation = 'horizontal' 
-}) => {
-  const baseClasses = orientation === 'horizontal' 
-    ? 'h-[2px] w-full my-2' 
-    : 'w-[2px] h-full mx-2';
-  
+const RetroDivider: React.FC<RetroDividerProps> = ({ className }) => {
   return (
-    <div className={`flex ${baseClasses} ${className}`}>
-      <div className="flex-1 bg-[#808080]"></div>
-      <div className="flex-1 bg-[#ffffff]"></div>
-    </div>
+    <div className={cn('h-[2px] w-full border-t border-b', 'border-t-[#808080] border-b-[#ffffff]', className)} />
   );
 };
 

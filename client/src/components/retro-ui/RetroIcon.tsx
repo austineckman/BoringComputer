@@ -1,21 +1,14 @@
 import React, { ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 
 interface RetroIconProps {
   icon: ReactNode;
   className?: string;
-  onClick?: () => void;
 }
 
-const RetroIcon: React.FC<RetroIconProps> = ({ 
-  icon, 
-  className = '',
-  onClick
-}) => {
+const RetroIcon: React.FC<RetroIconProps> = ({ icon, className }) => {
   return (
-    <div 
-      className={`inline-flex items-center justify-center ${className} ${onClick ? 'cursor-pointer' : ''}`}
-      onClick={onClick}
-    >
+    <div className={cn('flex items-center justify-center', className)}>
       {icon}
     </div>
   );

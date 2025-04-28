@@ -2,6 +2,9 @@ import { Router } from 'express';
 import { authenticate } from '../auth';
 import { storage } from '../storage';
 import { openLootBox, LootBoxType } from '../lootBoxSystem';
+import { db } from '../db';
+import { lootBoxes as lootBoxesTable } from '../../shared/schema';
+import { eq } from 'drizzle-orm';
 
 const router = Router();
 
@@ -63,7 +66,7 @@ router.post('/:id/open', authenticate, async (req, res) => {
 });
 
 // Test endpoint to generate lootboxes for development
-// Clear all user lootboxes by marking them as opened - for testing
+// Delete all user lootboxes - for testing purposes only
 router.post('/clear-all', authenticate, async (req, res) => {
   try {
     const user = (req as any).user;
@@ -73,21 +76,24 @@ router.post('/clear-all', authenticate, async (req, res) => {
     
     // Get all user's lootboxes
     const lootBoxes = await storage.getLootBoxes(user.id);
-    const updatedCount = lootBoxes.length;
+    if (lootBoxes.length === 0) {
+      return res.json({
+        success: true,
+        message: "No lootboxes to clear",
+        count: 0
+      });
+    }
     
-    // Update lootboxes in a single database call if possible
-    const promises = lootBoxes.map(box => 
-      storage.updateLootBox(box.id, { 
-        opened: true
-      })
-    );
-    
-    await Promise.all(promises);
+    // Delete lootboxes directly from the database
+    const deletedCount = await db.delete(lootBoxesTable)
+      .where(eq(lootBoxesTable.userId, user.id))
+      .returning()
+      .then(result => result.length);
     
     return res.json({
       success: true,
-      message: `Marked ${updatedCount} lootboxes as opened`,
-      count: updatedCount
+      message: `Deleted ${deletedCount} lootboxes`,
+      count: deletedCount
     });
   } catch (error) {
     console.error('Error clearing lootboxes:', error);
