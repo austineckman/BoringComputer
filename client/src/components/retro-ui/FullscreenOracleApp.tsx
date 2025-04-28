@@ -2235,38 +2235,38 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           <img 
             src={theOracleLogo} 
             alt="The Oracle" 
-            className="h-24 object-contain" 
+            className="h-12 object-contain" 
             style={{ imageRendering: 'pixelated' }}
           />
-          <span className="text-lg bg-red-600/80 text-white px-3 py-1 rounded-full ml-3">Admin Only</span>
+          <span className="text-xs bg-red-600/80 text-white px-2 py-0.5 rounded-full ml-3">Admin Only</span>
           
           {/* Admin Action Buttons */}
           <div className="flex items-center ml-6 space-x-2">
             <button
-              className="px-4 py-2 text-sm bg-brand-orange/90 hover:bg-brand-orange text-white rounded flex items-center"
+              className="px-3 py-1 text-xs bg-brand-orange/90 hover:bg-brand-orange text-white rounded flex items-center"
               onClick={handleGenerateTestLootboxes}
               onMouseEnter={() => window.sounds?.hover()}
               title="Generate test lootboxes of each type for your inventory"
             >
-              <Package className="h-4 w-4 mr-2" />
+              <Package className="h-3 w-3 mr-1" />
               Generate Test Lootboxes
             </button>
             <button
-              className="px-4 py-2 text-sm bg-blue-600/90 hover:bg-blue-600 text-white rounded flex items-center"
+              className="px-3 py-1 text-xs bg-blue-600/90 hover:bg-blue-600 text-white rounded flex items-center"
               onClick={handleResetInventory}
               onMouseEnter={() => window.sounds?.hover()}
               title="Reset inventory to have exactly 1 of each item"
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
+              <RefreshCw className="h-3 w-3 mr-1" />
               Reset Inventory
             </button>
             <button
-              className="px-4 py-2 text-sm bg-red-600/90 hover:bg-red-600 text-white rounded flex items-center"
+              className="px-3 py-1 text-xs bg-red-600/90 hover:bg-red-600 text-white rounded flex items-center"
               onClick={handleClearLootboxes}
               onMouseEnter={() => window.sounds?.hover()}
               title="Clear all lootboxes from your inventory"
             >
-              <Trash2 className="h-4 w-4 mr-2" />
+              <Trash2 className="h-3 w-3 mr-1" />
               Clear Lootboxes
             </button>
           </div>
