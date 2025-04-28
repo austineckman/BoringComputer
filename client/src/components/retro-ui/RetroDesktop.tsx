@@ -330,7 +330,7 @@ const RetroDesktop: React.FC = () => {
         window.sounds.click();
       }
       
-      // Open the PickLock app if it's currently closed
+      // Open the HackLock app if it's currently closed
       if (lockpickingAppState === 'closed') {
         setLockpickingAppState('open');
       }
@@ -610,7 +610,7 @@ const RetroDesktop: React.FC = () => {
               {icon.icon === "picklock" ? (
                 <img 
                   src={picklockImage} 
-                  alt="PickLock" 
+                  alt="HackLock" 
                   className="w-10 h-10 object-contain" 
                   style={{ imageRendering: 'pixelated' }}
                 />
@@ -704,7 +704,7 @@ const RetroDesktop: React.FC = () => {
                 ) : window.icon === "picklock" ? (
                   <img 
                     src={picklockImage} 
-                    alt="PickLock" 
+                    alt="HackLock" 
                     className="mr-2 w-6 h-6 object-contain" 
                     style={{ imageRendering: 'pixelated' }}
                   />
@@ -914,7 +914,7 @@ const RetroDesktop: React.FC = () => {
                 ) : window.icon === "picklock" ? (
                   <img 
                     src={picklockImage} 
-                    alt="PickLock" 
+                    alt="HackLock" 
                     className="mr-2 w-4 h-4 object-contain" 
                     style={{ imageRendering: 'pixelated' }}
                   />
