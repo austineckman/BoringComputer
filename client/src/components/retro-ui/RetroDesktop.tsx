@@ -85,11 +85,11 @@ const RetroDesktop: React.FC = () => {
     // First column (recyclebin at top left)
     { id: "recyclebin", name: "Recycle Bin", icon: "trashIcon", position: { x: 20, y: 20 } },
     { id: "quests", name: "Quests", icon: "questgrimoire", path: "/quests", position: { x: 20, y: 120 } },
-    { id: "inventory", name: "loot.exe", icon: "ironbag", path: "/inventory", position: { x: 20, y: 220 } },
+    { id: "inventory", name: "Inventory.exe", icon: "ironbag", path: "/inventory", position: { x: 20, y: 220 } },
     { id: "crafting", name: "crafting.exe", icon: "craftingarmor", path: "/crafting", position: { x: 20, y: 320 } },
     
     // Second column (after 4 icons in first column)
-    { id: "lootboxes", name: "PickLock.exe", icon: "picklock", path: "/lootboxes", position: { x: 140, y: 20 } },
+    { id: "lootboxes", name: "HackLock.exe", icon: "picklock", path: "/lootboxes", position: { x: 140, y: 20 } },
     { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 140, y: 120 } },
     { id: "circuitbuilder", name: "Circuit Builder", icon: "🔌", position: { x: 140, y: 220 } },
     
@@ -408,7 +408,7 @@ const RetroDesktop: React.FC = () => {
   const openInventoryWindow = () => {
     openWindow(
       "inventory", 
-      "loot.exe", 
+      "Inventory.exe", 
       <InventoryWindow openItemDetails={openItemDetailsWindow} />, 
       "ironbag",
       { width: 845, height: 676 } // Increased by 30% from 650x520

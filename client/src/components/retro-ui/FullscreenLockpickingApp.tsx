@@ -291,7 +291,7 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
         <div className="flex items-center">
           <img 
             src={picklockIconImage} 
-            alt="PickLock" 
+            alt="HackLock" 
             className="w-8 h-8 mr-3" 
             style={{ imageRendering: 'pixelated' }}
           />
