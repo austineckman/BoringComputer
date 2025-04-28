@@ -124,67 +124,24 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
     fetchItemsInfo();
   }, []);
 
-  // Fetch lootbox configurations
+  // Fetch lootbox configurations from the API
   useEffect(() => {
     const fetchLootboxConfigs = async () => {
       try {
-        // In a real app, we would have an endpoint to fetch these directly
-        // Since we don't have direct access to that endpoint without auth, we'll use the lootbox system data
-        const lootboxConfigData: Record<string, LootBoxConfig> = {
-          "common": {
-            id: "common",
-            name: "Common Lootbox",
-            description: "A basic lootbox with common items",
-            rarity: "common",
-            itemDropTable: [
-              { itemId: "copper", weight: 50, minQuantity: 1, maxQuantity: 2 },
-              { itemId: "cloth", weight: 30, minQuantity: 1, maxQuantity: 2 },
-              { itemId: "techscrap", weight: 20, minQuantity: 1, maxQuantity: 1 }
-            ],
-            minRewards: 1,
-            maxRewards: 2,
-            image: "/images/loot-crate.png",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          "Oozing-Crate": {
-            id: "Oozing-Crate",
-            name: "Oozing Crate",
-            description: "A mysterious crate with oozing potential",
-            rarity: "rare",
-            itemDropTable: [
-              { itemId: "copper", weight: 30, minQuantity: 1, maxQuantity: 3 },
-              { itemId: "cloth", weight: 20, minQuantity: 1, maxQuantity: 2 },
-              { itemId: "crystal", weight: 30, minQuantity: 1, maxQuantity: 1 },
-              { itemId: "techscrap", weight: 20, minQuantity: 1, maxQuantity: 2 }
-            ],
-            minRewards: 2,
-            maxRewards: 3,
-            image: "/images/loot-crate.png",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          "basic": {
-            id: "basic",
-            name: "Basic Lootbox",
-            description: "A simple lootbox with basic items",
-            rarity: "common",
-            itemDropTable: [
-              { itemId: "copper", weight: 60, minQuantity: 1, maxQuantity: 2 },
-              { itemId: "cloth", weight: 40, minQuantity: 1, maxQuantity: 1 }
-            ],
-            minRewards: 1,
-            maxRewards: 2,
-            image: "/images/loot-crate.png",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
-        };
+        // Use the same endpoint that the Oracle app uses to get real lootbox configurations
+        const response = await axios.get('/api/admin/lootboxes');
+        
+        // Convert the array to a record object with ID as key for easy lookup
+        const lootboxConfigData = response.data.reduce((acc: Record<string, LootBoxConfig>, config: LootBoxConfig) => {
+          acc[config.id] = config;
+          return acc;
+        }, {});
         
         console.log("Loaded lootbox configurations:", lootboxConfigData);
         setLootboxConfigs(lootboxConfigData);
       } catch (err) {
         console.error('Error loading lootbox configurations:', err);
+        setError('Failed to load lootbox configurations. Please try again later.');
       }
     };
 
