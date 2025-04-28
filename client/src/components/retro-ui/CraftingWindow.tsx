@@ -232,6 +232,9 @@ const CraftingWindow: React.FC = () => {
     )
   );
   
+  // Track items placed in grid to manage inventory
+  const [usedItems, setUsedItems] = useState<Record<string, number>>({});
+  
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [craftMessage, setCraftMessage] = useState<{text: string, type: 'success' | 'error' | 'info'} | null>(null);
   const [difficultyFilter, setDifficultyFilter] = useState<string | null>(null);
@@ -355,6 +358,9 @@ const CraftingWindow: React.FC = () => {
         type: "success"
       });
       
+      // Clear used items tracking
+      setUsedItems({});
+      
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       
@@ -377,33 +383,73 @@ const CraftingWindow: React.FC = () => {
     return allItems.find(item => item.id === itemId);
   };
 
-  // Helper function to get inventory quantity for an item
+  // Helper function to get inventory quantity for an item, accounting for items already used in the grid
   const getInventoryQuantity = (itemId: string) => {
     if (!inventoryItems || !Array.isArray(inventoryItems)) return 0;
     const item = inventoryItems.find((item: any) => item.type === itemId);
-    return item ? item.quantity : 0;
+    const baseQuantity = item ? item.quantity : 0;
+    
+    // Subtract any items that are already used in the crafting grid
+    const usedQuantity = usedItems[itemId] || 0;
+    
+    return Math.max(0, baseQuantity - usedQuantity);
   };
 
+  // Helper to update used items tracking
+  const trackUsedItem = (itemId: string | null, add: boolean) => {
+    if (!itemId) return; // Skip null items
+    
+    setUsedItems(prev => {
+      const newUsed = { ...prev };
+      if (add) {
+        // Add item to used items
+        newUsed[itemId] = (newUsed[itemId] || 0) + 1;
+      } else {
+        // Remove item from used items
+        newUsed[itemId] = Math.max(0, (newUsed[itemId] || 0) - 1);
+        if (newUsed[itemId] === 0) {
+          delete newUsed[itemId]; // Clean up zero entries
+        }
+      }
+      return newUsed;
+    });
+  };
+  
   // Handle drop on crafting grid
   const handleItemDrop = (item: DragItem, row: number, col: number) => {
     // Create a copy of the current grid
     const updatedGrid = [...craftingGrid.map(r => [...r])];
     
-    // If the item is coming from another grid cell, clear that cell
+    // If the item is coming from another grid cell, clear that cell and return item to inventory
     if (item.source === 'grid' && item.position) {
       const [sourceRow, sourceCol] = item.position;
       if (sourceRow !== row || sourceCol !== col) { // Only clear if not the same cell
+        const removedItemId = updatedGrid[sourceRow][sourceCol].itemId;
+        trackUsedItem(removedItemId, false); // Return item to inventory
+        
         updatedGrid[sourceRow][sourceCol] = { itemId: null, quantity: 0 };
       }
+    }
+    
+    // Get the current item in the target cell (if any)
+    const currentItemId = updatedGrid[row][col].itemId;
+    if (currentItemId) {
+      // Return the current item to inventory
+      trackUsedItem(currentItemId, false);
     }
     
     // Add the item to the target cell
     const itemDetails = getItemDetails(item.itemId);
     updatedGrid[row][col] = {
       itemId: item.itemId,
-      quantity: item.source === 'inventory' ? 1 : item.quantity, // From inventory we only take 1
+      quantity: 1, // Grid cells always have quantity 1
       itemDetails
     };
+    
+    // If from inventory, track as used
+    if (item.source === 'inventory') {
+      trackUsedItem(item.itemId, true);
+    }
     
     // Update the grid
     setCraftingGrid(updatedGrid);
@@ -451,12 +497,46 @@ const CraftingWindow: React.FC = () => {
   // Handle removing items from the grid
   const handleRemoveItem = (row: number, col: number) => {
     const updatedGrid = [...craftingGrid.map(r => [...r])];
+    const removedItemId = updatedGrid[row][col].itemId;
+    
+    // Return the item to inventory
+    trackUsedItem(removedItemId, false);
+    
+    // Clear the cell
     updatedGrid[row][col] = { itemId: null, quantity: 0 };
     setCraftingGrid(updatedGrid);
   };
+  
+  // Clear the entire crafting grid
+  const handleClearGrid = () => {
+    // Return all items to inventory
+    craftingGrid.forEach(row => {
+      row.forEach(cell => {
+        if (cell.itemId) {
+          trackUsedItem(cell.itemId, false);
+        }
+      });
+    });
+    
+    // Reset the grid
+    setCraftingGrid(Array(3).fill(null).map(() => 
+      Array(3).fill(null).map(() => ({ itemId: null, quantity: 0 }))
+    ));
+    
+    setSelectedRecipeId(null);
+  };
 
   const handleRecipeClick = (recipe: Recipe) => {
-    // Clear the grid first
+    // First, return all items currently in the grid to inventory
+    craftingGrid.forEach(row => {
+      row.forEach(cell => {
+        if (cell.itemId) {
+          trackUsedItem(cell.itemId, false);
+        }
+      });
+    });
+    
+    // Clear the grid
     const newGrid = Array(3).fill(null).map(() => 
       Array(3).fill(null).map(() => ({ itemId: null, quantity: 0 }))
     );
@@ -473,6 +553,9 @@ const CraftingWindow: React.FC = () => {
         quantity: 1, // Always 1 for grid positions
         itemDetails
       };
+      
+      // Mark item as used in inventory
+      trackUsedItem(input.itemId, true);
     });
     
     // Update the grid and selected recipe
@@ -817,22 +900,37 @@ const CraftingWindow: React.FC = () => {
                         </div>
                       </div>
                       
-                      <button 
-                        className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 
-                                 text-white rounded-md border border-amber-800 shadow-md transition-colors
-                                 flex items-center justify-center gap-2 min-w-32"
-                        onClick={handleCraftClick}
-                        disabled={craftMutation.isPending}
-                      >
-                        {craftMutation.isPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <>
-                            <Hammer className="h-4 w-4" />
-                            <span>Forge Item</span>
-                          </>
-                        )}
-                      </button>
+                      <div className="flex gap-2">
+                        {/* Clear Crafting Table Button */}
+                        <button 
+                          className="px-3 py-2 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 
+                                   text-white rounded-md border border-gray-700 shadow-md transition-colors
+                                   flex items-center justify-center gap-1"
+                          onClick={handleClearGrid}
+                          disabled={!craftingGrid.some(row => row.some(cell => cell.itemId !== null))}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span>Clear</span>
+                        </button>
+                        
+                        {/* Forge Button */}
+                        <button 
+                          className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 
+                                   text-white rounded-md border border-amber-800 shadow-md transition-colors
+                                   flex items-center justify-center gap-2 min-w-32"
+                          onClick={handleCraftClick}
+                          disabled={craftMutation.isPending}
+                        >
+                          {craftMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Hammer className="h-4 w-4" />
+                              <span>Forge Item</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                       
                       {/* Crafting Messages */}
                       {craftMessage && (
