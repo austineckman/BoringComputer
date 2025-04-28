@@ -653,59 +653,34 @@ const CraftingWindow: React.FC = () => {
                             <div className="text-xs text-gray-400 mb-1">Requires:</div>
                             <div className="flex flex-wrap gap-2">
                               {(() => {
-                                // Special case for Gizbo's Glasses recipe to show the correct totals
-                                if (recipe.name === "Gizbo's Glasses") {
-                                  const fixedRequirements = [
-                                    { itemId: 'copper', totalQuantity: 6, item: getItemDetails('copper') },
-                                    { itemId: 'elementium-bar', totalQuantity: 4, item: getItemDetails('elementium-bar') },
-                                    { itemId: 'dark-elementium', totalQuantity: 1, item: getItemDetails('dark-elementium') }
-                                  ];
-                                  
-                                  return fixedRequirements.map((requirement, idx) => {
-                                    const hasEnough = getInventoryQuantity(requirement.itemId) >= requirement.totalQuantity;
-                                    
-                                    return (
-                                      <div 
-                                        key={idx}
-                                        className={`flex items-center bg-black/40 px-1.5 py-0.5 rounded ${
-                                          hasEnough ? 'text-white' : 'text-red-400'
-                                        }`}
-                                      >
-                                        {requirement.item?.imagePath && (
-                                          <img 
-                                            src={requirement.item.imagePath} 
-                                            alt={requirement.item.name} 
-                                            className="w-4 h-4 mr-1 object-contain"
-                                            style={{ imageRendering: 'pixelated' }}
-                                          />
-                                        )}
-                                        <span className="text-xs">
-                                          {requirement.totalQuantity}x {requirement.item?.name || requirement.itemId}
-                                        </span>
-                                      </div>
-                                    );
-                                  });
+                                // For each recipe, the server already provides the total quantities needed
+                                // in the requiredItems field. We can use that directly.
+                                
+                                // Most efficient approach: just use the requiredItems directly from the server recipe
+                                // First, we need to find the original server recipe data
+                                const serverRecipe = serverRecipes?.find(
+                                  (sr: any) => sr.id.toString() === recipe.id
+                                );
+                                
+                                if (!serverRecipe) {
+                                  console.error("Could not find server recipe for:", recipe.id);
+                                  return null;
                                 }
                                 
-                                // For other recipes, process normally
-                                const requiredItems: Record<string, { 
-                                  itemId: string, 
-                                  totalQuantity: number,
-                                  item: any 
-                                }> = {};
-                                
-                                recipe.inputs.forEach(input => {
-                                  if (!requiredItems[input.itemId]) {
-                                    requiredItems[input.itemId] = {
-                                      itemId: input.itemId,
-                                      totalQuantity: 0,
-                                      item: getItemDetails(input.itemId)
+                                // Create a new array for displaying the requirements
+                                // with proper typing that TS will understand
+                                const displayItems = Object.entries(serverRecipe.requiredItems).map(
+                                  ([itemId, quantity]: [string, number]) => {
+                                    return {
+                                      itemId,
+                                      totalQuantity: quantity,
+                                      item: getItemDetails(itemId)
                                     };
                                   }
-                                  requiredItems[input.itemId].totalQuantity += input.quantity;
-                                });
+                                );
                                 
-                                return Object.values(requiredItems).map((requirement, idx) => {
+                                // Display the consolidated requirements
+                                return displayItems.map((requirement, idx) => {
                                   const hasEnough = getInventoryQuantity(requirement.itemId) >= requirement.totalQuantity;
                                   
                                   return (
