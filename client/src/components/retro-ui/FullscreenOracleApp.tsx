@@ -2358,20 +2358,49 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 </div>
                 
                 <div className="flex items-center mb-2">
-                  <div className="w-16 h-16 mr-3 bg-gray-800 rounded-md flex items-center justify-center overflow-hidden">
-                    {recipe.image ? (
-                      <img 
-                        src={recipe.image} 
-                        alt={recipe.name}
-                        className="w-full h-full object-contain"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
-                          (e.target as HTMLImageElement).className = 'w-8 h-8 opacity-30';
-                        }}
-                      />
-                    ) : (
-                      <ClipboardList className="w-8 h-8 text-gray-600" />
-                    )}
+                  <div className={`w-16 h-16 mr-3 bg-gray-800 rounded-md flex items-center justify-center overflow-hidden border-2 ${
+                    recipe.resultItem && items.find(i => i.id === recipe.resultItem)?.rarity ? 
+                      rarityColorClass(items.find(i => i.id === recipe.resultItem)?.rarity || 'common').replace('text-', 'border-') : 
+                      'border-gray-700'
+                  }`}>
+                    {/* Try to display the resulting item image first */}
+                    {(() => {
+                      const resultItem = items.find(i => i.id === recipe.resultItem);
+                      if (resultItem?.imagePath) {
+                        return (
+                          <img 
+                            src={resultItem.imagePath}
+                            alt={resultItem.name}
+                            className="w-full h-full object-contain p-1"
+                            style={{imageRendering: 'pixelated'}}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                              (e.target as HTMLImageElement).className = 'w-8 h-8 opacity-30';
+                            }}
+                          />
+                        );
+                      }
+                      
+                      // Fall back to recipe image if result item image isn't available
+                      else if (recipe.image) {
+                        return (
+                          <img 
+                            src={recipe.image} 
+                            alt={recipe.name}
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                              (e.target as HTMLImageElement).className = 'w-8 h-8 opacity-30';
+                            }}
+                          />
+                        );
+                      }
+                      
+                      // Fall back to placeholder if no images are available
+                      return (
+                        <ClipboardList className="w-8 h-8 text-gray-600" />
+                      );
+                    })()}
                   </div>
                   <div>
                     <div className="flex items-center mb-1">
@@ -2383,7 +2412,20 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                       </span>
                     </div>
                     <div className="text-sm text-white">
-                      <span className="font-medium">Result:</span> {recipe.resultQuantity}x {recipe.resultItem}
+                      <span className="font-medium">Result:</span> {recipe.resultQuantity}x {(() => {
+                        const resultItem = items.find(i => i.id === recipe.resultItem);
+                        return resultItem?.name || recipe.resultItem;
+                      })()}
+                      <span className={`ml-2 text-xs ${
+                        recipe.resultItem && items.find(i => i.id === recipe.resultItem)?.rarity ? 
+                          rarityColorClass(items.find(i => i.id === recipe.resultItem)?.rarity || 'common') : 
+                          'text-gray-400'
+                      }`}>
+                        {(() => {
+                          const resultItem = items.find(i => i.id === recipe.resultItem);
+                          return resultItem?.rarity ? `(${resultItem.rarity})` : '';
+                        })()}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -4636,20 +4678,45 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                         <div className={`w-24 h-24 ${
                           rarityColorClass((items.find(i => i.id === (editingItem as Recipe).resultItem)?.rarity || 'common')).replace('text-', 'border-')
                         } bg-black/50 border-2 rounded-lg flex items-center justify-center overflow-hidden mr-4`}>
-                          {(editingItem as Recipe).image ? (
-                            <img
-                              src={(editingItem as Recipe).image}
-                              alt={(editingItem as Recipe).name}
-                              className="w-full h-full object-contain p-1"
-                              style={{imageRendering: 'pixelated'}}
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
-                                (e.target as HTMLImageElement).className = 'w-10 h-10 opacity-30';
-                              }}
-                            />
-                          ) : (
-                            <ClipboardList className="w-10 h-10 text-gray-700" />
-                          )}
+                          {(() => {
+                            // First try to use the result item's image
+                            const resultItem = items.find(i => i.id === (editingItem as Recipe).resultItem);
+                            if (resultItem?.imagePath) {
+                              return (
+                                <img
+                                  src={resultItem.imagePath}
+                                  alt={resultItem.name}
+                                  className="w-full h-full object-contain p-1"
+                                  style={{imageRendering: 'pixelated'}}
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                                    (e.target as HTMLImageElement).className = 'w-10 h-10 opacity-30';
+                                  }}
+                                />
+                              );
+                            }
+                            
+                            // Fall back to recipe image
+                            else if ((editingItem as Recipe).image) {
+                              return (
+                                <img
+                                  src={(editingItem as Recipe).image}
+                                  alt={(editingItem as Recipe).name}
+                                  className="w-full h-full object-contain p-1"
+                                  style={{imageRendering: 'pixelated'}}
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                                    (e.target as HTMLImageElement).className = 'w-10 h-10 opacity-30';
+                                  }}
+                                />
+                              );
+                            }
+                            
+                            // Default placeholder
+                            return (
+                              <ClipboardList className="w-10 h-10 text-gray-700" />
+                            );
+                          })()}
                         </div>
                         
                         {/* Recipe details */}
