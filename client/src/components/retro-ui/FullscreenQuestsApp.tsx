@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, FilterX, Filter, ChevronRight, Clock, Award, Cpu, Loader2 } from 'lucide-react';
+import { X, Search, FilterX, Filter, ChevronRight, Clock, Award, Cpu, Loader2, AlertCircle } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useComponentKits } from '../../hooks/useComponentKits';
 import { useQuests, type Quest } from '../../hooks/useQuests';
@@ -26,7 +26,7 @@ interface FullscreenQuestsAppProps {
 const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) => {
   const [, navigate] = useLocation();
   const { kits, loading: loadingKits } = useComponentKits();
-  const { questsByAdventureLine, allQuests, loading: loadingQuests } = useQuests();
+  const { questsByAdventureLine, allQuests, loading: loadingQuests, error: questsError } = useQuests();
   
   const [selectedKit, setSelectedKit] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,7 +35,12 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
   
   // Filter quests based on selected kit, search query, and adventure line
   useEffect(() => {
-    let filtered = allQuests ? [...allQuests] : [];
+    // Only run this effect if allQuests is actually populated to avoid infinite loops
+    if (!allQuests?.length) {
+      return;
+    }
+    
+    let filtered = [...allQuests];
     
     // Filter by selected kit
     if (selectedKit) {
@@ -50,13 +55,11 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
         
         // Debug info about component requirements
         const components = quest.componentRequirements || [];
-        console.log(`Quest "${quest.title}" has ${components.length} component requirements`);
         
         // Check if any component from this kit is required for the quest
         if (components.length > 0) {
           for (const comp of components) {
             if (comp && comp.kitId === selectedKit) {
-              console.log(`Quest "${quest.title}" requires component ${comp.name} from kit ${selectedKit}`);
               return true;
             }
           }
@@ -64,8 +67,6 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
         
         return false;
       });
-      
-      console.log(`After filtering by kit ${selectedKit}, ${filtered.length} quests remain`);
     }
     
     // Filter by search query
@@ -490,6 +491,23 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
             <div className="flex flex-col items-center justify-center h-full">
               <Loader2 className="h-10 w-10 animate-spin text-brand-orange mb-3" />
               <p className="text-brand-orange">Loading quests...</p>
+            </div>
+          ) : questsError ? (
+            <div className="flex flex-col items-center justify-center h-full bg-black/20 rounded-lg border border-red-500/50 p-8">
+              <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
+              <h3 className="text-xl font-bold text-red-400 mb-2">Error Loading Quests</h3>
+              <p className="text-gray-300 text-center mb-6">
+                Unable to load quests from the server. Please make sure you're logged in and try again.
+              </p>
+              <div className="text-sm text-gray-400 bg-black/50 p-3 rounded mb-4 max-w-md overflow-auto">
+                {questsError instanceof Error ? questsError.message : "Unknown error"}
+              </div>
+              <button 
+                className="px-4 py-2 bg-brand-orange hover:bg-brand-orange/80 text-white rounded-md"
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </button>
             </div>
           ) : (
             renderQuestsByAdventureLine()
