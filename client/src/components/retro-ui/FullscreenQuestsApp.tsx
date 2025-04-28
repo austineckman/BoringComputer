@@ -8,9 +8,10 @@ import { useLocation } from 'wouter';
 import { useComponentKits } from '../../hooks/useComponentKits';
 import { useQuests, type Quest } from '../../hooks/useQuests';
 import { useItems } from '../../hooks/useItems';
+import { useLootBoxConfigs, getLootBoxConfigById } from '../../hooks/useLootBoxConfigs';
 import questImage from '@assets/01_Fire_Grimoire.png';
 import wallbg from '@assets/wallbg.png';
-import lootCrateImage from '@assets/loot crate.png';
+import lootCrateImage from '@assets/loot crate.png'; // Fallback image
 
 // For sounds
 declare global {
@@ -34,6 +35,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
   const { kits, loading: loadingKits } = useComponentKits();
   const { questsByAdventureLine, allQuests, loading: loadingQuests, error: questsError } = useQuests();
   const { items, loading: loadingItems } = useItems();
+  const { lootBoxConfigs, lootBoxConfigsMap, isLoading: loadingLootBoxConfigs } = useLootBoxConfigs();
   
   const [selectedKit, setSelectedKit] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -290,20 +292,36 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                 {quest.rewards.map((reward, idx) => {
                   // Try to find the item in the items list to get its image
                   const item = items?.find(i => i.id === reward.id);
+                  
+                  // Check if this is a lootbox type reward (type = 'lootbox')
+                  const isLootbox = reward.type === 'lootbox';
+                  // Get lootbox config if available
+                  const lootboxConfig = isLootbox ? getLootBoxConfigById(lootBoxConfigsMap, reward.id) : null;
+                  
                   return (
                     <div
                       key={`${reward.id}-${idx}`}
                       className="flex items-center px-2 py-1 bg-gray-800/80 rounded-md"
-                      title={`${reward.quantity}x ${reward.id}`}
+                      title={`${reward.quantity}x ${lootboxConfig?.name || reward.id}`}
                     >
                       {item?.imagePath ? (
+                        // Use item image from item database
                         <img 
                           src={item.imagePath} 
                           alt={reward.id} 
                           className="w-5 h-5 mr-1"
-                          style={{ objectFit: 'contain' }}
+                          style={{ objectFit: 'contain', imageRendering: 'pixelated' }}
+                        />
+                      ) : isLootbox && lootboxConfig?.image ? (
+                        // Use lootbox config image for lootbox rewards
+                        <img 
+                          src={lootboxConfig.image} 
+                          alt={lootboxConfig.name} 
+                          className="w-5 h-5 mr-1 object-contain"
+                          style={{ imageRendering: 'pixelated' }}
                         />
                       ) : (
+                        // Fallback to default loot crate image
                         <img 
                           src={lootCrateImage} 
                           alt="Loot Crate" 
@@ -423,6 +441,12 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
               {selectedQuest.rewards.map((reward, idx) => {
                 // Find item details
                 const item = items?.find(i => i.id === reward.id);
+                
+                // Check if this is a lootbox type reward
+                const isLootbox = reward.type === 'lootbox';
+                // Get lootbox config if available
+                const lootboxConfig = isLootbox ? getLootBoxConfigById(lootBoxConfigsMap, reward.id) : null;
+                
                 return (
                   <div 
                     key={`${reward.id}-${idx}`}
@@ -430,13 +454,23 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                   >
                     <div className="w-16 h-16 mb-3 flex items-center justify-center">
                       {item?.imagePath ? (
+                        // Show item image from database
                         <img 
                           src={item.imagePath} 
                           alt={reward.id}
                           className="max-w-full max-h-full object-contain"
                           style={{ imageRendering: 'pixelated' }}
                         />
+                      ) : isLootbox && lootboxConfig?.image ? (
+                        // Show lootbox image from lootbox config
+                        <img 
+                          src={lootboxConfig.image} 
+                          alt={lootboxConfig.name}
+                          className="max-w-full max-h-full object-contain"
+                          style={{ imageRendering: 'pixelated' }}
+                        />
                       ) : (
+                        // Fallback to default loot crate image
                         <img 
                           src={lootCrateImage} 
                           alt="Loot Crate"
@@ -445,10 +479,14 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                         />
                       )}
                     </div>
-                    <h3 className="text-white font-medium text-center mb-1">{item?.name || reward.id}</h3>
+                    <h3 className="text-white font-medium text-center mb-1">
+                      {item?.name || (lootboxConfig ? lootboxConfig.name : reward.id)}
+                    </h3>
                     <p className="text-brand-orange text-center font-bold">{reward.quantity}x</p>
-                    {item?.description && (
+                    {item?.description ? (
                       <p className="text-gray-400 text-xs text-center mt-2">{item.description}</p>
+                    ) : lootboxConfig?.description && (
+                      <p className="text-gray-400 text-xs text-center mt-2">{lootboxConfig.description}</p>
                     )}
                   </div>
                 );
