@@ -1,7 +1,8 @@
+import { db } from './db';
 import { storage } from './storage';
-import { LootBox, User } from '@shared/schema';
+import { lootBoxConfigs, lootBoxes, items, eq } from '@shared/schema';
+import { getItemDetails } from './itemDatabase';
 
-// Define rarity tiers with chance percentages and quantity ranges
 export interface RarityTier {
   name: string;
   chance: number; // Percentage chance (0-100)
@@ -9,432 +10,11 @@ export interface RarityTier {
   itemWeights: Record<string, number>; // Item weights within this rarity tier
 }
 
-// Define different loot box types
 export type LootBoxType = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'welcome' | 'quest' | 'event';
 
-// Rarity tiers - chances should add up to 100 for each loot box type
-const rarityTiers: Record<LootBoxType, RarityTier[]> = {
-  common: [
-    {
-      name: 'common',
-      chance: 75,
-      quantityRange: [1, 3],
-      itemWeights: {
-        'cloth': 35,
-        'metal': 35,
-        'tech-scrap': 20,
-        'circuit-board': 10,
-        'sensor-crystal': 0,
-        'alchemy-ink': 0
-      }
-    },
-    {
-      name: 'uncommon',
-      chance: 20,
-      quantityRange: [2, 4],
-      itemWeights: {
-        'cloth': 20,
-        'metal': 20,
-        'tech-scrap': 30,
-        'circuit-board': 25,
-        'sensor-crystal': 5,
-        'alchemy-ink': 0
-      }
-    },
-    {
-      name: 'rare',
-      chance: 5,
-      quantityRange: [3, 5],
-      itemWeights: {
-        'cloth': 10,
-        'metal': 10,
-        'tech-scrap': 20,
-        'circuit-board': 40,
-        'sensor-crystal': 15,
-        'alchemy-ink': 5
-      }
-    },
-    {
-      name: 'epic',
-      chance: 0,
-      quantityRange: [0, 0],
-      itemWeights: {}
-    },
-    {
-      name: 'legendary',
-      chance: 0,
-      quantityRange: [0, 0],
-      itemWeights: {}
-    }
-  ],
-  uncommon: [
-    {
-      name: 'common',
-      chance: 55,
-      quantityRange: [2, 4],
-      itemWeights: {
-        'cloth': 25,
-        'metal': 25,
-        'tech-scrap': 30,
-        'circuit-board': 15,
-        'sensor-crystal': 5,
-        'alchemy-ink': 0
-      }
-    },
-    {
-      name: 'uncommon',
-      chance: 35,
-      quantityRange: [3, 5],
-      itemWeights: {
-        'cloth': 15,
-        'metal': 15,
-        'tech-scrap': 25,
-        'circuit-board': 30,
-        'sensor-crystal': 10,
-        'alchemy-ink': 5
-      }
-    },
-    {
-      name: 'rare',
-      chance: 10,
-      quantityRange: [4, 6],
-      itemWeights: {
-        'cloth': 5,
-        'metal': 5,
-        'tech-scrap': 15,
-        'circuit-board': 40,
-        'sensor-crystal': 25,
-        'alchemy-ink': 10
-      }
-    },
-    {
-      name: 'epic',
-      chance: 0,
-      quantityRange: [0, 0],
-      itemWeights: {}
-    },
-    {
-      name: 'legendary',
-      chance: 0,
-      quantityRange: [0, 0],
-      itemWeights: {}
-    }
-  ],
-  rare: [
-    {
-      name: 'common',
-      chance: 30,
-      quantityRange: [3, 5],
-      itemWeights: {
-        'cloth': 20,
-        'metal': 20,
-        'tech-scrap': 30,
-        'circuit-board': 20,
-        'sensor-crystal': 10,
-        'alchemy-ink': 0
-      }
-    },
-    {
-      name: 'uncommon',
-      chance: 45,
-      quantityRange: [4, 6],
-      itemWeights: {
-        'cloth': 10,
-        'metal': 10,
-        'tech-scrap': 25,
-        'circuit-board': 30,
-        'sensor-crystal': 20,
-        'alchemy-ink': 5
-      }
-    },
-    {
-      name: 'rare',
-      chance: 20,
-      quantityRange: [5, 7],
-      itemWeights: {
-        'cloth': 5,
-        'metal': 5,
-        'tech-scrap': 15,
-        'circuit-board': 35,
-        'sensor-crystal': 30,
-        'alchemy-ink': 10
-      }
-    },
-    {
-      name: 'epic',
-      chance: 5,
-      quantityRange: [6, 8],
-      itemWeights: {
-        'cloth': 0,
-        'metal': 0,
-        'tech-scrap': 5,
-        'circuit-board': 20,
-        'sensor-crystal': 45,
-        'alchemy-ink': 30
-      }
-    },
-    {
-      name: 'legendary',
-      chance: 0,
-      quantityRange: [0, 0],
-      itemWeights: {}
-    }
-  ],
-  epic: [
-    {
-      name: 'common',
-      chance: 10,
-      quantityRange: [4, 6],
-      itemWeights: {
-        'cloth': 15,
-        'metal': 15,
-        'tech-scrap': 30,
-        'circuit-board': 25,
-        'sensor-crystal': 10,
-        'alchemy-ink': 5
-      }
-    },
-    {
-      name: 'uncommon',
-      chance: 25,
-      quantityRange: [5, 7],
-      itemWeights: {
-        'cloth': 5,
-        'metal': 5,
-        'tech-scrap': 20,
-        'circuit-board': 35,
-        'sensor-crystal': 25,
-        'alchemy-ink': 10
-      }
-    },
-    {
-      name: 'rare',
-      chance: 40,
-      quantityRange: [6, 8],
-      itemWeights: {
-        'cloth': 0,
-        'metal': 0,
-        'tech-scrap': 10,
-        'circuit-board': 30,
-        'sensor-crystal': 40,
-        'alchemy-ink': 20
-      }
-    },
-    {
-      name: 'epic',
-      chance: 20,
-      quantityRange: [7, 9],
-      itemWeights: {
-        'cloth': 0,
-        'metal': 0,
-        'tech-scrap': 5,
-        'circuit-board': 15,
-        'sensor-crystal': 45,
-        'alchemy-ink': 35
-      }
-    },
-    {
-      name: 'legendary',
-      chance: 5,
-      quantityRange: [8, 10],
-      itemWeights: {
-        'cloth': 0,
-        'metal': 0,
-        'tech-scrap': 0,
-        'circuit-board': 5,
-        'sensor-crystal': 45,
-        'alchemy-ink': 50
-      }
-    }
-  ],
-  legendary: [
-    {
-      name: 'common',
-      chance: 0,
-      quantityRange: [0, 0],
-      itemWeights: {}
-    },
-    {
-      name: 'uncommon',
-      chance: 10,
-      quantityRange: [6, 8],
-      itemWeights: {
-        'cloth': 0,
-        'metal': 0,
-        'tech-scrap': 15,
-        'circuit-board': 40,
-        'sensor-crystal': 30,
-        'alchemy-ink': 15
-      }
-    },
-    {
-      name: 'rare',
-      chance: 30,
-      quantityRange: [7, 9],
-      itemWeights: {
-        'cloth': 0,
-        'metal': 0,
-        'tech-scrap': 5,
-        'circuit-board': 25,
-        'sensor-crystal': 40,
-        'alchemy-ink': 30
-      }
-    },
-    {
-      name: 'epic',
-      chance: 40,
-      quantityRange: [8, 10],
-      itemWeights: {
-        'cloth': 0,
-        'metal': 0,
-        'tech-scrap': 0,
-        'circuit-board': 15,
-        'sensor-crystal': 40,
-        'alchemy-ink': 45
-      }
-    },
-    {
-      name: 'legendary',
-      chance: 20,
-      quantityRange: [10, 15],
-      itemWeights: {
-        'cloth': 0,
-        'metal': 0,
-        'tech-scrap': 0,
-        'circuit-board': 5,
-        'sensor-crystal': 35,
-        'alchemy-ink': 60
-      }
-    }
-  ],
-  welcome: [
-    {
-      name: 'uncommon',
-      chance: 50,
-      quantityRange: [3, 5],
-      itemWeights: {
-        'cloth': 20,
-        'metal': 20,
-        'tech-scrap': 30,
-        'circuit-board': 20,
-        'sensor-crystal': 8,
-        'alchemy-ink': 2
-      }
-    },
-    {
-      name: 'rare',
-      chance: 50,
-      quantityRange: [3, 5],
-      itemWeights: {
-        'cloth': 10,
-        'metal': 10,
-        'tech-scrap': 25,
-        'circuit-board': 30,
-        'sensor-crystal': 15,
-        'alchemy-ink': 10
-      }
-    }
-  ],
-  quest: [
-    {
-      name: 'common',
-      chance: 40,
-      quantityRange: [2, 4],
-      itemWeights: {
-        'cloth': 25,
-        'metal': 25,
-        'tech-scrap': 30,
-        'circuit-board': 15,
-        'sensor-crystal': 5,
-        'alchemy-ink': 0
-      }
-    },
-    {
-      name: 'uncommon',
-      chance: 35,
-      quantityRange: [3, 5],
-      itemWeights: {
-        'cloth': 15,
-        'metal': 15,
-        'tech-scrap': 30,
-        'circuit-board': 25,
-        'sensor-crystal': 10,
-        'alchemy-ink': 5
-      }
-    },
-    {
-      name: 'rare',
-      chance: 20,
-      quantityRange: [4, 6],
-      itemWeights: {
-        'cloth': 5,
-        'metal': 5,
-        'tech-scrap': 20,
-        'circuit-board': 35,
-        'sensor-crystal': 25,
-        'alchemy-ink': 10
-      }
-    },
-    {
-      name: 'epic',
-      chance: 5,
-      quantityRange: [5, 7],
-      itemWeights: {
-        'cloth': 0,
-        'metal': 0,
-        'tech-scrap': 10,
-        'circuit-board': 30,
-        'sensor-crystal': 35,
-        'alchemy-ink': 25
-      }
-    }
-  ],
-  event: [
-    {
-      name: 'rare',
-      chance: 40,
-      quantityRange: [4, 6],
-      itemWeights: {
-        'cloth': 5,
-        'metal': 5,
-        'tech-scrap': 15,
-        'circuit-board': 35,
-        'sensor-crystal': 25,
-        'alchemy-ink': 15
-      }
-    },
-    {
-      name: 'epic',
-      chance: 40,
-      quantityRange: [5, 8],
-      itemWeights: {
-        'cloth': 0,
-        'metal': 0,
-        'tech-scrap': 5,
-        'circuit-board': 25,
-        'sensor-crystal': 40,
-        'alchemy-ink': 30
-      }
-    },
-    {
-      name: 'legendary',
-      chance: 20,
-      quantityRange: [6, 10],
-      itemWeights: {
-        'cloth': 0,
-        'metal': 0,
-        'tech-scrap': 0,
-        'circuit-board': 10,
-        'sensor-crystal': 40,
-        'alchemy-ink': 50
-      }
-    }
-  ]
-};
-
-// Define reward types and structure
 export interface Reward {
   type: string;
+  id: string;
   quantity: number;
 }
 
@@ -446,21 +26,81 @@ function getRandomInt(min: number, max: number): number {
 }
 
 /**
- * Select a rarity tier based on the loot box type and random chance
+ * Select a rarity tier based on the lootbox type and random chance
  */
 function selectRarityTier(lootBoxType: LootBoxType): RarityTier {
+  // Lootbox drop rates based on type
+  const rarityTiers: Record<LootBoxType, RarityTier[]> = {
+    common: [
+      { name: 'common', chance: 80, quantityRange: [1, 2], itemWeights: { 'copper': 50, 'cloth': 30, 'techscrap': 20 } },
+      { name: 'uncommon', chance: 18, quantityRange: [1, 1], itemWeights: { 'circuit': 60, 'crystal': 40 } },
+      { name: 'rare', chance: 2, quantityRange: [1, 1], itemWeights: { 'emerald': 100 } },
+      { name: 'epic', chance: 0, quantityRange: [0, 0], itemWeights: {} },
+      { name: 'legendary', chance: 0, quantityRange: [0, 0], itemWeights: {} }
+    ],
+    uncommon: [
+      { name: 'common', chance: 60, quantityRange: [1, 3], itemWeights: { 'copper': 40, 'cloth': 30, 'techscrap': 30 } },
+      { name: 'uncommon', chance: 35, quantityRange: [1, 2], itemWeights: { 'circuit': 55, 'crystal': 45 } },
+      { name: 'rare', chance: 5, quantityRange: [1, 1], itemWeights: { 'emerald': 80, 'ruby': 20 } },
+      { name: 'epic', chance: 0, quantityRange: [0, 0], itemWeights: {} },
+      { name: 'legendary', chance: 0, quantityRange: [0, 0], itemWeights: {} }
+    ],
+    rare: [
+      { name: 'common', chance: 40, quantityRange: [2, 4], itemWeights: { 'copper': 30, 'cloth': 30, 'techscrap': 40 } },
+      { name: 'uncommon', chance: 40, quantityRange: [1, 3], itemWeights: { 'circuit': 50, 'crystal': 50 } },
+      { name: 'rare', chance: 18, quantityRange: [1, 1], itemWeights: { 'emerald': 60, 'ruby': 30, 'sapphire': 10 } },
+      { name: 'epic', chance: 2, quantityRange: [1, 1], itemWeights: { 'diamond': 100 } },
+      { name: 'legendary', chance: 0, quantityRange: [0, 0], itemWeights: {} }
+    ],
+    epic: [
+      { name: 'common', chance: 20, quantityRange: [3, 5], itemWeights: { 'copper': 25, 'cloth': 25, 'techscrap': 50 } },
+      { name: 'uncommon', chance: 50, quantityRange: [2, 3], itemWeights: { 'circuit': 50, 'crystal': 50 } },
+      { name: 'rare', chance: 25, quantityRange: [1, 2], itemWeights: { 'emerald': 40, 'ruby': 30, 'sapphire': 30 } },
+      { name: 'epic', chance: 5, quantityRange: [1, 1], itemWeights: { 'diamond': 90, 'obsidian': 10 } },
+      { name: 'legendary', chance: 0.1, quantityRange: [1, 1], itemWeights: { 'artifact': 100 } }
+    ],
+    legendary: [
+      { name: 'common', chance: 0, quantityRange: [5, 8], itemWeights: { 'copper': 20, 'cloth': 20, 'techscrap': 60 } },
+      { name: 'uncommon', chance: 40, quantityRange: [3, 5], itemWeights: { 'circuit': 40, 'crystal': 60 } },
+      { name: 'rare', chance: 40, quantityRange: [1, 3], itemWeights: { 'emerald': 30, 'ruby': 30, 'sapphire': 40 } },
+      { name: 'epic', chance: 18, quantityRange: [1, 1], itemWeights: { 'diamond': 80, 'obsidian': 20 } },
+      { name: 'legendary', chance: 2, quantityRange: [1, 1], itemWeights: { 'artifact': 70, 'cosmiccore': 30 } }
+    ],
+    welcome: [
+      { name: 'common', chance: 70, quantityRange: [2, 3], itemWeights: { 'copper': 40, 'cloth': 40, 'techscrap': 20 } },
+      { name: 'uncommon', chance: 30, quantityRange: [1, 1], itemWeights: { 'circuit': 70, 'crystal': 30 } },
+      { name: 'rare', chance: 0, quantityRange: [0, 0], itemWeights: {} },
+      { name: 'epic', chance: 0, quantityRange: [0, 0], itemWeights: {} },
+      { name: 'legendary', chance: 0, quantityRange: [0, 0], itemWeights: {} }
+    ],
+    quest: [
+      { name: 'common', chance: 50, quantityRange: [2, 4], itemWeights: { 'copper': 30, 'cloth': 30, 'techscrap': 40 } },
+      { name: 'uncommon', chance: 35, quantityRange: [1, 2], itemWeights: { 'circuit': 60, 'crystal': 40 } },
+      { name: 'rare', chance: 15, quantityRange: [1, 1], itemWeights: { 'emerald': 70, 'ruby': 30 } },
+      { name: 'epic', chance: 0, quantityRange: [0, 0], itemWeights: {} },
+      { name: 'legendary', chance: 0, quantityRange: [0, 0], itemWeights: {} }
+    ],
+    event: [
+      { name: 'common', chance: 30, quantityRange: [3, 5], itemWeights: { 'copper': 25, 'cloth': 25, 'techscrap': 50 } },
+      { name: 'uncommon', chance: 45, quantityRange: [2, 3], itemWeights: { 'circuit': 45, 'crystal': 55 } },
+      { name: 'rare', chance: 20, quantityRange: [1, 2], itemWeights: { 'emerald': 50, 'ruby': 30, 'sapphire': 20 } },
+      { name: 'epic', chance: 5, quantityRange: [1, 1], itemWeights: { 'diamond': 100 } },
+      { name: 'legendary', chance: 0, quantityRange: [0, 0], itemWeights: {} }
+    ]
+  };
+
   const tiers = rarityTiers[lootBoxType];
-  const randomNum = getRandomInt(1, 100);
+  const randomValue = Math.random() * 100;
   
   let cumulativeChance = 0;
   for (const tier of tiers) {
     cumulativeChance += tier.chance;
-    if (randomNum <= cumulativeChance) {
+    if (randomValue <= cumulativeChance) {
       return tier;
     }
   }
   
-  // Fallback to the first tier if something goes wrong
+  // Fallback to common tier if no tier was selected
   return tiers[0];
 }
 
@@ -468,25 +108,25 @@ function selectRarityTier(lootBoxType: LootBoxType): RarityTier {
  * Select an item based on the weights defined in the rarity tier
  */
 function selectItem(tier: RarityTier): string {
-  const itemWeights = tier.itemWeights;
-  const items = Object.keys(itemWeights);
-  const weights = Object.values(itemWeights);
+  const weights = tier.itemWeights;
+  const items = Object.keys(weights);
   
-  // Calculate total weight
-  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+  if (items.length === 0) {
+    throw new Error(`No items defined for rarity tier ${tier.name}`);
+  }
   
-  // Random number between 0 and total weight
-  const randomNum = getRandomInt(1, totalWeight);
+  const totalWeight = Object.values(weights).reduce((sum, weight) => sum + weight, 0);
+  const randomValue = Math.random() * totalWeight;
   
   let cumulativeWeight = 0;
-  for (let i = 0; i < items.length; i++) {
-    cumulativeWeight += weights[i];
-    if (randomNum <= cumulativeWeight) {
-      return items[i];
+  for (const item of items) {
+    cumulativeWeight += weights[item];
+    if (randomValue <= cumulativeWeight) {
+      return item;
     }
   }
   
-  // Fallback to the first item if something goes wrong
+  // Fallback to first item
   return items[0];
 }
 
@@ -494,215 +134,210 @@ function selectItem(tier: RarityTier): string {
  * Generate a quantity based on the rarity tier's range
  */
 function generateQuantity(tier: RarityTier): number {
-  return getRandomInt(tier.quantityRange[0], tier.quantityRange[1]);
+  const [min, max] = tier.quantityRange;
+  return getRandomInt(min, max);
 }
 
 /**
- * Generate rewards for a loot box
- * @param lootBoxType The type of loot box
+ * Generate rewards for a lootbox based on configurations in database
+ * @param lootBoxType The type of lootbox
  * @returns Array of rewards
  */
-export function generateLootBoxRewards(lootBoxType: LootBoxType): Reward[] {
-  const rewards: Reward[] = [];
-  
-  // Different box types have different number of items
-  const numItems = lootBoxType === 'legendary' ? 3 :
-                  lootBoxType === 'epic' ? 2 :
-                  lootBoxType === 'event' ? 2 : 1;
-  
-  for (let i = 0; i < numItems; i++) {
-    const tier = selectRarityTier(lootBoxType);
-    const itemType = selectItem(tier);
-    const quantity = generateQuantity(tier);
+export async function generateLootBoxRewards(lootBoxType: LootBoxType): Promise<Reward[]> {
+  try {
+    // Check if this lootbox type has a database config
+    const [config] = await db
+      .select()
+      .from(lootBoxConfigs)
+      .where(eq(lootBoxConfigs.id, lootBoxType));
     
-    rewards.push({
-      type: itemType,
-      quantity
-    });
+    // If we have a database config, use it instead of the hardcoded logic
+    if (config) {
+      return generateConfiguredLootBoxRewards(config);
+    }
+    
+    // Otherwise fall back to the hardcoded logic
+    const numberOfRewards = getRandomInt(1, 3); // Generate 1-3 rewards
+    const rewards: Reward[] = [];
+    
+    for (let i = 0; i < numberOfRewards; i++) {
+      const tier = selectRarityTier(lootBoxType);
+      const itemId = selectItem(tier);
+      const quantity = generateQuantity(tier);
+      
+      // Skip if quantity is 0
+      if (quantity === 0) continue;
+      
+      rewards.push({
+        type: 'item',
+        id: itemId,
+        quantity
+      });
+    }
+    
+    return rewards;
+  } catch (error) {
+    console.error('Error generating lootbox rewards:', error);
+    // Return a default reward if there's an error
+    return [{ type: 'item', id: 'copper', quantity: 1 }];
   }
-  
-  return rewards;
 }
 
 /**
- * Opens a loot box and adds the rewards to the user's inventory
- * @param lootBoxId The ID of the loot box to open
+ * Opens a lootbox and adds the rewards to the user's inventory
+ * @param lootBoxId The ID of the lootbox to open
  * @param userId The ID of the user opening the box
  * @returns The rewards given to the user
  */
 export async function openLootBox(lootBoxId: number, userId: number): Promise<{ success: boolean, message: string, rewards: Reward[] | null }> {
   try {
-    // Get the loot box from storage
-    const lootBox = await storage.getLootBox(lootBoxId);
+    // Fetch the lootbox
+    const [lootbox] = await db
+      .select()
+      .from(lootBoxes)
+      .where(eq(lootBoxes.id, lootBoxId))
+      .where(eq(lootBoxes.userId, userId));
     
-    if (!lootBox) {
-      return { success: false, message: "Loot box not found", rewards: null };
+    if (!lootbox) {
+      return { success: false, message: 'Lootbox not found', rewards: null };
     }
     
-    if (lootBox.userId !== userId) {
-      return { success: false, message: "You do not own this loot box", rewards: null };
+    if (lootbox.opened) {
+      return { success: false, message: 'Lootbox has already been opened', rewards: null };
     }
     
-    if (lootBox.opened) {
-      return { success: false, message: "Loot box already opened", rewards: null };
+    // Get the user's data
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return { success: false, message: 'User not found', rewards: null };
     }
     
-    // Generate rewards based on the loot box config
-    // First, check if there's a loot box configuration for this type
-    const lootBoxConfig = await storage.getLootBoxConfig(lootBox.type);
+    // Generate rewards for this lootbox
+    let rewards: Reward[];
     
-    let rewards: Reward[] = [];
-    
-    if (lootBoxConfig) {
-      // Use the loot box configuration's item drop table
-      console.log(`Using loot box config for ${lootBox.type}: ${lootBoxConfig.name}`);
-      rewards = await generateConfiguredLootBoxRewards(lootBoxConfig);
+    // If the lootbox already has rewards (from a saved state), use those
+    if (lootbox.rewards && lootbox.rewards.length > 0) {
+      rewards = lootbox.rewards as Reward[];
     } else {
-      // Fall back to the old system for backward compatibility
-      console.log(`No loot box config found for ${lootBox.type}, using legacy system`);
-      rewards = generateLootBoxRewards(lootBox.type as LootBoxType);
+      // Otherwise, generate new rewards
+      rewards = await generateLootBoxRewards(lootbox.type as LootBoxType);
     }
-    
-    // Update the loot box to mark it as opened
-    await storage.updateLootBox(lootBoxId, {
-      opened: true,
-      openedAt: new Date()
-    });
     
     // Add the rewards to the user's inventory
+    const inventory = { ...user.inventory };
+    
     for (const reward of rewards) {
-      // Get user
-      const user = await storage.getUser(userId);
-      if (!user) {
-        console.error(`User with ID ${userId} not found`);
-        continue;
+      // For items and equipment, add directly to inventory
+      if (reward.type === 'item' || reward.type === 'equipment') {
+        inventory[reward.id] = (inventory[reward.id] || 0) + reward.quantity;
+        
+        // Create inventory history entry
+        await storage.createInventoryHistory({
+          userId,
+          type: reward.id,
+          quantity: reward.quantity,
+          action: 'gained',
+          source: 'lootbox'
+        });
       }
-      
-      // 1. First, ensure the item exists in our item database
-      let itemDetails = await storage.getItem(reward.type);
-      
-      // If it doesn't exist in our new system but is a valid reward, create it with default values
-      if (!itemDetails) {
-        try {
-          // Try to get item details from the item database
-          const allItems = await storage.getItems();
-          const existingItem = allItems.find(item => item.id === reward.type);
-          
-          if (!existingItem) {
-            // Create a new item in our item system with default values
-            console.log(`Creating new item in database: ${reward.type}`);
-            await storage.createItem({
-              id: reward.type,
-              name: reward.type.charAt(0).toUpperCase() + reward.type.slice(1).replace(/-/g, ' '),
-              description: `A resource that can be used for crafting`,
-              flavorText: `This ${reward.type.replace(/-/g, ' ')} seems valuable.`,
-              rarity: 'common',
-              craftingUses: ['crafting'],
-              imagePath: `/items/${reward.type}.png`,
-              category: 'resource'
-            });
-          }
-        } catch (error) {
-          console.error(`Failed to create item ${reward.type}:`, error);
-        }
-      }
-      
-      // 2. Update the user's inventory (legacy approach for backwards compatibility)
-      const currentInventory = user.inventory || {};
-      const currentAmount = currentInventory[reward.type] || 0;
-      
-      // Update user inventory
-      await storage.updateUser(userId, {
-        inventory: {
-          ...currentInventory,
-          [reward.type]: currentAmount + reward.quantity
-        }
-      });
-      
-      // 3. Add entry to inventory history
-      const lootBoxDisplayName = lootBoxConfig ? lootBoxConfig.name : `${lootBox.type} Loot Crate`;
-      await storage.createInventoryHistory({
-        userId,
-        type: reward.type,
-        quantity: reward.quantity,
-        action: 'gained',
-        source: lootBoxDisplayName
-      });
     }
     
-    return { success: true, message: "Loot box opened successfully", rewards };
+    // Mark the lootbox as opened and store the rewards
+    await db
+      .update(lootBoxes)
+      .set({
+        opened: true,
+        openedAt: new Date(),
+        rewards
+      })
+      .where(eq(lootBoxes.id, lootBoxId));
+    
+    // Update the user's inventory
+    await storage.updateUser(userId, { inventory });
+    
+    return { success: true, message: 'Lootbox opened successfully', rewards };
   } catch (error) {
-    console.error("Error opening loot box:", error);
-    return { success: false, message: "Error opening loot box", rewards: null };
+    console.error('Error opening lootbox:', error);
+    return { success: false, message: 'An error occurred while opening the lootbox', rewards: null };
   }
 }
 
 /**
- * Generate rewards from a loot box configuration
- * @param config The loot box configuration object
+ * Generate rewards from a lootbox configuration
+ * @param config The lootbox configuration object
  * @returns Array of rewards
  */
 async function generateConfiguredLootBoxRewards(config: any): Promise<Reward[]> {
-  // Determine number of rewards to give based on min/max settings
-  const numberOfRewards = getRandomInt(
-    config.minRewards || 1, 
-    config.maxRewards || 3
-  );
-  
-  console.log(`Generating ${numberOfRewards} rewards from loot box config: ${config.name}`);
-  
+  const numRewards = getRandomInt(config.minRewards, config.maxRewards);
   const rewards: Reward[] = [];
-  const itemDropTable = Array.isArray(config.itemDropTable) ? config.itemDropTable : [];
   
-  if (itemDropTable.length === 0) {
-    console.warn(`No item drop table found for loot box config: ${config.id}`);
-    return rewards;
-  }
+  // Get all items from the database for validation
+  const allItems = await db.select().from(items);
+  const allItemIds = allItems.map(item => item.id);
   
-  // Calculate total weight across all items
-  const totalWeight = itemDropTable.reduce((sum, item) => sum + (item.weight || 0), 0);
-  
-  // Generate the specified number of rewards
-  for (let i = 0; i < numberOfRewards; i++) {
-    // Select a random item based on weights
-    const randomValue = Math.random() * totalWeight;
-    let currentWeight = 0;
-    let selectedItem = null;
+  // Generate rewards based on the item drop table
+  for (let i = 0; i < numRewards; i++) {
+    // Calculate total weight
+    const totalWeight = config.itemDropTable.reduce((sum: number, item: any) => sum + item.weight, 0);
     
-    for (const item of itemDropTable) {
-      currentWeight += item.weight || 0;
-      if (randomValue <= currentWeight) {
-        selectedItem = item;
+    // Select an item based on weight
+    const randomValue = Math.random() * totalWeight;
+    let cumulativeWeight = 0;
+    
+    for (const itemEntry of config.itemDropTable) {
+      cumulativeWeight += itemEntry.weight;
+      
+      if (randomValue <= cumulativeWeight) {
+        // Make sure the item exists
+        if (allItemIds.includes(itemEntry.itemId)) {
+          // Generate a random quantity
+          const quantity = getRandomInt(itemEntry.minQuantity, itemEntry.maxQuantity);
+          
+          rewards.push({
+            type: 'item',
+            id: itemEntry.itemId,
+            quantity
+          });
+        }
         break;
       }
     }
-    
-    if (!selectedItem) {
-      console.warn(`Failed to select an item from loot box config: ${config.id}`);
-      continue;
-    }
-    
-    // Generate a quantity based on min/max settings for this item
-    const quantity = getRandomInt(
-      selectedItem.minQuantity || 1,
-      selectedItem.maxQuantity || 1
-    );
-    
+  }
+  
+  // If we somehow ended up with no rewards, add a default item
+  if (rewards.length === 0) {
     rewards.push({
-      type: selectedItem.itemId,
-      quantity
+      type: 'item',
+      id: 'copper',
+      quantity: 1
     });
-    
-    console.log(`Selected item ${selectedItem.itemId} with quantity ${quantity}`);
   }
   
   return rewards;
 }
 
-// Export also individual selectors for testing or custom implementations
+// Helper function to get predefined lootbox config selectors
 export const lootBoxSelectors = {
-  selectRarityTier,
-  selectItem,
-  generateQuantity,
-  generateConfiguredLootBoxRewards
+  // Returns selectors for dropdown menus in the admin panel
+  getSelectors() {
+    return {
+      types: [
+        { label: 'Common Crate', value: 'common' },
+        { label: 'Uncommon Crate', value: 'uncommon' },
+        { label: 'Rare Crate', value: 'rare' },
+        { label: 'Epic Crate', value: 'epic' },
+        { label: 'Legendary Crate', value: 'legendary' },
+        { label: 'Welcome Package', value: 'welcome' },
+        { label: 'Quest Reward', value: 'quest' },
+        { label: 'Event Prize', value: 'event' }
+      ],
+      rarities: [
+        { label: 'Common', value: 'common' },
+        { label: 'Uncommon', value: 'uncommon' },
+        { label: 'Rare', value: 'rare' },
+        { label: 'Epic', value: 'epic' },
+        { label: 'Legendary', value: 'legendary' }
+      ]
+    };
+  }
 };
