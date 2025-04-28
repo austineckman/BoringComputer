@@ -13,12 +13,15 @@ const router = Router();
 router.get('/', async (req, res) => {
   try {
     const user = (req as any).user;
+    console.log('DEBUG - User in lootboxes endpoint:', user.id, user.username);
+    
     // Fetch lootboxes from DB for this user
     const userLootboxes = await db
       .select()
       .from(lootBoxes)
       .where(eq(lootBoxes.userId, user.id));
     
+    console.log('DEBUG - Found lootboxes:', userLootboxes.length);
     return res.json(userLootboxes);
   } catch (error) {
     console.error('Error fetching lootboxes:', error);

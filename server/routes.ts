@@ -469,6 +469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get the user's current inventory
       const userInventory = user.inventory || {};
+      console.log('DEBUG - User inventory from /api/inventory endpoint:', userInventory);
       
       // Get inventory history for last acquired info
       const history = await storage.getInventoryHistory(user.id);
