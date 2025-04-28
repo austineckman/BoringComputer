@@ -295,7 +295,7 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
             className="w-8 h-8 mr-3" 
             style={{ imageRendering: 'pixelated' }}
           />
-          <h1 className="text-2xl font-bold text-blue-400">PickLock.exe</h1>
+          <h1 className="text-2xl font-bold text-blue-400">HackLock.exe</h1>
         </div>
         <button 
           className="text-white hover:text-blue-400" 
@@ -588,7 +588,7 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
       
       {/* Footer */}
       <div className="bg-black/80 border-t border-gray-800 px-4 py-2 text-xs text-gray-500 flex items-center justify-between">
-        <span>PickLock.exe v1.0</span>
+        <span>HackLock.exe v1.0</span>
         <span>MemAllocRem: 8192 KB</span>
       </div>
     </div>
