@@ -4413,41 +4413,15 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   </div>
                 </div>
                 
-                {/* Required Items Section */}
-                <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
-                  <h3 className="text-md font-semibold text-brand-orange mb-4">Required Items</h3>
-                  <div className="text-sm text-gray-400 mb-4">
-                    Add or modify the items required for this recipe. Enter in format: item-id:quantity (separated by commas).
+                {/* Recipe building note */}
+                <div className="bg-black/30 border border-gray-700 rounded-lg p-4 mb-4">
+                  <div className="flex items-start">
+                    <AlertCircle className="h-5 w-5 text-brand-orange mr-2 mt-0.5" />
+                    <div className="text-sm text-gray-300">
+                      <p className="mb-1">Required items are automatically calculated from the crafting pattern.</p>
+                      <p>Use the pattern grid below to define which materials are needed for this recipe.</p>
+                    </div>
                   </div>
-                  
-                  <textarea
-                    className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none min-h-[100px]"
-                    value={Object.entries((editingItem as Recipe).requiredItems || {}).map(([item, quantity]) => `${item}:${quantity}`).join(', ')}
-                    onChange={(e) => {
-                      // Parse the text input into a requiredItems object
-                      const itemsText = e.target.value;
-                      const requiredItems: Record<string, number> = {};
-                      
-                      // Split by commas and process each item:quantity pair
-                      itemsText.split(',').forEach(pair => {
-                        const trimmedPair = pair.trim();
-                        if (trimmedPair) {
-                          const [item, quantityStr] = trimmedPair.split(':').map(s => s.trim());
-                          if (item && quantityStr) {
-                            const quantity = parseInt(quantityStr);
-                            if (!isNaN(quantity) && quantity > 0) {
-                              requiredItems[item] = quantity;
-                            }
-                          }
-                        }
-                      });
-                      
-                      const updatedRecipe = {...editingItem as Recipe, requiredItems};
-                      setEditingItem(updatedRecipe);
-                    }}
-                    placeholder="copper:2, iron:1, crystal:3"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Format: item-id:quantity, item-id:quantity, etc.</p>
                 </div>
                 
                 {/* Pattern Section */}
