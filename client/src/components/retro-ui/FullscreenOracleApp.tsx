@@ -735,12 +735,29 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           data: formattedData
         };
       } else if (editingType === 'item') {
+        // Clean up the item data before sending
+        const cleanedData = { ...data };
+        
+        // Remove any undefined values or convert nulls to empty strings
+        Object.keys(cleanedData).forEach(key => {
+          if (cleanedData[key] === undefined) {
+            delete cleanedData[key];
+          } else if (cleanedData[key] === null && (key === 'flavorText' || key === 'imagePath' || key === 'category')) {
+            cleanedData[key] = '';
+          }
+        });
+        
+        // Ensure craftingUses is an array
+        if (cleanedData.craftingUses === null || cleanedData.craftingUses === undefined) {
+          cleanedData.craftingUses = [];
+        }
+                
         if (isCreatingNewItem) {
           endpoint = '/api/items';
-          body = data;
+          body = cleanedData;
         } else {
           endpoint = `/api/items/${id}`;
-          body = data;
+          body = cleanedData;
         }
       } else if (editingType === 'kit') {
         endpoint = `/api/admin/kits/${id}`;
