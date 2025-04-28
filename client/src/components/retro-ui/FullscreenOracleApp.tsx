@@ -2875,20 +2875,13 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   
                   <div className="mt-4">
                     <label className="block text-gray-300 text-sm mb-1">Crafting Uses</label>
-                    <div className="flex">
-                      <input
-                        type="text"
-                        className="flex-1 px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                        value={(editingItem as GameItem).craftingUses ? (editingItem as GameItem).craftingUses.join(',') : ''}
-                        onChange={(e) => {
-                          const uses = e.target.value.split(',').map(use => use.trim()).filter(Boolean);
-                          const updatedItem = {...editingItem as GameItem, craftingUses: uses};
-                          setEditingItem(updatedItem);
-                        }}
-                        placeholder="wiring,circuits,conductors"
-                      />
+                    <div className="px-3 py-2 bg-black/50 text-gray-500 border border-gray-700 rounded-md">
+                      {(editingItem as GameItem).craftingUses && (editingItem as GameItem).craftingUses.length > 0 ? 
+                        (editingItem as GameItem).craftingUses.join(', ') : 
+                        'Automatically populated based on recipes'
+                      }
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">Comma-separated list of crafting uses</p>
+                    <p className="text-xs text-gray-500 mt-1">This field is read-only and automatically updated when an item is used in recipes</p>
                   </div>
                 </div>
                 
