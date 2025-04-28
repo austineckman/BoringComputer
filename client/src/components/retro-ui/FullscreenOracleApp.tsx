@@ -4292,7 +4292,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                       </div>
                       <input
                         type="hidden"
-                        value={3}
+                        value="3"
                         readOnly
                       />
                       <p className="text-xs text-gray-500 mt-1">All crafting recipes use a standard 3×3 grid.</p>
