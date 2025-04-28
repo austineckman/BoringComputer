@@ -46,40 +46,11 @@ export async function comparePasswords(supplied: string, stored: string): Promis
   }
 }
 
-// Persistent mock user for development
-const mockUser = {
-  id: 999,
-  username: "devuser",
-  email: "dev@example.com",
-  roles: ["admin", "user"],
-  level: 10,
-  inventory: {
-    "copper": 10,
-    "crystal": 5,
-    "techscrap": 3,
-    "circuit_board": 2,
-    "cloth": 8
-  },
-  titles: [],
-  activeTitle: null
-};
-
-// Log the mockUser inventory for debugging
-console.log('DEBUG - Mock user inventory initialized with:', mockUser.inventory);
+// No mock users - only use real authenticated users from the database
 
 // Authentication middleware
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
-  // For development purposes, temporarily skip authentication
-  const BYPASS_AUTH = process.env.NODE_ENV === 'development';
-  
   if (!req.isAuthenticated()) {
-    if (BYPASS_AUTH) {
-      // Use the persistent mock user
-      (req as any).user = mockUser;
-      console.log("⚠️ Development mode: Authentication bypassed with mock user");
-      return next();
-    }
-    
     return res.status(401).json({ message: "Authentication required" });
   }
   next();
@@ -87,23 +58,8 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
 
 // Admin-only middleware
 export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
-  // For development purposes, temporarily skip admin check
-  const BYPASS_AUTH = process.env.NODE_ENV === 'development';
-  
   if (!req.isAuthenticated()) {
-    if (BYPASS_AUTH) {
-      // Use the same persistent mock user for admin routes
-      (req as any).user = mockUser;
-      console.log("⚠️ Development mode: Admin authentication bypassed with mock admin user");
-      return next();
-    }
-    
     return res.status(401).json({ message: "Authentication required" });
-  }
-  
-  // Skip admin role check in development mode
-  if (BYPASS_AUTH) {
-    return next();
   }
   
   // Check if user has admin role
