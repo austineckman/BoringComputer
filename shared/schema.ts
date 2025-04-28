@@ -131,9 +131,13 @@ export const lootBoxes = pgTable("loot_boxes", {
   opened: boolean("opened").default(false),
   acquiredAt: timestamp("acquired_at").defaultNow(),
   openedAt: timestamp("opened_at"),
-  rewards: json("rewards").$type<{type: string, quantity: number}[]>().default([]),
+  rewards: json("rewards").$type<{type: string, id: string, quantity: number}[]>().default([]),
   source: text("source").notNull(), // quest, achievement, etc.
-  sourceId: integer("source_id"), // ID of the quest, achievement, etc.
+  sourceId: text("source_id"), // ID of the quest, achievement, etc.
+  name: text("name"), // User-friendly name
+  description: text("description"), // Description text
+  rarity: text("rarity", { enum: ["common", "uncommon", "rare", "epic", "legendary"] }), // Rarity level
+  image: text("image"), // Image path
 });
 
 // Inventory History table
@@ -312,6 +316,10 @@ export const insertLootBoxSchema = createInsertSchema(lootBoxes).pick({
   sourceId: true,
   acquiredAt: true,
   openedAt: true,
+  name: true,
+  description: true,
+  rarity: true,
+  image: true,
 });
 
 export const insertInventoryHistorySchema = createInsertSchema(inventoryHistory).pick({
@@ -539,4 +547,16 @@ export const kitComponentsRelations = relations(kitComponents, ({ one }) => ({
     fields: [kitComponents.kitId],
     references: [componentKits.id],
   }),
+}));
+
+// Define lootbox relations
+export const lootBoxesRelations = relations(lootBoxes, ({ one }) => ({
+  user: one(users, {
+    fields: [lootBoxes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const usersRelations = relations(users, ({ many }) => ({
+  lootBoxes: many(lootBoxes),
 }));
