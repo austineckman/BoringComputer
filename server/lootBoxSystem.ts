@@ -1,6 +1,7 @@
 import { db } from './db';
 import { storage } from './storage';
-import { lootBoxConfigs, lootBoxes, items, eq } from '@shared/schema';
+import { lootBoxConfigs, lootBoxes, items } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 import { getItemDetails } from './itemDatabase';
 
 export interface RarityTier {
@@ -195,8 +196,12 @@ export async function openLootBox(lootBoxId: number, userId: number): Promise<{ 
     const [lootbox] = await db
       .select()
       .from(lootBoxes)
-      .where(eq(lootBoxes.id, lootBoxId))
-      .where(eq(lootBoxes.userId, userId));
+      .where(eq(lootBoxes.id, lootBoxId));
+    
+    // Extra validation for userId
+    if (lootbox && lootbox.userId !== userId) {
+      return { success: false, message: 'Lootbox not found', rewards: null };
+    }
     
     if (!lootbox) {
       return { success: false, message: 'Lootbox not found', rewards: null };
