@@ -147,11 +147,56 @@ const RetroDesktop: React.FC = () => {
       openJukeboxWindow();
     };
     
+    const handleOpenQuests = () => {
+      // Play sound if available
+      if (window.sounds) {
+        window.sounds.click();
+      }
+      
+      // Only trigger loading state if quests app is currently closed
+      if (questsAppState === 'closed') {
+        // Show loading screen
+        setQuestsAppState('loading');
+      }
+    };
+    
+    const handleOpenCircuitBuilder = () => {
+      // Play sound if available
+      if (window.sounds) {
+        window.sounds.click();
+      }
+      
+      // Open the Circuit Builder app if it's currently closed
+      if (circuitBuilderAppState === 'closed') {
+        setCircuitBuilderAppState('open');
+      }
+    };
+    
+    const handleOpenLockpicking = () => {
+      // Play sound if available
+      if (window.sounds) {
+        window.sounds.click();
+      }
+      
+      // Open the HackLock app if it's currently closed
+      if (lockpickingAppState === 'closed') {
+        setLockpickingAppState('open');
+      }
+    };
+    
+    const handleOpenRecycleBin = () => {
+      openRecycleBinWindow();
+    };
+    
     window.addEventListener('openTerminal', handleOpenTerminal);
     window.addEventListener('openBrowser', handleOpenBrowser);
     window.addEventListener('openProfile', handleOpenProfile);
     window.addEventListener('openPartyKitty', handleOpenPartyKitty);
     window.addEventListener('openJukebox', handleOpenJukebox);
+    window.addEventListener('openQuests', handleOpenQuests);
+    window.addEventListener('openCircuitBuilder', handleOpenCircuitBuilder);
+    window.addEventListener('openLockpicking', handleOpenLockpicking);
+    window.addEventListener('openRecycleBin', handleOpenRecycleBin);
     
     return () => {
       window.removeEventListener('openTerminal', handleOpenTerminal);
@@ -159,6 +204,10 @@ const RetroDesktop: React.FC = () => {
       window.removeEventListener('openProfile', handleOpenProfile);
       window.removeEventListener('openPartyKitty', handleOpenPartyKitty);
       window.removeEventListener('openJukebox', handleOpenJukebox);
+      window.removeEventListener('openQuests', handleOpenQuests);
+      window.removeEventListener('openCircuitBuilder', handleOpenCircuitBuilder);
+      window.removeEventListener('openLockpicking', handleOpenLockpicking);
+      window.removeEventListener('openRecycleBin', handleOpenRecycleBin);
     };
   }, []);
   

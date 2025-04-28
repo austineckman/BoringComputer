@@ -1,9 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Wrench, Terminal, Globe, Music } from "lucide-react";
+import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Wrench, Terminal, Globe, Music, Trash2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import logoImage from "@assets/Asset 6@2x-8.png";
 import jukeboxIcon from "@assets/jukebox_icon.png";
+import ironBagImage from "@assets/486_Iron_Bag_Leather_B.png";
+import questImage from "@assets/01_Fire_Grimoire.png";
+import shopCoinImage from "@assets/22_Leperchaun_Coin.png";
+import picklockImage from "@assets/Untitled design - 2025-04-26T171551.402.png";
+import craftingImage from "@assets/Untitled design - 2025-04-26T171858.770.png";
 
 type MenuItem = {
   id: string;
@@ -182,51 +187,182 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
         </div>
       </div>
       
-      {/* Menu items */}
+      {/* Desktop Applications Menu */}
       <div className="max-h-[70vh] overflow-y-auto">
-        {filteredMenuItems.map((item) => (
-          <div key={item.id}>
-            <div 
-              className="flex items-center justify-between p-2 hover:bg-blue-100 cursor-pointer border-b border-gray-300"
-              onClick={() => handleMenuItemClick(item)}
-            >
-              <div className="flex items-center">
-                <span className="text-gray-700 mr-2">{item.icon}</span>
-                <span>{item.label}</span>
-              </div>
-              {item.submenu && item.submenu.length > 0 && (
-                <ChevronRight 
-                  size={16} 
-                  className={`transform transition-transform ${activeSubmenu === item.id ? 'rotate-90' : ''}`} 
-                />
-              )}
-            </div>
-            
-            {/* Submenu */}
-            {activeSubmenu === item.id && item.submenu && (
-              <div className="bg-gray-100 pl-4">
-                {item.submenu.map((subItem) => (
-                  <div 
-                    key={subItem.id}
-                    className="flex items-center p-2 hover:bg-blue-50 cursor-pointer border-b border-gray-200"
-                    onClick={() => {
-                      if (subItem.onClick) {
-                        subItem.onClick();
-                        onClose();
-                      } else if (subItem.path) {
-                        navigate(subItem.path);
-                        onClose();
-                      }
-                    }}
-                  >
-                    <span className="text-gray-600 mr-2">{subItem.icon}</span>
-                    <span className="text-sm">{subItem.label}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+        <div className="p-2 bg-gray-300 border-b border-gray-400 font-semibold text-gray-700">
+          Desktop Applications
+        </div>
+        
+        {/* Quests App */}
+        <div 
+          className="flex items-center p-3 hover:bg-blue-100 cursor-pointer border-b border-gray-300"
+          onClick={() => {
+            const event = new CustomEvent('openQuests');
+            window.dispatchEvent(event);
+            onClose();
+          }}
+        >
+          <img 
+            src={questImage} 
+            alt="Quests" 
+            className="w-7 h-7 mr-3 object-contain" 
+            style={{ imageRendering: 'pixelated' }}
+          />
+          <span className="text-gray-700">Quests</span>
+        </div>
+        
+        {/* Inventory.exe */}
+        <div 
+          className="flex items-center p-3 hover:bg-blue-100 cursor-pointer border-b border-gray-300"
+          onClick={() => {
+            navigate("/inventory");
+            onClose();
+          }}
+        >
+          <img 
+            src={ironBagImage} 
+            alt="Inventory" 
+            className="w-7 h-7 mr-3 object-contain" 
+            style={{ imageRendering: 'pixelated' }}
+          />
+          <span className="text-gray-700">Inventory.exe</span>
+        </div>
+        
+        {/* Gizbo's Forge */}
+        <div 
+          className="flex items-center p-3 hover:bg-blue-100 cursor-pointer border-b border-gray-300"
+          onClick={() => {
+            navigate("/crafting");
+            onClose();
+          }}
+        >
+          <img 
+            src={craftingImage} 
+            alt="Gizbo's Forge" 
+            className="w-7 h-7 mr-3 object-contain" 
+            style={{ imageRendering: 'pixelated' }}
+          />
+          <span className="text-gray-700">Gizbo's Forge</span>
+        </div>
+        
+        {/* HackLock.exe */}
+        <div 
+          className="flex items-center p-3 hover:bg-blue-100 cursor-pointer border-b border-gray-300"
+          onClick={() => {
+            const event = new CustomEvent('openLockpicking');
+            window.dispatchEvent(event);
+            onClose();
+          }}
+        >
+          <img 
+            src={picklockImage} 
+            alt="HackLock.exe" 
+            className="w-7 h-7 mr-3 object-contain" 
+            style={{ imageRendering: 'pixelated' }}
+          />
+          <span className="text-gray-700">HackLock.exe</span>
+        </div>
+        
+        {/* Shop */}
+        <div 
+          className="flex items-center p-3 hover:bg-blue-100 cursor-pointer border-b border-gray-300"
+          onClick={() => {
+            const event = new CustomEvent('openBrowser');
+            window.dispatchEvent(event);
+            onClose();
+          }}
+        >
+          <img 
+            src={shopCoinImage} 
+            alt="Shop" 
+            className="w-7 h-7 mr-3 object-contain" 
+            style={{ imageRendering: 'pixelated' }}
+          />
+          <span className="text-gray-700">Shop</span>
+        </div>
+        
+        {/* Circuit Builder */}
+        <div 
+          className="flex items-center p-3 hover:bg-blue-100 cursor-pointer border-b border-gray-300"
+          onClick={() => {
+            const event = new CustomEvent('openCircuitBuilder');
+            window.dispatchEvent(event);
+            onClose();
+          }}
+        >
+          <div className="w-7 h-7 mr-3 flex items-center justify-center text-lg">🔌</div>
+          <span className="text-gray-700">Circuit Builder</span>
+        </div>
+        
+        {/* Command Prompt */}
+        <div 
+          className="flex items-center p-3 hover:bg-blue-100 cursor-pointer border-b border-gray-300"
+          onClick={() => {
+            const event = new CustomEvent('openTerminal');
+            window.dispatchEvent(event);
+            onClose();
+          }}
+        >
+          <Terminal className="w-6 h-6 mr-3 text-gray-600" />
+          <span className="text-gray-700">Command Prompt</span>
+        </div>
+        
+        {/* Music Player */}
+        <div 
+          className="flex items-center p-3 hover:bg-blue-100 cursor-pointer border-b border-gray-300"
+          onClick={() => {
+            const event = new CustomEvent('openJukebox');
+            window.dispatchEvent(event);
+            onClose();
+          }}
+        >
+          <img 
+            src={jukeboxIcon} 
+            alt="Music Player" 
+            className="w-7 h-7 mr-3 object-contain" 
+            style={{ imageRendering: 'pixelated' }}
+          />
+          <span className="text-gray-700">Music Player</span>
+        </div>
+        
+        {/* Recycle Bin */}
+        <div 
+          className="flex items-center p-3 hover:bg-blue-100 cursor-pointer border-b border-gray-300"
+          onClick={() => {
+            const event = new CustomEvent('openRecycleBin');
+            window.dispatchEvent(event);
+            onClose();
+          }}
+        >
+          <Trash2 className="w-6 h-6 mr-3 text-gray-600" />
+          <span className="text-gray-700">Recycle Bin</span>
+        </div>
+        
+        {/* Profile */}
+        <div 
+          className="flex items-center p-3 hover:bg-blue-100 cursor-pointer border-b border-gray-300"
+          onClick={() => {
+            const event = new CustomEvent('openProfile');
+            window.dispatchEvent(event);
+            onClose();
+          }}
+        >
+          <User className="w-6 h-6 mr-3 text-gray-600" />
+          <span className="text-gray-700">My Profile</span>
+        </div>
+
+        {/* Logout */}
+        <div 
+          className="flex items-center p-3 hover:bg-red-100 cursor-pointer border-b border-gray-300"
+          onClick={() => {
+            logout();
+            navigate("/auth");
+            onClose();
+          }}
+        >
+          <LogOut className="w-6 h-6 mr-3 text-red-600" />
+          <span className="text-red-600 font-medium">Log Out</span>
+        </div>
       </div>
       
       {/* Footer */}
