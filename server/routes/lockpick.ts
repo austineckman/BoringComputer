@@ -63,6 +63,37 @@ router.post('/:id/open', authenticate, async (req, res) => {
 });
 
 // Test endpoint to generate lootboxes for development
+// Clear all user lootboxes - for testing
+router.post('/clear-all', authenticate, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    if (!user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    // Get all user's lootboxes
+    const lootBoxes = await storage.getLootBoxes(user.id);
+    
+    // Delete each lootbox
+    for (const box of lootBoxes) {
+      await storage.deleteLootBox(box.id);
+    }
+    
+    return res.json({
+      success: true,
+      message: `Cleared ${lootBoxes.length} lootboxes`,
+      count: lootBoxes.length
+    });
+  } catch (error) {
+    console.error('Error clearing lootboxes:', error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to clear lootboxes",
+      error: (error as Error).message
+    });
+  }
+});
+
 router.post('/generate-test', authenticate, async (req, res) => {
   try {
     const user = (req as any).user;
