@@ -41,6 +41,26 @@ interface ItemInfo {
   category?: string;
 }
 
+interface ItemDropEntry {
+  itemId: string;
+  weight: number;
+  minQuantity: number;
+  maxQuantity: number;
+}
+
+interface LootBoxConfig {
+  id: string;
+  name: string;
+  description: string;
+  rarity: string;
+  itemDropTable: ItemDropEntry[];
+  minRewards: number;
+  maxRewards: number;
+  image: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onClose }) => {
   const [lootboxes, setLootboxes] = useState<Lootbox[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,6 +112,64 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
     };
 
     fetchItemsInfo();
+  }, []);
+
+  // Fetch lootbox configurations
+  useEffect(() => {
+    const fetchLootboxConfigs = async () => {
+      try {
+        // In a real app, we would have an endpoint to fetch these directly
+        // Since we don't have direct access to that endpoint without auth, we'll use the lootbox system data
+        const lootboxConfigData: Record<string, any> = {
+          "common": {
+            id: "common",
+            name: "Common Lootbox",
+            description: "A basic lootbox with common items",
+            rarity: "common",
+            itemDropTable: [
+              { itemId: "copper", weight: 50, minQuantity: 1, maxQuantity: 2 },
+              { itemId: "cloth", weight: 30, minQuantity: 1, maxQuantity: 2 },
+              { itemId: "techscrap", weight: 20, minQuantity: 1, maxQuantity: 1 }
+            ],
+            minRewards: 1,
+            maxRewards: 2
+          },
+          "Oozing-Crate": {
+            id: "Oozing-Crate",
+            name: "Oozing Crate",
+            description: "A mysterious crate with oozing potential",
+            rarity: "rare",
+            itemDropTable: [
+              { itemId: "copper", weight: 30, minQuantity: 1, maxQuantity: 3 },
+              { itemId: "cloth", weight: 20, minQuantity: 1, maxQuantity: 2 },
+              { itemId: "crystal", weight: 30, minQuantity: 1, maxQuantity: 1 },
+              { itemId: "techscrap", weight: 20, minQuantity: 1, maxQuantity: 2 }
+            ],
+            minRewards: 2,
+            maxRewards: 3
+          },
+          "basic": {
+            id: "basic",
+            name: "Basic Lootbox",
+            description: "A simple lootbox with basic items",
+            rarity: "common",
+            itemDropTable: [
+              { itemId: "copper", weight: 60, minQuantity: 1, maxQuantity: 2 },
+              { itemId: "cloth", weight: 40, minQuantity: 1, maxQuantity: 1 }
+            ],
+            minRewards: 1,
+            maxRewards: 2
+          }
+        };
+        
+        console.log("Loaded lootbox configurations:", lootboxConfigData);
+        // setLootboxConfigs(lootboxConfigData);
+      } catch (err) {
+        console.error('Error loading lootbox configurations:', err);
+      }
+    };
+
+    fetchLootboxConfigs();
   }, []);
 
   // Handle lootbox selection
