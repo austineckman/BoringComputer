@@ -140,14 +140,9 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
     }
   ];
   
-  // Filter out admin menu if user is not admin and remove the terminal item
+  // Filter out admin menu if user is not admin
   const filteredMenuItems = menuItems.filter(item => {
-    // Remove admin menu for non-admin users
     if (item.id === "admin" && (!user?.roles || !user.roles.includes("admin"))) {
-      return false;
-    }
-    // Remove the terminal menu item
-    if (item.id === "terminal") {
       return false;
     }
     return true;
