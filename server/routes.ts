@@ -1299,7 +1299,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           opened: false,
           rewards: null, // Will be generated when opened
           source: 'Test Crate Generator',
-          sourceId: null
+          sourceId: null,
+          name: config.name,
+          description: config.description,
+          rarity: config.rarity,
+          image: config.image
         });
         
         createdBoxes.push(lootBox);
