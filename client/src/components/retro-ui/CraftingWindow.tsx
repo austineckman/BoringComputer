@@ -254,11 +254,20 @@ const CraftingSuccess: React.FC<{
 // Main CraftingWindow component
 const CraftingWindow: React.FC = () => {
   // Initialize a 3x3 crafting grid with empty cells
-  const [craftingGrid, setCraftingGrid] = useState<CraftingGridItem[][]>(
-    Array(3).fill(null).map(() => 
-      Array(3).fill(null).map(() => ({ itemId: null, quantity: 0 }))
-    )
-  );
+  // IMPORTANT: Use a proper initialization function to avoid shared references between rows
+  const initializeEmptyGrid = () => {
+    const grid = [];
+    for (let i = 0; i < 3; i++) {
+      const row = [];
+      for (let j = 0; j < 3; j++) {
+        row.push({ itemId: null, quantity: 0 });
+      }
+      grid.push(row);
+    }
+    return grid;
+  };
+  
+  const [craftingGrid, setCraftingGrid] = useState<CraftingGridItem[][]>(initializeEmptyGrid());
 
   // Track items placed in grid to manage inventory
   const [usedItems, setUsedItems] = useState<Record<string, number>>({});
@@ -375,10 +384,8 @@ const CraftingWindow: React.FC = () => {
         });
       }
 
-      // Clear grid
-      setCraftingGrid(Array(3).fill(null).map(() => 
-        Array(3).fill(null).map(() => ({ itemId: null, quantity: 0 }))
-      ));
+      // Clear grid with proper initialization
+      setCraftingGrid(initializeEmptyGrid());
 
       // Show success message
       setCraftMessage({
@@ -537,7 +544,15 @@ const CraftingWindow: React.FC = () => {
 
     // Check if this matches any recipe
     const matchingRecipe = recipes.find(recipe => {
-      const pattern = Array(3).fill(null).map(() => Array(3).fill(null));
+      // Create a safe pattern array without shared references
+      const pattern = [];
+      for (let i = 0; i < 3; i++) {
+        const row = [];
+        for (let j = 0; j < 3; j++) {
+          row.push(null);
+        }
+        pattern.push(row);
+      };
 
       // Fill the pattern based on our grid
       updatedGrid.forEach((row, rowIdx) => {
@@ -617,10 +632,8 @@ const CraftingWindow: React.FC = () => {
       });
     });
 
-    // Create a new empty grid
-    const emptyGrid = Array(3).fill(null).map(() => 
-      Array(3).fill(null).map(() => ({ itemId: null, quantity: 0 }))
-    );
+    // Create a new empty grid using our initialization function
+    const emptyGrid = initializeEmptyGrid();
     
     console.log('Reset grid to empty state');
     
@@ -641,10 +654,8 @@ const CraftingWindow: React.FC = () => {
       });
     });
 
-    // Create a new empty grid
-    const newGrid = Array(3).fill(null).map(() => 
-      Array(3).fill(null).map(() => ({ itemId: null, quantity: 0 }))
-    );
+    // Create a new empty grid using the safe initialization function
+    const newGrid = initializeEmptyGrid();
 
     console.log('Recipe inputs:', recipe.inputs);
     
