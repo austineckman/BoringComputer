@@ -230,10 +230,12 @@ export async function openLootBox(lootBoxId: number, userId: number): Promise<{ 
     
     // Add the rewards to the user's inventory
     const inventory = { ...user.inventory };
+    console.log('DEBUG - Before opening lootbox, user inventory:', inventory);
     
     for (const reward of rewards) {
       // For items and equipment, add directly to inventory
       if (reward.type === 'item' || reward.type === 'equipment') {
+        console.log(`DEBUG - Adding item ${reward.id} x${reward.quantity} to inventory`);
         inventory[reward.id] = (inventory[reward.id] || 0) + reward.quantity;
         
         // Create inventory history entry
@@ -247,6 +249,8 @@ export async function openLootBox(lootBoxId: number, userId: number): Promise<{ 
       }
     }
     
+    console.log('DEBUG - After rewards added, user inventory:', inventory);
+    
     // Mark the lootbox as opened and store the rewards
     await db
       .update(lootBoxes)
@@ -259,6 +263,7 @@ export async function openLootBox(lootBoxId: number, userId: number): Promise<{ 
     
     // Update the user's inventory
     await storage.updateUser(userId, { inventory });
+    console.log('DEBUG - User inventory updated in database');
     
     return { success: true, message: 'Lootbox opened successfully', rewards };
   } catch (error) {
