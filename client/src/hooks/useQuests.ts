@@ -19,6 +19,11 @@ export interface Quest {
   orderInLine: number; // New field
   xpReward: number; // New field
   rewards: QuestReward[];
+  content?: {
+    videos: string[];
+    images: string[];
+    codeBlocks: { language: string; code: string }[];
+  };
 }
 
 export interface UserQuest extends Quest {
