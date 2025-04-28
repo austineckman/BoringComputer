@@ -652,31 +652,50 @@ const CraftingWindow: React.FC = () => {
                           <div className="mt-2 pt-2 border-t border-gray-700/50">
                             <div className="text-xs text-gray-400 mb-1">Requires:</div>
                             <div className="flex flex-wrap gap-2">
-                              {recipe.inputs.map((input, idx) => {
-                                const inputItem = getItemDetails(input.itemId);
-                                const hasEnough = getInventoryQuantity(input.itemId) >= input.quantity;
+                              {(() => {
+                                // Consolidate ingredients by itemId to show total quantities
+                                const requiredItems: Record<string, { 
+                                  itemId: string, 
+                                  totalQuantity: number,
+                                  item: any 
+                                }> = {};
                                 
-                                return (
-                                  <div 
-                                    key={idx}
-                                    className={`flex items-center bg-black/40 px-1.5 py-0.5 rounded ${
-                                      hasEnough ? 'text-white' : 'text-red-400'
-                                    }`}
-                                  >
-                                    {inputItem?.imagePath && (
-                                      <img 
-                                        src={inputItem.imagePath} 
-                                        alt={inputItem.name} 
-                                        className="w-4 h-4 mr-1 object-contain"
-                                        style={{ imageRendering: 'pixelated' }}
-                                      />
-                                    )}
-                                    <span className="text-xs">
-                                      {input.quantity}x {inputItem?.name || input.itemId}
-                                    </span>
-                                  </div>
-                                );
-                              })}
+                                recipe.inputs.forEach(input => {
+                                  if (!requiredItems[input.itemId]) {
+                                    requiredItems[input.itemId] = {
+                                      itemId: input.itemId,
+                                      totalQuantity: 0,
+                                      item: getItemDetails(input.itemId)
+                                    };
+                                  }
+                                  requiredItems[input.itemId].totalQuantity += input.quantity;
+                                });
+                                
+                                return Object.values(requiredItems).map((requirement, idx) => {
+                                  const hasEnough = getInventoryQuantity(requirement.itemId) >= requirement.totalQuantity;
+                                  
+                                  return (
+                                    <div 
+                                      key={idx}
+                                      className={`flex items-center bg-black/40 px-1.5 py-0.5 rounded ${
+                                        hasEnough ? 'text-white' : 'text-red-400'
+                                      }`}
+                                    >
+                                      {requirement.item?.imagePath && (
+                                        <img 
+                                          src={requirement.item.imagePath} 
+                                          alt={requirement.item.name} 
+                                          className="w-4 h-4 mr-1 object-contain"
+                                          style={{ imageRendering: 'pixelated' }}
+                                        />
+                                      )}
+                                      <span className="text-xs">
+                                        {requirement.totalQuantity}x {requirement.item?.name || requirement.itemId}
+                                      </span>
+                                    </div>
+                                  );
+                                });
+                              })()}
                             </div>
                           </div>
                         </div>
