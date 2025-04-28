@@ -1321,12 +1321,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = (req as any).user;
       if (!user) return res.status(401).json({ message: "User not found" });
       
+      console.log('DEBUG - Reset inventory requested by user:', user.id, user.username);
+      console.log('DEBUG - Current user inventory before reset:', user.inventory);
+      
       // Check if user has admin role (you can replace this with your own admin check)
       const isAdmin = user.roles?.includes('admin');
       if (!isAdmin) return res.status(403).json({ message: "Admin privileges required" });
       
       // Get all items from the database
       const adminItems = await storage.getItems();
+      console.log(`DEBUG - Found ${adminItems.length} items in database to reset inventory with`);
       
       // Create a new inventory with exactly 1 of each item
       const newInventory: Record<string, number> = {};
@@ -1344,8 +1348,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Update user's inventory
-      await storage.updateUser(user.id, { inventory: newInventory });
+      console.log('DEBUG - New inventory after reset:', newInventory);
+      
+      // Special case for mock user (ID 999)
+      if (user.id === 999) {
+        // For the mock user, just update the in-memory object directly
+        user.inventory = newInventory;
+        console.log('DEBUG - Development mode: Updated mock user inventory directly:', newInventory);
+      } else {
+        // Update user's inventory in the database
+        await storage.updateUser(user.id, { inventory: newInventory });
+        console.log('DEBUG - User inventory updated in database');
+      }
       
       return res.json({ 
         message: `Reset inventory to exactly 1 of each item (${adminItems.length} items)`,

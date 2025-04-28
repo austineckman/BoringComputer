@@ -64,6 +64,9 @@ const mockUser = {
   activeTitle: null
 };
 
+// Log the mockUser inventory for debugging
+console.log('DEBUG - Mock user inventory initialized with:', mockUser.inventory);
+
 // Authentication middleware
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   // For development purposes, temporarily skip authentication
