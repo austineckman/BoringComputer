@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useRef, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useRef, useEffect, useCallback, ReactNode } from 'react';
 
 // Define the Track interface
 export interface Track {
@@ -76,7 +76,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const playTrack = (index: number) => {
+  const playTrack = useCallback((index: number) => {
     if (playlist.length === 0) return;
     
     // Ensure index is within bounds
@@ -91,7 +91,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       // Auto-play when track is selected
       play();
     }
-  };
+  }, [playlist]);
 
   // Define event handlers
   const handleTimeUpdate = () => {
@@ -103,13 +103,34 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const handleEnded = () => {
-    console.log("Track ended, playing next track");
+  // Forward reference for playTrack function
+  const playTrackRef = useRef<(index: number) => void>();
+  
+  // Update the ref when playTrack changes
+  useEffect(() => {
+    playTrackRef.current = playTrack;
+  }, [playTrack]);
+  
+  // Use useCallback to ensure reference stability across renders
+  const handleEnded = useCallback(() => {
+    console.log("Track ended, autoPlayEnabled:", autoPlayEnabled);
     if (playlist.length > 0 && autoPlayEnabled) {
-      const nextIndex = (currentTrackIndex + 1) % playlist.length;
-      playTrack(nextIndex);
+      console.log("Auto-playing next track...");
+      // Use setTimeout to ensure we're not trying to play immediately after 'ended'
+      // which can sometimes cause issues with the browser's autoplay policy
+      setTimeout(() => {
+        const nextIndex = (currentTrackIndex + 1) % playlist.length;
+        console.log(`Playing next track at index ${nextIndex}`);
+        
+        // Use the ref to avoid circular dependency
+        if (playTrackRef.current) {
+          playTrackRef.current(nextIndex);
+        }
+      }, 100);
+    } else {
+      console.log("Autoplay is disabled or playlist is empty");
     }
-  };
+  }, [autoPlayEnabled, playlist.length, currentTrackIndex]);
 
   const handleLoaded = () => {
     if (audioRef.current) {
@@ -129,7 +150,6 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       
       // Add event listeners
       audioRef.current.addEventListener('timeupdate', handleTimeUpdate);
-      audioRef.current.addEventListener('ended', handleEnded);
       audioRef.current.addEventListener('loadedmetadata', handleLoaded);
       audioRef.current.addEventListener('play', handlePlay);
       audioRef.current.addEventListener('pause', handlePause);
@@ -140,7 +160,6 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       if (audioRef.current) {
         // Properly remove event listeners
         audioRef.current.removeEventListener('timeupdate', handleTimeUpdate);
-        audioRef.current.removeEventListener('ended', handleEnded);
         audioRef.current.removeEventListener('loadedmetadata', handleLoaded);
         audioRef.current.removeEventListener('play', handlePlay);
         audioRef.current.removeEventListener('pause', handlePause);
@@ -151,6 +170,22 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       }
     };
   }, []);
+  
+  // Add a separate effect for the 'ended' event to ensure it updates when autoPlayEnabled changes
+  useEffect(() => {
+    if (audioRef.current) {
+      // Remove previous listener to prevent duplicates
+      audioRef.current.removeEventListener('ended', handleEnded);
+      // Add the updated listener
+      audioRef.current.addEventListener('ended', handleEnded);
+    }
+    
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.removeEventListener('ended', handleEnded);
+      }
+    };
+  }, [handleEnded, autoPlayEnabled, playlist.length, currentTrackIndex]);
 
   // Player controls
   const pause = () => {
