@@ -119,43 +119,6 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
       ]
     },
     {
-      id: "admin",
-      label: "Admin Tools",
-      icon: <Settings size={16} />,
-      submenu: user?.roles?.includes("admin") ? [
-        {
-          id: "quest-admin",
-          label: "Quest Management",
-          icon: <Settings size={16} />,
-          path: "/admin/quests"
-        },
-        {
-          id: "item-admin",
-          label: "Item Database",
-          icon: <Settings size={16} />,
-          path: "/admin/items"
-        },
-        {
-          id: "kit-admin",
-          label: "Component Kits",
-          icon: <Settings size={16} />,
-          path: "/admin/kits"
-        },
-        {
-          id: "user-admin",
-          label: "User Management",
-          icon: <User size={16} />,
-          path: "/admin/users"
-        },
-        {
-          id: "quest-generator",
-          label: "AI Quest Generator",
-          icon: <Settings size={16} />,
-          path: "/admin/quest-generator"
-        }
-      ] : []
-    },
-    {
       id: "profile",
       label: "My Profile",
       icon: <User size={16} />,
