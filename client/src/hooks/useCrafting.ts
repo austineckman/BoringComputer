@@ -38,7 +38,7 @@ export function useCrafting() {
   
   // Fetch recipes from API with shorter stale time to refresh more frequently
   const { data: recipes = [], isLoading: isRecipesLoading } = useQuery<Recipe[]>({
-    queryKey: ['/api/crafting/recipes'],
+    queryKey: ['/api/recipes'],
     staleTime: 10000, // 10 seconds (much shorter than default)
     refetchOnMount: true,
     refetchOnWindowFocus: true,
@@ -77,7 +77,7 @@ export function useCrafting() {
         gridPattern: grid
       });
       
-      const response = await fetch('/api/crafting/craft', {
+      const response = await fetch('/api/recipes/craft', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
