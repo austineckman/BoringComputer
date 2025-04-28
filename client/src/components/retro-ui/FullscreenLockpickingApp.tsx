@@ -2,6 +2,14 @@ import React, { useState, useEffect } from "react";
 import { X, Package, ChevronRight, AlertCircle, Sparkles, Loader2 } from "lucide-react";
 import wallbg from "@assets/wallbg.png";
 import picklockIconImage from "@assets/Untitled design - 2025-04-26T171551.402.png";
+import lootCrateImg from "@assets/loot crate.png";
+import copperImg from "@assets/copper.png";
+import clothImg from "@assets/cloth.png";
+import crystalImg from "@assets/crystal.png";
+import techscrapImg from "@assets/techscrap.png";
+import inkImg from "@assets/ink.png";
+import fireGrimoireImg from "@assets/01_Fire_Grimoire.png"; 
+import iceArmorImg from "@assets/62_Ice_Armor.png";
 import axios from "axios";
 
 interface FullscreenLockpickingAppProps {
@@ -443,244 +451,217 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
           
           {/* Right panel - Selected lootbox and opening interface */}
           <div className="w-2/3 pl-6 border-l border-gray-700 flex flex-col">
-            {/* Selected lootbox display */}
-            <div className="flex-1">
-              {!selectedLootbox ? (
-                <div className="h-full flex flex-col items-center justify-center">
-                  <Package className="h-20 w-20 text-gray-600 mb-4" />
-                  <h2 className="text-xl font-medium text-gray-400 mb-2">No Lootbox Selected</h2>
-                  <p className="text-gray-500 text-center max-w-md">
-                    Select a lootbox from the left to view its details and unlock its hidden treasures.
-                  </p>
+            {!selectedLootbox ? (
+              <div className="h-full flex flex-col items-center justify-center">
+                <Package className="h-20 w-20 text-gray-600 mb-4" />
+                <h2 className="text-xl font-medium text-gray-400 mb-2">No Lootbox Selected</h2>
+                <p className="text-gray-500 text-center max-w-md">
+                  Select a lootbox from the left to view its details and unlock its hidden treasures.
+                </p>
+              </div>
+            ) : (
+              <div className="h-full flex flex-col">
+                {/* Top: Lootbox Image Display */}
+                <div className="flex flex-col items-center justify-center mb-6">
+                  <div className={`relative w-48 h-48 bg-black/30 rounded-lg p-4 mb-4 overflow-hidden
+                    ${animatingReward ? 'animate-pulse' : ''}`}
+                  >
+                    {openingLootbox ? (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-blue-500/20 animate-pulse"></div>
+                        <Sparkles className="h-20 w-20 text-yellow-400 animate-bounce" />
+                      </div>
+                    ) : (
+                      <img
+                        src={lootCrateImg}
+                        alt={selectedLootbox.name || selectedLootbox.type}
+                        className="w-full h-full object-contain pixelated"
+                        style={{ 
+                          imageRendering: 'pixelated',
+                          filter: showRewards ? 'blur(10px) brightness(0.7)' : 'none',
+                          transition: 'all 0.5s ease'
+                        }}
+                      />
+                    )}
+                    
+                    {/* Show rewards overlay */}
+                    {showRewards && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/70 animate-fadeIn">
+                        <Sparkles className="h-12 w-12 text-yellow-400 animate-ping" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Open Button */}
+                  {!showRewards && !openingLootbox && (
+                    <button
+                      className="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg flex items-center"
+                      onClick={handleOpenLootbox}
+                      disabled={openingLootbox}
+                      onMouseEnter={() => window.sounds?.hover()}
+                    >
+                      <Package className="h-5 w-5 mr-2" />
+                      Open Lootbox
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <div className="h-full">
-                  {/* Lootbox Header */}
-                  <div className="mb-6">
+
+                {/* Bottom: Lootbox Details + Potential Rewards */}
+                {!showRewards ? (
+                  <div className="flex-1 bg-black/40 border border-gray-700 rounded-lg p-5 overflow-y-auto">
+                    {/* Lootbox Details */}
                     <h2 className="text-2xl font-bold text-blue-300 mb-2">{selectedLootbox.name || selectedLootbox.type}</h2>
                     <div className="flex items-center space-x-3 mb-4">
                       {renderRarityBadge(selectedLootbox.rarity)}
                       <span className="text-sm text-gray-400">
-                        ID: {selectedLootbox.id}
+                        Source: {selectedLootbox.source || 'Unknown'}
                       </span>
                     </div>
-                    <p className="text-gray-300">{selectedLootbox.description || 'A mysterious lootbox with unknown treasures inside.'}</p>
+                    <p className="text-gray-300 mb-6">
+                      {selectedLootbox.description || `A mysterious ${selectedLootbox.type} with unknown treasures inside.`}
+                    </p>
                     
-                    {/* Potential rewards section - showing the actual drop table data */}
-                    {potentialRewards.length > 0 && (
-                      <div className="mt-6">
-                        <h3 className="text-lg font-bold text-blue-300 mb-3">Potential Rewards:</h3>
-                        <p className="text-sm text-gray-400 mb-3">
-                          This crate may contain the following items. Rewards are randomized based on rarity.
-                        </p>
-                        <div className="grid grid-cols-4 gap-2">
-                          {potentialRewards.map((item) => (
-                            <div 
-                              key={item.id} 
-                              className="bg-black/40 border border-gray-700 rounded p-2 flex flex-col items-center"
-                              title={`${item.name} - ${item.description}`}
-                            >
-                              <div className="w-10 h-10 bg-black/50 rounded-md flex items-center justify-center mb-1.5">
-                                <img
-                                  src={item.imagePath}
-                                  alt={item.name}
-                                  className="w-8 h-8 object-contain"
-                                  style={{ imageRendering: 'pixelated' }}
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
-                                    (e.target as HTMLImageElement).className = 'w-6 h-6 opacity-30';
-                                  }}
-                                />
-                              </div>
-                              <span className="text-xs text-center whitespace-nowrap overflow-hidden text-ellipsis w-full">
-                                {item.name}
-                              </span>
-                              <span className="text-xs mt-0.5">
-                                {renderRarityBadge(item.rarity)}
-                              </span>
-                            </div>
-                          ))}
+                    {/* Potential Rewards Section */}
+                    <h3 className="text-lg font-bold text-blue-300 mb-3">Potential Rewards:</h3>
+                    <p className="text-sm text-gray-400 mb-4">
+                      This crate may contain the following items based on rarity.
+                    </p>
+                    
+                    <div className="grid grid-cols-4 gap-3">
+                      {potentialRewards.map((item) => (
+                        <div 
+                          key={item.id} 
+                          className="bg-black/40 border border-gray-700 rounded p-3 flex flex-col items-center"
+                        >
+                          <div className="w-12 h-12 bg-black/50 rounded-md flex items-center justify-center mb-2">
+                            <img
+                              src={
+                                item.id === "copper" ? copperImg : 
+                                item.id === "cloth" ? clothImg :
+                                item.id === "crystal" ? crystalImg :
+                                item.id === "techscrap" ? techscrapImg :
+                                item.id === "ink" ? inkImg :
+                                item.rarity === "legendary" ? fireGrimoireImg :
+                                item.rarity === "epic" ? iceArmorImg :
+                                item.imagePath
+                              }
+                              alt={item.name}
+                              className="w-10 h-10 object-contain"
+                              style={{ imageRendering: 'pixelated' }}
+                              onError={(e) => {
+                                // Fall back to a colored square based on rarity
+                                (e.target as HTMLImageElement).style.display = 'none';
+                                (e.target as HTMLImageElement).parentElement!.style.backgroundColor = 
+                                  item.rarity === 'legendary' ? '#f59e0b' :
+                                  item.rarity === 'epic' ? '#8b5cf6' :
+                                  item.rarity === 'rare' ? '#3b82f6' :
+                                  item.rarity === 'uncommon' ? '#10b981' :
+                                  '#6b7280';
+                              }}
+                            />
+                          </div>
+                          <span className="text-sm text-white font-medium text-center mb-1">
+                            {item.name}
+                          </span>
+                          <div>
+                            {renderRarityBadge(item.rarity)}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Lootbox Display */}
-                  <div className="flex flex-col items-center justify-center mb-8">
-                    <div className={`relative w-48 h-48 bg-black/30 rounded-lg p-4 mb-6 overflow-hidden
-                      ${animatingReward ? 'animate-pulse' : ''}`}
-                    >
-                      {openingLootbox ? (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="absolute inset-0 bg-blue-500/20 animate-pulse"></div>
-                          <Sparkles className="h-20 w-20 text-yellow-400 animate-bounce" />
-                        </div>
-                      ) : (
-                        <img
-                          src={selectedLootbox.image || '/images/lootboxes/common_lootbox.png'}
-                          alt={selectedLootbox.name}
-                          className="w-full h-full object-contain"
-                          style={{ 
-                            filter: showRewards ? 'blur(10px) brightness(0.7)' : 'none',
-                            transition: 'all 0.5s ease'
-                          }}
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
-                            (e.target as HTMLImageElement).style.filter = 'none';
-                          }}
-                        />
-                      )}
-                      
-                      {/* Show rewards overlay */}
-                      {showRewards && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/70 animate-fadeIn">
-                          <Sparkles className="h-12 w-12 text-yellow-400 animate-ping" />
-                        </div>
-                      )}
+                      ))}
                     </div>
-                    
-                    {!showRewards && !openingLootbox && (
-                      <button
-                        className="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg flex items-center"
-                        onClick={handleOpenLootbox}
-                        disabled={openingLootbox}
-                        onMouseEnter={() => window.sounds?.hover()}
-                      >
-                        <Package className="h-5 w-5 mr-2" />
-                        Attempt Opening Box
-                      </button>
-                    )}
                   </div>
-
-                  {/* Rewards Display */}
-                  {showRewards && (
-                    <div className="bg-black/50 border border-blue-500/50 rounded-lg p-4 animate-fadeIn">
-                      <h3 className="text-lg font-medium text-blue-300 mb-4 flex items-center">
-                        <Sparkles className="h-5 w-5 mr-2 text-yellow-400" />
-                        Rewards Unlocked!
-                      </h3>
-                      
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {lootboxRewards.map((reward, index) => {
-                          const item = itemsInfo[reward.id];
-                          return (
-                            <div 
-                              key={`${reward.id}-${index}`}
-                              className="flex items-center gap-3 bg-gray-900/50 border border-gray-700 rounded-lg p-3 animate-fadeInUp"
-                              style={{ animationDelay: `${index * 0.1}s` }}
-                            >
-                              <div className="w-12 h-12 bg-black/30 rounded-md flex items-center justify-center overflow-hidden">
-                                <img
-                                  src={item?.imagePath || '/images/items/placeholder.png'}
-                                  alt={item?.name || reward.id}
-                                  className="w-full h-full object-contain"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
-                                    (e.target as HTMLImageElement).className = 'w-8 h-8 opacity-30';
-                                  }}
-                                />
+                ) : (
+                  /* Rewards Display (after opening) */
+                  <div className="flex-1 bg-black/50 border border-blue-500/50 rounded-lg p-4 animate-fadeIn">
+                    <h3 className="text-lg font-medium text-blue-300 mb-4 flex items-center">
+                      <Sparkles className="h-5 w-5 mr-2 text-yellow-400" />
+                      Rewards Unlocked!
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {lootboxRewards.map((reward, index) => {
+                        const item = itemsInfo[reward.id];
+                        return (
+                          <div 
+                            key={`${reward.id}-${index}`}
+                            className="flex items-center gap-3 bg-gray-900/50 border border-gray-700 rounded-lg p-3 animate-fadeInUp"
+                            style={{ animationDelay: `${index * 0.1}s` }}
+                          >
+                            <div className="w-12 h-12 bg-black/30 rounded-md flex items-center justify-center overflow-hidden">
+                              <img
+                                src={
+                                  reward.id === "copper" ? copperImg : 
+                                  reward.id === "cloth" ? clothImg :
+                                  reward.id === "crystal" ? crystalImg :
+                                  reward.id === "techscrap" ? techscrapImg :
+                                  reward.id === "ink" ? inkImg :
+                                  item?.rarity === "legendary" ? fireGrimoireImg :
+                                  item?.rarity === "epic" ? iceArmorImg :
+                                  item?.imagePath
+                                }
+                                alt={item?.name || reward.id}
+                                className="w-full h-full object-contain"
+                                style={{ imageRendering: 'pixelated' }}
+                                onError={(e) => {
+                                  // Fall back to a colored square based on rarity
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                  (e.target as HTMLImageElement).parentElement!.style.backgroundColor = 
+                                    item?.rarity === 'legendary' ? '#f59e0b' :
+                                    item?.rarity === 'epic' ? '#8b5cf6' :
+                                    item?.rarity === 'rare' ? '#3b82f6' :
+                                    item?.rarity === 'uncommon' ? '#10b981' :
+                                    '#6b7280';
+                                }}
+                              />
+                            </div>
+                            
+                            <div className="flex-1">
+                              <div className="flex justify-between items-start">
+                                <h4 className="font-medium text-white">
+                                  {item?.name || reward.id}
+                                </h4>
+                                <span className="font-bold text-green-400">
+                                  x{reward.quantity}
+                                </span>
                               </div>
                               
-                              <div className="flex-1">
-                                <div className="flex justify-between items-start">
-                                  <h4 className="font-medium text-white">
-                                    {item?.name || reward.id}
-                                  </h4>
-                                  <span className="font-bold text-green-400">
-                                    x{reward.quantity}
-                                  </span>
+                              {item && (
+                                <p className="text-xs text-gray-400 line-clamp-1 mt-1">
+                                  {item.description}
+                                </p>
+                              )}
+                              
+                              {item && (
+                                <div className="mt-1">
+                                  {renderRarityBadge(item.rarity)}
                                 </div>
-                                
-                                {item && (
-                                  <p className="text-xs text-gray-400 line-clamp-1 mt-1">
-                                    {item.description}
-                                  </p>
-                                )}
-                                
-                                {item && (
-                                  <div className="mt-1">
-                                    {renderRarityBadge(item.rarity)}
-                                  </div>
-                                )}
-                              </div>
+                              )}
                             </div>
-                          );
-                        })}
-                      </div>
-                      
-                      {lootboxRewards.length === 0 && (
-                        <div className="text-center py-6">
-                          <p className="text-gray-400">No rewards found in this lootbox.</p>
-                        </div>
-                      )}
-                      
-                      <div className="mt-6 text-center">
-                        <button
-                          className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-md"
-                          onClick={() => {
-                            setSelectedLootbox(null);
-                            setShowRewards(false);
-                          }}
-                          onMouseEnter={() => window.sounds?.hover()}
-                        >
-                          Close
-                        </button>
-                      </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
-            
-            {/* Bottom section - Potential rewards */}
-            {selectedLootbox && !showRewards && (
-              <div className="mt-4 bg-black/40 border border-gray-700 rounded-lg p-4">
-                <h3 className="text-md font-medium text-gray-300 mb-3 flex items-center">
-                  <ChevronRight className="h-5 w-5 mr-1" />
-                  Potential Rewards
-                </h3>
-                <p className="text-sm text-gray-400 mb-4">
-                  This {selectedLootbox.type} lootbox may contain items of varying rarity and quantity.
-                  Will you get a common item or a legendary treasure?
-                </p>
-                
-                {/* Display potential rewards based on lootbox type and sorted by rarity */}
-                <div className="grid grid-cols-5 gap-3">
-                  {/* Show items from the actual drop table of the lootbox config */}
-                  {potentialRewards
-                    .slice(0, 5) // Show up to 5 items total
-                    .map(item => (
-                      <div key={item.id} className="bg-black/30 p-2 rounded border border-gray-700 flex flex-col items-center">
-                        <div className="w-10 h-10 bg-black/50 rounded-md flex items-center justify-center mb-1 overflow-hidden">
-                          <img 
-                            src={item.id === "copper" ? "/assets/copper.png" : 
-                                 item.id === "cloth" ? "/assets/cloth.png" :
-                                 item.id === "crystal" ? "/assets/crystal.png" :
-                                 item.id === "circuit-board" ? "/assets/circuit-board.png" :
-                                 item.id === "techscrap" ? "/assets/techscrap.png" :
-                                 item.id === "ink" ? "/assets/ink.png" :
-                                 item.rarity === "legendary" ? "/assets/fire-grimoire.png" :
-                                 item.rarity === "epic" ? "/assets/ice-armor.png" :
-                                 item.imagePath}
-                            alt={item.name}
-                            className="w-8 h-8 object-contain"
-                            style={{ imageRendering: 'pixelated' }}
-                            onError={(e) => {
-                              console.log(`Failed to load image for item: ${item.id} (${item.name}), path: ${item.imagePath}`);
-                              (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
-                              (e.target as HTMLImageElement).className = 'w-6 h-6 opacity-30';
-                            }}
-                          />
-                        </div>
-                        <span className="text-xs text-gray-300 truncate w-full text-center">{item.name}</span>
-                        {renderRarityBadge(item.rarity)}
+                    
+                    {lootboxRewards.length === 0 && (
+                      <div className="text-center py-6">
+                        <p className="text-gray-400">No rewards found in this lootbox.</p>
                       </div>
-                    ))}
-                </div>
-                
-                <p className="text-xs text-gray-500 mt-3 italic">
-                  Note: These are example items. Actual rewards are generated randomly.
-                </p>
+                    )}
+                    
+                    <div className="mt-6 text-center">
+                      <button
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-md"
+                        onClick={() => {
+                          setSelectedLootbox(null);
+                          setShowRewards(false);
+                        }}
+                        onMouseEnter={() => window.sounds?.hover()}
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
