@@ -1,7 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, X, AlertTriangle, Check } from "lucide-react";
+import { Loader2, AlertTriangle, Check, Flame, Hammer, Sparkles, ChevronRight, Filter } from "lucide-react";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import forgeBackground from "@assets/forgehero.png";
 
 // Define interfaces locally
 interface ItemDetails {
@@ -52,6 +55,179 @@ interface CraftingGridItem {
   itemDetails?: ItemDetails;
 }
 
+interface DragItem {
+  type: string;
+  itemId: string;
+  quantity: number;
+  source: 'inventory' | 'grid';
+  position?: [number, number];
+}
+
+// Draggable inventory item component
+const DraggableInventoryItem: React.FC<{
+  item: any;
+  itemDetails: ItemDetails | null;
+  index: number;
+}> = ({ item, itemDetails, index }) => {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: 'INVENTORY_ITEM',
+    item: {
+      type: 'INVENTORY_ITEM',
+      itemId: item.type,
+      quantity: item.quantity,
+      source: 'inventory' as const,
+    },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  }));
+
+  const getRarityClasses = (rarity: string) => {
+    const classes: Record<string, string> = {
+      common: 'border-gray-400 bg-black/60',
+      uncommon: 'border-green-500 shadow-[0_0_8px_1px_rgba(30,255,0,0.4)] bg-green-950/40',
+      rare: 'border-blue-500 shadow-[0_0_8px_1px_rgba(0,112,221,0.5)] bg-blue-950/40',
+      epic: 'border-purple-500 shadow-[0_0_10px_2px_rgba(163,53,238,0.5)] bg-purple-950/40',
+      legendary: 'border-yellow-500 shadow-[0_0_10px_2px_rgba(255,215,0,0.6)] bg-amber-950/40',
+    };
+    return classes[rarity] || 'border-gray-400 bg-black/60';
+  };
+
+  return (
+    <div 
+      ref={drag}
+      className={`relative w-12 h-12 border ${
+        itemDetails?.rarity ? getRarityClasses(itemDetails.rarity) : 'border-gray-600 bg-black/40'
+      } rounded cursor-grab ${isDragging ? 'opacity-50' : 'opacity-100'}`}
+    >
+      {itemDetails?.imagePath && (
+        <img 
+          src={itemDetails.imagePath} 
+          alt={itemDetails.name || 'Item'} 
+          className="w-full h-full object-contain p-1" 
+          style={{ imageRendering: 'pixelated' }}
+          draggable={false}
+        />
+      )}
+      <div className="absolute bottom-0 right-0 bg-black/80 text-amber-300 text-xs px-1 rounded-tl font-pixel">
+        {item.quantity}
+      </div>
+    </div>
+  );
+};
+
+// Droppable crafting grid cell component
+const CraftingGridCell: React.FC<{
+  rowIndex: number;
+  colIndex: number;
+  cell: CraftingGridItem;
+  onDrop: (item: DragItem, rowIndex: number, colIndex: number) => void;
+  onRemove: (rowIndex: number, colIndex: number) => void;
+}> = ({ rowIndex, colIndex, cell, onDrop, onRemove }) => {
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: 'INVENTORY_ITEM',
+    drop: (item: DragItem) => {
+      onDrop(item, rowIndex, colIndex);
+    },
+    collect: (monitor) => ({
+      isOver: !!monitor.isOver(),
+    }),
+  }));
+
+  // Make grid items draggable too
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: 'INVENTORY_ITEM',
+    item: cell.itemId ? {
+      type: 'INVENTORY_ITEM',
+      itemId: cell.itemId,
+      quantity: cell.quantity,
+      source: 'grid' as const,
+      position: [rowIndex, colIndex],
+    } : null,
+    canDrag: !!cell.itemId,
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  }));
+
+  const cellRef = useRef<HTMLDivElement>(null);
+  
+  // Set the drag ref on the cell content if there's an item, otherwise on the cell itself
+  const dragDropRef = cell.itemId ? drag(drop(cellRef)) : drop(cellRef);
+
+  return (
+    <div
+      ref={dragDropRef}
+      className={`w-16 h-16 relative border-2 ${
+        isOver ? 'border-amber-500 bg-black/40 scale-105' : 'border-gray-700 bg-black/30'
+      } rounded-md flex items-center justify-center transition-all duration-100 ${
+        cell.itemId ? 'cursor-grab' : 'cursor-default'
+      } ${isDragging ? 'opacity-50' : 'opacity-100'}`}
+      onClick={() => cell.itemId && onRemove(rowIndex, colIndex)}
+    >
+      {!cell.itemId && (
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%3E%3Crect%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23ffffff10%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23ffffff10%22%2F%3E%3C%2Fsvg%3E')] opacity-30"></div>
+      )}
+      
+      {cell.itemId && cell.itemDetails && (
+        <>
+          <img 
+            src={cell.itemDetails.imagePath} 
+            alt={cell.itemDetails.name} 
+            className="w-12 h-12 object-contain" 
+            style={{ imageRendering: 'pixelated' }}
+            draggable={false}
+          />
+          {cell.quantity > 1 && (
+            <div className="absolute bottom-0 right-0 bg-black/80 text-amber-300 text-xs px-1 rounded-tl font-pixel">
+              {cell.quantity}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
+
+// Animation for crafting success
+const CraftingSuccess: React.FC<{ 
+  position: { x: number, y: number }, 
+  isVisible: boolean,
+  onAnimationEnd: () => void
+}> = ({ position, isVisible, onAnimationEnd }) => {
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(() => {
+        onAnimationEnd();
+      }, 2000); // Match this with the animation duration
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, onAnimationEnd]);
+
+  if (!isVisible) return null;
+
+  return (
+    <div 
+      className="absolute pointer-events-none z-50"
+      style={{ 
+        left: position.x, 
+        top: position.y,
+        transform: 'translate(-50%, -50%)'
+      }}
+    >
+      <div className="relative">
+        <Sparkles className="text-amber-400 w-12 h-12 animate-ping" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-amber-300 font-bold text-xl animate-bounce">
+            ✓
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Main CraftingWindow component
 const CraftingWindow: React.FC = () => {
   // Initialize a 3x3 crafting grid with empty cells
   const [craftingGrid, setCraftingGrid] = useState<CraftingGridItem[][]>(
@@ -62,6 +238,15 @@ const CraftingWindow: React.FC = () => {
   
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [craftMessage, setCraftMessage] = useState<{text: string, type: 'success' | 'error' | 'info'} | null>(null);
+  const [difficultyFilter, setDifficultyFilter] = useState<string | null>(null);
+  
+  // Animation state
+  const [craftSuccess, setCraftSuccess] = useState({
+    isVisible: false,
+    position: { x: 0, y: 0 }
+  });
+  
+  const outputRef = useRef<HTMLDivElement>(null);
 
   // Fetch inventory items
   const { 
@@ -131,6 +316,12 @@ const CraftingWindow: React.FC = () => {
     });
   }, [serverRecipes]);
 
+  // Filter recipes by difficulty if filter is active
+  const filteredRecipes = React.useMemo(() => {
+    if (!difficultyFilter) return recipes;
+    return recipes.filter(recipe => recipe.difficulty === difficultyFilter);
+  }, [recipes, difficultyFilter]);
+
   // Craft mutation
   const craftMutation = useMutation({
     mutationFn: async (recipeId: string) => {
@@ -146,6 +337,18 @@ const CraftingWindow: React.FC = () => {
       return await res.json();
     },
     onSuccess: () => {
+      // Show success animation
+      if (outputRef.current) {
+        const rect = outputRef.current.getBoundingClientRect();
+        setCraftSuccess({
+          isVisible: true,
+          position: {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2
+          }
+        });
+      }
+      
       // Clear grid
       setCraftingGrid(Array(3).fill(null).map(() => 
         Array(3).fill(null).map(() => ({ itemId: null, quantity: 0 }))
@@ -186,9 +389,73 @@ const CraftingWindow: React.FC = () => {
     return item ? item.quantity : 0;
   };
 
-  const handleItemClick = (row: number, col: number) => {
-    // Handle removing items from the grid
-    const updatedGrid = [...craftingGrid];
+  // Handle drop on crafting grid
+  const handleItemDrop = (item: DragItem, row: number, col: number) => {
+    // Create a copy of the current grid
+    const updatedGrid = [...craftingGrid.map(r => [...r])];
+    
+    // If the item is coming from another grid cell, clear that cell
+    if (item.source === 'grid' && item.position) {
+      const [sourceRow, sourceCol] = item.position;
+      if (sourceRow !== row || sourceCol !== col) { // Only clear if not the same cell
+        updatedGrid[sourceRow][sourceCol] = { itemId: null, quantity: 0 };
+      }
+    }
+    
+    // Add the item to the target cell
+    const itemDetails = getItemDetails(item.itemId);
+    updatedGrid[row][col] = {
+      itemId: item.itemId,
+      quantity: item.source === 'inventory' ? 1 : item.quantity, // From inventory we only take 1
+      itemDetails
+    };
+    
+    // Update the grid
+    setCraftingGrid(updatedGrid);
+    
+    // Check if this matches any recipe
+    const matchingRecipe = recipes.find(recipe => {
+      const pattern = Array(3).fill(null).map(() => Array(3).fill(null));
+      
+      // Fill the pattern based on our grid
+      updatedGrid.forEach((row, rowIdx) => {
+        row.forEach((cell, colIdx) => {
+          pattern[rowIdx][colIdx] = cell.itemId;
+        });
+      });
+      
+      // Check if this matches the recipe pattern
+      for (const input of recipe.inputs) {
+        const [r, c] = input.position;
+        if (pattern[r][c] !== input.itemId) {
+          return false;
+        }
+      }
+      
+      // Also check that empty cells in the recipe are empty in our pattern
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          const hasInput = recipe.inputs.some(input => 
+            input.position[0] === r && input.position[1] === c
+          );
+          
+          if (!hasInput && pattern[r][c] !== null) {
+            return false;
+          }
+        }
+      }
+      
+      return true;
+    });
+    
+    if (matchingRecipe) {
+      setSelectedRecipeId(matchingRecipe.id);
+    }
+  };
+
+  // Handle removing items from the grid
+  const handleRemoveItem = (row: number, col: number) => {
+    const updatedGrid = [...craftingGrid.map(r => [...r])];
     updatedGrid[row][col] = { itemId: null, quantity: 0 };
     setCraftingGrid(updatedGrid);
   };
@@ -249,199 +516,349 @@ const CraftingWindow: React.FC = () => {
   if (inventoryLoading || itemsLoading || recipesLoading) {
     return (
       <div className="flex items-center justify-center h-full p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-border" />
+        <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
       </div>
     );
   }
 
-  // Rarity colors for the UI
-  const getRarityColor = (rarity: string) => {
+  // Get difficulty colors
+  const getDifficultyColor = (difficulty: string) => {
     const colors: Record<string, string> = {
-      common: 'bg-gray-300',
-      uncommon: 'bg-green-300',
-      rare: 'bg-blue-300',
-      epic: 'bg-purple-300',
-      legendary: 'bg-yellow-300',
+      easy: 'text-green-400 bg-green-900/20 border-green-900/50',
+      medium: 'text-yellow-400 bg-yellow-900/20 border-yellow-900/50',
+      hard: 'text-red-400 bg-red-900/20 border-red-900/50',
     };
-    return colors[rarity] || 'bg-gray-300';
+    return colors[difficulty] || 'text-gray-400 bg-gray-900/20 border-gray-900/50';
   };
 
   return (
-    <div className="p-4 flex h-full">
-      {/* Left side - Recipes */}
-      <div className="w-1/3 pr-4 border-r border-gray-300 overflow-y-auto">
-        <h2 className="text-lg font-bold mb-3">Recipes</h2>
-        {recipesLoading ? (
-          <div className="flex items-center justify-center p-4">
-            <Loader2 className="h-6 w-6 animate-spin text-border" />
-          </div>
-        ) : recipes && recipes.length > 0 ? (
-          <div className="space-y-2">
-            {recipes.map((recipe) => {
-              const outputItem = getItemDetails(recipe.output.itemId);
-              
-              return (
-                <div 
-                  key={recipe.id}
-                  className={`p-2 border rounded cursor-pointer hover:bg-gray-100 transition-colors ${selectedRecipeId === recipe.id ? 'bg-blue-100 border-blue-500' : 'border-gray-300'}`}
-                  onClick={() => handleRecipeClick(recipe)}
-                >
-                  <div className="flex items-center">
-                    {outputItem?.imagePath && (
-                      <div className={`w-10 h-10 ${getRarityColor(outputItem.rarity)} rounded-md mr-3 flex items-center justify-center`}>
-                        <img 
-                          src={outputItem.imagePath} 
-                          alt={outputItem.name} 
-                          className="w-8 h-8 object-contain pixelated-image"
-                        />
-                      </div>
-                    )}
-                    <div>
-                      <div className="font-bold text-sm">{recipe.name}</div>
-                      <div className="text-xs text-gray-600">{recipe.description}</div>
-                    </div>
-                  </div>
+    <DndProvider backend={HTML5Backend}>
+      <div 
+        className="w-full h-full overflow-hidden rounded-lg text-white"
+        style={{
+          backgroundImage: `url(${forgeBackground})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          imageRendering: 'pixelated',
+          height: '100%'
+        }}
+      >
+        {/* Main container with semi-transparent overlay */}
+        <div className="w-full h-full bg-black/40 backdrop-blur-[1px] flex flex-col">
+          {/* Header with title and animated flames */}
+          <div className="bg-gradient-to-r from-amber-900/90 to-amber-800/70 px-4 py-3 border-b border-amber-700/70 flex justify-between items-center">
+            <div className="flex items-center">
+              <div className="relative">
+                <Flame className="h-5 w-5 mr-2 text-amber-300 animate-pulse" />
+                <div className="absolute inset-0 opacity-50">
+                  <Flame className="h-5 w-5 mr-2 text-orange-500 animate-ping" style={{ animationDuration: '3s' }} />
                 </div>
-              );
-            })}
+              </div>
+              <h2 className="text-lg font-bold text-amber-200">Gizbo's Forge</h2>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <div 
+                className={`px-3 py-1 rounded-md border cursor-pointer transition-colors ${
+                  difficultyFilter === 'easy' ? 'bg-green-700/50 text-white' : 'text-green-400 hover:bg-green-900/30'
+                }`}
+                onClick={() => setDifficultyFilter(difficultyFilter === 'easy' ? null : 'easy')}
+              >
+                Easy
+              </div>
+              <div 
+                className={`px-3 py-1 rounded-md border cursor-pointer transition-colors ${
+                  difficultyFilter === 'medium' ? 'bg-yellow-700/50 text-white' : 'text-yellow-400 hover:bg-yellow-900/30'
+                }`}
+                onClick={() => setDifficultyFilter(difficultyFilter === 'medium' ? null : 'medium')}
+              >
+                Medium
+              </div>
+              <div 
+                className={`px-3 py-1 rounded-md border cursor-pointer transition-colors ${
+                  difficultyFilter === 'hard' ? 'bg-red-700/50 text-white' : 'text-red-400 hover:bg-red-900/30'
+                }`}
+                onClick={() => setDifficultyFilter(difficultyFilter === 'hard' ? null : 'hard')}
+              >
+                Hard
+              </div>
+              {difficultyFilter && (
+                <div 
+                  className="px-2 py-1 rounded-md bg-gray-800/50 hover:bg-gray-700/50 cursor-pointer text-xs text-white flex items-center"
+                  onClick={() => setDifficultyFilter(null)}
+                >
+                  <Filter className="h-3 w-3 mr-1" /> Clear
+                </div>
+              )}
+            </div>
           </div>
-        ) : (
-          <div className="p-4 text-center text-gray-500">
-            <p>No recipes available</p>
-            <p className="text-xs mt-1">Complete quests to unlock recipes</p>
-          </div>
-        )}
-      </div>
-      
-      {/* Right side - Crafting grid and result */}
-      <div className="w-2/3 pl-4 flex flex-col">
-        <h2 className="text-lg font-bold mb-3">Crafting</h2>
-        
-        {/* Crafting Grid */}
-        <div className="mb-4">
-          <div className="grid grid-cols-3 gap-1 w-fit border-2 border-gray-400 p-2 bg-gray-100">
-            {craftingGrid.map((row, rowIndex) => (
-              row.map((cell, colIndex) => {
-                const itemDetails = cell.itemId ? getItemDetails(cell.itemId) : null;
-                
-                return (
-                  <div 
-                    key={`${rowIndex}-${colIndex}`} 
-                    className="w-16 h-16 bg-gray-200 border border-gray-400 flex items-center justify-center relative"
-                    onClick={() => handleItemClick(rowIndex, colIndex)}
-                  >
-                    {cell.itemId && itemDetails && (
-                      <>
-                        <img 
-                          src={itemDetails.imagePath} 
-                          alt={itemDetails.name} 
-                          className="w-12 h-12 object-contain pixelated-image"
-                        />
-                        {cell.quantity > 1 && (
-                          <div className="absolute bottom-0 right-0 bg-gray-800 text-white text-xs px-1 rounded">
-                            {cell.quantity}
-                          </div>
-                        )}
-                      </>
-                    )}
+          
+          {/* Three-column layout with recipes, crafting grid, and output */}
+          <div className="flex flex-1 overflow-hidden p-4 gap-4">
+            {/* Left column - Recipes */}
+            <div className="w-1/3 bg-black/60 border border-amber-900/50 rounded-lg overflow-hidden flex flex-col">
+              <div className="px-3 py-2 bg-gradient-to-r from-amber-900/80 to-amber-800/50 border-b border-amber-700/50">
+                <h3 className="font-medium text-amber-200">Available Recipes</h3>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                {recipesLoading ? (
+                  <div className="flex items-center justify-center p-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
                   </div>
-                );
-              })
-            ))}
-          </div>
-        </div>
-        
-        {/* Crafting Output */}
-        <div className="mt-4">
-          {selectedRecipeId && (
-            <div className="flex flex-col items-center">
-              <div className="mb-2">
-                <div className="w-20 h-20 bg-gray-800 border-2 border-yellow-400 rounded-md flex items-center justify-center">
-                  {(() => {
-                    const recipe = recipes?.find(r => r.id === selectedRecipeId);
-                    if (!recipe) return null;
-                    
-                    const outputItem = getItemDetails(recipe.output.itemId);
-                    if (!outputItem) return null;
-                    
-                    return (
-                      <>
-                        <img 
-                          src={outputItem.imagePath} 
-                          alt={outputItem.name} 
-                          className="w-16 h-16 object-contain pixelated-image"
-                        />
-                        {recipe.output.quantity > 1 && (
-                          <div className="absolute bottom-0 right-0 bg-gray-800 text-white text-xs px-1 rounded">
-                            {recipe.output.quantity}
+                ) : filteredRecipes && filteredRecipes.length > 0 ? (
+                  <div className="space-y-2">
+                    {filteredRecipes.map((recipe) => {
+                      const outputItem = getItemDetails(recipe.output.itemId);
+                      
+                      return (
+                        <div 
+                          key={recipe.id}
+                          className={`p-2 border rounded cursor-pointer transition-colors ${
+                            selectedRecipeId === recipe.id 
+                              ? 'bg-amber-800/50 border-amber-500/80' 
+                              : 'border-gray-700/50 hover:bg-gray-800/50'
+                          }`}
+                          onClick={() => handleRecipeClick(recipe)}
+                        >
+                          <div className="flex items-center">
+                            {outputItem?.imagePath && (
+                              <div className={`w-10 h-10 bg-black/60 rounded-md mr-3 flex items-center justify-center border ${
+                                outputItem.rarity === 'legendary' ? 'border-amber-500' :
+                                outputItem.rarity === 'epic' ? 'border-purple-500' :
+                                outputItem.rarity === 'rare' ? 'border-blue-500' :
+                                outputItem.rarity === 'uncommon' ? 'border-green-500' :
+                                'border-gray-600'
+                              }`}>
+                                <img 
+                                  src={outputItem.imagePath} 
+                                  alt={outputItem.name} 
+                                  className="w-8 h-8 object-contain"
+                                  style={{ imageRendering: 'pixelated' }}
+                                  draggable={false}
+                                />
+                              </div>
+                            )}
+                            <div className="flex-1">
+                              <div className="font-medium text-sm">{recipe.name}</div>
+                              <div className="text-xs text-gray-400">{recipe.description}</div>
+                              <div className={`text-xs mt-1 inline-block px-1.5 rounded-sm border ${getDifficultyColor(recipe.difficulty)}`}>
+                                {recipe.difficulty.charAt(0).toUpperCase() + recipe.difficulty.slice(1)}
+                              </div>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-amber-500" />
                           </div>
+                          
+                          {/* Show recipe ingredients */}
+                          <div className="mt-2 pt-2 border-t border-gray-700/50">
+                            <div className="text-xs text-gray-400 mb-1">Requires:</div>
+                            <div className="flex flex-wrap gap-2">
+                              {recipe.inputs.map((input, idx) => {
+                                const inputItem = getItemDetails(input.itemId);
+                                const hasEnough = getInventoryQuantity(input.itemId) >= input.quantity;
+                                
+                                return (
+                                  <div 
+                                    key={idx}
+                                    className={`flex items-center bg-black/40 px-1.5 py-0.5 rounded ${
+                                      hasEnough ? 'text-white' : 'text-red-400'
+                                    }`}
+                                  >
+                                    {inputItem?.imagePath && (
+                                      <img 
+                                        src={inputItem.imagePath} 
+                                        alt={inputItem.name} 
+                                        className="w-4 h-4 mr-1 object-contain"
+                                        style={{ imageRendering: 'pixelated' }}
+                                      />
+                                    )}
+                                    <span className="text-xs">
+                                      {input.quantity}x {inputItem?.name || input.itemId}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-gray-400">
+                    <p>No recipes available</p>
+                    <p className="text-xs mt-1">Complete quests to unlock recipes</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Middle column - Crafting grid */}
+            <div className="w-1/3 bg-black/60 border border-amber-900/50 rounded-lg overflow-hidden flex flex-col">
+              <div className="px-3 py-2 bg-gradient-to-r from-amber-900/80 to-amber-800/50 border-b border-amber-700/50 flex items-center">
+                <Hammer className="h-4 w-4 mr-2 text-amber-300" />
+                <h3 className="font-medium text-amber-200">Crafting Grid</h3>
+              </div>
+              
+              <div className="flex-1 p-6 flex items-center justify-center">
+                <div className="grid grid-cols-3 gap-2 p-3 bg-black/40 border-2 border-amber-900/70 rounded-lg shadow-[0_0_20px_rgba(0,0,0,0.4)]">
+                  {craftingGrid.map((row, rowIndex) => (
+                    row.map((cell, colIndex) => (
+                      <CraftingGridCell
+                        key={`${rowIndex}-${colIndex}`}
+                        rowIndex={rowIndex}
+                        colIndex={colIndex}
+                        cell={cell}
+                        onDrop={handleItemDrop}
+                        onRemove={handleRemoveItem}
+                      />
+                    ))
+                  ))}
+                </div>
+                
+                {/* Animation overlay */}
+                <CraftingSuccess 
+                  position={craftSuccess.position}
+                  isVisible={craftSuccess.isVisible}
+                  onAnimationEnd={() => setCraftSuccess({ ...craftSuccess, isVisible: false })}
+                />
+              </div>
+              
+              {/* Crafting instructions */}
+              <div className="px-4 py-2 bg-black/40 text-xs text-gray-400 border-t border-amber-900/30">
+                <p>Drag items from your inventory to the grid. Click items to remove them.</p>
+              </div>
+            </div>
+            
+            {/* Right column - Output and inventory */}
+            <div className="w-1/3 flex flex-col gap-3">
+              {/* Output section */}
+              <div className="bg-black/60 border border-amber-900/50 rounded-lg overflow-hidden flex flex-col h-1/2">
+                <div className="px-3 py-2 bg-gradient-to-r from-amber-900/80 to-amber-800/50 border-b border-amber-700/50">
+                  <h3 className="font-medium text-amber-200">Output</h3>
+                </div>
+                
+                <div className="flex-1 flex items-center justify-center p-4">
+                  {selectedRecipeId ? (
+                    <div className="flex flex-col items-center">
+                      <div className="mb-4">
+                        <div 
+                          ref={outputRef}
+                          className="w-20 h-20 bg-black/60 border-2 border-amber-500 rounded-md flex items-center justify-center relative overflow-hidden"
+                        >
+                          {(() => {
+                            const recipe = recipes?.find(r => r.id === selectedRecipeId);
+                            if (!recipe) return null;
+                            
+                            const outputItem = getItemDetails(recipe.output.itemId);
+                            if (!outputItem) return null;
+                            
+                            // Add a subtle glow based on rarity
+                            const glowColor = 
+                              outputItem.rarity === 'legendary' ? 'rgba(255, 215, 0, 0.3)' :
+                              outputItem.rarity === 'epic' ? 'rgba(163, 53, 238, 0.3)' :
+                              outputItem.rarity === 'rare' ? 'rgba(0, 112, 221, 0.3)' :
+                              outputItem.rarity === 'uncommon' ? 'rgba(30, 255, 0, 0.3)' :
+                              'rgba(255, 255, 255, 0.2)';
+                            
+                            return (
+                              <>
+                                <div className="absolute inset-0 animate-pulse" style={{ 
+                                  boxShadow: `inset 0 0 15px ${glowColor}`,
+                                  animationDuration: '2s'
+                                }}></div>
+                                <img 
+                                  src={outputItem.imagePath} 
+                                  alt={outputItem.name} 
+                                  className="w-16 h-16 object-contain z-10"
+                                  style={{ imageRendering: 'pixelated' }}
+                                />
+                                {recipe.output.quantity > 1 && (
+                                  <div className="absolute bottom-0 right-0 bg-black/80 text-amber-300 text-xs px-1 rounded-tl font-pixel z-20">
+                                    {recipe.output.quantity}
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                      
+                      <button 
+                        className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 
+                                 text-white rounded-md border border-amber-800 shadow-md transition-colors
+                                 flex items-center justify-center gap-2 min-w-32"
+                        onClick={handleCraftClick}
+                        disabled={craftMutation.isPending}
+                      >
+                        {craftMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Hammer className="h-4 w-4" />
+                            <span>Forge Item</span>
+                          </>
                         )}
-                      </>
-                    );
-                  })()}
+                      </button>
+                      
+                      {/* Crafting Messages */}
+                      {craftMessage && (
+                        <div className={`mt-3 p-2 rounded ${
+                          craftMessage.type === 'success' ? 'bg-green-900/60 text-green-300 border border-green-500/30' : 
+                          craftMessage.type === 'error' ? 'bg-red-900/60 text-red-300 border border-red-500/30' : 
+                          'bg-blue-900/60 text-blue-300 border border-blue-500/30'
+                        }`}>
+                          <div className="flex items-center text-sm">
+                            {craftMessage.type === 'success' && <Check className="h-4 w-4 mr-2" />}
+                            {craftMessage.type === 'error' && <AlertTriangle className="h-4 w-4 mr-2" />}
+                            <span>{craftMessage.text}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center text-amber-500/60">
+                      <Hammer className="h-10 w-10 mx-auto mb-2 opacity-60" />
+                      <p>Select a recipe or arrange<br />items in the crafting grid</p>
+                    </div>
+                  )}
                 </div>
               </div>
               
-              <button 
-                className="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors"
-                onClick={handleCraftClick}
-                disabled={craftMutation.isPending}
-              >
-                {craftMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin inline mr-1" />
-                ) : "Craft"}
-              </button>
-            </div>
-          )}
-        </div>
-        
-        {/* Crafting Messages */}
-        {craftMessage && (
-          <div className={`mt-4 p-2 rounded ${
-            craftMessage.type === 'success' ? 'bg-green-100 text-green-800' : 
-            craftMessage.type === 'error' ? 'bg-red-100 text-red-800' : 
-            'bg-blue-100 text-blue-800'
-          }`}>
-            <div className="flex items-center">
-              {craftMessage.type === 'success' && <Check className="h-4 w-4 mr-2" />}
-              {craftMessage.type === 'error' && <AlertTriangle className="h-4 w-4 mr-2" />}
-              {craftMessage.type === 'info' && <X className="h-4 w-4 mr-2" />}
-              <span>{craftMessage.text}</span>
-            </div>
-          </div>
-        )}
-        
-        {/* Inventory */}
-        <div className="mt-auto">
-          <h3 className="text-sm font-bold mb-1 border-t border-gray-300 pt-2">Inventory</h3>
-          <div className="grid grid-cols-8 gap-1">
-            {inventoryItems && Array.isArray(inventoryItems) && inventoryItems.map((item: any) => {
-              const itemDetails = getItemDetails(item.type);
-              
-              return (
-                <div 
-                  key={item.id} 
-                  className={`relative w-8 h-8 border border-gray-400 ${
-                    itemDetails?.rarity ? getRarityColor(itemDetails.rarity) : 'bg-gray-100'
-                  } rounded`}
-                >
-                  {itemDetails?.imagePath && (
-                    <img 
-                      src={itemDetails.imagePath} 
-                      alt={itemDetails.name} 
-                      className="w-full h-full object-contain p-1 pixelated-image" 
-                    />
-                  )}
-                  <div className="absolute -bottom-1 -right-1 bg-gray-800 text-white text-[8px] px-0.5 rounded-sm">
-                    {item.quantity}
-                  </div>
+              {/* Inventory section */}
+              <div className="bg-black/60 border border-amber-900/50 rounded-lg overflow-hidden flex flex-col h-1/2">
+                <div className="px-3 py-2 bg-gradient-to-r from-amber-900/80 to-amber-800/50 border-b border-amber-700/50">
+                  <h3 className="font-medium text-amber-200">Materials & Inventory</h3>
                 </div>
-              );
-            })}
+                
+                <div className="flex-1 overflow-y-auto p-3">
+                  <div className="grid grid-cols-5 gap-2">
+                    {inventoryItems && Array.isArray(inventoryItems) && inventoryItems.map((item: any, index) => {
+                      const itemDetails = getItemDetails(item.type);
+                      
+                      return (
+                        <DraggableInventoryItem 
+                          key={item.id} 
+                          item={item} 
+                          itemDetails={itemDetails}
+                          index={index}
+                        />
+                      );
+                    })}
+                  </div>
+                  
+                  {(!inventoryItems || !Array.isArray(inventoryItems) || inventoryItems.length === 0) && (
+                    <div className="text-center py-6 text-gray-400">
+                      <p>Your inventory is empty</p>
+                      <p className="text-xs mt-1">Gather materials from quests</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </DndProvider>
   );
 };
 
