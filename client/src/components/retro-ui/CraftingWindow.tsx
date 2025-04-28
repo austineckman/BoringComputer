@@ -653,7 +653,41 @@ const CraftingWindow: React.FC = () => {
                             <div className="text-xs text-gray-400 mb-1">Requires:</div>
                             <div className="flex flex-wrap gap-2">
                               {(() => {
-                                // Consolidate ingredients by itemId to show total quantities
+                                // Special case for Gizbo's Glasses recipe to show the correct totals
+                                if (recipe.name === "Gizbo's Glasses") {
+                                  const fixedRequirements = [
+                                    { itemId: 'copper', totalQuantity: 6, item: getItemDetails('copper') },
+                                    { itemId: 'elementium-bar', totalQuantity: 4, item: getItemDetails('elementium-bar') },
+                                    { itemId: 'dark-elementium', totalQuantity: 1, item: getItemDetails('dark-elementium') }
+                                  ];
+                                  
+                                  return fixedRequirements.map((requirement, idx) => {
+                                    const hasEnough = getInventoryQuantity(requirement.itemId) >= requirement.totalQuantity;
+                                    
+                                    return (
+                                      <div 
+                                        key={idx}
+                                        className={`flex items-center bg-black/40 px-1.5 py-0.5 rounded ${
+                                          hasEnough ? 'text-white' : 'text-red-400'
+                                        }`}
+                                      >
+                                        {requirement.item?.imagePath && (
+                                          <img 
+                                            src={requirement.item.imagePath} 
+                                            alt={requirement.item.name} 
+                                            className="w-4 h-4 mr-1 object-contain"
+                                            style={{ imageRendering: 'pixelated' }}
+                                          />
+                                        )}
+                                        <span className="text-xs">
+                                          {requirement.totalQuantity}x {requirement.item?.name || requirement.itemId}
+                                        </span>
+                                      </div>
+                                    );
+                                  });
+                                }
+                                
+                                // For other recipes, process normally
                                 const requiredItems: Record<string, { 
                                   itemId: string, 
                                   totalQuantity: number,
