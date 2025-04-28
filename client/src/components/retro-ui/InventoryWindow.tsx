@@ -39,15 +39,17 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
   });
 
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
 
   const handleItemClick = (itemId: string, quantity: number) => {
     openItemDetails(itemId, quantity);
+    setSelectedItem(itemId);
   };
 
   if (inventoryLoading || itemsLoading) {
     return (
       <div className="flex items-center justify-center h-full p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-border" />
+        <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
       </div>
     );
   }
@@ -64,19 +66,19 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
   const itemsArray = Array.isArray(inventoryItems) ? inventoryItems : [];
   const itemCount = itemsArray.length;
 
-  // WoW-style rarity classes combining border and glow effects
+  // Enhanced RPG-style rarity classes with stronger glow effects
   const getRarityClasses = (rarity: string) => {
     const classes: Record<string, string> = {
-      common: 'border-gray-400',
-      uncommon: 'border-green-500 shadow-[0_0_5px_0_rgba(30,255,0,0.3)]',
-      rare: 'border-blue-500 shadow-[0_0_5px_0_rgba(0,112,221,0.4)]',
-      epic: 'border-purple-500 shadow-[0_0_8px_0_rgba(163,53,238,0.5)]',
-      legendary: 'border-yellow-500 shadow-[0_0_10px_0_rgba(255,215,0,0.6)]',
+      common: 'border-gray-400 bg-black/60',
+      uncommon: 'border-green-500 shadow-[0_0_8px_1px_rgba(30,255,0,0.4)] bg-green-950/40',
+      rare: 'border-blue-500 shadow-[0_0_8px_1px_rgba(0,112,221,0.5)] bg-blue-950/40',
+      epic: 'border-purple-500 shadow-[0_0_10px_2px_rgba(163,53,238,0.5)] bg-purple-950/40',
+      legendary: 'border-yellow-500 shadow-[0_0_10px_2px_rgba(255,215,0,0.6)] bg-amber-950/40',
     };
-    return classes[rarity] || 'border-gray-400';
+    return classes[rarity] || 'border-gray-400 bg-black/60';
   };
 
-  // WoW-style rarity text colors
+  // Enhanced RPG-style rarity text colors
   const getRarityTextColor = (rarity: string): string => {
     switch (rarity) {
       case 'legendary': return '#FFD700';
@@ -92,19 +94,22 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
     return Array.from({ length: totalSlots }).map((_, slotIndex) => {
       const item = itemsArray[slotIndex];
       const itemDetails = item ? getItemDetails(item.type) : null;
+      const isHovered = item && hoveredItem === item.id;
+      const isSelected = item && selectedItem === item.id;
     
       return (
         <div 
           key={`slot-${slotIndex}`} 
           className={`
-            relative w-12 h-12 rounded-md
+            relative w-14 h-14 rounded
             ${item ? 'bg-black/40' : 'bg-black/20'} 
-            ${item && itemDetails?.rarity ? getRarityClasses(itemDetails.rarity) : 'border-gray-700'} 
-            border-2 cursor-pointer 
-            hover:bg-black/60 hover:brightness-125 
+            ${item && itemDetails?.rarity ? getRarityClasses(itemDetails.rarity) : 'border-gray-700/50'} 
+            ${isSelected ? 'border-white border-2 scale-105' : 'border border-gray-700/80'} 
+            cursor-pointer 
+            hover:brightness-125 
             transition-all duration-200
-            transform hover:scale-105
-            ${!item ? 'after:content-[""] after:absolute after:inset-0 after:bg-[url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%3E%3Crect%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23ffffff10%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23ffffff10%22%2F%3E%3C%2Fsvg%3E")] after:opacity-50' : ''}
+            ${isHovered ? 'scale-105 z-10' : ''}
+            ${!item ? 'after:content-[""] after:absolute after:inset-0 after:bg-[url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%3E%3Crect%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23ffffff10%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23ffffff10%22%2F%3E%3C%2Fsvg%3E")] after:opacity-30' : ''}
           `}
           onClick={() => item && handleItemClick(item.type, item.quantity)}
           onMouseEnter={() => item && setHoveredItem(item.id)}
@@ -114,53 +119,14 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
             <img 
               src={itemDetails.imagePath} 
               alt={itemDetails.name || 'Item'} 
-              className="w-full h-full object-contain p-1.5" 
+              className="w-full h-full object-contain p-2" 
               style={{ imageRendering: 'pixelated' }}
             />
           )}
           
           {item && (
-            <div className="absolute bottom-0 right-0.5 bg-black/80 text-white text-xs px-1 rounded-sm font-bold">
+            <div className="absolute bottom-0 right-0 bg-black/80 text-white text-xs px-1 py-0.5 rounded font-bold">
               {item.quantity}
-            </div>
-          )}
-          
-          {/* Enhanced WoW-style Tooltip - positioned absolutely relative to viewport */}
-          {item && hoveredItem === item.id && (
-            <div 
-              className="fixed z-[99999] p-4 border-2 rounded-md shadow-2xl pointer-events-none w-64"
-              style={{ 
-                backgroundColor: '#000000', /* Solid black background */
-                borderColor: itemDetails?.rarity 
-                  ? getRarityTextColor(itemDetails.rarity)
-                  : '#FFFFFF',
-                position: 'fixed',
-                top: '20%',  /* Position at top of screen */
-                right: '20%', /* Position at right side */
-                boxShadow: '0 0 15px 5px rgba(0, 0, 0, 0.7)'
-              }}
-            >
-              <p className="font-bold text-base mb-1" style={{ 
-                color: itemDetails?.rarity 
-                  ? getRarityTextColor(itemDetails.rarity)
-                  : '#FFFFFF'
-              }}>
-                {itemDetails?.name || item.type}
-              </p>
-              
-              <p className="text-sm mb-2 text-gray-400 italic">
-                {itemDetails?.rarity 
-                  ? `${itemDetails.rarity.charAt(0).toUpperCase()}${itemDetails.rarity.slice(1)}` 
-                  : 'Unknown'}
-              </p>
-              
-              {itemDetails?.description && (
-                <p className="text-sm mb-2 text-white">{itemDetails.description}</p>
-              )}
-              
-              {itemDetails?.flavorText && (
-                <p className="text-sm mt-2 text-gray-400 italic">"{itemDetails.flavorText}"</p>
-              )}
             </div>
           )}
         </div>
@@ -168,13 +134,13 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
     });
   };
 
-  // Render keyring slots
+  // Render keyring slots with improved styling
   const renderKeyringSlots = () => {
     return Array.from({ length: 3 }).map((_, index) => (
       <div 
         key={`keyring-${index}`} 
-        className="relative w-10 h-10 rounded-md bg-black/20 border-2 border-amber-700
-          after:content-[''] after:absolute after:inset-0 after:bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%3E%3Crect%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23ffffff10%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23ffffff10%22%2F%3E%3C%2Fsvg%3E')] after:opacity-50"
+        className="relative w-12 h-12 rounded bg-black/40 border border-amber-700/70
+          after:content-[''] after:absolute after:inset-0 after:bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%3E%3Crect%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23ffffff10%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23ffffff10%22%2F%3E%3C%2Fsvg%3E')] after:opacity-30"
       />
     ));
   };
@@ -189,45 +155,123 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
     );
   };
 
-  return (
-    <div 
-      className="p-3 text-white relative rounded-lg overflow-hidden"
-      style={{
-        backgroundImage: `url(${bagBackground})`,
-        backgroundSize: 'cover',
-        backgroundRepeat: 'no-repeat',
-        imageRendering: 'pixelated',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.5)'
-      }}
-    >
-      
-      {/* Main Bag */}
-      <div className="rounded-lg overflow-hidden">
-        <div className="p-3">
-          <div className="flex justify-end items-center mb-2">
-            <span className="text-xs text-amber-200 bg-black/30 px-2 py-1 rounded-full">
-              {itemCount} / {totalSlots} slots
-            </span>
+  // Render item details panel (shown when an item is hovered)
+  const renderItemDetails = () => {
+    if (!hoveredItem) return null;
+    
+    const hoveredItemData = itemsArray.find(item => item.id === hoveredItem);
+    if (!hoveredItemData) return null;
+    
+    const itemDetails = getItemDetails(hoveredItemData.type);
+    if (!itemDetails) return null;
+    
+    return (
+      <div className="bg-black/80 border border-gray-700 rounded-lg p-4 h-full">
+        <div className="flex items-start gap-4 mb-4">
+          <div className={`w-16 h-16 rounded ${getRarityClasses(itemDetails.rarity || 'common')} flex items-center justify-center p-2`}>
+            {itemDetails.imagePath && (
+              <img 
+                src={itemDetails.imagePath} 
+                alt={itemDetails.name} 
+                className="w-full h-full object-contain" 
+                style={{ imageRendering: 'pixelated' }}
+              />
+            )}
           </div>
           
-          {itemsArray.length > 0 ? (
-            <div className="p-4" style={{ backgroundColor: 'rgba(20, 20, 20, 0.7)' }}>
-              <div className="grid grid-cols-8 gap-2 mb-4">
+          <div className="flex-1">
+            <h3 
+              className="text-lg font-semibold mb-0.5" 
+              style={{ color: getRarityTextColor(itemDetails.rarity || 'common') }}
+            >
+              {itemDetails.name}
+            </h3>
+            
+            <p className="text-xs text-gray-400">
+              {itemDetails.rarity 
+                ? `${itemDetails.rarity.charAt(0).toUpperCase()}${itemDetails.rarity.slice(1)}` 
+                : 'Common'} Item
+            </p>
+            
+            <p className="text-xs text-white mt-1">
+              Quantity: <span className="text-amber-300">{hoveredItemData.quantity}</span>
+            </p>
+          </div>
+        </div>
+        
+        {itemDetails.description && (
+          <div className="mb-3">
+            <p className="text-sm text-white">{itemDetails.description}</p>
+          </div>
+        )}
+        
+        {itemDetails.flavorText && (
+          <div className="border-t border-gray-700 pt-2 mt-2">
+            <p className="text-sm text-gray-400 italic">"{itemDetails.flavorText}"</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div 
+      className="w-full h-full overflow-hidden rounded-lg text-white"
+      style={{
+        backgroundImage: `url(${bagBackground})`,
+        backgroundSize: 'cover', 
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        imageRendering: 'pixelated',
+      }}
+    >
+      {/* Main container with semi-transparent overlay */}
+      <div className="w-full h-full bg-black/40 backdrop-blur-[1px] flex flex-col">
+        {/* Header with title and slots counter */}
+        <div className="bg-gradient-to-r from-amber-900/80 to-amber-800/50 px-4 py-3 border-b border-amber-700/50 flex justify-between items-center">
+          <div className="flex items-center">
+            <ShoppingBag className="h-5 w-5 mr-2 text-amber-300" />
+            <h2 className="text-lg font-bold text-amber-200">Adventurer's Inventory</h2>
+          </div>
+          <div className="bg-black/40 text-xs text-amber-200 px-3 py-1 rounded-full border border-amber-800/40">
+            {itemCount} / {totalSlots} slots
+          </div>
+        </div>
+        
+        {/* Two-column layout with items grid and details panel */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Main inventory grid (left side) */}
+          <div className="flex-1 overflow-auto p-4">
+            {itemsArray.length > 0 ? (
+              <div className="grid grid-cols-8 gap-1.5">
                 {renderInventorySlots()}
               </div>
-              
-              {/* Keyring Section */}
-              <div className="mt-4 border-t border-amber-900/30 pt-3">
-                <div className="flex items-center mb-2">
-                  <Key className="w-4 h-4 mr-2 text-amber-500" />
-                  <h4 className="text-sm font-semibold text-amber-500">Keyring</h4>
+            ) : renderEmptyState()}
+            
+            {/* Keyring Section */}
+            <div className="mt-6 pt-4 border-t border-amber-900/30">
+              <div className="flex items-center mb-2">
+                <div className="flex-1 h-px bg-gradient-to-r from-amber-700/0 via-amber-700/50 to-amber-700/0"></div>
+                <div className="flex items-center bg-amber-900/40 px-2 py-1 rounded-md mx-2 border border-amber-700/50">
+                  <Key className="w-4 h-4 mr-2 text-amber-300" />
+                  <h4 className="text-sm font-semibold text-amber-300">Keyring</h4>
                 </div>
-                <div className="flex gap-2 ml-2">
-                  {renderKeyringSlots()}
-                </div>
+                <div className="flex-1 h-px bg-gradient-to-r from-amber-700/0 via-amber-700/50 to-amber-700/0"></div>
+              </div>
+              <div className="flex justify-center gap-3 mt-3">
+                {renderKeyringSlots()}
               </div>
             </div>
-          ) : renderEmptyState()}
+          </div>
+          
+          {/* Item details panel (right side), only shown when an item is hovered */}
+          <div className="w-72 p-3 border-l border-amber-900/30">
+            {hoveredItem ? renderItemDetails() : (
+              <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                <p className="text-center">Hover over an item<br />to see details</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
