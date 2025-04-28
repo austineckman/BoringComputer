@@ -401,7 +401,7 @@ const RetroDesktop: React.FC = () => {
       "Gizbo's Forge", 
       <CraftingWindow />, 
       "craftingarmor", 
-      { width: 845, height: 676 } // 30% larger than standard window size for better crafting experience
+      { width: 930, height: 744 } // 10% larger than previous (845x676) for even better crafting experience
     );
   };
   
