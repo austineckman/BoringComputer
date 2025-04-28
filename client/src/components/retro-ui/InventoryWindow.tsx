@@ -4,6 +4,7 @@ import { getQueryFn } from "@/lib/queryClient";
 import { Key, Loader2, PackageOpen, ShoppingBag } from "lucide-react";
 import { ItemDetails } from "@/types";
 import bagBackground from "@assets/bagbkg.png";
+import inventoryExeLogo from "@assets/Untitled design - 2025-04-28T130514.365.png";
 
 // Define interfaces locally since we're having import issues
 interface InventoryItem {
@@ -227,11 +228,15 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
     >
       {/* Main container with semi-transparent overlay */}
       <div className="w-full h-full bg-black/40 backdrop-blur-[1px] flex flex-col">
-        {/* Header with title and slots counter */}
+        {/* Header with logo and slots counter */}
         <div className="bg-gradient-to-r from-amber-900/80 to-amber-800/50 px-4 py-3 border-b border-amber-700/50 flex justify-between items-center">
           <div className="flex items-center">
-            <ShoppingBag className="h-5 w-5 mr-2 text-amber-300" />
-            <h2 className="text-lg font-bold text-amber-200">Adventurer's Inventory</h2>
+            <img 
+              src={inventoryExeLogo} 
+              alt="Inventory.exe" 
+              className="h-12 object-contain"
+              style={{ imageRendering: 'pixelated' }}
+            />
           </div>
           <div className="bg-black/40 text-xs text-amber-200 px-3 py-1 rounded-full border border-amber-800/40">
             {itemCount} / {totalSlots} slots
