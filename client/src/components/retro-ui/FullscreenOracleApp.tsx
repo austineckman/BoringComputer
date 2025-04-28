@@ -54,6 +54,29 @@ function rarityColorClass(rarity?: string): string {
   }
 }
 
+function rarityBorderClass(rarity?: string): string {
+  switch (rarity?.toLowerCase()) {
+    case 'common':
+      return 'border-gray-400';
+    case 'uncommon':
+      return 'border-green-400';
+    case 'rare':
+      return 'border-blue-400';
+    case 'epic':
+      return 'border-purple-400';
+    case 'legendary':
+      return 'border-yellow-400';
+    case 'welcome':
+      return 'border-teal-400';
+    case 'quest':
+      return 'border-brand-orange';
+    case 'event':
+      return 'border-pink-400';
+    default:
+      return 'border-gray-400';
+  }
+}
+
 interface Quest {
   id: string;
   title: string;
@@ -3149,7 +3172,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b border-gray-700">
-                            <th className="text-left py-2 text-gray-400">Item ID</th>
+                            <th className="text-left py-2 text-gray-400">Item</th>
                             <th className="text-left py-2 text-gray-400">Weight (%)</th>
                             <th className="text-left py-2 text-gray-400">Min Qty</th>
                             <th className="text-left py-2 text-gray-400">Max Qty</th>
@@ -3159,7 +3182,30 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                         <tbody>
                           {(editingItem as LootBox).itemDropTable.map((item, index) => (
                             <tr key={index} className="border-b border-gray-700">
-                              <td className="py-2">{item.itemId}</td>
+                              <td className="py-2">
+                                {(() => {
+                                  // Find the corresponding item details
+                                  const itemDetails = items.find(i => i.id === item.itemId);
+                                  
+                                  return (
+                                    <div className="flex items-center gap-2">
+                                      {itemDetails?.imagePath && (
+                                        <div className={`w-6 h-6 rounded overflow-hidden border ${rarityBorderClass(itemDetails.rarity)}`}>
+                                          <img 
+                                            src={itemDetails.imagePath} 
+                                            alt={itemDetails.name}
+                                            className="w-full h-full object-contain"
+                                          />
+                                        </div>
+                                      )}
+                                      <div>
+                                        <div className="font-semibold">{itemDetails?.name || item.itemId}</div>
+                                        <div className="text-gray-500 font-mono text-[10px]">{item.itemId}</div>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                              </td>
                               <td className="py-2">
                                 <input
                                   type="number"
@@ -3255,13 +3301,16 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                     <h4 className="text-sm font-medium text-brand-orange mb-3">Add New Item</h4>
                     <div className="grid grid-cols-4 gap-2">
                       <div>
-                        <label className="block text-gray-400 text-xs mb-1">Item ID</label>
-                        <input
-                          type="text"
+                        <label className="block text-gray-400 text-xs mb-1">Item</label>
+                        <select
                           className="w-full px-2 py-1 bg-black/50 text-white border border-gray-700 rounded-md"
-                          placeholder="e.g. metal"
                           id="new-item-id"
-                        />
+                        >
+                          <option value="">Select an item</option>
+                          {items.map(item => (
+                            <option key={item.id} value={item.id}>{item.name} ({item.id})</option>
+                          ))}
+                        </select>
                       </div>
                       <div>
                         <label className="block text-gray-400 text-xs mb-1">Weight (%)</label>
