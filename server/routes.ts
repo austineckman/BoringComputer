@@ -1722,14 +1722,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin recipes routes - ensure we also apply admin authorization
   app.use('/api/admin/recipes', authenticate, adminAuth, adminRecipesRoutes);
   
-  // Register the admin routes for quest generator
-  app.use('/', authenticate, adminAuth, adminQuestGeneratorRoutes);
+  // Register the admin routes for quest generator with specific path prefix
+  app.use('/api/admin/quest-generator', authenticate, adminAuth, adminQuestGeneratorRoutes);
   
-  // Register the admin routes for saving quests
-  app.use('/', authenticate, adminAuth, adminQuestsSaveRoutes);
+  // Register the admin routes for saving quests with specific path prefix
+  app.use('/api/admin/quest-save', authenticate, adminAuth, adminQuestsSaveRoutes);
   
-  // Register adventure lines routes
-  app.use('/', adventureLinesRoutes);
+  // Register adventure lines routes with specific path prefix
+  app.use('/api/adventure-lines', adventureLinesRoutes);
   
   // Register Oracle routes (with full CRUD access to database)
   app.use('/api/oracle', authenticate, oracleRoutes);
