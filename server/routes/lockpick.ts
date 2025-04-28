@@ -17,15 +17,28 @@ router.get('/user', authenticate, async (req, res) => {
       return res.status(401).json({ message: "Authentication required" });
     }
     
+    // Allow filtering by opened status through query param
+    // If not provided, return all lootboxes
+    const { opened } = req.query;
+    const showOpenedOnly = opened === 'true';
+    const showUnopenedOnly = opened === 'false';
+    
     // Get user's lootboxes from storage
     const lootBoxes = await storage.getLootBoxes(user.id);
+    
+    // Apply filter if requested
+    const filteredLootBoxes = lootBoxes.filter(box => {
+      if (showOpenedOnly) return box.opened;
+      if (showUnopenedOnly) return !box.opened;
+      return true; // return all by default
+    });
     
     // Get lootbox configs to add additional metadata
     const lootBoxConfigs = await storage.getLootBoxConfigs();
     const configMap = new Map(lootBoxConfigs.map(config => [config.id, config]));
     
     // Enhance lootbox data with config details
-    const enhancedLootBoxes = lootBoxes.map(box => {
+    const enhancedLootBoxes = filteredLootBoxes.map(box => {
       const config = configMap.get(box.type);
       return {
         ...box,
@@ -35,6 +48,9 @@ router.get('/user', authenticate, async (req, res) => {
         rarity: box.type
       };
     });
+    
+    // Log the result for debugging
+    console.log(`Returning ${enhancedLootBoxes.length} lootboxes (${showOpenedOnly ? 'opened only' : showUnopenedOnly ? 'unopened only' : 'all'})`);
     
     return res.json(enhancedLootBoxes);
   } catch (error) {
