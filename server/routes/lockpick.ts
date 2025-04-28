@@ -63,7 +63,7 @@ router.post('/:id/open', authenticate, async (req, res) => {
 });
 
 // Test endpoint to generate lootboxes for development
-// Clear all user lootboxes - for testing
+// Clear all user lootboxes by marking them as opened - for testing
 router.post('/clear-all', authenticate, async (req, res) => {
   try {
     const user = (req as any).user;
@@ -73,16 +73,22 @@ router.post('/clear-all', authenticate, async (req, res) => {
     
     // Get all user's lootboxes
     const lootBoxes = await storage.getLootBoxes(user.id);
+    const updatedCount = lootBoxes.length;
     
-    // Delete each lootbox
-    for (const box of lootBoxes) {
-      await storage.deleteLootBox(box.id);
-    }
+    // Update lootboxes in a single database call if possible
+    const promises = lootBoxes.map(box => 
+      storage.updateLootBox(box.id, { 
+        opened: true,
+        openedAt: new Date().toISOString()
+      })
+    );
+    
+    await Promise.all(promises);
     
     return res.json({
       success: true,
-      message: `Cleared ${lootBoxes.length} lootboxes`,
-      count: lootBoxes.length
+      message: `Marked ${updatedCount} lootboxes as opened`,
+      count: updatedCount
     });
   } catch (error) {
     console.error('Error clearing lootboxes:', error);
