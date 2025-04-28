@@ -12,15 +12,24 @@ const RetroButton: React.FC<RetroButtonProps> = ({
   disabled,
   ...props
 }) => {
+  const baseStyles = 'px-3 py-1 text-sm font-bold border-2 active:border-inset active:pt-[5px] active:pb-[3px] select-none';
+  
+  const variantStyles = {
+    primary: 'bg-[#c0c0c0] border-t-[#ffffff] border-l-[#ffffff] border-r-[#808080] border-b-[#808080] text-black',
+    secondary: 'bg-[#d0d0d0] border-t-[#ffffff] border-l-[#ffffff] border-r-[#808080] border-b-[#808080] text-black',
+    danger: 'bg-[#ff0000] border-t-[#ffaaaa] border-l-[#ffaaaa] border-r-[#aa0000] border-b-[#aa0000] text-white'
+  };
+  
+  const disabledStyles = disabled 
+    ? 'opacity-50 cursor-not-allowed border-inset bg-[#c0c0c0] border-t-[#808080] border-l-[#808080] border-r-[#ffffff] border-b-[#ffffff]' 
+    : 'cursor-pointer hover:bg-[#d0d0d0]';
+
   return (
     <button
       className={cn(
-        'px-4 py-1 border-2 font-bold text-sm',
-        'hover:opacity-90 active:border-inset active:pt-[5px] active:pb-[3px]',
-        disabled && 'opacity-50 cursor-not-allowed',
-        variant === 'primary' && 'bg-[#d4d0c8] border-outset text-black',
-        variant === 'secondary' && 'bg-[#000080] border-outset text-white',
-        variant === 'danger' && 'bg-[#aa0000] border-outset text-white',
+        baseStyles,
+        variantStyles[variant],
+        disabledStyles,
         className
       )}
       disabled={disabled}

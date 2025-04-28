@@ -4,6 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Windows 95 style utility classes */
+@layer utilities {
+  .border-outset {
+    @apply border-t-[#ffffff] border-l-[#ffffff] border-r-[#808080] border-b-[#808080];
+  }
+  
+  .border-inset {
+    @apply border-t-[#808080] border-l-[#808080] border-r-[#ffffff] border-b-[#ffffff];
+  }
+}
+
 /* CSS animations for loot box system */
 
 @keyframes fadeIn {

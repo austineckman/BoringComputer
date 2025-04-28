@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { X, Unlock, Info, Award, Package2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import RetroButton from './RetroButton';
-import RetroDivider from './RetroDivider';
-import RetroIcon from './RetroIcon';
+import RetroButton from '@/components/retro-ui/RetroButton';
+import RetroDivider from '@/components/retro-ui/RetroDivider';
+import RetroIcon from '@/components/retro-ui/RetroIcon';
 import { apiRequest } from '@/lib/queryClient';
 
 // Types
