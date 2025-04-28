@@ -805,11 +805,11 @@ const CraftingWindow: React.FC = () => {
         <div className="w-full h-full bg-black/40 backdrop-blur-[1px] flex flex-col">
           {/* Header with title and animated flames */}
           <div className="bg-gradient-to-r from-amber-900/90 to-amber-800/70 px-4 py-3 border-b border-amber-700/70 flex justify-between items-center">
-            <div className="flex items-center">
+            <div className="flex items-center justify-center h-14 w-48">
               <img 
-                src="/Untitled design - 2025-04-28T124406.948.png" 
+                src="/gizbos-forge-logo.png" 
                 alt="Gizbo's Forge" 
-                className="h-12 object-contain"
+                className="h-14 object-contain"
                 style={{ imageRendering: 'pixelated' }}
               />
             </div>
