@@ -109,31 +109,7 @@ router.post("/logout", (req, res) => {
 
 // Get current user
 router.get("/me", (req, res) => {
-  // For development purposes, provide a mock user if not authenticated
-  const BYPASS_AUTH = process.env.NODE_ENV === 'development';
-  
   if (!req.isAuthenticated()) {
-    if (BYPASS_AUTH) {
-      // Return a development mock user
-      console.log("⚠️ Development mode: Providing mock user for /api/auth/me");
-      return res.json({
-        id: 999,
-        username: "devuser",
-        email: "dev@example.com",
-        roles: ["admin", "user"],
-        level: 10,
-        inventory: {
-          "copper": 10,
-          "crystal": 5,
-          "techscrap": 3,
-          "circuit_board": 2,
-          "cloth": 8
-        },
-        xp: 2500,
-        xpToNextLevel: 3000
-      });
-    }
-    
     return res.status(401).json({ message: "Not authenticated" });
   }
   
@@ -145,7 +121,9 @@ router.get("/me", (req, res) => {
     email: user.email,
     roles: user.roles,
     level: user.level,
-    inventory: user.inventory
+    inventory: user.inventory,
+    titles: user.titles || [],
+    activeTitle: user.activeTitle
   });
 });
 

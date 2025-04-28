@@ -261,9 +261,28 @@ export async function openLootBox(lootBoxId: number, userId: number): Promise<{ 
       })
       .where(eq(lootBoxes.id, lootBoxId));
     
-    // Update the user's inventory
-    await storage.updateUser(userId, { inventory });
-    console.log('DEBUG - User inventory updated in database');
+    // Special case for mock user (ID 999)
+    if (userId === 999) {
+      // For the mock user, update the in-memory object directly
+      const mockUser = (global as any).mockUser || { id: 999, username: "devuser" };
+      mockUser.inventory = inventory;
+      (global as any).mockUser = mockUser;
+      console.log('DEBUG - Development mode: Updated mock user inventory directly:', inventory);
+      
+      // Also update the mockUser in the auth module
+      try {
+        const authModule = require('./auth');
+        if (authModule && typeof authModule.updateMockUserInventory === 'function') {
+          authModule.updateMockUserInventory(inventory);
+        }
+      } catch (err) {
+        console.log('Could not update auth module mock user:', err);
+      }
+    } else {
+      // Update user's inventory in the database
+      await storage.updateUser(userId, { inventory });
+      console.log('DEBUG - User inventory updated in database');
+    }
     
     return { success: true, message: 'Lootbox opened successfully', rewards };
   } catch (error) {

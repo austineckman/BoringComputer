@@ -1,135 +1,94 @@
 import { Router } from 'express';
 import { authenticate } from '../auth';
+import { db } from '../db';
+import { eq } from 'drizzle-orm';
+import { recipes } from '@shared/schema';
 
 const router = Router();
 
-// Dummy recipes for testing until we implement proper recipe database
-const recipeData = [
-  {
-    id: "circuit-board",
-    name: "Basic Circuit Board",
-    description: "A foundation for any electronics project",
-    output: {
-      itemId: "circuit-board",
-      quantity: 1
-    },
-    inputs: [
-      {
-        itemId: "copper",
-        quantity: 2,
-        position: [0, 0]
-      },
-      {
-        itemId: "crystal",
-        quantity: 1,
-        position: [0, 1]
-      }
-    ],
-    category: "electronics"
-  },
-  {
-    id: "basic-wand",
-    name: "Apprentice's Wand",
-    description: "A beginner's magical implement",
-    output: {
-      itemId: "basic-wand",
-      quantity: 1
-    },
-    inputs: [
-      {
-        itemId: "wood",
-        quantity: 1,
-        position: [0, 0]
-      },
-      {
-        itemId: "crystal",
-        quantity: 1,
-        position: [1, 1]
-      }
-    ],
-    category: "magic"
-  },
-  {
-    id: "energy-potion",
-    name: "Energy Potion",
-    description: "Restores stamina during adventures",
-    output: {
-      itemId: "energy-potion",
-      quantity: 3
-    },
-    inputs: [
-      {
-        itemId: "herb",
-        quantity: 2,
-        position: [0, 0]
-      },
-      {
-        itemId: "crystal",
-        quantity: 1,
-        position: [0, 1]
-      },
-      {
-        itemId: "water",
-        quantity: 1,
-        position: [1, 0]
-      }
-    ],
-    category: "consumables"
-  }
-];
-
 // Get all recipes
-router.get('/', authenticate, (req, res) => {
-  res.json(recipeData);
+router.get('/', authenticate, async (req, res) => {
+  try {
+    const recipeData = await db.select().from(recipes);
+    res.json(recipeData);
+  } catch (error) {
+    console.error('Error fetching recipes:', error);
+    res.status(500).json({ error: 'Failed to fetch recipes' });
+  }
 });
 
 // Get recipes by category
-router.get('/category/:category', authenticate, (req, res) => {
-  const { category } = req.params;
-  const filteredRecipes = recipeData.filter(recipe => recipe.category === category);
-  res.json(filteredRecipes);
+router.get('/category/:category', authenticate, async (req, res) => {
+  try {
+    const { category } = req.params;
+    const filteredRecipes = await db.select().from(recipes).where(eq(recipes.category, category));
+    res.json(filteredRecipes);
+  } catch (error) {
+    console.error('Error fetching recipes by category:', error);
+    res.status(500).json({ error: 'Failed to fetch recipes' });
+  }
 });
 
 // Get a specific recipe
-router.get('/:id', authenticate, (req, res) => {
-  const { id } = req.params;
-  const recipe = recipeData.find(r => r.id === id);
-  
-  if (!recipe) {
-    return res.status(404).json({ error: 'Recipe not found' });
+router.get('/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const recipeId = parseInt(id, 10);
+    
+    if (isNaN(recipeId)) {
+      return res.status(400).json({ error: 'Invalid recipe ID' });
+    }
+    
+    const recipe = await db.select().from(recipes).where(eq(recipes.id, recipeId)).limit(1);
+    
+    if (!recipe || recipe.length === 0) {
+      return res.status(404).json({ error: 'Recipe not found' });
+    }
+    
+    res.json(recipe[0]);
+  } catch (error) {
+    console.error('Error fetching recipe:', error);
+    res.status(500).json({ error: 'Failed to fetch recipe' });
   }
-  
-  res.json(recipe);
 });
 
 // Craft an item
-router.post('/craft', authenticate, (req, res) => {
-  const { recipeId } = req.body;
-  
-  if (!recipeId) {
-    return res.status(400).json({ error: 'Recipe ID is required' });
+router.post('/craft', authenticate, async (req, res) => {
+  try {
+    const { recipeId, gridPattern } = req.body;
+    const user = req.user;
+    
+    if (!recipeId) {
+      return res.status(400).json({ error: 'Recipe ID is required' });
+    }
+    
+    // Get the recipe from the database
+    const recipeResult = await db.select().from(recipes).where(eq(recipes.id, recipeId)).limit(1);
+    
+    if (!recipeResult || recipeResult.length === 0) {
+      return res.status(404).json({ error: 'Recipe not found' });
+    }
+    
+    const recipe = recipeResult[0];
+    
+    // TODO: Implement real crafting logic
+    // 1. Validate the grid pattern against the recipe pattern
+    // 2. Check if the user has the required items in inventory
+    // 3. Remove the input items from their inventory
+    // 4. Add the output item to their inventory
+    // 5. Update user experience/level if needed
+    
+    // For now, return success with the crafted item
+    res.json({
+      success: true,
+      message: `Successfully crafted ${recipe.name}`,
+      resultItem: recipe.resultItem,
+      resultQuantity: recipe.resultQuantity || 1
+    });
+  } catch (error) {
+    console.error('Error crafting item:', error);
+    res.status(500).json({ error: 'Failed to craft item' });
   }
-  
-  const recipe = recipeData.find(r => r.id === recipeId);
-  
-  if (!recipe) {
-    return res.status(404).json({ error: 'Recipe not found' });
-  }
-  
-  // In a real implementation, we would:
-  // 1. Check if the user has the required items
-  // 2. Remove the input items from their inventory
-  // 3. Add the output item to their inventory
-  
-  // For now, we'll just simulate success
-  
-  // Dummy response for testing
-  res.json({
-    success: true,
-    message: `Successfully crafted ${recipe.name}`,
-    itemId: recipe.output.itemId,
-    quantity: recipe.output.quantity
-  });
 });
 
 export default router;
