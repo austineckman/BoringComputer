@@ -1,10 +1,21 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, createContext } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, AlertTriangle, Check, Flame, Hammer, Sparkles, ChevronRight, Filter } from "lucide-react";
+import { Loader2, AlertTriangle, Check, Flame, Hammer, Sparkles, ChevronRight, Filter, Trash2 } from "lucide-react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import forgeBackground from "@assets/forgebg.png";
+
+// Create a context for sharing usedItems state across components
+interface CraftingContextType {
+  usedItems: Record<string, number>;
+  getInventoryQuantity: (itemId: string) => number;
+}
+
+const CraftingContext = createContext<CraftingContextType>({ 
+  usedItems: {},
+  getInventoryQuantity: () => 0
+});
 
 // Define interfaces locally
 interface ItemDetails {
@@ -69,14 +80,25 @@ const DraggableInventoryItem: React.FC<{
   itemDetails: ItemDetails | null;
   index: number;
 }> = ({ item, itemDetails, index }) => {
+  // Get access to the usedItems state from the context
+  const { usedItems } = React.useContext(CraftingContext);
+  
+  // Calculate the effective quantity (accounting for items in the crafting grid)
+  const usedQuantity = usedItems[item.type] || 0;
+  const effectiveQuantity = Math.max(0, item.quantity - usedQuantity);
+  
+  // Disable dragging if all items of this type are used
+  const canDrag = effectiveQuantity > 0;
+  
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'INVENTORY_ITEM',
     item: {
       type: 'INVENTORY_ITEM',
       itemId: item.type,
-      quantity: item.quantity,
+      quantity: 1, // We always drag just 1 item at a time
       source: 'inventory' as const,
     },
+    canDrag, // Disable dragging if no items left
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
@@ -98,7 +120,9 @@ const DraggableInventoryItem: React.FC<{
       ref={drag}
       className={`relative w-12 h-12 border ${
         itemDetails?.rarity ? getRarityClasses(itemDetails.rarity) : 'border-gray-600 bg-black/40'
-      } rounded cursor-grab ${isDragging ? 'opacity-50' : 'opacity-100'}`}
+      } rounded ${
+        effectiveQuantity > 0 ? 'cursor-grab' : 'cursor-not-allowed'
+      } ${isDragging ? 'opacity-50' : effectiveQuantity === 0 ? 'opacity-40' : 'opacity-100'}`}
     >
       {itemDetails?.imagePath && (
         <img 
@@ -109,8 +133,12 @@ const DraggableInventoryItem: React.FC<{
           draggable={false}
         />
       )}
-      <div className="absolute bottom-0 right-0 bg-black/80 text-amber-300 text-xs px-1 rounded-tl font-pixel">
-        {item.quantity}
+      <div className={`absolute bottom-0 right-0 bg-black/80 ${
+        effectiveQuantity === 0 ? 'text-red-400' : 'text-amber-300'
+      } text-xs px-1 rounded-tl font-pixel`}>
+        {effectiveQuantity < item.quantity 
+          ? `${effectiveQuantity}/${item.quantity}` 
+          : item.quantity}
       </div>
     </div>
   );
@@ -620,18 +648,25 @@ const CraftingWindow: React.FC = () => {
     return colors[difficulty] || 'text-gray-400 bg-gray-900/20 border-gray-900/50';
   };
 
+  // Provide context values
+  const contextValue: CraftingContextType = {
+    usedItems,
+    getInventoryQuantity
+  };
+  
   return (
     <DndProvider backend={HTML5Backend}>
-      <div 
-        className="w-full h-full overflow-hidden rounded-lg text-white"
-        style={{
-          backgroundImage: `url(${forgeBackground})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          imageRendering: 'pixelated',
-          height: '100%'
-        }}
-      >
+      <CraftingContext.Provider value={contextValue}>
+        <div 
+          className="w-full h-full overflow-hidden rounded-lg text-white"
+          style={{
+            backgroundImage: `url(${forgeBackground})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            imageRendering: 'pixelated',
+            height: '100%'
+          }}
+        >
         {/* Main container with semi-transparent overlay */}
         <div className="w-full h-full bg-black/40 backdrop-blur-[1px] flex flex-col">
           {/* Header with title and animated flames */}
@@ -990,6 +1025,7 @@ const CraftingWindow: React.FC = () => {
           </div>
         </div>
       </div>
+      </CraftingContext.Provider>
     </DndProvider>
   );
 };
