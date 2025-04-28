@@ -23,6 +23,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count, sql } from "drizzle-orm";
+import { generateLootBoxRewards, LootBoxType } from "./lootBoxSystem";
 
 import session from "express-session";
 import connectPg from "connect-pg-simple";
@@ -85,6 +86,7 @@ export interface IStorage {
   getLootBox(id: number): Promise<LootBox | undefined>;
   createLootBox(lootBox: InsertLootBox): Promise<LootBox>;
   updateLootBox(id: number, lootBoxData: Partial<LootBox>): Promise<LootBox | undefined>;
+  openLootBox(lootBoxId: number, userId: number): Promise<{ success: boolean, message: string, rewards: { type: string, quantity: number }[] | null }>;
   
   // Loot Box Config methods
   getLootBoxConfigs(): Promise<LootBoxConfig[]>;
@@ -410,6 +412,96 @@ export class DatabaseStorage implements IStorage {
       .where(eq(lootBoxes.id, id))
       .returning();
     return updatedLootBox || undefined;
+  }
+  
+  // Open a lootbox and add items to user inventory
+  async openLootBox(lootBoxId: number, userId: number): Promise<{ success: boolean, message: string, rewards: { type: string, quantity: number }[] | null }> {
+    try {
+      // Start a transaction
+      return await db.transaction(async (tx) => {
+        // Get the lootbox
+        const [lootBox] = await tx
+          .select()
+          .from(lootBoxes)
+          .where(and(
+            eq(lootBoxes.id, lootBoxId),
+            eq(lootBoxes.userId, userId),
+            eq(lootBoxes.opened, false)
+          ));
+        
+        if (!lootBox) {
+          return { 
+            success: false, 
+            message: 'Lootbox not found or already opened', 
+            rewards: null 
+          };
+        }
+        
+        // Generate rewards using lootBoxSystem
+        const rewards = generateLootBoxRewards(lootBox.type as LootBoxType);
+        
+        // Update the lootbox as opened
+        const [updatedLootBox] = await tx
+          .update(lootBoxes)
+          .set({ 
+            opened: true, 
+            openedAt: new Date(),
+            rewards: rewards
+          })
+          .where(eq(lootBoxes.id, lootBoxId))
+          .returning();
+        
+        if (!updatedLootBox) {
+          throw new Error('Failed to update lootbox status');
+        }
+        
+        // Add items to user's inventory
+        const user = await this.getUser(userId);
+        if (!user) {
+          throw new Error('User not found');
+        }
+        
+        // Update user's inventory with the rewards
+        const currentInventory = user.inventory || {};
+        const newInventory = { ...currentInventory };
+        
+        for (const reward of rewards) {
+          const { type, quantity } = reward;
+          newInventory[type] = (newInventory[type] || 0) + quantity;
+          
+          // Create inventory history record
+          await tx
+            .insert(inventoryHistory)
+            .values({
+              userId,
+              type,
+              quantity,
+              action: 'gained',
+              source: 'loot_box',
+              createdAt: new Date()
+            });
+        }
+        
+        // Update user's inventory
+        await tx
+          .update(users)
+          .set({ inventory: newInventory })
+          .where(eq(users.id, userId));
+        
+        return { 
+          success: true, 
+          message: 'Lootbox opened successfully!', 
+          rewards 
+        };
+      });
+    } catch (error) {
+      console.error('Error opening lootbox:', error);
+      return { 
+        success: false, 
+        message: 'An error occurred while opening the lootbox', 
+        rewards: null 
+      };
+    }
   }
   
   // Loot Box Config methods
