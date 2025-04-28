@@ -201,6 +201,25 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
             style={{ imageRendering: 'pixelated' }}
           />
           <h1 className="text-2xl font-bold text-blue-400">PickLock.exe</h1>
+          <button
+            onClick={async () => {
+              try {
+                const userResponse = await axios.get('/api/user');
+                console.log('DEBUG - Current user data:', userResponse.data);
+                console.log('DEBUG - Current user inventory:', userResponse.data.inventory);
+                const inventoryResponse = await axios.get('/api/inventory');
+                console.log('DEBUG - Current inventory data:', inventoryResponse.data);
+                alert('User and inventory data logged to console');
+              } catch (err) {
+                console.error('Error fetching user/inventory data:', err);
+                alert('Error fetching data. Check console.');
+              }
+            }}
+            className="ml-4 bg-blue-800 hover:bg-blue-700 text-xs text-white px-2 py-1 rounded"
+            onMouseEnter={() => window.sounds?.hover()}
+          >
+            Debug
+          </button>
         </div>
         <button 
           className="text-white hover:text-blue-400" 
