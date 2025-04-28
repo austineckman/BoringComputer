@@ -806,13 +806,12 @@ const CraftingWindow: React.FC = () => {
           {/* Header with title and animated flames */}
           <div className="bg-gradient-to-r from-amber-900/90 to-amber-800/70 px-4 py-3 border-b border-amber-700/70 flex justify-between items-center">
             <div className="flex items-center">
-              <div className="relative">
-                <Flame className="h-5 w-5 mr-2 text-amber-300 animate-pulse" />
-                <div className="absolute inset-0 opacity-50">
-                  <Flame className="h-5 w-5 mr-2 text-orange-500 animate-ping" style={{ animationDuration: '3s' }} />
-                </div>
-              </div>
-              <h2 className="text-lg font-bold text-amber-200">Gizbo's Forge</h2>
+              <img 
+                src="/images/gizbos-forge-logo.png" 
+                alt="Gizbo's Forge" 
+                className="h-12 object-contain"
+                style={{ imageRendering: 'pixelated' }}
+              />
             </div>
             <div className="flex items-center gap-2 text-sm">
               <div 
