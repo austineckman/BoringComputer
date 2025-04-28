@@ -4261,16 +4261,64 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-gray-300 text-sm mb-1">Result Item</label>
-                      <input
-                        type="text"
+                      <select
                         className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
                         value={(editingItem as Recipe).resultItem || ''}
                         onChange={(e) => {
-                          const updatedRecipe = {...editingItem as Recipe, resultItem: e.target.value};
+                          const selectedItemId = e.target.value;
+                          // Find the selected item
+                          const selectedItem = items.find(i => i.id === selectedItemId);
+                          
+                          // Update the recipe with the selected item's id and image
+                          const updatedRecipe = {
+                            ...editingItem as Recipe, 
+                            resultItem: selectedItemId,
+                            image: selectedItem?.imagePath || ''
+                          };
+                          
                           setEditingItem(updatedRecipe);
                         }}
-                        placeholder="Item ID to create"
-                      />
+                      >
+                        <option value="">-- Select Result Item --</option>
+                        {items.map(item => (
+                          <option key={item.id} value={item.id}>{item.name} ({item.rarity})</option>
+                        ))}
+                      </select>
+                      
+                      {/* Show preview of selected item */}
+                      {(editingItem as Recipe).resultItem && (
+                        <div className="mt-2 flex items-center p-2 bg-black/30 border border-gray-700 rounded">
+                          <div className={`w-10 h-10 ${rarityColorClass((items.find(i => i.id === (editingItem as Recipe).resultItem)?.rarity || 'common')).replace('text-', 'border-')} bg-black/50 border rounded flex items-center justify-center overflow-hidden mr-2`}>
+                            {(() => {
+                              const selectedItem = items.find(i => i.id === (editingItem as Recipe).resultItem);
+                              if (selectedItem?.imagePath) {
+                                return (
+                                  <img 
+                                    src={selectedItem.imagePath} 
+                                    alt={selectedItem.name}
+                                    className="max-w-full max-h-full object-contain"
+                                    style={{imageRendering: 'pixelated'}}
+                                  />
+                                );
+                              }
+                              return <div className="text-xs text-gray-500">No image</div>;
+                            })()}
+                          </div>
+                          <div className="text-sm">
+                            <div className="text-gray-300">{(() => {
+                              const selectedItem = items.find(i => i.id === (editingItem as Recipe).resultItem);
+                              return selectedItem?.name || (editingItem as Recipe).resultItem;
+                            })()}</div>
+                            <div className={(() => {
+                              const selectedItem = items.find(i => i.id === (editingItem as Recipe).resultItem);
+                              return rarityColorClass(selectedItem?.rarity || 'common'); 
+                            })()}>{(() => {
+                              const selectedItem = items.find(i => i.id === (editingItem as Recipe).resultItem);
+                              return selectedItem?.rarity || 'unknown';
+                            })()}</div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div>
                       <label className="block text-gray-300 text-sm mb-1">Result Quantity</label>
@@ -4344,19 +4392,11 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                     </div>
                   </div>
                   
-                  <div className="mt-4">
-                    <label className="block text-gray-300 text-sm mb-1">Image Path</label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                      value={(editingItem as Recipe).image || ''}
-                      onChange={(e) => {
-                        const updatedRecipe = {...editingItem as Recipe, image: e.target.value};
-                        setEditingItem(updatedRecipe);
-                      }}
-                      placeholder="/assets/recipes/recipe-name.png"
-                    />
-                  </div>
+                  {/* Image path is now automatically set from the selected item */}
+                  <input
+                    type="hidden"
+                    value={(editingItem as Recipe).image || ''}
+                  />
                   
                   <div className="mt-4">
                     <label className="block text-gray-300 text-sm mb-1">Hero Image (Optional)</label>
@@ -4617,37 +4657,91 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 {/* Preview Section */}
                 <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
                   <h3 className="text-md font-semibold text-brand-orange mb-4">Recipe Preview</h3>
-                  <div className="flex items-center">
-                    <div className="w-24 h-24 bg-black/30 rounded flex items-center justify-center overflow-hidden mr-4">
-                      {(editingItem as Recipe).image ? (
-                        <img
-                          src={(editingItem as Recipe).image}
-                          alt={(editingItem as Recipe).name}
-                          className="w-full h-full object-contain p-1"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
-                            (e.target as HTMLImageElement).className = 'w-10 h-10 opacity-30';
-                          }}
-                        />
-                      ) : (
-                        <ClipboardList className="w-10 h-10 text-gray-700" />
+                  
+                  {/* No item selected state */}
+                  {!(editingItem as Recipe).resultItem ? (
+                    <div className="flex flex-col items-center justify-center p-8 text-center">
+                      <div className="bg-black/40 rounded-full p-4 mb-4">
+                        <ClipboardList className="w-12 h-12 text-gray-600" />
+                      </div>
+                      <p className="text-gray-400">Select a result item from the dropdown above to see a preview of your recipe.</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col">
+                      <div className="flex items-center mb-4">
+                        {/* Item image with rarity border */}
+                        <div className={`w-24 h-24 ${
+                          rarityColorClass((items.find(i => i.id === (editingItem as Recipe).resultItem)?.rarity || 'common')).replace('text-', 'border-')
+                        } bg-black/50 border-2 rounded-lg flex items-center justify-center overflow-hidden mr-4`}>
+                          {(editingItem as Recipe).image ? (
+                            <img
+                              src={(editingItem as Recipe).image}
+                              alt={(editingItem as Recipe).name}
+                              className="w-full h-full object-contain p-1"
+                              style={{imageRendering: 'pixelated'}}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                                (e.target as HTMLImageElement).className = 'w-10 h-10 opacity-30';
+                              }}
+                            />
+                          ) : (
+                            <ClipboardList className="w-10 h-10 text-gray-700" />
+                          )}
+                        </div>
+                        
+                        {/* Recipe details */}
+                        <div>
+                          <h4 className="font-medium text-white text-lg">{(editingItem as Recipe).name || "Unnamed Recipe"}</h4>
+                          <div className="flex items-center mt-1">
+                            <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full mr-2">
+                              {(editingItem as Recipe).category || 'Uncategorized'}
+                            </span>
+                            <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full">
+                              {(editingItem as Recipe).difficulty || 'easy'}
+                            </span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ml-2 ${(editingItem as Recipe).unlocked ? 'bg-green-900 text-green-200' : 'bg-red-900 text-red-200'}`}>
+                              {(editingItem as Recipe).unlocked ? 'Unlocked' : 'Locked'}
+                            </span>
+                          </div>
+                          <div className="flex items-center mt-2">
+                            <div className="text-sm text-white flex items-center">
+                              <ArrowRight className="h-4 w-4 mr-1 text-brand-orange" />
+                              <span>Creates:</span>
+                              <span className="font-bold ml-1 text-brand-orange">{(editingItem as Recipe).resultQuantity || 1}×</span>
+                              <span className="ml-1">
+                                {(() => {
+                                  const selectedItem = items.find(i => i.id === (editingItem as Recipe).resultItem);
+                                  return selectedItem?.name || (editingItem as Recipe).resultItem;
+                                })()}
+                              </span>
+                              <span className={`ml-2 text-xs ${
+                                rarityColorClass((items.find(i => i.id === (editingItem as Recipe).resultItem)?.rarity || 'common'))
+                              }`}>
+                                ({(() => {
+                                  const selectedItem = items.find(i => i.id === (editingItem as Recipe).resultItem);
+                                  return selectedItem?.rarity || 'unknown';
+                                })()})
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Recipe description */}
+                      {(editingItem as Recipe).description && (
+                        <div className="bg-black/40 border border-gray-700 rounded p-3 mt-2">
+                          <p className="text-sm text-gray-300">{(editingItem as Recipe).description}</p>
+                        </div>
+                      )}
+                      
+                      {/* Recipe flavor text */}
+                      {(editingItem as Recipe).flavorText && (
+                        <div className="mt-2 px-3 py-2 text-xs italic text-gray-400">
+                          "{(editingItem as Recipe).flavorText}"
+                        </div>
                       )}
                     </div>
-                    <div>
-                      <h4 className="font-medium text-white text-lg">{(editingItem as Recipe).name}</h4>
-                      <div className="flex items-center mt-1">
-                        <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full mr-2">
-                          {(editingItem as Recipe).category || 'Uncategorized'}
-                        </span>
-                        <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full">
-                          {(editingItem as Recipe).difficulty || 'easy'}
-                        </span>
-                      </div>
-                      <p className="text-sm text-white mt-1">
-                        Creates: {(editingItem as Recipe).resultQuantity || 1}x {(editingItem as Recipe).resultItem || 'item'}
-                      </p>
-                    </div>
-                  </div>
+                  )}
                 </div>
                 
                 {/* Action Buttons */}
