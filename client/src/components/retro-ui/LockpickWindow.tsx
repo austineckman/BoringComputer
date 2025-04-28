@@ -48,11 +48,12 @@ const LockpickWindow: React.FC<LockpickWindowProps> = ({ onClose }) => {
   const [openingBox, setOpeningBox] = useState(false);
   const [rewards, setRewards] = useState<Reward[] | null>(null);
   
-  // Fetch lootboxes
+  // Fetch unopened lootboxes only
   const { data: lootBoxes = [], isLoading: isLoadingLootBoxes, error: lootBoxesError } = useQuery({
-    queryKey: ['/api/lootboxes/user'],
+    queryKey: ['/api/lootboxes/user', 'unopened'],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/lootboxes/user');
+      // Request only unopened lootboxes
+      const response = await apiRequest('GET', '/api/lootboxes/user?opened=false');
       if (!response.ok) {
         throw new Error('Failed to fetch lootboxes');
       }
@@ -135,6 +136,12 @@ const LockpickWindow: React.FC<LockpickWindowProps> = ({ onClose }) => {
   };
   
   // Filter unopened lootboxes
+  useEffect(() => {
+    if (Array.isArray(lootBoxes) && lootBoxes.length > 0) {
+      console.log('Loaded lootboxes from API:', lootBoxes);
+    }
+  }, [lootBoxes]);
+  
   const unopenedLootBoxes = Array.isArray(lootBoxes) 
     ? lootBoxes.filter((box: LootBox) => !box.opened) 
     : [];
