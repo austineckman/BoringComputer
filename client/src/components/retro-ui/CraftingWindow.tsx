@@ -456,14 +456,23 @@ const CraftingWindow: React.FC = () => {
         trackUsedItem(removedItemId, false); // Return item to inventory
         
         updatedGrid[sourceRow][sourceCol] = { itemId: null, quantity: 0 };
+      } else {
+        // Same cell, no need to do anything
+        return;
       }
     }
     
     // Get the current item in the target cell (if any)
     const currentItemId = updatedGrid[row][col].itemId;
-    if (currentItemId) {
+    
+    // If there's already an item in this cell and it's different from what we're trying to add
+    // return that item to inventory first
+    if (currentItemId && currentItemId !== item.itemId) {
       // Return the current item to inventory
       trackUsedItem(currentItemId, false);
+    } else if (currentItemId === item.itemId) {
+      // If it's the same item, don't do anything
+      return;
     }
     
     // Add the item to the target cell
@@ -851,7 +860,24 @@ const CraftingWindow: React.FC = () => {
                 <h3 className="font-medium text-amber-200">Crafting Grid</h3>
               </div>
               
-              <div className="flex-1 p-6 flex items-center justify-center">
+              <div className="flex-1 p-6 flex flex-col items-center justify-center">
+                {/* Clear Grid Button */}
+                <div className="w-full flex justify-end mb-3">
+                  <button 
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-all ${
+                      craftingGrid.some(row => row.some(cell => cell.itemId !== null))
+                        ? 'bg-gray-700 hover:bg-gray-600 text-white' 
+                        : 'bg-gray-700/30 cursor-not-allowed text-gray-500'
+                    }`}
+                    onClick={handleClearGrid}
+                    disabled={!craftingGrid.some(row => row.some(cell => cell.itemId !== null))}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Clear Crafting Grid
+                  </button>
+                </div>
+                
+                {/* Crafting Grid */}
                 <div className="grid grid-cols-3 gap-2 p-3 bg-black/40 border-2 border-amber-900/70 rounded-lg shadow-[0_0_20px_rgba(0,0,0,0.4)]">
                   {craftingGrid.map((row, rowIndex) => (
                     row.map((cell, colIndex) => (
@@ -935,37 +961,22 @@ const CraftingWindow: React.FC = () => {
                         </div>
                       </div>
                       
-                      <div className="flex gap-2">
-                        {/* Clear Crafting Table Button */}
-                        <button 
-                          className="px-3 py-2 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 
-                                   text-white rounded-md border border-gray-700 shadow-md transition-colors
-                                   flex items-center justify-center gap-1"
-                          onClick={handleClearGrid}
-                          disabled={!craftingGrid.some(row => row.some(cell => cell.itemId !== null))}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span>Clear</span>
-                        </button>
-                        
-                        {/* Forge Button */}
-                        <button 
-                          className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 
-                                   text-white rounded-md border border-amber-800 shadow-md transition-colors
-                                   flex items-center justify-center gap-2 min-w-32"
-                          onClick={handleCraftClick}
-                          disabled={craftMutation.isPending}
-                        >
-                          {craftMutation.isPending ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <>
-                              <Hammer className="h-4 w-4" />
-                              <span>Forge Item</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
+                      <button 
+                        className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 
+                                 text-white rounded-md border border-amber-800 shadow-md transition-colors
+                                 flex items-center justify-center gap-2 min-w-32"
+                        onClick={handleCraftClick}
+                        disabled={craftMutation.isPending}
+                      >
+                        {craftMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Hammer className="h-4 w-4" />
+                            <span>Forge Item</span>
+                          </>
+                        )}
+                      </button>
                       
                       {/* Crafting Messages */}
                       {craftMessage && (
