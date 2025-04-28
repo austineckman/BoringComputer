@@ -455,139 +455,105 @@ const CraftingWindow: React.FC = () => {
     // Debug - log the current grid and the drop operation
     console.log(`Drop operation: Item ${item.itemId} at cell ${row},${col}. Source: ${item.source}`, 
       item.source === 'grid' ? `from position ${item.position}` : '');
-
-    // Create a DEEP copy of the current grid to avoid partial updates
-    const updatedGrid = JSON.parse(JSON.stringify(craftingGrid));
-
-    // Track if this is just moving an item to a different cell
-    let isMovingItem = false;
-    let sourceCell: {row: number, col: number} | null = null;
-
-    // If the item is coming from another grid cell, clear that cell and return item to inventory
-    if (item.source === 'grid' && item.position) {
-      const [sourceRow, sourceCol] = item.position;
-      sourceCell = {row: sourceRow, col: sourceCol};
-
-      // If dropping onto itself, don't do anything
-      if (sourceRow === row && sourceCol === col) {
-        console.log('Dropping item onto itself, ignoring');
-        return;
-      }
-
-      isMovingItem = true;
-      const removedItemId = updatedGrid[sourceRow][sourceCol].itemId;
-      console.log(`Moving item ${removedItemId} from [${sourceRow},${sourceCol}] to [${row},${col}]`);
-
-      // Clear the source cell
-      updatedGrid[sourceRow][sourceCol] = { itemId: null, quantity: 0 };
-
-      // When moving within the grid, we don't change the total number of used items,
-      // so we don't need to call trackUsedItem here
-    }
-
-    // Get the current item in the target cell (if any)
-    const currentItemId = updatedGrid[row][col].itemId;
-
-    // If there's already an item in this cell
-    if (currentItemId) {
-      // If we're moving from another cell and the target cell has an item too,
-      // we need to swap them
-      if (isMovingItem) {
-        console.log(`Target cell [${row},${col}] already has item ${currentItemId}, swapping items`);
-
-        // If source and target have different items, swap them
-        if (sourceCell && item.itemId !== currentItemId) {
-          console.log(`Placing ${item.itemId} in cell [${row},${col}] and returning ${currentItemId} to inventory`);
-          // We're replacing the item, no need to track usage changes as we're just swapping
-          updatedGrid[row][col] = {itemId: item.itemId, quantity: 1, itemDetails: getItemDetails(item.itemId)};
-          trackUsedItem(currentItemId, false);
-        } else {
-          // If the item being moved is the same as what's already in the target, just remove from source
-          console.log(`Target already has same item ${item.itemId}, keeping it as is`);
-          return;
-        }
-      } 
-      // If we're placing from inventory and there's already an item, replace it
-      else if (item.source === 'inventory') {
-        // If we're trying to place the same item that's already there, don't do anything
-        if (currentItemId === item.itemId) {
-          console.log(`Cell [${row},${col}] already has ${item.itemId}, ignoring drop`);
-          return;
-        }
-
-        console.log(`Replacing ${currentItemId} in cell [${row},${col}] with ${item.itemId} from inventory`);
-        // Return the current item to inventory
-        trackUsedItem(currentItemId, false);
-        updatedGrid[row][col] = {itemId: item.itemId, quantity: 1, itemDetails: getItemDetails(item.itemId)};
-      }
-    }
-    // Add the item to an empty cell
-    else {
-      const itemDetails = getItemDetails(item.itemId);
-      updatedGrid[row][col] = {
-        itemId: item.itemId,
-        quantity: 1, // Grid cells always have quantity 1
-        itemDetails
-      };
-    }
-
-    // Only track as used if coming from inventory (not when moving within the grid)
-    if (item.source === 'inventory') {
-      console.log(`Tracking ${item.itemId} as used from inventory`);
-      trackUsedItem(item.itemId, true);
-    }
-
-    console.log('Updated grid before state update:', JSON.stringify(updatedGrid));
     
-    // Update the grid state with the complete new grid
-    setCraftingGrid(updatedGrid);
-
-    // Check if this matches any recipe
-    const matchingRecipe = recipes.find(recipe => {
-      // Create a safe pattern array without shared references
-      const pattern = [];
-      for (let i = 0; i < 3; i++) {
-        const row = [];
-        for (let j = 0; j < 3; j++) {
-          row.push(null);
+    // Instead of creating our own deep copy, use the setState functional update
+    // which makes it much more reliable (similar to useCrafting.ts approach)
+    setCraftingGrid(prevGrid => {
+      // Log the grid we're starting with
+      console.log("FULL GRID BEFORE UPDATE (inside setState):", JSON.stringify(prevGrid));
+      
+      // First clone the entire grid
+      const newGrid = [...prevGrid];
+      
+      // Track if this is just moving an item to a different cell
+      let isMovingItem = false;
+      let sourceCell: {row: number, col: number} | null = null;
+      
+      // If the item is coming from another grid cell, handle that first
+      if (item.source === 'grid' && item.position) {
+        const [sourceRow, sourceCol] = item.position;
+        sourceCell = {row: sourceRow, col: sourceCol};
+        
+        // If dropping onto itself, don't do anything
+        if (sourceRow === row && sourceCol === col) {
+          console.log('Dropping item onto itself, ignoring');
+          return prevGrid; // No change
         }
-        pattern.push(row);
-      };
-
-      // Fill the pattern based on our grid
-      updatedGrid.forEach((row, rowIdx) => {
-        row.forEach((cell, colIdx) => {
-          pattern[rowIdx][colIdx] = cell.itemId;
-        });
-      });
-
-      // Check if this matches the recipe pattern
-      for (const input of recipe.inputs) {
-        const [r, c] = input.position;
-        if (pattern[r][c] !== input.itemId) {
-          return false;
-        }
+        
+        isMovingItem = true;
+        const removedItemId = prevGrid[sourceRow][sourceCol].itemId;
+        console.log(`Moving item ${removedItemId} from [${sourceRow},${sourceCol}] to [${row},${col}]`);
+        
+        // Clone this row since we're changing it
+        newGrid[sourceRow] = [...prevGrid[sourceRow]];
+        // Set value at source position to empty
+        newGrid[sourceRow][sourceCol] = { itemId: null, quantity: 0 };
       }
-
-      // Also check that empty cells in the recipe are empty in our pattern
-      for (let r = 0; r < 3; r++) {
-        for (let c = 0; c < 3; c++) {
-          const hasInput = recipe.inputs.some(input => 
-            input.position[0] === r && input.position[1] === c
-          );
-
-          if (!hasInput && pattern[r][c] !== null) {
-            return false;
+      
+      // Clone the target row as we'll be modifying it
+      newGrid[row] = [...prevGrid[row]];
+      
+      // Get the current item in the target cell (if any)
+      const currentItemId = prevGrid[row][col].itemId;
+      
+      // If there's already an item in this cell
+      if (currentItemId) {
+        // If we're moving from another cell and the target cell has an item too,
+        // we need to swap them
+        if (isMovingItem) {
+          console.log(`Target cell [${row},${col}] already has item ${currentItemId}, swapping items`);
+          
+          // If source and target have different items, swap them
+          if (sourceCell && item.itemId !== currentItemId) {
+            console.log(`Placing ${item.itemId} in cell [${row},${col}] and returning ${currentItemId} to inventory`);
+            // Set the new cell value
+            newGrid[row][col] = {itemId: item.itemId, quantity: 1, itemDetails: getItemDetails(item.itemId)};
+            trackUsedItem(currentItemId, false);
+          } else {
+            // If the item being moved is the same as what's already in the target, just remove from source
+            console.log(`Target already has same item ${item.itemId}, keeping it as is`);
+            return newGrid;
           }
+        } 
+        // If we're placing from inventory and there's already an item, replace it
+        else if (item.source === 'inventory') {
+          // If we're trying to place the same item that's already there, don't do anything
+          if (currentItemId === item.itemId) {
+            console.log(`Cell [${row},${col}] already has ${item.itemId}, ignoring drop`);
+            return prevGrid; // No change
+          }
+          
+          console.log(`Replacing ${currentItemId} in cell [${row},${col}] with ${item.itemId} from inventory`);
+          // Return the current item to inventory
+          trackUsedItem(currentItemId, false);
+          newGrid[row][col] = {itemId: item.itemId, quantity: 1, itemDetails: getItemDetails(item.itemId)};
+          
+          // Update tracking for the new item
+          trackUsedItem(item.itemId, true);
         }
       }
-
-      return true;
+      // Add the item to an empty cell
+      else {
+        const itemDetails = getItemDetails(item.itemId);
+        newGrid[row][col] = {
+          itemId: item.itemId,
+          quantity: 1, // Grid cells always have quantity 1
+          itemDetails
+        };
+        
+        // Only track as used if coming from inventory (not when moving within the grid)
+        if (item.source === 'inventory') {
+          console.log(`Tracking ${item.itemId} as used from inventory`);
+          trackUsedItem(item.itemId, true);
+        }
+      }
+      
+      console.log('Updated grid before return:', JSON.stringify(newGrid));
+      return newGrid;
     });
-
-    if (matchingRecipe) {
-      setSelectedRecipeId(matchingRecipe.id);
-    }
+    
+    // The remaining logic (recipe matching etc) will be handled by useEffect on grid change
+    // No need to do anything more here
   };
 
   // Handle removing items from the grid
