@@ -10,6 +10,7 @@ import { useQuests, type Quest } from '../../hooks/useQuests';
 import { useItems } from '../../hooks/useItems';
 import questImage from '@assets/01_Fire_Grimoire.png';
 import wallbg from '@assets/wallbg.png';
+import lootCrateImage from '@assets/loot crate.png';
 
 // For sounds
 declare global {
@@ -303,7 +304,12 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                           style={{ objectFit: 'contain' }}
                         />
                       ) : (
-                        <Package className="w-3 h-3 mr-1 text-brand-orange" />
+                        <img 
+                          src={lootCrateImage} 
+                          alt="Loot Crate" 
+                          className="w-4 h-4 mr-1 object-contain"
+                          style={{ imageRendering: 'pixelated' }}
+                        />
                       )}
                       <span className="text-xs text-gray-300">{reward.quantity}x {reward.id}</span>
                     </div>
@@ -356,7 +362,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
       <div className="flex-1 overflow-y-auto p-6">
         {/* Back button */}
         <button 
-          className="flex items-center text-gray-300 hover:text-brand-orange mb-6"
+          className="flex items-center text-white hover:text-brand-orange mb-6 bg-space-dark/50 px-4 py-2 rounded-md border border-brand-orange/30"
           onClick={() => {
             window.sounds?.click();
             setQuestView('list');
@@ -365,7 +371,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
           onMouseEnter={() => window.sounds?.hover()}
         >
           <ArrowLeft className="mr-2 h-5 w-5" />
-          Back to Quests
+          Back to Quest List
         </button>
         
         {/* Quest hero image and title section */}
@@ -431,7 +437,12 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                           style={{ imageRendering: 'pixelated' }}
                         />
                       ) : (
-                        <Package className="w-10 h-10 text-brand-orange" />
+                        <img 
+                          src={lootCrateImage} 
+                          alt="Loot Crate"
+                          className="w-10 h-10 object-contain"
+                          style={{ imageRendering: 'pixelated' }}
+                        />
                       )}
                     </div>
                     <h3 className="text-white font-medium text-center mb-1">{item?.name || reward.id}</h3>
