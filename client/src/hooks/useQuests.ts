@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, getQueryFn } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
@@ -41,6 +41,7 @@ export const useQuests = () => {
     error: questsError
   } = useQuery<QuestResponse>({
     queryKey: ['/api/quests'],
+    queryFn: getQueryFn(),
     retry: 2,
     // Add error handling
     onError: (error) => {
@@ -60,6 +61,7 @@ export const useQuests = () => {
     isLoading: loadingActiveQuest 
   } = useQuery<Quest | null>({
     queryKey: ['/api/quests/active'],
+    queryFn: getQueryFn(),
     retry: 1,
     initialData: null
   });
