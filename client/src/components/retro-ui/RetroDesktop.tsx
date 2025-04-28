@@ -398,10 +398,10 @@ const RetroDesktop: React.FC = () => {
   const openCraftingWindow = () => {
     openWindow(
       "crafting", 
-      "crafting.exe", 
+      "Gizbo's Forge", 
       <CraftingWindow />, 
       "craftingarmor", 
-      { width: 700, height: 500 }
+      { width: 845, height: 676 } // 30% larger than standard window size for better crafting experience
     );
   };
   
@@ -786,6 +786,8 @@ const RetroDesktop: React.FC = () => {
                       );
                     } else {
                       // Restore to default size
+                      // Use larger base size for crafting windows and regular size for others
+                      const isForgeWindow = window.title.includes('Forge') || window.title.includes('Crafting');
                       setWindows(
                         windows.map(w => 
                           w.id === window.id 
@@ -793,8 +795,8 @@ const RetroDesktop: React.FC = () => {
                                 ...w, 
                                 position: {
                                   ...w.position,
-                                  width: 600,
-                                  height: 400
+                                  width: isForgeWindow ? 845 : 600, // 30% larger for crafting
+                                  height: isForgeWindow ? 676 : 400 // 30% larger for crafting
                                 } 
                               } 
                             : w
