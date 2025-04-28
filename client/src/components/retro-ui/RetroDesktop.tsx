@@ -82,14 +82,19 @@ const RetroDesktop: React.FC = () => {
   
   // Desktop icons (regular icons visible to all users)
   const [desktopIcons, setDesktopIcons] = useState<DesktopIcon[]>([
-    { id: "quests", name: "Quests", icon: "questgrimoire", path: "/quests", position: { x: 20, y: 20 } },
-    { id: "inventory", name: "loot.exe", icon: "ironbag", path: "/inventory", position: { x: 20, y: 120 } },
-    { id: "crafting", name: "crafting.exe", icon: "craftingarmor", path: "/crafting", position: { x: 20, y: 220 } },
-    { id: "lootboxes", name: "PickLock.exe", icon: "picklock", path: "/lootboxes", position: { x: 20, y: 320 } },
-    { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 20, y: 420 } },
-    { id: "oracle", name: "The Oracle", icon: "oracle", position: { x: 20, y: 520 } },
-    { id: "circuitbuilder", name: "Circuit Builder", icon: "🔌", position: { x: 20, y: 620 } },
-    { id: "recyclebin", name: "Recycle Bin", icon: "trashIcon", position: { x: 140, y: 20 } },
+    // First column (recyclebin at top left)
+    { id: "recyclebin", name: "Recycle Bin", icon: "trashIcon", position: { x: 20, y: 20 } },
+    { id: "quests", name: "Quests", icon: "questgrimoire", path: "/quests", position: { x: 20, y: 120 } },
+    { id: "inventory", name: "loot.exe", icon: "ironbag", path: "/inventory", position: { x: 20, y: 220 } },
+    { id: "crafting", name: "crafting.exe", icon: "craftingarmor", path: "/crafting", position: { x: 20, y: 320 } },
+    
+    // Second column (after 4 icons in first column)
+    { id: "lootboxes", name: "PickLock.exe", icon: "picklock", path: "/lootboxes", position: { x: 140, y: 20 } },
+    { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 140, y: 120 } },
+    { id: "circuitbuilder", name: "Circuit Builder", icon: "🔌", position: { x: 140, y: 220 } },
+    
+    // Oracle in top right
+    { id: "oracle", name: "The Oracle", icon: "oracle", position: { x: 800, y: 20 } },
   ]);
   
   // Admin icons (for reference only - no longer displayed in a folder)
