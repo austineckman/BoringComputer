@@ -10,7 +10,7 @@ import { createHash } from "crypto";
 import { adminAuth } from "./middleware/adminAuth";
 import path from 'path';
 import { openLootBox, generateLootBoxRewards, LootBoxType } from './lootBoxSystem';
-import { getItemDetails, removeItem } from './itemDatabase';
+import { getItemDetails, removeItem, addOrUpdateItem } from './itemDatabase';
 import * as craftingRecipeRoutes from './routes/craftingRecipes';
 import adminRoutes from './routes/admin';
 import authRoutes from './routes/auth';
