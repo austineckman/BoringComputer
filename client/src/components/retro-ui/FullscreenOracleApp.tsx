@@ -1986,6 +1986,129 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     </div>
   );
 
+  // Function to generate test lootboxes
+  const handleGenerateTestLootboxes = async () => {
+    try {
+      window.sounds?.click();
+      setNotificationMessage({
+        type: 'success',
+        message: 'Generating test lootboxes...'
+      });
+
+      const response = await fetch('/api/loot-boxes/generate-test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setNotificationMessage({
+          type: 'success',
+          message: data.message || 'Generated test lootboxes successfully!'
+        });
+        window.sounds?.success();
+      } else {
+        const errorData = await response.json();
+        setNotificationMessage({
+          type: 'error',
+          message: errorData.message || 'Failed to generate test lootboxes'
+        });
+        window.sounds?.error();
+      }
+    } catch (error) {
+      console.error('Error generating test lootboxes:', error);
+      setNotificationMessage({
+        type: 'error',
+        message: 'An error occurred while generating test lootboxes'
+      });
+      window.sounds?.error();
+    }
+  };
+
+  // Function to reset inventory to one of each item
+  const handleResetInventory = async () => {
+    try {
+      window.sounds?.click();
+      setNotificationMessage({
+        type: 'success',
+        message: 'Resetting inventory...'
+      });
+
+      const response = await fetch('/api/admin/inventory/reset-to-one', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setNotificationMessage({
+          type: 'success',
+          message: data.message || 'Inventory reset successfully!'
+        });
+        window.sounds?.success();
+      } else {
+        const errorData = await response.json();
+        setNotificationMessage({
+          type: 'error',
+          message: errorData.message || 'Failed to reset inventory'
+        });
+        window.sounds?.error();
+      }
+    } catch (error) {
+      console.error('Error resetting inventory:', error);
+      setNotificationMessage({
+        type: 'error',
+        message: 'An error occurred while resetting inventory'
+      });
+      window.sounds?.error();
+    }
+  };
+
+  // Function to clear lootboxes from inventory
+  const handleClearLootboxes = async () => {
+    try {
+      window.sounds?.click();
+      setNotificationMessage({
+        type: 'success',
+        message: 'Clearing lootboxes...'
+      });
+
+      const response = await fetch('/api/admin/inventory/clear-loot-crates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setNotificationMessage({
+          type: 'success',
+          message: data.message || 'Lootboxes cleared successfully!'
+        });
+        window.sounds?.success();
+      } else {
+        const errorData = await response.json();
+        setNotificationMessage({
+          type: 'error',
+          message: errorData.message || 'Failed to clear lootboxes'
+        });
+        window.sounds?.error();
+      }
+    } catch (error) {
+      console.error('Error clearing lootboxes:', error);
+      setNotificationMessage({
+        type: 'error',
+        message: 'An error occurred while clearing lootboxes'
+      });
+      window.sounds?.error();
+    }
+  };
+
   return (
     <div 
       className="absolute inset-0 flex flex-col bg-black text-white z-50"
@@ -2007,6 +2130,37 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           />
           <h1 className="text-2xl font-bold text-brand-orange">The Oracle</h1>
           <span className="text-xs bg-red-600/80 text-white px-2 py-0.5 rounded-full ml-3">Admin Only</span>
+          
+          {/* Admin Action Buttons */}
+          <div className="flex items-center ml-6 space-x-2">
+            <button
+              className="px-3 py-1 text-xs bg-brand-orange/90 hover:bg-brand-orange text-white rounded flex items-center"
+              onClick={handleGenerateTestLootboxes}
+              onMouseEnter={() => window.sounds?.hover()}
+              title="Generate test lootboxes of each type for your inventory"
+            >
+              <Package className="h-3 w-3 mr-1" />
+              Generate Test Lootboxes
+            </button>
+            <button
+              className="px-3 py-1 text-xs bg-blue-600/90 hover:bg-blue-600 text-white rounded flex items-center"
+              onClick={handleResetInventory}
+              onMouseEnter={() => window.sounds?.hover()}
+              title="Reset inventory to have exactly 1 of each item"
+            >
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Reset Inventory
+            </button>
+            <button
+              className="px-3 py-1 text-xs bg-red-600/90 hover:bg-red-600 text-white rounded flex items-center"
+              onClick={handleClearLootboxes}
+              onMouseEnter={() => window.sounds?.hover()}
+              title="Clear all lootboxes from your inventory"
+            >
+              <Trash2 className="h-3 w-3 mr-1" />
+              Clear Lootboxes
+            </button>
+          </div>
         </div>
         <button 
           className="text-white hover:text-brand-orange" 
