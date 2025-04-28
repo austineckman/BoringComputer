@@ -555,24 +555,84 @@ const CraftingWindow: React.FC = () => {
     // The remaining logic (recipe matching etc) will be handled by useEffect on grid change
     // No need to do anything more here
   };
+  
+  // Effect to check for matching recipes whenever grid changes
+  useEffect(() => {
+    // Check if grid matches any recipe
+    console.log("Grid changed, checking for matching recipes");
+    
+    if (!recipes || !Array.isArray(recipes)) {
+      console.log("No recipes available to check against");
+      return;
+    }
+    
+    // Create a pattern from the current grid state
+    const pattern: (string | null)[][] = Array(3).fill(null).map(() => Array(3).fill(null));
+    craftingGrid.forEach((row, rowIdx) => {
+      row.forEach((cell, colIdx) => {
+        pattern[rowIdx][colIdx] = cell.itemId;
+      });
+    });
+    
+    console.log("Current grid pattern:", JSON.stringify(pattern));
+    
+    // Check for recipe matches
+    const matchingRecipe = recipes.find(recipe => {
+      // Check if each input in the recipe is in the right position
+      for (const input of recipe.inputs) {
+        const [r, c] = input.position;
+        if (pattern[r][c] !== input.itemId) {
+          return false;
+        }
+      }
+      
+      // Also check that empty cells in the recipe are empty in our pattern
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          const hasInput = recipe.inputs.some(input => 
+            input.position[0] === r && input.position[1] === c
+          );
+          
+          if (!hasInput && pattern[r][c] !== null) {
+            return false;
+          }
+        }
+      }
+      
+      return true;
+    });
+    
+    if (matchingRecipe) {
+      console.log("Found matching recipe:", matchingRecipe.name);
+      setSelectedRecipeId(matchingRecipe.id);
+    } else {
+      // When no match found, clear the selected recipe if it was auto-selected
+      // (but don't clear manually selected recipes)
+      console.log("No matching recipe found");
+    }
+  }, [craftingGrid, recipes]);
 
   // Handle removing items from the grid
   const handleRemoveItem = (row: number, col: number) => {
-    // Create deep copy of the grid
-    const updatedGrid = JSON.parse(JSON.stringify(craftingGrid));
-    const removedItemId = updatedGrid[row][col].itemId;
-
+    // Get the item ID at this position
+    const removedItemId = craftingGrid[row][col].itemId;
+    
     if (removedItemId) {
       // Return the item to inventory
       trackUsedItem(removedItemId, false);
-
-      // Clear the cell
-      updatedGrid[row][col] = { itemId: null, quantity: 0 };
       
-      console.log('Updated grid after removal:', JSON.stringify(updatedGrid));
-      
-      // Update the grid
-      setCraftingGrid(updatedGrid);
+      // Use the same setState pattern for consistent update behavior
+      setCraftingGrid(prevGrid => {
+        // First clone the grid
+        const newGrid = [...prevGrid];
+        // Then clone the row we're changing
+        newGrid[row] = [...prevGrid[row]];
+        // Update the specific cell
+        newGrid[row][col] = { itemId: null, quantity: 0 };
+        
+        console.log('Updated grid after removal:', JSON.stringify(newGrid));
+        return newGrid;
+      });
     }
   };
 
