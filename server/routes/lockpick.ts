@@ -1,10 +1,11 @@
 import { Router } from 'express';
-import { authenticate } from '../auth';
 import { storage } from '../storage';
-import { openLootBox, LootBoxType } from '../lootBoxSystem';
+import { authenticate } from '../auth';
 import { db } from '../db';
-import { lootBoxes as lootBoxesTable } from '../../shared/schema';
+import { LootBoxType } from '../lootBoxSystem';
 import { eq } from 'drizzle-orm';
+import { lootBoxConfigs as lootBoxConfigsTable } from '@shared/schema';
+import { getAllLootBoxConfigs } from '../lootBoxConfig';
 
 const router = Router();
 
@@ -28,7 +29,7 @@ router.get('/user', authenticate, async (req, res) => {
       const config = configMap.get(box.type);
       return {
         ...box,
-        image: config?.image || '/placeholder-lootbox.png',
+        image: config?.image || '/images/lootboxes/common_lootbox.png',
         description: config?.description || `A ${box.type} lootbox`,
         name: config?.name || `${box.type.charAt(0).toUpperCase() + box.type.slice(1)} Lootbox`,
         rarity: box.type
@@ -39,6 +40,49 @@ router.get('/user', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Error fetching user lootboxes:', error);
     return res.status(500).json({ error: 'Failed to fetch lootboxes' });
+  }
+});
+
+// Get a single lootbox by ID
+router.get('/:id', authenticate, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    if (!user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const lootBoxId = parseInt(req.params.id);
+    if (isNaN(lootBoxId)) {
+      return res.status(400).json({ error: 'Invalid lootbox ID' });
+    }
+    
+    // Get the lootbox
+    const lootBox = await storage.getLootBox(lootBoxId);
+    if (!lootBox) {
+      return res.status(404).json({ error: 'Lootbox not found' });
+    }
+    
+    // Verify that the lootbox belongs to the user
+    if (lootBox.userId !== user.id) {
+      return res.status(403).json({ error: 'You do not have permission to view this lootbox' });
+    }
+    
+    // Get the lootbox config
+    const config = await storage.getLootBoxConfig(lootBox.type);
+    
+    // Enhance lootbox with config details
+    const enhancedLootBox = {
+      ...lootBox,
+      image: config?.image || '/images/lootboxes/common_lootbox.png',
+      description: config?.description || `A ${lootBox.type} lootbox`,
+      name: config?.name || `${lootBox.type.charAt(0).toUpperCase() + lootBox.type.slice(1)} Lootbox`,
+      rarity: lootBox.type
+    };
+    
+    return res.json(enhancedLootBox);
+  } catch (error) {
+    console.error('Error fetching lootbox:', error);
+    return res.status(500).json({ error: 'Failed to fetch lootbox' });
   }
 });
 
@@ -55,97 +99,62 @@ router.post('/:id/open', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Invalid lootbox ID' });
     }
     
-    // Open the lootbox
-    const result = await openLootBox(lootBoxId, user.id);
+    // Get the lootbox
+    const lootBox = await storage.getLootBox(lootBoxId);
+    if (!lootBox) {
+      return res.status(404).json({ error: 'Lootbox not found' });
+    }
+    
+    // Verify that the lootbox belongs to the user
+    if (lootBox.userId !== user.id) {
+      return res.status(403).json({ error: 'You do not have permission to open this lootbox' });
+    }
+    
+    // Check if the lootbox is already opened
+    if (lootBox.opened) {
+      return res.status(400).json({ error: 'This lootbox has already been opened' });
+    }
+    
+    // Open the lootbox and get rewards
+    const result = await storage.openLootBox(lootBoxId, user.id);
     
     return res.json(result);
   } catch (error) {
     console.error('Error opening lootbox:', error);
-    return res.status(500).json({ error: 'Failed to open lootbox', message: (error as Error).message });
+    return res.status(500).json({ error: 'Failed to open lootbox' });
   }
 });
 
-// Test endpoint to generate lootboxes for development
-// Delete all user lootboxes - for testing purposes only
-router.post('/clear-all', authenticate, async (req, res) => {
+// Get lootbox configurations for the UI (using our static config)
+router.get('/configs/all', async (req, res) => {
   try {
-    const user = (req as any).user;
-    if (!user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
+    // Use in-memory configurations
+    const configs = getAllLootBoxConfigs();
     
-    // Get all user's lootboxes
-    const lootBoxes = await storage.getLootBoxes(user.id);
-    if (lootBoxes.length === 0) {
-      return res.json({
-        success: true,
-        message: "No lootboxes to clear",
-        count: 0
-      });
-    }
-    
-    // Delete lootboxes directly from the database
-    const deletedCount = await db.delete(lootBoxesTable)
-      .where(eq(lootBoxesTable.userId, user.id))
-      .returning()
-      .then(result => result.length);
-    
-    return res.json({
-      success: true,
-      message: `Deleted ${deletedCount} lootboxes`,
-      count: deletedCount
-    });
+    return res.json(configs);
   } catch (error) {
-    console.error('Error clearing lootboxes:', error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to clear lootboxes",
-      error: (error as Error).message
-    });
+    console.error('Error fetching lootbox configurations:', error);
+    return res.status(500).json({ error: 'Failed to fetch lootbox configurations' });
   }
 });
 
-router.post('/generate-test', authenticate, async (req, res) => {
+// Get a specific lootbox configuration (using our static config)
+router.get('/configs/:id', async (req, res) => {
   try {
-    const user = (req as any).user;
-    if (!user) {
-      return res.status(401).json({ message: "Authentication required" });
+    const configId = req.params.id as LootBoxType;
+    
+    // Use in-memory configurations
+    const configs = getAllLootBoxConfigs();
+    const config = configs.find(c => c.id === configId);
+    
+    if (!config) {
+      return res.status(404).json({ error: 'Lootbox configuration not found' });
     }
     
-    // Get the types and quantities from the request, or use defaults
-    const { types = ["common", "uncommon", "rare", "epic", "legendary"] } = req.body;
-    const count = req.body.count || 1;
-    
-    const createdLootBoxes = [];
-    
-    // Create the specified number of each type of lootbox
-    for (const type of types) {
-      for (let i = 0; i < count; i++) {
-        const lootBox = await storage.createLootBox({
-          userId: user.id,
-          type: type as LootBoxType,
-          opened: false,
-          rewards: [],
-          source: 'test',
-          sourceId: null
-        });
-        
-        createdLootBoxes.push(lootBox);
-      }
-    }
-    
-    return res.json({ 
-      success: true, 
-      message: `Created ${createdLootBoxes.length} lootboxes`, 
-      lootBoxes: createdLootBoxes 
-    });
+    return res.json(config);
   } catch (error) {
-    console.error('Error generating test lootboxes:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: "Failed to generate test lootboxes", 
-      error: (error as Error).message 
-    });
+    console.error('Error fetching lootbox configuration:', error);
+    return res.status(500).json({ error: 'Failed to fetch lootbox configuration' });
   }
 });
 
