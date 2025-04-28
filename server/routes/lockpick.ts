@@ -78,8 +78,7 @@ router.post('/clear-all', authenticate, async (req, res) => {
     // Update lootboxes in a single database call if possible
     const promises = lootBoxes.map(box => 
       storage.updateLootBox(box.id, { 
-        opened: true,
-        openedAt: new Date().toISOString()
+        opened: true
       })
     );
     
