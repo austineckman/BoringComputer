@@ -35,18 +35,32 @@ export const useQuests = () => {
   const { playSound } = useSoundEffects();
 
   // Get all quests
-  const { data: questData, isLoading: loadingQuests } = useQuery<QuestResponse>({
+  const { 
+    data: questData, 
+    isLoading: loadingQuests,
+    error: questsError
+  } = useQuery<QuestResponse>({
     queryKey: ['/api/quests'],
-    retry: false
+    retry: 2,
+    // Add error handling
+    onError: (error) => {
+      console.error('Failed to fetch quests:', error);
+    }
   });
   
+  // Extract questsByAdventureLine from API response or create empty object
+  const questsByAdventureLine = questData?.questsByAdventureLine || {};
+  
   // Extract all quests or use empty array as fallback
-  const quests = questData?.allQuests || [];
+  const allQuests = questData?.allQuests || [];
 
   // Get active quest
-  const { data: activeQuest, isLoading: loadingActiveQuest } = useQuery<Quest | null>({
+  const { 
+    data: activeQuest, 
+    isLoading: loadingActiveQuest 
+  } = useQuery<Quest | null>({
     queryKey: ['/api/quests/active'],
-    retry: false,
+    retry: 1,
     initialData: null
   });
 
@@ -114,12 +128,15 @@ export const useQuests = () => {
   });
 
   return {
-    quests,
+    quests: allQuests,
+    allQuests,
+    questsByAdventureLine,
     activeQuest,
     loading: loadingQuests || loadingActiveQuest,
     startQuest: startQuestMutation.mutate,
     completeQuest: completeQuestMutation.mutate,
     isStarting: startQuestMutation.isPending,
-    isCompleting: completeQuestMutation.isPending
+    isCompleting: completeQuestMutation.isPending,
+    error: questsError
   };
 };
