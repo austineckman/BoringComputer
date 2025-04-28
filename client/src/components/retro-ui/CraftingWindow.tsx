@@ -445,34 +445,71 @@ const CraftingWindow: React.FC = () => {
   
   // Handle drop on crafting grid
   const handleItemDrop = (item: DragItem, row: number, col: number) => {
+    // Debug - log the current grid and the drop operation
+    console.log(`Drop operation: Item ${item.itemId} at cell ${row},${col}. Source: ${item.source}`, 
+      item.source === 'grid' ? `from position ${item.position}` : '');
+    
     // Create a copy of the current grid
     const updatedGrid = [...craftingGrid.map(r => [...r])];
+    
+    // Track if this is just moving an item to a different cell
+    let isMovingItem = false;
+    let sourceCell: {row: number, col: number} | null = null;
     
     // If the item is coming from another grid cell, clear that cell and return item to inventory
     if (item.source === 'grid' && item.position) {
       const [sourceRow, sourceCol] = item.position;
-      if (sourceRow !== row || sourceCol !== col) { // Only clear if not the same cell
-        const removedItemId = updatedGrid[sourceRow][sourceCol].itemId;
-        trackUsedItem(removedItemId, false); // Return item to inventory
-        
-        updatedGrid[sourceRow][sourceCol] = { itemId: null, quantity: 0 };
-      } else {
-        // Same cell, no need to do anything
+      sourceCell = {row: sourceRow, col: sourceCol};
+      
+      // If dropping onto itself, don't do anything
+      if (sourceRow === row && sourceCol === col) {
+        console.log('Dropping item onto itself, ignoring');
         return;
       }
+      
+      isMovingItem = true;
+      const removedItemId = updatedGrid[sourceRow][sourceCol].itemId;
+      console.log(`Moving item ${removedItemId} from [${sourceRow},${sourceCol}] to [${row},${col}]`);
+      
+      // Clear the source cell
+      updatedGrid[sourceRow][sourceCol] = { itemId: null, quantity: 0 };
+      
+      // When moving within the grid, we don't change the total number of used items,
+      // so we don't need to call trackUsedItem here
     }
     
     // Get the current item in the target cell (if any)
     const currentItemId = updatedGrid[row][col].itemId;
     
-    // If there's already an item in this cell and it's different from what we're trying to add
-    // return that item to inventory first
-    if (currentItemId && currentItemId !== item.itemId) {
-      // Return the current item to inventory
-      trackUsedItem(currentItemId, false);
-    } else if (currentItemId === item.itemId) {
-      // If it's the same item, don't do anything
-      return;
+    // If there's already an item in this cell
+    if (currentItemId) {
+      // If we're moving from another cell and the target cell has an item too,
+      // we need to swap them
+      if (isMovingItem) {
+        console.log(`Target cell [${row},${col}] already has item ${currentItemId}, swapping items`);
+        
+        // If source and target have different items, swap them
+        if (sourceCell && item.itemId !== currentItemId) {
+          console.log(`Placing ${item.itemId} in cell [${row},${col}] and returning ${currentItemId} to inventory`);
+          // We're replacing the item, no need to track usage changes as we're just swapping
+        } else {
+          // If the item being moved is the same as what's already in the target, just remove from source
+          console.log(`Target already has same item ${item.itemId}, keeping it as is`);
+          return;
+        }
+      } 
+      // If we're placing from inventory and there's already an item, replace it
+      else if (item.source === 'inventory') {
+        // If we're trying to place the same item that's already there, don't do anything
+        if (currentItemId === item.itemId) {
+          console.log(`Cell [${row},${col}] already has ${item.itemId}, ignoring drop`);
+          return;
+        }
+        
+        console.log(`Replacing ${currentItemId} in cell [${row},${col}] with ${item.itemId} from inventory`);
+        // Return the current item to inventory
+        trackUsedItem(currentItemId, false);
+      }
     }
     
     // Add the item to the target cell
@@ -483,8 +520,9 @@ const CraftingWindow: React.FC = () => {
       itemDetails
     };
     
-    // If from inventory, track as used
+    // Only track as used if coming from inventory (not when moving within the grid)
     if (item.source === 'inventory') {
+      console.log(`Tracking ${item.itemId} as used from inventory`);
       trackUsedItem(item.itemId, true);
     }
     
