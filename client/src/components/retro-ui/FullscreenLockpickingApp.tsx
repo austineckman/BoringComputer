@@ -110,7 +110,7 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
     try {
       // Play sound if available
       if (window.sounds) {
-        window.sounds.select();
+        window.sounds.click();
       }
       
       setOpeningLootbox(true);

@@ -75,6 +75,8 @@ const RetroDesktop: React.FC = () => {
   const [oracleAppState, setOracleAppState] = useState<'closed' | 'open'>('closed');
   // State to manage Circuit Builder app: 'closed' or 'open'
   const [circuitBuilderAppState, setCircuitBuilderAppState] = useState<'closed' | 'open'>('closed');
+  // State to manage PickLock.exe app: 'closed' or 'open'
+  const [lockpickingAppState, setLockpickingAppState] = useState<'closed' | 'open'>('closed');
   // Use global audio player context
   const { isPlaying: isMusicPlaying, toggleMute } = useAudioPlayer();
   
@@ -317,6 +319,16 @@ const RetroDesktop: React.FC = () => {
       if (circuitBuilderAppState === 'closed') {
         setCircuitBuilderAppState('open');
       }
+    } else if (iconId === "lootboxes") {
+      // Play sound if available
+      if (window.sounds) {
+        window.sounds.click();
+      }
+      
+      // Open the PickLock app if it's currently closed
+      if (lockpickingAppState === 'closed') {
+        setLockpickingAppState('open');
+      }
     } else if (iconPath) {
       // For other icons, navigate to the path if it exists
       navigate(iconPath);
@@ -541,6 +553,14 @@ const RetroDesktop: React.FC = () => {
         <FullscreenCircuitBuilderApp onClose={() => {
           // Reset app state to closed
           setCircuitBuilderAppState('closed');
+        }} />
+      )}
+      
+      {/* Fullscreen Lockpicking Application */}
+      {lockpickingAppState === 'open' && (
+        <FullscreenLockpickingApp onClose={() => {
+          // Reset app state to closed
+          setLockpickingAppState('closed');
         }} />
       )}
       {/* Desktop Icons */}
