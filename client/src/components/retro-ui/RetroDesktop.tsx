@@ -86,7 +86,7 @@ const RetroDesktop: React.FC = () => {
     { id: "recyclebin", name: "Recycle Bin", icon: "trashIcon", position: { x: 20, y: 20 } },
     { id: "quests", name: "Quests", icon: "questgrimoire", path: "/quests", position: { x: 20, y: 120 } },
     { id: "inventory", name: "Inventory.exe", icon: "ironbag", path: "/inventory", position: { x: 20, y: 220 } },
-    { id: "crafting", name: "crafting.exe", icon: "craftingarmor", path: "/crafting", position: { x: 20, y: 320 } },
+    { id: "crafting", name: "Gizbo's Forge", icon: "craftingarmor", path: "/crafting", position: { x: 20, y: 320 } },
     
     // Second column (after 4 icons in first column)
     { id: "lootboxes", name: "HackLock.exe", icon: "picklock", path: "/lootboxes", position: { x: 140, y: 20 } },

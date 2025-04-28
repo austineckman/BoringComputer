@@ -100,19 +100,19 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
       submenu: [
         {
           id: "inventory",
-          label: "View Inventory",
+          label: "Inventory.exe",
           icon: <ShoppingBag size={16} />,
           path: "/inventory"
         },
         {
           id: "loot-crates",
-          label: "Loot Crates",
+          label: "HackLock.exe",
           icon: <ShoppingBag size={16} />,
           path: "/lootboxes"
         },
         {
           id: "crafting",
-          label: "Crafting Table",
+          label: "Gizbo's Forge",
           icon: <Wrench size={16} />,
           path: "/crafting"
         }
