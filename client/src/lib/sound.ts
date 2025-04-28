@@ -80,20 +80,4 @@ export function playSound(name: SoundName): void {
 }
 
 // Create a mock implementation for tests or environments without audio
-const mockSounds = Object.keys(sounds).reduce((acc, name) => {
-  acc[name as SoundName] = {
-    play: () => console.log(`[Mock] Playing sound: ${name}`),
-    stop: () => console.log(`[Mock] Stopping sound: ${name}`),
-  };
-  return acc;
-}, {} as Record<SoundName, { play: () => void; stop: () => void }>);
-
-// Export the mock implementation
-export const mockSound = {
-  play: (name: SoundName): void => {
-    mockSounds[name].play();
-  },
-  stop: (name: SoundName): void => {
-    mockSounds[name].stop();
-  },
-};
+// We no longer use mock sounds - all sounds should be loaded from real audio files

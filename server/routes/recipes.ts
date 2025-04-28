@@ -2,14 +2,14 @@ import { Router } from 'express';
 import { authenticate } from '../auth';
 import { db } from '../db';
 import { eq } from 'drizzle-orm';
-import { recipes } from '@shared/schema';
+import { craftingRecipes } from '@shared/schema';
 
 const router = Router();
 
 // Get all recipes
 router.get('/', authenticate, async (req, res) => {
   try {
-    const recipeData = await db.select().from(recipes);
+    const recipeData = await db.select().from(craftingRecipes);
     res.json(recipeData);
   } catch (error) {
     console.error('Error fetching recipes:', error);
@@ -21,7 +21,7 @@ router.get('/', authenticate, async (req, res) => {
 router.get('/category/:category', authenticate, async (req, res) => {
   try {
     const { category } = req.params;
-    const filteredRecipes = await db.select().from(recipes).where(eq(recipes.category, category));
+    const filteredRecipes = await db.select().from(craftingRecipes).where(eq(craftingRecipes.category, category));
     res.json(filteredRecipes);
   } catch (error) {
     console.error('Error fetching recipes by category:', error);
@@ -39,7 +39,7 @@ router.get('/:id', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Invalid recipe ID' });
     }
     
-    const recipe = await db.select().from(recipes).where(eq(recipes.id, recipeId)).limit(1);
+    const recipe = await db.select().from(craftingRecipes).where(eq(craftingRecipes.id, recipeId)).limit(1);
     
     if (!recipe || recipe.length === 0) {
       return res.status(404).json({ error: 'Recipe not found' });
@@ -63,7 +63,7 @@ router.post('/craft', authenticate, async (req, res) => {
     }
     
     // Get the recipe from the database
-    const recipeResult = await db.select().from(recipes).where(eq(recipes.id, recipeId)).limit(1);
+    const recipeResult = await db.select().from(craftingRecipes).where(eq(craftingRecipes.id, recipeId)).limit(1);
     
     if (!recipeResult || recipeResult.length === 0) {
       return res.status(404).json({ error: 'Recipe not found' });
