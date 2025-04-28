@@ -15,6 +15,7 @@ import MiniPlayer from "./MiniPlayer";
 import FullscreenQuestsApp from "./FullscreenQuestsApp";
 import FullscreenOracleApp from "./FullscreenOracleApp";
 import FullscreenCircuitBuilderApp from "./FullscreenCircuitBuilderApp";
+import FullscreenLockpickingApp from "./FullscreenLockpickingApp";
 import RecycleBinWindow from "./RecycleBinWindow";
 import QuestLoadingScreen from "./QuestLoadingScreen";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
