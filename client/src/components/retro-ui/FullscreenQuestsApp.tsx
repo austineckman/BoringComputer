@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, FilterX, Filter, ChevronRight, Clock, Award, Cpu, Loader2, AlertCircle, Package, Gift } from 'lucide-react';
+import { 
+  X, Search, FilterX, Filter, ChevronRight, ChevronLeft, 
+  Clock, Award, Cpu, Loader2, AlertCircle, Package, Gift, 
+  ArrowLeft, Play, Check, ExternalLink, Code, Video
+} from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useComponentKits } from '../../hooks/useComponentKits';
 import { useQuests, type Quest } from '../../hooks/useQuests';
@@ -34,6 +38,8 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAdventureLine, setSelectedAdventureLine] = useState<string | null>(null);
   const [filteredQuests, setFilteredQuests] = useState<Quest[]>([]);
+  const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
+  const [questView, setQuestView] = useState<'list' | 'detail'>('list');
   
   // Initialize filtered quests when allQuests changes
   useEffect(() => {
@@ -104,11 +110,12 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
     // Play sound effect if available
     window.sounds?.click();
     
-    // For fullscreen mode, we won't navigate away and instead will 
-    // implement showing quest details in a modal or panel later
-    console.log('Selected quest:', questId);
-    // Don't navigate away from desktop - this was causing the reappearing issue
-    // navigate(`/quests/${questId}`);
+    // Find the quest by ID and set it as the selected quest
+    const quest = allQuests?.find(q => q.id === questId);
+    if (quest) {
+      setSelectedQuest(quest);
+      setQuestView('detail');
+    }
   };
 
   const clearFilters = () => {
@@ -331,6 +338,264 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
               </div>
             </div>
           )}
+        </div>
+      </div>
+    );
+  };
+  
+  // Render the detailed view of a quest
+  const renderQuestDetail = () => {
+    if (!selectedQuest) return null;
+    
+    // Get the quest images if available
+    const questImages = selectedQuest.content?.images || [];
+    const questVideos = selectedQuest.content?.videos || [];
+    const questCodeBlocks = selectedQuest.content?.codeBlocks || [];
+    
+    return (
+      <div className="flex-1 overflow-y-auto p-6">
+        {/* Back button */}
+        <button 
+          className="flex items-center text-gray-300 hover:text-brand-orange mb-6"
+          onClick={() => {
+            window.sounds?.click();
+            setQuestView('list');
+            setSelectedQuest(null);
+          }}
+          onMouseEnter={() => window.sounds?.hover()}
+        >
+          <ArrowLeft className="mr-2 h-5 w-5" />
+          Back to Quests
+        </button>
+        
+        {/* Quest hero image and title section */}
+        <div className="relative mb-6">
+          {questImages[0] && (
+            <div className="w-full h-64 md:h-80 overflow-hidden rounded-lg mb-4">
+              <img 
+                src={questImages[0]} 
+                alt={selectedQuest.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+          
+          <div className="flex items-center mb-2">
+            <h1 className="text-3xl font-bold text-white">{selectedQuest.title}</h1>
+            <div className="ml-4 flex items-center">
+              <span className="text-brand-orange flex items-center mr-4">
+                <Award className="h-5 w-5 mr-1" />
+                {selectedQuest.xpReward} XP
+              </span>
+              <span className="text-white">
+                Difficulty: {Array(selectedQuest.difficulty).fill('★').join('')}
+              </span>
+            </div>
+          </div>
+          
+          <div className="flex items-center text-gray-400 mb-4">
+            <span className="mr-4">Adventure Line: {selectedQuest.adventureLine}</span>
+            <span>Order: {selectedQuest.orderInLine}</span>
+          </div>
+          
+          <p className="text-lg text-gray-300 mb-6">{selectedQuest.description}</p>
+        </div>
+        
+        {/* Mission brief section */}
+        {selectedQuest.missionBrief && (
+          <div className="bg-space-dark/70 border border-brand-orange/30 rounded-lg p-6 mb-6">
+            <h2 className="text-xl font-bold text-brand-orange mb-3">Mission Brief</h2>
+            <p className="text-gray-300 whitespace-pre-line">{selectedQuest.missionBrief}</p>
+          </div>
+        )}
+        
+        {/* Rewards section */}
+        {selectedQuest.rewards && selectedQuest.rewards.length > 0 && (
+          <div className="bg-space-dark/70 border border-brand-orange/30 rounded-lg p-6 mb-6">
+            <h2 className="text-xl font-bold text-brand-orange mb-4">Quest Rewards</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {selectedQuest.rewards.map((reward, idx) => {
+                // Find item details
+                const item = items?.find(i => i.id === reward.id);
+                return (
+                  <div 
+                    key={`${reward.id}-${idx}`}
+                    className="bg-black/50 rounded-lg border border-gray-700 p-4 flex flex-col items-center"
+                  >
+                    <div className="w-16 h-16 mb-3 flex items-center justify-center">
+                      {item?.imagePath ? (
+                        <img 
+                          src={item.imagePath} 
+                          alt={reward.id}
+                          className="max-w-full max-h-full object-contain"
+                          style={{ imageRendering: 'pixelated' }}
+                        />
+                      ) : (
+                        <Package className="w-10 h-10 text-brand-orange" />
+                      )}
+                    </div>
+                    <h3 className="text-white font-medium text-center mb-1">{item?.name || reward.id}</h3>
+                    <p className="text-brand-orange text-center font-bold">{reward.quantity}x</p>
+                    {item?.description && (
+                      <p className="text-gray-400 text-xs text-center mt-2">{item.description}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        
+        {/* Required Components section */}
+        {selectedQuest.componentRequirements && selectedQuest.componentRequirements.length > 0 && (
+          <div className="bg-space-dark/70 border border-brand-orange/30 rounded-lg p-6 mb-6">
+            <h2 className="text-xl font-bold text-brand-orange mb-4">Required Components</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {selectedQuest.componentRequirements.map((component) => (
+                <div 
+                  key={component.id}
+                  className="bg-black/50 rounded-lg border border-gray-700 p-4 flex"
+                >
+                  <div className="w-16 h-16 mr-4 flex-shrink-0 flex items-center justify-center">
+                    {component.imagePath ? (
+                      <img 
+                        src={component.imagePath} 
+                        alt={component.name}
+                        className="max-w-full max-h-full object-contain"
+                      />
+                    ) : (
+                      <Cpu className="w-10 h-10 text-gray-500" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-white font-medium mb-1">{component.name}</h3>
+                    <p className="text-gray-400 text-sm">{component.description}</p>
+                    {component.quantity > 1 && (
+                      <p className="text-brand-orange text-sm mt-1">Quantity: {component.quantity}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Images gallery */}
+        {questImages.length > 1 && (
+          <div className="bg-space-dark/70 border border-brand-orange/30 rounded-lg p-6 mb-6">
+            <h2 className="text-xl font-bold text-brand-orange mb-4">Images</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {questImages.slice(1).map((image, index) => (
+                <div key={index} className="rounded-lg overflow-hidden border border-gray-700">
+                  <img 
+                    src={image} 
+                    alt={`Quest image ${index + 1}`}
+                    className="w-full h-48 object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Videos gallery */}
+        {questVideos && questVideos.length > 0 && (
+          <div className="bg-space-dark/70 border border-brand-orange/30 rounded-lg p-6 mb-6">
+            <h2 className="text-xl font-bold text-brand-orange mb-4">Videos</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {questVideos.map((video, index) => (
+                <div key={index} className="relative rounded-lg overflow-hidden border border-gray-700">
+                  <div className="aspect-video bg-black flex items-center justify-center">
+                    {/* Embed video or show placeholder with link */}
+                    <a 
+                      href={video} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex flex-col items-center justify-center text-white hover:text-brand-orange"
+                    >
+                      <Play className="w-16 h-16 mb-3" />
+                      <div className="flex items-center">
+                        <span>Watch Video</span>
+                        <ExternalLink className="w-4 h-4 ml-1" />
+                      </div>
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Code blocks */}
+        {questCodeBlocks && questCodeBlocks.length > 0 && (
+          <div className="bg-space-dark/70 border border-brand-orange/30 rounded-lg p-6 mb-6">
+            <h2 className="text-xl font-bold text-brand-orange mb-4">Code Examples</h2>
+            <div className="space-y-4">
+              {questCodeBlocks.map((codeBlock, index) => (
+                <div key={index} className="bg-black rounded-lg border border-gray-700 overflow-hidden">
+                  <div className="bg-gray-900 border-b border-gray-700 px-4 py-2 flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Code className="w-4 h-4 mr-2 text-brand-orange" />
+                      <span className="text-gray-300">{codeBlock.language || 'Code'}</span>
+                    </div>
+                  </div>
+                  <pre className="p-4 text-gray-300 overflow-x-auto text-sm">
+                    <code>{codeBlock.code}</code>
+                  </pre>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Kit information if available */}
+        {selectedQuest.kitId && (
+          <div className="bg-space-dark/70 border border-brand-orange/30 rounded-lg p-6 mb-6">
+            <h2 className="text-xl font-bold text-brand-orange mb-4">Required Kit</h2>
+            {kits ? (
+              <div>
+                {kits.find(k => k.id === selectedQuest.kitId) ? (
+                  <div className="flex items-start">
+                    <div className="w-20 h-20 mr-4">
+                      {kits.find(k => k.id === selectedQuest.kitId)?.imagePath ? (
+                        <img 
+                          src={kits.find(k => k.id === selectedQuest.kitId)?.imagePath} 
+                          alt={kits.find(k => k.id === selectedQuest.kitId)?.name}
+                          className="w-full h-full object-contain rounded-md"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-black/50 rounded-md flex items-center justify-center">
+                          <Cpu className="w-10 h-10 text-gray-500" />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-white mb-1">{kits.find(k => k.id === selectedQuest.kitId)?.name}</h3>
+                      <p className="text-gray-300">{kits.find(k => k.id === selectedQuest.kitId)?.description}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-gray-300">Kit information not available</p>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center">
+                <Loader2 className="w-5 h-5 animate-spin mr-2 text-brand-orange" />
+                <p className="text-gray-300">Loading kit information...</p>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Action buttons */}
+        <div className="flex justify-end space-x-4">
+          <button
+            className="px-6 py-3 bg-brand-orange text-white font-medium rounded-md hover:bg-brand-orange/80 transition-colors"
+            onClick={() => window.sounds?.click()}
+            onMouseEnter={() => window.sounds?.hover()}
+          >
+            Start Quest
+          </button>
         </div>
       </div>
     );
