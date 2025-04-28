@@ -4415,41 +4415,53 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   <h3 className="text-md font-semibold text-brand-orange mb-4">Crafting Pattern</h3>
                   
                   <div className="flex flex-col gap-4">
-                    <div className="flex justify-between items-center">
-                      <div className="text-sm text-gray-400">
-                        Click to place selected item in the crafting grid. Click again to remove.
-                      </div>
-                      
-                      {/* Item selector for pattern */}
-                      <div className="flex gap-2 items-center">
-                        <label className="text-gray-300 text-sm">Selected Item:</label>
-                        <select
-                          className="px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                          onChange={(e) => {
-                            // Store the selected item ID in a recipe-specific attribute
-                            const recipe = editingItem as Recipe;
-                            const updatedRecipe = {...recipe, _selectedItemId: e.target.value};
-                            setEditingItem(updatedRecipe);
-                          }}
-                          value={(editingItem as any)._selectedItemId || ""}
-                        >
-                          <option value="">Select an item</option>
-                          {items.map(item => (
-                            <option key={item.id} value={item.id}>{item.name}</option>
-                          ))}
-                        </select>
+                    <div className="flex flex-col gap-4 mb-4">
+                      <div className="flex justify-between items-center bg-black/50 p-3 border border-gray-700 rounded-lg">
+                        <div className="text-sm text-gray-200 flex items-center">
+                          <AlertTriangle className="h-4 w-4 text-brand-orange mr-2" />
+                          <div>
+                            <p className="font-semibold text-brand-orange">How to create a recipe pattern:</p>
+                            <p>1. Select a material from the panel below</p>
+                            <p>2. Click on a grid cell to place the item</p>
+                            <p>3. Click on a placed item to remove it</p>
+                          </div>
+                        </div>
+                        
+                        {/* Item selector dropdown (alternative selection method) */}
+                        <div className="flex gap-2 items-center">
+                          <label className="text-gray-300 text-sm">Select by name:</label>
+                          <select
+                            className="px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                            onChange={(e) => {
+                              // Store the selected item ID in a recipe-specific attribute
+                              const recipe = editingItem as Recipe;
+                              const updatedRecipe = {...recipe, _selectedItemId: e.target.value};
+                              setEditingItem(updatedRecipe);
+                            }}
+                            value={(editingItem as any)._selectedItemId || ""}
+                          >
+                            <option value="">Choose material</option>
+                            {items.map(item => (
+                              <option key={item.id} value={item.id}>{item.name}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </div>
                     
-                    {/* Available items panel - drag from here */}
-                    <div className="flex justify-center mb-4">
-                      <div className="bg-black/50 border border-gray-700 rounded p-3">
-                        <h4 className="text-sm text-brand-orange mb-2">Available Items</h4>
-                        <div className="grid grid-cols-5 gap-2">
+                    {/* Available items panel - select items from here */}
+                    <div className="flex justify-center mb-6">
+                      <div className="bg-black/60 border-2 border-gray-700 rounded-lg p-4" style={{boxShadow: 'inset 0 0 15px rgba(0, 0, 0, 0.6)'}}>
+                        <h4 className="text-sm font-semibold text-brand-orange mb-3">Available Crafting Materials</h4>
+                        <div className="grid grid-cols-5 gap-3">
                           {items.slice(0, 10).map(item => (
                             <div 
                               key={item.id}
-                              className={`w-12 h-12 bg-black/30 border border-gray-700 rounded flex items-center justify-center cursor-pointer hover:border-brand-orange/70 transition-colors ${rarityColorClass(item.rarity).replace('text-', 'border-')}`}
+                              className={`w-14 h-14 bg-black/40 border-2 ${
+                                (editingItem as any)._selectedItemId === item.id 
+                                  ? 'border-brand-orange' 
+                                  : `border-gray-600 hover:border-gray-400`
+                              } rounded-md flex items-center justify-center cursor-pointer transition-all`}
                               onClick={() => {
                                 // Set as the selected item
                                 const recipe = editingItem as Recipe;
@@ -4461,10 +4473,11 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                                 }
                               }}
                               style={{
-                                boxShadow: (editingItem as any)._selectedItemId === item.id ? '0 0 8px #ff7b00' : 'none'
+                                boxShadow: (editingItem as any)._selectedItemId === item.id ? '0 0 12px #ff7b00' : 'none',
+                                transform: (editingItem as any)._selectedItemId === item.id ? 'scale(1.05)' : 'scale(1)'
                               }}
                             >
-                              <div className="relative w-10 h-10 flex items-center justify-center">
+                              <div className="relative w-12 h-12 flex items-center justify-center">
                                 <img 
                                   src={item.imagePath} 
                                   alt={item.name}
@@ -4479,18 +4492,20 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                     </div>
                     
                     {/* Visual crafting grid */}
-                    <div className="flex justify-center">
+                    <div className="flex justify-center my-4">
                       <div 
-                        className="grid gap-1 p-3 bg-black/70 border-2 border-gray-700 rounded"
+                        className="grid grid-cols-3 gap-3 p-5 bg-black/70 border-2 border-gray-700 rounded-lg"
                         style={{ 
-                          gridTemplateColumns: `repeat(3, 1fr)`,
-                          backgroundImage: 'radial-gradient(circle, rgba(50, 50, 50, 0.2) 1px, transparent 1px)',
-                          backgroundSize: '10px 10px'
+                          backgroundImage: 'radial-gradient(circle, rgba(50, 50, 50, 0.3) 1px, transparent 1px)',
+                          backgroundSize: '10px 10px',
+                          width: '345px',
+                          height: '345px',
+                          boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.5)'
                         }}>
-                        {/* Create grid cells */}
+                        {/* Create grid cells - always 3x3 */}
                         {(() => {
-                          // Use a self-executing function to properly handle the grid creation
-                          const gridSize = (editingItem as Recipe).gridSize || 3;
+                          // Fixed 3x3 grid
+                          const gridSize = 3;
                           const cells = [];
                           
                           for (let rowIndex = 0; rowIndex < gridSize; rowIndex++) {
@@ -4505,7 +4520,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                               cells.push(
                                 <div 
                                   key={`${rowIndex}-${colIndex}`}
-                                  className="w-16 h-16 bg-black/30 border border-gray-700 rounded flex items-center justify-center cursor-pointer hover:border-brand-orange/70 transition-colors"
+                                  className="w-20 h-20 bg-black/60 border-2 border-gray-600 rounded-md flex items-center justify-center cursor-pointer hover:border-brand-orange hover:bg-black/80 transition-all"
                                   onClick={() => {
                                     // Initialize pattern if it doesn't exist
                                     const recipe = editingItem as Recipe;
@@ -4560,9 +4575,15 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                                           (e.target as HTMLImageElement).className = 'w-8 h-8 opacity-30';
                                         }}
                                       />
+                                      <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-xs text-white text-center py-1">
+                                        {item.name}
+                                      </div>
                                     </div>
                                   ) : (
-                                    <div className="text-gray-700 text-xs">Empty</div>
+                                    <div className="flex flex-col items-center justify-center">
+                                      <Plus className="h-6 w-6 text-gray-500 opacity-30" />
+                                      <div className="text-gray-500 text-xs mt-1">Click to place</div>
+                                    </div>
                                   )}
                                 </div>
                               );
