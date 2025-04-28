@@ -4,7 +4,7 @@ import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, AlertTriangle, Check, Flame, Hammer, Sparkles, ChevronRight, Filter } from "lucide-react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import forgeBackground from "@assets/forgehero.png";
+import forgeBackground from "@assets/forgebg.png";
 
 // Define interfaces locally
 interface ItemDetails {
