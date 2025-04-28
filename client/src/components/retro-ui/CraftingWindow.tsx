@@ -807,7 +807,7 @@ const CraftingWindow: React.FC = () => {
           <div className="bg-gradient-to-r from-amber-900/90 to-amber-800/70 px-4 py-3 border-b border-amber-700/70 flex justify-between items-center">
             <div className="flex items-center">
               <img 
-                src="/images/gizbos-forge-logo.png" 
+                src="/Untitled design - 2025-04-28T124406.948.png" 
                 alt="Gizbo's Forge" 
                 className="h-12 object-contain"
                 style={{ imageRendering: 'pixelated' }}
