@@ -675,19 +675,41 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           endpoint = '/api/admin/lootboxes';
           body = data;
         } else {
+          // Properly format dates for database update
+          const formattedData = { ...data };
+          
+          // Convert string dates to actual Date objects if they exist
+          if (formattedData.createdAt && typeof formattedData.createdAt === 'string') {
+            delete formattedData.createdAt; // Remove instead of trying to convert
+          }
+          if (formattedData.updatedAt && typeof formattedData.updatedAt === 'string') {
+            delete formattedData.updatedAt; // Remove instead of trying to convert
+          }
+
           endpoint = '/api/oracle/entities';
           body = {
             tableName: 'lootBoxConfigs',
             id,
-            data
+            data: formattedData
           };
         }
       } else if (editingType === 'quest') {
+        // Properly format dates for database update
+        const formattedData = { ...data };
+        
+        // Remove date fields that might cause issues
+        if (formattedData.createdAt && typeof formattedData.createdAt === 'string') {
+          delete formattedData.createdAt;
+        }
+        if (formattedData.updatedAt && typeof formattedData.updatedAt === 'string') {
+          delete formattedData.updatedAt;
+        }
+        
         endpoint = '/api/oracle/entities';
         body = {
           tableName: 'quests',
           id,
-          data
+          data: formattedData
         };
       } else if (editingType === 'item') {
         if (isCreatingNewItem) {
