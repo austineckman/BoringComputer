@@ -620,7 +620,12 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
             className="w-8 h-8 mr-3" 
             style={{ imageRendering: 'pixelated' }}
           />
-          <h1 className="text-2xl font-bold text-brand-orange">Quest Center</h1>
+          <h1 className="text-2xl font-bold text-brand-orange">
+            {questView === 'detail' && selectedQuest 
+              ? `Quest: ${selectedQuest.title}` 
+              : 'Quest Center'
+            }
+          </h1>
         </div>
         <button 
           className="text-white hover:text-brand-orange" 
@@ -633,206 +638,213 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
       
       {/* Main content */}
       <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
-        {/* Sidebar with filters */}
-        <div className="w-full md:w-64 bg-space-dark/80 p-4 border-r border-brand-orange/30 overflow-y-auto">
-          <div className="mb-6">
-            <h2 className="text-lg font-bold text-brand-orange mb-3">Search</h2>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search quests..."
-                className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md pl-9 focus:border-brand-orange focus:outline-none"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-            </div>
-          </div>
-          
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-brand-orange">Component Kits</h2>
-              {selectedKit && (
-                <button 
-                  className="text-xs text-gray-400 hover:text-white"
-                  onClick={() => setSelectedKit(null)}
-                  onMouseEnter={() => window.sounds?.hover()}
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-            
-            {loadingKits ? (
-              <div className="flex items-center justify-center py-4">
-                <Loader2 className="h-6 w-6 animate-spin text-brand-orange" />
-              </div>
-            ) : kits && kits.length > 0 ? (
-              <div className="space-y-2">
-                {kits.map(kit => (
-                  <div 
-                    key={kit.id}
-                    className={`
-                      flex items-center p-2 rounded-md cursor-pointer transition-colors
-                      ${selectedKit === kit.id 
-                        ? 'bg-brand-orange/20 border border-brand-orange/50' 
-                        : 'hover:bg-space-mid border border-transparent'
-                      }
-                    `}
-                    onClick={() => handleKitSelect(kit.id)}
-                    onMouseEnter={() => window.sounds?.hover()}
-                  >
-                    {kit.imagePath ? (
-                      <img 
-                        src={kit.imagePath} 
-                        alt={kit.name} 
-                        className="w-8 h-8 mr-2 rounded" 
-                        style={{ objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <div className="w-8 h-8 mr-2 rounded bg-space-mid flex items-center justify-center">
-                        <Cpu className="h-4 w-4 text-gray-400" />
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-sm font-medium text-white">{kit.name}</p>
-                      <p className="text-xs text-gray-400 truncate">{kit.difficulty || kit.category}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-400">No component kits available.</p>
-            )}
-          </div>
-          
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-brand-orange">Adventure Lines</h2>
-              {selectedAdventureLine && (
-                <button 
-                  className="text-xs text-gray-400 hover:text-white"
-                  onClick={() => setSelectedAdventureLine(null)}
-                  onMouseEnter={() => window.sounds?.hover()}
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-            
-            <div className="space-y-1">
-              {Object.keys(questsByAdventureLine || {}).map(line => (
-                <div 
-                  key={line}
-                  className={`
-                    px-3 py-2 rounded-md cursor-pointer transition-colors
-                    ${selectedAdventureLine === line 
-                      ? 'bg-brand-orange/20 text-white' 
-                      : 'text-gray-300 hover:bg-space-mid'
-                    }
-                  `}
-                  onClick={() => {
-                    window.sounds?.click();
-                    setSelectedAdventureLine(prev => prev === line ? null : line);
-                  }}
-                  onMouseEnter={() => window.sounds?.hover()}
-                >
-                  {line}
+        {questView === 'list' ? (
+          <>
+            {/* Sidebar with filters - only show in list view */}
+            <div className="w-full md:w-64 bg-space-dark/80 p-4 border-r border-brand-orange/30 overflow-y-auto">
+              <div className="mb-6">
+                <h2 className="text-lg font-bold text-brand-orange mb-3">Search</h2>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search quests..."
+                    className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md pl-9 focus:border-brand-orange focus:outline-none"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                 </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Active filters indicator and reset button */}
-          {(selectedKit || selectedAdventureLine || searchQuery) && (
-            <div className="mt-auto pt-4 border-t border-gray-700">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center text-sm text-gray-400">
-                  <Filter className="h-4 w-4 mr-1" />
-                  Active Filters
-                </div>
-                <button
-                  className="text-xs text-brand-orange hover:text-brand-orange/80 font-medium"
-                  onClick={clearFilters}
-                  onMouseEnter={() => window.sounds?.hover()}
-                >
-                  Reset All
-                </button>
               </div>
               
-              <div className="mt-2 flex flex-wrap gap-2">
-                {selectedKit && (
-                  <div className="flex items-center text-xs bg-brand-orange/20 text-white px-2 py-1 rounded-full">
-                    Kit: {kits.find(k => k.id === selectedKit)?.name || 'Selected Kit'}
-                    <X 
-                      className="h-3 w-3 ml-1 cursor-pointer" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.sounds?.click();
-                        setSelectedKit(null);
-                      }}
-                    />
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-lg font-bold text-brand-orange">Component Kits</h2>
+                  {selectedKit && (
+                    <button 
+                      className="text-xs text-gray-400 hover:text-white"
+                      onClick={() => setSelectedKit(null)}
+                      onMouseEnter={() => window.sounds?.hover()}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                
+                {loadingKits ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-brand-orange" />
                   </div>
-                )}
-                {selectedAdventureLine && (
-                  <div className="flex items-center text-xs bg-brand-orange/20 text-white px-2 py-1 rounded-full">
-                    Line: {selectedAdventureLine}
-                    <X 
-                      className="h-3 w-3 ml-1 cursor-pointer" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.sounds?.click();
-                        setSelectedAdventureLine(null);
-                      }}
-                    />
+                ) : kits && kits.length > 0 ? (
+                  <div className="space-y-2">
+                    {kits.map(kit => (
+                      <div 
+                        key={kit.id}
+                        className={`
+                          flex items-center p-2 rounded-md cursor-pointer transition-colors
+                          ${selectedKit === kit.id 
+                            ? 'bg-brand-orange/20 border border-brand-orange/50' 
+                            : 'hover:bg-space-mid border border-transparent'
+                          }
+                        `}
+                        onClick={() => handleKitSelect(kit.id)}
+                        onMouseEnter={() => window.sounds?.hover()}
+                      >
+                        {kit.imagePath ? (
+                          <img 
+                            src={kit.imagePath} 
+                            alt={kit.name} 
+                            className="w-8 h-8 mr-2 rounded" 
+                            style={{ objectFit: 'cover' }}
+                          />
+                        ) : (
+                          <div className="w-8 h-8 mr-2 rounded bg-space-mid flex items-center justify-center">
+                            <Cpu className="h-4 w-4 text-gray-400" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-sm font-medium text-white">{kit.name}</p>
+                          <p className="text-xs text-gray-400 truncate">{kit.difficulty || kit.category}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )}
-                {searchQuery && (
-                  <div className="flex items-center text-xs bg-brand-orange/20 text-white px-2 py-1 rounded-full">
-                    Search: {searchQuery}
-                    <X 
-                      className="h-3 w-3 ml-1 cursor-pointer" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.sounds?.click();
-                        setSearchQuery('');
-                      }}
-                    />
-                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400">No component kits available.</p>
                 )}
               </div>
-            </div>
-          )}
-        </div>
-        
-        {/* Quest list */}
-        <div className="flex-1 overflow-y-auto p-4 bg-black/70">
-          {loadingQuests ? (
-            <div className="flex flex-col items-center justify-center h-full">
-              <Loader2 className="h-10 w-10 animate-spin text-brand-orange mb-3" />
-              <p className="text-brand-orange">Loading quests...</p>
-            </div>
-          ) : questsError ? (
-            <div className="flex flex-col items-center justify-center h-full bg-black/20 rounded-lg border border-red-500/50 p-8">
-              <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
-              <h3 className="text-xl font-bold text-red-400 mb-2">Error Loading Quests</h3>
-              <p className="text-gray-300 text-center mb-6">
-                Unable to load quests from the server. Please make sure you're logged in and try again.
-              </p>
-              <div className="text-sm text-gray-400 bg-black/50 p-3 rounded mb-4 max-w-md overflow-auto">
-                {questsError instanceof Error ? questsError.message : "Unknown error"}
+              
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-lg font-bold text-brand-orange">Adventure Lines</h2>
+                  {selectedAdventureLine && (
+                    <button 
+                      className="text-xs text-gray-400 hover:text-white"
+                      onClick={() => setSelectedAdventureLine(null)}
+                      onMouseEnter={() => window.sounds?.hover()}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                
+                <div className="space-y-1">
+                  {Object.keys(questsByAdventureLine || {}).map(line => (
+                    <div 
+                      key={line}
+                      className={`
+                        px-3 py-2 rounded-md cursor-pointer transition-colors
+                        ${selectedAdventureLine === line 
+                          ? 'bg-brand-orange/20 text-white' 
+                          : 'text-gray-300 hover:bg-space-mid'
+                        }
+                      `}
+                      onClick={() => {
+                        window.sounds?.click();
+                        setSelectedAdventureLine(prev => prev === line ? null : line);
+                      }}
+                      onMouseEnter={() => window.sounds?.hover()}
+                    >
+                      {line}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <button 
-                className="px-4 py-2 bg-brand-orange hover:bg-brand-orange/80 text-white rounded-md"
-                onClick={() => window.location.reload()}
-              >
-                Retry
-              </button>
+              
+              {/* Active filters indicator and reset button */}
+              {(selectedKit || selectedAdventureLine || searchQuery) && (
+                <div className="mt-auto pt-4 border-t border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center text-sm text-gray-400">
+                      <Filter className="h-4 w-4 mr-1" />
+                      Active Filters
+                    </div>
+                    <button
+                      className="text-xs text-brand-orange hover:text-brand-orange/80 font-medium"
+                      onClick={clearFilters}
+                      onMouseEnter={() => window.sounds?.hover()}
+                    >
+                      Reset All
+                    </button>
+                  </div>
+                  
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {selectedKit && (
+                      <div className="flex items-center text-xs bg-brand-orange/20 text-white px-2 py-1 rounded-full">
+                        Kit: {kits.find(k => k.id === selectedKit)?.name || 'Selected Kit'}
+                        <X 
+                          className="h-3 w-3 ml-1 cursor-pointer" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.sounds?.click();
+                            setSelectedKit(null);
+                          }}
+                        />
+                      </div>
+                    )}
+                    {selectedAdventureLine && (
+                      <div className="flex items-center text-xs bg-brand-orange/20 text-white px-2 py-1 rounded-full">
+                        Line: {selectedAdventureLine}
+                        <X 
+                          className="h-3 w-3 ml-1 cursor-pointer" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.sounds?.click();
+                            setSelectedAdventureLine(null);
+                          }}
+                        />
+                      </div>
+                    )}
+                    {searchQuery && (
+                      <div className="flex items-center text-xs bg-brand-orange/20 text-white px-2 py-1 rounded-full">
+                        Search: {searchQuery}
+                        <X 
+                          className="h-3 w-3 ml-1 cursor-pointer" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.sounds?.click();
+                            setSearchQuery('');
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-          ) : (
-            renderQuestsByAdventureLine()
-          )}
-        </div>
+            
+            {/* Quest list */}
+            <div className="flex-1 overflow-y-auto p-4 bg-black/70">
+              {loadingQuests ? (
+                <div className="flex flex-col items-center justify-center h-full">
+                  <Loader2 className="h-10 w-10 animate-spin text-brand-orange mb-3" />
+                  <p className="text-brand-orange">Loading quests...</p>
+                </div>
+              ) : questsError ? (
+                <div className="flex flex-col items-center justify-center h-full bg-black/20 rounded-lg border border-red-500/50 p-8">
+                  <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
+                  <h3 className="text-xl font-bold text-red-400 mb-2">Error Loading Quests</h3>
+                  <p className="text-gray-300 text-center mb-6">
+                    Unable to load quests from the server. Please make sure you're logged in and try again.
+                  </p>
+                  <div className="text-sm text-gray-400 bg-black/50 p-3 rounded mb-4 max-w-md overflow-auto">
+                    {questsError instanceof Error ? questsError.message : "Unknown error"}
+                  </div>
+                  <button 
+                    className="px-4 py-2 bg-brand-orange hover:bg-brand-orange/80 text-white rounded-md"
+                    onClick={() => window.location.reload()}
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : (
+                renderQuestsByAdventureLine()
+              )}
+            </div>
+          </>
+        ) : (
+          /* Render quest detail view */
+          renderQuestDetail()
+        )}
       </div>
       
       {/* Bottom notice about returning to desktop */}
