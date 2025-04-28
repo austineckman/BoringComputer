@@ -23,6 +23,7 @@ import adminQuestsSaveRoutes from './routes/admin-quests-save';
 import adventureLinesRoutes from './routes/adventure-lines';
 import oracleRoutes from './routes/oracle';
 import lootboxesRoutes from './routes/lootboxes';
+import lootboxRewardsRoutes from './routes/lootboxRewards';
 import { authenticate, hashPassword } from './auth';
 import { componentKits, items } from '@shared/schema';
 import { itemDatabase } from './itemDatabase';
@@ -1720,6 +1721,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Lootboxes routes
   app.use('/api/lootboxes', authenticate, lootboxesRoutes);
+  app.use('/api/lootbox-rewards', authenticate, lootboxRewardsRoutes);
   
   // Routes for admin recipes and crafting were already registered above
   

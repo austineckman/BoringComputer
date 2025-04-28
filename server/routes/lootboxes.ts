@@ -1,47 +1,66 @@
 import { Router } from "express";
 import { db } from "../db";
-import { lootBoxes, lootboxRewards } from "@shared/schema";
+import { lootBoxes, insertLootBoxSchema, items, lootBoxConfigs } from "@shared/schema";
 import { authenticate } from "../auth";
-import { eq, and } from "drizzle-orm";
-import { generateLootBoxRewards, openLootBox } from "../lootBoxSystem";
+import { eq, and, desc } from "drizzle-orm";
+import { generateLootBoxRewards, LootBoxType } from "../lootBoxSystem";
 import { itemDatabase } from "../itemDatabase";
-import path from "path";
-import fs from "fs";
 
-// Setup lootboxes router
 const router = Router();
 
-// Get all lootboxes for the current user
+// Get all lootboxes for the authenticated user
 router.get("/", authenticate, async (req, res) => {
   try {
     const userId = req.user!.id;
     
-    const userLootboxes = await db.query.lootBoxes.findMany({
-      where: eq(lootBoxes.userId, userId),
-      with: {
-        rewards: true
-      }
-    });
+    const userLootboxes = await db.select().from(lootBoxes)
+      .where(eq(lootBoxes.userId, userId))
+      .orderBy(desc(lootBoxes.acquiredAt));
     
-    // Enhance lootboxes with image paths
-    const enhancedLootboxes = userLootboxes.map(lootbox => {
-      // Get lootbox image based on type or rarity
-      const imagePath = `/images/lootboxes/${lootbox.type}_lootbox.png`;
-      
-      return {
-        ...lootbox,
-        image: lootbox.image || imagePath,
-        rewards: lootbox.rewards || []
-      };
-    });
-    
-    res.json(enhancedLootboxes);
+    res.json(userLootboxes);
   } catch (error) {
-    console.error("Error fetching lootboxes:", error);
-    res.status(500).json({ 
-      error: "Failed to fetch lootboxes",
-      details: error.message 
-    });
+    console.error("Error getting lootboxes:", error);
+    res.status(500).json({ error: "Failed to get lootboxes" });
+  }
+});
+
+// Get a specific lootbox by ID
+router.get("/:id", authenticate, async (req, res) => {
+  try {
+    const lootboxId = parseInt(req.params.id);
+    const userId = req.user!.id;
+    
+    const [lootbox] = await db.select().from(lootBoxes)
+      .where(and(
+        eq(lootBoxes.id, lootboxId),
+        eq(lootBoxes.userId, userId)
+      ));
+    
+    if (!lootbox) {
+      return res.status(404).json({ error: "Lootbox not found" });
+    }
+    
+    res.json(lootbox);
+  } catch (error) {
+    console.error("Error getting lootbox:", error);
+    res.status(500).json({ error: "Failed to get lootbox" });
+  }
+});
+
+// Create a lootbox (admin only or system endpoint)
+router.post("/", authenticate, async (req, res) => {
+  try {
+    // In a production app, you would check for admin role here
+    const validatedData = insertLootBoxSchema.parse(req.body);
+    
+    const [lootbox] = await db.insert(lootBoxes)
+      .values(validatedData)
+      .returning();
+    
+    res.status(201).json(lootbox);
+  } catch (error) {
+    console.error("Error creating lootbox:", error);
+    res.status(500).json({ error: "Failed to create lootbox" });
   }
 });
 
@@ -51,103 +70,108 @@ router.post("/:id/open", authenticate, async (req, res) => {
     const lootboxId = parseInt(req.params.id);
     const userId = req.user!.id;
     
-    if (isNaN(lootboxId)) {
-      return res.status(400).json({ error: "Invalid lootbox ID" });
+    // Get the lootbox
+    const [lootbox] = await db.select().from(lootBoxes)
+      .where(and(
+        eq(lootBoxes.id, lootboxId),
+        eq(lootBoxes.userId, userId)
+      ));
+    
+    if (!lootbox) {
+      return res.status(404).json({ error: "Lootbox not found" });
     }
     
-    // Open the lootbox and get rewards
-    const result = await openLootBox(lootboxId, userId);
-    
-    if (!result.success) {
-      return res.status(400).json({ 
-        error: result.message || "Failed to open lootbox" 
-      });
+    // Check if already opened
+    if (lootbox.opened) {
+      return res.status(400).json({ error: "Lootbox already opened" });
     }
     
-    // Enhance the rewards with item details
-    const enhancedRewards = result.rewards?.map(reward => {
-      const itemDetails = itemDatabase[reward.id] || null;
+    // Generate rewards if not already generated
+    let rewards = lootbox.rewards;
+    if (!rewards || rewards.length === 0) {
+      // Get associated lootbox config
+      const [config] = await db.select().from(lootBoxConfigs)
+        .where(eq(lootBoxConfigs.id, lootbox.type));
+      
+      if (config) {
+        // Use configured drop table from lootbox config
+        const generatedRewards = [];
+        for (const item of config.itemDropTable) {
+          // Random quantity between min and max
+          const quantity = Math.floor(Math.random() * (item.maxQuantity - item.minQuantity + 1)) + item.minQuantity;
+          
+          // Only add if quantity > 0
+          if (quantity > 0) {
+            generatedRewards.push({
+              id: item.itemId,
+              type: "item",
+              quantity
+            });
+          }
+        }
+        rewards = generatedRewards;
+      } else {
+        // Fallback to the generic system if no config found
+        rewards = generateLootBoxRewards(lootbox.type as LootBoxType)
+          .map(r => ({ id: r.type, type: "item", quantity: r.quantity }));
+      }
+    }
+    
+    // Get item details for each reward
+    const rewardsWithDetails = rewards.map(reward => {
+      const itemInfo = itemDatabase[reward.id] || { 
+        name: reward.id,
+        description: "Mystery item", 
+        rarity: "common",
+        imagePath: "/images/unknown.png"
+      };
       
       return {
         ...reward,
-        name: itemDetails?.name || "Unknown Item",
-        description: itemDetails?.description || "",
-        rarity: itemDetails?.rarity || "common",
-        imagePath: itemDetails?.imagePath || ""
+        name: itemInfo.name,
+        description: itemInfo.description,
+        rarity: itemInfo.rarity,
+        imagePath: itemInfo.imagePath
       };
     });
     
-    res.json({ 
-      success: true, 
-      message: "Lootbox opened successfully!",
-      rewards: enhancedRewards || []
+    // Update user's inventory (you'll need to implement this)
+    // This is a simplified version - in practice, you'd need a transaction
+    // to ensure inventory updates are atomic
+    for (const reward of rewards) {
+      if (reward.type === "item") {
+        // Update inventory (example, implement based on your system)
+        const currentInventory = req.user!.inventory || {};
+        const currentAmount = currentInventory[reward.id] || 0;
+        
+        // Update inventory with new amount
+        currentInventory[reward.id] = currentAmount + reward.quantity;
+        
+        // Update user record with new inventory
+        await db.update(req.user!.constructor as any)
+          .set({ inventory: currentInventory })
+          .where(eq((req.user! as any).id, userId));
+      }
+    }
+    
+    // Mark the lootbox as opened
+    const [updatedLootbox] = await db.update(lootBoxes)
+      .set({ 
+        opened: true, 
+        openedAt: new Date(),
+        rewards: rewards
+      })
+      .where(eq(lootBoxes.id, lootboxId))
+      .returning();
+    
+    // Return the opened lootbox with detailed rewards
+    res.json({
+      lootbox: updatedLootbox,
+      rewards: rewardsWithDetails
     });
   } catch (error) {
     console.error("Error opening lootbox:", error);
-    res.status(500).json({ 
-      error: "Failed to open lootbox",
-      details: error.message 
-    });
-  }
-});
-
-// Admin endpoint to create a new lootbox (only accessible by admins)
-router.post("/create", authenticate, async (req, res) => {
-  try {
-    if (!req.user?.roles?.includes("admin")) {
-      return res.status(403).json({ error: "Unauthorized: Admin access required" });
-    }
-    
-    const { userId, type, source, sourceId } = req.body;
-    
-    if (!userId || !type) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-    
-    // Insert a new lootbox
-    const [newLootbox] = await db.insert(lootBoxes).values({
-      userId,
-      type,
-      source: source || "admin",
-      sourceId: sourceId || null,
-      opened: false,
-      acquiredAt: new Date(),
-      openedAt: null,
-      name: `${type.charAt(0).toUpperCase() + type.slice(1)} Lootbox`,
-      description: `A ${type} lootbox with mysterious items inside`,
-      rarity: type
-    }).returning();
-    
-    res.status(201).json(newLootbox);
-  } catch (error) {
-    console.error("Error creating lootbox:", error);
-    res.status(500).json({ 
-      error: "Failed to create lootbox",
-      details: error.message 
-    });
-  }
-});
-
-// Admin endpoint to get all lootboxes from all users (only accessible by admins)
-router.get("/all", authenticate, async (req, res) => {
-  try {
-    if (!req.user?.roles?.includes("admin")) {
-      return res.status(403).json({ error: "Unauthorized: Admin access required" });
-    }
-    
-    const allLootboxes = await db.query.lootBoxes.findMany({
-      with: {
-        rewards: true
-      }
-    });
-    
-    res.json(allLootboxes);
-  } catch (error) {
-    console.error("Error fetching all lootboxes:", error);
-    res.status(500).json({ 
-      error: "Failed to fetch all lootboxes",
-      details: error.message 
-    });
+    res.status(500).json({ error: "Failed to open lootbox" });
   }
 });
 
