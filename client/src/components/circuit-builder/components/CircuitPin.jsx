@@ -85,19 +85,17 @@ const CircuitPin = ({
     }
     
     // Dispatch a global event for the WireManager to handle
-    // Add a slight delay to ensure component registration is complete
-    setTimeout(() => {
-      console.log(`Dispatching pinClicked event for pin ${id}`);
-      const clickEvent = new CustomEvent('pinClicked', {
-        detail: { 
-          id,
-          pinType,
-          parentId,
-          element: pinRef.current
-        }
-      });
-      document.dispatchEvent(clickEvent);
-    }, 10);
+    // Send synchronously to ensure we don't miss any events
+    console.log(`Dispatching pinClicked event for pin ${id}`);
+    const clickEvent = new CustomEvent('pinClicked', {
+      detail: { 
+        id,
+        pinType,
+        parentId,
+        element: pinRef.current
+      }
+    });
+    document.dispatchEvent(clickEvent);
     
     console.log(`Pin ${id} (${pinType}) of component ${parentId} clicked`);
   };
