@@ -2,6 +2,7 @@ import React from 'react';
 import BaseComponent from './BaseComponent';
 import CircuitPin from '../CircuitPin';
 import { ComponentProps } from '../ComponentGenerator';
+import buzzerIconPath from '../../../assets/components/buzzer.icon.png';
 
 const BuzzerComponent: React.FC<ComponentProps> = ({
   componentData,
@@ -93,7 +94,7 @@ const BuzzerComponent: React.FC<ComponentProps> = ({
       <div className="relative w-full h-full flex items-center justify-center">
         {/* Use real buzzer image */}
         <img
-          src="/assets/components/buzzer.icon.png"
+          src={buzzerIconPath}
           alt="Buzzer Component"
           className="w-full h-full object-contain"
           style={{

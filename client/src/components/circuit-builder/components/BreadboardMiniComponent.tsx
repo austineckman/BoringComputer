@@ -2,6 +2,7 @@ import React from 'react';
 import BaseComponent from './BaseComponent';
 import CircuitPin from '../CircuitPin';
 import { ComponentProps } from '../ComponentGenerator';
+import breadboardMiniIconPath from '../../../assets/components/breadboard-mini.icon.png';
 
 const BreadboardMiniComponent: React.FC<ComponentProps> = ({
   componentData,
