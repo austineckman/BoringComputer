@@ -256,29 +256,37 @@ const CircuitComponent = ({
         y = 0.9;
       }
     }
-    // HeroBoard - arrange pins around the board
+    // HeroBoard - arrange pins around the board to match Arduino UNO R3 layout
     else if (componentType === 'hero board') {
       if (pinId.startsWith('d')) {
-        // Digital pins on right side
+        // Digital pins (D0-D13) along the right side (blue headers in the reference image)
         const pinNumber = parseInt(pinId.substring(1), 10);
         x = 0.95;
-        y = 0.2 + (pinNumber / 13) * 0.6;
+        y = 0.3 + (pinNumber / 13) * 0.6;
       } else if (pinId.startsWith('a')) {
-        // Analog pins on left side
+        // Analog pins (A0-A5) along the left side (green headers in the reference image)
         const pinNumber = parseInt(pinId.substring(1), 10);
         x = 0.05;
         y = 0.3 + (pinNumber / 5) * 0.4;
-      } else if (pinId === '5v' || pinId === '3v3') {
-        // Power pins at top
-        x = pinId === '5v' ? 0.3 : 0.7;
-        y = 0.05;
+      } else if (pinId === '5v' || pinId === 'vin') {
+        // Power pins at bottom
+        x = pinId === '5v' ? 0.4 : 0.55;
+        y = 0.95;
+      } else if (pinId === '3v3' || pinId === 'aref') {
+        // 3.3V and Analog Reference pins bottom
+        x = pinId === '3v3' ? 0.25 : 0.7;
+        y = 0.95;
       } else if (pinId === 'gnd') {
-        // Ground pin at bottom
+        // Ground pin at bottom middle
         x = 0.5;
         y = 0.95;
       } else if (pinId === 'rst') {
-        // Reset pin at top right
-        x = 0.9;
+        // Reset pin at top
+        x = 0.2;
+        y = 0.05;
+      } else if (pinId === 'ioref') {
+        // IO Reference pin at top
+        x = 0.8;
         y = 0.05;
       }
     }
