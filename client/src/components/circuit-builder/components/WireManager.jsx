@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import Pathline from 'react-svg-pathline';
+import * as PathlineModule from 'react-svg-pathline';
 import { getRelativePosition } from '../utils/Utils';
+
+// Correctly extract Pathline component based on module structure
+const Pathline = PathlineModule.Pathline || PathlineModule.default || PathlineModule;
 
 /**
  * WireManager handles all wire connections between components
