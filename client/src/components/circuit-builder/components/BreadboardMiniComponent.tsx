@@ -112,7 +112,7 @@ const BreadboardMiniComponent: React.FC<ComponentProps> = ({
       <div className="relative w-full h-full">
         {/* Use real breadboard image */}
         <img
-          src="/images/components/breadboard-mini.icon.png"
+          src="/assets/components/breadboard-mini.icon.png"
           alt="Breadboard Mini Component"
           className="w-full h-full object-contain"
           style={{

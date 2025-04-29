@@ -2,6 +2,7 @@ import React from 'react';
 import BaseComponent from '../components/BaseComponent';
 import CircuitPin from '../CircuitPin';
 import { ComponentProps } from '../ComponentGenerator';
+import heroBoardIconPath from '../../../assets/components/hero-board.icon.png';
 
 interface PinDefinition {
   id: string;
