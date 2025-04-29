@@ -16,7 +16,7 @@ const CircuitPin = ({
   pinType, // 'input', 'output', or 'bidirectional'
   label,
   position, // {x, y} exact position within parent component
-  color = '#dddddd', // Light gray for Tinkercad pins
+  color = '#ffcc00',
   size = 8,
   onPinClick,
   onPinHover,
@@ -85,9 +85,10 @@ const CircuitPin = ({
   };
   
   // Get border color based on pin type
-  // In Tinkercad, pins are all black with consistent appearance
   const getBorderColor = () => {
-    return '#000000'; // Black border for all pins
+    if (pinType === 'input') return '#006400'; // Dark green for inputs
+    if (pinType === 'output') return '#8B0000'; // Dark red for outputs  
+    return '#00008B'; // Dark blue for bidirectional
   };
   
   // Get styles for label based on position
@@ -142,7 +143,7 @@ const CircuitPin = ({
       style={{
         width: `${size}px`,
         height: `${size}px`,
-        backgroundColor: isConnected ? '#cc0000' : (isHovered ? '#ff9800' : color),
+        backgroundColor: isConnected ? '#4caf50' : (isHovered ? '#ff9800' : color),
         border: `1.5px solid ${getBorderColor()}`,
         left: position.x,
         top: position.y,
@@ -150,8 +151,7 @@ const CircuitPin = ({
         cursor: 'crosshair',
         zIndex: 15,
         boxShadow: isConnected || isHovered ? '0 0 4px rgba(0, 0, 0, 0.5)' : '0 1px 2px rgba(0, 0, 0, 0.3)',
-        transition: 'all 0.1s ease',
-        position: 'relative'
+        transition: 'all 0.1s ease'
       }}
       onClick={handlePinClick}
       onMouseEnter={handleMouseEnter}
@@ -159,11 +159,8 @@ const CircuitPin = ({
       data-pin-id={id}
       data-pin-type={pinType}
       data-parent-id={parentId}
-      title={label || id || 'Pin'}
       data-testid={`pin-${id}`}
     >
-
-    
       {/* Pin dot center */}
       <div 
         className="absolute rounded-full" 
@@ -174,6 +171,20 @@ const CircuitPin = ({
           opacity: 0.6
         }}
       />
+      
+      {/* Label shown on hover */}
+      {(isHovered || label?.includes('PWM') || label?.includes('SDA') || label?.includes('SCL')) && (
+        <div 
+          className="absolute bg-gray-800 text-white text-xs px-1 py-0.5 rounded z-20 whitespace-nowrap"
+          style={{
+            ...getLabelStyle(),
+            pointerEvents: 'none',
+            opacity: 0.9
+          }}
+        >
+          {label}
+        </div>
+      )}
     </div>
   );
 };

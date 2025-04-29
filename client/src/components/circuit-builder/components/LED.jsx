@@ -114,20 +114,9 @@ const LED = ({
   // Handle pin click
   const handlePinClicked = (e) => {
     if (onPinConnect) {
-      try {
-        // Parse the data from the event
-        const data = e.detail.data ? (typeof e.detail.data === 'string' ? JSON.parse(e.detail.data) : e.detail.data) : {};
-        const pinId = data.name;
-        const pinType = data.type || 'bidirectional'; // Default to bidirectional if no type specified
-        
-        // Debug output
-        console.log('Pin clicked:', pinId, pinType, data);
-        
-        // Call onPinConnect with the parsed data
-        onPinConnect(pinId, pinType, id);
-      } catch (err) {
-        console.error('Error handling pin click:', err, e.detail);
-      }
+      const pinId = e.detail.pinId;
+      const pinType = e.detail.pinType;
+      onPinConnect(pinId, pinType, id);
     }
   };
 

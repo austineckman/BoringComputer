@@ -213,27 +213,70 @@ const WireManager = ({ canvasRef }) => {
     };
   }, [canvasRef, pendingWire, registeredPins, getElementPosition]);
   
-  // Get wire color - In Tinkercad, all wires are red
-  const getWireColor = () => {
-    // Tinkercad style - all wires are red
-    return '#cc0000'; // Red
+  // Get wire color based on connection types
+  const getWireColor = (sourceType, targetType) => {
+    // Power connections (VCC, GND, etc.)
+    if (
+      (sourceType === 'output' && targetType === 'input') ||
+      (sourceType === 'input' && targetType === 'output')
+    ) {
+      return '#ef4444'; // Red - power connections
+    }
+    
+    // Signal connections
+    if (sourceType === 'bidirectional' || targetType === 'bidirectional') {
+      return '#3b82f6'; // Blue - bidirectional signals
+    }
+    
+    // Default color
+    return '#10b981'; // Green - general signal
   };
   
-  // Get wire style - Tinkercad style (simple red solid lines)
-  const getWireStyle = () => {
-    // Tinkercad style - solid red lines
+  // Get wire style based on connection types - Wokwi style
+  const getWireStyle = (sourceType, targetType) => {
+    // Power connections - typically from outputs to inputs
+    if (
+      (sourceType === 'output' && targetType === 'input') ||
+      (sourceType === 'input' && targetType === 'output')
+    ) {
+      // For power connections (typical LED to resistor, or board to LED)
+      return {
+        stroke: getWireColor(sourceType, targetType),
+        strokeWidth: 4, // Thicker for power connections
+        strokeLinecap: 'round',
+        strokeMiterlimit: 10, // Better path corner rendering
+        filter: 'drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.5))',
+        fill: 'none',
+        opacity: 0.95
+      };
+    }
+    
+    // Bidirectional connections - typically for data or I/O pins
+    if (sourceType === 'bidirectional' || targetType === 'bidirectional') {
+      return {
+        stroke: getWireColor(sourceType, targetType),
+        strokeWidth: 3.5,
+        strokeLinecap: 'round',
+        strokeMiterlimit: 10,
+        filter: 'drop-shadow(0px 1.5px 2px rgba(0, 0, 0, 0.3))',
+        fill: 'none',
+        opacity: 0.9
+      };
+    }
+    
+    // Default style for other connections
     return {
-      stroke: getWireColor(),
-      strokeWidth: 2, // Consistent width for all wires
+      stroke: getWireColor(sourceType, targetType),
+      strokeWidth: 3.5,
       strokeLinecap: 'round',
       strokeMiterlimit: 10,
+      filter: 'drop-shadow(0px 1.5px 2px rgba(0, 0, 0, 0.25))',
       fill: 'none',
-      opacity: 1 // Fully opaque
+      opacity: 0.85
     };
   };
   
-  // Calculate SVG path string for a wire following Tinkercad's implementation
-  // This uses straight lines between points instead of curves
+  // Calculate SVG path string for a wire following Wokwi's implementation
   const getWirePath = (sourcePos, targetPos) => {
     // Ensure we have valid positions
     if (!sourcePos || !targetPos) {
@@ -241,8 +284,62 @@ const WireManager = ({ canvasRef }) => {
       return `M 0,0`;
     }
     
-    // Simple straight line from source to target - Tinkercad style
-    return `M${sourcePos.x},${sourcePos.y} L${targetPos.x},${targetPos.y}`;
+    const dx = targetPos.x - sourcePos.x;
+    const dy = targetPos.y - sourcePos.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Calculate a nice curve that follows Wokwi's wire appearance
+    // We'll use multiple segments for better control over the curve shape
+    
+    // For very short connections, use a simple curve
+    if (distance < 30) {
+      return `M${sourcePos.x},${sourcePos.y} Q${(sourcePos.x + targetPos.x)/2},${(sourcePos.y + targetPos.y)/2} ${targetPos.x},${targetPos.y}`;
+    }
+    
+    // Determine if this is primarily horizontal, vertical, or diagonal
+    const isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.5; 
+    const isVertical = Math.abs(dy) > Math.abs(dx) * 1.5;
+    
+    // Calculate control points with consideration for the circuit board grid layout
+    // These offsets create the nice curved wires seen in Wokwi
+    
+    // For horizontal-ish wires
+    if (isHorizontal) {
+      const midX = sourcePos.x + dx / 2;
+      const controlDist = Math.min(Math.abs(dx) / 4, 40);
+      
+      return `M${sourcePos.x},${sourcePos.y} `+
+             `C${sourcePos.x + controlDist},${sourcePos.y} `+
+             `${midX - controlDist},${targetPos.y} `+ 
+             `${midX},${targetPos.y} `+
+             `S${targetPos.x - controlDist},${targetPos.y} `+
+             `${targetPos.x},${targetPos.y}`;
+    }
+    
+    // For vertical-ish wires
+    if (isVertical) {
+      const midY = sourcePos.y + dy / 2;
+      const controlDist = Math.min(Math.abs(dy) / 4, 40);
+      
+      return `M${sourcePos.x},${sourcePos.y} `+
+             `C${sourcePos.x},${sourcePos.y + controlDist} `+
+             `${targetPos.x},${midY - controlDist} `+ 
+             `${targetPos.x},${midY} `+
+             `S${targetPos.x},${targetPos.y - controlDist} `+
+             `${targetPos.x},${targetPos.y}`;
+    }
+    
+    // For diagonal connections, create a curve with a 45° segment in the middle
+    const midX = sourcePos.x + dx / 2;
+    const midY = sourcePos.y + dy / 2;
+    const controlLen = distance / 4;  // Control point distance as fraction of total distance
+    
+    return `M${sourcePos.x},${sourcePos.y} `+
+           `C${sourcePos.x + Math.sign(dx) * controlLen},${sourcePos.y} `+
+           `${midX - Math.sign(dx) * controlLen/2},${midY - Math.sign(dy) * controlLen/2} `+
+           `${midX},${midY} `+
+           `S${targetPos.x - Math.sign(dx) * controlLen},${targetPos.y} `+
+           `${targetPos.x},${targetPos.y}`;
   };
   
   // Handle wire deletion
@@ -337,15 +434,16 @@ const WireManager = ({ canvasRef }) => {
           
           // Mouse movement handled in main useEffect
           
-          // Render pending wire path - Tinkercad style
+          // Render pending wire path
           const sourcePos = getElementPosition(sourceElement);
           const wireStyle = {
-            stroke: getWireColor(), // Red for Tinkercad
-            strokeWidth: 2,
+            stroke: getWireColor(pendingWire.sourceType, 'bidirectional'),
+            strokeWidth: 3,
             strokeLinecap: 'round',
-            strokeDasharray: 'none', // Solid line in Tinkercad
+            strokeDasharray: '6,4',
+            filter: 'drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.2))',
             fill: 'none',
-            opacity: 1 // Fully opaque for Tinkercad
+            opacity: 0.7
           };
           
           return (
