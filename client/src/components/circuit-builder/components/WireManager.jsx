@@ -17,7 +17,7 @@ const WireManager = ({ canvasRef }) => {
   const svgRef = useRef(null);
   
   // Get element position relative to the canvas
-  const getElementPosition = (element) => {
+  const getElementPosition = useCallback((element) => {
     if (!element || !canvasRef?.current) return { x: 0, y: 0 };
     
     const canvasRect = canvasRef.current.getBoundingClientRect();
@@ -27,7 +27,136 @@ const WireManager = ({ canvasRef }) => {
       x: elementRect.left - canvasRect.left + elementRect.width / 2,
       y: elementRect.top - canvasRect.top + elementRect.height / 2
     };
-  };
+  }, [canvasRef]);
+  
+  // Get wire color based on connection types
+  const getWireColor = useCallback((sourceType, targetType) => {
+    // Power connections (VCC, GND, etc.)
+    if (
+      (sourceType === 'output' && targetType === 'input') ||
+      (sourceType === 'input' && targetType === 'output')
+    ) {
+      return '#ef4444'; // Red - power connections
+    }
+    
+    // Signal connections
+    if (sourceType === 'bidirectional' || targetType === 'bidirectional') {
+      return '#3b82f6'; // Blue - bidirectional signals
+    }
+    
+    // Default color
+    return '#10b981'; // Green - general signal
+  }, []);
+  
+  // Get wire style based on connection types - Wokwi style
+  const getWireStyle = useCallback((sourceType, targetType) => {
+    // Power connections - typically from outputs to inputs
+    if (
+      (sourceType === 'output' && targetType === 'input') ||
+      (sourceType === 'input' && targetType === 'output')
+    ) {
+      // For power connections (typical LED to resistor, or board to LED)
+      return {
+        stroke: getWireColor(sourceType, targetType),
+        strokeWidth: 4, // Thicker for power connections
+        strokeLinecap: 'round',
+        strokeMiterlimit: 10, // Better path corner rendering
+        filter: 'drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.5))',
+        fill: 'none',
+        opacity: 0.95
+      };
+    }
+    
+    // Bidirectional connections - typically for data or I/O pins
+    if (sourceType === 'bidirectional' || targetType === 'bidirectional') {
+      return {
+        stroke: getWireColor(sourceType, targetType),
+        strokeWidth: 3.5,
+        strokeLinecap: 'round',
+        strokeMiterlimit: 10,
+        filter: 'drop-shadow(0px 1.5px 2px rgba(0, 0, 0, 0.3))',
+        fill: 'none',
+        opacity: 0.9
+      };
+    }
+    
+    // Default style for other connections
+    return {
+      stroke: getWireColor(sourceType, targetType),
+      strokeWidth: 3.5,
+      strokeLinecap: 'round',
+      strokeMiterlimit: 10,
+      filter: 'drop-shadow(0px 1.5px 2px rgba(0, 0, 0, 0.25))',
+      fill: 'none',
+      opacity: 0.85
+    };
+  }, [getWireColor]);
+  
+  // Calculate SVG path string for a wire following Wokwi's implementation
+  const getWirePath = useCallback((sourcePos, targetPos) => {
+    // Ensure we have valid positions
+    if (!sourcePos || !targetPos) {
+      console.warn('Invalid positions for wire path:', sourcePos, targetPos);
+      return `M 0,0`;
+    }
+    
+    const dx = targetPos.x - sourcePos.x;
+    const dy = targetPos.y - sourcePos.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Calculate a nice curve that follows Wokwi's wire appearance
+    // We'll use multiple segments for better control over the curve shape
+    
+    // For very short connections, use a simple curve
+    if (distance < 30) {
+      return `M${sourcePos.x},${sourcePos.y} Q${(sourcePos.x + targetPos.x)/2},${(sourcePos.y + targetPos.y)/2} ${targetPos.x},${targetPos.y}`;
+    }
+    
+    // Determine if this is primarily horizontal, vertical, or diagonal
+    const isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.5; 
+    const isVertical = Math.abs(dy) > Math.abs(dx) * 1.5;
+    
+    // Calculate control points with consideration for the circuit board grid layout
+    // These offsets create the nice curved wires seen in Wokwi
+    
+    // For horizontal-ish wires
+    if (isHorizontal) {
+      const midX = sourcePos.x + dx / 2;
+      const controlDist = Math.min(Math.abs(dx) / 4, 40);
+      
+      return `M${sourcePos.x},${sourcePos.y} `+
+             `C${sourcePos.x + controlDist},${sourcePos.y} `+
+             `${midX - controlDist},${targetPos.y} `+ 
+             `${midX},${targetPos.y} `+
+             `S${targetPos.x - controlDist},${targetPos.y} `+
+             `${targetPos.x},${targetPos.y}`;
+    }
+    
+    // For vertical-ish wires
+    if (isVertical) {
+      const midY = sourcePos.y + dy / 2;
+      const controlDist = Math.min(Math.abs(dy) / 4, 40);
+      
+      return `M${sourcePos.x},${sourcePos.y} `+
+             `C${sourcePos.x},${sourcePos.y + controlDist} `+
+             `${targetPos.x},${midY - controlDist} `+ 
+             `${targetPos.x},${midY} `+
+             `S${targetPos.x},${targetPos.y - controlDist} `+
+             `${targetPos.x},${targetPos.y}`;
+    }
+    
+    // For diagonal connections, create a curve with a 45° segment in the middle
+    const midX = sourcePos.x + dx / 2;
+    const midY = sourcePos.y + dy / 2;
+    const controlLen = distance / 4;  // Control point distance as fraction of total distance
+    
+    return `M${sourcePos.x},${sourcePos.y} `+
+           `C${sourcePos.x + Math.sign(dx) * controlLen},${sourcePos.y} `+
+           `${midX - Math.sign(dx) * controlLen/2},${midY - Math.sign(dy) * controlLen/2} `+
+           `${midX},${midY} `+
+           `S${targetPos.x - Math.sign(dx) * controlLen},${targetPos.y} `+
+           `${targetPos.x},${targetPos.y}`;
+  }, []);
   
   // Handle pin clicks - create or finish a wire - defined with useCallback to avoid recreating on every render
   const handlePinClick = useCallback((pinId) => {
@@ -183,164 +312,60 @@ const WireManager = ({ canvasRef }) => {
     if (!pendingWire || !canvasRef?.current || !svgRef?.current) return;
     
     const canvasElement = canvasRef.current;
+    const sourcePinElement = registeredPins[pendingWire.sourceId]?.element;
     
-    const handlePendingWireMouseMove = (e) => {
+    // Check if we have a valid source element
+    if (!sourcePinElement) return;
+    
+    // Add a visual indicator to the source pin
+    sourcePinElement.classList.add('wire-source-pin');
+    
+    // Create a function to handle mouse movement for the pending wire
+    const handleMouseMove = (e) => {
       const svg = svgRef.current;
       if (!svg) return;
       
-      // Update mouse position for wire visualization
+      // Get mouse position relative to canvas
       const canvasRect = canvasElement.getBoundingClientRect();
       const mouseX = e.clientX - canvasRect.left;
       const mouseY = e.clientY - canvasRect.top;
       
-      // Get the current path element and update it
+      // Update the pending wire path
       const pendingPath = svg.querySelector('.pending-wire');
-      if (pendingPath) {
-        const sourceElement = registeredPins[pendingWire.sourceId]?.element;
-        if (sourceElement) {
-          const sourcePos = getElementPosition(sourceElement);
-          const pathString = getWirePath(sourcePos, { x: mouseX, y: mouseY });
-          pendingPath.setAttribute('d', pathString);
-        }
+      if (pendingPath && sourcePinElement) {
+        const sourcePos = getElementPosition(sourcePinElement);
+        const pathString = getWirePath(sourcePos, { x: mouseX, y: mouseY });
+        pendingPath.setAttribute('d', pathString);
       }
     };
     
-    canvasElement.addEventListener('mousemove', handlePendingWireMouseMove);
+    // Immediately draw the initial wire path with a slight offset
+    const svg = svgRef.current;
+    if (svg && sourcePinElement) {
+      const sourcePos = getElementPosition(sourcePinElement);
+      // Start wire with slight offset from source
+      const initialTarget = { 
+        x: sourcePos.x + 20,
+        y: sourcePos.y + 20
+      };
+      const initialPath = getWirePath(sourcePos, initialTarget);
+      
+      // Find and update the pending wire path element
+      const pendingWireEl = svg.querySelector('.pending-wire');
+      if (pendingWireEl) {
+        pendingWireEl.setAttribute('d', initialPath);
+      }
+    }
     
-    // Cleanup function
+    // Add the mouse move event listener
+    canvasElement.addEventListener('mousemove', handleMouseMove);
+    
+    // Clean up the event listener and visual indicators
     return () => {
-      canvasElement.removeEventListener('mousemove', handlePendingWireMouseMove);
+      canvasElement.removeEventListener('mousemove', handleMouseMove);
+      sourcePinElement.classList.remove('wire-source-pin');
     };
-  }, [canvasRef, pendingWire, registeredPins, getElementPosition]);
-  
-  // Get wire color based on connection types
-  const getWireColor = (sourceType, targetType) => {
-    // Power connections (VCC, GND, etc.)
-    if (
-      (sourceType === 'output' && targetType === 'input') ||
-      (sourceType === 'input' && targetType === 'output')
-    ) {
-      return '#ef4444'; // Red - power connections
-    }
-    
-    // Signal connections
-    if (sourceType === 'bidirectional' || targetType === 'bidirectional') {
-      return '#3b82f6'; // Blue - bidirectional signals
-    }
-    
-    // Default color
-    return '#10b981'; // Green - general signal
-  };
-  
-  // Get wire style based on connection types - Wokwi style
-  const getWireStyle = (sourceType, targetType) => {
-    // Power connections - typically from outputs to inputs
-    if (
-      (sourceType === 'output' && targetType === 'input') ||
-      (sourceType === 'input' && targetType === 'output')
-    ) {
-      // For power connections (typical LED to resistor, or board to LED)
-      return {
-        stroke: getWireColor(sourceType, targetType),
-        strokeWidth: 4, // Thicker for power connections
-        strokeLinecap: 'round',
-        strokeMiterlimit: 10, // Better path corner rendering
-        filter: 'drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.5))',
-        fill: 'none',
-        opacity: 0.95
-      };
-    }
-    
-    // Bidirectional connections - typically for data or I/O pins
-    if (sourceType === 'bidirectional' || targetType === 'bidirectional') {
-      return {
-        stroke: getWireColor(sourceType, targetType),
-        strokeWidth: 3.5,
-        strokeLinecap: 'round',
-        strokeMiterlimit: 10,
-        filter: 'drop-shadow(0px 1.5px 2px rgba(0, 0, 0, 0.3))',
-        fill: 'none',
-        opacity: 0.9
-      };
-    }
-    
-    // Default style for other connections
-    return {
-      stroke: getWireColor(sourceType, targetType),
-      strokeWidth: 3.5,
-      strokeLinecap: 'round',
-      strokeMiterlimit: 10,
-      filter: 'drop-shadow(0px 1.5px 2px rgba(0, 0, 0, 0.25))',
-      fill: 'none',
-      opacity: 0.85
-    };
-  };
-  
-  // Calculate SVG path string for a wire following Wokwi's implementation
-  const getWirePath = (sourcePos, targetPos) => {
-    // Ensure we have valid positions
-    if (!sourcePos || !targetPos) {
-      console.warn('Invalid positions for wire path:', sourcePos, targetPos);
-      return `M 0,0`;
-    }
-    
-    const dx = targetPos.x - sourcePos.x;
-    const dy = targetPos.y - sourcePos.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Calculate a nice curve that follows Wokwi's wire appearance
-    // We'll use multiple segments for better control over the curve shape
-    
-    // For very short connections, use a simple curve
-    if (distance < 30) {
-      return `M${sourcePos.x},${sourcePos.y} Q${(sourcePos.x + targetPos.x)/2},${(sourcePos.y + targetPos.y)/2} ${targetPos.x},${targetPos.y}`;
-    }
-    
-    // Determine if this is primarily horizontal, vertical, or diagonal
-    const isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.5; 
-    const isVertical = Math.abs(dy) > Math.abs(dx) * 1.5;
-    
-    // Calculate control points with consideration for the circuit board grid layout
-    // These offsets create the nice curved wires seen in Wokwi
-    
-    // For horizontal-ish wires
-    if (isHorizontal) {
-      const midX = sourcePos.x + dx / 2;
-      const controlDist = Math.min(Math.abs(dx) / 4, 40);
-      
-      return `M${sourcePos.x},${sourcePos.y} `+
-             `C${sourcePos.x + controlDist},${sourcePos.y} `+
-             `${midX - controlDist},${targetPos.y} `+ 
-             `${midX},${targetPos.y} `+
-             `S${targetPos.x - controlDist},${targetPos.y} `+
-             `${targetPos.x},${targetPos.y}`;
-    }
-    
-    // For vertical-ish wires
-    if (isVertical) {
-      const midY = sourcePos.y + dy / 2;
-      const controlDist = Math.min(Math.abs(dy) / 4, 40);
-      
-      return `M${sourcePos.x},${sourcePos.y} `+
-             `C${sourcePos.x},${sourcePos.y + controlDist} `+
-             `${targetPos.x},${midY - controlDist} `+ 
-             `${targetPos.x},${midY} `+
-             `S${targetPos.x},${targetPos.y - controlDist} `+
-             `${targetPos.x},${targetPos.y}`;
-    }
-    
-    // For diagonal connections, create a curve with a 45° segment in the middle
-    const midX = sourcePos.x + dx / 2;
-    const midY = sourcePos.y + dy / 2;
-    const controlLen = distance / 4;  // Control point distance as fraction of total distance
-    
-    return `M${sourcePos.x},${sourcePos.y} `+
-           `C${sourcePos.x + Math.sign(dx) * controlLen},${sourcePos.y} `+
-           `${midX - Math.sign(dx) * controlLen/2},${midY - Math.sign(dy) * controlLen/2} `+
-           `${midX},${midY} `+
-           `S${targetPos.x - Math.sign(dx) * controlLen},${targetPos.y} `+
-           `${targetPos.x},${targetPos.y}`;
-  };
+  }, [canvasRef, svgRef, pendingWire, registeredPins, getElementPosition, getWirePath]);
   
   // Handle wire deletion
   const handleWireDelete = (wireId, e) => {
@@ -348,6 +373,7 @@ const WireManager = ({ canvasRef }) => {
     setWires(prev => prev.filter(wire => wire.id !== wireId));
   };
   
+  // Render the wire manager component
   return (
     <svg 
       ref={svgRef}
@@ -357,11 +383,11 @@ const WireManager = ({ canvasRef }) => {
       {/* Draw existing wires */}
       {wires.map(wire => {
         // Get source and target elements from registered pins
-        const sourceElement = registeredPins[wire.sourceId]?.element;
-        const targetElement = registeredPins[wire.targetId]?.element;
+        const sourcePinEl = registeredPins[wire.sourceId]?.element;
+        const targetPinEl = registeredPins[wire.targetId]?.element;
         
-        if (!sourceElement || !targetElement) {
-          // One of the pins is no longer available, remove this wire
+        if (!sourcePinEl || !targetPinEl) {
+          // Remove wires with missing pins
           setTimeout(() => {
             setWires(prev => prev.filter(w => w.id !== wire.id));
           }, 0);
@@ -369,8 +395,8 @@ const WireManager = ({ canvasRef }) => {
         }
         
         // Get positions
-        const sourcePos = getElementPosition(sourceElement);
-        const targetPos = getElementPosition(targetElement);
+        const sourcePos = getElementPosition(sourcePinEl);
+        const targetPos = getElementPosition(targetPinEl);
         
         // Calculate path and wire style
         const pathString = getWirePath(sourcePos, targetPos);
@@ -409,33 +435,10 @@ const WireManager = ({ canvasRef }) => {
       {/* Draw pending wire */}
       {pendingWire && (
         (() => {
-          // Get source element
-          const sourceElement = registeredPins[pendingWire.sourceId]?.element;
-          if (!sourceElement) return null;
+          const pendingPinEl = registeredPins[pendingWire.sourceId]?.element;
+          if (!pendingPinEl) return null;
           
-          // Get mouse position relative to canvas
-          const handleMouseMove = (e) => {
-            const svg = svgRef.current;
-            if (!svg) return;
-            
-            // Update mouse position for wire visualization
-            const canvasRect = canvasRef.current.getBoundingClientRect();
-            const mouseX = e.clientX - canvasRect.left;
-            const mouseY = e.clientY - canvasRect.top;
-            
-            // Get the current path element and update it
-            const pendingPath = svg.querySelector('.pending-wire');
-            if (pendingPath) {
-              const sourcePos = getElementPosition(sourceElement);
-              const pathString = getWirePath(sourcePos, { x: mouseX, y: mouseY });
-              pendingPath.setAttribute('d', pathString);
-            }
-          };
-          
-          // Mouse movement handled in main useEffect
-          
-          // Render pending wire path
-          const sourcePos = getElementPosition(sourceElement);
+          const sourcePos = getElementPosition(pendingPinEl);
           const wireStyle = {
             stroke: getWireColor(pendingWire.sourceType, 'bidirectional'),
             strokeWidth: 3,

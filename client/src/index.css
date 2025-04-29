@@ -575,3 +575,19 @@ body {
   animation: marquee 10s linear infinite;
   padding-right: 50px; /* Add space between the repeating text */
 }
+
+/* Circuit Builder Styles */
+.wire-source-pin {
+  box-shadow: 0 0 0 4px rgba(255, 165, 0, 0.7), 0 0 10px 2px rgba(255, 255, 0, 0.5) !important;
+  animation: pulse-pin 1.5s infinite alternate;
+  z-index: 30 !important;
+}
+
+@keyframes pulse-pin {
+  0% {
+    box-shadow: 0 0 0 4px rgba(255, 165, 0, 0.7), 0 0 10px 2px rgba(255, 255, 0, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 6px rgba(255, 165, 0, 0.9), 0 0 14px 4px rgba(255, 255, 0, 0.7);
+  }
+}

@@ -72,15 +72,65 @@ const CircuitPin = ({
   // Handle mouse hover
   const handleMouseEnter = (e) => {
     setIsHovered(true);
+    
+    // Call onPinHover if provided
     if (onPinHover) {
       onPinHover(id, pinType, parentId);
     }
+    
+    // Dispatch custom event for global tooltip handling
+    const pinHoverEvent = new CustomEvent('pinHover', {
+      detail: {
+        id,
+        pinId: id,
+        parentId,
+        componentId: parentId,
+        label,
+        type: pinType,
+        pinType,
+        x: e.clientX,
+        y: e.clientY,
+        description: getPinDescription(pinType, label)
+      }
+    });
+    document.dispatchEvent(pinHoverEvent);
   };
   
   const handleMouseLeave = () => {
     setIsHovered(false);
+    
+    // Call onPinHover with null to indicate hover end
     if (onPinHover) {
       onPinHover(null);
+    }
+    
+    // Dispatch custom event for global tooltip handling
+    const pinLeaveEvent = new CustomEvent('pinLeave');
+    document.dispatchEvent(pinLeaveEvent);
+  };
+  
+  // Generate helpful descriptions for pins based on type and label
+  const getPinDescription = (type, label) => {
+    if (label?.includes('GND')) return 'Ground connection (0V)';
+    if (label?.includes('VCC') || label?.includes('5V') || label?.includes('3.3V')) 
+      return `Power ${label?.includes('3.3') ? '3.3V' : '5V'} connection`;
+    
+    if (label?.includes('A') && label?.match(/A\d+/)) 
+      return `Analog input pin ${label}`;
+    
+    if (label?.includes('SCL')) return 'I²C clock line';
+    if (label?.includes('SDA')) return 'I²C data line';
+    if (label?.includes('TX')) return 'Serial transmit pin';
+    if (label?.includes('RX')) return 'Serial receive pin';
+    
+    if (label?.includes('PWM') || label?.match(/~D\d+/)) 
+      return 'PWM capable digital pin';
+    
+    switch (type) {
+      case 'input': return 'Digital input connection';
+      case 'output': return 'Digital output connection';
+      case 'bidirectional': return 'Bidirectional I/O connection';
+      default: return 'Component connection pin';
     }
   };
   
