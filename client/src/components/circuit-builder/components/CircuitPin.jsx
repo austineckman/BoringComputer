@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
+import WireState from '../utils/WireState';
 
 /**
  * CircuitPin component represents a connection point for components
@@ -55,42 +56,62 @@ const CircuitPin = ({
     e.stopPropagation();
     e.preventDefault();
     
-    // Log that a pin click occurred 
-    console.log(`CircuitPin component - Pin clicked: ${id} (${pinType})`);
-    
-    // Apply a quick visual feedback that pin was clicked - RED like Wokwi
+    // Apply visual feedback
     const pinElement = e.currentTarget;
     pinElement.style.transform = 'scale(1.3) translate(-50%, -50%)';
     pinElement.style.boxShadow = '0 0 8px rgba(255, 0, 0, 0.9)';
     setTimeout(() => {
       pinElement.style.transform = 'translate(-50%, -50%)';
-      // Don't reset the box-shadow - the WireManager will handle this if needed
     }, 150);
     
-    // First handle internal pin click handler if provided
+    // Get the canvas reference so we can get proper coordinates
+    const canvasElement = document.querySelector('.circuit-canvas');
+    if (!canvasElement) {
+      console.error('Cannot find circuit canvas element for pin positioning');
+      return;
+    }
+    
+    // Calculate absolute pin position
+    const pinRect = pinElement.getBoundingClientRect();
+    const canvasRect = canvasElement.getBoundingClientRect();
+    
+    // Convert to coordinates relative to the canvas
+    const pinPosition = {
+      x: pinRect.left + pinRect.width/2 - canvasRect.left,
+      y: pinRect.top + pinRect.height/2 - canvasRect.top
+    };
+    
+    console.log(`Pin clicked: ${id} (${pinType}) at position:`, pinPosition);
+    
+    // Handle internal pin click callback if provided
     if (onPinClick) {
       onPinClick(id, pinType, parentId);
     }
     
-    // IMPORTANT: Call the global handler for WireManager to detect
-    console.log(`CircuitPin attempting to call global handler for ${id}`);
+    // Import WireState
+    const WireState = require('../utils/WireState').default;
     
-    // Get exact pin position for accurate wiring
-    const pinRect = pinElement.getBoundingClientRect();
-    const pinPosition = {
-      x: pinRect.left + pinRect.width/2,
-      y: pinRect.top + pinRect.height/2
-    };
+    // Check if we're starting a new wire or completing one
+    const currentState = WireState.getState();
     
-    console.log(`Pin ${id} absolute position:`, pinPosition);
-    
-    // For improved reliability, create a global function call, which is more reliable
-    // than event bubbling in complex component hierarchies
-    if (typeof window.CIRCUIT_PIN_CLICKED === 'function') {
-      console.log(`Global pin handler exists, calling it for ${id}`);
-      window.CIRCUIT_PIN_CLICKED(id, pinType, parentId, pinPosition, pinElement);
+    if (!currentState.pendingWireStart) {
+      // Start a new wire
+      WireState.startWire({
+        id,
+        type: pinType,
+        parentId,
+        position: pinPosition,
+        element: pinElement
+      });
     } else {
-      console.warn(`Global pin handler doesn't exist yet for ${id}`);
+      // Complete an existing wire
+      WireState.completeWire({
+        id,
+        type: pinType,
+        parentId,
+        position: pinPosition,
+        element: pinElement
+      });
     }
     
     // Also dispatch a global event for the WireManager to handle (backup method)
