@@ -5,23 +5,24 @@ import {
 import Moveable from "react-moveable";
 import heroboardImg from '@assets/hero-board.icon.png';
 
-// Define MOVE_SETTINGS to match what the original code expects
+// Define MOVE_SETTINGS - remove rotation
 const MOVE_SETTINGS = {
   DRAGGABLE: true,
   SNAPPABLE: true,
   THROTTLE_DRAG: 0,
-  ROTATABLE: true
+  ROTATABLE: false // Disable rotation
 };
 
 /**
  * HeroBoard Component (Arduino UNO R3 compatible)
  * Using the Wokwi implementation from invent-share-master
+ * Rotation functionality removed for simplicity
  */
 const HeroBoard = ({
   id,
   initialX = 100,
   initialY = 100,
-  initialRotation = 0,
+  initialRotation = 0, // Kept for compatibility but not used
   onSelect,
   isSelected,
   canvasRef,
@@ -29,8 +30,6 @@ const HeroBoard = ({
 }) => {
   const targetRef = useRef();
   const moveableRef = useRef();
-  const oldDataRef = useRef();
-  const [rotationAngle, setRotationAngle] = useState(initialRotation);
   const [isDragged, setIsDragged] = useState(false);
   const [posTop, setPosTop] = useState(initialY);
   const [posLeft, setPosLeft] = useState(initialX);
@@ -43,7 +42,6 @@ const HeroBoard = ({
     id,
     type: 'heroboard',
     attrs: {
-      rotate: rotationAngle,
       top: posTop,
       left: posLeft,
       zIndex: 10,
@@ -51,28 +49,14 @@ const HeroBoard = ({
     }
   };
 
-  // Handle drag or rotate
-  const onDragOrRotate = ({ target, beforeTranslate, beforeRotate }) => {
+  // Handle drag only (rotation removed)
+  const onDrag = ({ target, beforeTranslate }) => {
     if (beforeTranslate) {
       const [x, y] = beforeTranslate;
       setPosTop(y);
       setPosLeft(x);
     }
-    
-    if (beforeRotate !== undefined) {
-      setRotationAngle(beforeRotate);
-    }
   };
-
-  // No longer need to show menu when selected
-
-  // Rotate component when rotation angle is changed
-  useEffect(() => {
-    if (moveableRef.current) {
-      moveableRef.current.request("rotatable", { rotate: rotationAngle }, true);
-      triggerRedraw();
-    }
-  }, [moveableRef.current, rotationAngle]);
 
   // Update position when dragged
   useEffect(() => {
@@ -83,18 +67,12 @@ const HeroBoard = ({
     setPinInfo(e.detail);
   }
 
-  // Trigger redraw function similar to the original
+  // Trigger redraw function to update position
   const triggerRedraw = () => {
-    // This simulates the original triggerRedraw function
     if (targetRef.current) {
       const newTransform = `translate(${posLeft}px, ${posTop}px)`;
       targetRef.current.style.transform = newTransform;
     }
-  };
-
-  // Rotate the handle by 90 degrees
-  const handleRotate = () => {
-    setRotationAngle((rotationAngle + 90) % 360);
   };
 
   // Handle pin click
@@ -131,8 +109,6 @@ const HeroBoard = ({
     }
   };
 
-  // No longer need component context menu portal
-
   return (
     <>
       {isSelected && (
@@ -142,9 +118,8 @@ const HeroBoard = ({
           draggable={MOVE_SETTINGS.DRAGGABLE}
           snappable={MOVE_SETTINGS.SNAPPABLE}
           throttleDrag={MOVE_SETTINGS.THROTTLE_DRAG}
-          rotatable={MOVE_SETTINGS.ROTATABLE}
-          onDrag={onDragOrRotate}
-          onRotate={onDragOrRotate}
+          rotatable={false} // Explicitly set to false to prevent rotation
+          onDrag={onDrag}
           onDragStart={() => setIsDragged(true)}
           onDragEnd={() => setIsDragged(false)}
         ></Moveable>
@@ -158,7 +133,7 @@ const HeroBoard = ({
         onPinClicked={handlePinClicked}
         onPininfoChange={(e) => onPinInfoChange(e)}
         isActive={isSelected}
-        rotationTransform={rotationAngle}
+        rotationTransform={0} // Fixed to 0 degrees - no rotation
         onMouseDown={(e) => {
           e.stopPropagation();
           if (onSelect) onSelect(id);
