@@ -4,6 +4,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom styles for circuit builder */
+.moveable-no-border .moveable-line, 
+.moveable-no-border .moveable-control {
+  display: none !important;
+}
+
+/* Hide all default selection indicators from react-moveable */
+.moveable-control-box {
+  --moveable-color: transparent !important;
+  border-color: transparent !important;
+}
+
+.moveable-line {
+  background-color: transparent !important;
+  border-color: transparent !important;
+}
+
 /* CSS animations for loot box system */
 
 @keyframes fadeIn {

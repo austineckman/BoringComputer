@@ -159,6 +159,8 @@ const RGBLED = ({
           snappable={MOVE_SETTINGS.SNAPPABLE}
           throttleDrag={MOVE_SETTINGS.THROTTLE_DRAG}
           rotatable={false} // Explicitly set to false to prevent rotation
+          hideDefaultLines={true} // Hide the default selection lines
+          className="moveable-no-border" // Add custom class for styling
           onDrag={onDrag}
           onDragStart={() => setIsDragged(true)}
           onDragEnd={() => setIsDragged(false)}
