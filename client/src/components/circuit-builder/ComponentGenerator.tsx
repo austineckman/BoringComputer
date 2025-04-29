@@ -1,17 +1,7 @@
 import React from 'react';
 
-// Import all component types
-import LEDComponent from './components/LEDComponent';
-import RGBLEDComponent from './components/RGBLEDComponent';
-import ResistorComponent from './components/ResistorComponent';
-import HeroBoardComponent from './components/HeroBoardComponent';
-import BuzzerComponent from './components/BuzzerComponent';
-import PhotoresistorComponent from './components/PhotoresistorComponent';
-import BreadboardMiniComponent from './components/BreadboardMiniComponent';
-
 // Type for component attributes
 export interface ComponentAttributes {
-  id: string;
   rotate: number;
   top: number;
   left: number;
@@ -27,6 +17,8 @@ export interface ComponentAttributes {
   hasSignal?: boolean;
   // Photoresistor specific
   value?: number | string;
+  // Hero Board specific
+  ledPower?: boolean;
   // Additional props can be added for specific components
   [key: string]: any;
 }
@@ -39,22 +31,14 @@ export interface ComponentData {
   attrs: ComponentAttributes;
 }
 
-// Component map for dynamically generating components
-export const componentMap: Record<string, React.FC<{
+// Component props interface
+export interface ComponentProps {
   componentData: ComponentData;
   onPinClicked: (pinId: string) => void;
   isActive: boolean;
   handleMouseDown: (id: string, isActive: boolean) => void;
   handleDeleteComponent: (id: string) => void;
-}>> = {
-  'led': LEDComponent,
-  'rgb-led': RGBLEDComponent,
-  'resistor': ResistorComponent,
-  'hero-board': HeroBoardComponent,
-  'buzzer': BuzzerComponent,
-  'photoresistor': PhotoresistorComponent,
-  'breadboard-mini': BreadboardMiniComponent,
-};
+}
 
 // Component options for the palette
 export const componentOptions = [
@@ -148,6 +132,76 @@ export const componentOptions = [
   }
 ];
 
+// Temporary placeholder component until individual components are implemented
+const PlaceholderComponent: React.FC<ComponentProps> = ({ 
+  componentData, 
+  onPinClicked, 
+  isActive, 
+  handleMouseDown 
+}) => {
+  const getColor = () => {
+    switch (componentData.name) {
+      case 'led': return componentData.attrs.color || 'red';
+      case 'rgb-led': 
+        const r = Math.round((componentData.attrs.ledRed || 0) * 255);
+        const g = Math.round((componentData.attrs.ledGreen || 0) * 255);
+        const b = Math.round((componentData.attrs.ledBlue || 0) * 255);
+        return `rgb(${r}, ${g}, ${b})`;
+      case 'resistor': return '#9c27b0';
+      case 'hero-board': return '#1a365d';
+      case 'buzzer': return '#444';
+      case 'photoresistor': return '#ffc107';
+      case 'breadboard-mini': return '#eee';
+      default: return '#ccc';
+    }
+  };
+
+  return (
+    <div
+      className={`absolute rounded-md cursor-move transition-shadow ${isActive ? 'shadow-lg ring-2 ring-blue-500' : ''}`}
+      style={{
+        left: `${componentData.attrs.left}px`,
+        top: `${componentData.attrs.top}px`,
+        width: '80px',
+        height: '80px',
+        backgroundColor: getColor(),
+        transform: `rotate(${componentData.attrs.rotate}deg)`,
+        zIndex: componentData.attrs.zIndex || 1,
+        transition: 'transform 0.2s ease'
+      }}
+      onMouseDown={() => handleMouseDown(componentData.id, true)}
+    >
+      <div className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold">
+        <div className="bg-black bg-opacity-50 px-2 py-1 rounded">
+          {componentData.name}
+        </div>
+      </div>
+      
+      {/* Display some pins */}
+      <div 
+        className="absolute w-3 h-3 rounded-full bg-yellow-400 top-0 left-1/2 transform -translate-x-1/2 cursor-pointer" 
+        onClick={() => onPinClicked(`${componentData.id}-pin1`)}
+      ></div>
+      <div 
+        className="absolute w-3 h-3 rounded-full bg-yellow-400 bottom-0 left-1/2 transform -translate-x-1/2 cursor-pointer" 
+        onClick={() => onPinClicked(`${componentData.id}-pin2`)}
+      ></div>
+    </div>
+  );
+};
+
+// Temporary component map using placeholders
+// In a real implementation, each component would be implemented separately
+export const componentMap: Record<string, React.FC<ComponentProps>> = {
+  'led': PlaceholderComponent,
+  'rgb-led': PlaceholderComponent,
+  'resistor': PlaceholderComponent,
+  'hero-board': PlaceholderComponent,
+  'buzzer': PlaceholderComponent, 
+  'photoresistor': PlaceholderComponent,
+  'breadboard-mini': PlaceholderComponent
+};
+
 // Utility function to create a new component with default attributes
 export const createComponent = (name: string, id?: string): ComponentData => {
   const componentOption = componentOptions.find(opt => opt.name === name);
@@ -170,7 +224,7 @@ export const renderComponent = (
   isActive: boolean,
   handleMouseDown: (id: string, isActive: boolean) => void,
   handleDeleteComponent: (id: string) => void
-) => {
+): React.ReactNode => {
   const Component = componentMap[componentData.name];
   if (!Component) {
     console.error(`Component type '${componentData.name}' not found in component map`);

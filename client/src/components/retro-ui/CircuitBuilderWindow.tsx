@@ -1,17 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, RotateCcw, Trash2, ZoomIn, ZoomOut, Move } from 'lucide-react';
+import { X, RotateCcw, Trash2, ZoomIn, ZoomOut, Move, Play, Save, FileCode } from 'lucide-react';
+import ace from 'ace-builds';
 
-// Circuit component types
-type ComponentType = 'battery' | 'wire' | 'led' | 'resistor' | 'breadboard';
+// Import our circuit components
+import { 
+  componentOptions, 
+  createComponent, 
+  renderComponent, 
+  ComponentData 
+} from '../circuit-builder/ComponentGenerator';
+import CircuitWire from '../circuit-builder/CircuitWire';
+import { PinPosition } from '../circuit-builder/CircuitPin';
 
-interface CircuitComponent {
+// Types for wire connections
+interface WireConnection {
   id: string;
-  type: ComponentType;
-  x: number;
-  y: number;
-  rotation: number; // in degrees
-  width: number;
-  height: number;
+  startPin: PinPosition;
+  endPin: PinPosition;
+  color: string;
 }
 
 interface CircuitBuilderWindowProps {
@@ -19,27 +25,77 @@ interface CircuitBuilderWindowProps {
 }
 
 const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) => {
-  const [components, setComponents] = useState<CircuitComponent[]>([]);
+  // State for components and wires
+  const [components, setComponents] = useState<ComponentData[]>([]);
+  const [wires, setWires] = useState<WireConnection[]>([]);
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
+  const [selectedWire, setSelectedWire] = useState<string | null>(null);
   const [draggingComponent, setDraggingComponent] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  
+  // State for creating a wire
+  const [wireCreationMode, setWireCreationMode] = useState(false);
+  const [wireStartPin, setWireStartPin] = useState<PinPosition | null>(null);
+  const [wireEndPin, setWireEndPin] = useState<PinPosition | null>(null);
+  const [tempWirePosition, setTempWirePosition] = useState<{ x: number; y: number } | null>(null);
+  
+  // Canvas view state
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
-  const [code, setCode] = useState('// Write your Arduino code here\n\nvoid setup() {\n  // Initialize components\n  pinMode(13, OUTPUT);\n}\n\nvoid loop() {\n  // Main program loop\n  digitalWrite(13, HIGH);\n  delay(1000);\n  digitalWrite(13, LOW);\n  delay(1000);\n}');
   
+  // Code editor state
+  const [editorReady, setEditorReady] = useState(false);
+  
+  // Default Arduino code for new projects
+  const defaultCode = `// CircuitBuilder Arduino Code
+  
+void setup() {
+  // Initialize pins
+  pinMode(13, OUTPUT);
+}
+
+void loop() {
+  // Blink the LED on pin 13
+  digitalWrite(13, HIGH);
+  delay(1000);
+  digitalWrite(13, LOW);
+  delay(1000);
+}`;
+  
+  // References
   const canvasRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const editorInstanceRef = useRef<any>(null);
   const gridSize = 20; // Size of grid squares in pixels
 
-  // Component palette items
-  const paletteItems: { type: ComponentType; name: string; color: string; width: number; height: number }[] = [
-    { type: 'battery', name: 'Battery', color: '#FF5722', width: 3, height: 2 },
-    { type: 'wire', name: 'Wire', color: '#2196F3', width: 1, height: 1 },
-    { type: 'led', name: 'LED', color: '#4CAF50', width: 1, height: 1 },
-    { type: 'resistor', name: 'Resistor', color: '#9C27B0', width: 2, height: 1 },
-    { type: 'breadboard', name: 'Breadboard', color: '#795548', width: 6, height: 4 }
-  ];
+  // Initialize Ace editor
+  useEffect(() => {
+    if (editorRef.current && !editorInstanceRef.current) {
+      const editor = ace.edit(editorRef.current);
+      editor.setTheme('ace/theme/xcode');
+      editor.session.setMode('ace/mode/arduino');
+      editor.setValue(defaultCode);
+      editor.setOptions({
+        enableBasicAutocompletion: true,
+        enableLiveAutocompletion: true,
+        enableSnippets: true,
+        showLineNumbers: true,
+        tabSize: 2,
+      });
+      
+      editorInstanceRef.current = editor;
+      setEditorReady(true);
+    }
+    
+    return () => {
+      if (editorInstanceRef.current) {
+        editorInstanceRef.current.destroy();
+        editorInstanceRef.current = null;
+      }
+    };
+  }, []);
 
   // Generate a unique ID
   const generateId = () => {
@@ -47,7 +103,7 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
   };
 
   // Add a new component to the canvas
-  const addComponent = (type: ComponentType) => {
+  const addComponent = (componentName: string) => {
     // Default position in the center of visible canvas
     const canvasRect = canvasRef.current?.getBoundingClientRect();
     let centerX = 0;
@@ -58,28 +114,34 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
       centerY = (canvasRect.height / 2 - pan.y) / zoom;
     }
     
-    const paletteItem = paletteItems.find(item => item.type === type);
-    if (!paletteItem) return;
+    const newComponent = createComponent(componentName);
     
-    const newComponent: CircuitComponent = {
-      id: generateId(),
-      type,
-      x: Math.round(centerX / gridSize) * gridSize,
-      y: Math.round(centerY / gridSize) * gridSize,
-      rotation: 0,
-      width: paletteItem.width * gridSize,
-      height: paletteItem.height * gridSize
-    };
+    // Update position to be centered in the current view
+    newComponent.attrs.left = Math.round(centerX / gridSize) * gridSize;
+    newComponent.attrs.top = Math.round(centerY / gridSize) * gridSize;
     
     setComponents([...components, newComponent]);
     setSelectedComponent(newComponent.id);
+    setSelectedWire(null);
   };
 
-  // Delete the selected component
-  const deleteSelectedComponent = () => {
+  // Delete the selected component or wire
+  const deleteSelectedItem = () => {
     if (selectedComponent) {
+      // Remove the component
       setComponents(components.filter(c => c.id !== selectedComponent));
+      
+      // Also remove any wires connected to this component
+      const updatedWires = wires.filter(wire => 
+        !wire.startPin.id.startsWith(`${selectedComponent}-`) && 
+        !wire.endPin.id.startsWith(`${selectedComponent}-`)
+      );
+      setWires(updatedWires);
       setSelectedComponent(null);
+    } else if (selectedWire) {
+      // Remove the wire
+      setWires(wires.filter(w => w.id !== selectedWire));
+      setSelectedWire(null);
     }
   };
 
@@ -88,28 +150,31 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
     if (selectedComponent) {
       setComponents(components.map(c => {
         if (c.id === selectedComponent) {
-          return { ...c, rotation: (c.rotation + 90) % 360 };
+          return {
+            ...c,
+            attrs: {
+              ...c.attrs,
+              rotate: (c.attrs.rotate + 90) % 360
+            }
+          };
         }
         return c;
       }));
     }
   };
 
-  // Handle mouse down on a component
-  const handleComponentMouseDown = (e: React.MouseEvent, componentId: string) => {
-    e.stopPropagation();
-    setSelectedComponent(componentId);
+  // Handle component mouse down event for dragging
+  const handleComponentMouseDown = (id: string, isActive: boolean) => {
+    if (!isActive) return;
     
-    const component = components.find(c => c.id === componentId);
+    setSelectedComponent(id);
+    setSelectedWire(null);
+    
+    const component = components.find(c => c.id === id);
     if (!component) return;
     
-    // Calculate offset from the mouse to the component's top-left corner
-    const rect = (e.target as HTMLElement).getBoundingClientRect();
-    const offsetX = e.clientX - rect.left;
-    const offsetY = e.clientY - rect.top;
-    
-    setDraggingComponent(componentId);
-    setDragOffset({ x: offsetX, y: offsetY });
+    setDraggingComponent(id);
+    setDragOffset({ x: 10, y: 10 }); // Offset from top-left corner
   };
 
   // Handle mouse move for dragging components
@@ -122,12 +187,19 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
       const mouseX = e.clientX - canvasRect.left;
       const mouseY = e.clientY - canvasRect.top;
       
-      const x = Math.round(((mouseX - dragOffset.x) / zoom - pan.x) / gridSize) * gridSize;
-      const y = Math.round(((mouseY - dragOffset.y) / zoom - pan.y) / gridSize) * gridSize;
+      const left = Math.round(((mouseX - dragOffset.x) / zoom - pan.x) / gridSize) * gridSize;
+      const top = Math.round(((mouseY - dragOffset.y) / zoom - pan.y) / gridSize) * gridSize;
       
       setComponents(components.map(c => {
         if (c.id === draggingComponent) {
-          return { ...c, x, y };
+          return { 
+            ...c, 
+            attrs: {
+              ...c.attrs,
+              left,
+              top
+            } 
+          };
         }
         return c;
       }));
@@ -145,6 +217,15 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
         x: e.clientX,
         y: e.clientY
       });
+    } else if (wireCreationMode && wireStartPin) {
+      // Show wire while dragging
+      const canvasRect = canvasRef.current?.getBoundingClientRect();
+      if (canvasRect) {
+        setTempWirePosition({
+          x: e.clientX - canvasRect.left,
+          y: e.clientY - canvasRect.top
+        });
+      }
     }
   };
 
@@ -152,12 +233,26 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
   const handleCanvasMouseUp = () => {
     setDraggingComponent(null);
     setIsPanning(false);
+    
+    // Clear temporary wire if we're not connecting to a pin
+    if (wireCreationMode && !wireEndPin) {
+      setWireCreationMode(false);
+      setWireStartPin(null);
+      setTempWirePosition(null);
+    }
   };
 
   // Handle mouse down on the canvas for panning
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
-    // Only start panning if the middle mouse button (wheel) is pressed or if holding the spacebar
-    if (e.button === 1 || e.button === 0) {
+    // Clear any selection when clicking on the canvas
+    if (!wireCreationMode) {
+      setSelectedComponent(null);
+      setSelectedWire(null);
+    }
+    
+    // Only start panning if the middle mouse button (wheel) is pressed or 
+    // if holding the spacebar and using left click
+    if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
       setIsPanning(true);
       setPanStart({
         x: e.clientX,
@@ -205,44 +300,107 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        deleteSelectedComponent();
+        deleteSelectedItem();
       } else if (e.key === 'r') {
         rotateSelectedComponent();
+      } else if (e.key === 'Escape') {
+        // Cancel wire creation mode
+        if (wireCreationMode) {
+          setWireCreationMode(false);
+          setWireStartPin(null);
+          setTempWirePosition(null);
+        }
       }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedComponent, components]);
+  }, [selectedComponent, selectedWire, wireCreationMode, wireStartPin]);
 
-  // Render component based on its type
-  const renderComponent = (component: CircuitComponent) => {
-    const paletteItem = paletteItems.find(item => item.type === component.type);
-    if (!paletteItem) return null;
+  // Handle pin click for wire creation
+  const handlePinClick = (pinId: string) => {
+    if (!wireCreationMode) {
+      // Start wire creation
+      setWireCreationMode(true);
+      
+      // Find the pin's position
+      const [componentId, pinName] = pinId.split('-', 2);
+      const component = components.find(c => c.id === componentId);
+      
+      if (component) {
+        // This is a simplified approach - in a real app, you'd calculate the actual pin position
+        const startPin: PinPosition = {
+          id: pinId,
+          x: component.attrs.left + 20, // This is just a placeholder
+          y: component.attrs.top + 20,  // This is just a placeholder
+        };
+        
+        setWireStartPin(startPin);
+      }
+    } else if (wireStartPin && wireStartPin.id !== pinId) {
+      // Complete wire creation
+      // Find the pin's position
+      const [componentId, pinName] = pinId.split('-', 2);
+      const component = components.find(c => c.id === componentId);
+      
+      if (component) {
+        // This is a simplified approach - in a real app, you'd calculate the actual pin position
+        const endPin: PinPosition = {
+          id: pinId,
+          x: component.attrs.left + 20, // This is just a placeholder
+          y: component.attrs.top + 20,  // This is just a placeholder
+        };
+        
+        // Create a new wire
+        const newWire: WireConnection = {
+          id: generateId(),
+          startPin: wireStartPin,
+          endPin: endPin,
+          color: '#3b82f6' // Default blue color
+        };
+        
+        setWires([...wires, newWire]);
+        
+        // Reset wire creation mode
+        setWireCreationMode(false);
+        setWireStartPin(null);
+        setTempWirePosition(null);
+      }
+    }
+  };
+
+  // Handle wire click
+  const handleWireClick = (wireId: string) => {
+    setSelectedWire(wireId);
+    setSelectedComponent(null);
+  };
+
+  // Get the code from the editor
+  const getCode = () => {
+    if (editorInstanceRef.current) {
+      return editorInstanceRef.current.getValue();
+    }
+    return defaultCode;
+  };
+
+  // Save the current project
+  const saveProject = () => {
+    const projectData = {
+      components,
+      wires,
+      code: getCode()
+    };
     
-    const isSelected = component.id === selectedComponent;
+    // In a real app, you'd save this to a database or file
+    console.log('Saving project:', projectData);
     
-    return (
-      <div
-        key={component.id}
-        className={`absolute rounded-md cursor-move transition-shadow ${isSelected ? 'shadow-lg ring-2 ring-blue-500' : ''}`}
-        style={{
-          left: `${component.x}px`,
-          top: `${component.y}px`,
-          width: `${component.width}px`,
-          height: `${component.height}px`,
-          backgroundColor: paletteItem.color,
-          transform: `rotate(${component.rotation}deg)`,
-          zIndex: isSelected ? 10 : 1,
-          transition: 'transform 0.2s ease'
-        }}
-        onMouseDown={(e) => handleComponentMouseDown(e, component.id)}
-      >
-        <div className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold">
-          {paletteItem.name}
-        </div>
-      </div>
-    );
+    // For now, just show an alert
+    alert('Project saved! (This is a placeholder - in a real app, this would save to the database)');
+  };
+
+  // Simulate running the code (placeholder)
+  const runSimulation = () => {
+    alert('Simulation started! (This is a placeholder - in a real app, this would run the simulation)');
   };
 
   return (
@@ -250,9 +408,15 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
       {/* Toolbar */}
       <div className="bg-gray-900 p-2 flex items-center justify-between border-b border-gray-700">
         <div className="flex items-center space-x-2">
+          <img 
+            src="/images/circuit-builder-logo.svg" 
+            alt="buildr.exe" 
+            className="h-6 mr-2" 
+          />
           <h2 className="text-lg font-bold">Circuit Builder</h2>
         </div>
         <div className="flex items-center space-x-2">
+          {/* Canvas controls */}
           <button 
             className="bg-gray-700 p-1 rounded hover:bg-gray-600 text-xs"
             onClick={() => setZoom(Math.min(3, zoom * 1.2))}
@@ -275,8 +439,10 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
             <Move size={18} />
           </button>
           <span className="text-xs">{Math.round(zoom * 100)}%</span>
+          
+          {/* Component controls */}
           <button 
-            className="bg-gray-700 p-1 rounded hover:bg-gray-600 text-xs"
+            className={`p-1 rounded text-xs ${selectedComponent ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-700 hover:bg-gray-600 opacity-50 cursor-not-allowed'}`}
             onClick={rotateSelectedComponent}
             disabled={!selectedComponent}
             title="Rotate Selected Component"
@@ -284,16 +450,36 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
             <RotateCcw size={18} />
           </button>
           <button 
-            className="bg-red-700 p-1 rounded hover:bg-red-600 text-xs"
-            onClick={deleteSelectedComponent}
-            disabled={!selectedComponent}
-            title="Delete Selected Component"
+            className={`p-1 rounded text-xs ${selectedComponent || selectedWire ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-700 hover:bg-gray-600 opacity-50 cursor-not-allowed'}`}
+            onClick={deleteSelectedItem}
+            disabled={!selectedComponent && !selectedWire}
+            title="Delete Selected Item"
           >
             <Trash2 size={18} />
           </button>
+          
+          {/* Project controls */}
+          <div className="w-px h-6 bg-gray-600 mx-2"></div>
+          <button 
+            className="bg-green-600 p-1 rounded hover:bg-green-700 text-xs"
+            onClick={runSimulation}
+            title="Run Simulation"
+          >
+            <Play size={18} />
+          </button>
+          <button 
+            className="bg-blue-600 p-1 rounded hover:bg-blue-700 text-xs"
+            onClick={saveProject}
+            title="Save Project"
+          >
+            <Save size={18} />
+          </button>
+          
+          {/* Close button */}
           <button 
             onClick={onClose}
             className="bg-gray-700 px-2 py-1 rounded hover:bg-gray-600 ml-4"
+            title="Close Circuit Builder"
           >
             <X size={18} />
           </button>
@@ -302,30 +488,32 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
 
       <div className="flex flex-1 overflow-hidden">
         {/* Component Palette */}
-        <div className="w-40 bg-gray-700 p-2 flex flex-col space-y-2 overflow-y-auto">
+        <div className="w-48 bg-gray-700 p-2 flex flex-col space-y-2 overflow-y-auto">
           <h3 className="text-sm font-bold mb-2">Components</h3>
-          {paletteItems.map((item) => (
-            <div
-              key={item.type}
-              className="bg-gray-800 p-2 rounded cursor-pointer hover:bg-gray-600 transition-colors"
-              onClick={() => addComponent(item.type)}
-            >
+          <div className="grid grid-cols-2 gap-2">
+            {componentOptions.map((item) => (
               <div
-                className="mx-auto mb-1 rounded"
-                style={{
-                  width: `${Math.min(32, item.width * 10)}px`,
-                  height: `${Math.min(32, item.height * 10)}px`,
-                  backgroundColor: item.color
-                }}
-              ></div>
-              <div className="text-xs text-center">{item.name}</div>
-            </div>
-          ))}
+                key={item.name}
+                className="bg-gray-800 p-2 rounded cursor-pointer hover:bg-gray-600 transition-colors text-center"
+                onClick={() => addComponent(item.name)}
+              >
+                <div className="flex justify-center mb-1">
+                  <img 
+                    src={`/images/${item.name}.icon.svg`}
+                    alt={item.displayName} 
+                    className="w-8 h-8" 
+                  />
+                </div>
+                <div className="text-xs text-center">{item.displayName}</div>
+              </div>
+            ))}
+          </div>
           <div className="text-xs mt-4 p-2 bg-gray-800 rounded">
             <p>Drag components onto the grid.</p>
-            <p className="mt-2">Rotate: Right-click or press 'R'</p>
+            <p className="mt-2">Click on pins to create wires between components.</p>
+            <p className="mt-1">Rotate: Right-click or press 'R'</p>
             <p className="mt-1">Delete: Delete key</p>
-            <p className="mt-1">Pan: Middle-click drag</p>
+            <p className="mt-1">Pan: Shift + drag or middle-click</p>
             <p className="mt-1">Zoom: Scroll wheel</p>
           </div>
         </div>
@@ -340,31 +528,68 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
           onWheel={handleWheel}
           ref={canvasRef}
         >
+          {/* Grid background */}
           <div
             className="absolute inset-0"
             style={{
               backgroundSize: `${gridSize * zoom}px ${gridSize * zoom}px`,
               backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px)',
-              transform: `translate(${pan.x}px, ${pan.y}px)`,
-              transformOrigin: '0 0',
-              scale: `${zoom}`
+              transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+              transformOrigin: '0 0'
             }}
           >
-            {components.map(renderComponent)}
+            {/* Render all circuit components */}
+            {components.map(componentData => renderComponent(
+              componentData,
+              handlePinClick,
+              componentData.id === selectedComponent,
+              handleComponentMouseDown,
+              deleteSelectedItem
+            ))}
+            
+            {/* Render wire connections */}
+            {wires.map(wire => (
+              <CircuitWire
+                key={wire.id}
+                id={wire.id}
+                startPin={wire.startPin}
+                endPin={wire.endPin}
+                color={wire.color}
+                selected={wire.id === selectedWire}
+                onClick={handleWireClick}
+              />
+            ))}
+            
+            {/* Temporary wire while creating */}
+            {wireCreationMode && wireStartPin && tempWirePosition && (
+              <svg className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                <line
+                  x1={wireStartPin.x}
+                  y1={wireStartPin.y}
+                  x2={tempWirePosition.x}
+                  y2={tempWirePosition.y}
+                  stroke="#3b82f6"
+                  strokeWidth={2}
+                  strokeDasharray="5,5"
+                />
+              </svg>
+            )}
           </div>
         </div>
 
         {/* Code Editor */}
         <div className="w-2/5 bg-gray-800 border-l border-gray-700 flex flex-col">
-          <div className="p-2 bg-gray-900 text-sm font-bold border-b border-gray-700">
-            Code Editor
+          <div className="p-2 bg-gray-900 text-sm font-bold border-b border-gray-700 flex justify-between items-center">
+            <div className="flex items-center">
+              <FileCode size={16} className="mr-2 text-blue-400" />
+              <span>Arduino Code</span>
+            </div>
           </div>
-          <textarea
-            className="flex-1 bg-gray-800 text-green-400 p-4 font-mono text-sm resize-none outline-none"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            spellCheck={false}
-          />
+          <div 
+            ref={editorRef} 
+            className="flex-1 text-sm resize-none"
+            style={{ fontSize: '14px' }}
+          ></div>
         </div>
       </div>
     </div>
