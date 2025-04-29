@@ -95,7 +95,7 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
       <div className="relative" style={{ width: '170px', height: '220px' }}>
         {/* Use the real hero board image */}
         <img
-          src="/assets/components/hero-board.icon.png"
+          src={heroBoardIconPath}
           alt="HERO Board Component"
           className="w-full h-full object-contain"
         />
