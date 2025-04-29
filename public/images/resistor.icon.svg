@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
+  <line x1="5" y1="20" x2="12" y2="20" stroke="#333" stroke-width="2"/>
+  <rect x="12" y="15" width="16" height="10" fill="#9c27b0" stroke="#333" stroke-width="1.5"/>
+  <line x1="28" y1="20" x2="35" y2="20" stroke="#333" stroke-width="2"/>
+  
+  <!-- Resistor bands -->
+  <rect x="14" y="15" width="2" height="10" fill="#ff9800"/>
+  <rect x="18" y="15" width="2" height="10" fill="#e91e63"/>
+  <rect x="22" y="15" width="2" height="10" fill="#ffc107"/>
+  <rect x="26" y="15" width="1" height="10" fill="#8bc34a"/>
+</svg>

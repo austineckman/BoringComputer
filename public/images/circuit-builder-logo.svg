@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 40" width="180" height="40">
+  <!-- Background with circuit pattern -->
+  <rect x="0" y="0" width="180" height="40" fill="#0c1832" rx="5" ry="5"/>
+  <path d="M5,20 H15 M20,5 V15 M20,25 V35 M25,20 H35" stroke="#2563eb" stroke-width="1.5" fill="none"/>
+  <circle cx="20" cy="20" r="3" fill="#2563eb"/>
+  <path d="M45,5 V35 M45,10 H55 M45,20 H55 M45,30 H55" stroke="#2563eb" stroke-width="1.5" fill="none"/>
+  <path d="M125,10 H135 M145,5 V15 M145,25 V35 M150,20 H160" stroke="#2563eb" stroke-width="1.5" fill="none"/>
+  <circle cx="145" cy="20" r="3" fill="#2563eb"/>
+  
+  <!-- Circuit Builder Text -->
+  <text x="65" y="25" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff">
+    buildr.exe
+  </text>
+</svg>
