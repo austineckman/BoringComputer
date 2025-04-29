@@ -1,17 +1,18 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import BaseComponent from './BaseComponent';
 import CircuitPin from './CircuitPin';
 
-// Import LED image
-const ledImagePath = '/components/led.png';
+// Import LED image directly
+import ledImg from '@assets/led.icon.png';
 
 /**
  * LED Component
  * 
  * An electronic LED component with:
- * - Power input pin
- * - Ground input pin
- * - Visual feedback for power state
+ * - Anode (+) input pin
+ * - Cathode (-) output pin
+ * - Visual feedback when powered
+ * - Accurate pin positioning for consistent connections
  */
 const LED = ({
   id,
@@ -27,20 +28,34 @@ const LED = ({
   const componentRef = useRef(null);
   const [powered, setPowered] = useState(false);
   
-  // Component dimensions
-  const width = 30;
-  const height = 50;
+  // Component dimensions - matches the image aspect ratio
+  const width = 50;
+  const height = 70;
   
   // Handle receiving power
   const updatePowerState = (isOn) => {
     setPowered(isOn);
   };
   
-  // Pin positions relative to component center
-  const pinPositions = {
-    power: { x: 0, y: -height/2 }, // Top center
-    ground: { x: 0, y: height/2 }  // Bottom center
-  };
+  // Pin positions with specific coordinates that match the LED image
+  const pins = [
+    // Anode at top
+    { 
+      id: `${id}-anode`, 
+      label: 'Anode (+)', 
+      pinType: 'input',
+      x: width / 2,
+      y: 5 // Position at top of LED
+    },
+    // Cathode at bottom
+    { 
+      id: `${id}-cathode`, 
+      label: 'Cathode (-)', 
+      pinType: 'output',
+      x: width / 2,
+      y: height - 5 // Position at bottom of LED
+    }
+  ];
   
   return (
     <BaseComponent
@@ -54,44 +69,40 @@ const LED = ({
       onSelect={onSelect}
       isSelected={isSelected}
       canvasRef={canvasRef}
-      componentProps={{ color, powered }}
     >
       <div
         ref={componentRef}
         className="relative w-full h-full flex items-center justify-center"
       >
         {/* LED body */}
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center p-2">
           <img 
-            src={ledImagePath} 
+            src={ledImg} 
             alt="LED" 
-            className="max-w-full max-h-full" 
+            className="max-w-full max-h-full object-contain"
             style={{
-              filter: powered ? `drop-shadow(0 0 4px ${color})` : 'none'
+              filter: powered ? `drop-shadow(0 0 8px ${color}) brightness(1.2)` : 'none',
+              transition: 'filter 0.1s ease',
+              pointerEvents: 'none'
             }}
           />
         </div>
         
         {/* Pins */}
-        <CircuitPin
-          id={`${id}-power`}
-          parentId={id}
-          pinType="input"
-          label="+"
-          position={pinPositions.power}
-          parentRef={componentRef}
-          onPinClick={onPinConnect}
-        />
-        
-        <CircuitPin
-          id={`${id}-ground`}
-          parentId={id}
-          pinType="input"
-          label="-"
-          position={pinPositions.ground}
-          parentRef={componentRef}
-          onPinClick={onPinConnect}
-        />
+        {pins.map(pin => (
+          <CircuitPin
+            key={pin.id}
+            id={pin.id}
+            parentId={id}
+            pinType={pin.pinType}
+            label={pin.label}
+            position={pin}
+            parentRef={componentRef}
+            onPinClick={onPinConnect}
+            color={pin.pinType === 'input' ? '#ff5252' : '#333'} // Red for anode, dark for cathode
+            size={6} // Smaller pin size for LED component
+          />
+        ))}
       </div>
     </BaseComponent>
   );
