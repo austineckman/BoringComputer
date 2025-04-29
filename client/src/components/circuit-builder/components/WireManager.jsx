@@ -414,8 +414,37 @@ const WireManager = ({ canvasRef }) => {
     // Handler for direct pin click events
     const handlePinClickEvent = (e) => {
       const { id } = e.detail;
-      console.log(`Received pinClicked event for ${id}`, e.detail);
-      handlePinClick(id);
+      console.log(`Received pinClicked event for ${id || 'unknown pin'}`, e.detail);
+      
+      // If the ID is not provided, try to extract it from the element's data-pin-id attribute
+      let pinId = id;
+      if (!pinId && e.detail.element) {
+        // Try to extract the pin ID from the element
+        const element = e.detail.element;
+        pinId = element.dataset?.pinId || element.getAttribute('data-pin-id');
+        console.log(`Extracted pin ID from element: ${pinId}`);
+      }
+      
+      if (pinId) {
+        // Register the pin if it's not already registered
+        if (!registeredPins[pinId] && e.detail.element) {
+          console.log(`Auto-registering pin ${pinId} from click event`);
+          setRegisteredPins(prev => ({
+            ...prev,
+            [pinId]: { 
+              id: pinId, 
+              parentId: e.detail.parentId, 
+              type: e.detail.pinType || 'bidirectional', 
+              label: e.detail.label || 'Pin', 
+              element: e.detail.element 
+            }
+          }));
+        }
+        
+        handlePinClick(pinId);
+      } else {
+        console.warn("Could not determine pin ID from event:", e.detail);
+      }
     };
     
     // Handler for wire redrawing (e.g., when components move)
