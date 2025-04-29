@@ -51,49 +51,29 @@ const LEDComponent: React.FC<ComponentProps> = ({
       handleMouseDown={handleMouseDown}
       handleDelete={() => handleDeleteComponent(id)}
     >
-      <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-        {/* LED Package - round 5mm style */}
-        <defs>
-          <radialGradient id={`led-glow-${id}`} cx="0.5" cy="0.5" r="0.5" fx="0.5" fy="0.5">
-            <stop offset="0%" stopColor={color} stopOpacity={ledOpacity} />
-            <stop offset="40%" stopColor={color} stopOpacity={ledOpacity * 0.8} />
-            <stop offset="80%" stopColor={color} stopOpacity={ledOpacity * 0.2} />
-            <stop offset="100%" stopColor={color} stopOpacity="0" />
-          </radialGradient>
-        </defs>
+      <div className="relative w-10 h-10 flex items-center justify-center">
+        {/* Use the real LED image */}
+        <img 
+          src="/images/components/led.icon.png" 
+          alt="LED Component" 
+          className="w-full h-full object-contain"
+          style={{
+            filter: ledOpacity > 0.5 ? `drop-shadow(0 0 5px ${color})` : 'none',
+          }}
+        />
         
-        {/* LED body - epoxy dome */}
-        <ellipse cx="20" cy="15" rx="10" ry="10" fill="#eee" opacity="0.3" />
-        <circle cx="20" cy="20" r="8" fill="#ececec" /> 
-        
-        {/* Inner LED die */}
-        <circle cx="20" cy="20" r="6" fill="#ddd" />
-        <circle cx="20" cy="20" r="4" fill={color} opacity={ledOpacity > 0.3 ? 0.8 : 0.3} />
-        
-        {/* Glowing effect when on */}
+        {/* Overlay colored glow when LED is on */}
         {ledOpacity > 0.5 && (
-          <circle 
-            cx="20" 
-            cy="20" 
-            r="12" 
-            fill={`url(#led-glow-${id})`} 
+          <div 
+            className="absolute inset-0 rounded-full" 
+            style={{
+              backgroundColor: color,
+              opacity: ledOpacity * 0.5,
+              mixBlendMode: 'screen',
+            }}
           />
         )}
-        
-        {/* Leads */}
-        <line x1="16" y1="28" x2="16" y2="38" stroke="#aaa" strokeWidth="1.5" />
-        <line x1="24" y1="28" x2="24" y2="38" stroke="#aaa" strokeWidth="1.5" />
-        
-        {/* Package base */}
-        <rect x="15" y="25" width="10" height="3" rx="1" fill="#333" />
-        
-        {/* Refraction highlight */}
-        <ellipse cx="18" cy="17" rx="2" ry="1" fill="#fff" opacity="0.7" transform="rotate(-20 18 17)" />
-        
-        {/* Polarity indicator (longer lead is anode/positive) */}
-        <text x="14" y="36" fontSize="6" fill="#666">-</text>
-        <text x="22" y="36" fontSize="6" fill="#666">+</text>
-      </svg>
+      </div>
 
       {/* Pin connections */}
       <CircuitPin
