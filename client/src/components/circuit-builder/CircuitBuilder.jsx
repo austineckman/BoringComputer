@@ -59,7 +59,7 @@ const CircuitBuilder = () => {
       type, // Use the component name from componentOptions
       x: randomX,
       y: randomY,
-      rotation: 0,
+      // No rotation property needed - rotation is removed
       props: {
         // Add any component-specific properties
         label: componentInfo.displayName,
@@ -121,7 +121,7 @@ const CircuitBuilder = () => {
           id={component.id}
           initialX={component.x}
           initialY={component.y}
-          initialRotation={component.rotation}
+          initialRotation={0} // Fixed to 0 - no rotation
           onSelect={() => handleSelectComponent(component.id)}
           isSelected={component.id === selectedComponentId}
           canvasRef={canvasRef}
@@ -137,7 +137,7 @@ const CircuitBuilder = () => {
           id={component.id}
           initialX={component.x}
           initialY={component.y}
-          initialRotation={component.rotation}
+          initialRotation={0} // Fixed to 0 - no rotation
           onSelect={() => handleSelectComponent(component.id)}
           isSelected={component.id === selectedComponentId}
           canvasRef={canvasRef}
@@ -154,7 +154,7 @@ const CircuitBuilder = () => {
           id={component.id}
           initialX={component.x}
           initialY={component.y}
-          initialRotation={component.rotation}
+          initialRotation={0} // Fixed to 0 - no rotation
           onSelect={() => handleSelectComponent(component.id)}
           isSelected={component.id === selectedComponentId}
           canvasRef={canvasRef}
@@ -164,15 +164,6 @@ const CircuitBuilder = () => {
           ledGreen={component.props?.ledGreen || 0}
           ledBlue={component.props?.ledBlue || 0}
           commonPin={component.props?.commonPin || 'cathode'}
-          onRotate={(newRotation) => {
-            setComponents(prev => 
-              prev.map(c => 
-                c.id === component.id 
-                  ? { ...c, rotation: newRotation } 
-                  : c
-              )
-            );
-          }}
         />
       );
     }
@@ -184,7 +175,7 @@ const CircuitBuilder = () => {
           id={component.id}
           initialX={component.x}
           initialY={component.y}
-          initialRotation={component.rotation}
+          initialRotation={0} // Fixed to 0 - no rotation
           onSelect={() => handleSelectComponent(component.id)}
           isSelected={component.id === selectedComponentId}
           canvasRef={canvasRef}
@@ -201,7 +192,7 @@ const CircuitBuilder = () => {
           id={component.id}
           initialX={component.x}
           initialY={component.y}
-          initialRotation={component.rotation}
+          initialRotation={0} // Fixed to 0 - no rotation
           onSelect={() => handleSelectComponent(component.id)}
           isSelected={component.id === selectedComponentId}
           canvasRef={canvasRef}
@@ -218,7 +209,7 @@ const CircuitBuilder = () => {
           id={component.id}
           initialX={component.x}
           initialY={component.y}
-          initialRotation={component.rotation}
+          initialRotation={0} // Fixed to 0 - no rotation
           onSelect={() => handleSelectComponent(component.id)}
           isSelected={component.id === selectedComponentId}
           canvasRef={canvasRef}
@@ -235,7 +226,7 @@ const CircuitBuilder = () => {
           id={component.id}
           initialX={component.x}
           initialY={component.y}
-          initialRotation={component.rotation}
+          initialRotation={0} // Fixed to 0 - no rotation
           onSelect={() => handleSelectComponent(component.id)}
           isSelected={component.id === selectedComponentId}
           canvasRef={canvasRef}
@@ -252,7 +243,7 @@ const CircuitBuilder = () => {
           id={component.id}
           initialX={component.x}
           initialY={component.y}
-          initialRotation={component.rotation}
+          initialRotation={0} // Fixed to 0 - no rotation
           onSelect={() => handleSelectComponent(component.id)}
           isSelected={component.id === selectedComponentId}
           canvasRef={canvasRef}
@@ -269,7 +260,7 @@ const CircuitBuilder = () => {
           id={component.id}
           initialX={component.x}
           initialY={component.y}
-          initialRotation={component.rotation}
+          initialRotation={0} // Fixed to 0 - no rotation
           onSelect={() => handleSelectComponent(component.id)}
           isSelected={component.id === selectedComponentId}
           canvasRef={canvasRef}
@@ -287,7 +278,7 @@ const CircuitBuilder = () => {
           id={component.id}
           initialX={component.x}
           initialY={component.y}
-          initialRotation={component.rotation}
+          initialRotation={0} // Fixed to 0 - no rotation
           onSelect={() => handleSelectComponent(component.id)}
           isSelected={component.id === selectedComponentId}
           canvasRef={canvasRef}
@@ -303,7 +294,7 @@ const CircuitBuilder = () => {
           id={component.id}
           initialX={component.x}
           initialY={component.y}
-          initialRotation={component.rotation}
+          initialRotation={0} // Fixed to 0 - no rotation
           onSelect={() => handleSelectComponent(component.id)}
           isSelected={component.id === selectedComponentId}
           canvasRef={canvasRef}
@@ -343,7 +334,7 @@ const CircuitBuilder = () => {
         image={componentDefinition.imagePath}
         x={component.x}
         y={component.y}
-        rotation={component.rotation}
+        rotation={0} // Fixed to 0 - no rotation
         pins={componentDefinition.pinConfig}
         onSelect={handleSelectComponent}
         isSelected={component.id === selectedComponentId}
