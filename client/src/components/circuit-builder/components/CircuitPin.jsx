@@ -62,11 +62,16 @@ const CircuitPin = ({
     
     // Dispatch a global event for the WireManager to handle
     const clickEvent = new CustomEvent('pinClicked', {
-      detail: { id, pinType, parentId }
+      detail: { 
+        id: id,
+        pinType: pinType || 'bidirectional', // Default to bidirectional if not specified
+        parentId: parentId || 'unknown' 
+      }
     });
     document.dispatchEvent(clickEvent);
+    console.log('Dispatched pinClicked event with:', { id, pinType, parentId });
     
-    console.log(`Pin clicked: ${id}`);
+    console.log(`Pin clicked: ${id}, type: ${pinType}, parent: ${parentId}`);
   };
   
   // Handle mouse hover
