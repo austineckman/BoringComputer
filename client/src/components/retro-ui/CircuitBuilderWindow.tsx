@@ -516,28 +516,38 @@ void loop() {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* New Enhanced Circuit Builder */}
-        <div className="flex-1 bg-gray-900 overflow-hidden relative">
+        {/* Main Circuit Builder Component */}
+        <div className="w-full bg-gray-900 overflow-hidden relative">
           <CircuitBuilder />
         </div>
-
-        {/* Code Editor */}
-        <div className="w-2/5 bg-gray-800 border-l border-gray-700 flex flex-col">
-          <div className="p-2 bg-gray-900 text-sm font-bold border-b border-gray-700 flex justify-between items-center">
-            <div className="flex items-center">
-              <FileCode size={16} className="mr-2 text-blue-400" />
-              <span>Arduino Code</span>
-            </div>
+      </div>
+      
+      {/* Bottom Code Editor */}
+      <div className="h-1/3 bg-gray-800 border-t border-gray-700 flex flex-col">
+        <div className="p-2 bg-gray-900 text-sm font-bold border-b border-gray-700 flex justify-between items-center">
+          <div className="flex items-center">
+            <FileCode size={16} className="mr-2 text-blue-400" />
+            <span>Arduino Code</span>
           </div>
-          <textarea 
-            ref={editorRef}
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            className="flex-1 w-full h-full bg-gray-900 text-gray-100 p-4 text-sm resize-none outline-none border-none font-mono"
-            style={{ fontSize: '14px' }}
-            spellCheck="false"
-          ></textarea>
+          <div className="flex items-center space-x-2">
+            <button className="bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded text-xs flex items-center">
+              <Play size={14} className="mr-1" />
+              <span>Run Simulation</span>
+            </button>
+            <button className="bg-green-600 hover:bg-green-700 px-2 py-1 rounded text-xs flex items-center">
+              <Save size={14} className="mr-1" />
+              <span>Save Code</span>
+            </button>
+          </div>
         </div>
+        <textarea 
+          ref={editorRef}
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          className="flex-1 w-full h-full bg-gray-900 text-gray-100 p-4 text-sm resize-none outline-none border-none font-mono"
+          style={{ fontSize: '14px' }}
+          spellCheck="false"
+        ></textarea>
       </div>
     </div>
   );

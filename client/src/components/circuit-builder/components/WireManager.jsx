@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import * as PathlineModule from 'react-svg-pathline';
-import { getRelativePosition } from '../utils/Utils';
 
 // Correctly extract Pathline component based on module structure
 const Pathline = PathlineModule.Pathline || PathlineModule.default || PathlineModule;
@@ -120,12 +119,14 @@ const WireManager = ({ canvasRef }) => {
     
     if (
       (fromPin.pinType === 'output' && toPin.pinType === 'input') ||
-      (fromPin.pinType === 'input' && toPin.pinType === 'output')
+      (fromPin.pinType === 'input' && toPin.pinType === 'output') ||
+      fromPin.pinType === 'bidirectional' || 
+      toPin.pinType === 'bidirectional'
     ) {
       // Determine which is input and which is output
       let from, to;
       
-      if (fromPin.pinType === 'output') {
+      if (fromPin.pinType === 'output' || toPin.pinType === 'input') {
         from = tempWire.fromId;
         to = pinId;
       } else {
@@ -239,11 +240,25 @@ const WireManager = ({ canvasRef }) => {
           const fromPos = getPinPosition(from);
           const toPos = getPinPosition(to);
           
+          // Determine wire color based on pin IDs
+          let wireColor = '#4a5568'; // Default gray
+          
+          // Check pin IDs to determine the type of connection
+          if (from.includes('5v') || from.includes('3v3') || to.includes('5v') || to.includes('3v3')) {
+            wireColor = '#f56565'; // Red for power
+          } else if (from.includes('gnd') || to.includes('gnd')) {
+            wireColor = '#718096'; // Dark gray for ground
+          } else if (from.includes('d') || to.includes('d')) {
+            wireColor = '#4299e1'; // Blue for digital pins
+          } else if (from.includes('a') || to.includes('a')) {
+            wireColor = '#ed8936'; // Orange for analog pins
+          }
+          
           return (
             <g key={id} className="wire-connection">
               <Pathline
                 points={generateWirePath(fromPos, toPos)}
-                stroke="#4a5568"
+                stroke={wireColor}
                 strokeWidth={2}
                 fill="none"
                 r={10}

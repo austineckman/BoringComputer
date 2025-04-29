@@ -1,16 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { generateId } from './utils/Utils';
-import WireManager from './components/WireManager';
+import { nanoid } from 'nanoid';
 import ComponentPalette from './components/ComponentPalette';
-import LED from './components/LED';
-import HeroBoard from './components/HeroBoard';
-
-// Component types mapping to their React components
-const componentTypes = {
-  'LED': LED,
-  'HeroBoard': HeroBoard,
-  // Add more component types as they are implemented
-};
+import WireManager from './components/WireManager';
+import CircuitComponent from './components/CircuitComponent';
 
 /**
  * CircuitBuilder is the main component for building electronic circuits
@@ -20,6 +12,146 @@ const componentTypes = {
  * - Wire management for connecting components
  * - Component properties panel for configuring components
  */
+
+// Helper function to generate unique IDs
+const generateId = () => nanoid(8);
+
+// Define available circuit components
+export const componentOptions = [
+  { 
+    name: 'led', 
+    displayName: 'LED',
+    category: 'output',
+    description: 'Light Emitting Diode',
+    imagePath: '/images/components/led.icon.png',
+    pinConfig: [
+      { id: 'anode', type: 'input', label: '+' },
+      { id: 'cathode', type: 'output', label: '-' }
+    ]
+  },
+  { 
+    name: 'heroboard', 
+    displayName: 'HeroBoard',
+    category: 'controller',
+    description: 'Microcontroller Board',
+    imagePath: '/images/components/hero-board.icon.png', 
+    pinConfig: [
+      { id: 'd0', type: 'bidirectional', label: 'D0' },
+      { id: 'd1', type: 'bidirectional', label: 'D1' },
+      { id: 'd2', type: 'bidirectional', label: 'D2' },
+      { id: 'd3', type: 'bidirectional', label: 'D3' },
+      { id: 'd4', type: 'bidirectional', label: 'D4' },
+      { id: 'd5', type: 'bidirectional', label: 'D5' },
+      { id: 'd6', type: 'bidirectional', label: 'D6' },
+      { id: 'd7', type: 'bidirectional', label: 'D7' },
+      { id: 'd8', type: 'bidirectional', label: 'D8' },
+      { id: 'd9', type: 'bidirectional', label: 'D9' },
+      { id: 'd10', type: 'bidirectional', label: 'D10' },
+      { id: 'd11', type: 'bidirectional', label: 'D11' },
+      { id: 'd12', type: 'bidirectional', label: 'D12' },
+      { id: 'd13', type: 'bidirectional', label: 'D13' },
+      { id: 'a0', type: 'input', label: 'A0' },
+      { id: 'a1', type: 'input', label: 'A1' },
+      { id: 'a2', type: 'input', label: 'A2' },
+      { id: 'a3', type: 'input', label: 'A3' },
+      { id: 'a4', type: 'input', label: 'A4' },
+      { id: 'a5', type: 'input', label: 'A5' },
+      { id: '5v', type: 'output', label: '5V' },
+      { id: '3v3', type: 'output', label: '3.3V' },
+      { id: 'gnd', type: 'input', label: 'GND' },
+      { id: 'rst', type: 'input', label: 'RST' }
+    ]
+  },
+  { 
+    name: 'resistor', 
+    displayName: 'Resistor',
+    category: 'passive',
+    description: 'Current Limiting Resistor',
+    imagePath: '/images/components/resistor.icon.png',
+    pinConfig: [
+      { id: 'pin1', type: 'bidirectional', label: '1' },
+      { id: 'pin2', type: 'bidirectional', label: '2' }
+    ]
+  },
+  { 
+    name: 'rgbled', 
+    displayName: 'RGB LED',
+    category: 'output',
+    description: 'Red-Green-Blue LED',
+    imagePath: '/images/components/rgb-led.icon.png',
+    pinConfig: [
+      { id: 'common', type: 'input', label: 'COM' },
+      { id: 'red', type: 'output', label: 'R' },
+      { id: 'green', type: 'output', label: 'G' },
+      { id: 'blue', type: 'output', label: 'B' }
+    ]
+  },
+  { 
+    name: 'photoresistor', 
+    displayName: 'Photoresistor',
+    category: 'sensor',
+    description: 'Light Sensor',
+    imagePath: '/images/components/photoresistor.icon.png',
+    pinConfig: [
+      { id: 'pin1', type: 'bidirectional', label: '1' },
+      { id: 'pin2', type: 'bidirectional', label: '2' }
+    ]
+  },
+  { 
+    name: 'oled-display', 
+    displayName: 'OLED Display',
+    category: 'output',
+    description: 'Small OLED Screen',
+    imagePath: '/images/components/oled-display.icon.png',
+    pinConfig: [
+      { id: 'vcc', type: 'input', label: 'VCC' },
+      { id: 'gnd', type: 'output', label: 'GND' },
+      { id: 'scl', type: 'input', label: 'SCL' },
+      { id: 'sda', type: 'input', label: 'SDA' }
+    ]
+  },
+  { 
+    name: 'rotary-encoder', 
+    displayName: 'Rotary Encoder',
+    category: 'input',
+    description: 'Rotary Input Control',
+    imagePath: '/images/components/rotary-encoder.icon.png',
+    pinConfig: [
+      { id: 'clk', type: 'output', label: 'CLK' },
+      { id: 'dt', type: 'output', label: 'DT' },
+      { id: 'sw', type: 'output', label: 'SW' },
+      { id: 'vcc', type: 'input', label: 'VCC' },
+      { id: 'gnd', type: 'input', label: 'GND' }
+    ]
+  },
+  { 
+    name: 'dip-switch', 
+    displayName: 'DIP Switch',
+    category: 'input',
+    description: '3-Way DIP Switch',
+    imagePath: '/images/components/dip-switch-3.icon.png',
+    pinConfig: [
+      { id: 'com', type: 'input', label: 'COM' },
+      { id: 'sw1', type: 'output', label: 'SW1' },
+      { id: 'sw2', type: 'output', label: 'SW2' },
+      { id: 'sw3', type: 'output', label: 'SW3' }
+    ]
+  },
+  { 
+    name: 'segmented-display', 
+    displayName: '7-Segment Display',
+    category: 'output',
+    description: 'Numeric Display',
+    imagePath: '/images/components/segmented-display.icon.png',
+    pinConfig: [
+      { id: 'vcc', type: 'input', label: 'VCC' },
+      { id: 'gnd', type: 'input', label: 'GND' },
+      { id: 'din', type: 'input', label: 'DIN' },
+      { id: 'clk', type: 'input', label: 'CLK' },
+      { id: 'cs', type: 'input', label: 'CS' }
+    ]
+  }
+];
 const CircuitBuilder = () => {
   // State for tracking components and connections
   const [components, setComponents] = useState([]);
@@ -92,25 +224,37 @@ const CircuitBuilder = () => {
   
   // Render a component based on its type
   const renderComponent = (component) => {
-    const ComponentToRender = componentTypes[component.type];
+    // Find the component definition from the options
+    const componentDefinition = componentOptions.find(opt => opt.name === component.type);
     
-    if (!ComponentToRender) {
+    if (!componentDefinition) {
       console.warn(`Unknown component type: ${component.type}`);
       return null;
     }
     
     return (
-      <ComponentToRender
+      <CircuitComponent
         key={component.id}
         id={component.id}
-        initialX={component.x}
-        initialY={component.y}
-        initialRotation={component.rotation}
+        type={componentDefinition.displayName}
+        image={componentDefinition.imagePath}
+        x={component.x}
+        y={component.y}
+        rotation={component.rotation}
+        pins={componentDefinition.pinConfig.map(pin => ({
+          ...pin,
+          position: {
+            // Simple pin positioning - can be improved for more complex components
+            x: pin.id.includes('left') ? 0 : pin.id.includes('right') ? 1 : 0.5,
+            y: pin.id.includes('top') ? 0 : pin.id.includes('bottom') ? 1 : 0.5,
+          }
+        }))}
         onSelect={handleSelectComponent}
         isSelected={component.id === selectedComponentId}
-        canvasRef={canvasRef}
         onPinConnect={handlePinConnect}
-        {...component.props}
+        canvasRef={canvasRef}
+        width={componentDefinition.name === 'heroboard' ? 200 : 100}
+        height={componentDefinition.name === 'heroboard' ? 150 : 100}
       />
     );
   };
