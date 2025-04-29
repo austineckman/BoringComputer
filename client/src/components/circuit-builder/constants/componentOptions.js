@@ -13,6 +13,7 @@ import segmentedDisplayImg from '@assets/segmented-display.icon.png';
 import customKeypadImg from '@assets/custom-keypad.icon.png';
 import rotaryEncoderImg from '@assets/rotary-encoder.icon.png';
 import dipSwitchImg from '@assets/dip-switch-3.icon.png';
+import buzzerImg from '@assets/buzzer.icon.svg';
 
 // List of available components with their properties and pin configurations
 export const componentOptions = [
@@ -110,8 +111,7 @@ export const componentOptions = [
     displayName: 'Buzzer',
     description: 'Makes sound',
     category: 'outputs',
-    // Use a direct URL to buzzer SVG icon
-    imagePath: '/images/buzzer.icon.svg',
+    imagePath: buzzerImg,
     pinConfig: [
       { id: 'positive', type: 'input', label: 'Positive (+)' },
       { id: 'negative', type: 'output', label: 'Negative (-)' }
