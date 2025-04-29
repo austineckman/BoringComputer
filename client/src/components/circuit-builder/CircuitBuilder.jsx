@@ -7,9 +7,11 @@ import CircuitComponent from './components/CircuitComponent';
 // Import specialized component implementations
 import HeroBoard from './components/HeroBoard';
 import LED from './components/LED';
-import RgbLed from './components/RgbLed';
+import RGBLED from './components/RGBLED';
 import Resistor from './components/Resistor';
 import Photoresistor from './components/Photoresistor';
+import Buzzer from './components/Buzzer';
+import RotaryEncoder from './components/RotaryEncoder';
 
 /**
  * Main Circuit Builder component
@@ -140,7 +142,7 @@ const CircuitBuilder = () => {
     
     if (component.type === 'rgb-led') {
       return (
-        <RgbLed
+        <RGBLED
           key={component.id}
           id={component.id}
           initialX={component.x}
@@ -185,6 +187,40 @@ const CircuitBuilder = () => {
           canvasRef={canvasRef}
           onPinConnect={handlePinConnect}
           lightLevel={component.props?.lightLevel || 50}
+        />
+      );
+    }
+    
+    if (component.type === 'buzzer') {
+      return (
+        <Buzzer
+          key={component.id}
+          id={component.id}
+          initialX={component.x}
+          initialY={component.y}
+          initialRotation={component.rotation}
+          onSelect={() => handleSelectComponent(component.id)}
+          isSelected={component.id === selectedComponentId}
+          canvasRef={canvasRef}
+          onPinConnect={handlePinConnect}
+          hasSignal={component.props?.hasSignal || false}
+        />
+      );
+    }
+    
+    if (component.type === 'rotary-encoder') {
+      return (
+        <RotaryEncoder
+          key={component.id}
+          id={component.id}
+          initialX={component.x}
+          initialY={component.y}
+          initialRotation={component.rotation}
+          onSelect={() => handleSelectComponent(component.id)}
+          isSelected={component.id === selectedComponentId}
+          canvasRef={canvasRef}
+          onPinConnect={handlePinConnect}
+          stepSize={component.props?.stepSize || 1}
         />
       );
     }
