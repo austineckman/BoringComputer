@@ -1,12 +1,21 @@
-import { useRef } from 'react';
-import BaseComponent from './BaseComponent';
-import CircuitPin from './CircuitPin';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  ReactPhotoresistor
+} from "../lib/inventr-component-lib.es.js";
+import Moveable from "react-moveable";
+import { createPortal } from "react-dom";
 
-// Import Photoresistor image directly
-import photoresistorImg from '@assets/photoresistor.icon.png';
+// Define MOVE_SETTINGS to match what the original code expects
+const MOVE_SETTINGS = {
+  DRAGGABLE: true,
+  SNAPPABLE: true,
+  THROTTLE_DRAG: 0,
+  ROTATABLE: true
+};
 
 /**
  * Photoresistor Component
+ * Using the Wokwi implementation from invent-share-master
  * 
  * A light-sensitive resistor (LDR) with:
  * - Two connection pins
@@ -24,87 +33,193 @@ const Photoresistor = ({
   onPinConnect,
   lightLevel = 50 // Default light level (0-100)
 }) => {
-  const componentRef = useRef(null);
-  
-  // Component dimensions
-  const width = 80;
-  const height = 40;
-  
-  // Calculate resistance based on light level (simplified for simulation)
-  // Lower light = higher resistance
-  const resistance = Math.round((100 - lightLevel) * 10); // 0-1000 Ohms
-  
-  // Pin positions with specific coordinates
-  const pins = [
-    // Left pin
-    { 
-      id: `${id}-pin1`, 
-      label: 'Pin 1', 
-      pinType: 'bidirectional',
-      x: 5,
-      y: height / 2
-    },
-    // Right pin
-    { 
-      id: `${id}-pin2`, 
-      label: 'Pin 2', 
-      pinType: 'bidirectional',
-      x: width - 5,
-      y: height / 2
+  const targetRef = useRef();
+  const moveableRef = useRef();
+  const oldDataRef = useRef();
+
+  const [isComponentMenuShowing, setIsComponentMenuShowing] = useState(false);
+  const [lightValue, setLightValue] = useState(lightLevel);
+  const [rotationAngle, setRotationAngle] = useState(initialRotation);
+  const [pinInfo, setPinInfo] = useState();
+  const [isDragged, setIsDragged] = useState(false);
+  const [posTop, setPosTop] = useState(initialY);
+  const [posLeft, setPosLeft] = useState(initialX);
+  const [initPosTop, setInitPosTop] = useState(initialY);
+  const [initPosLeft, setInitPosLeft] = useState(initialX);
+
+  // Create a component data structure that matches what the original code expects
+  const componentData = {
+    id,
+    type: 'photoresistor',
+    attrs: {
+      rotate: rotationAngle,
+      top: posTop,
+      left: posLeft,
+      zIndex: 10,
+      value: lightValue
     }
-  ];
-  
+  };
+
+  // Handle drag or rotate
+  const onDragOrRotate = ({ target, beforeTranslate, beforeRotate }) => {
+    if (beforeTranslate) {
+      const [x, y] = beforeTranslate;
+      setPosTop(y);
+      setPosLeft(x);
+    }
+    
+    if (beforeRotate !== undefined) {
+      setRotationAngle(beforeRotate);
+    }
+  };
+
+  // Show menu when selected
+  useEffect(() => {
+    setIsComponentMenuShowing(isSelected);
+  }, [isSelected]);
+
+  // Rotate component when rotation angle is changed
+  useEffect(() => {
+    if (moveableRef.current) {
+      moveableRef.current.request("rotatable", { rotate: rotationAngle }, true);
+      triggerRedraw();
+    }
+  }, [moveableRef.current, rotationAngle]);
+
+  // Update position when dragged
+  useEffect(() => {
+    triggerRedraw();
+  }, [pinInfo, posTop, posLeft]);
+
+  const onPinInfoChange = (e) => {
+    setPinInfo(e.detail);
+  }
+
+  // Trigger redraw function similar to the original
+  const triggerRedraw = () => {
+    // This simulates the original triggerRedraw function
+    if (targetRef.current) {
+      const newTransform = `translate(${posLeft}px, ${posTop}px)`;
+      targetRef.current.style.transform = newTransform;
+    }
+  };
+
+  // Rotate the handle by 90 degrees
+  const handleRotate = () => {
+    setRotationAngle((rotationAngle + 90) % 360);
+  };
+
+  // Handle pin click
+  const handlePinClicked = (e) => {
+    if (onPinConnect) {
+      const pinId = e.detail.pinId;
+      const pinType = e.detail.pinType;
+      onPinConnect(pinId, pinType, id);
+    }
+  };
+
+  // Create context menu portal target if it doesn't exist
+  useEffect(() => {
+    if (!document.querySelector('#component-context-menu')) {
+      const menuDiv = document.createElement('div');
+      menuDiv.id = 'component-context-menu';
+      menuDiv.style.position = 'absolute';
+      menuDiv.style.zIndex = '9999';
+      document.body.appendChild(menuDiv);
+    }
+  }, []);
+
   return (
-    <BaseComponent
-      id={id}
-      type="Photoresistor"
-      initialX={initialX}
-      initialY={initialY}
-      initialRotation={initialRotation}
-      width={width}
-      height={height}
-      onSelect={onSelect}
-      isSelected={isSelected}
-      canvasRef={canvasRef}
-    >
-      <div
-        ref={componentRef}
-        className="relative w-full h-full flex items-center justify-center"
-      >
-        {/* Photoresistor body */}
-        <div className="absolute inset-0 flex items-center justify-center p-2">
-          <img 
-            src={photoresistorImg} 
-            alt="Photoresistor" 
-            className="max-w-full max-h-full object-contain"
-            style={{ pointerEvents: 'none' }}
-          />
-        </div>
-        
-        {/* Resistance value display */}
-        <div className="absolute bottom-0 inset-x-0 flex items-center justify-center">
-          <div className="text-xs font-mono bg-white bg-opacity-70 px-1 rounded">
-            {resistance}Ω
+    <>
+      <Moveable
+        ref={moveableRef}
+        target={targetRef}
+        draggable={MOVE_SETTINGS.DRAGGABLE}
+        snappable={MOVE_SETTINGS.SNAPPABLE}
+        throttleDrag={MOVE_SETTINGS.THROTTLE_DRAG}
+        rotatable={MOVE_SETTINGS.ROTATABLE}
+        onDrag={onDragOrRotate}
+        onRotate={onDragOrRotate}
+        onDragStart={() => setIsDragged(true)}
+        onDragEnd={() => setIsDragged(false)}
+      ></Moveable>
+      
+      <ReactPhotoresistor
+        id={id}
+        className="min-w-min cursor-pointer absolute"
+        ref={targetRef}
+        isActive={isSelected}
+        isDragged={isDragged}
+        onPinClicked={handlePinClicked}
+        onPininfoChange={(e) => onPinInfoChange(e)}
+        rotationTransform={rotationAngle}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          if (onSelect) onSelect(id);
+        }}
+        style={{
+          transform: `translate(${initPosLeft}px, ${initPosTop}px)`,
+          zIndex: isDragged ? 99999 : 10
+        }}
+        value={lightValue}
+        width="36px"
+      ></ReactPhotoresistor>
+
+      {isComponentMenuShowing && isSelected && createPortal(
+        <div className="bg-gray-800 rounded shadow-lg p-2 text-white absolute">
+          <div className="mb-3">
+            <label htmlFor="light-level" className="block text-sm font-medium mb-1">
+              Light Intensity
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={lightValue}
+                onChange={(e) => setLightValue(parseInt(e.target.value))}
+                className="w-32"
+              />
+              <span className="text-xs min-w-[30px] text-right">{lightValue}%</span>
+            </div>
+            <div className="text-xs text-gray-400 mt-1">
+              Resistance: ~{Math.round((100 - lightValue) * 10)}Ω
+            </div>
           </div>
-        </div>
-        
-        {/* Pins */}
-        {pins.map(pin => (
-          <CircuitPin
-            key={pin.id}
-            id={pin.id}
-            parentId={id}
-            pinType={pin.pinType}
-            label={pin.label}
-            position={pin}
-            parentRef={componentRef}
-            onPinClick={onPinConnect}
-            color="#4a9d5e" // Green for photoresistor pins
-            size={6}
-          />
-        ))}
-      </div>
-    </BaseComponent>
+          
+          <div className="flex gap-2">
+            <button
+              onClick={handleRotate}
+              className="p-1 bg-blue-600 rounded hover:bg-blue-700"
+              title="Rotate"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+              </svg>
+            </button>
+            
+            <button
+              onClick={() => {
+                if (onSelect) onSelect(null);
+                const customEvent = new CustomEvent('deleteComponent', {
+                  detail: { id }
+                });
+                document.dispatchEvent(customEvent);
+              }}
+              className="p-1 bg-red-600 rounded hover:bg-red-700"
+              title="Delete"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                <path fillRule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+              </svg>
+            </button>
+          </div>
+        </div>,
+        document.querySelector('#component-context-menu')
+      )}
+    </>
   );
 };
 
