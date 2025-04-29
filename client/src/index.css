@@ -5,8 +5,10 @@
 @tailwind utilities;
 
 /* Custom styles for circuit builder */
+/* Hide all Moveable component selection indicators */
 .moveable-no-border .moveable-line, 
-.moveable-no-border .moveable-control {
+.moveable-no-border .moveable-control,
+.moveable-no-border .moveable-direction {
   display: none !important;
 }
 
@@ -14,11 +16,31 @@
 .moveable-control-box {
   --moveable-color: transparent !important;
   border-color: transparent !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 .moveable-line {
   background-color: transparent !important;
   border-color: transparent !important;
+  display: none !important;
+}
+
+/* Hide all moveable controls */
+.moveable-origin,
+.moveable-direction,
+.moveable-line,
+.moveable-rotation,
+.moveable-control {
+  display: none !important;
+}
+
+/* Universal selector to hide everything from Moveable */
+[class*="moveable"] {
+  border-color: transparent !important;
+  --moveable-color: transparent !important;
 }
 
 /* CSS animations for loot box system */
