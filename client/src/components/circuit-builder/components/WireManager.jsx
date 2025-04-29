@@ -29,23 +29,10 @@ const WireManager = ({ canvasRef }) => {
     };
   }, [canvasRef]);
   
-  // Get wire color based on connection types
+  // Get wire color based on connection types - Use red as default as per Wokwi
   const getWireColor = useCallback((sourceType, targetType) => {
-    // Power connections (VCC, GND, etc.)
-    if (
-      (sourceType === 'output' && targetType === 'input') ||
-      (sourceType === 'input' && targetType === 'output')
-    ) {
-      return '#ef4444'; // Red - power connections
-    }
-    
-    // Signal connections
-    if (sourceType === 'bidirectional' || targetType === 'bidirectional') {
-      return '#3b82f6'; // Blue - bidirectional signals
-    }
-    
-    // Default color
-    return '#10b981'; // Green - general signal
+    // Always return red for all wires as per requirement
+    return '#ef4444'; // Red - for all wires like Wokwi
   }, []);
   
   // Get wire style based on connection types - Wokwi style
@@ -92,7 +79,7 @@ const WireManager = ({ canvasRef }) => {
     };
   }, [getWireColor]);
   
-  // Calculate SVG path string for a wire following Wokwi's implementation
+  // Generate a straight wire path like Wokwi
   const getWirePath = useCallback((sourcePos, targetPos) => {
     // Ensure we have valid positions
     if (!sourcePos || !targetPos) {
@@ -100,62 +87,8 @@ const WireManager = ({ canvasRef }) => {
       return `M 0,0`;
     }
     
-    const dx = targetPos.x - sourcePos.x;
-    const dy = targetPos.y - sourcePos.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Calculate a nice curve that follows Wokwi's wire appearance
-    // We'll use multiple segments for better control over the curve shape
-    
-    // For very short connections, use a simple curve
-    if (distance < 30) {
-      return `M${sourcePos.x},${sourcePos.y} Q${(sourcePos.x + targetPos.x)/2},${(sourcePos.y + targetPos.y)/2} ${targetPos.x},${targetPos.y}`;
-    }
-    
-    // Determine if this is primarily horizontal, vertical, or diagonal
-    const isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.5; 
-    const isVertical = Math.abs(dy) > Math.abs(dx) * 1.5;
-    
-    // Calculate control points with consideration for the circuit board grid layout
-    // These offsets create the nice curved wires seen in Wokwi
-    
-    // For horizontal-ish wires
-    if (isHorizontal) {
-      const midX = sourcePos.x + dx / 2;
-      const controlDist = Math.min(Math.abs(dx) / 4, 40);
-      
-      return `M${sourcePos.x},${sourcePos.y} `+
-             `C${sourcePos.x + controlDist},${sourcePos.y} `+
-             `${midX - controlDist},${targetPos.y} `+ 
-             `${midX},${targetPos.y} `+
-             `S${targetPos.x - controlDist},${targetPos.y} `+
-             `${targetPos.x},${targetPos.y}`;
-    }
-    
-    // For vertical-ish wires
-    if (isVertical) {
-      const midY = sourcePos.y + dy / 2;
-      const controlDist = Math.min(Math.abs(dy) / 4, 40);
-      
-      return `M${sourcePos.x},${sourcePos.y} `+
-             `C${sourcePos.x},${sourcePos.y + controlDist} `+
-             `${targetPos.x},${midY - controlDist} `+ 
-             `${targetPos.x},${midY} `+
-             `S${targetPos.x},${targetPos.y - controlDist} `+
-             `${targetPos.x},${targetPos.y}`;
-    }
-    
-    // For diagonal connections, create a curve with a 45° segment in the middle
-    const midX = sourcePos.x + dx / 2;
-    const midY = sourcePos.y + dy / 2;
-    const controlLen = distance / 4;  // Control point distance as fraction of total distance
-    
-    return `M${sourcePos.x},${sourcePos.y} `+
-           `C${sourcePos.x + Math.sign(dx) * controlLen},${sourcePos.y} `+
-           `${midX - Math.sign(dx) * controlLen/2},${midY - Math.sign(dy) * controlLen/2} `+
-           `${midX},${midY} `+
-           `S${targetPos.x - Math.sign(dx) * controlLen},${targetPos.y} `+
-           `${targetPos.x},${targetPos.y}`;
+    // Simple straight line from source pin to target pin - exactly like Wokwi
+    return `M${sourcePos.x},${sourcePos.y} L${targetPos.x},${targetPos.y}`;
   }, []);
   
   // Handle pin clicks - create or finish a wire - defined with useCallback to avoid recreating on every render
