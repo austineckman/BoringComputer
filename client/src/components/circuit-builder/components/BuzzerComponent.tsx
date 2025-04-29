@@ -1,70 +1,138 @@
-import React, { useState, useEffect } from 'react';
-import BaseComponent from '../BaseComponent';
-import { ComponentData } from '../ComponentGenerator';
+import React from 'react';
+import BaseComponent from './BaseComponent';
+import CircuitPin from '../CircuitPin';
+import { ComponentProps } from '../ComponentGenerator';
 
-interface BuzzerComponentProps {
-  componentData: ComponentData;
-  onPinClicked: (pinId: string) => void;
-  isActive: boolean;
-  handleMouseDown: (id: string, isActive: boolean) => void;
-  handleDeleteComponent: (id: string) => void;
-}
-
-const BuzzerComponent: React.FC<BuzzerComponentProps> = (props) => {
-  const { componentData } = props;
-  const [hasSignal, setHasSignal] = useState(componentData.attrs.hasSignal || false);
+const BuzzerComponent: React.FC<ComponentProps> = ({
+  componentData,
+  onPinClicked,
+  isActive,
+  handleMouseDown,
+  handleDeleteComponent
+}) => {
+  const { id, attrs } = componentData;
+  const { rotate = 0, top, left, hasSignal = false } = attrs;
   
-  // Update internal state when component data changes
-  useEffect(() => {
-    setHasSignal(componentData.attrs.hasSignal || false);
-  }, [componentData.attrs.hasSignal]);
+  // Calculate pin positions based on rotation
+  const pinPositions = {
+    0: { // Default horizontal orientation
+      pin1: { x: -15, y: 0 }, // Left pin (positive)
+      pin2: { x: 15, y: 0 },  // Right pin (negative)
+    },
+    90: { // Vertical orientation
+      pin1: { x: 0, y: -15 }, // Top pin (positive)
+      pin2: { x: 0, y: 15 },  // Bottom pin (negative)
+    },
+    180: { // Horizontal flipped
+      pin1: { x: 15, y: 0 },  // Right pin (positive)
+      pin2: { x: -15, y: 0 }, // Left pin (negative)
+    },
+    270: { // Vertical flipped
+      pin1: { x: 0, y: 15 },  // Bottom pin (positive)
+      pin2: { x: 0, y: -15 }, // Top pin (negative)
+    }
+  };
   
-  // Define pins for Buzzer
-  const definePins = () => {
-    return [
-      { id: 'positive', x: 17, y: 40, label: '+ (VCC)' },
-      { id: 'negative', x: 33, y: 40, label: '- (GND)' }
-    ];
+  // Get current rotation's pin positions
+  const currentPins = pinPositions[rotate as keyof typeof pinPositions] || pinPositions[0];
+  
+  // Animation for the active buzzer
+  const [animationState, setAnimationState] = React.useState(0);
+  
+  React.useEffect(() => {
+    if (hasSignal) {
+      const interval = setInterval(() => {
+        setAnimationState(state => (state + 1) % 4);
+      }, 200);
+      return () => clearInterval(interval);
+    } else {
+      setAnimationState(0);
+    }
+  }, [hasSignal]);
+  
+  // Visualization for sound waves
+  const getSoundWavePath = () => {
+    if (!hasSignal) return null;
+    
+    const waves = [];
+    const baseRadius = 8 + animationState * 2;
+    
+    for (let i = 0; i < 3; i++) {
+      const radius = baseRadius + i * 5;
+      const opacity = 1 - (i * 0.25 + animationState * 0.1);
+      waves.push(
+        <circle 
+          key={`wave-${i}`}
+          cx="0" 
+          cy="0" 
+          r={radius} 
+          fill="none" 
+          stroke="#3b82f6" 
+          strokeWidth="1" 
+          strokeDasharray="3,2"
+          opacity={opacity}
+        />
+      );
+    }
+    
+    return waves;
   };
   
   return (
-    <BaseComponent {...props} connectedPins={[]}>
-      <div className="relative w-50 h-50 flex items-center justify-center">
+    <BaseComponent
+      id={id}
+      left={left}
+      top={top}
+      rotate={rotate}
+      width={40}
+      height={40}
+      isActive={isActive}
+      handleMouseDown={handleMouseDown}
+      handleDelete={() => handleDeleteComponent(id)}
+    >
+      <svg width="40" height="40" viewBox="-20 -20 40 40" xmlns="http://www.w3.org/2000/svg">
         {/* Buzzer body */}
-        <div className="absolute w-40 h-40 rounded-full bg-gray-800 border border-gray-700 shadow-lg"></div>
+        <circle cx="0" cy="0" r="10" fill="#333" stroke="#222" strokeWidth="0.5" />
+        <circle cx="0" cy="0" r="8" fill="#222" />
+        <circle cx="0" cy="0" r="6" fill={hasSignal ? "#444" : "#333"} />
+        <circle cx="0" cy="0" r="2" fill={hasSignal ? "#666" : "#444"} />
         
-        {/* Buzzer center */}
-        <div className="absolute w-20 h-20 rounded-full bg-gray-900 border border-gray-700"></div>
+        {/* Sound hole pattern */}
+        <path 
+          d="M0,0 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" 
+          fill="none" 
+          stroke="#555" 
+          strokeWidth="0.5"
+          strokeDasharray="2,2" 
+        />
         
-        {/* Sound waves (only show when active) */}
-        {hasSignal && (
-          <>
-            <div 
-              className="absolute w-50 h-50 rounded-full border-2 border-yellow-500 opacity-0"
-              style={{ animation: 'soundWave 1.5s infinite' }}
-            ></div>
-            <div 
-              className="absolute w-60 h-60 rounded-full border-2 border-yellow-500 opacity-0"
-              style={{ animation: 'soundWave 1.5s infinite 0.2s' }}
-            ></div>
-            <div 
-              className="absolute w-70 h-70 rounded-full border-2 border-yellow-500 opacity-0"
-              style={{ animation: 'soundWave 1.5s infinite 0.4s' }}
-            ></div>
-          </>
-        )}
+        {/* Sound waves animation */}
+        {getSoundWavePath()}
         
-        {/* Buzzer label */}
-        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 text-xs font-mono font-semibold">
-          Buzzer
-        </div>
+        {/* Leads */}
+        <line x1="-15" y1="0" x2="-10" y2="0" stroke="#999" strokeWidth="1.5" />
+        <line x1="10" y1="0" x2="15" y2="0" stroke="#999" strokeWidth="1.5" />
         
-        {/* + and - markings */}
-        <div className="absolute top-[27px] left-[12px] text-sm font-bold text-white">+</div>
-        <div className="absolute top-[27px] right-[12px] text-sm font-bold text-white">-</div>
-      </div>
+        {/* Polarity indicator (positive) */}
+        <circle cx="-12" cy="3" r="1" fill="#999" />
+        <text x="-12" y="2" fontSize="3" textAnchor="middle" fill="#999">+</text>
+      </svg>
       
-      {/* CSS for animations would go here in a real implementation */}
+      {/* Connection pins */}
+      <CircuitPin
+        id={`${id}-pin1`}
+        x={20 + currentPins.pin1.x}
+        y={20 + currentPins.pin1.y}
+        onClick={() => onPinClicked(`${id}-pin1`)}
+        color="#ff6666"  // red for positive terminal
+      />
+      <CircuitPin
+        id={`${id}-pin2`}
+        x={20 + currentPins.pin2.x}
+        y={20 + currentPins.pin2.y}
+        onClick={() => onPinClicked(`${id}-pin2`)}
+        color="#aaaaaa"  // gray for negative terminal
+      />
     </BaseComponent>
   );
 };

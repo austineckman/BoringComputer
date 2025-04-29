@@ -194,16 +194,20 @@ const PlaceholderComponent: React.FC<ComponentProps> = ({
 import LEDComponent from './components/LEDComponent';
 import RGBLEDComponent from './components/RGBLEDComponent';
 import HeroBoardComponent from './components/HeroBoardComponent';
+import ResistorComponent from './components/ResistorComponent';
+import PhotoresistorComponent from './components/PhotoresistorComponent';
+import BuzzerComponent from './components/BuzzerComponent';
+import BreadboardMiniComponent from './components/BreadboardMiniComponent';
 
 // Component map with real implementations where available
 export const componentMap: Record<string, React.FC<ComponentProps>> = {
   'led': LEDComponent,
   'rgb-led': RGBLEDComponent,
-  'resistor': PlaceholderComponent,
+  'resistor': ResistorComponent,
   'hero-board': HeroBoardComponent,
-  'buzzer': PlaceholderComponent, 
-  'photoresistor': PlaceholderComponent,
-  'breadboard-mini': PlaceholderComponent
+  'buzzer': BuzzerComponent, 
+  'photoresistor': PhotoresistorComponent,
+  'breadboard-mini': BreadboardMiniComponent
 };
 
 // Utility function to create a new component with default attributes
