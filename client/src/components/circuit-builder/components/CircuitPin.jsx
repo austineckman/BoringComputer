@@ -138,7 +138,7 @@ const CircuitPin = ({
   return (
     <div
       ref={pinRef}
-      className="absolute rounded-full flex items-center justify-center pin-connection-point"
+      className="absolute rounded-full flex items-center justify-center pin-connection-point relative group"
       style={{
         width: `${size}px`,
         height: `${size}px`,
@@ -158,6 +158,7 @@ const CircuitPin = ({
       data-pin-id={id}
       data-pin-type={pinType}
       data-parent-id={parentId}
+      data-pin-label={label || id}
       data-testid={`pin-${id}`}
     >
       {/* Pin dot center */}
@@ -171,19 +172,21 @@ const CircuitPin = ({
         }}
       />
       
-      {/* Label shown on hover */}
-      {isHovered && (
-        <div 
-          className="absolute bg-gray-800 text-white text-xs px-1 py-0.5 rounded z-20 whitespace-nowrap"
-          style={{
-            ...getLabelStyle(),
-            pointerEvents: 'none',
-            opacity: 0.9
-          }}
-        >
-          {label || 'Pin'}
-        </div>
-      )}
+      {/* Tooltip element - always present but only visible on hover */}
+      <div 
+        className={`absolute bg-gray-800 text-white text-xs px-2 py-1 rounded z-50 whitespace-nowrap shadow-lg transition-opacity duration-200 ${
+          isHovered ? 'opacity-100' : 'opacity-0'
+        }`}
+        style={{
+          ...getLabelStyle(),
+          pointerEvents: 'none',
+          minWidth: '40px',
+          textAlign: 'center',
+          transform: 'translateY(-5px)'
+        }}
+      >
+        {label || id || 'Pin'}
+      </div>
     </div>
   );
 };
