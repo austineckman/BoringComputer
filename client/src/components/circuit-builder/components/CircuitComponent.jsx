@@ -440,7 +440,7 @@ const CircuitComponent = ({
           <div
             key={pin.id}
             id={`${id}-${pin.id}`}
-            className={`circuit-pin absolute w-5 h-5 rounded-full transform -translate-x-1/2 -translate-y-1/2 cursor-crosshair border-2 shadow-md ${
+            className={`circuit-pin absolute w-5 h-5 rounded-full transform -translate-x-1/2 -translate-y-1/2 cursor-crosshair border-2 shadow-md group ${
               pin.type === 'input' ? 'bg-green-500 border-green-700' : 
               pin.type === 'output' ? 'bg-red-500 border-red-700' : 
               'bg-blue-500 border-blue-700' // bidirectional
@@ -453,8 +453,8 @@ const CircuitComponent = ({
             onClick={(e) => handlePinClick(pin.id, pin.type, e)}
             title={pin.label || pin.id}
           >
-            {/* Pin hover tooltip */}
-            <div className="pin-tooltip absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-1 py-0.5 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">
+            {/* Pin tooltip - only shown on hover */}
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-1 py-0.5 bg-gray-900 text-white text-xs rounded whitespace-nowrap z-50 pointer-events-none hidden group-hover:block">
               {pin.label || pin.id}
             </div>
           </div>
