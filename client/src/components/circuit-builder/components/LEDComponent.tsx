@@ -2,6 +2,7 @@ import React from 'react';
 import BaseComponent from '../components/BaseComponent';
 import CircuitPin from '../CircuitPin';
 import { ComponentProps } from '../ComponentGenerator';
+import ledIconPath from '../../../assets/components/led.icon.png';
 
 const LEDComponent: React.FC<ComponentProps> = ({
   componentData,
@@ -54,7 +55,7 @@ const LEDComponent: React.FC<ComponentProps> = ({
       <div className="relative w-10 h-10 flex items-center justify-center">
         {/* Use the real LED image */}
         <img 
-          src="/assets/components/led.icon.png" 
+          src={ledIconPath} 
           alt="LED Component" 
           className="w-full h-full object-contain"
           style={{
