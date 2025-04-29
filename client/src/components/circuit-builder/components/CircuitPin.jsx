@@ -172,7 +172,7 @@ const CircuitPin = ({
       />
       
       {/* Label shown on hover */}
-      {(isHovered || label?.includes('PWM') || label?.includes('SDA') || label?.includes('SCL')) && (
+      {isHovered && (
         <div 
           className="absolute bg-gray-800 text-white text-xs px-1 py-0.5 rounded z-20 whitespace-nowrap"
           style={{
@@ -181,7 +181,7 @@ const CircuitPin = ({
             opacity: 0.9
           }}
         >
-          {label}
+          {label || 'Pin'}
         </div>
       )}
     </div>
