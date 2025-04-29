@@ -55,6 +55,9 @@ const CircuitPin = ({
     e.stopPropagation();
     e.preventDefault();
     
+    // Log that a pin click occurred 
+    console.log(`Pin clicked: ${id} (${pinType}) - DIRECT HANDLER`);
+    
     // Apply a quick visual feedback that pin was clicked - RED like Wokwi
     const pinElement = e.currentTarget;
     pinElement.style.transform = 'scale(1.3) translate(-50%, -50%)';
@@ -69,7 +72,16 @@ const CircuitPin = ({
       onPinClick(id, pinType, parentId);
     }
     
-    // Dispatch a global event for the WireManager to handle
+    // For improved reliability, create a global function call, which is more reliable
+    // than event bubbling in complex component hierarchies
+    if (window.CIRCUIT_PIN_CLICKED) {
+      window.CIRCUIT_PIN_CLICKED(id, pinType, parentId, {
+        x: e.clientX,
+        y: e.clientY
+      });
+    }
+    
+    // Also dispatch a global event for the WireManager to handle (backup method)
     const clickEvent = new CustomEvent('pinClicked', {
       detail: { 
         id, 
@@ -79,8 +91,15 @@ const CircuitPin = ({
           x: e.clientX,
           y: e.clientY
         }
-      }
+      },
+      bubbles: true,  // Make sure it bubbles up the DOM tree
+      cancelable: true // Allow this event to be canceled
     });
+    
+    // Dispatch on the element directly
+    pinElement.dispatchEvent(clickEvent);
+    
+    // Also dispatch on document for redundancy
     document.dispatchEvent(clickEvent);
     
     // Ensure the WireManager always focuses on pin clicks more than other events

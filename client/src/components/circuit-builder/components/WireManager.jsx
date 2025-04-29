@@ -12,6 +12,7 @@ const WireManager = ({ canvasRef }) => {
   const [registeredPins, setRegisteredPins] = useState({});
   const [wires, setWires] = useState([]);
   const [pendingWire, setPendingWire] = useState(null);
+  const [mousePosition, setMousePosition] = useState({ x: 100, y: 100 });
   
   // SVG reference
   const svgRef = useRef(null);
@@ -59,9 +60,9 @@ const WireManager = ({ canvasRef }) => {
     return `M${sourcePos.x},${sourcePos.y} L${targetPos.x},${targetPos.y}`;
   }, []);
   
-  // Handle pin clicks - create or finish a wire - defined with useCallback to avoid recreating on every render
+  // Handle pin clicks - create or finish a wire - FIXING Wokwi-like behavior
   const handlePinClick = useCallback((pinId) => {
-    console.log(`Pin clicked: ${pinId}`);
+    console.log(`Pin clicked: ${pinId} - DIRECT HANDLER`);
     
     // Get the pin information
     const pin = registeredPins[pinId];
@@ -70,14 +71,26 @@ const WireManager = ({ canvasRef }) => {
       return;
     }
     
+    // For debugging only - log all registered pins
+    console.log("Available pins:", Object.keys(registeredPins).length);
+    
     if (!pendingWire) {
       // Start a new wire from this pin
       console.log(`Starting new wire from pin ${pinId} (${pin.type})`);
+      console.log("Creating pendingWire state with sourceId:", pinId);
+      
+      // Create pending wire state and immediately apply visual effect
       setPendingWire({
         sourceId: pinId,
         sourceType: pin.type,
         sourceParentId: pin.parentId
       });
+      
+      // Apply visual feedback immediately (don't wait for state update)
+      if (pin.element) {
+        pin.element.classList.add('wire-source-pin');
+      }
+      
     } else {
       // Finishing a wire
       const { sourceId, sourceType, sourceParentId } = pendingWire;
@@ -123,6 +136,12 @@ const WireManager = ({ canvasRef }) => {
       console.log(`Creating new wire:`, newWire);
       setWires(prev => [...prev, newWire]);
       setPendingWire(null);
+      
+      // Remove visual feedback from source pin
+      const sourcePinElement = registeredPins[sourceId]?.element;
+      if (sourcePinElement) {
+        sourcePinElement.classList.remove('wire-source-pin');
+      }
     }
   }, [pendingWire, registeredPins]);
   
@@ -246,13 +265,27 @@ const WireManager = ({ canvasRef }) => {
   
   // Add mouse move handler for pending wire visualization
   useEffect(() => {
-    if (!pendingWire || !canvasRef?.current || !svgRef?.current) return;
+    console.log("WIRE EFFECT - pendingWire state:", pendingWire);
+    if (!pendingWire || !canvasRef?.current || !svgRef?.current) {
+      console.log("WIRE EFFECT - Early return, missing required refs:", {
+        hasPendingWire: !!pendingWire,
+        hasCanvasRef: !!canvasRef?.current,
+        hasSvgRef: !!svgRef?.current
+      });
+      return;
+    }
     
     const canvasElement = canvasRef.current;
     const sourcePinElement = registeredPins[pendingWire.sourceId]?.element;
     
     // Check if we have a valid source element
-    if (!sourcePinElement) return;
+    if (!sourcePinElement) {
+      console.log("WIRE EFFECT - Missing source pin element for ID:", pendingWire.sourceId);
+      console.log("WIRE EFFECT - Available registered pins:", Object.keys(registeredPins));
+      return;
+    }
+    
+    console.log("WIRE EFFECT - Successfully starting wire from pin:", pendingWire.sourceId);
     
     // Add a visual indicator to the source pin
     sourcePinElement.classList.add('wire-source-pin');
@@ -260,19 +293,38 @@ const WireManager = ({ canvasRef }) => {
     // Create a function to handle mouse movement for the pending wire
     const handleMouseMove = (e) => {
       const svg = svgRef.current;
-      if (!svg) return;
+      if (!svg) {
+        console.log("WIRE EFFECT - Missing SVG ref in mousemove");
+        return;
+      }
       
       // Get mouse position relative to canvas
       const canvasRect = canvasElement.getBoundingClientRect();
       const mouseX = e.clientX - canvasRect.left;
       const mouseY = e.clientY - canvasRect.top;
       
-      // Update the pending wire path
-      const pendingPath = svg.querySelector('.pending-wire');
-      if (pendingPath && sourcePinElement) {
+      // Update mouse position state for the whole component to use
+      setMousePosition({ x: mouseX, y: mouseY });
+      console.log("Mouse position updated:", mouseX, mouseY);
+      
+      // Try to get the pending wire element - for line type elements we need to set x2,y2 not 'd'
+      const pendingLine = svg.querySelector('.pending-wire');
+      if (pendingLine && sourcePinElement) {
         const sourcePos = getElementPosition(sourcePinElement);
-        const pathString = getWirePath(sourcePos, { x: mouseX, y: mouseY });
-        pendingPath.setAttribute('d', pathString);
+        
+        if (pendingLine.tagName === 'line') {
+          // For <line> elements, set x2,y2 attributes
+          pendingLine.setAttribute('x2', mouseX);
+          pendingLine.setAttribute('y2', mouseY);
+          console.log("WIRE EFFECT - Updated line wire coords to", mouseX, mouseY);
+        } else {
+          // For <path> elements, set the 'd' attribute
+          const pathString = getWirePath(sourcePos, { x: mouseX, y: mouseY });
+          pendingLine.setAttribute('d', pathString);
+          console.log("WIRE EFFECT - Updated path wire to", pathString);
+        }
+      } else {
+        console.log("WIRE EFFECT - Missing pendingPath element:", !!pendingLine);
       }
     };
     
@@ -314,8 +366,13 @@ const WireManager = ({ canvasRef }) => {
   return (
     <svg 
       ref={svgRef}
-      className="absolute inset-0 pointer-events-none z-10"
-      style={{ width: '100%', height: '100%' }}
+      className="absolute inset-0 overflow-visible"
+      style={{ 
+        width: '100%', 
+        height: '100%', 
+        zIndex: 50, // Higher z-index to ensure wires are visible
+        pointerEvents: 'none'
+      }}
     >
       {/* Draw existing wires */}
       {wires.map(wire => {
@@ -373,25 +430,44 @@ const WireManager = ({ canvasRef }) => {
       {pendingWire && (
         (() => {
           const pendingPinEl = registeredPins[pendingWire.sourceId]?.element;
-          if (!pendingPinEl) return null;
+          if (!pendingPinEl) {
+            console.log("Cannot render pending wire - missing source pin element");
+            return null;
+          }
           
           const sourcePos = getElementPosition(pendingPinEl);
-          // Wokwi-style wire - red straight line
+          // Wokwi-style wire - pure red straight line
           const wireStyle = {
             stroke: '#ff0000', // Pure red for all wires
-            strokeWidth: 2.5,  // Slightly thinner 
+            strokeWidth: 3,  // Slightly thicker for visibility
             strokeLinecap: 'round',
             fill: 'none',
-            opacity: 1.0
+            opacity: 1.0,
+            strokeDasharray: '8 2' // Dotted line while dragging
           };
+          
+          // Get current mouse position for testing
+          const canvasRect = canvasRef.current?.getBoundingClientRect();
+          let initialX = sourcePos.x + 50;
+          let initialY = sourcePos.y + 50;
+          
+          if (canvasRef.current) {
+            initialX = mousePosition?.x || initialX;
+            initialY = mousePosition?.y || initialY;
+          }
+          
+          console.log("Drawing pending wire from", sourcePos, "to", { x: initialX, y: initialY });
           
           return (
             <>
               {/* Main wire line */}
-              <path
-                className="pending-wire"
-                d={`M ${sourcePos.x},${sourcePos.y}`}
-                {...wireStyle}
+              <line 
+                className="pending-wire" 
+                x1={sourcePos.x} 
+                y1={sourcePos.y} 
+                x2={initialX} 
+                y2={initialY}
+                style={wireStyle}
                 pointerEvents="none"
               />
               
@@ -399,6 +475,16 @@ const WireManager = ({ canvasRef }) => {
               <circle
                 cx={sourcePos.x}
                 cy={sourcePos.y}
+                r={5}
+                fill="#ff0000"
+                opacity={0.9}
+                pointerEvents="none"
+              />
+              
+              {/* Target cursor point */}
+              <circle
+                cx={initialX}
+                cy={initialY}
                 r={4}
                 fill="#ff0000"
                 opacity={0.7}
