@@ -1,0 +1,23 @@
+/* Enhanced tooltips for circuit components */
+.pin-target {
+  cursor: pointer;
+  transition: r 0.2s ease;
+}
+
+.pin-target:hover {
+  r: 4px !important; /* Make pins larger on hover */
+  stroke: #ffffff;
+  stroke-width: 1px;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.8));
+}
+
+/* Enhanced native title tooltips */
+.pin-target title {
+  display: block;
+}
+
+/* Make browser tooltips more visible (will vary by browser) */
+svg title {
+  font-size: 14px;
+  font-weight: bold;
+}
