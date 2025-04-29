@@ -206,20 +206,32 @@ const WireManager = ({ canvasRef }) => {
       const sourcePos = getElementPosition(sourceElement);
       const targetPos = getElementPosition(targetElement);
       
-      // Filter out redundant intermediate points that are too close to source or target
-      const minDistance = 20; // Minimum distance between points
-      let filteredPoints = points.filter(point => {
-        const distToSource = Math.hypot(point.x - sourcePos.x, point.y - sourcePos.y);
-        const distToTarget = Math.hypot(point.x - targetPos.x, point.y - targetPos.y);
-        return distToSource > minDistance && distToTarget > minDistance;
-      });
-      
       // Create a direct connection from source to target without any intermediate points
       // For Wokwi compatibility - intermediate points are only added when editing after creation
+      // This follows Wokwi's implementation where wires are initially simple direct connections
+      // and bend points are only added later after the initial connection is made
       const allPoints = [
         sourcePos,
         targetPos
       ];
+      
+      // If there are intermediate points, we can apply them (this would be for
+      // an edited wire, but initially wires have no intermediate points)
+      if (pendingWire && pendingWire.points && pendingWire.points.length > 0) {
+        const pendingPoints = pendingWire.points;
+        // Filter out redundant intermediate points that are too close to source or target
+        const minDistance = 20; // Minimum distance between points
+        let filteredPoints = pendingPoints.filter(point => {
+          const distToSource = Math.hypot(point.x - sourcePos.x, point.y - sourcePos.y);
+          const distToTarget = Math.hypot(point.x - targetPos.x, point.y - targetPos.y);
+          return distToSource > minDistance && distToTarget > minDistance;
+        });
+        
+        if (filteredPoints.length > 0) {
+          // Add filtered intermediate points between source and target
+          allPoints.splice(1, 0, ...filteredPoints);
+        }
+      }
       
       // Generate a wire color based on type
       const wireColor = getWireColor(sourceType, targetType);
