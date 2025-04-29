@@ -171,7 +171,7 @@ const RGBLED = ({
         id={id}
         className="min-w-min cursor-pointer absolute"
         ref={targetRef}
-        isActive={isSelected}
+        isActive={false} // Explicitly set to false to remove blue outline
         isDragged={isDragged}
         onPinClicked={handlePinClicked}
         onPininfoChange={(e) => onPinInfoChange(e)}
@@ -182,7 +182,8 @@ const RGBLED = ({
         }}
         style={{
           transform: `translate(${initPosLeft}px, ${initPosTop}px)`,
-          zIndex: isDragged ? 99999 : 10
+          zIndex: isDragged ? 99999 : 10,
+          outline: isSelected ? '1px solid #3b82f6' : 'none' // Apply a single outline when selected
         }}
         ledRed={ledRed}
         ledGreen={ledGreen}
