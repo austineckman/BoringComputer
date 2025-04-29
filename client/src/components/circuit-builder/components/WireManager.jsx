@@ -269,11 +269,28 @@ const WireManager = ({ canvasRef }) => {
       ));
     };
     
-    // Handler for direct pin click events
+    // Handler for direct pin click events - has highest priority
     const handlePinClickEvent = (e) => {
-      const { id } = e.detail;
+      const { id, position } = e.detail;
       console.log(`Received pinClicked event for ${id}`);
+      
+      // First cancel any click about to bubble to the canvas
+      if (e.stopPropagation) e.stopPropagation();
+      
+      // Make sure this event has priority
+      e.preventDefault && e.preventDefault();
+      
+      // Handle the pin click - this will start or finish a wire
       handlePinClick(id);
+      
+      // If we're creating a wire, highlight this connection in some way
+      if (pendingWire && pendingWire.sourceId === id) {
+        // Apply visual feedback that source pin is now active
+        const element = registeredPins[id]?.element;
+        if (element) {
+          element.classList.add('wire-source-pin');
+        }
+      }
     };
     
     // Handler for wire redrawing (e.g., when components move)
@@ -282,30 +299,49 @@ const WireManager = ({ canvasRef }) => {
       setWires(prev => [...prev]);
     };
     
-    // Register event listeners
+    // Register event listeners with high priority for wiring
     document.addEventListener('registerPin', handleRegisterPin);
     document.addEventListener('unregisterPin', handleUnregisterPin);
-    document.addEventListener('pinClicked', handlePinClickEvent);
+    document.addEventListener('pinClicked', handlePinClickEvent, { capture: true });
     document.addEventListener('redrawWires', handleRedrawWires);
     
     // Add click handler to the canvas for wire interactions
     const canvasElement = canvasRef?.current;
     if (canvasElement) {
       canvasElement.addEventListener('click', handleCanvasClick);
+      
+      // Also listen for mouseup events to cancel wiring if needed
+      canvasElement.addEventListener('mouseup', (e) => {
+        if (pendingWire && e.button === 2) { // Right click
+          console.log('Canceling wire on right click');
+          setPendingWire(null);
+        }
+      });
+      
+      // Add double-click support for wire management
+      canvasElement.addEventListener('dblclick', (e) => {
+        // If we double-click on the canvas while making a wire, cancel it
+        if (pendingWire) {
+          console.log('Canceling wire on double click');
+          setPendingWire(null);
+        }
+      });
     }
     
     // Cleanup function to remove all event listeners
     return () => {
       document.removeEventListener('registerPin', handleRegisterPin);
       document.removeEventListener('unregisterPin', handleUnregisterPin);
-      document.removeEventListener('pinClicked', handlePinClickEvent);
+      document.removeEventListener('pinClicked', handlePinClickEvent, { capture: true });
       document.removeEventListener('redrawWires', handleRedrawWires);
       
       if (canvasElement) {
         canvasElement.removeEventListener('click', handleCanvasClick);
+        canvasElement.removeEventListener('mouseup', () => {});
+        canvasElement.removeEventListener('dblclick', () => {});
       }
     };
-  }, [canvasRef, handlePinClick, handleCanvasClick]);
+  }, [canvasRef, handlePinClick, handleCanvasClick, pendingWire, registeredPins]);
   
   // Add mouse move handler for pending wire visualization
   useEffect(() => {
