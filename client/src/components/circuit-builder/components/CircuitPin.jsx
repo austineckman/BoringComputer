@@ -56,7 +56,7 @@ const CircuitPin = ({
     e.preventDefault();
     
     // Log that a pin click occurred 
-    console.log(`Pin clicked: ${id} (${pinType}) - DIRECT HANDLER`);
+    console.log(`CircuitPin component - Pin clicked: ${id} (${pinType})`);
     
     // Apply a quick visual feedback that pin was clicked - RED like Wokwi
     const pinElement = e.currentTarget;
@@ -72,13 +72,19 @@ const CircuitPin = ({
       onPinClick(id, pinType, parentId);
     }
     
+    // IMPORTANT: Call the global handler for WireManager to detect
+    console.log(`CircuitPin attempting to call global handler for ${id}`);
+    
     // For improved reliability, create a global function call, which is more reliable
     // than event bubbling in complex component hierarchies
-    if (window.CIRCUIT_PIN_CLICKED) {
+    if (typeof window.CIRCUIT_PIN_CLICKED === 'function') {
+      console.log(`Global pin handler exists, calling it for ${id}`);
       window.CIRCUIT_PIN_CLICKED(id, pinType, parentId, {
         x: e.clientX,
         y: e.clientY
       });
+    } else {
+      console.warn(`Global pin handler doesn't exist yet for ${id}`);
     }
     
     // Also dispatch a global event for the WireManager to handle (backup method)

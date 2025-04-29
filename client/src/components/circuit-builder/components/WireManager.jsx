@@ -20,11 +20,11 @@ const WireManager = ({ canvasRef }) => {
   
   // Initialize the global pin click handler
   useEffect(() => {
-    console.log("Setting up global pin click handler");
+    console.log("Setting up global pin click handler in WireManager");
     
     // Create a global function to receive pin clicks
     window.CIRCUIT_PIN_CLICKED = (pinId, pinType, parentId, position) => {
-      console.log("GLOBAL PIN CLICK:", pinId, pinType, parentId);
+      console.log("GLOBAL PIN CLICK HANDLER TRIGGERED:", pinId, pinType, parentId);
       handlePinClick(pinId, pinType, parentId);
     };
     
