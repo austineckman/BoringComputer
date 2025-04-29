@@ -120,19 +120,22 @@ const WireManager = ({ canvasRef }) => {
   const handlePinClick = useCallback((pinId) => {
     console.log(`Pin clicked: ${pinId}`);
     
-    // Get the pin information
+    // Get the pin information - this could be undefined or null in some cases
     const pin = registeredPins[pinId];
     if (!pin) {
-      console.warn(`Pin ${pinId} not found in registered pins`);
+      // For debugging only - this happens when the pin is not registered yet
+      console.warn(`Pin ${pinId} not found in registered pins - this is normal during initialization`);
       return;
     }
+    
+    console.log("Pin info for click:", pin);
     
     if (!pendingWire) {
       // Start a new wire from this pin
       console.log(`Starting new wire from pin ${pinId} (${pin.type})`);
       setPendingWire({
         sourceId: pinId,
-        sourceType: pin.type,
+        sourceType: pin.type || 'bidirectional', // Default to bidirectional if type is missing
         sourceParentId: pin.parentId,
         points: []  // Store the wire points for segmented routing
       });
@@ -155,16 +158,19 @@ const WireManager = ({ canvasRef }) => {
         return;
       }
       
+      // Set default pin type if not available
+      const targetType = pin.type || 'bidirectional';
+      
       // Check compatibility (input to output or bidirectional)
       const isCompatible = (
-        (sourceType === 'output' && pin.type === 'input') ||
-        (sourceType === 'input' && pin.type === 'output') ||
+        (sourceType === 'output' && targetType === 'input') ||
+        (sourceType === 'input' && targetType === 'output') ||
         sourceType === 'bidirectional' ||
-        pin.type === 'bidirectional'
+        targetType === 'bidirectional'
       );
       
       if (!isCompatible) {
-        console.warn(`Cannot connect ${sourceType} to ${pin.type}`);
+        console.warn(`Cannot connect ${sourceType} to ${targetType}`);
         setPendingWire(null);
         return;
       }
@@ -198,7 +204,7 @@ const WireManager = ({ canvasRef }) => {
       ];
       
       // Generate a wire color based on type
-      const wireColor = getWireColor(sourceType, pin.type);
+      const wireColor = getWireColor(sourceType, targetType);
       
       // Add the new wire
       const newWire = {
@@ -206,7 +212,7 @@ const WireManager = ({ canvasRef }) => {
         sourceId,
         targetId: pinId,
         sourceType,
-        targetType: pin.type,
+        targetType,
         points: allPoints,
         color: wireColor
       };

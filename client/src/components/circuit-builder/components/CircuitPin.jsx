@@ -29,6 +29,7 @@ const CircuitPin = ({
   // Register pin with global wire management system
   useEffect(() => {
     if (parentRef?.current && pinRef.current) {
+      console.log(`Registering pin ${id} of type ${pinType} for component ${parentId}`);
       const customEvent = new CustomEvent('registerPin', {
         detail: {
           id,
@@ -40,8 +41,31 @@ const CircuitPin = ({
       });
       document.dispatchEvent(customEvent);
       
+      // Add direct click handler on the DOM element
+      const pinElement = pinRef.current;
+      const directClickHandler = (e) => {
+        console.log("pin clicked");
+        e.stopPropagation();
+        e.preventDefault();
+        
+        // Dispatch global event for WireManager
+        const clickEvent = new CustomEvent('pinClicked', {
+          detail: { 
+            id,
+            pinType, 
+            parentId,
+            element: pinRef.current
+          }
+        });
+        document.dispatchEvent(clickEvent);
+      };
+      
+      pinElement.addEventListener('mousedown', directClickHandler);
+      
       // Clean up on unmount
       return () => {
+        pinElement.removeEventListener('mousedown', directClickHandler);
+        
         const cleanup = new CustomEvent('unregisterPin', {
           detail: { id }
         });
@@ -61,10 +85,19 @@ const CircuitPin = ({
     }
     
     // Dispatch a global event for the WireManager to handle
-    const clickEvent = new CustomEvent('pinClicked', {
-      detail: { id, pinType, parentId }
-    });
-    document.dispatchEvent(clickEvent);
+    // Add a slight delay to ensure component registration is complete
+    setTimeout(() => {
+      console.log(`Dispatching pinClicked event for pin ${id}`);
+      const clickEvent = new CustomEvent('pinClicked', {
+        detail: { 
+          id,
+          pinType,
+          parentId,
+          element: pinRef.current
+        }
+      });
+      document.dispatchEvent(clickEvent);
+    }, 10);
     
     console.log(`Pin ${id} (${pinType}) of component ${parentId} clicked`);
   };
