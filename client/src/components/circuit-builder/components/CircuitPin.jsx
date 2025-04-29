@@ -162,20 +162,7 @@ const CircuitPin = ({
       title={label || id || 'Pin'}
       data-testid={`pin-${id}`}
     >
-      {isHovered && (
-        <div 
-          className="absolute bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap z-50"
-          style={{
-            top: '-28px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            pointerEvents: 'none',
-            boxShadow: '0 2px 5px rgba(0,0,0,0.3)'
-          }}
-        >
-          {label || id || 'Pin'}
-        </div>
-      )}
+
     
       {/* Pin dot center */}
       <div 
