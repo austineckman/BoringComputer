@@ -110,8 +110,8 @@ export const componentOptions = [
     displayName: 'Buzzer',
     description: 'Makes sound',
     category: 'outputs',
-    // Use LED image as fallback since we don't have buzzer image
-    imagePath: ledImg,
+    // Use a direct URL to buzzer SVG icon
+    imagePath: '/images/buzzer.icon.svg',
     pinConfig: [
       { id: 'positive', type: 'input', label: 'Positive (+)' },
       { id: 'negative', type: 'output', label: 'Negative (-)' }
