@@ -86,13 +86,17 @@ const HeroBoard = ({
         ref={componentRef}
         className="relative w-full h-full flex items-center justify-center"
       >
-        {/* Board image */}
+        {/* Board image - rotated 90 degrees */}
         <div className="absolute inset-0 flex items-center justify-center p-2">
           <img 
             src={heroboardImg} 
             alt="Hero Board (Arduino UNO R3)"
             className="max-w-full max-h-full object-contain"
-            style={{ pointerEvents: 'none' }}
+            style={{ 
+              pointerEvents: 'none',
+              transform: 'rotate(90deg)',
+              transformOrigin: 'center'
+            }}
           />
         </div>
         
