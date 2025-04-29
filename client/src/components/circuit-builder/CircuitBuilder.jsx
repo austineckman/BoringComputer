@@ -163,22 +163,36 @@ const CircuitBuilder = () => {
   
   // Add a new component to the canvas
   const handleAddComponent = (type) => {
+    // Find component details in our componentOptions
+    const componentInfo = componentOptions.find(c => c.name === type);
+    if (!componentInfo) {
+      console.warn(`Unknown component type: ${type}`);
+      return;
+    }
+    
     // Generate random position near the center of the canvas
     const canvasWidth = canvasRef.current?.clientWidth || 800;
     const canvasHeight = canvasRef.current?.clientHeight || 600;
     
+    // Adjust position to be more centered and randomized slightly
     const randomX = (canvasWidth / 2) + (Math.random() * 100 - 50);
     const randomY = (canvasHeight / 2) + (Math.random() * 100 - 50);
     
+    // Create the new component with a unique ID
     const newComponent = {
-      id: generateId(type.toLowerCase()),
-      type,
+      id: `${type}-${generateId()}`,
+      type, // Use the component name from componentOptions
       x: randomX,
       y: randomY,
       rotation: 0,
-      props: {} // Component-specific properties
+      props: {
+        // Add any component-specific properties
+        label: componentInfo.displayName,
+        description: componentInfo.description
+      } 
     };
     
+    // Add component to state
     setComponents(prev => [...prev, newComponent]);
     setSelectedComponentId(newComponent.id);
   };
@@ -232,6 +246,24 @@ const CircuitBuilder = () => {
       return null;
     }
     
+    // Get custom dimensions based on component type
+    let width = 100;
+    let height = 100;
+    
+    if (componentDefinition.name === 'heroboard') {
+      width = 200;
+      height = 150;
+    } else if (componentDefinition.name === 'oled-display') {
+      width = 120;
+      height = 80;
+    } else if (componentDefinition.name === 'segmented-display') {
+      width = 120;
+      height = 80;
+    } else if (componentDefinition.name === 'resistor' || componentDefinition.name === 'photoresistor') {
+      width = 80;
+      height = 40;
+    }
+    
     return (
       <CircuitComponent
         key={component.id}
@@ -241,20 +273,13 @@ const CircuitBuilder = () => {
         x={component.x}
         y={component.y}
         rotation={component.rotation}
-        pins={componentDefinition.pinConfig.map(pin => ({
-          ...pin,
-          position: {
-            // Simple pin positioning - can be improved for more complex components
-            x: pin.id.includes('left') ? 0 : pin.id.includes('right') ? 1 : 0.5,
-            y: pin.id.includes('top') ? 0 : pin.id.includes('bottom') ? 1 : 0.5,
-          }
-        }))}
+        pins={componentDefinition.pinConfig}
         onSelect={handleSelectComponent}
         isSelected={component.id === selectedComponentId}
         onPinConnect={handlePinConnect}
         canvasRef={canvasRef}
-        width={componentDefinition.name === 'heroboard' ? 200 : 100}
-        height={componentDefinition.name === 'heroboard' ? 150 : 100}
+        width={width}
+        height={height}
       />
     );
   };
