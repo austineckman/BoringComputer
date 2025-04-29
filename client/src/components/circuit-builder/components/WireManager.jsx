@@ -140,7 +140,7 @@ const WireManager = ({ canvasRef }) => {
         points: []  // Store the wire points for segmented routing
       });
     } else {
-      // Finishing a wire
+      // Finishing a wire - connecting from source to target
       const { sourceId, sourceType, sourceParentId, points } = pendingWire;
       console.log(`Finishing wire: ${sourceId} -> ${pinId}`);
       
@@ -148,6 +148,15 @@ const WireManager = ({ canvasRef }) => {
       if (sourceId === pinId) {
         console.warn('Cannot connect a pin to itself');
         setPendingWire(null);
+        
+        // Clear any pending wire visualization
+        const svg = svgRef.current;
+        if (svg) {
+          const pendingPath = svg.querySelector('.pending-wire');
+          if (pendingPath) {
+            pendingPath.setAttribute('d', '');
+          }
+        }
         return;
       }
       
@@ -155,6 +164,15 @@ const WireManager = ({ canvasRef }) => {
       if (sourceParentId === pin.parentId) {
         console.warn('Cannot connect pins on the same component');
         setPendingWire(null);
+        
+        // Clear any pending wire visualization
+        const svg = svgRef.current;
+        if (svg) {
+          const pendingPath = svg.querySelector('.pending-wire');
+          if (pendingPath) {
+            pendingPath.setAttribute('d', '');
+          }
+        }
         return;
       }
       
@@ -439,19 +457,39 @@ const WireManager = ({ canvasRef }) => {
         // Register the pin if it's not already registered
         if (!registeredPins[pinId] && e.detail.element) {
           console.log(`Auto-registering pin ${pinId} from click event`);
-          setRegisteredPins(prev => ({
-            ...prev,
-            [pinId]: { 
-              id: pinId, 
-              parentId: e.detail.parentId, 
-              type: e.detail.pinType || 'bidirectional', 
-              label: e.detail.label || 'Pin', 
-              element: e.detail.element 
+          
+          // First register the pin so it's available for handlePinClick
+          setRegisteredPins(prev => {
+            const newPins = {
+              ...prev,
+              [pinId]: { 
+                id: pinId, 
+                parentId: e.detail.parentId, 
+                type: e.detail.pinType || 'bidirectional', 
+                label: e.detail.label || 'Pin', 
+                element: e.detail.element 
+              }
+            };
+            
+            // If there's a pending wire, immediately connect to this newly registered pin
+            if (pendingWire) {
+              console.log(`Connecting pending wire to newly registered pin ${pinId}`);
+              setTimeout(() => {
+                handlePinClick(pinId);
+              }, 0);
+            } else {
+              // If no pending wire, just start a new wire from this pin
+              setTimeout(() => {
+                handlePinClick(pinId);
+              }, 0);
             }
-          }));
+            
+            return newPins;
+          });
+        } else {
+          // Pin is already registered, proceed with click handling
+          handlePinClick(pinId);
         }
-        
-        handlePinClick(pinId);
       } else {
         console.warn("Could not determine pin ID from event:", e.detail);
       }
@@ -536,7 +574,14 @@ const WireManager = ({ canvasRef }) => {
     
     const handlePendingWireMouseMove = (e) => {
       const svg = svgRef.current;
-      if (!svg || !pendingWire) return;
+      if (!svg || !pendingWire) {
+        // No pending wire, ensure the path is cleared
+        const pendingPath = svg.querySelector('.pending-wire');
+        if (pendingPath) {
+          pendingPath.setAttribute('d', '');
+        }
+        return;
+      }
       
       // Update mouse position for wire visualization
       const canvasRect = canvasElement.getBoundingClientRect();
@@ -564,7 +609,7 @@ const WireManager = ({ canvasRef }) => {
       }
     };
     
-    // When pendingWire is null, clear any lingering wire visualization
+    // When pendingWire is null, immediately clear any lingering wire visualization
     if (!pendingWire) {
       const svg = svgRef.current;
       if (svg) {
@@ -580,6 +625,14 @@ const WireManager = ({ canvasRef }) => {
     // Cleanup function
     return () => {
       canvasElement.removeEventListener('mousemove', handlePendingWireMouseMove);
+      
+      // Also clean up when unmounting or updating
+      if (svgRef.current) {
+        const pendingPath = svgRef.current.querySelector('.pending-wire');
+        if (pendingPath) {
+          pendingPath.setAttribute('d', '');
+        }
+      }
     };
   }, [canvasRef, pendingWire, registeredPins, getElementPosition]);
   
