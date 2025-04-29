@@ -213,8 +213,9 @@ const WireManager = ({ canvasRef }) => {
     ) {
       return {
         stroke: getWireColor(sourceType, targetType),
-        strokeWidth: 2.5,
+        strokeWidth: 3,
         strokeLinecap: 'round',
+        filter: 'drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3))',
         fill: 'none'
       };
     }
@@ -223,9 +224,10 @@ const WireManager = ({ canvasRef }) => {
     if (sourceType === 'bidirectional' || targetType === 'bidirectional') {
       return {
         stroke: getWireColor(sourceType, targetType),
-        strokeWidth: 2,
+        strokeWidth: 2.5,
         strokeLinecap: 'round',
         strokeDasharray: '0',
+        filter: 'drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.2))',
         fill: 'none'
       };
     }
@@ -233,8 +235,9 @@ const WireManager = ({ canvasRef }) => {
     // Default style
     return {
       stroke: getWireColor(sourceType, targetType),
-      strokeWidth: 2,
+      strokeWidth: 2.5,
       strokeLinecap: 'round',
+      filter: 'drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.2))',
       fill: 'none'
     };
   };
@@ -243,14 +246,36 @@ const WireManager = ({ canvasRef }) => {
   const getWirePath = (sourcePos, targetPos) => {
     const dx = targetPos.x - sourcePos.x;
     const dy = targetPos.y - sourcePos.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
     
-    // Curved path with a control point
-    const controlPointOffset = Math.min(100, Math.max(20, Math.abs(dx) / 3));
+    // Adjust control point offset based on distance
+    const controlPointOffset = Math.min(80, Math.max(20, distance / 4));
     
+    // Use horizontal control points for horizontal-ish connections
+    if (Math.abs(dx) > Math.abs(dy) * 2) {
+      return `
+        M ${sourcePos.x},${sourcePos.y}
+        C ${sourcePos.x + controlPointOffset},${sourcePos.y}
+          ${targetPos.x - controlPointOffset},${targetPos.y}
+          ${targetPos.x},${targetPos.y}
+      `;
+    }
+    
+    // Use vertical control points for vertical-ish connections
+    if (Math.abs(dy) > Math.abs(dx) * 2) {
+      return `
+        M ${sourcePos.x},${sourcePos.y}
+        C ${sourcePos.x},${sourcePos.y + Math.sign(dy) * controlPointOffset}
+          ${targetPos.x},${targetPos.y - Math.sign(dy) * controlPointOffset}
+          ${targetPos.x},${targetPos.y}
+      `;
+    }
+    
+    // Use diagonal control points for diagonal connections
     return `
       M ${sourcePos.x},${sourcePos.y}
-      C ${sourcePos.x + controlPointOffset},${sourcePos.y}
-        ${targetPos.x - controlPointOffset},${targetPos.y}
+      C ${sourcePos.x + dx/3},${sourcePos.y + dy/3}
+        ${sourcePos.x + dx*2/3},${sourcePos.y + dy*2/3}
         ${targetPos.x},${targetPos.y}
     `;
   };
