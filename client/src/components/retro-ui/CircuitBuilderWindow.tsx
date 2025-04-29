@@ -516,94 +516,9 @@ void loop() {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Component Palette */}
-        <div className="w-48 bg-gray-700 p-2 flex flex-col space-y-2 overflow-y-auto">
-          <h3 className="text-sm font-bold mb-2">Components</h3>
-          <div className="grid grid-cols-2 gap-2">
-            {componentOptions.map((item) => (
-              <div
-                key={item.name}
-                className="bg-gray-800 p-2 rounded cursor-pointer hover:bg-gray-600 transition-colors text-center"
-                onClick={() => addComponent(item.name)}
-              >
-                <div className="flex justify-center mb-1">
-                  <img 
-                    src={`/images/${item.name}.icon.svg`}
-                    alt={item.displayName} 
-                    className="w-8 h-8" 
-                  />
-                </div>
-                <div className="text-xs text-center">{item.displayName}</div>
-              </div>
-            ))}
-          </div>
-          <div className="text-xs mt-4 p-2 bg-gray-800 rounded">
-            <p>Drag components onto the grid.</p>
-            <p className="mt-2">Click on pins to create wires between components.</p>
-            <p className="mt-1">Rotate: Right-click or press 'R'</p>
-            <p className="mt-1">Delete: Delete key</p>
-            <p className="mt-1">Pan: Shift + drag or middle-click</p>
-            <p className="mt-1">Zoom: Scroll wheel</p>
-          </div>
-        </div>
-
-        {/* Circuit Canvas */}
-        <div 
-          className="flex-1 bg-gray-900 overflow-hidden relative"
-          onMouseDown={handleCanvasMouseDown}
-          onMouseMove={handleCanvasMouseMove}
-          onMouseUp={handleCanvasMouseUp}
-          onMouseLeave={handleCanvasMouseUp}
-          onWheel={handleWheel}
-          ref={canvasRef}
-        >
-          {/* Grid background */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundSize: `${gridSize * zoom}px ${gridSize * zoom}px`,
-              backgroundImage: 'linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px)',
-              transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-              transformOrigin: '0 0'
-            }}
-          >
-            {/* Render all circuit components */}
-            {components.map(componentData => renderComponent(
-              componentData,
-              handlePinClick,
-              componentData.id === selectedComponent,
-              handleComponentMouseDown,
-              deleteSelectedItem
-            ))}
-            
-            {/* Render wire connections */}
-            {wires.map(wire => (
-              <CircuitWire
-                key={wire.id}
-                id={wire.id}
-                startPin={wire.startPin}
-                endPin={wire.endPin}
-                color={wire.color}
-                selected={wire.id === selectedWire}
-                onClick={handleWireClick}
-              />
-            ))}
-            
-            {/* Temporary wire while creating */}
-            {wireCreationMode && wireStartPin && tempWirePosition && (
-              <svg className="absolute top-0 left-0 w-full h-full pointer-events-none">
-                <line
-                  x1={wireStartPin.x}
-                  y1={wireStartPin.y}
-                  x2={tempWirePosition.x}
-                  y2={tempWirePosition.y}
-                  stroke="#3b82f6"
-                  strokeWidth={2}
-                  strokeDasharray="5,5"
-                />
-              </svg>
-            )}
-          </div>
+        {/* New Enhanced Circuit Builder */}
+        <div className="flex-1 bg-gray-900 overflow-hidden relative">
+          <CircuitBuilder />
         </div>
 
         {/* Code Editor */}
