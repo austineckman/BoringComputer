@@ -1,227 +1,104 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Search, Filter } from 'lucide-react';
+import { componentOptions } from '../constants/componentOptions';
 
 /**
- * ComponentPalette provides a UI for selecting circuit components
+ * Component palette for displaying available circuit components
+ * 
+ * @param {Object} props
+ * @param {Function} props.onAddComponent - Callback when a component is selected
  */
-
-// Define available circuit components
-const componentOptions = [
-  { 
-    name: 'led', 
-    displayName: 'LED',
-    category: 'output',
-    description: 'Light Emitting Diode',
-    imagePath: '/images/components/led.icon.png',
-    pinConfig: [
-      { id: 'anode', type: 'input', label: '+' },
-      { id: 'cathode', type: 'output', label: '-' }
-    ]
-  },
-  { 
-    name: 'heroboard', 
-    displayName: 'HeroBoard',
-    category: 'controller',
-    description: 'Microcontroller Board',
-    imagePath: '/images/components/hero-board.icon.png', 
-    pinConfig: [
-      { id: 'd0', type: 'bidirectional', label: 'D0' },
-      { id: 'd1', type: 'bidirectional', label: 'D1' },
-      { id: 'd2', type: 'bidirectional', label: 'D2' },
-      { id: 'd3', type: 'bidirectional', label: 'D3' },
-      { id: 'd4', type: 'bidirectional', label: 'D4' },
-      { id: 'd5', type: 'bidirectional', label: 'D5' },
-      { id: 'd6', type: 'bidirectional', label: 'D6' },
-      { id: 'd7', type: 'bidirectional', label: 'D7' },
-      { id: 'd8', type: 'bidirectional', label: 'D8' },
-      { id: 'd9', type: 'bidirectional', label: 'D9' },
-      { id: 'd10', type: 'bidirectional', label: 'D10' },
-      { id: 'd11', type: 'bidirectional', label: 'D11' },
-      { id: 'd12', type: 'bidirectional', label: 'D12' },
-      { id: 'd13', type: 'bidirectional', label: 'D13' },
-      { id: 'a0', type: 'input', label: 'A0' },
-      { id: 'a1', type: 'input', label: 'A1' },
-      { id: 'a2', type: 'input', label: 'A2' },
-      { id: 'a3', type: 'input', label: 'A3' },
-      { id: 'a4', type: 'input', label: 'A4' },
-      { id: 'a5', type: 'input', label: 'A5' },
-      { id: '5v', type: 'output', label: '5V' },
-      { id: '3v3', type: 'output', label: '3.3V' },
-      { id: 'gnd', type: 'input', label: 'GND' },
-      { id: 'rst', type: 'input', label: 'RST' }
-    ]
-  },
-  { 
-    name: 'resistor', 
-    displayName: 'Resistor',
-    category: 'passive',
-    description: 'Current Limiting Resistor',
-    imagePath: '/images/components/resistor.icon.png',
-    pinConfig: [
-      { id: 'pin1', type: 'bidirectional', label: '1' },
-      { id: 'pin2', type: 'bidirectional', label: '2' }
-    ]
-  },
-  { 
-    name: 'rgbled', 
-    displayName: 'RGB LED',
-    category: 'output',
-    description: 'Red-Green-Blue LED',
-    imagePath: '/images/components/rgb-led.icon.png',
-    pinConfig: [
-      { id: 'common', type: 'input', label: 'COM' },
-      { id: 'red', type: 'output', label: 'R' },
-      { id: 'green', type: 'output', label: 'G' },
-      { id: 'blue', type: 'output', label: 'B' }
-    ]
-  },
-  { 
-    name: 'photoresistor', 
-    displayName: 'Photoresistor',
-    category: 'sensor',
-    description: 'Light Sensor',
-    imagePath: '/images/components/photoresistor.icon.png',
-    pinConfig: [
-      { id: 'pin1', type: 'bidirectional', label: '1' },
-      { id: 'pin2', type: 'bidirectional', label: '2' }
-    ]
-  },
-  { 
-    name: 'oled-display', 
-    displayName: 'OLED Display',
-    category: 'output',
-    description: 'Small OLED Screen',
-    imagePath: '/images/components/oled-display.icon.png',
-    pinConfig: [
-      { id: 'vcc', type: 'input', label: 'VCC' },
-      { id: 'gnd', type: 'output', label: 'GND' },
-      { id: 'scl', type: 'input', label: 'SCL' },
-      { id: 'sda', type: 'input', label: 'SDA' }
-    ]
-  },
-  { 
-    name: 'rotary-encoder', 
-    displayName: 'Rotary Encoder',
-    category: 'input',
-    description: 'Rotary Input Control',
-    imagePath: '/images/components/rotary-encoder.icon.png',
-    pinConfig: [
-      { id: 'clk', type: 'output', label: 'CLK' },
-      { id: 'dt', type: 'output', label: 'DT' },
-      { id: 'sw', type: 'output', label: 'SW' },
-      { id: 'vcc', type: 'input', label: 'VCC' },
-      { id: 'gnd', type: 'input', label: 'GND' }
-    ]
-  },
-  { 
-    name: 'dip-switch', 
-    displayName: 'DIP Switch',
-    category: 'input',
-    description: '3-Way DIP Switch',
-    imagePath: '/images/components/dip-switch-3.icon.png',
-    pinConfig: [
-      { id: 'com', type: 'input', label: 'COM' },
-      { id: 'sw1', type: 'output', label: 'SW1' },
-      { id: 'sw2', type: 'output', label: 'SW2' },
-      { id: 'sw3', type: 'output', label: 'SW3' }
-    ]
-  },
-  { 
-    name: 'segmented-display', 
-    displayName: '7-Segment Display',
-    category: 'output',
-    description: 'Numeric Display',
-    imagePath: '/images/components/segmented-display.icon.png',
-    pinConfig: [
-      { id: 'vcc', type: 'input', label: 'VCC' },
-      { id: 'gnd', type: 'input', label: 'GND' },
-      { id: 'din', type: 'input', label: 'DIN' },
-      { id: 'clk', type: 'input', label: 'CLK' },
-      { id: 'cs', type: 'input', label: 'CS' }
-    ]
-  }
-];
 const ComponentPalette = ({ onAddComponent }) => {
-  const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [filteredComponents, setFilteredComponents] = useState(componentOptions);
   
-  // Define component categories
-  const categories = [
-    { id: 'all', name: 'All Components' },
-    { id: 'controller', name: 'Controllers' },
-    { id: 'input', name: 'Input Devices' },
-    { id: 'output', name: 'Output Devices' },
-    { id: 'sensor', name: 'Sensors' },
-    { id: 'passive', name: 'Passive Components' }
-  ];
+  // Unique categories from component options
+  const categories = ['all', ...new Set(componentOptions.map(c => c.category))];
   
-  // Filter components based on category and search term
-  const filteredComponents = componentOptions.filter(component => {
-    const matchesCategory = selectedCategory === 'all' || component.category === selectedCategory;
-    const matchesSearch = component.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          component.description.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  // Filter and search components based on current filters
+  useEffect(() => {
+    let filtered = componentOptions;
+    
+    // Filter by category
+    if (filterCategory !== 'all') {
+      filtered = filtered.filter(c => c.category === filterCategory);
+    }
+    
+    // Filter by search term
+    if (searchTerm.trim() !== '') {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(c => 
+        c.displayName.toLowerCase().includes(searchLower) || 
+        c.description.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    setFilteredComponents(filtered);
+  }, [searchTerm, filterCategory]);
   
   return (
-    <div className="circuit-component-palette">
-      <h3 className="text-lg font-bold mb-2">Component Palette</h3>
+    <div className="component-palette h-full flex flex-col">
+      <h3 className="font-semibold text-lg mb-3">Component Palette</h3>
       
-      {/* Search */}
-      <div className="mb-3">
+      {/* Search bar */}
+      <div className="mb-3 relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <Search size={16} className="text-gray-400" />
+        </div>
         <input
           type="text"
+          className="block w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-md"
           placeholder="Search components..."
-          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
       
-      {/* Category tabs */}
-      <div className="flex mb-3 overflow-x-auto whitespace-nowrap text-xs">
+      {/* Category filters */}
+      <div className="mb-3 flex flex-wrap gap-1">
         {categories.map(category => (
           <button
-            key={category.id}
-            className={`px-2 py-1 rounded-t border-b-2 ${
-              selectedCategory === category.id
-                ? 'border-blue-500 text-blue-600 bg-blue-50'
-                : 'border-transparent hover:bg-gray-100'
+            key={category}
+            className={`px-2 py-1 text-xs rounded-md ${
+              filterCategory === category 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
-            onClick={() => setSelectedCategory(category.id)}
+            onClick={() => setFilterCategory(category)}
           >
-            {category.name}
+            {category.charAt(0).toUpperCase() + category.slice(1)}
           </button>
         ))}
       </div>
       
       {/* Component grid */}
-      <div className="grid grid-cols-2 gap-2">
-        {filteredComponents.map((component) => (
-          <div
+      <div className="overflow-y-auto flex-1 grid grid-cols-2 gap-2">
+        {filteredComponents.map(component => (
+          <div 
             key={component.name}
-            className="p-2 border border-gray-200 rounded bg-white hover:bg-blue-50 hover:border-blue-200 cursor-pointer text-center shadow-sm transition-colors"
+            className="border border-gray-300 rounded-md p-2 cursor-pointer hover:bg-blue-50 hover:border-blue-400 transition-colors"
             onClick={() => onAddComponent(component.name)}
           >
-            <div className="mb-1 h-12 flex items-center justify-center">
-              <img
-                src={component.imagePath}
-                alt={component.displayName}
-                className="h-full object-contain"
+            <div className="aspect-square flex items-center justify-center mb-1 bg-gray-100 rounded overflow-hidden">
+              <img 
+                src={component.imagePath} 
+                alt={component.displayName} 
+                className="max-w-full max-h-full p-1"
               />
             </div>
-            <div className="text-xs font-medium">{component.displayName}</div>
-            <div className="text-xs text-gray-500 truncate">{component.description}</div>
+            <div className="text-xs font-medium text-center truncate">
+              {component.displayName}
+            </div>
           </div>
         ))}
+        
+        {filteredComponents.length === 0 && (
+          <div className="col-span-2 text-center text-gray-500 p-4">
+            No components found
+          </div>
+        )}
       </div>
-      
-      {/* Empty state */}
-      {filteredComponents.length === 0 && (
-        <div className="text-center py-4 text-gray-500">
-          <p>No components found</p>
-          <p className="text-xs mt-1">Try another search term or category</p>
-        </div>
-      )}
     </div>
   );
 };

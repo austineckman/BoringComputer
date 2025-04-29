@@ -1,9 +1,23 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 
 /**
- * Base component for circuit elements
- * Renders a component image with connection pins
- * Handles drag and rotation
+ * CircuitComponent represents a draggable electronic component with pins
+ * on the circuit builder canvas
+ * 
+ * @param {Object} props
+ * @param {string} props.id - Unique identifier for the component
+ * @param {string} props.type - Type of component (LED, resistor, etc.)
+ * @param {string} props.image - URL to the component image
+ * @param {number} props.x - Initial X position
+ * @param {number} props.y - Initial Y position
+ * @param {number} props.rotation - Initial rotation in degrees
+ * @param {Array} props.pins - Array of pin configurations
+ * @param {Function} props.onSelect - Callback when component is selected
+ * @param {boolean} props.isSelected - Whether this component is currently selected
+ * @param {Function} props.onPinConnect - Callback when a pin is clicked for connection
+ * @param {RefObject} props.canvasRef - Reference to the parent canvas element
+ * @param {number} props.width - Component width in pixels
+ * @param {number} props.height - Component height in pixels
  */
 const CircuitComponent = ({
   id,
@@ -12,61 +26,64 @@ const CircuitComponent = ({
   x,
   y,
   rotation = 0,
-  width = 100,
-  height = 100,
   pins = [],
   onSelect,
   isSelected,
-  onMove,
-  onRotate,
   onPinConnect,
-  canvasRef
+  canvasRef,
+  width = 100,
+  height = 100,
+  onMove,
+  onRotate
 }) => {
-  const [position, setPosition] = useState({ x, y });
-  const [currentRotation, setCurrentRotation] = useState(rotation);
+  // State for component position and interaction
+  const [position, setPosition] = useState({ x: x || 0, y: y || 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [currentRotation, setCurrentRotation] = useState(rotation || 0);
   
+  // Refs
   const componentRef = useRef(null);
   
-  // Handle component selection and deletion
+  // Handle click on component
   const handleClick = (e) => {
     e.stopPropagation();
-    if (onSelect) onSelect(id);
+    if (onSelect) {
+      onSelect(id);
+    }
   };
   
-  // Start dragging the component
+  // Handle mouse down on component for dragging
   const handleMouseDown = (e) => {
     e.stopPropagation();
-    onSelect(id);
-    
-    // Calculate drag offset (where in the component the user clicked)
-    if (componentRef.current) {
+    if (e.button === 0) { // Left mouse button
       const rect = componentRef.current.getBoundingClientRect();
-      const offsetX = e.clientX - rect.left;
-      const offsetY = e.clientY - rect.top;
-      
-      setDragOffset({ x: offsetX, y: offsetY });
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
       setIsDragging(true);
     }
   };
   
-  // Handle pin click for wire creation
+  // Handle pin click
   const handlePinClick = (pinId, pinType, e) => {
     e.stopPropagation();
     if (onPinConnect) {
-      onPinConnect(`${id}-${pinId}`, pinType, id);
+      onPinConnect(pinId, pinType, id);
     }
   };
   
-  // Handle component rotation on right-click
+  // Handle context menu (right-click) for rotation
   const handleContextMenu = (e) => {
     e.preventDefault();
     e.stopPropagation();
     
+    // Rotate component by 90 degrees
     const newRotation = (currentRotation + 90) % 360;
     setCurrentRotation(newRotation);
     
+    // Notify parent component if needed
     if (onRotate) {
       onRotate(id, newRotation);
     }
@@ -156,7 +173,7 @@ const CircuitComponent = ({
       }
     }
     // HeroBoard - arrange pins around the board
-    else if (componentType === 'heroboard') {
+    else if (componentType === 'hero board') {
       if (pinId.startsWith('d')) {
         // Digital pins on right side
         const pinNumber = parseInt(pinId.substring(1), 10);
