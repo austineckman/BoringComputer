@@ -37,22 +37,45 @@ const RGBLED = ({
   const [ledBlue, setLedBlue] = useState(0); // Initial blue value (0-1)
   const [commonPin, setCommonPin] = useState('anode'); // 'anode' or 'cathode'
   
-  // Get LED color and common pin values from props if provided
+  // Initialize from props at component creation
   useEffect(() => {
-    // Use the props values directly from the RGBLED function arguments
-    if (typeof props.ledRed === 'number') {
-      setLedRed(props.ledRed);
+    // The props values are already destructured in the function signature
+    if (typeof ledRed === 'number') {
+      setLedRed(ledRed);
     }
-    if (typeof props.ledGreen === 'number') {
-      setLedGreen(props.ledGreen);
+    if (typeof ledGreen === 'number') {
+      setLedGreen(ledGreen);
     }
-    if (typeof props.ledBlue === 'number') {
-      setLedBlue(props.ledBlue);
+    if (typeof ledBlue === 'number') {
+      setLedBlue(ledBlue);
     }
-    if (typeof props.commonPin === 'string') {
-      setCommonPin(props.commonPin);
+    if (typeof commonPin === 'string') {
+      setCommonPin(commonPin);
     }
-  }, [props.ledRed, props.ledGreen, props.ledBlue, props.commonPin]);
+  // Only run on mount - props changes handled below
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  
+  // Handle prop updates separately for each value to avoid dependency cycles
+  useEffect(() => {
+    if (typeof ledRed === 'number') setLedRed(ledRed);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ledRed]);
+  
+  useEffect(() => {
+    if (typeof ledGreen === 'number') setLedGreen(ledGreen);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ledGreen]);
+  
+  useEffect(() => {
+    if (typeof ledBlue === 'number') setLedBlue(ledBlue);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ledBlue]);
+  
+  useEffect(() => {
+    if (typeof commonPin === 'string') setCommonPin(commonPin);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [commonPin]);
   const [rotationAngle, setRotationAngle] = useState(initialRotation);
   const [pinInfo, setPinInfo] = useState();
   const [isDragged, setIsDragged] = useState(false);
