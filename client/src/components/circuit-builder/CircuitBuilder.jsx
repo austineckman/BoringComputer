@@ -3,6 +3,7 @@ import { componentOptions, generateId } from './constants/componentOptions';
 import ComponentPalette from './components/ComponentPalette';
 import WireManager from './components/WireManager';
 import CircuitComponent from './components/CircuitComponent';
+import PinTooltip from './components/PinTooltip'; // Import custom tooltip component
 import './styles/tooltips.css'; // Import custom tooltip styles
 import './lib/pin-tooltips.js'; // Import pin tooltip enhancer
 
@@ -364,6 +365,9 @@ const CircuitBuilder = () => {
         
         {/* Wire management layer */}
         <WireManager canvasRef={canvasRef} />
+        
+        {/* Custom pin tooltip component */}
+        <PinTooltip />
         
         {/* Empty state */}
         {components.length === 0 && (
