@@ -3,7 +3,6 @@ import {
   ReactHeroBoardElement
 } from "../lib/inventr-component-lib.es.js";
 import Moveable from "react-moveable";
-import { createPortal } from "react-dom";
 import heroboardImg from '@assets/hero-board.icon.png';
 
 // Define MOVE_SETTINGS to match what the original code expects
@@ -33,7 +32,7 @@ const HeroBoard = ({
   const oldDataRef = useRef();
   const componentContextRef = useRef(null);
 
-  const [isComponentMenuShowing, setIsComponentMenuShowing] = useState(false);
+
   const [rotationAngle, setRotationAngle] = useState(initialRotation);
   const [isDragged, setIsDragged] = useState(false);
   const [posTop, setPosTop] = useState(initialY);
