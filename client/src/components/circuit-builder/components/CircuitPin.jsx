@@ -180,9 +180,10 @@ const CircuitPin = ({
         top: position.y,
         transform: 'translate(-50%, -50%)',
         cursor: 'crosshair',
-        zIndex: 15,
+        zIndex: 100, // Much higher z-index to ensure pins are always clickable
         boxShadow: isConnected || isHovered ? '0 0 4px rgba(0, 0, 0, 0.5)' : '0 1px 2px rgba(0, 0, 0, 0.3)',
-        transition: 'all 0.1s ease'
+        transition: 'all 0.1s ease',
+        pointerEvents: 'all' // Ensure pin receives click events
       }}
       onClick={handlePinClick}
       onMouseEnter={handleMouseEnter}
