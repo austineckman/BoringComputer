@@ -65,6 +65,15 @@ const WireManager = ({ canvasRef }) => {
       ));
     };
     
+    // Handler for pin click events from global event
+    const handlePinClickEvent = (e) => {
+      const { id, pinType, parentId } = e.detail;
+      
+      // Call our internal pin click handler
+      handlePinClick(id);
+      console.log(`WireManager received pin click for ${id} (${pinType})`);
+    };
+    
     // Handler for wire redrawing (e.g., when components move)
     const handleRedrawWires = () => {
       // Force redraw by creating a new array reference
@@ -74,6 +83,7 @@ const WireManager = ({ canvasRef }) => {
     // Register event listeners
     document.addEventListener('registerPin', handleRegisterPin);
     document.addEventListener('unregisterPin', handleUnregisterPin);
+    document.addEventListener('pinClicked', handlePinClickEvent);
     document.addEventListener('redrawWires', handleRedrawWires);
     
     // Add click handler to the canvas for wire interactions
@@ -110,6 +120,7 @@ const WireManager = ({ canvasRef }) => {
         return () => {
           document.removeEventListener('registerPin', handleRegisterPin);
           document.removeEventListener('unregisterPin', handleUnregisterPin);
+          document.removeEventListener('pinClicked', handlePinClickEvent);
           document.removeEventListener('redrawWires', handleRedrawWires);
           canvasElement.removeEventListener('click', handleCanvasClick);
           canvasElement.removeEventListener('mousemove', handlePendingWireMouseMove);
@@ -120,6 +131,7 @@ const WireManager = ({ canvasRef }) => {
     return () => {
       document.removeEventListener('registerPin', handleRegisterPin);
       document.removeEventListener('unregisterPin', handleUnregisterPin);
+      document.removeEventListener('pinClicked', handlePinClickEvent);
       document.removeEventListener('redrawWires', handleRedrawWires);
       
       if (canvasElement) {
