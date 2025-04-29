@@ -58,46 +58,90 @@ const PhotoresistorComponent: React.FC<ComponentProps> = ({
       handleDelete={() => handleDeleteComponent(id)}
     >
       <svg width="40" height="30" viewBox="-20 -15 40 30" xmlns="http://www.w3.org/2000/svg">
-        {/* Photoresistor body */}
-        <rect x="-10" y="-7" width="20" height="14" rx="2" fill="#333" />
-        
-        {/* Light-sensitive window with brightness */}
-        <rect 
-          x="-6" 
-          y="-5" 
-          width="12" 
-          height="10" 
-          rx="1" 
-          fill={`url(#brightness-${id})`} 
-        />
-        
-        {/* Define gradient based on brightness */}
+        {/* Define gradients and patterns */}
         <defs>
+          {/* Light-sensitive window gradient based on brightness */}
           <linearGradient id={`brightness-${id}`} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor={darkColor} />
             <stop offset={`${brightnessPct}%`} stopColor={lightColor} />
           </linearGradient>
+          
+          {/* Surface texture */}
+          <pattern id={`photoresistor-grid-${id}`} patternUnits="userSpaceOnUse" width="4" height="4" patternTransform="rotate(45)">
+            <path d="M 0,0 L 0,2" stroke="#444" strokeWidth="0.5" opacity="0.5" />
+          </pattern>
         </defs>
         
-        {/* Leads */}
-        <line x1="-15" y1="0" x2="-10" y2="0" stroke="#999" strokeWidth="1.5" />
-        <line x1="10" y1="0" x2="15" y2="0" stroke="#999" strokeWidth="1.5" />
+        {/* Photoresistor body - LDR shape with epoxy coating */}
+        <ellipse cx="0" cy="0" rx="10" ry="10" fill="#1e1e1e" />
+        <ellipse cx="0" cy="0" rx="9" ry="9" fill="#333" />
         
-        {/* Light-sensitive symbol */}
+        {/* Light-sensitive zig-zag pattern */}
         <path 
-          d="M 0 -12 L 3 -15 M 5 -10 L 8 -13 M 7 -5 L 10 -8" 
+          d="M -6,0 
+             C -6,-4 -4,-6 0,-6 
+             C 4,-6 6,-4 6,0 
+             C 6,4 4,6 0,6 
+             C -4,6 -6,4 -6,0" 
+          fill="none" 
+          stroke="#888" 
+          strokeWidth="1.2" 
+          strokeDasharray="1,0.5" 
+        />
+        
+        {/* Light-sensitive element with brightness indication */}
+        <circle 
+          cx="0" 
+          cy="0" 
+          r="6" 
+          fill={`url(#brightness-${id})`} 
+          opacity="0.9" 
+        />
+        <circle 
+          cx="0" 
+          cy="0" 
+          r="6" 
+          fill={`url(#photoresistor-grid-${id})`} 
+          opacity="0.5" 
+        />
+        
+        {/* Highlight to show 3D nature */}
+        <ellipse cx="-2" cy="-2" rx="3" ry="2" fill="#fff" opacity="0.15" />
+        
+        {/* Leads - metal legs */}
+        <line x1="-15" y1="0" x2="-9" y2="0" stroke="#aaa" strokeWidth="1.2" />
+        <line x1="9" y1="0" x2="15" y2="0" stroke="#aaa" strokeWidth="1.2" />
+        
+        {/* Light indicator symbols */}
+        <path 
+          d="M 14,-8 L 11,-5 M 16,-7 L 13,-4 M 18,-6 L 15,-3" 
           stroke="#ffcc33" 
           strokeWidth="0.8" 
+          fill="none" 
+        />
+        
+        {/* LDR symbol */}
+        <path 
+          d="M -14,-10 L -13,-11 L -12,-10" 
+          stroke="#888" 
+          strokeWidth="0.6" 
+          fill="none" 
+        />
+        <path 
+          d="M -15,-8 L -14,-9 L -13,-8" 
+          stroke="#888" 
+          strokeWidth="0.6" 
           fill="none" 
         />
         
         {/* Value display */}
         <text 
           x="0" 
-          y="12" 
+          y="14" 
           fontSize="5" 
+          fontWeight="bold"
           textAnchor="middle" 
-          fill="#fff"
+          fill="#eee"
           style={{ pointerEvents: 'none' }}
         >
           {typeof value === 'number' ? value : 'N/A'}
