@@ -268,17 +268,132 @@ const CircuitBuilder = () => {
               <label className="block text-sm font-medium text-gray-700">
                 Component Type
               </label>
-              <div className="mt-1 text-sm">{selectedComponent.type}</div>
+              <div className="mt-1 text-sm font-semibold">{
+                componentOptions.find(opt => opt.name === selectedComponent.type)?.displayName || 
+                selectedComponent.type
+              }</div>
             </div>
             
             <div className="mb-3">
               <label className="block text-sm font-medium text-gray-700">
                 Component ID
               </label>
-              <div className="mt-1 text-sm">{selectedComponent.id}</div>
+              <div className="mt-1 text-xs text-gray-500 font-mono">{selectedComponent.id}</div>
             </div>
             
-            {/* Component-specific properties would go here */}
+            {/* Component-specific properties */}
+            {selectedComponent.type === 'led' && (
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  LED Color
+                </label>
+                <div className="mt-1 flex items-center gap-2">
+                  {['red', 'green', 'blue', 'yellow', 'white'].map(color => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => {
+                        setComponents(prev => 
+                          prev.map(c => 
+                            c.id === selectedComponent.id 
+                              ? { ...c, props: { ...c.props, color } } 
+                              : c
+                          )
+                        );
+                      }}
+                      className={`w-6 h-6 rounded-full border ${
+                        selectedComponent.props?.color === color ? 'ring-2 ring-offset-2 ring-blue-500' : ''
+                      }`}
+                      style={{ backgroundColor: color }}
+                      aria-label={`Set color to ${color}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {selectedComponent.type === 'resistor' && (
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Resistance Value
+                </label>
+                <select 
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                  value={selectedComponent.props?.value || '220Ω'}
+                  onChange={(e) => {
+                    setComponents(prev => 
+                      prev.map(c => 
+                        c.id === selectedComponent.id 
+                          ? { ...c, props: { ...c.props, value: e.target.value } } 
+                          : c
+                      )
+                    );
+                  }}
+                >
+                  <option value="100Ω">100Ω</option>
+                  <option value="220Ω">220Ω</option>
+                  <option value="330Ω">330Ω</option>
+                  <option value="470Ω">470Ω</option>
+                  <option value="1kΩ">1kΩ</option>
+                  <option value="4.7kΩ">4.7kΩ</option>
+                  <option value="10kΩ">10kΩ</option>
+                </select>
+              </div>
+            )}
+            
+            {selectedComponent.type === 'photoresistor' && (
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Light Level
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs">Dark</span>
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="100" 
+                    value={selectedComponent.props?.lightLevel || 50}
+                    onChange={(e) => {
+                      setComponents(prev => 
+                        prev.map(c => 
+                          c.id === selectedComponent.id 
+                            ? { ...c, props: { ...c.props, lightLevel: parseInt(e.target.value) } } 
+                            : c
+                        )
+                      );
+                    }}
+                    className="flex-1"
+                  />
+                  <span className="text-xs">Bright</span>
+                </div>
+              </div>
+            )}
+            
+            {selectedComponent.type === 'rgb-led' && (
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Common Type
+                </label>
+                <div className="mt-1">
+                  <select 
+                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                    value={selectedComponent.props?.commonType || 'cathode'}
+                    onChange={(e) => {
+                      setComponents(prev => 
+                        prev.map(c => 
+                          c.id === selectedComponent.id 
+                            ? { ...c, props: { ...c.props, commonType: e.target.value } } 
+                            : c
+                        )
+                      );
+                    }}
+                  >
+                    <option value="cathode">Common Cathode</option>
+                    <option value="anode">Common Anode</option>
+                  </select>
+                </div>
+              </div>
+            )}
             
             <button
               onClick={handleDeleteComponent}
