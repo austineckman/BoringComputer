@@ -8,7 +8,7 @@ const config = {
   initDelay: 300,          // Initial delay before enhancing pins (ms)
   pollInterval: 1000,      // Interval to check for new components (ms)
   updateInterval: 250,     // How often to update pin appearance (ms)
-  debug: false            // Enable console logging
+  debug: true             // Enable console logging for debugging
 };
 
 // Pin enhancement state
