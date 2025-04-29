@@ -26,6 +26,9 @@ const CircuitBuilder = () => {
       return;
     }
     
+    // Log the image path to debug
+    console.log(`Adding component with image: ${componentInfo.imagePath}`);
+    
     // Generate random position near the center of the canvas
     const canvasWidth = canvasRef.current?.clientWidth || 800;
     const canvasHeight = canvasRef.current?.clientHeight || 600;
