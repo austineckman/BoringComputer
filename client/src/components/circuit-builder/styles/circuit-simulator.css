@@ -1,0 +1,342 @@
+/* Circuit Simulator Styles */
+
+.circuit-simulator {
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  padding: 16px;
+  color: #f0f0f0;
+  font-family: 'Courier New', monospace;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.simulator-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #444;
+  margin-bottom: 16px;
+}
+
+.simulator-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #f8f8f8;
+}
+
+.simulator-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.simulator-control {
+  background-color: #3a3a3a;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: #f0f0f0;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  transition: background-color 0.2s;
+}
+
+.simulator-control:hover {
+  background-color: #4a4a4a;
+}
+
+.simulator-control.running {
+  background-color: #a83232;
+}
+
+.simulator-control.running:hover {
+  background-color: #c04040;
+}
+
+.simulator-content {
+  display: flex;
+  flex: 1;
+  gap: 16px;
+  min-height: 0; /* Important for proper flex behavior */
+}
+
+.simulator-code-section {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Important for proper flex behavior */
+}
+
+.simulator-results-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Important for proper flex behavior */
+}
+
+.simulator-status {
+  background-color: #333;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.status-running {
+  color: #6dff6d;
+}
+
+.status-idle {
+  color: #ff9e3d;
+}
+
+.simulator-history {
+  background-color: #333;
+  border-radius: 4px;
+  padding: 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.simulator-history h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 1rem;
+  color: #f0f0f0;
+}
+
+.history-items {
+  flex: 1;
+  overflow-y: auto;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.no-history {
+  color: #888;
+  font-style: italic;
+  padding: 8px 0;
+}
+
+.history-item {
+  padding: 4px 0;
+  border-bottom: 1px solid #444;
+  display: flex;
+  gap: 8px;
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-item .timestamp {
+  color: #888;
+  flex-shrink: 0;
+}
+
+.history-item .event {
+  flex: 1;
+}
+
+.history-item.success .event {
+  color: #6dff6d;
+}
+
+.history-item.error .event {
+  color: #ff6d6d;
+}
+
+.history-item.info .event {
+  color: #6dceff;
+}
+
+/* Code Editor Styles */
+
+.code-editor-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0; /* Important for proper flex behavior */
+}
+
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+.editor-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #f0f0f0;
+}
+
+.editor-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.editor-buttons button {
+  background-color: #444;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  color: #f0f0f0;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  transition: background-color 0.2s;
+}
+
+.editor-buttons button:hover {
+  background-color: #555;
+}
+
+.save-btn {
+  background-color: #2c5282 !important;
+}
+
+.save-btn:hover {
+  background-color: #3672b3 !important;
+}
+
+.compile-btn {
+  background-color: #645200 !important;
+}
+
+.compile-btn:hover {
+  background-color: #866e00 !important;
+}
+
+.run-btn {
+  background-color: #2a623d !important;
+}
+
+.run-btn:hover {
+  background-color: #368250 !important;
+}
+
+.run-btn.running {
+  background-color: #a83232 !important;
+}
+
+.run-btn.running:hover {
+  background-color: #c04040 !important;
+}
+
+.code-editor {
+  flex: 1;
+  border-radius: 4px;
+  overflow: hidden;
+  min-height: 0; /* Important for proper flex behavior */
+}
+
+.compilation-error {
+  background-color: #3a2525;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-top: 12px;
+  border-left: 4px solid #a83232;
+}
+
+.compilation-error h4 {
+  margin: 0 0 4px 0;
+  color: #ff6d6d;
+  font-size: 0.9rem;
+}
+
+.compilation-error pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 0.85rem;
+  color: #ffaaaa;
+}
+
+/* AVR8 Simulator styles */
+
+.avr8-simulator {
+  display: none; /* Hide by default, it's a headless component */
+}
+
+.compile-error {
+  background-color: #3a2525;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-top: 12px;
+  border-left: 4px solid #a83232;
+}
+
+.compile-error h3 {
+  margin: 0 0 4px 0;
+  color: #ff6d6d;
+  font-size: 1rem;
+}
+
+.compile-error pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 0.85rem;
+  color: #ffaaaa;
+}
+
+.compiling-indicator,
+.simulation-status {
+  background-color: #333;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-top: 12px;
+  text-align: center;
+  color: #f0f0f0;
+}
+
+/* Pin visualization (for debugging) */
+
+.pin-states {
+  margin-top: 16px;
+  background-color: #333;
+  border-radius: 4px;
+  padding: 12px;
+}
+
+.pin-states h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 1rem;
+  color: #f0f0f0;
+}
+
+.pin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+}
+
+.pin {
+  background-color: #444;
+  border-radius: 4px;
+  padding: 6px;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.pin span {
+  display: block;
+  margin-bottom: 4px;
+  color: #aaa;
+}
+
+.pin.high {
+  background-color: #2a623d;
+  color: #6dff6d;
+}
+
+.pin.low {
+  background-color: #623c2a;
+  color: #ffa76d;
+}
