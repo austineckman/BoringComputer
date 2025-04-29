@@ -1,77 +1,117 @@
-import React, { useState, useEffect } from 'react';
-import BaseComponent from '../BaseComponent';
-import { ComponentData } from '../ComponentGenerator';
+import React from 'react';
+import BaseComponent from './BaseComponent';
+import CircuitPin from '../CircuitPin';
+import { ComponentProps } from '../ComponentGenerator';
 
-interface ResistorComponentProps {
-  componentData: ComponentData;
-  onPinClicked: (pinId: string) => void;
-  isActive: boolean;
-  handleMouseDown: (id: string, isActive: boolean) => void;
-  handleDeleteComponent: (id: string) => void;
-}
-
-const ResistorComponent: React.FC<ResistorComponentProps> = (props) => {
-  const { componentData } = props;
-  const [value, setValue] = useState(componentData.attrs.value || '220');
+const ResistorComponent: React.FC<ComponentProps> = ({
+  componentData,
+  onPinClicked,
+  isActive,
+  handleMouseDown,
+  handleDeleteComponent
+}) => {
+  const { id, attrs } = componentData;
+  const { rotate = 0, top, left, value = '220' } = attrs;
   
-  // Update internal state when component data changes
-  useEffect(() => {
-    setValue(componentData.attrs.value || '220');
-  }, [componentData.attrs.value]);
-  
-  // Define pins for Resistor
-  const definePins = () => {
-    return [
-      { id: 'pin1', x: 5, y: 20, label: 'Pin 1' },
-      { id: 'pin2', x: 85, y: 20, label: 'Pin 2' }
-    ];
+  // Calculate pin positions based on rotation
+  const pinPositions = {
+    0: { // Default horizontal orientation
+      pin1: { x: -25, y: 0 }, // Left pin
+      pin2: { x: 25, y: 0 },  // Right pin
+    },
+    90: { // Vertical orientation
+      pin1: { x: 0, y: -25 }, // Top pin
+      pin2: { x: 0, y: 25 },  // Bottom pin
+    },
+    180: { // Horizontal flipped
+      pin1: { x: 25, y: 0 },  // Right pin
+      pin2: { x: -25, y: 0 }, // Left pin
+    },
+    270: { // Vertical flipped
+      pin1: { x: 0, y: 25 },  // Bottom pin
+      pin2: { x: 0, y: -25 }, // Top pin
+    }
   };
   
-  // Get resistor band colors based on value
-  const getResistorBands = () => {
-    // This is a simplified color band calculator
-    // In a real implementation, you would parse the resistance value
-    // and calculate the correct color bands
-    
-    const bandColors = {
-      '100': ['brown', 'black', 'brown', 'gold'],
-      '220': ['red', 'red', 'brown', 'gold'],
-      '330': ['orange', 'orange', 'brown', 'gold'],
-      '470': ['yellow', 'violet', 'brown', 'gold'],
-      '1000': ['brown', 'black', 'red', 'gold'],
-      '2200': ['red', 'red', 'red', 'gold'],
-      '4700': ['yellow', 'violet', 'red', 'gold'],
-      '10000': ['brown', 'black', 'orange', 'gold']
-    };
-    
-    // Default to 220 ohm
-    return bandColors[value as keyof typeof bandColors] || ['red', 'red', 'brown', 'gold'];
-  };
+  // Get current rotation's pin positions
+  const currentPins = pinPositions[rotate as keyof typeof pinPositions] || pinPositions[0];
   
-  const bands = getResistorBands();
+  // Determine color bands based on resistance value
+  // This is a simplified version that just uses different colors 
+  // for standard resistor values
+  let colorBands = ['brown', 'black', 'brown', 'gold']; // 100 ohm default
+  
+  if (typeof value === 'string' || typeof value === 'number') {
+    const resistanceValue = parseInt(value.toString(), 10);
+    if (resistanceValue === 220) {
+      colorBands = ['red', 'red', 'brown', 'gold']; // 220 ohm
+    } else if (resistanceValue === 330) {
+      colorBands = ['orange', 'orange', 'brown', 'gold']; // 330 ohm
+    } else if (resistanceValue === 1000 || resistanceValue === 1) {
+      colorBands = ['brown', 'black', 'red', 'gold']; // 1k ohm
+    } else if (resistanceValue === 4700 || resistanceValue === 4.7) {
+      colorBands = ['yellow', 'violet', 'red', 'gold']; // 4.7k ohm
+    } else if (resistanceValue === 10000 || resistanceValue === 10) {
+      colorBands = ['brown', 'black', 'orange', 'gold']; // 10k ohm
+    } else if (resistanceValue === 100000 || resistanceValue === 100) {
+      colorBands = ['brown', 'black', 'yellow', 'gold']; // 100k ohm
+    } else if (resistanceValue === 1000000 || resistanceValue === 1000) {
+      colorBands = ['brown', 'black', 'green', 'gold']; // 1M ohm
+    }
+  }
   
   return (
-    <BaseComponent {...props} connectedPins={[]}>
-      <div className="relative w-90 h-40 flex items-center justify-center">
-        {/* Lead wires */}
-        <div className="absolute left-0 top-1/2 w-15 h-1 bg-gray-400 -translate-y-1/2"></div>
-        <div className="absolute right-0 top-1/2 w-15 h-1 bg-gray-400 -translate-y-1/2"></div>
-        
+    <BaseComponent
+      id={id}
+      left={left}
+      top={top}
+      rotate={rotate}
+      width={60}
+      height={20}
+      isActive={isActive}
+      handleMouseDown={handleMouseDown}
+      handleDelete={() => handleDeleteComponent(id)}
+    >
+      <svg width="60" height="20" viewBox="-30 -10 60 20" xmlns="http://www.w3.org/2000/svg">
         {/* Resistor body */}
-        <div className="absolute left-15 top-1/2 w-60 h-15 bg-beige-200 -translate-y-1/2 border border-beige-300 rounded-sm"
-             style={{ backgroundColor: '#e1c699' }}>
-          {/* Color bands */}
-          <div className="absolute left-5 top-0 bottom-0 w-4 rounded-sm" style={{ backgroundColor: bands[0] }}></div>
-          <div className="absolute left-15 top-0 bottom-0 w-4 rounded-sm" style={{ backgroundColor: bands[1] }}></div>
-          <div className="absolute left-25 top-0 bottom-0 w-4 rounded-sm" style={{ backgroundColor: bands[2] }}></div>
-          <div className="absolute right-5 top-0 bottom-0 w-4 rounded-sm" style={{ backgroundColor: bands[3] }}></div>
-        </div>
+        <rect x="-15" y="-7" width="30" height="14" rx="2" fill="#e0d0b0" stroke="#888" strokeWidth="0.5" />
+        
+        {/* Color bands */}
+        <rect x="-12" y="-7" width="3" height="14" fill={colorBands[0]} />
+        <rect x="-6" y="-7" width="3" height="14" fill={colorBands[1]} />
+        <rect x="0" y="-7" width="3" height="14" fill={colorBands[2]} />
+        <rect x="9" y="-7" width="3" height="14" fill={colorBands[3]} />
+        
+        {/* Leads */}
+        <line x1="-25" y1="0" x2="-15" y2="0" stroke="#999" strokeWidth="1.5" />
+        <line x1="15" y1="0" x2="25" y2="0" stroke="#999" strokeWidth="1.5" />
         
         {/* Value label */}
-        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 text-xs font-mono font-semibold">
-          {value} Ω
-        </div>
-      </div>
+        <text 
+          x="0" 
+          y="-12" 
+          fontSize="5" 
+          textAnchor="middle" 
+          fill="#555"
+          style={{ pointerEvents: 'none' }}
+        >
+          {value}Ω
+        </text>
+      </svg>
+      
+      {/* Connection pins */}
+      <CircuitPin
+        id={`${id}-pin1`}
+        x={30 + currentPins.pin1.x}
+        y={10 + currentPins.pin1.y}
+        onClick={() => onPinClicked(`${id}-pin1`)}
+      />
+      <CircuitPin
+        id={`${id}-pin2`}
+        x={30 + currentPins.pin2.x}
+        y={10 + currentPins.pin2.y}
+        onClick={() => onPinClicked(`${id}-pin2`)}
+      />
     </BaseComponent>
   );
 };
