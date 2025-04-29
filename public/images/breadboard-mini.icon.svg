@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
+  <rect x="2" y="10" width="36" height="20" rx="2" ry="2" fill="#eee" stroke="#333" stroke-width="1.5"/>
+  
+  <!-- Power rails -->
+  <rect x="3" y="11" width="34" height="3" fill="#f00" stroke="#333" stroke-width="0.5" stroke-opacity="0.3"/>
+  <rect x="3" y="26" width="34" height="3" fill="#00f" stroke="#333" stroke-width="0.5" stroke-opacity="0.3"/>
+  
+  <!-- Pin rows -->
+  <rect x="4" y="15" width="1" height="1" fill="#aaa"/>
+  <rect x="7" y="15" width="1" height="1" fill="#aaa"/>
+  <rect x="10" y="15" width="1" height="1" fill="#aaa"/>
+  <rect x="13" y="15" width="1" height="1" fill="#aaa"/>
+  <rect x="16" y="15" width="1" height="1" fill="#aaa"/>
+  <rect x="19" y="15" width="1" height="1" fill="#aaa"/>
+  <rect x="22" y="15" width="1" height="1" fill="#aaa"/>
+  <rect x="25" y="15" width="1" height="1" fill="#aaa"/>
+  <rect x="28" y="15" width="1" height="1" fill="#aaa"/>
+  <rect x="31" y="15" width="1" height="1" fill="#aaa"/>
+  <rect x="34" y="15" width="1" height="1" fill="#aaa"/>
+  
+  <rect x="4" y="18" width="1" height="1" fill="#aaa"/>
+  <rect x="7" y="18" width="1" height="1" fill="#aaa"/>
+  <rect x="10" y="18" width="1" height="1" fill="#aaa"/>
+  <rect x="13" y="18" width="1" height="1" fill="#aaa"/>
+  <rect x="16" y="18" width="1" height="1" fill="#aaa"/>
+  <rect x="19" y="18" width="1" height="1" fill="#aaa"/>
+  <rect x="22" y="18" width="1" height="1" fill="#aaa"/>
+  <rect x="25" y="18" width="1" height="1" fill="#aaa"/>
+  <rect x="28" y="18" width="1" height="1" fill="#aaa"/>
+  <rect x="31" y="18" width="1" height="1" fill="#aaa"/>
+  <rect x="34" y="18" width="1" height="1" fill="#aaa"/>
+  
+  <rect x="4" y="21" width="1" height="1" fill="#aaa"/>
+  <rect x="7" y="21" width="1" height="1" fill="#aaa"/>
+  <rect x="10" y="21" width="1" height="1" fill="#aaa"/>
+  <rect x="13" y="21" width="1" height="1" fill="#aaa"/>
+  <rect x="16" y="21" width="1" height="1" fill="#aaa"/>
+  <rect x="19" y="21" width="1" height="1" fill="#aaa"/>
+  <rect x="22" y="21" width="1" height="1" fill="#aaa"/>
+  <rect x="25" y="21" width="1" height="1" fill="#aaa"/>
+  <rect x="28" y="21" width="1" height="1" fill="#aaa"/>
+  <rect x="31" y="21" width="1" height="1" fill="#aaa"/>
+  <rect x="34" y="21" width="1" height="1" fill="#aaa"/>
+  
+  <rect x="4" y="24" width="1" height="1" fill="#aaa"/>
+  <rect x="7" y="24" width="1" height="1" fill="#aaa"/>
+  <rect x="10" y="24" width="1" height="1" fill="#aaa"/>
+  <rect x="13" y="24" width="1" height="1" fill="#aaa"/>
+  <rect x="16" y="24" width="1" height="1" fill="#aaa"/>
+  <rect x="19" y="24" width="1" height="1" fill="#aaa"/>
+  <rect x="22" y="24" width="1" height="1" fill="#aaa"/>
+  <rect x="25" y="24" width="1" height="1" fill="#aaa"/>
+  <rect x="28" y="24" width="1" height="1" fill="#aaa"/>
+  <rect x="31" y="24" width="1" height="1" fill="#aaa"/>
+  <rect x="34" y="24" width="1" height="1" fill="#aaa"/>
+  
+  <!-- Center divider -->
+  <rect x="19.5" y="14" width="1" height="12" fill="#aaa" opacity="0.5"/>
+</svg>
