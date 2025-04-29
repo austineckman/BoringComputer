@@ -1,265 +1,226 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 /**
- * WireManager - A simplified wire manager that implements
- * the exact Wokwi wiring behavior:
- * 1. Click on pin 1
- * 2. Red wire follows mouse
- * 3. Click on pin 2 to complete
- * 4. Click on non-pin to cancel
+ * Simplified WireManager focused ONLY on drawing wires correctly
+ * Only handles drawing straight lines from point to point
  */
 const WireManager = ({ canvasRef }) => {
-  // State for wire management
+  // State for tracking pin clicks and mouse position
+  const [pendingWireStart, setPendingWireStart] = useState(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [wires, setWires] = useState([]);
-  const [startPin, setStartPin] = useState(null);
-  const [mousePos, setMousePos] = useState({ x: 100, y: 100 });
-  const [registeredPins, setRegisteredPins] = useState({});
   
-  // Ref for the SVG element
-  const svgRef = useRef(null);
-  
-  // Initialize the global pin click handler
+  // Debug flag to force render SVG layer
+  const [isVisible, setIsVisible] = useState(true);
+
+  // Setup global handler for pin clicks
   useEffect(() => {
-    console.log("Setting up global pin click handler in WireManager");
+    console.log("Setting up WireManager with global handler");
     
-    // Create a global function to receive pin clicks
-    window.CIRCUIT_PIN_CLICKED = (pinId, pinType, parentId, position) => {
-      console.log("GLOBAL PIN CLICK HANDLER TRIGGERED:", pinId, pinType, parentId);
-      handlePinClick(pinId, pinType, parentId);
+    // Set up global handler for pin clicks
+    window.CIRCUIT_PIN_CLICKED = (pinId, pinType, parentId, position, element) => {
+      console.log("WIRE MANAGER: Pin clicked", { pinId, pinType, parentId, position });
+      
+      if (!position || (!position.x && !position.y)) {
+        console.error("WIRE MANAGER: Missing position data for pin", pinId);
+        return;
+      }
+      
+      handlePinClick(pinId, pinType, parentId, position, element);
     };
     
-    // Setup mousemove listener for the entire document
+    // Add mouse move handler to track mouse position
     const handleMouseMove = (e) => {
       if (!canvasRef?.current) return;
       
-      const canvasRect = canvasRef.current.getBoundingClientRect();
-      const x = e.clientX - canvasRect.left;
-      const y = e.clientY - canvasRect.top;
+      const rect = canvasRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      // Log mouse move for debugging (uncomment if needed)
+      // console.log("Mouse position:", { x, y });
       
       setMousePos({ x, y });
     };
     
     document.addEventListener('mousemove', handleMouseMove);
     
-    // Setup canvas click to cancel wire
-    const handleCanvasClick = (e) => {
-      // Only cancel if click wasn't on a pin
-      if (e.target.classList.contains('pin-connection-point') || 
-          e.target.closest('.pin-connection-point')) {
-        return;
-      }
-      
-      if (startPin) {
-        console.log("Canceling wire (canvas click)");
-        startPin.element?.classList.remove('wire-source-pin');
-        setStartPin(null);
-      }
-    };
+    // Ensure we can see the wire rendering
+    setIsVisible(true);
     
-    if (canvasRef?.current) {
-      canvasRef.current.addEventListener('click', handleCanvasClick);
-    }
-    
-    // Register for pin events
-    const handleRegisterPin = (e) => {
-      const { id, parentId, pinType, label, element } = e.detail;
-      
-      setRegisteredPins(prev => ({
-        ...prev,
-        [id]: { id, parentId, type: pinType, label, element }
-      }));
-    };
-    
-    // Handle pin unregistration
-    const handleUnregisterPin = (e) => {
-      const { id } = e.detail;
-      
-      setRegisteredPins(prev => {
-        const newPins = { ...prev };
-        delete newPins[id];
-        return newPins;
-      });
-      
-      // Remove any wires connected to this pin
-      setWires(prev => prev.filter(wire => 
-        wire.sourceId !== id && wire.targetId !== id
-      ));
-    };
-    
-    // Plain DOM event listeners
-    document.addEventListener('registerPin', handleRegisterPin);
-    document.addEventListener('unregisterPin', handleUnregisterPin);
-    
-    // Cleanup
+    // Clean up event listeners
     return () => {
       window.CIRCUIT_PIN_CLICKED = null;
       document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('registerPin', handleRegisterPin);
-      document.removeEventListener('unregisterPin', handleUnregisterPin);
-      
-      if (canvasRef?.current) {
-        canvasRef.current.removeEventListener('click', handleCanvasClick);
-      }
     };
-  }, [canvasRef, startPin]);
+  }, [canvasRef]);
   
-  // Get element position relative to the canvas
-  const getElementPosition = (element) => {
-    if (!element || !canvasRef?.current) return { x: 0, y: 0 };
+  // Handle pin click
+  const handlePinClick = (pinId, pinType, parentId, position, element) => {
+    console.log("WireManager handlePinClick", { pinId, position });
     
-    const canvasRect = canvasRef.current.getBoundingClientRect();
-    const elementRect = element.getBoundingClientRect();
+    // Get absolute position of the pin
+    let pinPosition = position;
     
-    return {
-      x: elementRect.left - canvasRect.left + elementRect.width / 2,
-      y: elementRect.top - canvasRect.top + elementRect.height / 2
-    };
-  };
-  
-  // Handle pin click for wiring (simple implementation)
-  const handlePinClick = (pinId, pinType, parentId) => {
-    console.log(`Pin clicked: ${pinId}, type: ${pinType}`);
-    
-    const pin = registeredPins[pinId];
-    if (!pin) {
-      console.warn(`Pin not found: ${pinId}`);
-      return;
+    // If we have direct access to the element, use getBoundingClientRect for accurate position
+    if (element) {
+      const rect = element.getBoundingClientRect();
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      pinPosition = {
+        x: rect.left + rect.width/2 - canvasRect.left,
+        y: rect.top + rect.height/2 - canvasRect.top
+      };
     }
     
-    if (!startPin) {
-      // Start a new wire
-      console.log(`Starting wire from pin ${pinId}`);
-      setStartPin({
+    // If no active wire, start one
+    if (!pendingWireStart) {
+      console.log("Starting new wire from", pinPosition);
+      setPendingWireStart({
         id: pinId,
         type: pinType,
-        parentId: parentId,
-        element: pin.element
+        parentId,
+        position: pinPosition
       });
-      
-      // Apply visual feedback to the pin
-      pin.element?.classList.add('wire-source-pin');
     } else {
-      // Complete the wire if it's not the same pin or component
-      if (startPin.id === pinId) {
-        console.log("Cannot connect pin to itself");
-        startPin.element?.classList.remove('wire-source-pin');
-        setStartPin(null);
-        return;
-      }
-      
-      if (startPin.parentId === parentId) {
-        console.log("Cannot connect pins on same component");
-        startPin.element?.classList.remove('wire-source-pin');
-        setStartPin(null);
-        return;
-      }
+      // Complete existing wire
+      console.log("Completing wire to", pinPosition);
       
       // Create a new wire
       const newWire = {
         id: `wire-${Date.now()}`,
-        sourceId: startPin.id,
+        sourceId: pendingWireStart.id,
         targetId: pinId,
-        sourceType: startPin.type,
+        sourcePosition: pendingWireStart.position,
+        targetPosition: pinPosition,
+        sourceType: pendingWireStart.type,
         targetType: pinType
       };
       
-      console.log("Creating wire:", newWire);
-      setWires([...wires, newWire]);
+      console.log("Created new wire:", newWire);
       
-      // Reset the start pin
-      startPin.element?.classList.remove('wire-source-pin');
-      setStartPin(null);
+      // Add the new wire to the list
+      setWires(prev => [...prev, newWire]);
+      
+      // Reset pending wire
+      setPendingWireStart(null);
     }
   };
   
-  // Handle double-click on wires to delete them
-  const handleWireDelete = (wireId, e) => {
+  // Handle wire deletion
+  const handleDeleteWire = (wireId, e) => {
     if (e) e.stopPropagation();
     console.log("Deleting wire:", wireId);
     setWires(prev => prev.filter(wire => wire.id !== wireId));
   };
   
-  // Render the WireManager component
+  // Debug function to log current state
+  useEffect(() => {
+    console.log("WireManager state:", {
+      pendingWireStart,
+      mousePos,
+      wires,
+      isVisible
+    });
+  }, [pendingWireStart, mousePos, wires, isVisible]);
+
+  // Cancel wire on background click
+  useEffect(() => {
+    const handleCanvasClick = (e) => {
+      if (e.target === canvasRef.current && pendingWireStart) {
+        console.log("Canceling wire - background click");
+        setPendingWireStart(null);
+      }
+    };
+
+    if (canvasRef?.current) {
+      canvasRef.current.addEventListener('click', handleCanvasClick);
+    }
+    
+    return () => {
+      if (canvasRef?.current) {
+        canvasRef.current.removeEventListener('click', handleCanvasClick);
+      }
+    };
+  }, [canvasRef, pendingWireStart]);
+
   return (
     <svg
-      ref={svgRef}
-      className="absolute inset-0 overflow-visible"
+      className="absolute inset-0 overflow-visible pointer-events-none"
       style={{
         width: '100%',
         height: '100%',
-        zIndex: 50,
-        pointerEvents: 'none'
+        zIndex: 100,
+        backgroundColor: 'rgba(0,0,0,0.01)', // Very slight background to ensure visible
       }}
     >
-      {/* Render existing wires */}
-      {wires.map(wire => {
-        const sourcePinEl = registeredPins[wire.sourceId]?.element;
-        const targetPinEl = registeredPins[wire.targetId]?.element;
-        
-        if (!sourcePinEl || !targetPinEl) {
-          return null;
-        }
-        
-        const sourcePos = getElementPosition(sourcePinEl);
-        const targetPos = getElementPosition(targetPinEl);
-        
-        return (
-          <g key={wire.id} className="wire-group">
-            <line
-              x1={sourcePos.x}
-              y1={sourcePos.y}
-              x2={targetPos.x}
-              y2={targetPos.y}
-              strokeWidth={2.8}
-              stroke="#ff0000"
-              strokeLinecap="round"
-              className="wire"
-              data-wire-id={wire.id}
-              style={{ pointerEvents: 'auto', cursor: 'crosshair' }}
-              onDoubleClick={(e) => handleWireDelete(wire.id, e)}
-            />
-            
-            {/* Wire endpoints */}
-            <circle
-              cx={sourcePos.x}
-              cy={sourcePos.y}
-              r={4}
-              fill="#ff0000"
-              pointerEvents="none"
-            />
-            <circle
-              cx={targetPos.x}
-              cy={targetPos.y}
-              r={4}
-              fill="#ff0000"
-              pointerEvents="none"
-            />
-          </g>
-        );
-      })}
+      {/* Debug info for visibility */}
+      <text x="10" y="20" fill="black" fontSize="12px">WireManager Active</text>
+      <text x="10" y="40" fill="black" fontSize="12px">
+        {pendingWireStart ? 'Wire in progress' : 'No active wire'}
+      </text>
+      <text x="10" y="60" fill="black" fontSize="12px">
+        Mouse: {Math.round(mousePos.x)}, {Math.round(mousePos.y)}
+      </text>
       
-      {/* Render pending wire (while dragging) */}
-      {startPin && (
-        <g className="pending-wire-group">
+      {/* Render completed wires */}
+      {wires.map(wire => (
+        <g key={wire.id} className="wire-group">
           <line
-            className="pending-wire"
-            x1={getElementPosition(startPin.element).x}
-            y1={getElementPosition(startPin.element).y}
-            x2={mousePos.x}
-            y2={mousePos.y}
-            strokeWidth={2.8}
+            x1={wire.sourcePosition.x}
+            y1={wire.sourcePosition.y}
+            x2={wire.targetPosition.x}
+            y2={wire.targetPosition.y}
+            strokeWidth={3}
             stroke="#ff0000"
             strokeLinecap="round"
-            strokeDasharray="5,2"
-            pointerEvents="none"
+            style={{ pointerEvents: 'auto', cursor: 'crosshair' }}
+            onDoubleClick={(e) => handleDeleteWire(wire.id, e)}
           />
+          
+          {/* Wire endpoints */}
           <circle
-            cx={getElementPosition(startPin.element).x}
-            cy={getElementPosition(startPin.element).y}
+            cx={wire.sourcePosition.x}
+            cy={wire.sourcePosition.y}
             r={4}
             fill="#ff0000"
             pointerEvents="none"
           />
+          <circle
+            cx={wire.targetPosition.x}
+            cy={wire.targetPosition.y}
+            r={4}
+            fill="#ff0000"
+            pointerEvents="none"
+          />
+        </g>
+      ))}
+      
+      {/* Render pending wire if one is in progress */}
+      {pendingWireStart && (
+        <g className="pending-wire-group">
+          {/* Draw line from start to current mouse position */}
+          <line
+            x1={pendingWireStart.position.x}
+            y1={pendingWireStart.position.y}
+            x2={mousePos.x}
+            y2={mousePos.y}
+            strokeWidth={3}
+            stroke="#ff0000"
+            strokeLinecap="round"
+            strokeDasharray="5,3"
+            pointerEvents="none"
+          />
+          
+          {/* Starting point */}
+          <circle
+            cx={pendingWireStart.position.x}
+            cy={pendingWireStart.position.y}
+            r={4}
+            fill="#ff0000"
+            pointerEvents="none"
+          />
+          
+          {/* End point (follows mouse) */}
           <circle
             cx={mousePos.x}
             cy={mousePos.y}
@@ -270,23 +231,6 @@ const WireManager = ({ canvasRef }) => {
           />
         </g>
       )}
-      
-      {/* Invisible click handlers for pins */}
-      {Object.values(registeredPins).map(pin => {
-        const pos = getElementPosition(pin.element);
-        return (
-          <circle
-            key={pin.id}
-            cx={pos.x}
-            cy={pos.y}
-            r={8}
-            fill="transparent"
-            style={{ pointerEvents: 'auto', cursor: 'crosshair' }}
-            onClick={() => handlePinClick(pin.id, pin.type, pin.parentId)}
-            data-pin-id={pin.id}
-          />
-        );
-      })}
     </svg>
   );
 };
