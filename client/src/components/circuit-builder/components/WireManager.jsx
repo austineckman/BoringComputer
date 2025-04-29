@@ -206,39 +206,43 @@ const WireManager = ({ canvasRef }) => {
   
   // Get wire style based on connection types
   const getWireStyle = (sourceType, targetType) => {
-    // Power connections
+    // Power connections - typically from outputs to inputs
     if (
       (sourceType === 'output' && targetType === 'input') ||
       (sourceType === 'input' && targetType === 'output')
     ) {
+      // For power connections (typical LED to resistor, or board to LED)
+      return {
+        stroke: getWireColor(sourceType, targetType),
+        strokeWidth: 3.5,
+        strokeLinecap: 'round',
+        filter: 'drop-shadow(0px 1px 3px rgba(0, 0, 0, 0.4))',
+        fill: 'none',
+        opacity: 0.9
+      };
+    }
+    
+    // Bidirectional connections - typically for data or I/O pins
+    if (sourceType === 'bidirectional' || targetType === 'bidirectional') {
       return {
         stroke: getWireColor(sourceType, targetType),
         strokeWidth: 3,
         strokeLinecap: 'round',
-        filter: 'drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3))',
-        fill: 'none'
-      };
-    }
-    
-    // Bidirectional connections
-    if (sourceType === 'bidirectional' || targetType === 'bidirectional') {
-      return {
-        stroke: getWireColor(sourceType, targetType),
-        strokeWidth: 2.5,
-        strokeLinecap: 'round',
         strokeDasharray: '0',
-        filter: 'drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.2))',
-        fill: 'none'
+        filter: 'drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.25))',
+        fill: 'none',
+        opacity: 0.85
       };
     }
     
-    // Default style
+    // Default style for other connections
     return {
       stroke: getWireColor(sourceType, targetType),
-      strokeWidth: 2.5,
+      strokeWidth: 3,
       strokeLinecap: 'round',
       filter: 'drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.2))',
-      fill: 'none'
+      fill: 'none',
+      opacity: 0.8
     };
   };
   
@@ -376,10 +380,12 @@ const WireManager = ({ canvasRef }) => {
           const sourcePos = getElementPosition(sourceElement);
           const wireStyle = {
             stroke: getWireColor(pendingWire.sourceType, 'bidirectional'),
-            strokeWidth: 2,
+            strokeWidth: 3,
             strokeLinecap: 'round',
-            strokeDasharray: '5,5',
-            fill: 'none'
+            strokeDasharray: '6,4',
+            filter: 'drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.2))',
+            fill: 'none',
+            opacity: 0.7
           };
           
           return (
