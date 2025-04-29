@@ -50,6 +50,29 @@
   100% { transform: translate(0); }
 }
 
+/* Custom tooltip style for circuit pins */
+.circuit-pin {
+  position: relative;
+}
+
+/* Enhanced HTML title tooltip */
+.circuit-pin:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
 @keyframes glitch-content {
   0% { opacity: 1; }
   30% { opacity: 0.9; }

@@ -455,40 +455,8 @@ const CircuitComponent = ({
               zIndex: 20
             }}
             onClick={(e) => handlePinClick(pin.id, pin.type, e)}
-            onMouseEnter={(e) => {
-              // Log pin data for debugging
-              console.log(`Pin hover: ${pin.id}, label: ${pin.label || pin.id}, type: ${pin.type}`);
-              
-              // Find pin element
-              const pinElement = e.currentTarget;
-              
-              // Create tooltip if it doesn't exist
-              let tooltip = document.getElementById(`tooltip-${id}-${pin.id}`);
-              if (!tooltip) {
-                tooltip = document.createElement('div');
-                tooltip.id = `tooltip-${id}-${pin.id}`;
-                tooltip.className = 'absolute bg-gray-800 text-white text-xs px-2 py-1 rounded z-50 whitespace-nowrap';
-                tooltip.style.pointerEvents = 'none';
-                tooltip.style.opacity = '0.9';
-                tooltip.style.bottom = '150%';
-                tooltip.style.left = '50%';
-                tooltip.style.transform = 'translateX(-50%)';
-                tooltip.textContent = pin.label || pin.id;
-                
-                // Add to DOM
-                pinElement.appendChild(tooltip);
-              } else {
-                tooltip.style.display = 'block';
-              }
-            }}
-            onMouseLeave={(e) => {
-              // Find and hide tooltip
-              const tooltip = document.getElementById(`tooltip-${id}-${pin.id}`);
-              if (tooltip) {
-                tooltip.style.display = 'none';
-              }
-            }}
             title={pin.label || pin.id}
+            data-tooltip={pin.label || pin.id}
           />
           
         );
