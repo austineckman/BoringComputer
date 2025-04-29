@@ -678,6 +678,268 @@ const CircuitBuilder = () => {
               </div>
             )}
             
+            {selectedComponent.type === 'custom-keypad' && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Keypad Settings
+                  </label>
+                  
+                  <div className="text-xs text-gray-500 bg-gray-100 p-3 rounded">
+                    <div className="font-medium mb-1">Pin Configuration</div>
+                    <p>This is a 4x4 matrix keypad with 8 pins:</p>
+                    <ul className="list-disc pl-4 mt-1">
+                      <li>4 row pins (output)</li>
+                      <li>4 column pins (input)</li>
+                    </ul>
+                    <p className="mt-2 text-gray-600">Connection Example:</p>
+                    <div className="bg-gray-200 p-2 mt-1 rounded font-mono">
+                      <div>Row1 → Arduino pin 5</div>
+                      <div>Row2 → Arduino pin 4</div>
+                      <div>Row3 → Arduino pin 3</div>
+                      <div>Row4 → Arduino pin 2</div>
+                      <div>Col1 → Arduino pin 9</div>
+                      <div>Col2 → Arduino pin 8</div>
+                      <div>Col3 → Arduino pin 7</div>
+                      <div>Col4 → Arduino pin 6</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded">
+                  <div className="font-medium mb-1">Component Information</div>
+                  <div>A standard 4x4 matrix keypad with 16 keys.</div>
+                  <div className="mt-1">Requires the Keypad library to be used in Arduino code.</div>
+                </div>
+              </div>
+            )}
+            
+            {selectedComponent.type === 'oled-display' && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    OLED Display Settings
+                  </label>
+                  
+                  <div>
+                    <label htmlFor="display-scale" className="block text-sm font-medium text-gray-700 flex justify-between">
+                      <span>Display Scale</span>
+                      <span className="text-blue-500">{selectedComponent.props?.scale?.toFixed(1) || '1.0'}</span>
+                    </label>
+                    <input
+                      id="display-scale"
+                      type="range"
+                      min="0.5"
+                      max="1.0"
+                      step="0.1"
+                      value={selectedComponent.props?.scale || 1.0}
+                      onChange={(e) => {
+                        setComponents(prev => 
+                          prev.map(c => 
+                            c.id === selectedComponent.id 
+                              ? { ...c, props: { ...c.props, scale: parseFloat(e.target.value) } } 
+                              : c
+                          )
+                        );
+                      }}
+                      className="w-full mt-1"
+                    />
+                  </div>
+                </div>
+                
+                <div className="text-xs text-gray-500 bg-gray-100 p-3 rounded">
+                  <div className="font-medium mb-1">I2C Connection Guide</div>
+                  <div className="bg-gray-200 p-2 rounded font-mono">
+                    <div>GND → Arduino GND</div>
+                    <div>VCC → Arduino 3.3V or 5V</div>
+                    <div>SCL → Arduino SCL (A5 on Uno)</div>
+                    <div>SDA → Arduino SDA (A4 on Uno)</div>
+                  </div>
+                  <div className="mt-2">Uses Adafruit SSD1306 library in Arduino code.</div>
+                </div>
+                
+                <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded">
+                  <div className="font-medium mb-1">Component Information</div>
+                  <div>128x64 pixel monochrome OLED display (SSD1306)</div>
+                  <div className="mt-1">Communicates via I2C protocol.</div>
+                </div>
+              </div>
+            )}
+            
+            {selectedComponent.type === 'segmented-display' && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    7-Segment Display Settings
+                  </label>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label htmlFor="digit-count" className="block text-sm font-medium text-gray-700 mb-1">
+                        Number of Digits
+                      </label>
+                      <select
+                        id="digit-count"
+                        value={selectedComponent.props?.digits || 1}
+                        onChange={(e) => {
+                          setComponents(prev => 
+                            prev.map(c => 
+                              c.id === selectedComponent.id 
+                                ? { ...c, props: { ...c.props, digits: parseInt(e.target.value) } } 
+                                : c
+                            )
+                          );
+                        }}
+                        className="w-full text-sm rounded p-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="1">1 Digit</option>
+                        <option value="2">2 Digits</option>
+                        <option value="4">4 Digits</option>
+                        <option value="8">8 Digits</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="pin-layout" className="block text-sm font-medium text-gray-700 mb-1">
+                        Pin Layout
+                      </label>
+                      <select
+                        id="pin-layout"
+                        value={selectedComponent.props?.pins || 'side'}
+                        onChange={(e) => {
+                          setComponents(prev => 
+                            prev.map(c => 
+                              c.id === selectedComponent.id 
+                                ? { ...c, props: { ...c.props, pins: e.target.value } } 
+                                : c
+                            )
+                          );
+                        }}
+                        className="w-full text-sm rounded p-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="side">Side Pins</option>
+                        <option value="bottom">Bottom Pins</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="text-xs text-gray-500 bg-gray-100 p-3 rounded">
+                  <div className="font-medium mb-1">Connection Guide</div>
+                  <p>Using common cathode configuration:</p>
+                  <div className="bg-gray-200 p-2 mt-1 rounded font-mono">
+                    <div>A-G pins → Arduino digital pins through resistors (220Ω)</div>
+                    <div>Common pins → Arduino GND</div>
+                  </div>
+                  <p className="mt-2">Libraries: TM1637 (4-digit) or MAX7219 (8-digit)</p>
+                </div>
+                
+                <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded">
+                  <div className="font-medium mb-1">Component Information</div>
+                  <div>Seven-segment display for showing numbers and limited characters.</div>
+                  <div className="mt-1">Each segment requires one digital pin or specialized driver.</div>
+                </div>
+              </div>
+            )}
+            
+            {selectedComponent.type === 'rotary-encoder' && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Rotary Encoder Settings
+                  </label>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label htmlFor="encoder-value" className="block text-sm font-medium text-gray-700 flex justify-between">
+                        <span>Current Value</span>
+                        <span className="text-blue-500">{selectedComponent.props?.value || 0}</span>
+                      </label>
+                      <input
+                        id="encoder-value"
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={selectedComponent.props?.value || 0}
+                        onChange={(e) => {
+                          setComponents(prev => 
+                            prev.map(c => 
+                              c.id === selectedComponent.id 
+                                ? { ...c, props: { ...c.props, value: parseInt(e.target.value) } } 
+                                : c
+                            )
+                          );
+                        }}
+                        className="w-full mt-1"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="step-size" className="block text-sm font-medium text-gray-700 mb-1">
+                        Step Size
+                      </label>
+                      <select
+                        id="step-size"
+                        value={selectedComponent.props?.stepSize || 1}
+                        onChange={(e) => {
+                          setComponents(prev => 
+                            prev.map(c => 
+                              c.id === selectedComponent.id 
+                                ? { ...c, props: { ...c.props, stepSize: parseInt(e.target.value) } } 
+                                : c
+                            )
+                          );
+                        }}
+                        className="w-full text-sm rounded p-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="1">1 (Fine)</option>
+                        <option value="5">5 (Medium)</option>
+                        <option value="10">10 (Coarse)</option>
+                      </select>
+                    </div>
+                    
+                    <div className="flex items-center mt-2">
+                      <input
+                        id="has-button"
+                        type="checkbox"
+                        checked={selectedComponent.props?.hasButton || false}
+                        onChange={(e) => {
+                          setComponents(prev => 
+                            prev.map(c => 
+                              c.id === selectedComponent.id 
+                                ? { ...c, props: { ...c.props, hasButton: e.target.checked } } 
+                                : c
+                            )
+                          );
+                        }}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="has-button" className="ml-2 block text-sm text-gray-700">
+                        Enable push button
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="text-xs text-gray-500 bg-gray-100 p-3 rounded">
+                  <div className="font-medium mb-1">Connection Guide</div>
+                  <div className="bg-gray-200 p-2 rounded font-mono">
+                    <div>CLK → Arduino pin 2 (interrupt)</div>
+                    <div>DT → Arduino pin 3 (interrupt)</div>
+                    <div>SW → Arduino pin 4 (if button enabled)</div>
+                    <div>+ → Arduino 5V</div>
+                    <div>GND → Arduino GND</div>
+                  </div>
+                </div>
+                
+                <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded">
+                  <div className="font-medium mb-1">Component Information</div>
+                  <div>Rotary encoder for selecting values by rotation.</div>
+                  <div className="mt-1">Optionally includes a push button for selections.</div>
+                </div>
+              </div>
+            )}
+            
             <button
               onClick={handleDeleteComponent}
               className="mt-3 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
