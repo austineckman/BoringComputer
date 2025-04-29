@@ -1,8 +1,90 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+
+// Wire Color Options based on Wokwi's palette
+const wireColorOptions = [
+  { value: '#000000' }, // Black
+  { value: '#563831' }, // Brown
+  { value: '#26b297' }, // Teal
+  { value: '#00ff00' }, // Bright Green
+  { value: '#1f5e1f' }, // Dark Green
+  { value: '#852583' }, // Purple
+  { value: '#3c61e3' }, // Blue
+  { value: '#ff6600' }, // Orange
+  { value: '#ff3333' }, // Red
+  { value: '#dada32' }, // Yellow
+  { value: '#b925c9' }  // Pink
+];
+
+/**
+ * Generate a path string from a series of points
+ * This creates a nice curve between the segments for better appearance
+ */
+const generatePathFromPoints = (points, radius = 15) => {
+  if (!points || points.length < 2) return '';
+  
+  let pathString = `M ${points[0].x} ${points[0].y} `;
+  
+  for (let i = 1; i < points.length; i++) {
+    const curr = points[i];
+    const prev = points[i-1];
+    
+    // Simple straight line if it's just two points
+    if (points.length === 2) {
+      return `M ${prev.x} ${prev.y} L ${curr.x} ${curr.y}`;
+    }
+    
+    // If this is the last point or we only have 2 points, just draw a line
+    if (i === points.length - 1 || points.length === 2) {
+      pathString += `L ${curr.x} ${curr.y} `;
+      continue;
+    }
+    
+    const next = points[i+1];
+    
+    // Check if the points are collinear (in a straight line)
+    const isCollinear = (p1, p2, p3) => {
+      const area = Math.abs(
+        (p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y)) / 2
+      );
+      return area < 0.1; // Threshold for collinearity
+    };
+    
+    if (!isCollinear(prev, curr, next)) {
+      // Calculate control points for a smooth curve
+      const dx1 = curr.x - prev.x;
+      const dy1 = curr.y - prev.y;
+      const dx2 = next.x - curr.x;
+      const dy2 = next.y - curr.y;
+      
+      // Calculate distance from curr to prev/next (up to a limit)
+      const dist1 = Math.min(Math.sqrt(dx1*dx1 + dy1*dy1) / 3, radius);
+      const dist2 = Math.min(Math.sqrt(dx2*dx2 + dy2*dy2) / 3, radius);
+      
+      // Calculate control points before and after the current point
+      const angle1 = Math.atan2(dy1, dx1);
+      const angle2 = Math.atan2(dy2, dx2);
+      
+      const beforeX = curr.x - Math.cos(angle1) * dist1;
+      const beforeY = curr.y - Math.sin(angle1) * dist1;
+      
+      const afterX = curr.x + Math.cos(angle2) * dist2;
+      const afterY = curr.y + Math.sin(angle2) * dist2;
+      
+      // Use curved segments instead of straight lines
+      pathString += `L ${beforeX} ${beforeY} S ${curr.x} ${curr.y} ${afterX} ${afterY} `;
+    } else {
+      // If points are collinear, just use a straight line
+      pathString += `L ${curr.x} ${curr.y} `;
+    }
+  }
+  
+  return pathString;
+};
 
 /**
  * WireManager component handles the creation and rendering of wires
- * between component pins
+ * between component pins with support for segmented paths
  * 
  * @param {Object} props
  * @param {RefObject} props.canvasRef - Reference to the canvas element
@@ -12,12 +94,17 @@ const WireManager = ({ canvasRef }) => {
   const [registeredPins, setRegisteredPins] = useState({});
   const [wires, setWires] = useState([]);
   const [pendingWire, setPendingWire] = useState(null);
+  const [editingWire, setEditingWire] = useState(null);
+  const [selectedWire, setSelectedWire] = useState(null);
+  
+  // Color management for wires
+  const [wireColorMenu, setWireColorMenu] = useState({ visible: false, wireId: null, position: { x: 0, y: 0 } });
   
   // SVG reference
   const svgRef = useRef(null);
   
   // Get element position relative to the canvas
-  const getElementPosition = (element) => {
+  const getElementPosition = useCallback((element) => {
     if (!element || !canvasRef?.current) return { x: 0, y: 0 };
     
     const canvasRect = canvasRef.current.getBoundingClientRect();
@@ -27,9 +114,9 @@ const WireManager = ({ canvasRef }) => {
       x: elementRect.left - canvasRect.left + elementRect.width / 2,
       y: elementRect.top - canvasRect.top + elementRect.height / 2
     };
-  };
+  }, [canvasRef]);
   
-  // Handle pin clicks - create or finish a wire - defined with useCallback to avoid recreating on every render
+  // Handle pin clicks - create or finish a wire
   const handlePinClick = useCallback((pinId) => {
     console.log(`Pin clicked: ${pinId}`);
     
@@ -46,11 +133,12 @@ const WireManager = ({ canvasRef }) => {
       setPendingWire({
         sourceId: pinId,
         sourceType: pin.type,
-        sourceParentId: pin.parentId
+        sourceParentId: pin.parentId,
+        points: []  // Store the wire points for segmented routing
       });
     } else {
       // Finishing a wire
-      const { sourceId, sourceType, sourceParentId } = pendingWire;
+      const { sourceId, sourceType, sourceParentId, points } = pendingWire;
       console.log(`Finishing wire: ${sourceId} -> ${pinId}`);
       
       // Prevent connecting a pin to itself
@@ -81,36 +169,211 @@ const WireManager = ({ canvasRef }) => {
         return;
       }
       
+      // Get the source and target positions
+      const sourceElement = registeredPins[sourceId]?.element;
+      const targetElement = pin.element;
+      
+      if (!sourceElement || !targetElement) {
+        console.warn('Source or target element is missing');
+        setPendingWire(null);
+        return;
+      }
+      
+      const sourcePos = getElementPosition(sourceElement);
+      const targetPos = getElementPosition(targetElement);
+      
+      // Filter out redundant intermediate points that are too close to source or target
+      const minDistance = 20; // Minimum distance between points
+      let filteredPoints = points.filter(point => {
+        const distToSource = Math.hypot(point.x - sourcePos.x, point.y - sourcePos.y);
+        const distToTarget = Math.hypot(point.x - targetPos.x, point.y - targetPos.y);
+        return distToSource > minDistance && distToTarget > minDistance;
+      });
+      
+      // Create the final array of points from source through intermediate points to target
+      const allPoints = [
+        sourcePos,
+        ...filteredPoints,
+        targetPos
+      ];
+      
+      // Generate a wire color based on type
+      const wireColor = getWireColor(sourceType, pin.type);
+      
       // Add the new wire
       const newWire = {
         id: `wire-${Date.now()}`,
         sourceId,
         targetId: pinId,
         sourceType,
-        targetType: pin.type
+        targetType: pin.type,
+        points: allPoints,
+        color: wireColor
       };
       
       console.log(`Creating new wire:`, newWire);
       setWires(prev => [...prev, newWire]);
       setPendingWire(null);
     }
-  }, [pendingWire, registeredPins]);
+  }, [pendingWire, registeredPins, getElementPosition]);
   
-  // Handle clicks on the canvas (to cancel pending wire)
+  // Handle clicks on the canvas for wire editing
   const handleCanvasClick = useCallback((e) => {
-    // If click wasn't on a pin and wasn't handled by a pin, cancel any pending wire
+    // Close color menu if it's open and click is outside of it
+    if (wireColorMenu.visible) {
+      const menuElement = document.getElementById('wire-color-menu');
+      if (menuElement && !menuElement.contains(e.target)) {
+        setWireColorMenu({ visible: false, wireId: null, position: { x: 0, y: 0 } });
+      }
+      return;
+    }
+    
+    // If click wasn't on a pin and wasn't handled by a pin, it's a canvas click
     if (e.target.classList.contains('circuit-pin') || 
         e.target.closest('.pin-connection-point') ||
         e.target.dataset.pinId) {
       return; // Do nothing, let the pin click handler handle it
     }
     
-    // Cancel the pending wire
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    const clickX = e.clientX - canvasRect.left;
+    const clickY = e.clientY - canvasRect.top;
+    
+    // Handle clicks during wire creation - add intermediate points
     if (pendingWire) {
-      console.log('Canceling pending wire (canvas click)');
-      setPendingWire(null);
+      setPendingWire(prev => {
+        const newPoints = [...(prev.points || []), { x: clickX, y: clickY }];
+        return { ...prev, points: newPoints };
+      });
+      return;
     }
-  }, [pendingWire]);
+    
+    // If a wire is being edited, add a point to it at the clicked position
+    if (editingWire) {
+      setWires(prev => {
+        return prev.map(wire => {
+          if (wire.id === editingWire) {
+            // Insert the new point at the appropriate position
+            const newPoint = { x: clickX, y: clickY };
+            
+            // Find the closest segment to insert the point
+            let bestDistance = Infinity;
+            let bestIndex = 0;
+            
+            for (let i = 0; i < wire.points.length - 1; i++) {
+              const p1 = wire.points[i];
+              const p2 = wire.points[i + 1];
+              
+              // Calculate distance from the point to the line segment
+              const dist = distanceToSegment(newPoint, p1, p2);
+              if (dist < bestDistance) {
+                bestDistance = dist;
+                bestIndex = i + 1; // Insert after p1
+              }
+            }
+            
+            if (bestDistance < 30) { // Only insert if it's close to a segment
+              const newPoints = [...wire.points];
+              newPoints.splice(bestIndex, 0, newPoint);
+              return { ...wire, points: newPoints };
+            }
+          }
+          return wire;
+        });
+      });
+      return;
+    }
+    
+    // Deselect any selected wire
+    setSelectedWire(null);
+  }, [pendingWire, editingWire, wireColorMenu, canvasRef]);
+  
+  // Calculate the distance from a point to a line segment
+  const distanceToSegment = (p, v, w) => {
+    const squaredLength = (v.x - w.x) ** 2 + (v.y - w.y) ** 2;
+    if (squaredLength === 0) return Math.hypot(p.x - v.x, p.y - v.y);
+    
+    let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / squaredLength;
+    t = Math.max(0, Math.min(1, t));
+    
+    const projX = v.x + t * (w.x - v.x);
+    const projY = v.y + t * (w.y - v.y);
+    
+    return Math.hypot(p.x - projX, p.y - projY);
+  };
+  
+  // Handle double click on wire midpoints for deletion
+  const handleWirePointDoubleClick = (wireId, pointIndex, e) => {
+    e.stopPropagation();
+    
+    // Don't delete first or last point (source/target pin connections)
+    if (pointIndex === 0 || pointIndex === wires.find(w => w.id === wireId)?.points.length - 1) {
+      return;
+    }
+    
+    // Remove the point from the wire
+    setWires(prev => {
+      return prev.map(wire => {
+        if (wire.id === wireId) {
+          const newPoints = [...wire.points];
+          newPoints.splice(pointIndex, 1);
+          return { ...wire, points: newPoints };
+        }
+        return wire;
+      });
+    });
+  };
+  
+  // Start editing a wire
+  const handleStartEditWire = (wireId, e) => {
+    e.stopPropagation();
+    setSelectedWire(wireId);
+    setEditingWire(wireId);
+  };
+  
+  // Finish editing a wire
+  const handleFinishEditWire = () => {
+    setEditingWire(null);
+  };
+  
+  // Handle wire deletion
+  const handleWireDelete = (wireId, e) => {
+    e.stopPropagation();
+    setWires(prev => prev.filter(wire => wire.id !== wireId));
+    setSelectedWire(null);
+    setEditingWire(null);
+    setWireColorMenu({ visible: false, wireId: null, position: { x: 0, y: 0 } });
+  };
+  
+  // Open the wire color menu
+  const handleOpenColorMenu = (wireId, e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    const position = {
+      x: e.clientX - canvasRect.left,
+      y: e.clientY - canvasRect.top
+    };
+    
+    setWireColorMenu({
+      visible: true,
+      wireId,
+      position
+    });
+  };
+  
+  // Change the color of a wire
+  const handleWireColorChange = (wireId, color) => {
+    setWires(prev => 
+      prev.map(wire => 
+        wire.id === wireId 
+          ? { ...wire, color } 
+          : wire
+      )
+    );
+    setWireColorMenu({ visible: false, wireId: null, position: { x: 0, y: 0 } });
+  };
   
   // Register event listeners for pin registration and wire drawing
   useEffect(() => {
@@ -150,7 +413,27 @@ const WireManager = ({ canvasRef }) => {
     // Handler for wire redrawing (e.g., when components move)
     const handleRedrawWires = () => {
       // Force redraw by creating a new array reference
-      setWires(prev => [...prev]);
+      setWires(prev => {
+        return prev.map(wire => {
+          // Update source and target positions
+          const sourceElement = registeredPins[wire.sourceId]?.element;
+          const targetElement = registeredPins[wire.targetId]?.element;
+          
+          if (!sourceElement || !targetElement) {
+            return wire;
+          }
+          
+          const sourcePos = getElementPosition(sourceElement);
+          const targetPos = getElementPosition(targetElement);
+          
+          // Keep any intermediate points but update the source and target
+          const newPoints = wire.points.length > 2 
+            ? [sourcePos, ...wire.points.slice(1, -1), targetPos]
+            : [sourcePos, targetPos];
+          
+          return { ...wire, points: newPoints };
+        });
+      });
     };
     
     // Register event listeners
@@ -165,18 +448,37 @@ const WireManager = ({ canvasRef }) => {
       canvasElement.addEventListener('click', handleCanvasClick);
     }
     
+    // Keyboard events for canceling wire creation/editing
+    const handleKeyDown = (e) => {
+      // Escape key to cancel pending wire or editing mode
+      if (e.key === 'Escape') {
+        if (pendingWire) {
+          setPendingWire(null);
+        }
+        if (editingWire) {
+          setEditingWire(null);
+        }
+        if (wireColorMenu.visible) {
+          setWireColorMenu({ visible: false, wireId: null, position: { x: 0, y: 0 } });
+        }
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    
     // Cleanup function to remove all event listeners
     return () => {
       document.removeEventListener('registerPin', handleRegisterPin);
       document.removeEventListener('unregisterPin', handleUnregisterPin);
       document.removeEventListener('pinClicked', handlePinClickEvent);
       document.removeEventListener('redrawWires', handleRedrawWires);
+      document.removeEventListener('keydown', handleKeyDown);
       
       if (canvasElement) {
         canvasElement.removeEventListener('click', handleCanvasClick);
       }
     };
-  }, [canvasRef, handlePinClick, handleCanvasClick]);
+  }, [canvasRef, handlePinClick, handleCanvasClick, pendingWire, editingWire, wireColorMenu, registeredPins, getElementPosition]);
   
   // Add mouse move handler for pending wire visualization
   useEffect(() => {
@@ -199,7 +501,16 @@ const WireManager = ({ canvasRef }) => {
         const sourceElement = registeredPins[pendingWire.sourceId]?.element;
         if (sourceElement) {
           const sourcePos = getElementPosition(sourceElement);
-          const pathString = getWirePath(sourcePos, { x: mouseX, y: mouseY });
+          
+          // Create the path with all intermediate points plus the current mouse position
+          const allPoints = [
+            sourcePos,
+            ...(pendingWire.points || []),
+            { x: mouseX, y: mouseY }
+          ];
+          
+          // Generate the path from all points
+          const pathString = generatePathFromPoints(allPoints);
           pendingPath.setAttribute('d', pathString);
         }
       }
@@ -220,20 +531,39 @@ const WireManager = ({ canvasRef }) => {
       (sourceType === 'output' && targetType === 'input') ||
       (sourceType === 'input' && targetType === 'output')
     ) {
-      return '#ef4444'; // Red - power connections
+      return '#ff3333'; // Red - power connections
     }
     
     // Signal connections
     if (sourceType === 'bidirectional' || targetType === 'bidirectional') {
-      return '#3b82f6'; // Blue - bidirectional signals
+      return '#3c61e3'; // Blue - bidirectional signals
     }
     
     // Default color
-    return '#10b981'; // Green - general signal
+    return '#26b297'; // Teal - general signal
   };
   
   // Get wire style based on connection types - Wokwi style
-  const getWireStyle = (sourceType, targetType) => {
+  const getWireStyle = (sourceType, targetType, isSelected = false) => {
+    // Common styles for all wires
+    const commonStyle = {
+      strokeLinecap: 'round',
+      strokeLinejoin: 'round',
+      strokeMiterlimit: 10,
+      fill: 'none',
+      transition: 'stroke-width 0.2s, opacity 0.2s, filter 0.2s'
+    };
+    
+    // Enhanced style for selected wires
+    if (isSelected) {
+      return {
+        ...commonStyle,
+        strokeWidth: 5,
+        filter: 'drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.6))',
+        opacity: 1
+      };
+    }
+    
     // Power connections - typically from outputs to inputs
     if (
       (sourceType === 'output' && targetType === 'input') ||
@@ -241,12 +571,9 @@ const WireManager = ({ canvasRef }) => {
     ) {
       // For power connections (typical LED to resistor, or board to LED)
       return {
-        stroke: getWireColor(sourceType, targetType),
+        ...commonStyle,
         strokeWidth: 4, // Thicker for power connections
-        strokeLinecap: 'round',
-        strokeMiterlimit: 10, // Better path corner rendering
         filter: 'drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.5))',
-        fill: 'none',
         opacity: 0.95
       };
     }
@@ -254,226 +581,235 @@ const WireManager = ({ canvasRef }) => {
     // Bidirectional connections - typically for data or I/O pins
     if (sourceType === 'bidirectional' || targetType === 'bidirectional') {
       return {
-        stroke: getWireColor(sourceType, targetType),
+        ...commonStyle,
         strokeWidth: 3.5,
-        strokeLinecap: 'round',
-        strokeMiterlimit: 10,
         filter: 'drop-shadow(0px 1.5px 2px rgba(0, 0, 0, 0.3))',
-        fill: 'none',
         opacity: 0.9
       };
     }
     
     // Default style for other connections
     return {
-      stroke: getWireColor(sourceType, targetType),
+      ...commonStyle,
       strokeWidth: 3.5,
-      strokeLinecap: 'round',
-      strokeMiterlimit: 10,
       filter: 'drop-shadow(0px 1.5px 2px rgba(0, 0, 0, 0.25))',
-      fill: 'none',
       opacity: 0.85
     };
   };
   
-  // Calculate SVG path string for a wire following Wokwi's implementation
-  const getWirePath = (sourcePos, targetPos) => {
-    // Ensure we have valid positions
-    if (!sourcePos || !targetPos) {
-      console.warn('Invalid positions for wire path:', sourcePos, targetPos);
-      return `M 0,0`;
-    }
-    
-    const dx = targetPos.x - sourcePos.x;
-    const dy = targetPos.y - sourcePos.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Calculate a nice curve that follows Wokwi's wire appearance
-    // We'll use multiple segments for better control over the curve shape
-    
-    // For very short connections, use a simple curve
-    if (distance < 30) {
-      return `M${sourcePos.x},${sourcePos.y} Q${(sourcePos.x + targetPos.x)/2},${(sourcePos.y + targetPos.y)/2} ${targetPos.x},${targetPos.y}`;
-    }
-    
-    // Determine if this is primarily horizontal, vertical, or diagonal
-    const isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.5; 
-    const isVertical = Math.abs(dy) > Math.abs(dx) * 1.5;
-    
-    // Calculate control points with consideration for the circuit board grid layout
-    // These offsets create the nice curved wires seen in Wokwi
-    
-    // For horizontal-ish wires
-    if (isHorizontal) {
-      const midX = sourcePos.x + dx / 2;
-      const controlDist = Math.min(Math.abs(dx) / 4, 40);
-      
-      return `M${sourcePos.x},${sourcePos.y} `+
-             `C${sourcePos.x + controlDist},${sourcePos.y} `+
-             `${midX - controlDist},${targetPos.y} `+ 
-             `${midX},${targetPos.y} `+
-             `S${targetPos.x - controlDist},${targetPos.y} `+
-             `${targetPos.x},${targetPos.y}`;
-    }
-    
-    // For vertical-ish wires
-    if (isVertical) {
-      const midY = sourcePos.y + dy / 2;
-      const controlDist = Math.min(Math.abs(dy) / 4, 40);
-      
-      return `M${sourcePos.x},${sourcePos.y} `+
-             `C${sourcePos.x},${sourcePos.y + controlDist} `+
-             `${targetPos.x},${midY - controlDist} `+ 
-             `${targetPos.x},${midY} `+
-             `S${targetPos.x},${targetPos.y - controlDist} `+
-             `${targetPos.x},${targetPos.y}`;
-    }
-    
-    // For diagonal connections, create a curve with a 45° segment in the middle
-    const midX = sourcePos.x + dx / 2;
-    const midY = sourcePos.y + dy / 2;
-    const controlLen = distance / 4;  // Control point distance as fraction of total distance
-    
-    return `M${sourcePos.x},${sourcePos.y} `+
-           `C${sourcePos.x + Math.sign(dx) * controlLen},${sourcePos.y} `+
-           `${midX - Math.sign(dx) * controlLen/2},${midY - Math.sign(dy) * controlLen/2} `+
-           `${midX},${midY} `+
-           `S${targetPos.x - Math.sign(dx) * controlLen},${targetPos.y} `+
-           `${targetPos.x},${targetPos.y}`;
-  };
-  
-  // Handle wire deletion
-  const handleWireDelete = (wireId, e) => {
-    e.stopPropagation();
-    setWires(prev => prev.filter(wire => wire.id !== wireId));
-  };
-  
   return (
-    <svg 
-      ref={svgRef}
-      className="absolute inset-0 pointer-events-none z-10"
-      style={{ width: '100%', height: '100%' }}
-    >
-      {/* Draw existing wires */}
-      {wires.map(wire => {
-        // Get source and target elements from registered pins
-        const sourceElement = registeredPins[wire.sourceId]?.element;
-        const targetElement = registeredPins[wire.targetId]?.element;
-        
-        if (!sourceElement || !targetElement) {
-          // One of the pins is no longer available, remove this wire
-          setTimeout(() => {
-            setWires(prev => prev.filter(w => w.id !== wire.id));
-          }, 0);
-          return null;
-        }
-        
-        // Get positions
-        const sourcePos = getElementPosition(sourceElement);
-        const targetPos = getElementPosition(targetElement);
-        
-        // Calculate path and wire style
-        const pathString = getWirePath(sourcePos, targetPos);
-        const wireStyle = getWireStyle(wire.sourceType, wire.targetType);
-        
-        return (
-          <g key={wire.id} className="wire-group">
-            <path
-              d={pathString}
-              {...wireStyle}
-              className="wire"
-              data-wire-id={wire.id}
-              onDoubleClick={(e) => handleWireDelete(wire.id, e)}
-              style={{ pointerEvents: 'auto', cursor: 'crosshair' }}
-            />
-            
-            {/* Wire endpoints */}
-            <circle
-              cx={sourcePos.x}
-              cy={sourcePos.y}
-              r={4}
-              fill={wireStyle.stroke}
-              pointerEvents="none"
-            />
-            <circle
-              cx={targetPos.x}
-              cy={targetPos.y}
-              r={4}
-              fill={wireStyle.stroke}
-              pointerEvents="none"
-            />
-          </g>
-        );
-      })}
-      
-      {/* Draw pending wire */}
-      {pendingWire && (
-        (() => {
-          // Get source element
-          const sourceElement = registeredPins[pendingWire.sourceId]?.element;
-          if (!sourceElement) return null;
+    <>
+      <svg 
+        ref={svgRef}
+        className="absolute inset-0 pointer-events-none z-10"
+        style={{ width: '100%', height: '100%' }}
+      >
+        {/* Draw existing wires */}
+        {wires.map(wire => {
+          // Get source and target elements from registered pins
+          const sourceElement = registeredPins[wire.sourceId]?.element;
+          const targetElement = registeredPins[wire.targetId]?.element;
           
-          // Get mouse position relative to canvas
-          const handleMouseMove = (e) => {
-            const svg = svgRef.current;
-            if (!svg) return;
-            
-            // Update mouse position for wire visualization
-            const canvasRect = canvasRef.current.getBoundingClientRect();
-            const mouseX = e.clientX - canvasRect.left;
-            const mouseY = e.clientY - canvasRect.top;
-            
-            // Get the current path element and update it
-            const pendingPath = svg.querySelector('.pending-wire');
-            if (pendingPath) {
-              const sourcePos = getElementPosition(sourceElement);
-              const pathString = getWirePath(sourcePos, { x: mouseX, y: mouseY });
-              pendingPath.setAttribute('d', pathString);
-            }
-          };
+          if (!sourceElement || !targetElement) {
+            // One of the pins is no longer available, remove this wire
+            setTimeout(() => {
+              setWires(prev => prev.filter(w => w.id !== wire.id));
+            }, 0);
+            return null;
+          }
           
-          // Mouse movement handled in main useEffect
+          // Generate path from all points
+          const pathString = generatePathFromPoints(wire.points || [
+            getElementPosition(sourceElement),
+            getElementPosition(targetElement)
+          ]);
           
-          // Render pending wire path
-          const sourcePos = getElementPosition(sourceElement);
-          const wireStyle = {
-            stroke: getWireColor(pendingWire.sourceType, 'bidirectional'),
-            strokeWidth: 3,
-            strokeLinecap: 'round',
-            strokeDasharray: '6,4',
-            filter: 'drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.2))',
-            fill: 'none',
-            opacity: 0.7
-          };
+          // Determine if this wire is selected
+          const isSelected = selectedWire === wire.id || editingWire === wire.id;
+          
+          // Get wire style
+          const wireStyle = getWireStyle(wire.sourceType, wire.targetType, isSelected);
           
           return (
-            <path
-              className="pending-wire"
-              d={`M ${sourcePos.x},${sourcePos.y}`}
-              {...wireStyle}
-              pointerEvents="none"
-            />
+            <g key={wire.id} className="wire-group">
+              {/* Main wire path */}
+              <path
+                d={pathString}
+                stroke={wire.color || getWireColor(wire.sourceType, wire.targetType)}
+                {...wireStyle}
+                className={`wire ${isSelected ? 'selected-wire' : ''}`}
+                data-wire-id={wire.id}
+                onDoubleClick={(e) => handleWireDelete(wire.id, e)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedWire(wire.id);
+                }}
+                onContextMenu={(e) => handleOpenColorMenu(wire.id, e)}
+                style={{ pointerEvents: 'auto', cursor: isSelected ? 'crosshair' : 'pointer' }}
+              />
+              
+              {/* Show wire control points when selected */}
+              {isSelected && (wire.points || []).map((point, index) => (
+                <circle
+                  key={`${wire.id}-point-${index}`}
+                  cx={point.x}
+                  cy={point.y}
+                  r={index === 0 || index === (wire.points || []).length - 1 ? 5 : 6}
+                  fill={index === 0 || index === (wire.points || []).length - 1 ? wire.color : '#ffffff'}
+                  stroke={wire.color}
+                  strokeWidth={2}
+                  style={{ 
+                    pointerEvents: 'auto', 
+                    cursor: index === 0 || index === (wire.points || []).length - 1 ? 'default' : 'pointer',
+                    filter: 'drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3))'
+                  }}
+                  onDoubleClick={(e) => handleWirePointDoubleClick(wire.id, index, e)}
+                />
+              ))}
+            </g>
           );
-        })()
+        })}
+        
+        {/* Draw pending wire */}
+        {pendingWire && (
+          (() => {
+            // Get source element
+            const sourceElement = registeredPins[pendingWire.sourceId]?.element;
+            if (!sourceElement) return null;
+            
+            // Get source position
+            const sourcePos = getElementPosition(sourceElement);
+            
+            // Create the path with all intermediate points
+            // The last point will be the current mouse position, handled by mousemove
+            const allPoints = [
+              sourcePos,
+              ...(pendingWire.points || [])
+            ];
+            
+            // Add an empty point for the current mouse position
+            allPoints.push({ x: sourcePos.x, y: sourcePos.y });
+            
+            // Generate the path from all points
+            const pathString = generatePathFromPoints(allPoints);
+            
+            // Define wire style for pending wire
+            const wireStyle = {
+              stroke: getWireColor(pendingWire.sourceType, 'bidirectional'),
+              strokeWidth: 3,
+              strokeLinecap: 'round',
+              strokeDasharray: '6,4',
+              filter: 'drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.2))',
+              fill: 'none',
+              opacity: 0.7
+            };
+            
+            return (
+              <>
+                <path
+                  className="pending-wire"
+                  d={pathString}
+                  {...wireStyle}
+                  pointerEvents="none"
+                />
+                
+                {/* Show intermediate points */}
+                {pendingWire.points && pendingWire.points.map((point, index) => (
+                  <circle
+                    key={`pending-point-${index}`}
+                    cx={point.x}
+                    cy={point.y}
+                    r={5}
+                    fill="#ffffff"
+                    stroke={wireStyle.stroke}
+                    strokeWidth={2}
+                    pointerEvents="none"
+                  />
+                ))}
+                
+                {/* Source point */}
+                <circle
+                  cx={sourcePos.x}
+                  cy={sourcePos.y}
+                  r={5}
+                  fill={wireStyle.stroke}
+                  pointerEvents="none"
+                />
+              </>
+            );
+          })()
+        )}
+      </svg>
+      
+      {/* Wire editing toolbar */}
+      {editingWire && (
+        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white p-2 rounded-md z-20 flex gap-2 shadow-lg">
+          <div className="text-xs text-gray-300">
+            Editing wire: Click to add points, double-click points to remove them
+          </div>
+          <button 
+            className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700"
+            onClick={handleFinishEditWire}
+          >
+            Done
+          </button>
+        </div>
       )}
       
-      {/* Invisible wire click handlers */}
-      {Object.values(registeredPins).map(pin => {
-        const position = getElementPosition(pin.element);
-        return (
-          <circle
-            key={pin.id}
-            cx={position.x}
-            cy={position.y}
-            r={8}
-            fill="transparent"
-            style={{ pointerEvents: 'auto', cursor: 'crosshair' }}
-            onClick={() => handlePinClick(pin.id)}
-            data-pin-id={pin.id}
-          />
-        );
-      })}
-    </svg>
+      {/* Selected wire controls */}
+      {selectedWire && !editingWire && (
+        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white p-2 rounded-md z-20 flex gap-2 shadow-lg">
+          <button 
+            className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700"
+            onClick={(e) => handleStartEditWire(selectedWire, e)}
+          >
+            Edit Path
+          </button>
+          <button 
+            className="bg-purple-600 text-white px-2 py-1 rounded text-xs hover:bg-purple-700"
+            onClick={(e) => handleOpenColorMenu(selectedWire, e)}
+          >
+            Change Color
+          </button>
+          <button 
+            className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+            onClick={(e) => handleWireDelete(selectedWire, e)}
+          >
+            Delete
+          </button>
+        </div>
+      )}
+      
+      {/* Wire color menu */}
+      {wireColorMenu.visible && createPortal(
+        <div 
+          id="wire-color-menu"
+          className="absolute bg-gray-800 rounded shadow-lg p-2 text-white z-30"
+          style={{ 
+            left: `${wireColorMenu.position.x}px`, 
+            top: `${wireColorMenu.position.y}px`,
+            transform: 'translate(-50%, -100%)',
+            marginTop: '-10px'
+          }}
+        >
+          <div className="flex flex-wrap gap-1 justify-center mb-2 max-w-[180px]">
+            {wireColorOptions.map((color, index) => (
+              <button
+                key={`color-${index}`}
+                onClick={() => handleWireColorChange(wireColorMenu.wireId, color.value)}
+                className="w-6 h-6 rounded-full hover:ring-2 hover:ring-white"
+                style={{ 
+                  backgroundColor: color.value,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                }}
+                aria-label={`Set wire color to ${color.value}`}
+              />
+            ))}
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
   );
 };
 
