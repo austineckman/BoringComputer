@@ -1,85 +1,113 @@
-import React, { useState, useEffect } from 'react';
-import BaseComponent from '../BaseComponent';
-import { ComponentData } from '../ComponentGenerator';
+import React from 'react';
+import BaseComponent from '../components/BaseComponent';
+import CircuitPin from '../CircuitPin';
+import { ComponentProps } from '../ComponentGenerator';
 
-interface LEDComponentProps {
-  componentData: ComponentData;
-  onPinClicked: (pinId: string) => void;
-  isActive: boolean;
-  handleMouseDown: (id: string, isActive: boolean) => void;
-  handleDeleteComponent: (id: string) => void;
-}
-
-const LEDComponent: React.FC<LEDComponentProps> = (props) => {
-  const { componentData } = props;
-  const [brightness, setBrightness] = useState(componentData.attrs.brightness || 0);
-  const [color, setColor] = useState(componentData.attrs.color || 'red');
+const LEDComponent: React.FC<ComponentProps> = ({
+  componentData,
+  onPinClicked,
+  isActive,
+  handleMouseDown,
+  handleDeleteComponent
+}) => {
+  const { id, attrs } = componentData;
+  const { rotate, top, left, color = 'red', brightness = 100 } = attrs;
   
-  // Update internal state when component data changes
-  useEffect(() => {
-    setBrightness(componentData.attrs.brightness || 0);
-    setColor(componentData.attrs.color || 'red');
-  }, [componentData.attrs.brightness, componentData.attrs.color]);
-  
-  // Define pins for LED (anode and cathode)
-  const definePins = () => {
-    return [
-      { id: 'anode', x: 20, y: 5, label: 'Anode (+)' },
-      { id: 'cathode', x: 20, y: 35, label: 'Cathode (-)' }
-    ];
-  };
-  
-  // Gets the color based on the LED's state and type
-  const getLEDColor = () => {
-    // Map the brightness (0-100) to opacity (0.1-1)
-    const opacity = (brightness / 100) * 0.9 + 0.1;
-    
-    // Get the base color
-    let baseColor;
-    switch (color) {
-      case 'red':
-        baseColor = 'rgb(255, 0, 0)';
-        break;
-      case 'green':
-        baseColor = 'rgb(0, 255, 0)';
-        break;
-      case 'blue':
-        baseColor = 'rgb(0, 0, 255)';
-        break;
-      case 'yellow':
-        baseColor = 'rgb(255, 255, 0)';
-        break;
-      default:
-        baseColor = 'rgb(255, 0, 0)';
+  // Calculate pin positions based on rotation
+  const pinPositions = {
+    0: { // Default orientation (LED pointing up)
+      pin1: { x: 0, y: -20 }, // Top pin (anode)
+      pin2: { x: 0, y: 20 },  // Bottom pin (cathode)
+    },
+    90: { // Rotated 90 degrees clockwise
+      pin1: { x: 20, y: 0 },  // Right pin
+      pin2: { x: -20, y: 0 }, // Left pin
+    },
+    180: { // Rotated 180 degrees
+      pin1: { x: 0, y: 20 },  // Bottom pin
+      pin2: { x: 0, y: -20 }, // Top pin
+    },
+    270: { // Rotated 270 degrees
+      pin1: { x: -20, y: 0 }, // Left pin
+      pin2: { x: 20, y: 0 },  // Right pin
     }
-    
-    return { 
-      backgroundColor: baseColor,
-      opacity: opacity
-    };
   };
+  
+  // Get current rotation's pin positions
+  const currentPins = pinPositions[rotate as keyof typeof pinPositions] || pinPositions[0];
+  
+  // Calculate brightness opacity (0.2 to 1.0)
+  const ledOpacity = 0.2 + (brightness / 100) * 0.8;
   
   return (
-    <BaseComponent {...props} connectedPins={[]}>
-      <div className="relative w-40 h-40 flex items-center justify-center">
-        {/* LED body */}
-        <div className="absolute w-24 h-24 rounded-full bg-gray-200 border border-gray-400"></div>
+    <BaseComponent
+      id={id}
+      left={left}
+      top={top}
+      rotate={rotate}
+      width={40}
+      height={40}
+      isActive={isActive}
+      handleMouseDown={handleMouseDown}
+      handleDelete={() => handleDeleteComponent(id)}
+    >
+      <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+        {/* LED Body */}
+        <circle cx="20" cy="20" r="10" fill="#333" />
+        <circle 
+          cx="20" 
+          cy="20" 
+          r="8" 
+          fill={color} 
+          opacity={ledOpacity} 
+        />
+        <circle 
+          cx="20" 
+          cy="20" 
+          r="3" 
+          fill="#fff" 
+          opacity={ledOpacity * 0.8} 
+        />
         
-        {/* LED light */}
-        <div 
-          className="absolute w-16 h-16 rounded-full shadow-lg transition-opacity duration-200"
-          style={getLEDColor()}
-        ></div>
+        {/* Leads */}
+        <line 
+          x1="20" 
+          y1="10" 
+          x2="20" 
+          y2="0" 
+          stroke="#ccc" 
+          strokeWidth="2" 
+        />
+        <line 
+          x1="20" 
+          y1="30" 
+          x2="20" 
+          y2="40" 
+          stroke="#ccc" 
+          strokeWidth="2" 
+        />
         
-        {/* LED label */}
-        <div className="absolute bottom-2 text-center text-xs font-bold text-gray-700">
-          LED {componentData.attrs.color}
-        </div>
-        
-        {/* LED legs */}
-        <div className="absolute top-0 left-1/2 w-1 h-5 bg-gray-400 -translate-x-1/2"></div>
-        <div className="absolute bottom-0 left-1/2 w-1 h-5 bg-gray-400 -translate-x-1/2"></div>
-      </div>
+        {/* Polarity indicator (flat side on cathode) */}
+        <path 
+          d="M15,30 H25" 
+          stroke="#333" 
+          strokeWidth="1.5" 
+        />
+      </svg>
+
+      {/* Pin connections */}
+      <CircuitPin
+        id={`${id}-pin1`}
+        x={20 + currentPins.pin1.x}
+        y={20 + currentPins.pin1.y}
+        onClick={() => onPinClicked(`${id}-pin1`)}
+      />
+      <CircuitPin
+        id={`${id}-pin2`}
+        x={20 + currentPins.pin2.x}
+        y={20 + currentPins.pin2.y}
+        onClick={() => onPinClicked(`${id}-pin2`)}
+      />
     </BaseComponent>
   );
 };
