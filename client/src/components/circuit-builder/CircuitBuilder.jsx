@@ -110,8 +110,9 @@ const CircuitBuilder = () => {
     let height = 100;
     
     if (componentDefinition.name === 'heroboard') {
-      width = 200;
-      height = 150;
+      // Bigger dimensions for the Hero Board to match Arduino UNO R3
+      width = 240;
+      height = 160;
     } else if (componentDefinition.name === 'oled-display') {
       width = 120;
       height = 80;
@@ -121,6 +122,9 @@ const CircuitBuilder = () => {
     } else if (componentDefinition.name === 'resistor' || componentDefinition.name === 'photoresistor') {
       width = 80;
       height = 40;
+    } else if (componentDefinition.name === 'custom-keypad') {
+      width = 120;
+      height = 120;
     }
     
     return (

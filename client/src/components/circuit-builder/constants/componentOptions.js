@@ -19,34 +19,44 @@ export const componentOptions = [
   {
     name: 'heroboard',
     displayName: 'Hero Board',
-    description: 'The main microcontroller board',
+    description: 'Arduino UNO R3 compatible microcontroller board',
     category: 'controllers',
     imagePath: heroboardImg,
     pinConfig: [
-      { id: 'd0', type: 'bidirectional', label: 'Digital 0' },
-      { id: 'd1', type: 'bidirectional', label: 'Digital 1' },
+      // Digital pins (right side)
+      { id: 'd0', type: 'bidirectional', label: 'Digital 0 (RX)' },
+      { id: 'd1', type: 'bidirectional', label: 'Digital 1 (TX)' },
       { id: 'd2', type: 'bidirectional', label: 'Digital 2' },
-      { id: 'd3', type: 'bidirectional', label: 'Digital 3' },
+      { id: 'd3', type: 'bidirectional', label: 'Digital 3 (PWM)' },
       { id: 'd4', type: 'bidirectional', label: 'Digital 4' },
-      { id: 'd5', type: 'bidirectional', label: 'Digital 5' },
-      { id: 'd6', type: 'bidirectional', label: 'Digital 6' },
+      { id: 'd5', type: 'bidirectional', label: 'Digital 5 (PWM)' },
+      { id: 'd6', type: 'bidirectional', label: 'Digital 6 (PWM)' },
       { id: 'd7', type: 'bidirectional', label: 'Digital 7' },
       { id: 'd8', type: 'bidirectional', label: 'Digital 8' },
-      { id: 'd9', type: 'bidirectional', label: 'Digital 9' },
-      { id: 'd10', type: 'bidirectional', label: 'Digital 10' },
-      { id: 'd11', type: 'bidirectional', label: 'Digital 11' },
-      { id: 'd12', type: 'bidirectional', label: 'Digital 12' },
-      { id: 'd13', type: 'bidirectional', label: 'Digital 13' },
+      { id: 'd9', type: 'bidirectional', label: 'Digital 9 (PWM)' },
+      { id: 'd10', type: 'bidirectional', label: 'Digital 10 (PWM/SS)' },
+      { id: 'd11', type: 'bidirectional', label: 'Digital 11 (PWM/MOSI)' },
+      { id: 'd12', type: 'bidirectional', label: 'Digital 12 (MISO)' },
+      { id: 'd13', type: 'bidirectional', label: 'Digital 13 (SCK)' },
+      
+      // Analog pins (left side)
       { id: 'a0', type: 'input', label: 'Analog 0' },
       { id: 'a1', type: 'input', label: 'Analog 1' },
       { id: 'a2', type: 'input', label: 'Analog 2' },
       { id: 'a3', type: 'input', label: 'Analog 3' },
-      { id: 'a4', type: 'input', label: 'Analog 4' },
-      { id: 'a5', type: 'input', label: 'Analog 5' },
+      { id: 'a4', type: 'input', label: 'Analog 4 (SDA)' },
+      { id: 'a5', type: 'input', label: 'Analog 5 (SCL)' },
+      
+      // Power and ground pins
       { id: '5v', type: 'output', label: '5V Power' },
       { id: '3v3', type: 'output', label: '3.3V Power' },
       { id: 'gnd', type: 'bidirectional', label: 'Ground' },
-      { id: 'rst', type: 'input', label: 'Reset' }
+      { id: 'rst', type: 'input', label: 'Reset' },
+      
+      // Additional Arduino pins
+      { id: 'vin', type: 'input', label: 'Input Voltage' },
+      { id: 'aref', type: 'input', label: 'Analog Reference' },
+      { id: 'ioref', type: 'output', label: 'IO Reference' }
     ]
   },
   {
