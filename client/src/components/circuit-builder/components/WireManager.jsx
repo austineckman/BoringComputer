@@ -260,6 +260,39 @@ const WireManager = ({ canvasRef }) => {
     }
   }, [isDrawing, registeredPins, startPin, getElementPosition]);
   
+  // Special method for direct DOM click handling from pins
+  const handleDirectPinClick = useCallback((e) => {
+    // Check if this is a pin
+    const pinElement = e.target.closest('.pin-connection-point');
+    if (pinElement) {
+      const pinId = pinElement.dataset.pinId;
+      const pinType = pinElement.dataset.pinType;
+      const parentId = pinElement.dataset.parentId;
+      
+      console.log(`Direct pin click detected on ${pinId}, type ${pinType}`);
+      
+      if (pinId) {
+        handlePinClick(pinId);
+      }
+      
+      // Stop event to prevent other handlers
+      e.stopPropagation();
+    }
+  }, [handlePinClick]);
+  
+  // Add direct DOM click handler
+  useEffect(() => {
+    if (canvasRef?.current) {
+      canvasRef.current.addEventListener('click', handleDirectPinClick);
+      
+      return () => {
+        if (canvasRef?.current) {
+          canvasRef.current.removeEventListener('click', handleDirectPinClick);
+        }
+      };
+    }
+  }, [canvasRef, handleDirectPinClick]);
+  
   // Handle wire selection and context menu
   const handleWireMouseDown = (connectionId, showMenu = true, isConnection = false) => {
     if (showMenu) {
@@ -380,6 +413,8 @@ const WireManager = ({ canvasRef }) => {
   useEffect(() => {
     if (!isDrawing || !startPin || !canvasRef?.current) return;
     
+    console.log('Setting up mouse move for wire drawing...', { startPin });
+    
     const handleMouseMove = (e) => {
       // This is handled by the MouseTracker component
       const event = new CustomEvent('wire-drawing', {
@@ -395,8 +430,17 @@ const WireManager = ({ canvasRef }) => {
     const canvasEl = canvasRef.current;
     canvasEl.addEventListener('mousemove', handleMouseMove);
     
+    // Make the wire layer receive pointer events while drawing
+    if (svgRef.current) {
+      svgRef.current.style.pointerEvents = 'auto';
+    }
+    
     return () => {
       canvasEl.removeEventListener('mousemove', handleMouseMove);
+      // Reset pointer events when done drawing
+      if (svgRef.current) {
+        svgRef.current.style.pointerEvents = 'none';
+      }
     };
   }, [isDrawing, startPin, canvasRef]);
   

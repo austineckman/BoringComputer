@@ -29,9 +29,14 @@ const CircuitPin = ({
   // Register pin with global wire management system
   useEffect(() => {
     if (parentRef?.current && pinRef.current) {
+      // Create a unique ID for this pin if one wasn't provided
+      const pinId = id || `pin-${parentId}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      console.log(`Registering pin ${pinId} of type ${pinType} for component ${parentId}`);
+      
       const customEvent = new CustomEvent('registerPin', {
         detail: {
-          id,
+          id: pinId,
           parentId,
           pinType,
           label,
@@ -42,8 +47,9 @@ const CircuitPin = ({
       
       // Clean up on unmount
       return () => {
+        console.log(`Unregistering pin ${pinId}`);
         const cleanup = new CustomEvent('unregisterPin', {
-          detail: { id }
+          detail: { id: pinId }
         });
         document.dispatchEvent(cleanup);
       };
@@ -149,14 +155,15 @@ const CircuitPin = ({
         width: `${size}px`,
         height: `${size}px`,
         backgroundColor: isConnected ? '#4caf50' : (isHovered ? '#ff9800' : color),
-        border: `1.5px solid ${getBorderColor()}`,
+        border: `2.5px solid ${getBorderColor()}`,
         left: position.x,
         top: position.y,
         transform: 'translate(-50%, -50%)',
         cursor: 'crosshair',
-        zIndex: 15,
-        boxShadow: isConnected || isHovered ? '0 0 4px rgba(0, 0, 0, 0.5)' : '0 1px 2px rgba(0, 0, 0, 0.3)',
-        transition: 'all 0.1s ease'
+        zIndex: 20,
+        boxShadow: isConnected || isHovered ? '0 0 8px rgba(255, 50, 50, 0.8)' : '0 1px 4px rgba(0, 0, 0, 0.5)',
+        transition: 'all 0.1s ease',
+        pointerEvents: 'auto'
       }}
       onClick={handlePinClick}
       onMouseEnter={handleMouseEnter}
