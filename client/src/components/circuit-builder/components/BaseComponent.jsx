@@ -109,7 +109,7 @@ const BaseComponent = ({
   return (
     <div
       ref={componentRef}
-      className={`absolute ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+      className={`absolute ${isSelected ? 'outline outline-1 outline-blue-500' : ''}`}
       style={{
         left: `${posLeft}px`,
         top: `${posTop}px`,

@@ -374,7 +374,7 @@ const CircuitComponent = ({
     <div
       ref={componentRef}
       id={`component-${id}`}
-      className={`circuit-component absolute select-none ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+      className="circuit-component absolute select-none"
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
