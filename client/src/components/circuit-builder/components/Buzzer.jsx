@@ -3,7 +3,6 @@ import {
   ReactBuzzerComponent
 } from "../lib/inventr-component-lib.es.js";
 import Moveable from "react-moveable";
-import { createPortal } from "react-dom";
 
 // Define MOVE_SETTINGS to match what the original code expects
 const MOVE_SETTINGS = {
@@ -32,7 +31,6 @@ const Buzzer = ({
   const moveableRef = useRef();
   const oldDataRef = useRef();
 
-  const [isComponentMenuShowing, setIsComponentMenuShowing] = useState(false);
   const [buzzerActive, setBuzzerActive] = useState(hasSignal);
   const [rotationAngle, setRotationAngle] = useState(initialRotation);
   const [pinInfo, setPinInfo] = useState([]);
@@ -68,10 +66,7 @@ const Buzzer = ({
     }
   };
 
-  // Show menu when selected
-  useEffect(() => {
-    setIsComponentMenuShowing(isSelected);
-  }, [isSelected]);
+  // No longer need to show/hide component-specific menu
 
   // Rotate component when rotation angle is changed
   useEffect(() => {
@@ -113,16 +108,7 @@ const Buzzer = ({
     }
   };
 
-  // Create context menu portal target if it doesn't exist
-  useEffect(() => {
-    if (!document.querySelector('#component-context-menu')) {
-      const menuDiv = document.createElement('div');
-      menuDiv.id = 'component-context-menu';
-      menuDiv.style.position = 'absolute';
-      menuDiv.style.zIndex = '9999';
-      document.body.appendChild(menuDiv);
-    }
-  }, []);
+  // Context menu creation has been removed - now using centralized Properties panel
 
   return (
     <>
@@ -161,60 +147,7 @@ const Buzzer = ({
         hasSignal={buzzerActive}
       ></ReactBuzzerComponent>
 
-      {isComponentMenuShowing && isSelected && createPortal(
-        <div className="bg-gray-800 rounded shadow-lg p-2 text-white absolute">
-          <div className="mb-3">
-            <label className="block text-sm font-medium mb-1">
-              Buzzer Control
-            </label>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setBuzzerActive(!buzzerActive)}
-                className={`px-3 py-1 rounded ${buzzerActive ? 'bg-green-600' : 'bg-gray-600'}`}
-              >
-                {buzzerActive ? 'On' : 'Off'}
-              </button>
-              <span className="text-xs">
-                {buzzerActive ? 'Buzzer active' : 'Buzzer inactive'}
-              </span>
-            </div>
-            <p className="text-xs text-gray-400 mt-1">
-              Note: In a real circuit, the buzzer is controlled by the signal from connected pins.
-            </p>
-          </div>
-          
-          <div className="flex gap-2">
-            <button
-              onClick={handleRotate}
-              className="p-1 bg-blue-600 rounded hover:bg-blue-700"
-              title="Rotate"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
-                <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
-              </svg>
-            </button>
-            
-            <button
-              onClick={() => {
-                if (onSelect) onSelect(null);
-                const customEvent = new CustomEvent('deleteComponent', {
-                  detail: { id }
-                });
-                document.dispatchEvent(customEvent);
-              }}
-              className="p-1 bg-red-600 rounded hover:bg-red-700"
-              title="Delete"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                <path fillRule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-              </svg>
-            </button>
-          </div>
-        </div>,
-        document.querySelector('#component-context-menu')
-      )}
+      {/* Removed component-specific menu - now using centralized Properties panel */}
     </>
   );
 };
