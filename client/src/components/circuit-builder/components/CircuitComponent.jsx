@@ -74,7 +74,8 @@ const CircuitComponent = ({
   
   // Calculate the position of pins based on component rotation
   const getPinPosition = (pinConfig) => {
-    const { position: pinPosition } = pinConfig;
+    // For components with no explicit position, generate one based on the pin ID
+    const pinPosition = pinConfig.position || generatePinPosition(pinConfig.id, type.toLowerCase());
     const normalizedPosition = { ...pinPosition };
     
     // Adjust for rotation - this involves some trigonometry
@@ -100,6 +101,117 @@ const CircuitComponent = ({
       x: position.x + normalizedPosition.x * width,
       y: position.y + normalizedPosition.y * height
     };
+  };
+  
+  // Generate a pin position based on its ID and component type
+  const generatePinPosition = (pinId, componentType) => {
+    // Default position (center)
+    let x = 0.5; 
+    let y = 0.5;
+    
+    // LED component
+    if (componentType === 'led') {
+      if (pinId === 'anode') {
+        x = 0.3; 
+        y = 0;
+      } else if (pinId === 'cathode') {
+        x = 0.7; 
+        y = 1;
+      }
+    }
+    // Resistor component
+    else if (componentType === 'resistor') {
+      if (pinId === 'pin1') {
+        x = 0; 
+        y = 0.5;
+      } else if (pinId === 'pin2') {
+        x = 1; 
+        y = 0.5;
+      }
+    }
+    // RGB LED component
+    else if (componentType === 'rgb led') {
+      if (pinId === 'common') {
+        x = 0.5; 
+        y = 0;
+      } else if (pinId === 'red') {
+        x = 0.2; 
+        y = 1;
+      } else if (pinId === 'green') {
+        x = 0.5; 
+        y = 1;
+      } else if (pinId === 'blue') {
+        x = 0.8; 
+        y = 1;
+      }
+    }
+    // Photoresistor
+    else if (componentType === 'photoresistor') {
+      if (pinId === 'pin1') {
+        x = 0; 
+        y = 0.5;
+      } else if (pinId === 'pin2') {
+        x = 1; 
+        y = 0.5;
+      }
+    }
+    // HeroBoard - arrange pins around the board
+    else if (componentType === 'heroboard') {
+      if (pinId.startsWith('d')) {
+        // Digital pins on right side
+        const pinNumber = parseInt(pinId.substring(1), 10);
+        x = 1;
+        y = 0.2 + (pinNumber / 14) * 0.6;
+      } else if (pinId.startsWith('a')) {
+        // Analog pins on left side
+        const pinNumber = parseInt(pinId.substring(1), 10);
+        x = 0;
+        y = 0.3 + (pinNumber / 6) * 0.4;
+      } else if (pinId === '5v' || pinId === '3v3') {
+        // Power pins at top
+        x = pinId === '5v' ? 0.3 : 0.7;
+        y = 0;
+      } else if (pinId === 'gnd') {
+        // Ground pin at bottom
+        x = 0.5;
+        y = 1;
+      } else if (pinId === 'rst') {
+        // Reset pin at top right
+        x = 0.9;
+        y = 0;
+      }
+    }
+    // Default positions for other components
+    else {
+      // For any other component, distribute pins around the perimeter
+      if (pinId.includes('vcc') || pinId.includes('v') || pinId.includes('power')) {
+        x = 0.5; 
+        y = 0;
+      } else if (pinId.includes('gnd') || pinId.includes('g') || pinId.includes('ground')) {
+        x = 0.5; 
+        y = 1;
+      } else if (pinId.includes('in') || pinId.includes('input')) {
+        x = 0; 
+        y = 0.5;
+      } else if (pinId.includes('out') || pinId.includes('output')) {
+        x = 1; 
+        y = 0.5;
+      } else if (pinId.includes('clk') || pinId.includes('clock')) {
+        x = 0; 
+        y = 0.3;
+      } else if (pinId.includes('data') || pinId.includes('dt') || pinId.includes('din')) {
+        x = 0; 
+        y = 0.7;
+      } else if (pinId.includes('cs') || pinId.includes('select')) {
+        x = 1; 
+        y = 0.3;
+      } else if (pinId.includes('sw') || pinId.includes('switch')) {
+        x = 1; 
+        y = 0.7;
+      }
+    }
+    
+    return { x, y };
   };
   
   // Register pins in the global pin registry
