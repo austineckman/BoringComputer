@@ -16,6 +16,27 @@ const WireManager = ({ canvasRef }) => {
   // SVG reference
   const svgRef = useRef(null);
   
+  // Get element position relative to the canvas
+  const getElementPosition = (element) => {
+    if (!element || !canvasRef?.current) return { x: 0, y: 0 };
+    
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
+    
+    return {
+      x: elementRect.left - canvasRect.left + elementRect.width / 2,
+      y: elementRect.top - canvasRect.top + elementRect.height / 2
+    };
+  };
+  
+  // Handle clicks on the canvas (to cancel pending wire)
+  const handleCanvasClick = (e) => {
+    // If click wasn't on a pin, cancel any pending wire
+    if (!e.target.classList.contains('circuit-pin')) {
+      setPendingWire(null);
+    }
+  };
+  
   // Register event listeners for pin registration and wire drawing
   useEffect(() => {
     // Handler for pin registration
@@ -105,15 +126,7 @@ const WireManager = ({ canvasRef }) => {
         canvasElement.removeEventListener('click', handleCanvasClick);
       }
     };
-  }, [canvasRef, pendingWire, registeredPins, getElementPosition]);
-  
-  // Handle clicks on the canvas (to cancel pending wire)
-  const handleCanvasClick = (e) => {
-    // If click wasn't on a pin, cancel any pending wire
-    if (!e.target.classList.contains('circuit-pin')) {
-      setPendingWire(null);
-    }
-  };
+  }, [canvasRef, pendingWire, registeredPins]);
   
   // Handler for pin clicks - create or finish a wire
   const handlePinClick = (pinId) => {
@@ -170,19 +183,6 @@ const WireManager = ({ canvasRef }) => {
       setWires(prev => [...prev, newWire]);
       setPendingWire(null);
     }
-  };
-  
-  // Get element position relative to the canvas
-  const getElementPosition = (element) => {
-    if (!element || !canvasRef?.current) return { x: 0, y: 0 };
-    
-    const canvasRect = canvasRef.current.getBoundingClientRect();
-    const elementRect = element.getBoundingClientRect();
-    
-    return {
-      x: elementRect.left - canvasRect.left + elementRect.width / 2,
-      y: elementRect.top - canvasRect.top + elementRect.height / 2
-    };
   };
   
   // Get wire color based on connection types
