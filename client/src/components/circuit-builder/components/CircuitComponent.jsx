@@ -69,7 +69,6 @@ const CircuitComponent = ({
   // Handle pin click
   const handlePinClick = (pinId, pinType, e) => {
     e.stopPropagation();
-    console.log('Pin clicked:', pinId, pinType, id);
     if (onPinConnect) {
       onPinConnect(pinId, pinType, id);
     }
@@ -331,9 +330,6 @@ const CircuitComponent = ({
       const pinElement = document.getElementById(`${id}-${pin.id}`);
       
       if (pinElement) {
-        // Debug: Log the pin data
-        console.log('Registering pin:', pin.id, 'with label:', pin.label || pin.id);
-        
         // Dispatch event to register this pin for wire connections
         const event = new CustomEvent('registerPin', {
           detail: {
@@ -456,9 +452,12 @@ const CircuitComponent = ({
             }}
             onClick={(e) => handlePinClick(pin.id, pin.type, e)}
             title={pin.label || pin.id}
-            data-tooltip={pin.label || pin.id}
-          />
-          
+          >
+            {/* Pin hover tooltip */}
+            <div className="pin-tooltip absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-1 py-0.5 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">
+              {pin.label || pin.id}
+            </div>
+          </div>
         );
       })}
       
