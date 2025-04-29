@@ -1,0 +1,52 @@
+Prompt for Replit Agent — Wiring System (Modeled After Tinkercad)
+
+⸻
+
+Task Overview:
+Rebuild the digital wiring system to replicate the behavior of the Tinkercad Arduino simulator’s wiring interaction model.
+Use the existing wiring logic from Wokwi or Inventr.io projects as the base — do not invent new wiring code.
+Focus on reliable, simple, straight-line wiring between pins.
+
+⸻
+
+User Interaction Requirements (Tinkercad Behavior Reference):
+	1.	Click to Start Wire:
+	•	User clicks on a pin of a component (e.g., an Arduino board or sensor).
+	•	This begins a new wire from that pin.
+	•	A solid red line immediately starts drawing from the pin to follow the mouse cursor.
+	2.	Move Mouse to Preview Wire:
+	•	As the user moves the mouse, the system draws a live preview of the wire:
+a straight line from the origin pin to the current mouse location.
+	•	This preview shows where the wire would connect if the user clicked again.
+	3.	Click Second Pin to Complete Wire:
+	•	When the user clicks another valid pin, the wire locks in place between the two pins.
+	•	The wire becomes a permanent visual element connecting the two components.
+	4.	Cancel Wire (optional safety):
+	•	If the user clicks anywhere invalid (not a pin), cancel the active wire being drawn.
+	5.	Wire Appearance (for Testing Phase):
+	•	Wire should be a solid red line.
+	•	No curves, no bends, no multiple segments — just a straight line between two points.
+
+⸻
+
+System Notes:
+	•	One active wire at a time:
+Only one wire should be “drawing” at a time. If a wire is active, the system should not allow starting a second wire until it is completed or canceled.
+	•	Pin-Specific Interactions Only:
+Only clicking on valid “pins” (designated points on components) should start or finish a wire.
+	•	No extra features (yet):
+Features like curved wires, wire coloring, wire labels, or multiple segments can be ignored for now. Focus purely on Tinkercad-style simple connections.
+
+⸻
+
+Technical Constraints:
+	•	Reuse proven code from Wokwi or Inventr.io wiring systems where possible.
+	•	Avoid reimplementing or attempting a totally new wire system design unless absolutely necessary.
+	•	The priority is functionality, visual clarity, and precision matching Tinkercad’s user experience.
+	•	Ensure future modularity (later we will add colored wires, curved wires, etc.).
+
+⸻
+
+Summary:
+
+Build a minimal but precise point-to-point wire connection system matching Tinkercad’s Arduino simulator interaction model, using tested wiring logic (from Wokwi or Inventr.io), and focus on getting a reliable first version with simple straight red lines between clicked pins.

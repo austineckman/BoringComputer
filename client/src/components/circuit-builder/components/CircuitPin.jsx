@@ -16,7 +16,7 @@ const CircuitPin = ({
   pinType, // 'input', 'output', or 'bidirectional'
   label,
   position, // {x, y} exact position within parent component
-  color = '#ffcc00',
+  color = '#dddddd', // Light gray for Tinkercad pins
   size = 8,
   onPinClick,
   onPinHover,
@@ -85,10 +85,9 @@ const CircuitPin = ({
   };
   
   // Get border color based on pin type
+  // In Tinkercad, pins are all black with consistent appearance
   const getBorderColor = () => {
-    if (pinType === 'input') return '#006400'; // Dark green for inputs
-    if (pinType === 'output') return '#8B0000'; // Dark red for outputs  
-    return '#00008B'; // Dark blue for bidirectional
+    return '#000000'; // Black border for all pins
   };
   
   // Get styles for label based on position
@@ -143,7 +142,7 @@ const CircuitPin = ({
       style={{
         width: `${size}px`,
         height: `${size}px`,
-        backgroundColor: isConnected ? '#4caf50' : (isHovered ? '#ff9800' : color),
+        backgroundColor: isConnected ? '#cc0000' : (isHovered ? '#ff9800' : color),
         border: `1.5px solid ${getBorderColor()}`,
         left: position.x,
         top: position.y,
