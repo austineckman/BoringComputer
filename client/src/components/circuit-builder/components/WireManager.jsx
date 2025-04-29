@@ -35,49 +35,17 @@ const WireManager = ({ canvasRef }) => {
     return '#ef4444'; // Red - for all wires like Wokwi
   }, []);
   
-  // Get wire style based on connection types - Wokwi style
-  const getWireStyle = useCallback((sourceType, targetType) => {
-    // Power connections - typically from outputs to inputs
-    if (
-      (sourceType === 'output' && targetType === 'input') ||
-      (sourceType === 'input' && targetType === 'output')
-    ) {
-      // For power connections (typical LED to resistor, or board to LED)
-      return {
-        stroke: getWireColor(sourceType, targetType),
-        strokeWidth: 4, // Thicker for power connections
-        strokeLinecap: 'round',
-        strokeMiterlimit: 10, // Better path corner rendering
-        filter: 'drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.5))',
-        fill: 'none',
-        opacity: 0.95
-      };
-    }
-    
-    // Bidirectional connections - typically for data or I/O pins
-    if (sourceType === 'bidirectional' || targetType === 'bidirectional') {
-      return {
-        stroke: getWireColor(sourceType, targetType),
-        strokeWidth: 3.5,
-        strokeLinecap: 'round',
-        strokeMiterlimit: 10,
-        filter: 'drop-shadow(0px 1.5px 2px rgba(0, 0, 0, 0.3))',
-        fill: 'none',
-        opacity: 0.9
-      };
-    }
-    
-    // Default style for other connections
+  // Get wire style - exactly like Wokwi's simple red wires
+  const getWireStyle = useCallback(() => {
+    // Simple red wires for all connections (Wokwi style)
     return {
-      stroke: getWireColor(sourceType, targetType),
-      strokeWidth: 3.5,
+      stroke: '#ff0000', // Pure red for all wires
+      strokeWidth: 2.8,  // A bit thinner for cleaner lines
       strokeLinecap: 'round',
-      strokeMiterlimit: 10,
-      filter: 'drop-shadow(0px 1.5px 2px rgba(0, 0, 0, 0.25))',
       fill: 'none',
-      opacity: 0.85
+      opacity: 1.0
     };
-  }, [getWireColor]);
+  }, []);
   
   // Generate a straight wire path like Wokwi
   const getWirePath = useCallback((sourcePos, targetPos) => {
@@ -401,30 +369,42 @@ const WireManager = ({ canvasRef }) => {
         );
       })}
       
-      {/* Draw pending wire */}
+      {/* Draw pending wire - exactly like Wokwi */}
       {pendingWire && (
         (() => {
           const pendingPinEl = registeredPins[pendingWire.sourceId]?.element;
           if (!pendingPinEl) return null;
           
           const sourcePos = getElementPosition(pendingPinEl);
+          // Wokwi-style wire - red straight line
           const wireStyle = {
-            stroke: getWireColor(pendingWire.sourceType, 'bidirectional'),
-            strokeWidth: 3,
+            stroke: '#ff0000', // Pure red for all wires
+            strokeWidth: 2.5,  // Slightly thinner 
             strokeLinecap: 'round',
-            strokeDasharray: '6,4',
-            filter: 'drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.2))',
             fill: 'none',
-            opacity: 0.7
+            opacity: 1.0
           };
           
           return (
-            <path
-              className="pending-wire"
-              d={`M ${sourcePos.x},${sourcePos.y}`}
-              {...wireStyle}
-              pointerEvents="none"
-            />
+            <>
+              {/* Main wire line */}
+              <path
+                className="pending-wire"
+                d={`M ${sourcePos.x},${sourcePos.y}`}
+                {...wireStyle}
+                pointerEvents="none"
+              />
+              
+              {/* Source pin highlight */}
+              <circle
+                cx={sourcePos.x}
+                cy={sourcePos.y}
+                r={4}
+                fill="#ff0000"
+                opacity={0.7}
+                pointerEvents="none"
+              />
+            </>
           );
         })()
       )}
