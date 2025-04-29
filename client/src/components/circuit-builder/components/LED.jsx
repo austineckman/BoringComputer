@@ -113,11 +113,23 @@ const LED = ({
 
   // Handle pin click
   const handlePinClicked = (e) => {
+    console.log("LED component received pin click:", e.detail);
     if (onPinConnect) {
       const pinId = e.detail.pinId;
       const pinType = e.detail.pinType;
       onPinConnect(pinId, pinType, id);
     }
+    
+    // Also dispatch a global pinClicked event to support wiring
+    const clickEvent = new CustomEvent('pinClicked', {
+      detail: { 
+        id: e.detail.pinId,
+        pinType: e.detail.pinType, 
+        parentId: id,
+        element: e.detail.element
+      }
+    });
+    document.dispatchEvent(clickEvent);
   };
 
   // Create context menu portal target if it doesn't exist
