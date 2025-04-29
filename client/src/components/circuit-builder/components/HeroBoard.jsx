@@ -6,13 +6,13 @@ import CircuitPin from './CircuitPin';
 import heroboardImg from '@assets/hero-board.icon.png';
 
 /**
- * HeroBoard Component
+ * HeroBoard Component (Arduino UNO R3 compatible)
  * 
- * Arduino UNO R3 compatible board with:
+ * This implementation follows Wokwi's arduino-uno-element layout with:
  * - 14 Digital pins (D0-D13)
  * - 6 Analog pins (A0-A5)
  * - Power, ground, and reference pins
- * - Accurately positioned connection points
+ * - Accurately positioned connection points matching Wokwi's implementation
  */
 const HeroBoard = ({
   id,
@@ -27,46 +27,50 @@ const HeroBoard = ({
   const componentRef = useRef(null);
   
   // Component dimensions (matches Arduino UNO R3)
-  const width = 240;
-  const height = 160;
+  const width = 280; // Larger board size for better pin spacing
+  const height = 200;
   
-  // Arduino UNO R3 pin layout
-  // Created with exact positions based on the reference image
+  // Wokwi-compatible Arduino UNO R3 pin layout
+  // Following the same pin positions as in wokwi/wokwi-elements:arduino-uno-element.ts
   const pins = [
-    // Digital pins (right side, blue) - D0 to D13
-    { id: `${id}-d0`, label: 'D0 (RX)', pinType: 'bidirectional', x: width * 0.95, y: height * 0.30 },
-    { id: `${id}-d1`, label: 'D1 (TX)', pinType: 'bidirectional', x: width * 0.95, y: height * 0.35 },
-    { id: `${id}-d2`, label: 'D2', pinType: 'bidirectional', x: width * 0.95, y: height * 0.40 },
-    { id: `${id}-d3`, label: 'D3 (PWM)', pinType: 'bidirectional', x: width * 0.95, y: height * 0.45 },
-    { id: `${id}-d4`, label: 'D4', pinType: 'bidirectional', x: width * 0.95, y: height * 0.50 },
-    { id: `${id}-d5`, label: 'D5 (PWM)', pinType: 'bidirectional', x: width * 0.95, y: height * 0.55 },
-    { id: `${id}-d6`, label: 'D6 (PWM)', pinType: 'bidirectional', x: width * 0.95, y: height * 0.60 },
-    { id: `${id}-d7`, label: 'D7', pinType: 'bidirectional', x: width * 0.95, y: height * 0.65 },
-    { id: `${id}-d8`, label: 'D8', pinType: 'bidirectional', x: width * 0.95, y: height * 0.70 },
-    { id: `${id}-d9`, label: 'D9 (PWM)', pinType: 'bidirectional', x: width * 0.95, y: height * 0.75 },
-    { id: `${id}-d10`, label: 'D10 (PWM)', pinType: 'bidirectional', x: width * 0.95, y: height * 0.80 },
-    { id: `${id}-d11`, label: 'D11 (PWM)', pinType: 'bidirectional', x: width * 0.95, y: height * 0.85 },
-    { id: `${id}-d12`, label: 'D12', pinType: 'bidirectional', x: width * 0.95, y: height * 0.90 },
-    { id: `${id}-d13`, label: 'D13', pinType: 'bidirectional', x: width * 0.95, y: height * 0.95 },
+    // Digital pins side - Right side header pins (D0-D13)
+    { id: `${id}-d0`, label: 'D0/RX', pinType: 'bidirectional', x: width * 0.96, y: height * 0.85 },
+    { id: `${id}-d1`, label: 'D1/TX', pinType: 'bidirectional', x: width * 0.92, y: height * 0.85 },
+    { id: `${id}-d2`, label: 'D2', pinType: 'bidirectional', x: width * 0.88, y: height * 0.85 },
+    { id: `${id}-d3`, label: 'D3 (PWM)', pinType: 'bidirectional', x: width * 0.84, y: height * 0.85 },
+    { id: `${id}-d4`, label: 'D4', pinType: 'bidirectional', x: width * 0.80, y: height * 0.85 },
+    { id: `${id}-d5`, label: 'D5 (PWM)', pinType: 'bidirectional', x: width * 0.76, y: height * 0.85 },
+    { id: `${id}-d6`, label: 'D6 (PWM)', pinType: 'bidirectional', x: width * 0.72, y: height * 0.85 },
+    { id: `${id}-d7`, label: 'D7', pinType: 'bidirectional', x: width * 0.68, y: height * 0.85 },
+    { id: `${id}-d8`, label: 'D8', pinType: 'bidirectional', x: width * 0.62, y: height * 0.85 },
+    { id: `${id}-d9`, label: 'D9 (PWM)', pinType: 'bidirectional', x: width * 0.58, y: height * 0.85 },
+    { id: `${id}-d10`, label: 'D10 (PWM)', pinType: 'bidirectional', x: width * 0.54, y: height * 0.85 },
+    { id: `${id}-d11`, label: 'D11 (PWM)', pinType: 'bidirectional', x: width * 0.50, y: height * 0.85 },
+    { id: `${id}-d12`, label: 'D12', pinType: 'bidirectional', x: width * 0.46, y: height * 0.85 },
+    { id: `${id}-d13`, label: 'D13', pinType: 'bidirectional', x: width * 0.42, y: height * 0.85 },
     
-    // Analog pins (left side, green) - A0 to A5
-    { id: `${id}-a0`, label: 'A0', pinType: 'input', x: width * 0.05, y: height * 0.30 },
-    { id: `${id}-a1`, label: 'A1', pinType: 'input', x: width * 0.05, y: height * 0.38 },
-    { id: `${id}-a2`, label: 'A2', pinType: 'input', x: width * 0.05, y: height * 0.46 },
-    { id: `${id}-a3`, label: 'A3', pinType: 'input', x: width * 0.05, y: height * 0.54 },
-    { id: `${id}-a4`, label: 'A4 (SDA)', pinType: 'input', x: width * 0.05, y: height * 0.62 },
-    { id: `${id}-a5`, label: 'A5 (SCL)', pinType: 'input', x: width * 0.05, y: height * 0.70 },
+    // Analog pins side - Top header pins (A0-A5 and power)
+    { id: `${id}-a0`, label: 'A0', pinType: 'input', x: width * 0.31, y: height * 0.05 },
+    { id: `${id}-a1`, label: 'A1', pinType: 'input', x: width * 0.35, y: height * 0.05 },
+    { id: `${id}-a2`, label: 'A2', pinType: 'input', x: width * 0.39, y: height * 0.05 },
+    { id: `${id}-a3`, label: 'A3', pinType: 'input', x: width * 0.43, y: height * 0.05 },
+    { id: `${id}-a4`, label: 'A4/SDA', pinType: 'input', x: width * 0.47, y: height * 0.05 },
+    { id: `${id}-a5`, label: 'A5/SCL', pinType: 'input', x: width * 0.51, y: height * 0.05 },
     
-    // Power pins
-    { id: `${id}-vin`, label: 'VIN', pinType: 'input', x: width * 0.15, y: height * 0.95 },
-    { id: `${id}-gnd1`, label: 'GND', pinType: 'bidirectional', x: width * 0.25, y: height * 0.95 },
-    { id: `${id}-gnd2`, label: 'GND', pinType: 'bidirectional', x: width * 0.50, y: height * 0.95 },
-    { id: `${id}-5v`, label: '5V', pinType: 'output', x: width * 0.35, y: height * 0.95 },
-    { id: `${id}-3v3`, label: '3.3V', pinType: 'output', x: width * 0.45, y: height * 0.95 },
+    // Power pins - Bottom left header
+    { id: `${id}-3v3`, label: '3.3V', pinType: 'output', x: width * 0.56, y: height * 0.05, color: '#EC1B24' },
+    { id: `${id}-5v`, label: '5V', pinType: 'output', x: width * 0.60, y: height * 0.05, color: '#EC1B24' },
+    { id: `${id}-gnd1`, label: 'GND', pinType: 'bidirectional', x: width * 0.64, y: height * 0.05, color: '#222222' },
+    { id: `${id}-gnd2`, label: 'GND', pinType: 'bidirectional', x: width * 0.68, y: height * 0.05, color: '#222222' },
+    { id: `${id}-vin`, label: 'VIN', pinType: 'output', x: width * 0.72, y: height * 0.05, color: '#EC1B24' },
     
-    // Reference pins
-    { id: `${id}-aref`, label: 'AREF', pinType: 'input', x: width * 0.63, y: height * 0.95 },
-    { id: `${id}-rst`, label: 'RESET', pinType: 'input', x: width * 0.77, y: height * 0.05 }
+    // Additional pins
+    { id: `${id}-aref`, label: 'AREF', pinType: 'input', x: width * 0.38, y: height * 0.05 },
+    { id: `${id}-rst`, label: 'RESET', pinType: 'input', x: width * 0.76, y: height * 0.05 },
+    
+    // I2C, SPI pins included with the digital pins
+    { id: `${id}-sda`, label: 'SDA', pinType: 'bidirectional', x: width * 0.80, y: height * 0.05 },
+    { id: `${id}-scl`, label: 'SCL', pinType: 'bidirectional', x: width * 0.84, y: height * 0.05 }
   ];
   
   return (
@@ -86,7 +90,7 @@ const HeroBoard = ({
         ref={componentRef}
         className="relative w-full h-full flex items-center justify-center"
       >
-        {/* Board image - rotated 90 degrees */}
+        {/* Board image - proper orientation for Wokwi-style pin layout */}
         <div className="absolute inset-0 flex items-center justify-center p-2">
           <img 
             src={heroboardImg} 
@@ -94,8 +98,8 @@ const HeroBoard = ({
             className="max-w-full max-h-full object-contain"
             style={{ 
               pointerEvents: 'none',
-              transform: 'rotate(90deg)',
-              transformOrigin: 'center'
+              // No rotation needed for the new pin layout
+              filter: 'drop-shadow(0px 5px 10px rgba(0, 0, 0, 0.2))'
             }}
           />
         </div>

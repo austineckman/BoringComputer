@@ -28,32 +28,33 @@ const LED = ({
   const componentRef = useRef(null);
   const [powered, setPowered] = useState(false);
   
-  // Component dimensions - matches the image aspect ratio
-  const width = 50;
-  const height = 70;
+  // Component dimensions - matches Wokwi's LED implementation
+  const width = 40;
+  const height = 50;
   
   // Handle receiving power
   const updatePowerState = (isOn) => {
     setPowered(isOn);
   };
   
-  // Pin positions with specific coordinates that match the LED image
+  // Pin positions with specific coordinates that match Wokwi's LED implementation
+  // See: https://github.com/wokwi/wokwi-elements/blob/master/src/led-element.ts
   const pins = [
-    // Anode at top
+    // Anode - Using Wokwi's pinInfo layout
     { 
       id: `${id}-anode`, 
-      label: 'Anode (+)', 
+      label: 'A (+)', 
       pinType: 'input',
-      x: width / 2,
-      y: 5 // Position at top of LED
+      x: width * 0.65, // Offset to the right
+      y: height // Position at bottom of LED
     },
     // Cathode at bottom
     { 
       id: `${id}-cathode`, 
-      label: 'Cathode (-)', 
+      label: 'C (-)', 
       pinType: 'output',
-      x: width / 2,
-      y: height - 5 // Position at bottom of LED
+      x: width * 0.35, // Offset to the left
+      y: height // Position at bottom of LED
     }
   ];
   

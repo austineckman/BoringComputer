@@ -26,26 +26,27 @@ const Resistor = ({
 }) => {
   const componentRef = useRef(null);
   
-  // Component dimensions
-  const width = 80;
-  const height = 40;
+  // Component dimensions - following Wokwi's resistor element
+  const width = 60;
+  const height = 30;
   
-  // Pin positions with specific coordinates
+  // Pin positions with specific coordinates following Wokwi's resistor implementation
+  // See: https://github.com/wokwi/wokwi-elements/blob/master/src/resistor-element.ts
   const pins = [
-    // Left pin
+    // Left pin - exact position from Wokwi
     { 
       id: `${id}-pin1`, 
-      label: 'Pin 1', 
+      label: '1', 
       pinType: 'bidirectional',
-      x: 5,
+      x: 0, // Left edge
       y: height / 2
     },
-    // Right pin
+    // Right pin - exact position from Wokwi
     { 
       id: `${id}-pin2`, 
-      label: 'Pin 2', 
+      label: '2', 
       pinType: 'bidirectional',
-      x: width - 5,
+      x: width, // Right edge
       y: height / 2
     }
   ];
