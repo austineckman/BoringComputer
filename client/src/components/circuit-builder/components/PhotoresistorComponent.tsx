@@ -2,6 +2,7 @@ import React from 'react';
 import BaseComponent from './BaseComponent';
 import CircuitPin from '../CircuitPin';
 import { ComponentProps } from '../ComponentGenerator';
+import photoresistorIconPath from '../../../assets/components/photoresistor.icon.png';
 
 const PhotoresistorComponent: React.FC<ComponentProps> = ({
   componentData,

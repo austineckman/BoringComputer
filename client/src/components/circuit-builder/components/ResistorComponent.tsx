@@ -2,6 +2,7 @@ import React from 'react';
 import BaseComponent from './BaseComponent';
 import CircuitPin from '../CircuitPin';
 import { ComponentProps } from '../ComponentGenerator';
+import resistorIconPath from '../../../assets/components/resistor.icon.png';
 
 const ResistorComponent: React.FC<ComponentProps> = ({
   componentData,
@@ -75,7 +76,7 @@ const ResistorComponent: React.FC<ComponentProps> = ({
       <div className="relative w-full h-full flex items-center justify-center">
         {/* Use real resistor image */}
         <img
-          src="/assets/components/resistor.icon.png"
+          src={resistorIconPath}
           alt="Resistor Component"
           className="w-full h-full object-contain"
         />
