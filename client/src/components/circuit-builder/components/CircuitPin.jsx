@@ -54,7 +54,7 @@ const CircuitPin = ({
   // Handle pin click for wiring - Exactly like Wokwi behavior
   const handlePinClick = (e) => {
     e.stopPropagation();
-    e.preventDefault();
+    // Don't prevent default as we need the click to bubble to WireManager
     
     // Apply visual feedback
     const pinElement = e.currentTarget;
@@ -64,81 +64,15 @@ const CircuitPin = ({
       pinElement.style.transform = 'translate(-50%, -50%)';
     }, 150);
     
-    // Get the canvas reference so we can get proper coordinates
-    const canvasElement = document.querySelector('.circuit-canvas');
-    if (!canvasElement) {
-      console.error('Cannot find circuit canvas element for pin positioning');
-      return;
-    }
-    
-    // Calculate absolute pin position
-    const pinRect = pinElement.getBoundingClientRect();
-    const canvasRect = canvasElement.getBoundingClientRect();
-    
-    // Convert to coordinates relative to the canvas
-    const pinPosition = {
-      x: pinRect.left + pinRect.width/2 - canvasRect.left,
-      y: pinRect.top + pinRect.height/2 - canvasRect.top
-    };
-    
-    console.log(`Pin clicked: ${id} (${pinType}) at position:`, pinPosition);
+    console.log(`Pin clicked: ${id} (${pinType})`);
     
     // Handle internal pin click callback if provided
     if (onPinClick) {
       onPinClick(id, pinType, parentId);
     }
     
-    // Use the imported WireState directly
-    // The import is at the top of the file
-    
-    // Check if we're starting a new wire or completing one
-    const currentState = WireState.getState();
-    
-    if (!currentState.pendingWireStart) {
-      // Start a new wire
-      WireState.startWire({
-        id,
-        type: pinType,
-        parentId,
-        position: pinPosition,
-        element: pinElement
-      });
-    } else {
-      // Complete an existing wire
-      WireState.completeWire({
-        id,
-        type: pinType,
-        parentId,
-        position: pinPosition,
-        element: pinElement
-      });
-    }
-    
-    // Also dispatch a global event for the WireManager to handle (backup method)
-    const clickEvent = new CustomEvent('pinClicked', {
-      detail: { 
-        id, 
-        pinType, 
-        parentId,
-        position: {
-          x: e.clientX,
-          y: e.clientY
-        }
-      },
-      bubbles: true,  // Make sure it bubbles up the DOM tree
-      cancelable: true // Allow this event to be canceled
-    });
-    
-    // Dispatch on the element directly
-    pinElement.dispatchEvent(clickEvent);
-    
-    // Also dispatch on document for redundancy
-    document.dispatchEvent(clickEvent);
-    
-    // Ensure the WireManager always focuses on pin clicks more than other events
-    e.stopImmediatePropagation();
-    
-    console.log(`Pin clicked: ${id} (${pinType})`);
+    // The click event will bubble up to the document and be handled by WireManager
+    // No need to do anything else here
   };
   
   // Handle mouse hover

@@ -1,50 +1,85 @@
-import React, { useState, useEffect } from 'react';
-import WireState from '../utils/WireState';
+import React, { useState, useEffect, useRef } from 'react';
 
 /**
- * WireManager component
- * Renders wires between pins using the WireState for state management
+ * Very simple implementation of wire management using DOM-based approach
  */
 const WireManager = ({ canvasRef }) => {
-  // Local component state (pulled from the WireState)
-  const [wireState, setWireState] = useState(WireState.getState());
+  // Active wire state
+  const [activeWire, setActiveWire] = useState(null);
+  const [wires, setWires] = useState([]);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   
-  // Subscribe to WireState changes
+  // Refs
+  const svgRef = useRef(null);
+
   useEffect(() => {
-    console.log('WireManager: Setting up subscription to WireState');
-    
-    // Subscribe to state changes
-    const unsubscribe = WireState.subscribe((newState) => {
-      console.log('WireManager: State updated', newState);
-      setWireState({ ...newState });
-    });
-    
-    // Setup mouse tracking
     const handleMouseMove = (e) => {
       if (!canvasRef?.current) return;
       
       const rect = canvasRef.current.getBoundingClientRect();
-      const position = {
+      setMousePos({
         x: e.clientX - rect.left,
         y: e.clientY - rect.top
-      };
-      
-      setMousePos(position);
-      WireState.updateMousePosition(position);
+      });
     };
     
     document.addEventListener('mousemove', handleMouseMove);
     
-    // Handle canvas background clicks to cancel wiring
+    // Direct pin click event handler
+    const handlePinClick = (e) => {
+      if (!e.target.matches('.pin-connection-point')) return;
+      
+      e.stopPropagation();
+      const pin = e.target;
+      const pinId = pin.dataset.pinId;
+      const componentId = pin.dataset.parentId;
+      
+      console.log('Direct DOM pin click:', pinId, 'component:', componentId);
+      
+      const rect = pin.getBoundingClientRect();
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      const pinPos = {
+        x: rect.left + rect.width/2 - canvasRect.left,
+        y: rect.top + rect.height/2 - canvasRect.top
+      };
+      
+      // If no active wire, start one
+      if (!activeWire) {
+        setActiveWire({
+          startPin: {
+            id: pinId,
+            componentId,
+            position: pinPos
+          }
+        });
+      } else {
+        // Complete existing wire
+        const newWire = {
+          id: `wire-${Date.now()}`,
+          source: activeWire.startPin,
+          target: {
+            id: pinId,
+            componentId,
+            position: pinPos
+          }
+        };
+        
+        // Add wire to the list
+        setWires(prev => [...prev, newWire]);
+        
+        // Reset active wire
+        setActiveWire(null);
+      }
+    };
+    
+    // Add event listener to the document (event delegation)
+    document.addEventListener('click', handlePinClick, true);
+    
+    // Background click to cancel wire
     const handleCanvasClick = (e) => {
-      // Only if it's the background (canvas itself)
-      if (
-        e.target === canvasRef.current && 
-        wireState.pendingWireStart
-      ) {
-        console.log('WireManager: Canvas clicked, canceling wire');
-        WireState.cancelWire();
+      if (e.target === canvasRef.current && activeWire) {
+        console.log('Canceling wire - canvas click');
+        setActiveWire(null);
       }
     };
     
@@ -52,62 +87,56 @@ const WireManager = ({ canvasRef }) => {
       canvasRef.current.addEventListener('click', handleCanvasClick);
     }
     
-    // Cleanup
     return () => {
-      unsubscribe();
       document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('click', handlePinClick, true);
       
       if (canvasRef?.current) {
         canvasRef.current.removeEventListener('click', handleCanvasClick);
       }
     };
-  }, [canvasRef]);
+  }, [canvasRef, activeWire]);
   
-  // Handle wire deletion
+  // Delete wire handler
   const handleDeleteWire = (wireId, e) => {
-    if (e) e.stopPropagation();
-    WireState.deleteWire(wireId);
-  };
-  
-  // Render debug info for development
-  const renderDebugInfo = () => {
-    return (
-      <g className="debug-info">
-        <rect x="10" y="10" width="150" height="45" fill="rgba(0,0,0,0.5)" rx="5" />
-        <text x="15" y="25" fill="white" fontSize="10px">
-          {'WireManager Debug'}
-        </text>
-        <text x="15" y="40" fill="white" fontSize="10px">
-          {wireState.pendingWireStart ? 'Wiring in progress' : 'No active wire'}
-        </text>
-        <text x="15" y="55" fill="white" fontSize="10px">
-          {`Wires: ${wireState.wires.length}`}
-        </text>
-      </g>
-    );
+    e.stopPropagation();
+    setWires(prev => prev.filter(wire => wire.id !== wireId));
   };
   
   return (
     <svg
-      className="absolute inset-0 pointer-events-none"
+      ref={svgRef}
+      className="absolute inset-0 overflow-visible"
       style={{
         width: '100%',
         height: '100%',
-        zIndex: 50
+        zIndex: 50,
+        pointerEvents: 'none'
       }}
     >
-      {/* Render debug info */}
-      {renderDebugInfo()}
+      {/* Debug info */}
+      <g className="debug-info">
+        <rect x="10" y="10" width="200" height="60" fill="rgba(0,0,0,0.5)" rx="5" />
+        <text x="15" y="30" fill="white" fontSize="12px">
+          Wire Manager: DOM Edition
+        </text>
+        <text x="15" y="50" fill="white" fontSize="12px">
+          Status: {activeWire ? 'Wiring in progress' : 'Idle'}
+        </text>
+        <text x="15" y="70" fill="white" fontSize="12px">
+          Wires: {wires.length}
+        </text>
+      </g>
       
-      {/* Render existing wires */}
-      {wireState.wires.map(wire => (
+      {/* Complete wires */}
+      {wires.map(wire => (
         <g key={wire.id} className="wire-group">
           <line
-            x1={wire.sourcePosition.x}
-            y1={wire.sourcePosition.y}
-            x2={wire.targetPosition.x}
-            y2={wire.targetPosition.y}
-            strokeWidth={2.8}
+            x1={wire.source.position.x}
+            y1={wire.source.position.y}
+            x2={wire.target.position.x}
+            y2={wire.target.position.y}
+            strokeWidth={3}
             stroke="#ff0000"
             strokeLinecap="round"
             style={{ pointerEvents: 'auto', cursor: 'crosshair' }}
@@ -116,15 +145,15 @@ const WireManager = ({ canvasRef }) => {
           
           {/* Wire endpoints */}
           <circle
-            cx={wire.sourcePosition.x}
-            cy={wire.sourcePosition.y}
+            cx={wire.source.position.x}
+            cy={wire.source.position.y}
             r={4}
             fill="#ff0000"
             pointerEvents="none"
           />
           <circle
-            cx={wire.targetPosition.x}
-            cy={wire.targetPosition.y}
+            cx={wire.target.position.x}
+            cy={wire.target.position.y}
             r={4}
             fill="#ff0000"
             pointerEvents="none"
@@ -132,28 +161,28 @@ const WireManager = ({ canvasRef }) => {
         </g>
       ))}
       
-      {/* Render pending wire while dragging */}
-      {wireState.pendingWireStart && (
-        <g className="pending-wire-group">
+      {/* Active wire being created */}
+      {activeWire && (
+        <g className="active-wire">
           <line
-            className="pending-wire"
-            x1={wireState.pendingWireStart.position.x}
-            y1={wireState.pendingWireStart.position.y}
+            x1={activeWire.startPin.position.x}
+            y1={activeWire.startPin.position.y}
             x2={mousePos.x}
             y2={mousePos.y}
-            strokeWidth={2.8}
+            strokeWidth={3}
             stroke="#ff0000"
-            strokeLinecap="round"
             strokeDasharray="5,3"
             pointerEvents="none"
           />
+          
           <circle
-            cx={wireState.pendingWireStart.position.x}
-            cy={wireState.pendingWireStart.position.y}
+            cx={activeWire.startPin.position.x}
+            cy={activeWire.startPin.position.y}
             r={4}
             fill="#ff0000"
             pointerEvents="none"
           />
+          
           <circle
             cx={mousePos.x}
             cy={mousePos.y}
