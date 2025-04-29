@@ -4,6 +4,13 @@ import ComponentPalette from './components/ComponentPalette';
 import WireManager from './components/WireManager';
 import CircuitComponent from './components/CircuitComponent';
 
+// Import specialized component implementations
+import HeroBoard from './components/HeroBoard';
+import LED from './components/LED';
+import RgbLed from './components/RgbLed';
+import Resistor from './components/Resistor';
+import Photoresistor from './components/Photoresistor';
+
 /**
  * Main Circuit Builder component
  * Manages components, wires, and interactions
@@ -97,7 +104,92 @@ const CircuitBuilder = () => {
   
   // Render a component based on its type
   const renderComponent = (component) => {
-    // Find the component definition from the options
+    // Specialized component renderers
+    if (component.type === 'heroboard') {
+      return (
+        <HeroBoard
+          key={component.id}
+          id={component.id}
+          initialX={component.x}
+          initialY={component.y}
+          initialRotation={component.rotation}
+          onSelect={() => handleSelectComponent(component.id)}
+          isSelected={component.id === selectedComponentId}
+          canvasRef={canvasRef}
+          onPinConnect={handlePinConnect}
+        />
+      );
+    }
+    
+    if (component.type === 'led') {
+      return (
+        <LED
+          key={component.id}
+          id={component.id}
+          initialX={component.x}
+          initialY={component.y}
+          initialRotation={component.rotation}
+          onSelect={() => handleSelectComponent(component.id)}
+          isSelected={component.id === selectedComponentId}
+          canvasRef={canvasRef}
+          onPinConnect={handlePinConnect}
+          color={component.props?.color || 'red'}
+        />
+      );
+    }
+    
+    if (component.type === 'rgb-led') {
+      return (
+        <RgbLed
+          key={component.id}
+          id={component.id}
+          initialX={component.x}
+          initialY={component.y}
+          initialRotation={component.rotation}
+          onSelect={() => handleSelectComponent(component.id)}
+          isSelected={component.id === selectedComponentId}
+          canvasRef={canvasRef}
+          onPinConnect={handlePinConnect}
+          commonType={component.props?.commonType || 'cathode'}
+        />
+      );
+    }
+    
+    if (component.type === 'resistor') {
+      return (
+        <Resistor
+          key={component.id}
+          id={component.id}
+          initialX={component.x}
+          initialY={component.y}
+          initialRotation={component.rotation}
+          onSelect={() => handleSelectComponent(component.id)}
+          isSelected={component.id === selectedComponentId}
+          canvasRef={canvasRef}
+          onPinConnect={handlePinConnect}
+          value={component.props?.value || '220Ω'}
+        />
+      );
+    }
+    
+    if (component.type === 'photoresistor') {
+      return (
+        <Photoresistor
+          key={component.id}
+          id={component.id}
+          initialX={component.x}
+          initialY={component.y}
+          initialRotation={component.rotation}
+          onSelect={() => handleSelectComponent(component.id)}
+          isSelected={component.id === selectedComponentId}
+          canvasRef={canvasRef}
+          onPinConnect={handlePinConnect}
+          lightLevel={component.props?.lightLevel || 50}
+        />
+      );
+    }
+    
+    // Generic component renderer for other components
     const componentDefinition = componentOptions.find(opt => opt.name === component.type);
     
     if (!componentDefinition) {
@@ -109,19 +201,12 @@ const CircuitBuilder = () => {
     let width = 100;
     let height = 100;
     
-    if (componentDefinition.name === 'heroboard') {
-      // Bigger dimensions for the Hero Board to match Arduino UNO R3
-      width = 240;
-      height = 160;
-    } else if (componentDefinition.name === 'oled-display') {
+    if (componentDefinition.name === 'oled-display') {
       width = 120;
       height = 80;
     } else if (componentDefinition.name === 'segmented-display') {
       width = 120;
       height = 80;
-    } else if (componentDefinition.name === 'resistor' || componentDefinition.name === 'photoresistor') {
-      width = 80;
-      height = 40;
     } else if (componentDefinition.name === 'custom-keypad') {
       width = 120;
       height = 120;
