@@ -633,6 +633,51 @@ const CircuitBuilder = () => {
               </div>
             )}
             
+            {selectedComponent.type === 'dip-switch-3' && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    DIP Switch Settings
+                  </label>
+                  
+                  <div className="space-y-2 bg-gray-50 p-3 rounded border">
+                    {selectedComponent.props?.value?.map((switchValue, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Switch {index + 1}</span>
+                        <button
+                          onClick={() => {
+                            setComponents(prev => 
+                              prev.map(c => {
+                                if (c.id === selectedComponent.id) {
+                                  const newValue = [...(c.props?.value || [false, false, false])];
+                                  newValue[index] = !newValue[index];
+                                  return { ...c, props: { ...c.props, value: newValue } };
+                                }
+                                return c;
+                              })
+                            );
+                          }}
+                          className={`px-3 py-1 text-sm font-medium rounded transition-colors ${
+                            switchValue 
+                              ? 'bg-green-500 hover:bg-green-600 text-white' 
+                              : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
+                          }`}
+                        >
+                          {switchValue ? 'ON' : 'OFF'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded">
+                  <div className="font-medium mb-1">Component Information</div>
+                  <div>A 3-position DIP switch with independent toggle control.</div>
+                  <div className="mt-1">Each switch can be connected to a digital input pin.</div>
+                </div>
+              </div>
+            )}
+            
             <button
               onClick={handleDeleteComponent}
               className="mt-3 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
