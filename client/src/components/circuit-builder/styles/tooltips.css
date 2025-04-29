@@ -3,61 +3,27 @@
 /* Make pin targets more obvious for interaction */
 .pin-target {
   cursor: pointer !important;
-  transition: r 0.2s ease, fill 0.2s ease;
-  fill: rgba(0, 150, 255, 0.1); /* Very slight blue tint to show clickable area */
+  fill: rgba(255, 255, 255, 0.001) !important; /* Almost invisible fill to capture hover */
+  r: 3px !important; /* Slightly larger than default */
 }
 
 /* Add visual feedback on hover */
 .pin-target:hover {
-  r: 5px !important; /* Make pins larger on hover */
+  r: 6px !important; /* Make pins larger on hover */
   stroke: #00a0ff !important;
   stroke-width: 2px !important;
   fill: rgba(0, 150, 255, 0.3) !important;
   filter: drop-shadow(0 0 3px rgba(0, 150, 255, 0.8)) !important;
 }
 
-/* Increase visibility of title tooltips */
-.pin-target:hover::before {
-  content: attr(title);
-  position: absolute;
-  background-color: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  margin-top: -20px;
-  margin-left: 5px;
-  z-index: 9999;
-  pointer-events: none;
-  white-space: nowrap;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+/* Improve default browser tooltips using a combination of approaches */
+title {
+  font-weight: bold !important;
+  font-size: 14px !important;
 }
 
-/* Custom pin labels as additional enhancement */
-.pin-group {
-  position: relative;
-}
-
-/* Make sure the title tooltips are always visible when hovering */
-[title] {
-  position: relative;
-}
-
-/* Add pin highlight effect when component is selected */
+/* Make sure pins stand out when component is selected */
 .isActive .pin-target {
-  stroke: rgba(255, 255, 255, 0.3) !important;
+  stroke: #ddd !important;
   stroke-width: 1px !important;
-}
-
-/* Custom tooltip style for browsers that support it */
-.pin-target::after {
-  content: attr(data-pin-name);
-  visibility: hidden;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.pin-target:hover::after {
-  visibility: visible;
-  opacity: 1;
 }
