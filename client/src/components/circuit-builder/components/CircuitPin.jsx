@@ -75,14 +75,20 @@ const CircuitPin = ({
     // IMPORTANT: Call the global handler for WireManager to detect
     console.log(`CircuitPin attempting to call global handler for ${id}`);
     
+    // Get exact pin position for accurate wiring
+    const pinRect = pinElement.getBoundingClientRect();
+    const pinPosition = {
+      x: pinRect.left + pinRect.width/2,
+      y: pinRect.top + pinRect.height/2
+    };
+    
+    console.log(`Pin ${id} absolute position:`, pinPosition);
+    
     // For improved reliability, create a global function call, which is more reliable
     // than event bubbling in complex component hierarchies
     if (typeof window.CIRCUIT_PIN_CLICKED === 'function') {
       console.log(`Global pin handler exists, calling it for ${id}`);
-      window.CIRCUIT_PIN_CLICKED(id, pinType, parentId, {
-        x: e.clientX,
-        y: e.clientY
-      });
+      window.CIRCUIT_PIN_CLICKED(id, pinType, parentId, pinPosition, pinElement);
     } else {
       console.warn(`Global pin handler doesn't exist yet for ${id}`);
     }

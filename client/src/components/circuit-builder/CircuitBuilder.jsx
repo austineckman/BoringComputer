@@ -367,8 +367,8 @@ const CircuitBuilder = () => {
         {/* Circuit components */}
         {components.map(renderComponent)}
         
-        {/* Wire management layer */}
-        <WireManager canvasRef={canvasRef} />
+        {/* Wire management layer - MUST be above all components in SVG hierarchy */}
+        <WireManager key="wire-manager" canvasRef={canvasRef} />
         
         {/* Custom pin tooltip component */}
         <PinTooltip />
