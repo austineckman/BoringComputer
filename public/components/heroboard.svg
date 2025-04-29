@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="120" height="80" viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Board Base -->
+  <rect x="5" y="5" width="110" height="70" rx="2" fill="#1e88e5" stroke="#0d47a1" stroke-width="2"/>
+  
+  <!-- USB Connector -->
+  <rect x="52" y="0" width="16" height="10" fill="#78909c" stroke="#455a64" stroke-width="1"/>
+  
+  <!-- Digital Pins (D0-D13) -->
+  <g>
+    <rect x="10" y="15" width="100" height="15" fill="#0d47a1" stroke="#002171" stroke-width="1"/>
+    <!-- Pin Labels -->
+    <text x="15" y="25" font-family="monospace" font-size="8" fill="white">D0 D1 D2 D3 D4 D5 D6 D7 D8 D9 D10 D11 D12 D13</text>
+    <!-- Pin Headers -->
+    <g fill="#b0bec5">
+      <rect x="14" y="10" width="2" height="4" />
+      <rect x="22" y="10" width="2" height="4" />
+      <rect x="30" y="10" width="2" height="4" />
+      <rect x="38" y="10" width="2" height="4" />
+      <rect x="46" y="10" width="2" height="4" />
+      <rect x="54" y="10" width="2" height="4" />
+      <rect x="62" y="10" width="2" height="4" />
+      <rect x="70" y="10" width="2" height="4" />
+      <rect x="78" y="10" width="2" height="4" />
+      <rect x="86" y="10" width="2" height="4" />
+      <rect x="94" y="10" width="2" height="4" />
+      <rect x="102" y="10" width="2" height="4" />
+    </g>
+  </g>
+  
+  <!-- Analog Pins (A0-A5) -->
+  <g>
+    <rect x="10" y="40" width="100" height="15" fill="#0d47a1" stroke="#002171" stroke-width="1"/>
+    <!-- Pin Labels -->
+    <text x="15" y="50" font-family="monospace" font-size="8" fill="white">A0 A1 A2 A3 A4 A5</text>
+    <!-- Pin Headers -->
+    <g fill="#b0bec5">
+      <rect x="14" y="56" width="2" height="4" />
+      <rect x="22" y="56" width="2" height="4" />
+      <rect x="30" y="56" width="2" height="4" />
+      <rect x="38" y="56" width="2" height="4" />
+      <rect x="46" y="56" width="2" height="4" />
+      <rect x="54" y="56" width="2" height="4" />
+    </g>
+  </g>
+  
+  <!-- Power Pins -->
+  <g>
+    <rect x="10" y="65" width="100" height="10" fill="#0d47a1" stroke="#002171" stroke-width="1"/>
+    <!-- Pin Labels -->
+    <text x="15" y="72" font-family="monospace" font-size="6" fill="white">5V GND 3.3V RST</text>
+    <!-- Pin Headers -->
+    <g fill="#b0bec5">
+      <rect x="14" y="76" width="2" height="4" />
+      <rect x="22" y="76" width="2" height="4" />
+      <rect x="30" y="76" width="2" height="4" />
+      <rect x="38" y="76" width="2" height="4" />
+    </g>
+  </g>
+  
+  <!-- LEDs -->
+  <circle cx="105" cy="70" r="2" fill="#76ff03" />
+  <circle cx="112" cy="70" r="2" fill="#ffea00" />
+</svg>
