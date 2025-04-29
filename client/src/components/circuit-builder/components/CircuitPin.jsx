@@ -29,14 +29,9 @@ const CircuitPin = ({
   // Register pin with global wire management system
   useEffect(() => {
     if (parentRef?.current && pinRef.current) {
-      // Create a unique ID for this pin if one wasn't provided
-      const pinId = id || `pin-${parentId}-${Math.random().toString(36).substr(2, 9)}`;
-      
-      console.log(`Registering pin ${pinId} of type ${pinType} for component ${parentId}`);
-      
       const customEvent = new CustomEvent('registerPin', {
         detail: {
-          id: pinId,
+          id,
           parentId,
           pinType,
           label,
@@ -47,9 +42,8 @@ const CircuitPin = ({
       
       // Clean up on unmount
       return () => {
-        console.log(`Unregistering pin ${pinId}`);
         const cleanup = new CustomEvent('unregisterPin', {
-          detail: { id: pinId }
+          detail: { id }
         });
         document.dispatchEvent(cleanup);
       };
@@ -68,16 +62,11 @@ const CircuitPin = ({
     
     // Dispatch a global event for the WireManager to handle
     const clickEvent = new CustomEvent('pinClicked', {
-      detail: { 
-        id: id,
-        pinType: pinType || 'bidirectional', // Default to bidirectional if not specified
-        parentId: parentId || 'unknown' 
-      }
+      detail: { id, pinType, parentId }
     });
     document.dispatchEvent(clickEvent);
-    console.log('Dispatched pinClicked event with:', { id, pinType, parentId });
     
-    console.log(`Pin clicked: ${id}, type: ${pinType}, parent: ${parentId}`);
+    console.log(`Pin clicked: ${id}`);
   };
   
   // Handle mouse hover
@@ -155,15 +144,14 @@ const CircuitPin = ({
         width: `${size}px`,
         height: `${size}px`,
         backgroundColor: isConnected ? '#4caf50' : (isHovered ? '#ff9800' : color),
-        border: `2.5px solid ${getBorderColor()}`,
+        border: `1.5px solid ${getBorderColor()}`,
         left: position.x,
         top: position.y,
         transform: 'translate(-50%, -50%)',
         cursor: 'crosshair',
-        zIndex: 20,
-        boxShadow: isConnected || isHovered ? '0 0 8px rgba(255, 50, 50, 0.8)' : '0 1px 4px rgba(0, 0, 0, 0.5)',
-        transition: 'all 0.1s ease',
-        pointerEvents: 'auto'
+        zIndex: 15,
+        boxShadow: isConnected || isHovered ? '0 0 4px rgba(0, 0, 0, 0.5)' : '0 1px 2px rgba(0, 0, 0, 0.3)',
+        transition: 'all 0.1s ease'
       }}
       onClick={handlePinClick}
       onMouseEnter={handleMouseEnter}

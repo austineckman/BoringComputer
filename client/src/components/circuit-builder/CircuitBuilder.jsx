@@ -7,7 +7,7 @@ import CircuitComponent from './components/CircuitComponent';
 // Import specialized component implementations
 import HeroBoard from './components/HeroBoard';
 import LED from './components/LED';
-import RGBLED from './components/RgbLed';
+import RGBLED from './components/RGBLED';
 import Resistor from './components/Resistor';
 import Photoresistor from './components/Photoresistor';
 import Buzzer from './components/Buzzer';
