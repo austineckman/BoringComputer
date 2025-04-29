@@ -90,33 +90,43 @@ const BuzzerComponent: React.FC<ComponentProps> = ({
       handleMouseDown={handleMouseDown}
       handleDelete={() => handleDeleteComponent(id)}
     >
-      <svg width="40" height="40" viewBox="-20 -20 40 40" xmlns="http://www.w3.org/2000/svg">
-        {/* Buzzer body */}
-        <circle cx="0" cy="0" r="10" fill="#333" stroke="#222" strokeWidth="0.5" />
-        <circle cx="0" cy="0" r="8" fill="#222" />
-        <circle cx="0" cy="0" r="6" fill={hasSignal ? "#444" : "#333"} />
-        <circle cx="0" cy="0" r="2" fill={hasSignal ? "#666" : "#444"} />
-        
-        {/* Sound hole pattern */}
-        <path 
-          d="M0,0 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" 
-          fill="none" 
-          stroke="#555" 
-          strokeWidth="0.5"
-          strokeDasharray="2,2" 
+      <div className="relative w-full h-full flex items-center justify-center">
+        {/* Use real buzzer image */}
+        <img
+          src="/images/components/buzzer.icon.png"
+          alt="Buzzer Component"
+          className="w-full h-full object-contain"
+          style={{
+            filter: hasSignal ? 'brightness(1.2)' : 'brightness(1)',
+          }}
         />
         
         {/* Sound waves animation */}
-        {getSoundWavePath()}
+        {hasSignal && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            {[0, 1, 2].map((i) => {
+              const size = 16 + (i * 10) + (animationState * 4);
+              const opacity = 1 - (i * 0.25 + animationState * 0.1);
+              return (
+                <div 
+                  key={`wave-${i}`}
+                  className="absolute rounded-full border border-blue-500"
+                  style={{
+                    width: `${size}px`,
+                    height: `${size}px`,
+                    opacity: opacity,
+                    borderStyle: 'dashed',
+                    borderWidth: '1px',
+                  }}
+                />
+              );
+            })}
+          </div>
+        )}
         
-        {/* Leads */}
-        <line x1="-15" y1="0" x2="-10" y2="0" stroke="#999" strokeWidth="1.5" />
-        <line x1="10" y1="0" x2="15" y2="0" stroke="#999" strokeWidth="1.5" />
-        
-        {/* Polarity indicator (positive) */}
-        <circle cx="-12" cy="3" r="1" fill="#999" />
-        <text x="-12" y="2" fontSize="3" textAnchor="middle" fill="#999">+</text>
-      </svg>
+        {/* Polarity indicator */}
+        <div className="absolute -bottom-1 -left-2 text-xs text-red-500" style={{ fontSize: '7px' }}>+</div>
+      </div>
       
       {/* Connection pins */}
       <CircuitPin
