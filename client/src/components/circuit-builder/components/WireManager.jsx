@@ -221,7 +221,7 @@ const WireManager = ({ canvasRef }) => {
   
   // Handle pins being clicked to start/end connections
   const handlePinClick = useCallback((pinId) => {
-    console.log(`Pin ${pinId} clicked`);
+    console.log(`Pin ${pinId} clicked in WireManager handlePinClick`);
     
     // Get the pin information
     const pin = registeredPins[pinId];
@@ -235,10 +235,13 @@ const WireManager = ({ canvasRef }) => {
     
     if (!isDrawing) {
       // Start a new wire from this pin
+      console.log(`Starting wire from pin ${pinId} at position:`, position);
       setStartPin({ x: position.x, y: position.y, id: pinId });
+      setIsDrawing(true);
     } else {
       // Finish the wire if not connecting to self
-      if (startPin.id !== pinId) {
+      if (startPin && startPin.id !== pinId) {
+        console.log(`Connecting wire from pin ${startPin.id} to pin ${pinId}`);
         const newConnection = {
           id: `connection-${makeId(8)}`,
           startPin: startPin,
@@ -248,11 +251,14 @@ const WireManager = ({ canvasRef }) => {
         
         setConnections(prev => [...prev, newConnection]);
         setStartPin(null);
+      } else {
+        console.log(`Cancelling wire from pin ${startPin?.id || 'unknown'}`);
+        // Cancel the wire if clicking the same pin
+        setStartPin(null);
       }
+      setIsDrawing(false);
     }
-    
-    setIsDrawing(!isDrawing);
-  }, [isDrawing, registeredPins, startPin]);
+  }, [isDrawing, registeredPins, startPin, getElementPosition]);
   
   // Handle wire selection and context menu
   const handleWireMouseDown = (connectionId, showMenu = true, isConnection = false) => {
@@ -315,8 +321,13 @@ const WireManager = ({ canvasRef }) => {
     
     // Handler for direct pin click events
     const handlePinClickEvent = (e) => {
-      const { id } = e.detail;
-      console.log(`Received pinClicked event for ${id}`);
+      const { id, pinType, parentId } = e.detail;
+      console.log(`Received pinClicked event for pin ${id}, type: ${pinType}, parent: ${parentId}`);
+      
+      if (!id) {
+        console.warn('Received pinClicked event with missing id');
+        return;
+      }
       handlePinClick(id);
     };
     
