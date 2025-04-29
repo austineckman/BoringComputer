@@ -3,6 +3,7 @@ import { componentOptions, generateId } from './constants/componentOptions';
 import ComponentPalette from './components/ComponentPalette';
 import WireManager from './components/WireManager';
 import CircuitComponent from './components/CircuitComponent';
+import './styles/tooltips.css'; // Import custom tooltip styles
 
 // Import specialized component implementations
 import HeroBoard from './components/HeroBoard';
