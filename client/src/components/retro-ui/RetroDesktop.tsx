@@ -28,6 +28,7 @@ import jukeboxIconImage from "@assets/jukebox_icon.png";
 import shopCoinImage from "@assets/22_Leperchaun_Coin.png";
 import logoImage from "@assets/Asset 6@2x-8.png";
 import partyKittyImage from "@assets/partykitty.png";
+import ledIconImage from "@assets/led.icon.png";
 import oracleIconImage from "@assets/hooded-figure.png";
 import picklockImage from "@assets/Untitled design - 2025-04-26T171551.402.png";
 import craftingImage from "@assets/Untitled design - 2025-04-26T171858.770.png";
@@ -639,6 +640,13 @@ const RetroDesktop: React.FC = () => {
                   className="w-10 h-10 object-contain" 
                   style={{ imageRendering: 'pixelated' }}
                 />
+              ) : icon.icon === "circuitbuilder" ? (
+                <img 
+                  src={ledIconImage} 
+                  alt="Sandbox" 
+                  className="w-10 h-10 object-contain" 
+                  style={{ imageRendering: 'pixelated' }}
+                />
               ) : icon.icon === "discord" ? (
                 <FaDiscord size={28} className="text-indigo-600" />
               ) : icon.icon === "trashIcon" ? (
@@ -942,6 +950,13 @@ const RetroDesktop: React.FC = () => {
                   <img 
                     src={jukeboxIconImage} 
                     alt="Jukebox" 
+                    className="mr-2 w-4 h-4 object-contain" 
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                ) : window.icon === "circuitbuilder" ? (
+                  <img 
+                    src={ledIconImage} 
+                    alt="Sandbox" 
                     className="mr-2 w-4 h-4 object-contain" 
                     style={{ imageRendering: 'pixelated' }}
                   />
