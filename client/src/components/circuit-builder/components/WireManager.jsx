@@ -1,8 +1,130 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { PathLine } from 'react-svg-pathline';
+import { createPortal } from 'react-dom';
+
+// Utility functions to match Wokwi implementation
+const makeId = (length) => {
+  let result = '';
+  const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+};
+
+const randomColor = () => {
+  // Default to red for testing as requested
+  return '#ff3333';  // Solid red wires for testing
+};
+
+const wireColorOptions = () => [
+  { 'value': '#000000' },
+  { 'value': '#563831' },
+  { 'value': '#26b297' },
+  { 'value': '#00ff00' },
+  { 'value': '#1f5e1f' },
+  { 'value': '#852583' },
+  { 'value': '#3c61e3' },
+  { 'value': '#ff6600' },
+  { 'value': '#ff3333' },
+  { 'value': '#dada32' },
+  { 'value': '#b925c9' }
+];
+
+// MoveableConnection component for individual wires
+const MoveableConnection = ({ 
+  connectionData, 
+  path, 
+  handleMouseDown, 
+  handleDelete, 
+  showMenu, 
+  handleColorChange, 
+  isActive, 
+  zIndex 
+}) => {
+  const [isComponentMenuShowing, setIsComponentMenuShowing] = useState(false);
+  const [conColor, setConColor] = useState(connectionData.color); // Wire color
+  const colorOptions = wireColorOptions();
+  const [isDragged, setIsDragged] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    setTimeout(() => {
+      setIsComponentMenuShowing(showMenu);
+    }, 100);
+  }, [showMenu]);
+
+  return (
+    <>
+      <g id={connectionData.id}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        style={(isHovered || isActive) && !isDragged ? {filter: `drop-shadow(0 0 3px ${conColor})`} : {}}
+        className={`${(isActive && !isDragged) ? 'active' : ''} mPath cursor-pointer relative`}>
+        <PathLine
+          points={path}
+          stroke={conColor}
+          strokeWidth="3"
+          fill="none"
+          r={4}
+        />
+        <PathLine
+          style={{
+            pointerEvents: "visibleStroke"  // Ensures this element will receive mouse events
+          }}
+          onMouseDown={(e) => {
+            console.log('connection clicked');
+            e.nativeEvent.stopImmediatePropagation();
+            handleMouseDown(connectionData.id, true, true);
+          }}
+          points={path}
+          stroke="transparent"
+          strokeWidth="12"
+          fill="none"
+          r={4}
+        />
+      </g>
+      {isComponentMenuShowing && isActive && createPortal(
+        <>
+          <div className="flex-row">
+            <label className="block text-sm font-medium text-gray-700">Select color</label>
+            {colorOptions.map((color, index) => {
+              return <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const newColor = e.target.dataset.value;
+                  setConColor(newColor);
+                  handleColorChange(newColor); // Update the color in the context
+                }}
+                data-value={color.value}
+                className="inline-flex m-1 w-6 h-6 rounded border justify-center border-white hover:border-2"
+                style={{
+                  backgroundColor: color.value,
+                  border: conColor === color.value ? '3px solid white' : '1px solid white'
+                }}
+                key={`led-col-opt-${index}`}></button>
+            })}
+          </div>
+          <div className="flex items-center h-full">
+            <div className="p-2 cursor-pointer ml-1 mt-2" onClick={(e) => handleDelete(connectionData.id)}>
+              <svg xmlns="http://www.w3.org/2000/svg"
+                className="w-5 h-5"
+                viewBox="0 0 448 512">
+                <path
+                  d="M170.5 51.6L151.5 80h145l-19-28.4c-1.5-2.2-4-3.6-6.7-3.6H177.1c-2.7 0-5.2 1.3-6.7 3.6zm147-26.6L354.2 80H368h48 8c13.3 0 24 10.7 24 24s-10.7 24-24 24h-8V432c0 44.2-35.8 80-80 80H112c-44.2 0-80-35.8-80-80V128H24c-13.3 0-24-10.7-24-24S10.7 80 24 80h8H80 93.8l36.7-55.1C140.9 9.4 158.4 0 177.1 0h93.7c18.7 0 36.2 9.4 46.6 24.9zM80 128V432c0 17.7 14.3 32 32 32H336c17.7 0 32-14.3 32-32V128H80zm80 64V400c0 8.8-7.2 16-16 16s-16-7.2-16-16V192c0-8.8 7.2-16 16-16s16 7.2 16 16zm80 0V400c0 8.8-7.2 16-16 16s-16-7.2-16-16V192c0-8.8 7.2-16 16-16s16 7.2 16 16zm80 0V400c0 8.8-7.2 16-16 16s-16-7.2-16-16V192c0-8.8 7.2-16 16-16s16 7.2 16 16z" />
+              </svg>
+            </div>
+          </div>
+        </>,
+        document.querySelector('#component-context-menu') || document.body
+      )}
+    </>
+  );
+};
 
 /**
- * WireManager component handles the creation and rendering of wires
- * between component pins
+ * WireManager component using the Wokwi/Inventr implementation
  * 
  * @param {Object} props
  * @param {RefObject} props.canvasRef - Reference to the canvas element
@@ -10,11 +132,79 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 const WireManager = ({ canvasRef }) => {
   // State for pin and wire management
   const [registeredPins, setRegisteredPins] = useState({});
-  const [wires, setWires] = useState([]);
-  const [pendingWire, setPendingWire] = useState(null);
+  const [connections, setConnections] = useState([]);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [startPin, setStartPin] = useState(null);
+  const [focusedConnectionId, setFocusedConnectionId] = useState(null);
+  const [showMenu, setShowMenu] = useState(false);
   
   // SVG reference
   const svgRef = useRef(null);
+  
+  // Calculate path for connections
+  const drawConnection = (start, end) => {
+    const path = [];
+    const midPoint = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
+    
+    path.push(start);
+    
+    if (start.y === end.y || start.x === end.x) {
+      // If start-end points are collinear vertically or horizontally
+      path.push(end);
+    } else {
+      // If start-end points are not collinear
+      if (Math.abs(end.x - start.x) > Math.abs(end.y - start.y)) {
+        // If distance in x direction is more than in y direction
+        const midHorizontal = { x: midPoint.x, y: start.y };
+        path.push(midHorizontal);
+        const midVertical = { x: midPoint.x, y: end.y };
+        path.push(midVertical);
+      } else {
+        // If distance in y direction is more than in x direction
+        const midVertical = { x: start.x, y: midPoint.y };
+        path.push(midVertical);
+        const midHorizontal = { x: end.x, y: midPoint.y };
+        path.push(midHorizontal);
+      }
+    }
+    
+    path.push(end);
+    return path;
+  };
+  
+  // Redraw connections when component positions change
+  const handleRedrawConnections = useCallback(() => {
+    setConnections(prevConnections => {
+      return prevConnections.map(connection => {
+        // Get the start and end pin elements
+        const startPinEl = registeredPins[connection.startPin.id]?.element;
+        const endPinEl = registeredPins[connection.endPin.id]?.element;
+        
+        if (!startPinEl || !endPinEl) {
+          return connection;
+        }
+        
+        // Calculate new positions
+        const startPos = getElementPosition(startPinEl);
+        const endPos = getElementPosition(endPinEl);
+        
+        // Update connection with new positions
+        return {
+          ...connection,
+          startPin: {
+            ...connection.startPin,
+            x: startPos.x,
+            y: startPos.y
+          },
+          endPin: {
+            ...connection.endPin,
+            x: endPos.x,
+            y: endPos.y
+          }
+        };
+      });
+    });
+  }, [registeredPins]);
   
   // Get element position relative to the canvas
   const getElementPosition = (element) => {
@@ -29,9 +219,9 @@ const WireManager = ({ canvasRef }) => {
     };
   };
   
-  // Handle pin clicks - create or finish a wire - defined with useCallback to avoid recreating on every render
+  // Handle pins being clicked to start/end connections
   const handlePinClick = useCallback((pinId) => {
-    console.log(`Pin clicked: ${pinId}`);
+    console.log(`Pin ${pinId} clicked`);
     
     // Get the pin information
     const pin = registeredPins[pinId];
@@ -40,77 +230,60 @@ const WireManager = ({ canvasRef }) => {
       return;
     }
     
-    if (!pendingWire) {
+    // Get position of the pin
+    const position = getElementPosition(pin.element);
+    
+    if (!isDrawing) {
       // Start a new wire from this pin
-      console.log(`Starting new wire from pin ${pinId} (${pin.type})`);
-      setPendingWire({
-        sourceId: pinId,
-        sourceType: pin.type,
-        sourceParentId: pin.parentId
-      });
+      setStartPin({ x: position.x, y: position.y, id: pinId });
     } else {
-      // Finishing a wire
-      const { sourceId, sourceType, sourceParentId } = pendingWire;
-      console.log(`Finishing wire: ${sourceId} -> ${pinId}`);
-      
-      // Prevent connecting a pin to itself
-      if (sourceId === pinId) {
-        console.warn('Cannot connect a pin to itself');
-        setPendingWire(null);
-        return;
+      // Finish the wire if not connecting to self
+      if (startPin.id !== pinId) {
+        const newConnection = {
+          id: `connection-${makeId(8)}`,
+          startPin: startPin,
+          endPin: { x: position.x, y: position.y, id: pinId },
+          color: randomColor()
+        };
+        
+        setConnections(prev => [...prev, newConnection]);
+        setStartPin(null);
       }
-      
-      // Prevent connecting pins of the same component
-      if (sourceParentId === pin.parentId) {
-        console.warn('Cannot connect pins on the same component');
-        setPendingWire(null);
-        return;
-      }
-      
-      // Check compatibility (input to output or bidirectional)
-      const isCompatible = (
-        (sourceType === 'output' && pin.type === 'input') ||
-        (sourceType === 'input' && pin.type === 'output') ||
-        sourceType === 'bidirectional' ||
-        pin.type === 'bidirectional'
-      );
-      
-      if (!isCompatible) {
-        console.warn(`Cannot connect ${sourceType} to ${pin.type}`);
-        setPendingWire(null);
-        return;
-      }
-      
-      // Add the new wire
-      const newWire = {
-        id: `wire-${Date.now()}`,
-        sourceId,
-        targetId: pinId,
-        sourceType,
-        targetType: pin.type
-      };
-      
-      console.log(`Creating new wire:`, newWire);
-      setWires(prev => [...prev, newWire]);
-      setPendingWire(null);
-    }
-  }, [pendingWire, registeredPins]);
-  
-  // Handle clicks on the canvas (to cancel pending wire)
-  const handleCanvasClick = useCallback((e) => {
-    // If click wasn't on a pin and wasn't handled by a pin, cancel any pending wire
-    if (e.target.classList.contains('circuit-pin') || 
-        e.target.closest('.pin-connection-point') ||
-        e.target.dataset.pinId) {
-      return; // Do nothing, let the pin click handler handle it
     }
     
-    // Cancel the pending wire
-    if (pendingWire) {
-      console.log('Canceling pending wire (canvas click)');
-      setPendingWire(null);
+    setIsDrawing(!isDrawing);
+  }, [isDrawing, registeredPins, startPin]);
+  
+  // Handle wire selection and context menu
+  const handleWireMouseDown = (connectionId, showMenu = true, isConnection = false) => {
+    if (showMenu) {
+      setShowMenu(true);
+    } else {
+      setShowMenu(false);
     }
-  }, [pendingWire]);
+    
+    if (isConnection) {
+      setFocusedConnectionId(connectionId);
+    } else {
+      setFocusedConnectionId(null);
+    }
+  };
+  
+  // Handle wire deletion
+  const handleDeleteConnection = (connectionId) => {
+    setConnections(prev => prev.filter(conn => conn.id !== connectionId));
+    setFocusedConnectionId(null);
+    setShowMenu(false);
+  };
+  
+  // Handle wire color change
+  const handleColorChange = (newColor) => {
+    setConnections(prev => prev.map(conn => 
+      conn.id === focusedConnectionId 
+        ? { ...conn, color: newColor } 
+        : conn
+    ));
+  };
   
   // Register event listeners for pin registration and wire drawing
   useEffect(() => {
@@ -135,8 +308,8 @@ const WireManager = ({ canvasRef }) => {
       });
       
       // Remove any wires connected to this pin
-      setWires(prev => prev.filter(wire => 
-        wire.sourceId !== id && wire.targetId !== id
+      setConnections(prev => prev.filter(conn => 
+        conn.startPin.id !== id && conn.endPin.id !== id
       ));
     };
     
@@ -147,22 +320,39 @@ const WireManager = ({ canvasRef }) => {
       handlePinClick(id);
     };
     
-    // Handler for wire redrawing (e.g., when components move)
-    const handleRedrawWires = () => {
-      // Force redraw by creating a new array reference
-      setWires(prev => [...prev]);
+    // Handler for wire redrawing
+    const handleRedrawEvent = () => {
+      handleRedrawConnections();
+    };
+    
+    // Handler for clicks outside wires to clear selection
+    const handleDocumentClick = (e) => {
+      const isWireClick = e.target.closest('.mPath');
+      const isMenuClick = e.target.closest('#component-context-menu');
+      
+      if (!isWireClick && !isMenuClick) {
+        setFocusedConnectionId(null);
+        setShowMenu(false);
+      }
     };
     
     // Register event listeners
     document.addEventListener('registerPin', handleRegisterPin);
     document.addEventListener('unregisterPin', handleUnregisterPin);
     document.addEventListener('pinClicked', handlePinClickEvent);
-    document.addEventListener('redrawWires', handleRedrawWires);
+    document.addEventListener('redrawWires', handleRedrawEvent);
+    document.addEventListener('click', handleDocumentClick);
     
-    // Add click handler to the canvas for wire interactions
-    const canvasElement = canvasRef?.current;
-    if (canvasElement) {
-      canvasElement.addEventListener('click', handleCanvasClick);
+    // Create context menu container if it doesn't exist
+    if (!document.querySelector('#component-context-menu')) {
+      const menuDiv = document.createElement('div');
+      menuDiv.id = 'component-context-menu';
+      menuDiv.className = 'absolute z-50 bg-gray-800 p-3 rounded-md shadow-lg';
+      menuDiv.style.position = 'fixed';
+      menuDiv.style.top = '50%';
+      menuDiv.style.left = '50%';
+      menuDiv.style.transform = 'translate(-50%, -50%)';
+      document.body.appendChild(menuDiv);
     }
     
     // Cleanup function to remove all event listeners
@@ -170,182 +360,76 @@ const WireManager = ({ canvasRef }) => {
       document.removeEventListener('registerPin', handleRegisterPin);
       document.removeEventListener('unregisterPin', handleUnregisterPin);
       document.removeEventListener('pinClicked', handlePinClickEvent);
-      document.removeEventListener('redrawWires', handleRedrawWires);
-      
-      if (canvasElement) {
-        canvasElement.removeEventListener('click', handleCanvasClick);
-      }
+      document.removeEventListener('redrawWires', handleRedrawEvent);
+      document.removeEventListener('click', handleDocumentClick);
     };
-  }, [canvasRef, handlePinClick, handleCanvasClick]);
+  }, [handlePinClick, handleRedrawConnections]);
   
   // Add mouse move handler for pending wire visualization
   useEffect(() => {
-    if (!pendingWire || !canvasRef?.current || !svgRef?.current) return;
+    if (!isDrawing || !startPin || !canvasRef?.current) return;
     
-    const canvasElement = canvasRef.current;
-    
-    const handlePendingWireMouseMove = (e) => {
-      const svg = svgRef.current;
-      if (!svg) return;
-      
-      // Update mouse position for wire visualization
-      const canvasRect = canvasElement.getBoundingClientRect();
-      const mouseX = e.clientX - canvasRect.left;
-      const mouseY = e.clientY - canvasRect.top;
-      
-      // Get the current path element and update it
-      const pendingPath = svg.querySelector('.pending-wire');
-      if (pendingPath) {
-        const sourceElement = registeredPins[pendingWire.sourceId]?.element;
-        if (sourceElement) {
-          const sourcePos = getElementPosition(sourceElement);
-          const pathString = getWirePath(sourcePos, { x: mouseX, y: mouseY });
-          pendingPath.setAttribute('d', pathString);
+    const handleMouseMove = (e) => {
+      // This is handled by the MouseTracker component
+      const event = new CustomEvent('wire-drawing', {
+        detail: {
+          startPin,
+          mouseX: e.clientX,
+          mouseY: e.clientY
         }
-      }
+      });
+      document.dispatchEvent(event);
     };
     
-    canvasElement.addEventListener('mousemove', handlePendingWireMouseMove);
+    const canvasEl = canvasRef.current;
+    canvasEl.addEventListener('mousemove', handleMouseMove);
     
-    // Cleanup function
     return () => {
-      canvasElement.removeEventListener('mousemove', handlePendingWireMouseMove);
+      canvasEl.removeEventListener('mousemove', handleMouseMove);
     };
-  }, [canvasRef, pendingWire, registeredPins, getElementPosition]);
+  }, [isDrawing, startPin, canvasRef]);
   
-  // Get wire color based on connection types
-  const getWireColor = (sourceType, targetType) => {
-    // Power connections (VCC, GND, etc.)
-    if (
-      (sourceType === 'output' && targetType === 'input') ||
-      (sourceType === 'input' && targetType === 'output')
-    ) {
-      return '#ef4444'; // Red - power connections
-    }
+  // MouseTracker component for drawing the pending wire
+  const MouseTracker = () => {
+    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     
-    // Signal connections
-    if (sourceType === 'bidirectional' || targetType === 'bidirectional') {
-      return '#3b82f6'; // Blue - bidirectional signals
-    }
-    
-    // Default color
-    return '#10b981'; // Green - general signal
-  };
-  
-  // Get wire style based on connection types - Wokwi style
-  const getWireStyle = (sourceType, targetType) => {
-    // Power connections - typically from outputs to inputs
-    if (
-      (sourceType === 'output' && targetType === 'input') ||
-      (sourceType === 'input' && targetType === 'output')
-    ) {
-      // For power connections (typical LED to resistor, or board to LED)
-      return {
-        stroke: getWireColor(sourceType, targetType),
-        strokeWidth: 4, // Thicker for power connections
-        strokeLinecap: 'round',
-        strokeMiterlimit: 10, // Better path corner rendering
-        filter: 'drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.5))',
-        fill: 'none',
-        opacity: 0.95
+    useEffect(() => {
+      const handleWireDrawing = (e) => {
+        if (!canvasRef?.current) return;
+        
+        const canvasRect = canvasRef.current.getBoundingClientRect();
+        setMousePosition({
+          x: e.detail.mouseX - canvasRect.left,
+          y: e.detail.mouseY - canvasRect.top
+        });
       };
-    }
-    
-    // Bidirectional connections - typically for data or I/O pins
-    if (sourceType === 'bidirectional' || targetType === 'bidirectional') {
-      return {
-        stroke: getWireColor(sourceType, targetType),
-        strokeWidth: 3.5,
-        strokeLinecap: 'round',
-        strokeMiterlimit: 10,
-        filter: 'drop-shadow(0px 1.5px 2px rgba(0, 0, 0, 0.3))',
-        fill: 'none',
-        opacity: 0.9
+      
+      document.addEventListener('wire-drawing', handleWireDrawing);
+      
+      return () => {
+        document.removeEventListener('wire-drawing', handleWireDrawing);
       };
-    }
+    }, []);
     
-    // Default style for other connections
-    return {
-      stroke: getWireColor(sourceType, targetType),
-      strokeWidth: 3.5,
-      strokeLinecap: 'round',
-      strokeMiterlimit: 10,
-      filter: 'drop-shadow(0px 1.5px 2px rgba(0, 0, 0, 0.25))',
-      fill: 'none',
-      opacity: 0.85
-    };
-  };
-  
-  // Calculate SVG path string for a wire following Wokwi's implementation
-  const getWirePath = (sourcePos, targetPos) => {
-    // Ensure we have valid positions
-    if (!sourcePos || !targetPos) {
-      console.warn('Invalid positions for wire path:', sourcePos, targetPos);
-      return `M 0,0`;
-    }
+    if (!isDrawing || !startPin) return null;
     
-    const dx = targetPos.x - sourcePos.x;
-    const dy = targetPos.y - sourcePos.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    const path = drawConnection(
+      { x: startPin.x, y: startPin.y },
+      { x: mousePosition.x, y: mousePosition.y }
+    );
     
-    // Calculate a nice curve that follows Wokwi's wire appearance
-    // We'll use multiple segments for better control over the curve shape
-    
-    // For very short connections, use a simple curve
-    if (distance < 30) {
-      return `M${sourcePos.x},${sourcePos.y} Q${(sourcePos.x + targetPos.x)/2},${(sourcePos.y + targetPos.y)/2} ${targetPos.x},${targetPos.y}`;
-    }
-    
-    // Determine if this is primarily horizontal, vertical, or diagonal
-    const isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.5; 
-    const isVertical = Math.abs(dy) > Math.abs(dx) * 1.5;
-    
-    // Calculate control points with consideration for the circuit board grid layout
-    // These offsets create the nice curved wires seen in Wokwi
-    
-    // For horizontal-ish wires
-    if (isHorizontal) {
-      const midX = sourcePos.x + dx / 2;
-      const controlDist = Math.min(Math.abs(dx) / 4, 40);
-      
-      return `M${sourcePos.x},${sourcePos.y} `+
-             `C${sourcePos.x + controlDist},${sourcePos.y} `+
-             `${midX - controlDist},${targetPos.y} `+ 
-             `${midX},${targetPos.y} `+
-             `S${targetPos.x - controlDist},${targetPos.y} `+
-             `${targetPos.x},${targetPos.y}`;
-    }
-    
-    // For vertical-ish wires
-    if (isVertical) {
-      const midY = sourcePos.y + dy / 2;
-      const controlDist = Math.min(Math.abs(dy) / 4, 40);
-      
-      return `M${sourcePos.x},${sourcePos.y} `+
-             `C${sourcePos.x},${sourcePos.y + controlDist} `+
-             `${targetPos.x},${midY - controlDist} `+ 
-             `${targetPos.x},${midY} `+
-             `S${targetPos.x},${targetPos.y - controlDist} `+
-             `${targetPos.x},${targetPos.y}`;
-    }
-    
-    // For diagonal connections, create a curve with a 45° segment in the middle
-    const midX = sourcePos.x + dx / 2;
-    const midY = sourcePos.y + dy / 2;
-    const controlLen = distance / 4;  // Control point distance as fraction of total distance
-    
-    return `M${sourcePos.x},${sourcePos.y} `+
-           `C${sourcePos.x + Math.sign(dx) * controlLen},${sourcePos.y} `+
-           `${midX - Math.sign(dx) * controlLen/2},${midY - Math.sign(dy) * controlLen/2} `+
-           `${midX},${midY} `+
-           `S${targetPos.x - Math.sign(dx) * controlLen},${targetPos.y} `+
-           `${targetPos.x},${targetPos.y}`;
-  };
-  
-  // Handle wire deletion
-  const handleWireDelete = (wireId, e) => {
-    e.stopPropagation();
-    setWires(prev => prev.filter(wire => wire.id !== wireId));
+    return (
+      <g className="pending-wire">
+        <PathLine
+          points={path}
+          stroke="#ff3333" // Solid red for testing wires
+          strokeWidth="3"
+          strokeDasharray="6,3"
+          fill="none"
+          r={4}
+        />
+      </g>
+    );
   };
   
   return (
@@ -354,125 +438,30 @@ const WireManager = ({ canvasRef }) => {
       className="absolute inset-0 pointer-events-none z-10"
       style={{ width: '100%', height: '100%' }}
     >
-      {/* Draw existing wires */}
-      {wires.map(wire => {
-        // Get source and target elements from registered pins
-        const sourceElement = registeredPins[wire.sourceId]?.element;
-        const targetElement = registeredPins[wire.targetId]?.element;
-        
-        if (!sourceElement || !targetElement) {
-          // One of the pins is no longer available, remove this wire
-          setTimeout(() => {
-            setWires(prev => prev.filter(w => w.id !== wire.id));
-          }, 0);
-          return null;
-        }
-        
-        // Get positions
-        const sourcePos = getElementPosition(sourceElement);
-        const targetPos = getElementPosition(targetElement);
-        
-        // Calculate path and wire style
-        const pathString = getWirePath(sourcePos, targetPos);
-        const wireStyle = getWireStyle(wire.sourceType, wire.targetType);
+      {/* Draw existing wires using MoveableConnection */}
+      {connections.map(connection => {
+        const path = drawConnection(
+          { x: connection.startPin.x, y: connection.startPin.y },
+          { x: connection.endPin.x, y: connection.endPin.y }
+        );
         
         return (
-          <g key={wire.id} className="wire-group">
-            <path
-              d={pathString}
-              {...wireStyle}
-              className="wire"
-              data-wire-id={wire.id}
-              onDoubleClick={(e) => handleWireDelete(wire.id, e)}
-              style={{ pointerEvents: 'auto', cursor: 'crosshair' }}
-            />
-            
-            {/* Wire endpoints */}
-            <circle
-              cx={sourcePos.x}
-              cy={sourcePos.y}
-              r={4}
-              fill={wireStyle.stroke}
-              pointerEvents="none"
-            />
-            <circle
-              cx={targetPos.x}
-              cy={targetPos.y}
-              r={4}
-              fill={wireStyle.stroke}
-              pointerEvents="none"
-            />
-          </g>
+          <MoveableConnection
+            key={connection.id}
+            connectionData={connection}
+            path={path}
+            handleMouseDown={handleWireMouseDown}
+            handleDelete={handleDeleteConnection}
+            handleColorChange={handleColorChange}
+            showMenu={showMenu && focusedConnectionId === connection.id}
+            isActive={focusedConnectionId === connection.id}
+            zIndex={10}
+          />
         );
       })}
       
       {/* Draw pending wire */}
-      {pendingWire && (
-        (() => {
-          // Get source element
-          const sourceElement = registeredPins[pendingWire.sourceId]?.element;
-          if (!sourceElement) return null;
-          
-          // Get mouse position relative to canvas
-          const handleMouseMove = (e) => {
-            const svg = svgRef.current;
-            if (!svg) return;
-            
-            // Update mouse position for wire visualization
-            const canvasRect = canvasRef.current.getBoundingClientRect();
-            const mouseX = e.clientX - canvasRect.left;
-            const mouseY = e.clientY - canvasRect.top;
-            
-            // Get the current path element and update it
-            const pendingPath = svg.querySelector('.pending-wire');
-            if (pendingPath) {
-              const sourcePos = getElementPosition(sourceElement);
-              const pathString = getWirePath(sourcePos, { x: mouseX, y: mouseY });
-              pendingPath.setAttribute('d', pathString);
-            }
-          };
-          
-          // Mouse movement handled in main useEffect
-          
-          // Render pending wire path
-          const sourcePos = getElementPosition(sourceElement);
-          const wireStyle = {
-            stroke: getWireColor(pendingWire.sourceType, 'bidirectional'),
-            strokeWidth: 3,
-            strokeLinecap: 'round',
-            strokeDasharray: '6,4',
-            filter: 'drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.2))',
-            fill: 'none',
-            opacity: 0.7
-          };
-          
-          return (
-            <path
-              className="pending-wire"
-              d={`M ${sourcePos.x},${sourcePos.y}`}
-              {...wireStyle}
-              pointerEvents="none"
-            />
-          );
-        })()
-      )}
-      
-      {/* Invisible wire click handlers */}
-      {Object.values(registeredPins).map(pin => {
-        const position = getElementPosition(pin.element);
-        return (
-          <circle
-            key={pin.id}
-            cx={position.x}
-            cy={position.y}
-            r={8}
-            fill="transparent"
-            style={{ pointerEvents: 'auto', cursor: 'crosshair' }}
-            onClick={() => handlePinClick(pin.id)}
-            data-pin-id={pin.id}
-          />
-        );
-      })}
+      <MouseTracker />
     </svg>
   );
 };
