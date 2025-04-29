@@ -126,23 +126,26 @@ const CircuitComponent = ({
     let x = 0.5; 
     let y = 0.5;
     
+    // Convert component type to lowercase for easier matching
+    componentType = componentType.toLowerCase();
+    
     // LED component
     if (componentType === 'led') {
       if (pinId === 'anode') {
-        x = 0.3; 
-        y = 0;
+        x = 0.5; 
+        y = 0.1;
       } else if (pinId === 'cathode') {
-        x = 0.7; 
-        y = 1;
+        x = 0.5; 
+        y = 0.9;
       }
     }
     // Resistor component
     else if (componentType === 'resistor') {
       if (pinId === 'pin1') {
-        x = 0; 
+        x = 0.1; 
         y = 0.5;
       } else if (pinId === 'pin2') {
-        x = 1; 
+        x = 0.9; 
         y = 0.5;
       }
     }
@@ -150,26 +153,107 @@ const CircuitComponent = ({
     else if (componentType === 'rgb led') {
       if (pinId === 'common') {
         x = 0.5; 
-        y = 0;
+        y = 0.1;
       } else if (pinId === 'red') {
-        x = 0.2; 
-        y = 1;
+        x = 0.3; 
+        y = 0.9;
       } else if (pinId === 'green') {
         x = 0.5; 
-        y = 1;
+        y = 0.9;
       } else if (pinId === 'blue') {
-        x = 0.8; 
-        y = 1;
+        x = 0.7; 
+        y = 0.9;
       }
     }
     // Photoresistor
     else if (componentType === 'photoresistor') {
       if (pinId === 'pin1') {
-        x = 0; 
+        x = 0.1; 
         y = 0.5;
       } else if (pinId === 'pin2') {
-        x = 1; 
+        x = 0.9; 
         y = 0.5;
+      }
+    }
+    // OLED Display
+    else if (componentType === 'oled display') {
+      if (pinId === 'sda') {
+        x = 0.3;
+        y = 0.1;
+      } else if (pinId === 'scl') {
+        x = 0.5;
+        y = 0.1;
+      } else if (pinId === 'vcc') {
+        x = 0.7;
+        y = 0.1;
+      } else if (pinId === 'gnd') {
+        x = 0.9;
+        y = 0.1;
+      }
+    }
+    // 7-Segment Display
+    else if (componentType === '7-segment display') {
+      // Position pins along bottom edge
+      const segments = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'dp', 'common'];
+      const index = segments.indexOf(pinId);
+      if (index >= 0) {
+        x = 0.1 + (index * 0.1);
+        y = 0.9;
+      }
+    }
+    // Custom Keypad
+    else if (componentType === 'custom keypad') {
+      if (pinId.startsWith('row')) {
+        // Position row pins along left edge
+        const rowNum = parseInt(pinId.replace('row', ''), 10);
+        x = 0.1;
+        y = 0.2 + ((rowNum - 1) * 0.2);
+      } else if (pinId.startsWith('col')) {
+        // Position column pins along right edge
+        const colNum = parseInt(pinId.replace('col', ''), 10);
+        x = 0.9;
+        y = 0.2 + ((colNum - 1) * 0.2);
+      }
+    }
+    // Rotary Encoder
+    else if (componentType === 'rotary encoder') {
+      if (pinId === 'clk') {
+        x = 0.3;
+        y = 0.1;
+      } else if (pinId === 'dt') {
+        x = 0.5;
+        y = 0.1;
+      } else if (pinId === 'sw') {
+        x = 0.7;
+        y = 0.1;
+      } else if (pinId === 'vcc') {
+        x = 0.3;
+        y = 0.9;
+      } else if (pinId === 'gnd') {
+        x = 0.7;
+        y = 0.9;
+      }
+    }
+    // DIP Switch
+    else if (componentType === 'dip switch (3)') {
+      if (pinId === 'in1') {
+        x = 0.2;
+        y = 0.1;
+      } else if (pinId === 'out1') {
+        x = 0.2;
+        y = 0.9;
+      } else if (pinId === 'in2') {
+        x = 0.5;
+        y = 0.1;
+      } else if (pinId === 'out2') {
+        x = 0.5;
+        y = 0.9;
+      } else if (pinId === 'in3') {
+        x = 0.8;
+        y = 0.1;
+      } else if (pinId === 'out3') {
+        x = 0.8;
+        y = 0.9;
       }
     }
     // HeroBoard - arrange pins around the board
@@ -177,25 +261,25 @@ const CircuitComponent = ({
       if (pinId.startsWith('d')) {
         // Digital pins on right side
         const pinNumber = parseInt(pinId.substring(1), 10);
-        x = 1;
-        y = 0.2 + (pinNumber / 14) * 0.6;
+        x = 0.95;
+        y = 0.2 + (pinNumber / 13) * 0.6;
       } else if (pinId.startsWith('a')) {
         // Analog pins on left side
         const pinNumber = parseInt(pinId.substring(1), 10);
-        x = 0;
-        y = 0.3 + (pinNumber / 6) * 0.4;
+        x = 0.05;
+        y = 0.3 + (pinNumber / 5) * 0.4;
       } else if (pinId === '5v' || pinId === '3v3') {
         // Power pins at top
         x = pinId === '5v' ? 0.3 : 0.7;
-        y = 0;
+        y = 0.05;
       } else if (pinId === 'gnd') {
         // Ground pin at bottom
         x = 0.5;
-        y = 1;
+        y = 0.95;
       } else if (pinId === 'rst') {
         // Reset pin at top right
         x = 0.9;
-        y = 0;
+        y = 0.05;
       }
     }
     // Default positions for other components
@@ -203,28 +287,28 @@ const CircuitComponent = ({
       // For any other component, distribute pins around the perimeter
       if (pinId.includes('vcc') || pinId.includes('v') || pinId.includes('power')) {
         x = 0.5; 
-        y = 0;
+        y = 0.1;
       } else if (pinId.includes('gnd') || pinId.includes('g') || pinId.includes('ground')) {
         x = 0.5; 
-        y = 1;
+        y = 0.9;
       } else if (pinId.includes('in') || pinId.includes('input')) {
-        x = 0; 
+        x = 0.1; 
         y = 0.5;
       } else if (pinId.includes('out') || pinId.includes('output')) {
-        x = 1; 
+        x = 0.9; 
         y = 0.5;
       } else if (pinId.includes('clk') || pinId.includes('clock')) {
-        x = 0; 
-        y = 0.3;
+        x = 0.2; 
+        y = 0.1;
       } else if (pinId.includes('data') || pinId.includes('dt') || pinId.includes('din')) {
-        x = 0; 
-        y = 0.7;
+        x = 0.4; 
+        y = 0.1;
       } else if (pinId.includes('cs') || pinId.includes('select')) {
-        x = 1; 
-        y = 0.3;
+        x = 0.6; 
+        y = 0.1;
       } else if (pinId.includes('sw') || pinId.includes('switch')) {
-        x = 1; 
-        y = 0.7;
+        x = 0.8; 
+        y = 0.1;
       }
     }
     
@@ -348,7 +432,7 @@ const CircuitComponent = ({
           <div
             key={pin.id}
             id={`${id}-${pin.id}`}
-            className={`circuit-pin absolute w-4 h-4 rounded-full transform -translate-x-1/2 -translate-y-1/2 cursor-crosshair border-2 ${
+            className={`circuit-pin absolute w-5 h-5 rounded-full transform -translate-x-1/2 -translate-y-1/2 cursor-crosshair border-2 shadow-md ${
               pin.type === 'input' ? 'bg-green-500 border-green-700' : 
               pin.type === 'output' ? 'bg-red-500 border-red-700' : 
               'bg-blue-500 border-blue-700' // bidirectional
