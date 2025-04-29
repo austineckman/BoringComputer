@@ -119,6 +119,8 @@ const HeroBoard = ({
           snappable={MOVE_SETTINGS.SNAPPABLE}
           throttleDrag={MOVE_SETTINGS.THROTTLE_DRAG}
           rotatable={false} // Explicitly set to false to prevent rotation
+          hideDefaultLines={true} // Hide the default selection lines
+          className="moveable-no-border" // Add custom class for styling
           onDrag={onDrag}
           onDragStart={() => setIsDragged(true)}
           onDragEnd={() => setIsDragged(false)}
@@ -132,7 +134,7 @@ const HeroBoard = ({
         isDragged={isDragged}
         onPinClicked={handlePinClicked}
         onPininfoChange={(e) => onPinInfoChange(e)}
-        isActive={isSelected}
+        isActive={false} // Remove the active state to prevent blue outline
         rotationTransform={0} // Fixed to 0 degrees - no rotation
         onMouseDown={(e) => {
           e.stopPropagation();
@@ -140,7 +142,8 @@ const HeroBoard = ({
         }}
         style={{
           transform: `translate(${initPosLeft}px, ${initPosTop}px)`,
-          zIndex: isDragged ? 99999 : 10
+          zIndex: isDragged ? 99999 : 10,
+          outline: isSelected ? '1px solid #3b82f6' : 'none' // Apply a single outline when selected
         }}
         ledPower={true}
       ></ReactHeroBoardElement>
