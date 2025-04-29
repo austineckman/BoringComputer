@@ -50,16 +50,18 @@ const CircuitPin = ({
     }
   }, [id, parentId, pinType, label, parentRef]);
   
-  // Handle pin click
+  // Handle pin click for wiring - Exactly like Wokwi behavior
   const handlePinClick = (e) => {
     e.stopPropagation();
     e.preventDefault();
     
-    // Apply a quick visual feedback that pin was clicked
+    // Apply a quick visual feedback that pin was clicked - RED like Wokwi
     const pinElement = e.currentTarget;
     pinElement.style.transform = 'scale(1.3) translate(-50%, -50%)';
+    pinElement.style.boxShadow = '0 0 8px rgba(255, 0, 0, 0.9)';
     setTimeout(() => {
       pinElement.style.transform = 'translate(-50%, -50%)';
+      // Don't reset the box-shadow - the WireManager will handle this if needed
     }, 150);
     
     // First handle internal pin click handler if provided

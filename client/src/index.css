@@ -43,6 +43,34 @@
   --moveable-color: transparent !important;
 }
 
+/* Circuit wiring style enhancements */
+.pin-connection-point {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pin-connection-point:hover {
+  transform: translate(-50%, -50%) scale(1.2) !important;
+  box-shadow: 0 0 5px rgba(255, 0, 0, 0.7) !important;
+  z-index: 30 !important;
+}
+
+/* Style for pins that are the source of a wire */
+.wire-source-pin {
+  transform: translate(-50%, -50%) scale(1.3) !important;
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.9) !important;
+  z-index: 30 !important;
+}
+
+/* Wire styling */
+.wire {
+  cursor: crosshair;
+  transition: stroke-width 0.15s ease;
+}
+
+.wire:hover {
+  stroke-width: 4px !important;
+}
+
 /* CSS animations for loot box system */
 
 @keyframes fadeIn {
