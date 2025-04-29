@@ -80,7 +80,7 @@ const RGBLEDComponent: React.FC<ComponentProps> = ({
       <div className="relative w-full h-full flex items-center justify-center">
         {/* Use real RGB LED image */}
         <img
-          src="/images/components/rgb-led.icon.png"
+          src="/assets/components/rgb-led.icon.png"
           alt="RGB LED Component"
           className="w-full h-full object-contain"
           style={{

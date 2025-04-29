@@ -60,7 +60,7 @@ const PhotoresistorComponent: React.FC<ComponentProps> = ({
       <div className="relative w-full h-full flex items-center justify-center">
         {/* Use real photoresistor image */}
         <img
-          src="/images/components/photoresistor.icon.png"
+          src="/assets/components/photoresistor.icon.png"
           alt="Photoresistor Component"
           className="w-full h-full object-contain"
           style={{

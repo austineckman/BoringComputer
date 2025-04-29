@@ -75,7 +75,7 @@ const ResistorComponent: React.FC<ComponentProps> = ({
       <div className="relative w-full h-full flex items-center justify-center">
         {/* Use real resistor image */}
         <img
-          src="/images/components/resistor.icon.png"
+          src="/assets/components/resistor.icon.png"
           alt="Resistor Component"
           className="w-full h-full object-contain"
         />

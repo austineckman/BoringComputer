@@ -54,7 +54,7 @@ const LEDComponent: React.FC<ComponentProps> = ({
       <div className="relative w-10 h-10 flex items-center justify-center">
         {/* Use the real LED image */}
         <img 
-          src="/images/components/led.icon.png" 
+          src="/assets/components/led.icon.png" 
           alt="LED Component" 
           className="w-full h-full object-contain"
           style={{

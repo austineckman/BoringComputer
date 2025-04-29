@@ -93,7 +93,7 @@ const BuzzerComponent: React.FC<ComponentProps> = ({
       <div className="relative w-full h-full flex items-center justify-center">
         {/* Use real buzzer image */}
         <img
-          src="/images/components/buzzer.icon.png"
+          src="/assets/components/buzzer.icon.png"
           alt="Buzzer Component"
           className="w-full h-full object-contain"
           style={{
