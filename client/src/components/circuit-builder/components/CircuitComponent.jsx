@@ -69,6 +69,7 @@ const CircuitComponent = ({
   // Handle pin click
   const handlePinClick = (pinId, pinType, e) => {
     e.stopPropagation();
+    console.log('Pin clicked:', pinId, pinType, id);
     if (onPinConnect) {
       onPinConnect(pinId, pinType, id);
     }
@@ -330,6 +331,9 @@ const CircuitComponent = ({
       const pinElement = document.getElementById(`${id}-${pin.id}`);
       
       if (pinElement) {
+        // Debug: Log the pin data
+        console.log('Registering pin:', pin.id, 'with label:', pin.label || pin.id);
+        
         // Dispatch event to register this pin for wire connections
         const event = new CustomEvent('registerPin', {
           detail: {
@@ -440,7 +444,7 @@ const CircuitComponent = ({
           <div
             key={pin.id}
             id={`${id}-${pin.id}`}
-            className={`circuit-pin absolute w-5 h-5 rounded-full transform -translate-x-1/2 -translate-y-1/2 cursor-crosshair border-2 shadow-md group ${
+            className={`circuit-pin absolute w-5 h-5 rounded-full transform -translate-x-1/2 -translate-y-1/2 cursor-crosshair border-2 shadow-md ${
               pin.type === 'input' ? 'bg-green-500 border-green-700' : 
               pin.type === 'output' ? 'bg-red-500 border-red-700' : 
               'bg-blue-500 border-blue-700' // bidirectional
@@ -451,13 +455,42 @@ const CircuitComponent = ({
               zIndex: 20
             }}
             onClick={(e) => handlePinClick(pin.id, pin.type, e)}
+            onMouseEnter={(e) => {
+              // Log pin data for debugging
+              console.log(`Pin hover: ${pin.id}, label: ${pin.label || pin.id}, type: ${pin.type}`);
+              
+              // Find pin element
+              const pinElement = e.currentTarget;
+              
+              // Create tooltip if it doesn't exist
+              let tooltip = document.getElementById(`tooltip-${id}-${pin.id}`);
+              if (!tooltip) {
+                tooltip = document.createElement('div');
+                tooltip.id = `tooltip-${id}-${pin.id}`;
+                tooltip.className = 'absolute bg-gray-800 text-white text-xs px-2 py-1 rounded z-50 whitespace-nowrap';
+                tooltip.style.pointerEvents = 'none';
+                tooltip.style.opacity = '0.9';
+                tooltip.style.bottom = '150%';
+                tooltip.style.left = '50%';
+                tooltip.style.transform = 'translateX(-50%)';
+                tooltip.textContent = pin.label || pin.id;
+                
+                // Add to DOM
+                pinElement.appendChild(tooltip);
+              } else {
+                tooltip.style.display = 'block';
+              }
+            }}
+            onMouseLeave={(e) => {
+              // Find and hide tooltip
+              const tooltip = document.getElementById(`tooltip-${id}-${pin.id}`);
+              if (tooltip) {
+                tooltip.style.display = 'none';
+              }
+            }}
             title={pin.label || pin.id}
-          >
-            {/* Pin tooltip - only shown on hover */}
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-1 py-0.5 bg-gray-900 text-white text-xs rounded whitespace-nowrap z-50 pointer-events-none hidden group-hover:block">
-              {pin.label || pin.id}
-            </div>
-          </div>
+          />
+          
         );
       })}
       
