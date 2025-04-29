@@ -380,6 +380,7 @@ const WireManager = ({ canvasRef }) => {
     // Handler for pin registration
     const handleRegisterPin = (e) => {
       const { id, parentId, pinType, label, element } = e.detail;
+      console.log(`Pin registered: ${id}, type: ${pinType}`, element);
       
       setRegisteredPins(prev => ({
         ...prev,
@@ -390,6 +391,7 @@ const WireManager = ({ canvasRef }) => {
     // Handler for pin unregistration
     const handleUnregisterPin = (e) => {
       const { id } = e.detail;
+      console.log(`Pin unregistered: ${id}`);
       
       setRegisteredPins(prev => {
         const newPins = { ...prev };
@@ -406,12 +408,13 @@ const WireManager = ({ canvasRef }) => {
     // Handler for direct pin click events
     const handlePinClickEvent = (e) => {
       const { id } = e.detail;
-      console.log(`Received pinClicked event for ${id}`);
+      console.log(`Received pinClicked event for ${id}`, e.detail);
       handlePinClick(id);
     };
     
     // Handler for wire redrawing (e.g., when components move)
     const handleRedrawWires = () => {
+      console.log("Redrawing wires");
       // Force redraw by creating a new array reference
       setWires(prev => {
         return prev.map(wire => {
@@ -427,7 +430,7 @@ const WireManager = ({ canvasRef }) => {
           const targetPos = getElementPosition(targetElement);
           
           // Keep any intermediate points but update the source and target
-          const newPoints = wire.points.length > 2 
+          const newPoints = wire.points?.length > 2 
             ? [sourcePos, ...wire.points.slice(1, -1), targetPos]
             : [sourcePos, targetPos];
           

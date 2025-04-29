@@ -66,7 +66,7 @@ const CircuitPin = ({
     });
     document.dispatchEvent(clickEvent);
     
-    console.log(`Pin clicked: ${id}`);
+    console.log(`Pin ${id} (${pinType}) of component ${parentId} clicked`);
   };
   
   // Handle mouse hover
