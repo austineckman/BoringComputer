@@ -131,18 +131,20 @@ const Photoresistor = ({
 
   return (
     <>
-      <Moveable
-        ref={moveableRef}
-        target={targetRef}
-        draggable={MOVE_SETTINGS.DRAGGABLE}
-        snappable={MOVE_SETTINGS.SNAPPABLE}
-        throttleDrag={MOVE_SETTINGS.THROTTLE_DRAG}
-        rotatable={MOVE_SETTINGS.ROTATABLE}
-        onDrag={onDragOrRotate}
-        onRotate={onDragOrRotate}
-        onDragStart={() => setIsDragged(true)}
-        onDragEnd={() => setIsDragged(false)}
-      ></Moveable>
+      {isSelected && (
+        <Moveable
+          ref={moveableRef}
+          target={targetRef}
+          draggable={MOVE_SETTINGS.DRAGGABLE}
+          snappable={MOVE_SETTINGS.SNAPPABLE}
+          throttleDrag={MOVE_SETTINGS.THROTTLE_DRAG}
+          rotatable={MOVE_SETTINGS.ROTATABLE}
+          onDrag={onDragOrRotate}
+          onRotate={onDragOrRotate}
+          onDragStart={() => setIsDragged(true)}
+          onDragEnd={() => setIsDragged(false)}
+        ></Moveable>
+      )}
       
       <ReactPhotoresistor
         id={id}
