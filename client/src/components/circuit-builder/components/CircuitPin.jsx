@@ -55,18 +55,36 @@ const CircuitPin = ({
     e.stopPropagation();
     e.preventDefault();
     
-    // First handle internal pin click handler
+    // Apply a quick visual feedback that pin was clicked
+    const pinElement = e.currentTarget;
+    pinElement.style.transform = 'scale(1.3) translate(-50%, -50%)';
+    setTimeout(() => {
+      pinElement.style.transform = 'translate(-50%, -50%)';
+    }, 150);
+    
+    // First handle internal pin click handler if provided
     if (onPinClick) {
       onPinClick(id, pinType, parentId);
     }
     
     // Dispatch a global event for the WireManager to handle
     const clickEvent = new CustomEvent('pinClicked', {
-      detail: { id, pinType, parentId }
+      detail: { 
+        id, 
+        pinType, 
+        parentId,
+        position: {
+          x: e.clientX,
+          y: e.clientY
+        }
+      }
     });
     document.dispatchEvent(clickEvent);
     
-    console.log(`Pin clicked: ${id}`);
+    // Ensure the WireManager always focuses on pin clicks more than other events
+    e.stopImmediatePropagation();
+    
+    console.log(`Pin clicked: ${id} (${pinType})`);
   };
   
   // Handle mouse hover

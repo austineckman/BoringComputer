@@ -77,6 +77,23 @@ const BaseComponent = ({
           onRotate={onDragOrRotate}
           origin={false}
           rotationPosition={"top"}
+          hideDefaultLines={true}
+          className="circuit-moveable"
+          renderDirections={["nw", "ne", "sw", "se"]}
+          rotateAroundControls={true}
+          rotationTarget={".rotation-handle"}
+          elementGuidelines={[]}
+          snappable={false}
+        />
+      )}
+      
+      {/* Custom rotation handle that doesn't interfere with pins */}
+      {isSelected && (
+        <div 
+          className="rotation-handle absolute -top-6 left-1/2 transform -translate-x-1/2 w-5 h-5 bg-blue-500 rounded-full cursor-move border-2 border-white z-20"
+          style={{
+            boxShadow: '0 0 4px rgba(0, 0, 0, 0.3)'
+          }}
         />
       )}
     </>
