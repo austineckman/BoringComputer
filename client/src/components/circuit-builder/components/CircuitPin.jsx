@@ -1,5 +1,4 @@
 import { useRef, useEffect, useState } from 'react';
-import WireState from '../utils/WireState';
 
 /**
  * CircuitPin component represents a connection point for components
@@ -54,7 +53,7 @@ const CircuitPin = ({
   // Handle pin click for wiring - Exactly like Wokwi behavior
   const handlePinClick = (e) => {
     e.stopPropagation();
-    // Don't prevent default as we need the click to bubble to WireManager
+    // Don't prevent default as we need the click to bubble to SimpleWireManager
     
     // Apply visual feedback
     const pinElement = e.currentTarget;
@@ -71,7 +70,7 @@ const CircuitPin = ({
       onPinClick(id, pinType, parentId);
     }
     
-    // The click event will bubble up to the document and be handled by WireManager
+    // The click event will bubble up to the document and be handled by SimpleWireManager
     // No need to do anything else here
   };
   

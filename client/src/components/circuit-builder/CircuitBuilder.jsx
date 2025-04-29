@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { componentOptions, generateId } from './constants/componentOptions';
 import ComponentPalette from './components/ComponentPalette';
-import WireManager from './components/WireManager';
+import SimpleWireManager from './components/SimpleWireManager';
 import CircuitComponent from './components/CircuitComponent';
 import PinTooltip from './components/PinTooltip'; // Import custom tooltip component
 import './styles/tooltips.css'; // Import custom tooltip styles
@@ -80,7 +80,7 @@ const CircuitBuilder = () => {
   // Handle pin connections
   const handlePinConnect = (pinId, pinType, componentId) => {
     console.log(`Pin ${pinId} (${pinType}) of component ${componentId} clicked`);
-    // Wire connections are handled by WireManager
+    // Wire connections are handled by SimpleWireManager
   };
   
   // Handle component deletion
@@ -367,8 +367,8 @@ const CircuitBuilder = () => {
         {/* Circuit components */}
         {components.map(renderComponent)}
         
-        {/* Wire management layer - MUST be above all components in SVG hierarchy */}
-        <WireManager key="wire-manager" canvasRef={canvasRef} />
+        {/* Ultra simple wire management layer */}
+        <SimpleWireManager canvasRef={canvasRef} />
         
         {/* Custom pin tooltip component */}
         <PinTooltip />
