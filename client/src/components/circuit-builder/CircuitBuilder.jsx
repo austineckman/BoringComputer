@@ -355,7 +355,7 @@ const CircuitBuilder = () => {
       
       {/* Main canvas */}
       <div 
-        className="flex-1 relative h-full overflow-hidden bg-gray-50" 
+        className="flex-1 relative h-full overflow-hidden bg-gray-50 circuit-canvas" 
         ref={canvasRef}
         onClick={(e) => {
           // Only deselect when clicking directly on the canvas background
