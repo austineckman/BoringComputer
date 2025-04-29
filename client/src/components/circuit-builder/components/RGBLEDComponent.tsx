@@ -78,92 +78,94 @@ const RGBLEDComponent: React.FC<ComponentProps> = ({
       handleDelete={() => handleDeleteComponent(id)}
     >
       <svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
-        {/* LED Body */}
-        <circle cx="30" cy="30" r="13" fill="#333" />
+        {/* Define gradients and filters for glows */}
+        <defs>
+          <radialGradient id={`rgb-glow-${id}`} cx="0.5" cy="0.5" r="0.5" fx="0.5" fy="0.5">
+            <stop offset="0%" stopColor={rgbColor} stopOpacity={glowOpacity * 1.5} />
+            <stop offset="40%" stopColor={rgbColor} stopOpacity={glowOpacity} />
+            <stop offset="80%" stopColor={rgbColor} stopOpacity={glowOpacity * 0.3} />
+            <stop offset="100%" stopColor={rgbColor} stopOpacity="0" />
+          </radialGradient>
+        </defs>
         
-        {/* RGB LED main light */}
+        {/* LED Package - 5mm diffused style */}
+        <circle cx="30" cy="30" r="15" fill="#e0e0e0" opacity="0.3" />
+        <circle cx="30" cy="30" r="12" fill="#f8f8f8" opacity="0.7" />
+        
+        {/* LED Body - the plastic housing */}
+        <circle cx="30" cy="30" r="10" fill="#eaeaea" stroke="#d8d8d8" strokeWidth="0.5" />
+        
+        {/* Internal RGB die */}
         <circle 
           cx="30" 
           cy="30" 
-          r="10" 
-          fill={rgbColor} 
-          filter={`drop-shadow(0 0 ${glowRadius}px ${rgbColor})`}
-          opacity={glowOpacity + 0.2} 
+          r="8" 
+          fill="#222"
         />
         
-        {/* RGB sections */}
-        <path 
-          d="M30,30 L30,20 A10,10 0 0,1 40,30 z"
+        {/* RGB internal elements - visible when not illuminated */}
+        <circle cx="27" cy="27" r="2" fill="#331111" stroke="#440000" strokeWidth="0.3" opacity="0.7" />
+        <circle cx="33" cy="27" r="2" fill="#113311" stroke="#004400" strokeWidth="0.3" opacity="0.7" />
+        <circle cx="30" cy="33" r="2" fill="#111133" stroke="#000044" strokeWidth="0.3" opacity="0.7" />
+        
+        {/* RGB color sections when illuminated */}
+        <circle
+          cx="27" 
+          cy="27" 
+          r="2.5"
           fill="#ff0000"
-          opacity={ledRed * brightnessScale * 0.4}
+          opacity={ledRed * brightnessScale * 0.8}
         />
-        <path 
-          d="M30,30 L40,30 A10,10 0 0,1 30,40 z"
+        <circle
+          cx="33" 
+          cy="27" 
+          r="2.5"
           fill="#00ff00"
-          opacity={ledGreen * brightnessScale * 0.4}
+          opacity={ledGreen * brightnessScale * 0.8}
         />
-        <path 
-          d="M30,30 L30,40 A10,10 0 0,1 20,30 z"
-          fill="#0000ff"
-          opacity={ledBlue * brightnessScale * 0.4}
-        />
-        
-        {/* Center highlight */}
-        <circle 
+        <circle
           cx="30" 
-          cy="30" 
-          r="4" 
-          fill="#ffffff" 
-          opacity={brightnessScale * 0.6} 
+          cy="33" 
+          r="2.5"
+          fill="#0000ff"
+          opacity={ledBlue * brightnessScale * 0.8}
         />
         
-        {/* Leads */}
-        <line 
-          x1="20" 
-          y1="30" 
-          x2="10" 
-          y2="30" 
-          stroke="#ccc" 
-          strokeWidth="1.5" 
-        />
-        <line 
-          x1="30" 
-          y1="43" 
-          x2="30" 
-          y2="50" 
-          stroke="#ccc" 
-          strokeWidth="1.5" 
-        />
-        <line 
-          x1="25" 
-          y1="15" 
-          x2="25" 
-          y2="10" 
-          stroke="#ccc" 
-          strokeWidth="1.5" 
-        />
-        <line 
-          x1="30" 
-          y1="15" 
-          x2="30" 
-          y2="10" 
-          stroke="#ccc" 
-          strokeWidth="1.5" 
-        />
-        <line 
-          x1="35" 
-          y1="15" 
-          x2="35" 
-          y2="10" 
-          stroke="#ccc" 
-          strokeWidth="1.5" 
+        {/* Combined RGB glow effect */}
+        {(ledRed > 0.1 || ledGreen > 0.1 || ledBlue > 0.1) && (
+          <circle
+            cx="30" 
+            cy="30" 
+            r="20" 
+            fill={`url(#rgb-glow-${id})`}
+          />
+        )}
+        
+        {/* Light refraction on plastic case */}
+        <ellipse
+          cx="27" 
+          cy="27" 
+          rx="4" 
+          ry="2"
+          fill="#ffffff"
+          opacity="0.25"
+          transform="rotate(-15 27 27)"
         />
         
-        {/* RGB labels */}
-        <text x="23" y="16" fill="#ff0000" fontSize="6" textAnchor="middle">R</text>
-        <text x="30" y="16" fill="#00ff00" fontSize="6" textAnchor="middle">G</text>
-        <text x="37" y="16" fill="#0000ff" fontSize="6" textAnchor="middle">B</text>
-        <text x="30" y="45" fill="#ccc" fontSize="6" textAnchor="middle">C</text>
+        {/* Package base */}
+        <rect x="20" y="40" width="20" height="3" rx="1" fill="#222" />
+        
+        {/* Leads - four pins in common cathode/anode configuration */}
+        <line x1="22" y1="43" x2="22" y2="55" stroke="#aaa" strokeWidth="1" />
+        <line x1="26" y1="43" x2="26" y2="55" stroke="#aaa" strokeWidth="1" />
+        <line x1="34" y1="43" x2="34" y2="55" stroke="#aaa" strokeWidth="1" />
+        <line x1="38" y1="43" x2="38" y2="55" stroke="#aaa" strokeWidth="1" />
+        
+        {/* RGB pin labels */}
+        <text x="22" y="52" fill="#f33" fontSize="4" textAnchor="middle">R</text>
+        <text x="26" y="52" fill="#3f3" fontSize="4" textAnchor="middle">G</text>
+        <text x="34" y="52" fill="#33f" fontSize="4" textAnchor="middle">B</text>
+        <text x="38" y="52" fill="#ccc" fontSize="4" textAnchor="middle">C</text>
       </svg>
 
       {/* Connection pins */}

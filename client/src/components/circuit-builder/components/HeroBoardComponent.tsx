@@ -92,51 +92,99 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
       handleDelete={() => handleDeleteComponent(id)}
     >
       <svg width="170" height="220" viewBox="-85 -110 170 220" xmlns="http://www.w3.org/2000/svg">
-        {/* Board Body */}
-        <rect x="-80" y="-105" width="160" height="210" rx="10" ry="10" fill="#1a365d" />
+        {/* Board Body - Arduino Uno style but branded as HERO */}
+        <rect x="-80" y="-105" width="160" height="210" rx="10" ry="10" fill="#00979c" /> {/* Arduino teal */}
         
-        {/* Board Main Area */}
-        <rect x="-70" y="-95" width="140" height="190" rx="5" ry="5" fill="#173156" />
+        {/* PCB texture */}
+        <rect x="-78" y="-103" width="156" height="206" rx="8" ry="8" fill="#00979c" stroke="#008184" strokeWidth="1" />
+        
+        {/* Board mounting holes */}
+        <circle cx="-70" cy="-95" r="2" fill="#333" />
+        <circle cx="70" cy="-95" r="2" fill="#333" />
+        <circle cx="-70" cy="95" r="2" fill="#333" />
+        <circle cx="70" cy="95" r="2" fill="#333" />
         
         {/* USB Port */}
-        <rect x="-20" y="-105" width="40" height="15" rx="3" ry="3" fill="#666" />
+        <rect x="-25" y="-105" width="30" height="15" rx="2" ry="2" fill="#aaa" stroke="#888" strokeWidth="0.5" />
+        <rect x="-23" y="-103" width="26" height="11" rx="1" ry="1" fill="#444" />
+        
+        {/* Power Jack */}
+        <rect x="-75" y="-105" width="20" height="15" rx="2" ry="2" fill="#333" />
+        <circle cx="-65" cy="-97.5" r="5" fill="#222" stroke="#444" strokeWidth="0.5" />
+        
+        {/* Reset Button */}
+        <rect x="45" y="-93" width="10" height="10" rx="2" ry="2" fill="#333" />
+        <rect x="46" y="-92" width="8" height="8" rx="1" ry="1" fill="#c44" />
+        <text x="50" y="-84" fill="#fff" fontSize="4" textAnchor="middle">RESET</text>
         
         {/* Power LED */}
-        <circle cx="-60" cy="-85" r="3" fill={ledPower ? "#5fea00" : "#333"} />
-        <text x="-52" y="-83" fill="#ccc" fontSize="5">PWR</text>
+        <circle cx="-40" cy="-80" r="2" fill={ledPower ? "#5fea00" : "#333"} />
+        <text x="-33" y="-80" fill="#fff" fontSize="4">PWR</text>
         
         {/* TX/RX LEDs */}
-        <circle cx="-60" cy="-75" r="2" fill="#aa3333" />
-        <text x="-52" y="-73" fill="#ccc" fontSize="5">TX</text>
-        <circle cx="-60" cy="-65" r="2" fill="#33aa33" />
-        <text x="-52" y="-63" fill="#ccc" fontSize="5">RX</text>
+        <circle cx="-40" cy="-73" r="1.5" fill="#ff9c00" /> {/* TX LED */}
+        <text x="-33" y="-73" fill="#fff" fontSize="4">TX</text>
+        <circle cx="-40" cy="-66" r="1.5" fill="#16bc00" /> {/* RX LED */}
+        <text x="-33" y="-66" fill="#fff" fontSize="4">RX</text>
         
-        {/* Center Chip (Microcontroller) */}
-        <rect x="-30" y="-20" width="60" height="40" rx="2" ry="2" fill="#111" />
-        <text x="0" y="0" fill="#ccc" fontSize="8" textAnchor="middle">HERO</text>
-        <text x="0" y="12" fill="#ccc" fontSize="6" textAnchor="middle">MCU</text>
+        {/* Main Microcontroller */}
+        <rect x="-30" y="-25" width="60" height="40" rx="1" ry="1" fill="#222" stroke="#111" strokeWidth="1" />
+        <circle cx="-26" cy="-21" r="1" fill="#999" />
         
-        {/* Crystal Oscillator */}
-        <rect x="40" y="-25" width="10" height="5" fill="#aaa" />
+        {/* Pin 1 indicator on the chip */}
+        <circle cx="-26" cy="-21" r="1" fill="#999" />
         
-        {/* Pin Headers (Digital) */}
-        <rect x="-75" y="80" width="140" height="10" fill="#222" />
+        {/* Chip details */}
+        <text x="0" y="-5" fill="#eee" fontSize="8" textAnchor="middle">HERO MCU</text>
+        <text x="0" y="5" fill="#aaa" fontSize="4" textAnchor="middle">ATMEGA328P</text>
         
-        {/* Pin Headers (Power + Analog) */}
-        <rect x="-75" y="-90" width="140" height="10" fill="#222" />
+        {/* Pin Headers - Digital Side */}
+        <rect x="-70" y="80" width="140" height="10" fill="#444" />
+        {/* Digital pin labels */}
+        <text x="-69" y="77" fill="#fff" fontSize="4">D0</text>
+        <text x="-59" y="77" fill="#fff" fontSize="4">D1</text>
+        <text x="-49" y="77" fill="#fff" fontSize="4">D2</text>
+        <text x="-39" y="77" fill="#fff" fontSize="4">D3</text>
+        <text x="-29" y="77" fill="#fff" fontSize="4">D4</text>
+        <text x="-19" y="77" fill="#fff" fontSize="4">D5</text>
+        <text x="-9" y="77" fill="#fff" fontSize="4">D6</text>
+        <text x="1" y="77" fill="#fff" fontSize="4">D7</text>
+        <text x="11" y="77" fill="#fff" fontSize="4">D8</text>
+        <text x="21" y="77" fill="#fff" fontSize="4">D9</text>
+        <text x="30" y="77" fill="#fff" fontSize="4">D10</text>
+        <text x="40" y="77" fill="#fff" fontSize="4">D11</text>
+        <text x="50" y="77" fill="#fff" fontSize="4">D12</text>
+        <text x="60" y="77" fill="#fff" fontSize="4">D13</text>
         
-        {/* Circuit Traces */}
-        <path d="M-60 -85 L-60 -50 L-20 -20" stroke="#606060" strokeWidth="0.5" fill="none" />
-        <path d="M-60 -65 L-40 -40 L-25 -20" stroke="#606060" strokeWidth="0.5" fill="none" />
-        <path d="M60 -20 L70 -40 L70 80" stroke="#606060" strokeWidth="0.5" fill="none" />
-        <path d="M-75 80 L-75 0 L-30 -20" stroke="#606060" strokeWidth="0.5" fill="none" />
-        <path d="M75 -90 L75 -50 L30 -20" stroke="#606060" strokeWidth="0.5" fill="none" />
-        <path d="M-30 20 L-50 50 L-50 80" stroke="#606060" strokeWidth="0.5" fill="none" />
+        {/* Pin Headers - Analog Side */}
+        <rect x="-70" y="-90" width="140" height="10" fill="#444" />
+        {/* Power pin labels on top row */}
+        <text x="-69" y="-93" fill="#fff" fontSize="4">VIN</text>
+        <text x="-59" y="-93" fill="#fff" fontSize="4">GND</text>
+        <text x="-49" y="-93" fill="#fff" fontSize="4">GND</text>
+        <text x="-39" y="-93" fill="#fff" fontSize="4">5V</text>
+        <text x="-29" y="-93" fill="#fff" fontSize="4">3.3V</text>
+        <text x="-19" y="-93" fill="#fff" fontSize="4">RST</text>
+        <text x="-9" y="-93" fill="#fff" fontSize="4">AREF</text>
         
-        {/* Labels */}
-        <text x="0" y="-50" fill="#fff" fontSize="10" textAnchor="middle">HERO BOARD</text>
-        <text x="0" y="35" fill="#ccc" fontSize="6" textAnchor="middle">CIRCUIT BUILDER</text>
-        <text x="0" y="45" fill="#ccc" fontSize="6" textAnchor="middle">v1.0</text>
+        {/* Analog pin labels */}
+        <text x="11" y="-93" fill="#fff" fontSize="4">A0</text>
+        <text x="21" y="-93" fill="#fff" fontSize="4">A1</text>
+        <text x="31" y="-93" fill="#fff" fontSize="4">A2</text>
+        <text x="41" y="-93" fill="#fff" fontSize="4">A3</text>
+        <text x="51" y="-93" fill="#fff" fontSize="4">A4</text>
+        <text x="61" y="-93" fill="#fff" fontSize="4">A5</text>
+        
+        {/* Circuit Traces - subtle */}
+        <path d="M-30 -5 L-50 20 L-50 80" stroke="#0086bb" strokeWidth="0.5" fill="none" opacity="0.5" />
+        <path d="M30 -5 L60 20 L60 80" stroke="#0086bb" strokeWidth="0.5" fill="none" opacity="0.5" />
+        <path d="M20 -25 L20 -60 L70 -85" stroke="#0086bb" strokeWidth="0.5" fill="none" opacity="0.5" />
+        <path d="M-20 -25 L-20 -60 L-70 -85" stroke="#0086bb" strokeWidth="0.5" fill="none" opacity="0.5" />
+        
+        {/* HERO Board Logo */}
+        <text x="0" y="-50" fill="#fff" fontSize="12" fontWeight="bold" textAnchor="middle">HERO</text>
+        <text x="0" y="-40" fill="#eee" fontSize="6" textAnchor="middle">BOARD</text>
+        <text x="0" y="50" fill="#eee" fontSize="5" textAnchor="middle">www.questgiver.tech</text>
       </svg>
       
       {/* Pins */}
