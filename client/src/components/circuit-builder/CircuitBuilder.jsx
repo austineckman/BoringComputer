@@ -159,7 +159,20 @@ const CircuitBuilder = () => {
           isSelected={component.id === selectedComponentId}
           canvasRef={canvasRef}
           onPinConnect={handlePinConnect}
-          commonType={component.props?.commonType || 'cathode'}
+          // Pass through all the component props to the RGB LED component
+          ledRed={component.props?.ledRed || 0}
+          ledGreen={component.props?.ledGreen || 0}
+          ledBlue={component.props?.ledBlue || 0}
+          commonPin={component.props?.commonPin || 'cathode'}
+          onRotate={(newRotation) => {
+            setComponents(prev => 
+              prev.map(c => 
+                c.id === component.id 
+                  ? { ...c, rotation: newRotation } 
+                  : c
+              )
+            );
+          }}
         />
       );
     }
@@ -492,28 +505,120 @@ const CircuitBuilder = () => {
             )}
             
             {selectedComponent.type === 'rgb-led' && (
-              <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-700">
-                  Common Type
-                </label>
-                <div className="mt-1">
-                  <select 
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                    value={selectedComponent.props?.commonType || 'cathode'}
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Common Type
+                  </label>
+                  <div className="mt-1">
+                    <select 
+                      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                      value={selectedComponent.props?.commonPin || 'cathode'}
+                      onChange={(e) => {
+                        setComponents(prev => 
+                          prev.map(c => 
+                            c.id === selectedComponent.id 
+                              ? { ...c, props: { ...c.props, commonPin: e.target.value } } 
+                              : c
+                          )
+                        );
+                      }}
+                    >
+                      <option value="cathode">Common Cathode</option>
+                      <option value="anode">Common Anode</option>
+                    </select>
+                  </div>
+                </div>
+                
+                {/* Red control */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 flex justify-between">
+                    <span>Red</span>
+                    <span className="text-red-500">
+                      {Math.round((selectedComponent.props?.ledRed || 0) * 100)}%
+                    </span>
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={selectedComponent.props?.ledRed || 0}
                     onChange={(e) => {
                       setComponents(prev => 
                         prev.map(c => 
                           c.id === selectedComponent.id 
-                            ? { ...c, props: { ...c.props, commonType: e.target.value } } 
+                            ? { ...c, props: { ...c.props, ledRed: parseFloat(e.target.value) } } 
                             : c
                         )
                       );
                     }}
-                  >
-                    <option value="cathode">Common Cathode</option>
-                    <option value="anode">Common Anode</option>
-                  </select>
+                    className="mt-1 w-full"
+                  />
                 </div>
+                
+                {/* Green control */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 flex justify-between">
+                    <span>Green</span>
+                    <span className="text-green-500">
+                      {Math.round((selectedComponent.props?.ledGreen || 0) * 100)}%
+                    </span>
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={selectedComponent.props?.ledGreen || 0}
+                    onChange={(e) => {
+                      setComponents(prev => 
+                        prev.map(c => 
+                          c.id === selectedComponent.id 
+                            ? { ...c, props: { ...c.props, ledGreen: parseFloat(e.target.value) } } 
+                            : c
+                        )
+                      );
+                    }}
+                    className="mt-1 w-full"
+                  />
+                </div>
+                
+                {/* Blue control */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 flex justify-between">
+                    <span>Blue</span>
+                    <span className="text-blue-500">
+                      {Math.round((selectedComponent.props?.ledBlue || 0) * 100)}%
+                    </span>
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={selectedComponent.props?.ledBlue || 0}
+                    onChange={(e) => {
+                      setComponents(prev => 
+                        prev.map(c => 
+                          c.id === selectedComponent.id 
+                            ? { ...c, props: { ...c.props, ledBlue: parseFloat(e.target.value) } } 
+                            : c
+                        )
+                      );
+                    }}
+                    className="mt-1 w-full"
+                  />
+                </div>
+                
+                {/* Color preview */}
+                <div 
+                  className="h-8 w-full mt-2 rounded-md border"
+                  style={{ 
+                    backgroundColor: `rgb(${Math.round((selectedComponent.props?.ledRed || 0) * 255)}, ${Math.round((selectedComponent.props?.ledGreen || 0) * 255)}, ${Math.round((selectedComponent.props?.ledBlue || 0) * 255)})`,
+                    boxShadow: `0 0 10px rgb(${Math.round((selectedComponent.props?.ledRed || 0) * 255)}, ${Math.round((selectedComponent.props?.ledGreen || 0) * 255)}, ${Math.round((selectedComponent.props?.ledBlue || 0) * 255)})`
+                  }}
+                ></div>
               </div>
             )}
             
