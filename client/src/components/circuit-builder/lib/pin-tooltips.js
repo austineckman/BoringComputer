@@ -17,6 +17,50 @@ let pinTargets = new Set();
 let componentsScanned = new Set();
 let customElements = new Set();
 
+// Event handlers for custom tooltips
+function handlePinMouseOver(event) {
+  const pin = event.target;
+  const pinName = pin.getAttribute('data-pin-name') || 
+                  pin.querySelector('title')?.textContent || 
+                  pin.getAttribute('title') || 
+                  pin.getAttribute('id')?.split('-').pop() || 
+                  'Pin';
+  
+  // Create tooltip data
+  const tooltipData = {
+    name: pinName,
+    element: pin,
+    clientX: event.clientX,
+    clientY: event.clientY
+  };
+  
+  // Try to get additional data if available
+  const dataValue = pin.getAttribute('data-value');
+  if (dataValue) {
+    try {
+      const data = JSON.parse(dataValue);
+      if (data) {
+        tooltipData.pinType = data.type || 'unknown';
+        if (data.signals && data.signals.length > 0) {
+          tooltipData.signal = data.signals[0].signal;
+        }
+      }
+    } catch (e) {
+      // Ignore parsing errors
+    }
+  }
+
+  // Dispatch a custom event for the tooltip component
+  document.dispatchEvent(new CustomEvent('pinHover', { 
+    detail: tooltipData 
+  }));
+}
+
+function handlePinMouseOut() {
+  // Hide the tooltip
+  document.dispatchEvent(new CustomEvent('pinLeave'));
+}
+
 // Run the enhancement when DOM is loaded
 document.addEventListener('DOMContentLoaded', initPinEnhancement);
 
@@ -191,16 +235,23 @@ function scanForPins(element) {
       // Add to tracked pins
       pinTargets.add(pin);
       
-      // Ensure a title attribute exists for browser tooltip
-      if (!pin.hasAttribute('title')) {
-        pin.setAttribute('title', pinName);
-      }
+      // Store the pin name for later tooltip usage
+      pin.setAttribute('data-pin-name', pinName);
       
       // Add styling classes
       pin.classList.add('enhanced-pin');
       
       // Make pins more interactive
       pin.style.cursor = 'pointer';
+      
+      // Add event listeners for custom tooltips
+      // First, remove any existing listeners to avoid duplicates
+      pin.removeEventListener('mouseover', handlePinMouseOver);
+      pin.removeEventListener('mouseout', handlePinMouseOut);
+      
+      // Now add the listeners
+      pin.addEventListener('mouseover', handlePinMouseOver);
+      pin.addEventListener('mouseout', handlePinMouseOut);
       
       // For debugging
       if (config.debug) {
