@@ -438,11 +438,11 @@ void loop() {
       <div className="bg-gray-900 p-2 flex items-center justify-between border-b border-gray-700">
         <div className="flex items-center space-x-2">
           <img 
-            src="/images/circuit-builder-logo.svg" 
-            alt="buildr.exe" 
+            src="/@fs/home/runner/workspace/attached_assets/led.icon.png" 
+            alt="Sandbox" 
             className="h-6 mr-2" 
           />
-          <h2 className="text-lg font-bold">Circuit Builder</h2>
+          <h2 className="text-lg font-bold">Sandbox</h2>
         </div>
         <div className="flex items-center space-x-2">
           {/* Canvas controls */}
@@ -508,7 +508,7 @@ void loop() {
           <button 
             onClick={onClose}
             className="bg-gray-700 px-2 py-1 rounded hover:bg-gray-600 ml-4"
-            title="Close Circuit Builder"
+            title="Close Sandbox"
           >
             <X size={18} />
           </button>
@@ -516,7 +516,7 @@ void loop() {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Main Circuit Builder Component */}
+        {/* Main Sandbox Component */}
         <div className="w-full bg-gray-900 overflow-hidden relative">
           <CircuitBuilder />
         </div>
