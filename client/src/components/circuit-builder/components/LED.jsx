@@ -106,9 +106,18 @@ const LED = ({
 
   // Handle pin click
   const handlePinClicked = (e) => {
+    console.log("Pin clicked on LED:", e.detail);
+    
+    // Extract pin information from the event
     if (onPinConnect) {
-      const pinId = e.detail.pinId;
-      const pinType = e.detail.pinType;
+      const pinData = e.detail;
+      // Get pin ID and type from event data
+      const pinId = pinData.pinId || pinData.name;
+      const pinType = pinData.pinType || 'bidirectional';
+      
+      console.log(`Pin clicked: ${pinId} (${pinType})`);
+      
+      // Call the parent's onPinConnect handler
       onPinConnect(pinId, pinType, id);
     }
   };
