@@ -138,7 +138,7 @@ const CircuitPin = ({
   return (
     <div
       ref={pinRef}
-      className="absolute rounded-full flex items-center justify-center pin-connection-point circuit-pin"
+      className="absolute rounded-full flex items-center justify-center pin-connection-point"
       style={{
         width: `${size}px`,
         height: `${size}px`,
@@ -150,7 +150,8 @@ const CircuitPin = ({
         cursor: 'crosshair',
         zIndex: 15,
         boxShadow: isConnected || isHovered ? '0 0 4px rgba(0, 0, 0, 0.5)' : '0 1px 2px rgba(0, 0, 0, 0.3)',
-        transition: 'all 0.1s ease'
+        transition: 'all 0.1s ease',
+        position: 'relative'
       }}
       onClick={handlePinClick}
       onMouseEnter={handleMouseEnter}
@@ -158,10 +159,24 @@ const CircuitPin = ({
       data-pin-id={id}
       data-pin-type={pinType}
       data-parent-id={parentId}
-      data-tooltip={label || id || 'Pin'}
       title={label || id || 'Pin'}
       data-testid={`pin-${id}`}
     >
+      {isHovered && (
+        <div 
+          className="absolute bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap z-50"
+          style={{
+            top: '-28px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            pointerEvents: 'none',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.3)'
+          }}
+        >
+          {label || id || 'Pin'}
+        </div>
+      )}
+    
       {/* Pin dot center */}
       <div 
         className="absolute rounded-full" 
