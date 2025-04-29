@@ -477,29 +477,40 @@ const CircuitBuilder = () => {
             )}
             
             {selectedComponent.type === 'photoresistor' && (
-              <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-700">
-                  Light Level
-                </label>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs">Dark</span>
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max="100" 
-                    value={selectedComponent.props?.lightLevel || 50}
-                    onChange={(e) => {
-                      setComponents(prev => 
-                        prev.map(c => 
-                          c.id === selectedComponent.id 
-                            ? { ...c, props: { ...c.props, lightLevel: parseInt(e.target.value) } } 
-                            : c
-                        )
-                      );
-                    }}
-                    className="flex-1"
-                  />
-                  <span className="text-xs">Bright</span>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 flex justify-between">
+                    <span>Light Intensity</span>
+                    <span className="text-amber-500">
+                      {selectedComponent.props?.lightLevel || 50}%
+                    </span>
+                  </label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-gray-500">Dark</span>
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="100" 
+                      value={selectedComponent.props?.lightLevel || 50}
+                      onChange={(e) => {
+                        setComponents(prev => 
+                          prev.map(c => 
+                            c.id === selectedComponent.id 
+                              ? { ...c, props: { ...c.props, lightLevel: parseInt(e.target.value) } } 
+                              : c
+                          )
+                        );
+                      }}
+                      className="flex-1"
+                    />
+                    <span className="text-xs text-gray-500">Bright</span>
+                  </div>
+                </div>
+                
+                <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded">
+                  <div className="font-medium mb-1">Simulated Properties</div>
+                  <div>Resistance: ~{Math.round((100 - (selectedComponent.props?.lightLevel || 50)) * 10)}Ω</div>
+                  <div className="mt-1 text-xs text-gray-400">Lower light = higher resistance</div>
                 </div>
               </div>
             )}
