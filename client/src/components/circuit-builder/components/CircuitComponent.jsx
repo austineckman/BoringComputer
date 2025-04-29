@@ -40,7 +40,7 @@ const CircuitComponent = ({
   const [position, setPosition] = useState({ x: x || 0, y: y || 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [currentRotation, setCurrentRotation] = useState(rotation || 0);
+  // No rotation tracking needed per user request
   
   // Refs
   const componentRef = useRef(null);
@@ -74,49 +74,21 @@ const CircuitComponent = ({
     }
   };
   
-  // Handle context menu (right-click) for rotation
+  // Handle context menu (right-click) - rotation removed per user request
   const handleContextMenu = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    // Rotate component by 90 degrees
-    const newRotation = (currentRotation + 90) % 360;
-    setCurrentRotation(newRotation);
-    
-    // Notify parent component if needed
-    if (onRotate) {
-      onRotate(id, newRotation);
-    }
   };
   
-  // Calculate the position of pins based on component rotation
+  // Calculate the position of pins (no rotation, as per user request)
   const getPinPosition = (pinConfig) => {
     // For components with no explicit position, generate one based on the pin ID
     const pinPosition = pinConfig.position || generatePinPosition(pinConfig.id, type.toLowerCase());
-    const normalizedPosition = { ...pinPosition };
     
-    // Adjust for rotation - this involves some trigonometry
-    // For simplicity, we'll just handle 90-degree rotations
-    switch (currentRotation) {
-      case 90:
-        normalizedPosition.x = 1 - pinPosition.y;
-        normalizedPosition.y = pinPosition.x;
-        break;
-      case 180:
-        normalizedPosition.x = 1 - pinPosition.x;
-        normalizedPosition.y = 1 - pinPosition.y;
-        break;
-      case 270:
-        normalizedPosition.x = pinPosition.y;
-        normalizedPosition.y = 1 - pinPosition.x;
-        break;
-      default: // 0 degrees, no change
-        break;
-    }
-    
+    // Return pin positions without any rotation adjustment
     return {
-      x: position.x + normalizedPosition.x * width,
-      y: position.y + normalizedPosition.y * height
+      x: position.x + pinPosition.x * width,
+      y: position.y + pinPosition.y * height
     };
   };
   
@@ -357,7 +329,7 @@ const CircuitComponent = ({
         document.dispatchEvent(event);
       });
     };
-  }, [id, pins, position, currentRotation]);
+  }, [id, pins, position]);
   
   // Handle global mouse events for dragging
   useEffect(() => {
@@ -408,8 +380,6 @@ const CircuitComponent = ({
         top: `${position.y}px`,
         width: `${width}px`,
         height: `${height}px`,
-        transform: `rotate(${currentRotation}deg)`,
-        transformOrigin: 'center center',
         cursor: isDragging ? 'grabbing' : 'grab'
       }}
       onClick={handleClick}
@@ -464,7 +434,6 @@ const CircuitComponent = ({
       {/* Component label */}
       <div 
         className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-center whitespace-nowrap bg-gray-800 text-white px-1 rounded"
-        style={{ rotate: `-${currentRotation}deg` }} // Keep label readable regardless of component rotation
       >
         {type}
       </div>
