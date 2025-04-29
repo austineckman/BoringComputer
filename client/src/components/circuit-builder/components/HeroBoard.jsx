@@ -103,15 +103,31 @@ const HeroBoard = ({
     
     // Extract pin information from the event
     if (onPinConnect) {
-      const pinData = e.detail;
-      // Get pin ID and type from event data
-      const pinId = pinData.pinId || pinData.name;
-      const pinType = pinData.pinType || 'bidirectional';
-      
-      console.log(`Pin clicked: ${pinId} (${pinType})`);
-      
-      // Call the parent's onPinConnect handler
-      onPinConnect(pinId, pinType, id);
+      try {
+        // The data is a JSON string inside the detail object
+        const pinDataJson = e.detail.data;
+        const pinData = JSON.parse(pinDataJson);
+        
+        // Get pin ID and type from the parsed data
+        const pinId = pinData.name;
+        // Determine pin type based on signals if available
+        let pinType = 'bidirectional';
+        if (pinData.signals && pinData.signals.length > 0) {
+          const signal = pinData.signals[0];
+          if (signal.type === 'power') {
+            pinType = 'power';
+          } else if (signal.type === 'spi' || signal.type === 'i2c') {
+            pinType = 'digital';
+          }
+        }
+        
+        console.log(`Pin clicked: ${pinId} (${pinType})`);
+        
+        // Call the parent's onPinConnect handler
+        onPinConnect(pinId, pinType, id);
+      } catch (err) {
+        console.error("Error parsing pin data:", err);
+      }
     }
   };
 
