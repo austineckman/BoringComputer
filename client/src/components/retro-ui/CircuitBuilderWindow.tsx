@@ -10,7 +10,14 @@ import {
   ComponentData 
 } from '../circuit-builder/ComponentGenerator';
 import CircuitWire from '../circuit-builder/CircuitWire';
-import { PinPosition } from '../circuit-builder/CircuitPin';
+import CircuitPin from '../circuit-builder/CircuitPin';
+
+// Define the PinPosition interface
+interface PinPosition {
+  id: string;
+  x: number;
+  y: number;
+}
 
 // Types for wire connections
 interface WireConnection {
@@ -300,48 +307,91 @@ void loop() {
       // Start wire creation
       setWireCreationMode(true);
       
-      // Find the pin's position
-      const [componentId, pinName] = pinId.split('-', 2);
-      const component = components.find(c => c.id === componentId);
-      
-      if (component) {
-        // This is a simplified approach - in a real app, you'd calculate the actual pin position
-        const startPin: PinPosition = {
-          id: pinId,
-          x: component.attrs.left + 20, // This is just a placeholder
-          y: component.attrs.top + 20,  // This is just a placeholder
-        };
+      // Get the pin element position
+      const pinElement = document.getElementById(pinId);
+      if (pinElement) {
+        const pinRect = pinElement.getBoundingClientRect();
+        const canvasRect = canvasRef.current?.getBoundingClientRect();
         
-        setWireStartPin(startPin);
+        if (canvasRect) {
+          // Calculate pin position relative to canvas
+          const pinX = (pinRect.left + pinRect.width/2 - canvasRect.left) / zoom - pan.x;
+          const pinY = (pinRect.top + pinRect.height/2 - canvasRect.top) / zoom - pan.y;
+          
+          const startPin: PinPosition = {
+            id: pinId,
+            x: pinX,
+            y: pinY,
+          };
+          
+          setWireStartPin(startPin);
+        }
       }
     } else if (wireStartPin && wireStartPin.id !== pinId) {
       // Complete wire creation
-      // Find the pin's position
-      const [componentId, pinName] = pinId.split('-', 2);
-      const component = components.find(c => c.id === componentId);
-      
-      if (component) {
-        // This is a simplified approach - in a real app, you'd calculate the actual pin position
-        const endPin: PinPosition = {
-          id: pinId,
-          x: component.attrs.left + 20, // This is just a placeholder
-          y: component.attrs.top + 20,  // This is just a placeholder
-        };
+      // Get the pin element position
+      const pinElement = document.getElementById(pinId);
+      if (pinElement) {
+        const pinRect = pinElement.getBoundingClientRect();
+        const canvasRect = canvasRef.current?.getBoundingClientRect();
         
-        // Create a new wire
-        const newWire: WireConnection = {
-          id: generateId(),
-          startPin: wireStartPin,
-          endPin: endPin,
-          color: '#3b82f6' // Default blue color
-        };
-        
-        setWires([...wires, newWire]);
-        
-        // Reset wire creation mode
-        setWireCreationMode(false);
-        setWireStartPin(null);
-        setTempWirePosition(null);
+        if (canvasRect) {
+          // Calculate pin position relative to canvas
+          const pinX = (pinRect.left + pinRect.width/2 - canvasRect.left) / zoom - pan.x;
+          const pinY = (pinRect.top + pinRect.height/2 - canvasRect.top) / zoom - pan.y;
+          
+          const endPin: PinPosition = {
+            id: pinId,
+            x: pinX,
+            y: pinY,
+          };
+          
+          // Create a new wire with appropriate color based on the pin types
+          const [startCompId, startPinName] = wireStartPin.id.split('-', 2);
+          const [endCompId, endPinName] = pinId.split('-', 2);
+          
+          // Determine wire color based on pin type
+          let wireColor = '#3b82f6'; // Default blue
+          
+          if (startPinName && endPinName) {
+            // Power connections
+            if (startPinName.includes('5v') || startPinName.includes('3v3') || 
+                endPinName.includes('5v') || endPinName.includes('3v3')) {
+              wireColor = '#ff6666'; // Red for power
+            }
+            // Ground connections
+            else if (startPinName.includes('gnd') || endPinName.includes('gnd')) {
+              wireColor = '#aaaaaa'; // Gray for ground
+            }
+            // Digital pin connections
+            else if ((startPinName.startsWith('d') || endPinName.startsWith('d')) && 
+                    !isNaN(parseInt(startPinName.substring(1), 10)) || 
+                    !isNaN(parseInt(endPinName.substring(1), 10))) {
+              wireColor = '#66ffff'; // Cyan for digital
+            }
+            // Analog pin connections
+            else if ((startPinName.startsWith('a') || endPinName.startsWith('a')) && 
+                    !isNaN(parseInt(startPinName.substring(1), 10)) || 
+                    !isNaN(parseInt(endPinName.substring(1), 10))) {
+              wireColor = '#ffcc66'; // Orange for analog
+            }
+          }
+          
+          // Create a new wire
+          const newWire: WireConnection = {
+            id: generateId(),
+            startPin: wireStartPin,
+            endPin: endPin,
+            color: wireColor
+          };
+          
+          setWires([...wires, newWire]);
+          
+          // Reset wire creation mode
+          setWireCreationMode(false);
+          setWireStartPin(null);
+          setTempWirePosition(null);
+        }
       }
     }
   };

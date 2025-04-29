@@ -192,13 +192,15 @@ const PlaceholderComponent: React.FC<ComponentProps> = ({
 
 // Import actual components
 import LEDComponent from './components/LEDComponent';
+import RGBLEDComponent from './components/RGBLEDComponent';
+import HeroBoardComponent from './components/HeroBoardComponent';
 
 // Component map with real implementations where available
 export const componentMap: Record<string, React.FC<ComponentProps>> = {
   'led': LEDComponent,
-  'rgb-led': PlaceholderComponent,
+  'rgb-led': RGBLEDComponent,
   'resistor': PlaceholderComponent,
-  'hero-board': PlaceholderComponent,
+  'hero-board': HeroBoardComponent,
   'buzzer': PlaceholderComponent, 
   'photoresistor': PlaceholderComponent,
   'breadboard-mini': PlaceholderComponent

@@ -1,85 +1,200 @@
-import React, { useState, useEffect } from 'react';
-import BaseComponent from '../BaseComponent';
-import { ComponentData } from '../ComponentGenerator';
+import React from 'react';
+import BaseComponent from '../components/BaseComponent';
+import CircuitPin from '../CircuitPin';
+import { ComponentProps } from '../ComponentGenerator';
 
-interface RGBLEDComponentProps {
-  componentData: ComponentData;
-  onPinClicked: (pinId: string) => void;
-  isActive: boolean;
-  handleMouseDown: (id: string, isActive: boolean) => void;
-  handleDeleteComponent: (id: string) => void;
-}
-
-const RGBLEDComponent: React.FC<RGBLEDComponentProps> = (props) => {
-  const { componentData } = props;
-  const [brightness, setBrightness] = useState(componentData.attrs.brightness || 0);
-  const [redValue, setRedValue] = useState(componentData.attrs.ledRed || 0);
-  const [greenValue, setGreenValue] = useState(componentData.attrs.ledGreen || 0);
-  const [blueValue, setBlueValue] = useState(componentData.attrs.ledBlue || 0);
+const RGBLEDComponent: React.FC<ComponentProps> = ({
+  componentData,
+  onPinClicked,
+  isActive,
+  handleMouseDown,
+  handleDeleteComponent
+}) => {
+  const { id, attrs } = componentData;
+  const {
+    rotate = 0,
+    top,
+    left,
+    ledRed = 0.5,
+    ledGreen = 0.5,
+    ledBlue = 0.5,
+    brightness = 100
+  } = attrs;
   
-  // Update internal state when component data changes
-  useEffect(() => {
-    setBrightness(componentData.attrs.brightness || 0);
-    setRedValue(componentData.attrs.ledRed || 0);
-    setGreenValue(componentData.attrs.ledGreen || 0);
-    setBlueValue(componentData.attrs.ledBlue || 0);
-  }, [
-    componentData.attrs.brightness,
-    componentData.attrs.ledRed,
-    componentData.attrs.ledGreen,
-    componentData.attrs.ledBlue
-  ]);
-  
-  // Define pins for RGB LED
-  const definePins = () => {
-    return [
-      { id: 'common', x: 20, y: 5, label: 'Common' },
-      { id: 'red', x: 10, y: 35, label: 'Red' },
-      { id: 'green', x: 20, y: 35, label: 'Green' },
-      { id: 'blue', x: 30, y: 35, label: 'Blue' }
-    ];
+  // Calculate pin positions based on rotation
+  const pinPositions = {
+    0: { // Default orientation (LED pointing up)
+      r: { x: -10, y: -20 },  // Red pin
+      g: { x: 0, y: -20 },    // Green pin
+      b: { x: 10, y: -20 },   // Blue pin
+      c: { x: 0, y: 20 },     // Common pin
+    },
+    90: { // Rotated 90 degrees clockwise
+      r: { x: 20, y: -10 },
+      g: { x: 20, y: 0 },
+      b: { x: 20, y: 10 },
+      c: { x: -20, y: 0 },
+    },
+    180: { // Rotated 180 degrees
+      r: { x: 10, y: 20 },
+      g: { x: 0, y: 20 },
+      b: { x: -10, y: 20 },
+      c: { x: 0, y: -20 },
+    },
+    270: { // Rotated 270 degrees
+      r: { x: -20, y: 10 },
+      g: { x: -20, y: 0 },
+      b: { x: -20, y: -10 },
+      c: { x: 20, y: 0 },
+    }
   };
   
-  // Calculate RGB color based on component values
-  const getLEDColor = () => {
-    // Map the values (0-1) to RGB (0-255)
-    const red = Math.round(redValue * 255);
-    const green = Math.round(greenValue * 255);
-    const blue = Math.round(blueValue * 255);
-    
-    // Apply brightness (0-100) as opacity (0.1-1)
-    const opacity = (brightness / 100) * 0.9 + 0.1;
-    
-    return {
-      backgroundColor: `rgb(${red}, ${green}, ${blue})`,
-      opacity: opacity,
-      boxShadow: `0 0 15px 5px rgba(${red}, ${green}, ${blue}, 0.5)`
-    };
-  };
+  // Get current rotation's pin positions
+  const currentPins = pinPositions[rotate as keyof typeof pinPositions] || pinPositions[0];
+  
+  // Calculate brightness factor (0.2 to 1.0)
+  const brightnessScale = 0.2 + (brightness / 100) * 0.8;
+  
+  // Convert RGB values (0-1) to CSS color values
+  const redComponent = Math.round(ledRed * 255 * brightnessScale);
+  const greenComponent = Math.round(ledGreen * 255 * brightnessScale);
+  const blueComponent = Math.round(ledBlue * 255 * brightnessScale);
+  const rgbColor = `rgb(${redComponent}, ${greenComponent}, ${blueComponent})`;
+
+  // Calculate glow effect based on brightness
+  const glowRadius = Math.max(1, Math.round(brightness / 20)); // 1-5px
+  const glowOpacity = Math.min(0.8, brightness / 120); // 0-0.8
   
   return (
-    <BaseComponent {...props} connectedPins={[]}>
-      <div className="relative w-40 h-40 flex items-center justify-center">
-        {/* LED body */}
-        <div className="absolute w-24 h-24 rounded-full bg-gray-200 border border-gray-400"></div>
+    <BaseComponent
+      id={id}
+      left={left}
+      top={top}
+      rotate={rotate}
+      width={60}
+      height={60}
+      isActive={isActive}
+      handleMouseDown={handleMouseDown}
+      handleDelete={() => handleDeleteComponent(id)}
+    >
+      <svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+        {/* LED Body */}
+        <circle cx="30" cy="30" r="13" fill="#333" />
         
-        {/* LED light */}
-        <div 
-          className="absolute w-16 h-16 rounded-full transition-all duration-200"
-          style={getLEDColor()}
-        ></div>
+        {/* RGB LED main light */}
+        <circle 
+          cx="30" 
+          cy="30" 
+          r="10" 
+          fill={rgbColor} 
+          filter={`drop-shadow(0 0 ${glowRadius}px ${rgbColor})`}
+          opacity={glowOpacity + 0.2} 
+        />
         
-        {/* LED label */}
-        <div className="absolute bottom-2 text-center text-xs font-bold text-gray-700">
-          RGB LED
-        </div>
+        {/* RGB sections */}
+        <path 
+          d="M30,30 L30,20 A10,10 0 0,1 40,30 z"
+          fill="#ff0000"
+          opacity={ledRed * brightnessScale * 0.4}
+        />
+        <path 
+          d="M30,30 L40,30 A10,10 0 0,1 30,40 z"
+          fill="#00ff00"
+          opacity={ledGreen * brightnessScale * 0.4}
+        />
+        <path 
+          d="M30,30 L30,40 A10,10 0 0,1 20,30 z"
+          fill="#0000ff"
+          opacity={ledBlue * brightnessScale * 0.4}
+        />
         
-        {/* LED legs */}
-        <div className="absolute top-0 left-1/2 w-1 h-5 bg-gray-400 -translate-x-1/2"></div>
-        <div className="absolute bottom-0 left-1/4 w-1 h-5 bg-red-400"></div>
-        <div className="absolute bottom-0 left-1/2 w-1 h-5 bg-green-400 -translate-x-1/2"></div>
-        <div className="absolute bottom-0 left-3/4 w-1 h-5 bg-blue-400 -translate-x-1/2"></div>
-      </div>
+        {/* Center highlight */}
+        <circle 
+          cx="30" 
+          cy="30" 
+          r="4" 
+          fill="#ffffff" 
+          opacity={brightnessScale * 0.6} 
+        />
+        
+        {/* Leads */}
+        <line 
+          x1="20" 
+          y1="30" 
+          x2="10" 
+          y2="30" 
+          stroke="#ccc" 
+          strokeWidth="1.5" 
+        />
+        <line 
+          x1="30" 
+          y1="43" 
+          x2="30" 
+          y2="50" 
+          stroke="#ccc" 
+          strokeWidth="1.5" 
+        />
+        <line 
+          x1="25" 
+          y1="15" 
+          x2="25" 
+          y2="10" 
+          stroke="#ccc" 
+          strokeWidth="1.5" 
+        />
+        <line 
+          x1="30" 
+          y1="15" 
+          x2="30" 
+          y2="10" 
+          stroke="#ccc" 
+          strokeWidth="1.5" 
+        />
+        <line 
+          x1="35" 
+          y1="15" 
+          x2="35" 
+          y2="10" 
+          stroke="#ccc" 
+          strokeWidth="1.5" 
+        />
+        
+        {/* RGB labels */}
+        <text x="23" y="16" fill="#ff0000" fontSize="6" textAnchor="middle">R</text>
+        <text x="30" y="16" fill="#00ff00" fontSize="6" textAnchor="middle">G</text>
+        <text x="37" y="16" fill="#0000ff" fontSize="6" textAnchor="middle">B</text>
+        <text x="30" y="45" fill="#ccc" fontSize="6" textAnchor="middle">C</text>
+      </svg>
+
+      {/* Connection pins */}
+      <CircuitPin
+        id={`${id}-pin-r`}
+        x={30 + currentPins.r.x}
+        y={30 + currentPins.r.y}
+        onClick={() => onPinClicked(`${id}-pin-r`)}
+        color="#ff6666"
+      />
+      <CircuitPin
+        id={`${id}-pin-g`}
+        x={30 + currentPins.g.x}
+        y={30 + currentPins.g.y}
+        onClick={() => onPinClicked(`${id}-pin-g`)}
+        color="#66ff66"
+      />
+      <CircuitPin
+        id={`${id}-pin-b`}
+        x={30 + currentPins.b.x}
+        y={30 + currentPins.b.y}
+        onClick={() => onPinClicked(`${id}-pin-b`)}
+        color="#6666ff"
+      />
+      <CircuitPin
+        id={`${id}-pin-c`}
+        x={30 + currentPins.c.x}
+        y={30 + currentPins.c.y}
+        onClick={() => onPinClicked(`${id}-pin-c`)}
+        color="#aaaaaa"
+      />
     </BaseComponent>
   );
 };
