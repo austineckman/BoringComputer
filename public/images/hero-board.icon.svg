@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
+  <rect x="2" y="5" width="36" height="30" rx="2" ry="2" fill="#1a365d" stroke="#333" stroke-width="1.5"/>
+  <rect x="5" y="9" width="30" height="22" rx="1" ry="1" fill="#0f172a" stroke="#2563eb" stroke-width="1"/>
+  
+  <!-- Pins/connectors -->
+  <rect x="7" y="7" width="1" height="2" fill="#ffc107"/>
+  <rect x="10" y="7" width="1" height="2" fill="#ffc107"/>
+  <rect x="13" y="7" width="1" height="2" fill="#ffc107"/>
+  <rect x="16" y="7" width="1" height="2" fill="#ffc107"/>
+  <rect x="19" y="7" width="1" height="2" fill="#ffc107"/>
+  <rect x="22" y="7" width="1" height="2" fill="#ffc107"/>
+  <rect x="25" y="7" width="1" height="2" fill="#ffc107"/>
+  <rect x="28" y="7" width="1" height="2" fill="#ffc107"/>
+  <rect x="31" y="7" width="1" height="2" fill="#ffc107"/>
+  
+  <!-- USB port -->
+  <rect x="17" y="31" width="6" height="3" fill="#666" stroke="#333" stroke-width="0.5"/>
+  
+  <!-- LED -->
+  <circle cx="7" cy="15" r="1.5" fill="#4ade80"/>
+  
+  <!-- Components -->
+  <rect x="12" y="14" width="16" height="12" rx="1" ry="1" fill="#111827" stroke="#2563eb" stroke-width="0.5"/>
+  <text x="20" y="22" font-family="Arial, sans-serif" font-size="4" text-anchor="middle" fill="#ffffff">HERO</text>
+</svg>
