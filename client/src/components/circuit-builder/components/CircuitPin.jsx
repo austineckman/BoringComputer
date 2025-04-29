@@ -88,8 +88,8 @@ const CircuitPin = ({
       onPinClick(id, pinType, parentId);
     }
     
-    // Import WireState
-    const WireState = require('../utils/WireState').default;
+    // Use the imported WireState directly
+    // The import is at the top of the file
     
     // Check if we're starting a new wire or completing one
     const currentState = WireState.getState();
