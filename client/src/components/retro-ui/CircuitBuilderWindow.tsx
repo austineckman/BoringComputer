@@ -2,7 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, RotateCcw, Trash2, ZoomIn, ZoomOut, Move, Play, Save, FileCode } from 'lucide-react';
 import ace from 'ace-builds';
 
-// Import our circuit components
+// Import our new CircuitBuilder component
+import CircuitBuilder from '../circuit-builder/CircuitBuilder';
+
+// Legacy imports (keeping for compatibility with existing code)
 import { 
   componentOptions, 
   createComponent, 
