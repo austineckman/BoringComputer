@@ -164,71 +164,7 @@ const SegmentedDisplay = ({
         pins={pinLayout}
       ></ReactSevenSegmentComponent>
 
-      {isComponentMenuShowing && isSelected && createPortal(
-        <div className="bg-gray-800 rounded shadow-lg p-2 text-white absolute">
-          <div className="mb-3">
-            <h3 className="text-sm font-medium mb-2">7-Segment Display Settings</h3>
-            
-            <div className="space-y-2">
-              <div>
-                <label htmlFor="digit-count" className="block text-xs font-medium mb-1">
-                  Number of Digits
-                </label>
-                <select
-                  id="digit-count"
-                  value={digitCount}
-                  onChange={(e) => setDigitCount(parseInt(e.target.value))}
-                  className="w-full text-sm rounded p-1 text-black"
-                >
-                  <option value="1">1 Digit</option>
-                  <option value="2">2 Digits</option>
-                  <option value="4">4 Digits</option>
-                  <option value="8">8 Digits</option>
-                </select>
-              </div>
-              
-              <div>
-                <label htmlFor="pin-layout" className="block text-xs font-medium mb-1">
-                  Pin Layout
-                </label>
-                <select
-                  id="pin-layout"
-                  value={pinLayout}
-                  onChange={(e) => setPinLayout(e.target.value)}
-                  className="w-full text-sm rounded p-1 text-black"
-                >
-                  <option value="side">Side Pins</option>
-                  <option value="bottom">Bottom Pins</option>
-                </select>
-              </div>
-              
-              <div className="mt-2 text-xs text-gray-400 italic">
-                Note: The 7-segment display is controlled by the signal from connected pins.
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex gap-2">
-            <button
-              onClick={() => {
-                if (onSelect) onSelect(null);
-                const customEvent = new CustomEvent('deleteComponent', {
-                  detail: { id }
-                });
-                document.dispatchEvent(customEvent);
-              }}
-              className="p-1 bg-red-600 rounded hover:bg-red-700"
-              title="Delete"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                <path fillRule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-              </svg>
-            </button>
-          </div>
-        </div>,
-        document.querySelector('#component-context-menu')
-      )}
+      {/* Removed component menu - settings now in the properties panel */}
     </>
   );
 };
