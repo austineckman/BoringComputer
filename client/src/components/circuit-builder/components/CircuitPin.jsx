@@ -7,6 +7,8 @@ import { useRef, useEffect, useState } from 'react';
  * - Precise positioning for accurate connections
  * - Improved visualization with hover effects
  * - Color coding based on pin type (input/output/bidirectional)
+ * 
+ * This implementation follows Wokwi's approach to component pins
  */
 const CircuitPin = ({
   id,
@@ -64,7 +66,7 @@ const CircuitPin = ({
     });
     document.dispatchEvent(clickEvent);
     
-    console.log(`Pin ${label || id} (${pinType}) clicked - dispatched event to WireManager`);
+    console.log(`Pin clicked: ${id}`);
   };
   
   // Handle mouse hover
