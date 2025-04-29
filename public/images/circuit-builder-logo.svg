@@ -1,14 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 40" width="180" height="40">
-  <!-- Background with circuit pattern -->
-  <rect x="0" y="0" width="180" height="40" fill="#0c1832" rx="5" ry="5"/>
-  <path d="M5,20 H15 M20,5 V15 M20,25 V35 M25,20 H35" stroke="#2563eb" stroke-width="1.5" fill="none"/>
-  <circle cx="20" cy="20" r="3" fill="#2563eb"/>
-  <path d="M45,5 V35 M45,10 H55 M45,20 H55 M45,30 H55" stroke="#2563eb" stroke-width="1.5" fill="none"/>
-  <path d="M125,10 H135 M145,5 V15 M145,25 V35 M150,20 H160" stroke="#2563eb" stroke-width="1.5" fill="none"/>
-  <circle cx="145" cy="20" r="3" fill="#2563eb"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40" width="200" height="40">
+  <!-- Background -->
+  <rect x="0" y="0" width="200" height="40" fill="transparent"/>
   
-  <!-- Circuit Builder Text -->
-  <text x="65" y="25" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff">
-    buildr.exe
-  </text>
+  <!-- Circuit Traces Background -->
+  <rect x="5" y="5" width="190" height="30" rx="4" ry="4" fill="#0f172a"/>
+  
+  <!-- Circuit Traces -->
+  <path d="M20,20 H45 M75,20 H105 M135,20 H180" stroke="#3b82f6" stroke-width="2" fill="none"/>
+  <path d="M45,20 C55,20 55,10 65,10 H135 C145,10 145,20 155,20" stroke="#3b82f6" stroke-width="2" fill="none"/>
+  <path d="M105,20 C115,20 115,30 125,30 H170 C180,30 180,20 190,20" stroke="#3b82f6" stroke-width="2" fill="none"/>
+  
+  <!-- Connection Points -->
+  <circle cx="45" cy="20" r="3" fill="#0f172a" stroke="#3b82f6" stroke-width="2"/>
+  <circle cx="75" cy="20" r="3" fill="#0f172a" stroke="#3b82f6" stroke-width="2"/>
+  <circle cx="105" cy="20" r="3" fill="#0f172a" stroke="#3b82f6" stroke-width="2"/>
+  <circle cx="135" cy="20" r="3" fill="#0f172a" stroke="#3b82f6" stroke-width="2"/>
+  <circle cx="155" cy="20" r="3" fill="#0f172a" stroke="#3b82f6" stroke-width="2"/>
+  
+  <!-- Logo Text -->
+  <text x="25" y="25" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff">buildr.exe</text>
+  
+  <!-- Circuit Component Icon -->
+  <rect x="155" y="15" width="10" height="10" rx="1" ry="1" fill="#60a5fa"/>
+  <line x1="160" y1="15" x2="160" y2="12" stroke="#60a5fa" stroke-width="1.5"/>
+  <line x1="160" y1="25" x2="160" y2="28" stroke="#60a5fa" stroke-width="1.5"/>
 </svg>
