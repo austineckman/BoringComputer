@@ -598,3 +598,26 @@ body {
   animation: marquee 10s linear infinite;
   padding-right: 50px; /* Add space between the repeating text */
 }
+
+/* Custom styling for HTML title tooltips */
+[title] {
+  position: relative;
+}
+
+/* Use custom tooltips instead of default browser title attribute */
+[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
