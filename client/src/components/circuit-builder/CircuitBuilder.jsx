@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { componentOptions, generateId } from './constants/componentOptions';
 import ComponentPalette from './components/ComponentPalette';
-import SimpleWireManager from './components/SimpleWireManager';
+import WireManager from './components/WireManager';
 import CircuitComponent from './components/CircuitComponent';
 import PinTooltip from './components/PinTooltip'; // Import custom tooltip component
 import './styles/tooltips.css'; // Import custom tooltip styles
@@ -80,7 +80,7 @@ const CircuitBuilder = () => {
   // Handle pin connections
   const handlePinConnect = (pinId, pinType, componentId) => {
     console.log(`Pin ${pinId} (${pinType}) of component ${componentId} clicked`);
-    // Wire connections are handled by SimpleWireManager
+    // Wire connections are handled by WireManager
   };
   
   // Handle component deletion
@@ -355,7 +355,7 @@ const CircuitBuilder = () => {
       
       {/* Main canvas */}
       <div 
-        className="flex-1 relative h-full overflow-hidden bg-gray-50 circuit-canvas" 
+        className="flex-1 relative h-full overflow-hidden bg-gray-50" 
         ref={canvasRef}
         onClick={(e) => {
           // Only deselect when clicking directly on the canvas background
@@ -367,8 +367,8 @@ const CircuitBuilder = () => {
         {/* Circuit components */}
         {components.map(renderComponent)}
         
-        {/* Ultra simple wire management layer */}
-        <SimpleWireManager canvasRef={canvasRef} />
+        {/* Wire management layer */}
+        <WireManager canvasRef={canvasRef} />
         
         {/* Custom pin tooltip component */}
         <PinTooltip />

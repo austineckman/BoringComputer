@@ -50,28 +50,41 @@ const CircuitPin = ({
     }
   }, [id, parentId, pinType, label, parentRef]);
   
-  // Handle pin click for wiring - Exactly like Wokwi behavior
+  // Handle pin click
   const handlePinClick = (e) => {
     e.stopPropagation();
-    // Don't prevent default as we need the click to bubble to SimpleWireManager
+    e.preventDefault();
     
-    // Apply visual feedback
+    // Apply a quick visual feedback that pin was clicked
     const pinElement = e.currentTarget;
     pinElement.style.transform = 'scale(1.3) translate(-50%, -50%)';
-    pinElement.style.boxShadow = '0 0 8px rgba(255, 0, 0, 0.9)';
     setTimeout(() => {
       pinElement.style.transform = 'translate(-50%, -50%)';
     }, 150);
     
-    console.log(`Pin clicked: ${id} (${pinType})`);
-    
-    // Handle internal pin click callback if provided
+    // First handle internal pin click handler if provided
     if (onPinClick) {
       onPinClick(id, pinType, parentId);
     }
     
-    // The click event will bubble up to the document and be handled by SimpleWireManager
-    // No need to do anything else here
+    // Dispatch a global event for the WireManager to handle
+    const clickEvent = new CustomEvent('pinClicked', {
+      detail: { 
+        id, 
+        pinType, 
+        parentId,
+        position: {
+          x: e.clientX,
+          y: e.clientY
+        }
+      }
+    });
+    document.dispatchEvent(clickEvent);
+    
+    // Ensure the WireManager always focuses on pin clicks more than other events
+    e.stopImmediatePropagation();
+    
+    console.log(`Pin clicked: ${id} (${pinType})`);
   };
   
   // Handle mouse hover
