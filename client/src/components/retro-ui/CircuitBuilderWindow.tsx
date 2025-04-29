@@ -66,8 +66,7 @@ void loop() {
   
   // References
   const canvasRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<HTMLDivElement>(null);
-  const editorInstanceRef = useRef<any>(null);
+  const editorRef = useRef<HTMLTextAreaElement>(null);
   const gridSize = 20; // Size of grid squares in pixels
 
   // Simple editor for now
@@ -562,11 +561,14 @@ void loop() {
               <span>Arduino Code</span>
             </div>
           </div>
-          <div 
-            ref={editorRef} 
-            className="flex-1 text-sm resize-none"
+          <textarea 
+            ref={editorRef}
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            className="flex-1 w-full h-full bg-gray-900 text-gray-100 p-4 text-sm resize-none outline-none border-none font-mono"
             style={{ fontSize: '14px' }}
-          ></div>
+            spellCheck="false"
+          ></textarea>
         </div>
       </div>
     </div>

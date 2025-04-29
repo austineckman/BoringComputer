@@ -6,78 +6,80 @@ interface CircuitWireProps {
   startPin: PinPosition;
   endPin: PinPosition;
   color?: string;
-  thickness?: number;
   selected?: boolean;
   onClick?: (id: string) => void;
 }
 
-const CircuitWire: React.FC<CircuitWireProps> = ({ 
-  id, 
-  startPin, 
-  endPin, 
-  color = '#3b82f6', 
-  thickness = 2,
+const CircuitWire: React.FC<CircuitWireProps> = ({
+  id,
+  startPin,
+  endPin,
+  color = '#3b82f6',
   selected = false,
   onClick
 }) => {
-  // Calculate the path for a curved wire
-  const createPath = () => {
-    const dx = endPin.x - startPin.x;
-    const dy = endPin.y - startPin.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // For shorter wires, use a straight line
-    if (distance < 50) {
-      return `M ${startPin.x} ${startPin.y} L ${endPin.x} ${endPin.y}`;
-    }
-    
-    // For longer wires, create a curved path with control points
-    const mx = startPin.x + dx * 0.5;
-    const my = startPin.y + dy * 0.5;
-    
-    // Calculate control points perpendicular to the direct line
-    const perpX = -dy * 0.2;
-    const perpY = dx * 0.2;
-    
-    // Create a curved path
-    return `M ${startPin.x} ${startPin.y} 
-            C ${startPin.x + dx/3 + perpX} ${startPin.y + dy/3 + perpY}, 
-              ${startPin.x + dx*2/3 + perpX} ${startPin.y + dy*2/3 + perpY}, 
-              ${endPin.x} ${endPin.y}`;
-  };
+  // Calculate the midpoint between start and end pins for curved wires
+  const midX = (startPin.x + endPin.x) / 2;
+  const midY = (startPin.y + endPin.y) / 2;
   
+  // Determine if we should use a curved wire (for longer distances)
+  const distance = Math.sqrt(
+    Math.pow(endPin.x - startPin.x, 2) + 
+    Math.pow(endPin.y - startPin.y, 2)
+  );
+  
+  // Use curved wires for longer distances
+  const useCurvedWire = distance > 80;
+  
+  // Control point offset for curved wires (perpendicular to the wire)
+  const dx = endPin.x - startPin.x;
+  const dy = endPin.y - startPin.y;
+  const perpX = -dy * 0.3; // Perpendicular direction
+  const perpY = dx * 0.3;  // Perpendicular direction
+  
+  // Path definition for the wire
+  let path;
+  if (useCurvedWire) {
+    path = `M ${startPin.x} ${startPin.y} Q ${midX + perpX} ${midY + perpY}, ${endPin.x} ${endPin.y}`;
+  } else {
+    path = `M ${startPin.x} ${startPin.y} L ${endPin.x} ${endPin.y}`;
+  }
+  
+  // Handle wire click
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (onClick) onClick(id);
+    if (onClick) {
+      onClick(id);
+    }
   };
   
   return (
     <svg 
-      className="absolute top-0 left-0 w-full h-full pointer-events-none"
-      style={{ zIndex: 15 }}
+      className="absolute top-0 left-0 w-full h-full pointer-events-none" 
+      style={{ zIndex: 5 }}
     >
-      <path
-        d={createPath()}
-        stroke={color}
-        strokeWidth={selected ? thickness + 2 : thickness}
-        fill="none"
-        strokeLinecap="round"
-        className={`transition-all duration-100 ${selected ? 'stroke-yellow-400' : ''}`}
-        style={{ pointerEvents: 'stroke' }}
-        onClick={handleClick}
-      />
-      
-      {/* Selected wire highlight */}
+      {/* Wire highlight for selected wires */}
       {selected && (
         <path
-          d={createPath()}
-          stroke={color}
-          strokeWidth={thickness}
+          d={path}
+          stroke="#ffffff"
+          strokeWidth={5}
           fill="none"
           strokeLinecap="round"
-          style={{ pointerEvents: 'none' }}
+          opacity={0.5}
         />
       )}
+      
+      {/* Main wire */}
+      <path
+        d={path}
+        stroke={color}
+        strokeWidth={selected ? 3 : 2}
+        fill="none"
+        strokeLinecap="round"
+        className="pointer-events-auto cursor-pointer"
+        onClick={handleClick}
+      />
     </svg>
   );
 };

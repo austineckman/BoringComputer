@@ -190,10 +190,12 @@ const PlaceholderComponent: React.FC<ComponentProps> = ({
   );
 };
 
-// Temporary component map using placeholders
-// In a real implementation, each component would be implemented separately
+// Import actual components
+import LEDComponent from './components/LEDComponent';
+
+// Component map with real implementations where available
 export const componentMap: Record<string, React.FC<ComponentProps>> = {
-  'led': PlaceholderComponent,
+  'led': LEDComponent,
   'rgb-led': PlaceholderComponent,
   'resistor': PlaceholderComponent,
   'hero-board': PlaceholderComponent,
