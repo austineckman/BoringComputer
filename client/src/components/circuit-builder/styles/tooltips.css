@@ -1,29 +1,49 @@
 /* Enhanced tooltips for circuit components */
 
-/* Make pin targets more obvious for interaction */
-.pin-target {
+/* 
+  We're using a minimal styling approach here because the actual pin tooltips 
+  are handled by the browser's native tooltip display for SVG <title> elements.
+  The pin-tooltips.js script handles the full enhancement of these elements.
+*/
+
+/* Make pins stand out better when hovered or component is selected */
+.enhanced-pin, .pin-target {
   cursor: pointer !important;
-  fill: rgba(255, 255, 255, 0.001) !important; /* Almost invisible fill to capture hover */
-  r: 3px !important; /* Slightly larger than default */
+  transition: all 0.2s ease !important;
 }
 
-/* Add visual feedback on hover */
-.pin-target:hover {
-  r: 6px !important; /* Make pins larger on hover */
-  stroke: #00a0ff !important;
-  stroke-width: 2px !important;
-  fill: rgba(0, 150, 255, 0.3) !important;
-  filter: drop-shadow(0 0 3px rgba(0, 150, 255, 0.8)) !important;
-}
-
-/* Improve default browser tooltips using a combination of approaches */
-title {
-  font-weight: bold !important;
-  font-size: 14px !important;
-}
-
-/* Make sure pins stand out when component is selected */
-.isActive .pin-target {
-  stroke: #ddd !important;
+/* Highlight pins when component is selected */
+.isActive .pin-target, .isActive circle {
+  stroke: rgba(255, 255, 255, 0.4) !important;
   stroke-width: 1px !important;
+}
+
+/* 
+  The following are for browsers that don't fully support SVG tooltips 
+  or need additional enhancements through JavaScript 
+*/
+
+/* Handle tooltip container */
+.tooltip-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Style for custom tooltips when native ones aren't working */
+.custom-pin-tooltip {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.8);
+  border: 1px solid #00a0ff;
+  color: white;
+  padding: 3px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  margin-top: -5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
