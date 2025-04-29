@@ -105,11 +105,28 @@ const OLEDDisplay = ({
 
   // Handle pin click
   const handlePinClicked = (e) => {
+    console.log("OLED Display component received pin click:", e.detail);
+    
+    // Generate a proper pin ID if one doesn't exist
+    const pinId = e.detail.pinId || `pin-${id}-${e.detail.index || 'unknown'}`;
+    // Default to bidirectional if no pinType specified
+    const pinType = e.detail.pinType || 'bidirectional';
+    
     if (onPinConnect) {
-      const pinId = e.detail.pinId;
-      const pinType = e.detail.pinType;
       onPinConnect(pinId, pinType, id);
+      console.log(`Pin ${pinId} (${pinType}) of component ${id} clicked`);
     }
+    
+    // Also dispatch a global pinClicked event to support wiring
+    const clickEvent = new CustomEvent('pinClicked', {
+      detail: { 
+        id: pinId,
+        pinType: pinType, 
+        parentId: id,
+        element: e.detail.element || e.target
+      }
+    });
+    document.dispatchEvent(clickEvent);
   };
 
   // Create context menu portal target if it doesn't exist

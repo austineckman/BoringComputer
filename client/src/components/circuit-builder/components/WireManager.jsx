@@ -413,12 +413,26 @@ const WireManager = ({ canvasRef }) => {
     // Handler for pin registration
     const handleRegisterPin = (e) => {
       const { id, parentId, pinType, label, element } = e.detail;
-      console.log(`Pin registered: ${id}, type: ${pinType}`, element);
+      console.log(`Pin registered: ${id}, type: ${pinType || 'bidirectional'}`, element);
       
-      setRegisteredPins(prev => ({
-        ...prev,
-        [id]: { id, parentId, type: pinType, label, element }
-      }));
+      // Only register the pin if it has a valid element reference
+      if (element) {
+        // Generate a default ID if one wasn't provided
+        const pinId = id || `pin-${parentId}-${Date.now()}`;
+        
+        setRegisteredPins(prev => ({
+          ...prev,
+          [pinId]: { 
+            id: pinId, 
+            parentId: parentId || 'unknown', 
+            type: pinType || 'bidirectional', 
+            label: label || 'Pin', 
+            element 
+          }
+        }));
+      } else {
+        console.warn(`Attempted to register pin ${id} without a valid element reference`);
+      }
     };
     
     // Handler for pin unregistration
@@ -592,6 +606,9 @@ const WireManager = ({ canvasRef }) => {
       if (pendingPath) {
         const sourceElement = registeredPins[pendingWire.sourceId]?.element;
         if (sourceElement) {
+          // Log the source element for debugging
+          // console.log("Drawing wire from source element:", sourceElement);
+          
           const sourcePos = getElementPosition(sourceElement);
           
           // Create the path with all intermediate points plus the current mouse position
@@ -604,6 +621,8 @@ const WireManager = ({ canvasRef }) => {
           // Generate the path from all points
           const pathString = generatePathFromPoints(allPoints);
           pendingPath.setAttribute('d', pathString);
+        } else {
+          console.warn(`Source element for pin ${pendingWire.sourceId} not found in registered pins`);
         }
       }
     };
