@@ -29,7 +29,6 @@ const CircuitPin = ({
   // Register pin with global wire management system
   useEffect(() => {
     if (parentRef?.current && pinRef.current) {
-      console.log(`Registering pin ${id} of type ${pinType} for component ${parentId}`);
       const customEvent = new CustomEvent('registerPin', {
         detail: {
           id,
@@ -41,31 +40,8 @@ const CircuitPin = ({
       });
       document.dispatchEvent(customEvent);
       
-      // Add direct click handler on the DOM element
-      const pinElement = pinRef.current;
-      const directClickHandler = (e) => {
-        console.log("pin clicked");
-        e.stopPropagation();
-        e.preventDefault();
-        
-        // Dispatch global event for WireManager
-        const clickEvent = new CustomEvent('pinClicked', {
-          detail: { 
-            id,
-            pinType, 
-            parentId,
-            element: pinRef.current
-          }
-        });
-        document.dispatchEvent(clickEvent);
-      };
-      
-      pinElement.addEventListener('mousedown', directClickHandler);
-      
       // Clean up on unmount
       return () => {
-        pinElement.removeEventListener('mousedown', directClickHandler);
-        
         const cleanup = new CustomEvent('unregisterPin', {
           detail: { id }
         });
@@ -85,19 +61,12 @@ const CircuitPin = ({
     }
     
     // Dispatch a global event for the WireManager to handle
-    // Send synchronously to ensure we don't miss any events
-    console.log(`Dispatching pinClicked event for pin ${id}`);
     const clickEvent = new CustomEvent('pinClicked', {
-      detail: { 
-        id,
-        pinType,
-        parentId,
-        element: pinRef.current
-      }
+      detail: { id, pinType, parentId }
     });
     document.dispatchEvent(clickEvent);
     
-    console.log(`Pin ${id} (${pinType}) of component ${parentId} clicked`);
+    console.log(`Pin clicked: ${id}`);
   };
   
   // Handle mouse hover
@@ -180,10 +149,9 @@ const CircuitPin = ({
         top: position.y,
         transform: 'translate(-50%, -50%)',
         cursor: 'crosshair',
-        zIndex: 100, // Much higher z-index to ensure pins are always clickable
+        zIndex: 15,
         boxShadow: isConnected || isHovered ? '0 0 4px rgba(0, 0, 0, 0.5)' : '0 1px 2px rgba(0, 0, 0, 0.3)',
-        transition: 'all 0.1s ease',
-        pointerEvents: 'all' // Ensure pin receives click events
+        transition: 'all 0.1s ease'
       }}
       onClick={handlePinClick}
       onMouseEnter={handleMouseEnter}
