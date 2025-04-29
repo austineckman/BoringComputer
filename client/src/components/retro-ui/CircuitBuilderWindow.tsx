@@ -70,31 +70,9 @@ void loop() {
   const editorInstanceRef = useRef<any>(null);
   const gridSize = 20; // Size of grid squares in pixels
 
-  // Initialize Ace editor
+  // Simple editor for now
   useEffect(() => {
-    if (editorRef.current && !editorInstanceRef.current) {
-      const editor = ace.edit(editorRef.current);
-      editor.setTheme('ace/theme/xcode');
-      editor.session.setMode('ace/mode/arduino');
-      editor.setValue(defaultCode);
-      editor.setOptions({
-        enableBasicAutocompletion: true,
-        enableLiveAutocompletion: true,
-        enableSnippets: true,
-        showLineNumbers: true,
-        tabSize: 2,
-      });
-      
-      editorInstanceRef.current = editor;
-      setEditorReady(true);
-    }
-    
-    return () => {
-      if (editorInstanceRef.current) {
-        editorInstanceRef.current.destroy();
-        editorInstanceRef.current = null;
-      }
-    };
+    setEditorReady(true);
   }, []);
 
   // Generate a unique ID
@@ -375,12 +353,11 @@ void loop() {
     setSelectedComponent(null);
   };
 
-  // Get the code from the editor
+  // Get code from the editor (simple textarea for now)
+  const [code, setCode] = useState(defaultCode);
+  
   const getCode = () => {
-    if (editorInstanceRef.current) {
-      return editorInstanceRef.current.getValue();
-    }
-    return defaultCode;
+    return code;
   };
 
   // Save the current project
