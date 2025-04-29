@@ -1,112 +1,164 @@
-import React, { useState, useEffect } from 'react';
-import BaseComponent from '../BaseComponent';
-import { ComponentData } from '../ComponentGenerator';
+import React from 'react';
+import BaseComponent from '../components/BaseComponent';
+import CircuitPin from '../CircuitPin';
+import { ComponentProps } from '../ComponentGenerator';
 
-interface HeroBoardComponentProps {
-  componentData: ComponentData;
-  onPinClicked: (pinId: string) => void;
-  isActive: boolean;
-  handleMouseDown: (id: string, isActive: boolean) => void;
-  handleDeleteComponent: (id: string) => void;
+interface PinDefinition {
+  id: string;
+  x: number;
+  y: number;
+  label: string;
+  isDigital?: boolean;
+  isAnalog?: boolean;
+  isPower?: boolean;
+  isGround?: boolean;
 }
 
-const HeroBoardComponent: React.FC<HeroBoardComponentProps> = (props) => {
-  const { componentData } = props;
-  const [ledPower, setLedPower] = useState(componentData.attrs.ledPower || false);
+const HeroBoardComponent: React.FC<ComponentProps> = ({
+  componentData,
+  onPinClicked,
+  isActive,
+  handleMouseDown,
+  handleDeleteComponent
+}) => {
+  const { id, attrs } = componentData;
+  const { rotate = 0, top, left, ledPower = true } = attrs;
   
-  // Update internal state when component data changes
-  useEffect(() => {
-    setLedPower(componentData.attrs.ledPower || false);
-  }, [componentData.attrs.ledPower]);
+  // Define pins based on Arduino layout
+  const basePins: PinDefinition[] = [
+    // Power pins
+    { id: 'vin', x: -55, y: -90, label: 'VIN', isPower: true },
+    { id: 'gnd1', x: -45, y: -90, label: 'GND', isGround: true },
+    { id: 'gnd2', x: -35, y: -90, label: 'GND', isGround: true },
+    { id: '5v', x: -25, y: -90, label: '5V', isPower: true },
+    { id: '3v3', x: -15, y: -90, label: '3.3V', isPower: true },
+    { id: 'rst', x: -5, y: -90, label: 'RST' },
+    { id: 'aref', x: 5, y: -90, label: 'AREF' },
+    
+    // Digital pins (left side)
+    { id: 'd0', x: -55, y: 90, label: 'D0', isDigital: true },
+    { id: 'd1', x: -45, y: 90, label: 'D1', isDigital: true },
+    { id: 'd2', x: -35, y: 90, label: 'D2', isDigital: true },
+    { id: 'd3', x: -25, y: 90, label: 'D3', isDigital: true },
+    { id: 'd4', x: -15, y: 90, label: 'D4', isDigital: true },
+    { id: 'd5', x: -5, y: 90, label: 'D5', isDigital: true },
+    { id: 'd6', x: 5, y: 90, label: 'D6', isDigital: true },
+    { id: 'd7', x: 15, y: 90, label: 'D7', isDigital: true },
+    
+    // Digital pins (right side)
+    { id: 'd8', x: 25, y: 90, label: 'D8', isDigital: true },
+    { id: 'd9', x: 35, y: 90, label: 'D9', isDigital: true },
+    { id: 'd10', x: 45, y: 90, label: 'D10', isDigital: true },
+    { id: 'd11', x: 55, y: 90, label: 'D11', isDigital: true },
+    { id: 'd12', x: 65, y: 90, label: 'D12', isDigital: true },
+    { id: 'd13', x: 75, y: 90, label: 'D13', isDigital: true },
+    
+    // Analog pins
+    { id: 'a0', x: 15, y: -90, label: 'A0', isAnalog: true },
+    { id: 'a1', x: 25, y: -90, label: 'A1', isAnalog: true },
+    { id: 'a2', x: 35, y: -90, label: 'A2', isAnalog: true },
+    { id: 'a3', x: 45, y: -90, label: 'A3', isAnalog: true },
+    { id: 'a4', x: 55, y: -90, label: 'A4', isAnalog: true },
+    { id: 'a5', x: 65, y: -90, label: 'A5', isAnalog: true },
+    { id: 'a6', x: 75, y: -90, label: 'A6', isAnalog: true },
+  ];
   
-  // Define pins for Hero Board
-  const definePins = () => {
-    return [
-      // Digital pins
-      { id: 'D0', x: 20, y: 10, label: 'D0' },
-      { id: 'D1', x: 30, y: 10, label: 'D1' },
-      { id: 'D2', x: 40, y: 10, label: 'D2' },
-      { id: 'D3', x: 50, y: 10, label: 'D3' },
-      { id: 'D4', x: 60, y: 10, label: 'D4' },
-      { id: 'D5', x: 70, y: 10, label: 'D5' },
-      { id: 'D6', x: 80, y: 10, label: 'D6' },
-      { id: 'D7', x: 90, y: 10, label: 'D7' },
-      { id: 'D8', x: 100, y: 10, label: 'D8' },
-      { id: 'D9', x: 110, y: 10, label: 'D9' },
-      { id: 'D10', x: 120, y: 10, label: 'D10' },
-      { id: 'D11', x: 130, y: 10, label: 'D11' },
-      { id: 'D12', x: 140, y: 10, label: 'D12' },
-      { id: 'D13', x: 150, y: 10, label: 'D13' },
-      
-      // Analog pins
-      { id: 'A0', x: 20, y: 90, label: 'A0' },
-      { id: 'A1', x: 30, y: 90, label: 'A1' },
-      { id: 'A2', x: 40, y: 90, label: 'A2' },
-      { id: 'A3', x: 50, y: 90, label: 'A3' },
-      { id: 'A4', x: 60, y: 90, label: 'A4' },
-      { id: 'A5', x: 70, y: 90, label: 'A5' },
-      
-      // Power pins
-      { id: '5V', x: 90, y: 90, label: '5V' },
-      { id: '3.3V', x: 100, y: 90, label: '3.3V' },
-      { id: 'GND', x: 110, y: 90, label: 'GND' },
-      { id: 'GND2', x: 120, y: 90, label: 'GND' },
-      { id: 'VIN', x: 130, y: 90, label: 'VIN' },
-    ];
+  // Rotate pins based on board rotation
+  const getPinCoordinates = (pin: PinDefinition) => {
+    switch (rotate) {
+      case 0: 
+        return { x: pin.x, y: pin.y };
+      case 90:
+        return { x: -pin.y, y: pin.x };
+      case 180:
+        return { x: -pin.x, y: -pin.y };
+      case 270:
+        return { x: pin.y, y: -pin.x };
+      default:
+        return { x: pin.x, y: pin.y };
+    }
   };
   
   return (
-    <BaseComponent {...props} connectedPins={[]}>
-      <div className="relative w-180 h-100 flex items-center justify-center">
-        {/* Board */}
-        <div className="absolute inset-0 rounded-md bg-blue-900 border border-blue-700 shadow-lg">
-          {/* Digital pins labels */}
-          <div className="absolute top-2 left-2 right-2 flex justify-between">
-            <div className="text-xs font-mono font-bold text-white">DIGITAL</div>
-            <div className="text-xs font-mono font-bold text-white">USB</div>
-          </div>
-          
-          {/* Board center */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white font-bold text-lg">
-            HERO
-          </div>
-          
-          {/* USB port */}
-          <div className="absolute top-4 right-4 w-8 h-12 bg-gray-800 rounded-sm border border-gray-700"></div>
-          
-          {/* Power LED */}
-          <div className="absolute top-20 right-6 flex flex-col items-center">
-            <div 
-              className={`w-3 h-3 rounded-full ${ledPower ? 'bg-green-500' : 'bg-green-900'}`}
-              style={{ 
-                boxShadow: ledPower ? '0 0 4px 1px rgba(74, 222, 128, 0.7)' : 'none',
-                transition: 'all 0.2s ease' 
-              }}
-            ></div>
-            <div className="text-[8px] font-mono text-green-300 mt-1">PWR</div>
-          </div>
-          
-          {/* TX/RX LEDs */}
-          <div className="absolute top-30 right-6 flex flex-col items-center">
-            <div className="w-3 h-3 rounded-full bg-yellow-900"></div>
-            <div className="text-[8px] font-mono text-yellow-300 mt-1">TX</div>
-          </div>
-          <div className="absolute top-40 right-6 flex flex-col items-center">
-            <div className="w-3 h-3 rounded-full bg-blue-900"></div>
-            <div className="text-[8px] font-mono text-blue-300 mt-1">RX</div>
-          </div>
-          
-          {/* Analog pins label */}
-          <div className="absolute bottom-2 left-2">
-            <div className="text-xs font-mono font-bold text-white">ANALOG</div>
-          </div>
-          
-          {/* Power pins label */}
-          <div className="absolute bottom-2 right-2">
-            <div className="text-xs font-mono font-bold text-white">POWER</div>
-          </div>
-        </div>
-      </div>
+    <BaseComponent
+      id={id}
+      left={left}
+      top={top}
+      rotate={rotate}
+      width={170}
+      height={220}
+      isActive={isActive}
+      handleMouseDown={handleMouseDown}
+      handleDelete={() => handleDeleteComponent(id)}
+    >
+      <svg width="170" height="220" viewBox="-85 -110 170 220" xmlns="http://www.w3.org/2000/svg">
+        {/* Board Body */}
+        <rect x="-80" y="-105" width="160" height="210" rx="10" ry="10" fill="#1a365d" />
+        
+        {/* Board Main Area */}
+        <rect x="-70" y="-95" width="140" height="190" rx="5" ry="5" fill="#173156" />
+        
+        {/* USB Port */}
+        <rect x="-20" y="-105" width="40" height="15" rx="3" ry="3" fill="#666" />
+        
+        {/* Power LED */}
+        <circle cx="-60" cy="-85" r="3" fill={ledPower ? "#5fea00" : "#333"} />
+        <text x="-52" y="-83" fill="#ccc" fontSize="5">PWR</text>
+        
+        {/* TX/RX LEDs */}
+        <circle cx="-60" cy="-75" r="2" fill="#aa3333" />
+        <text x="-52" y="-73" fill="#ccc" fontSize="5">TX</text>
+        <circle cx="-60" cy="-65" r="2" fill="#33aa33" />
+        <text x="-52" y="-63" fill="#ccc" fontSize="5">RX</text>
+        
+        {/* Center Chip (Microcontroller) */}
+        <rect x="-30" y="-20" width="60" height="40" rx="2" ry="2" fill="#111" />
+        <text x="0" y="0" fill="#ccc" fontSize="8" textAnchor="middle">HERO</text>
+        <text x="0" y="12" fill="#ccc" fontSize="6" textAnchor="middle">MCU</text>
+        
+        {/* Crystal Oscillator */}
+        <rect x="40" y="-25" width="10" height="5" fill="#aaa" />
+        
+        {/* Pin Headers (Digital) */}
+        <rect x="-75" y="80" width="140" height="10" fill="#222" />
+        
+        {/* Pin Headers (Power + Analog) */}
+        <rect x="-75" y="-90" width="140" height="10" fill="#222" />
+        
+        {/* Circuit Traces */}
+        <path d="M-60 -85 L-60 -50 L-20 -20" stroke="#606060" strokeWidth="0.5" fill="none" />
+        <path d="M-60 -65 L-40 -40 L-25 -20" stroke="#606060" strokeWidth="0.5" fill="none" />
+        <path d="M60 -20 L70 -40 L70 80" stroke="#606060" strokeWidth="0.5" fill="none" />
+        <path d="M-75 80 L-75 0 L-30 -20" stroke="#606060" strokeWidth="0.5" fill="none" />
+        <path d="M75 -90 L75 -50 L30 -20" stroke="#606060" strokeWidth="0.5" fill="none" />
+        <path d="M-30 20 L-50 50 L-50 80" stroke="#606060" strokeWidth="0.5" fill="none" />
+        
+        {/* Labels */}
+        <text x="0" y="-50" fill="#fff" fontSize="10" textAnchor="middle">HERO BOARD</text>
+        <text x="0" y="35" fill="#ccc" fontSize="6" textAnchor="middle">CIRCUIT BUILDER</text>
+        <text x="0" y="45" fill="#ccc" fontSize="6" textAnchor="middle">v1.0</text>
+      </svg>
+      
+      {/* Pins */}
+      {basePins.map(pin => {
+        const coords = getPinCoordinates(pin);
+        return (
+          <CircuitPin
+            key={`${id}-${pin.id}`}
+            id={`${id}-${pin.id}`}
+            x={85 + coords.x}
+            y={110 + coords.y}
+            onClick={() => onPinClicked(`${id}-${pin.id}`)}
+            color={
+              pin.isPower ? '#ff6666' :
+              pin.isGround ? '#aaaaaa' :
+              pin.isDigital ? '#66ffff' :
+              pin.isAnalog ? '#ffcc66' :
+              '#ffcc00'
+            }
+          />
+        );
+      })}
     </BaseComponent>
   );
 };

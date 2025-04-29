@@ -1,49 +1,50 @@
 import React from 'react';
 
-export interface PinPosition {
-  id: string;
-  x: number;
-  y: number;
-}
-
 interface CircuitPinProps {
   id: string;
   x: number;
   y: number;
-  size?: number;
+  onClick: (id: string) => void;
   color?: string;
-  onClick: () => void;
+  size?: number;
+  isConnected?: boolean;
 }
 
 const CircuitPin: React.FC<CircuitPinProps> = ({
   id,
   x,
   y,
-  size = 6,
+  onClick,
   color = '#ffcc00',
-  onClick
+  size = 6,
+  isConnected = false
 }) => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClick(id);
+  };
+
   return (
     <div
-      className="absolute cursor-pointer transition-transform hover:scale-125 z-10"
+      id={id}
+      className="absolute cursor-pointer hover:ring-2 hover:ring-white hover:ring-opacity-70 rounded-full transition-all"
       style={{
         left: `${x - size/2}px`,
         top: `${y - size/2}px`,
         width: `${size}px`,
         height: `${size}px`,
+        zIndex: 20
       }}
-      onClick={onClick}
+      onClick={handleClick}
     >
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <circle 
-          cx={size/2} 
-          cy={size/2} 
-          r={size/2 - 0.5} 
-          fill={color} 
-          stroke="#333" 
-          strokeWidth="0.5"
-        />
-      </svg>
+      <div
+        className="w-full h-full rounded-full transition-all"
+        style={{
+          backgroundColor: color,
+          border: isConnected ? '1px solid white' : 'none',
+          boxShadow: isConnected ? `0 0 3px ${color}` : 'none'
+        }}
+      ></div>
     </div>
   );
 };
