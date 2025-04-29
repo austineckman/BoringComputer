@@ -1,0 +1,37 @@
+export default function wireColorOptions (){
+    return [
+        {
+            'value':'#000000'
+        },
+        {
+            'value':'#563831'
+        },
+        {
+            'value':'#26b297'
+        },
+        {
+            'value':'#00ff00'
+        },
+        {
+            'value':'#1f5e1f'
+        },
+        {
+            'value':'#852583'
+        },
+        {
+            'value':'#3c61e3'
+        },
+        {
+            'value':'#ff6600'
+        },
+        {
+            'value':'#ff3333'
+        },
+        {
+            'value':'#dada32'
+        },
+        {
+            'value':'#b925c9'
+        }
+    ]
+}
