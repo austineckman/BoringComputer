@@ -155,7 +155,6 @@ const PinTooltip = () => {
         position: 'absolute',
         bottom: '-6px',
         left: '50%',
-        transform: 'translateX(-50%)',
         width: '12px',
         height: '12px',
         backgroundColor: 'rgba(0, 0, 0, 0.85)',
