@@ -59,6 +59,41 @@ const WireManager = ({ canvasRef }) => {
     const canvasElement = canvasRef?.current;
     if (canvasElement) {
       canvasElement.addEventListener('click', handleCanvasClick);
+      
+      // Add mouse move handler for pending wire if needed
+      if (pendingWire) {
+        const handlePendingWireMouseMove = (e) => {
+          const svg = svgRef.current;
+          if (!svg) return;
+          
+          // Update mouse position for wire visualization
+          const canvasRect = canvasElement.getBoundingClientRect();
+          const mouseX = e.clientX - canvasRect.left;
+          const mouseY = e.clientY - canvasRect.top;
+          
+          // Get the current path element and update it
+          const pendingPath = svg.querySelector('.pending-wire');
+          if (pendingPath) {
+            const sourceElement = registeredPins[pendingWire.sourceId]?.element;
+            if (sourceElement) {
+              const sourcePos = getElementPosition(sourceElement);
+              const pathString = getWirePath(sourcePos, { x: mouseX, y: mouseY });
+              pendingPath.setAttribute('d', pathString);
+            }
+          }
+        };
+        
+        canvasElement.addEventListener('mousemove', handlePendingWireMouseMove);
+        
+        // Add to cleanup
+        return () => {
+          document.removeEventListener('registerPin', handleRegisterPin);
+          document.removeEventListener('unregisterPin', handleUnregisterPin);
+          document.removeEventListener('redrawWires', handleRedrawWires);
+          canvasElement.removeEventListener('click', handleCanvasClick);
+          canvasElement.removeEventListener('mousemove', handlePendingWireMouseMove);
+        };
+      }
     }
     
     return () => {
@@ -70,7 +105,7 @@ const WireManager = ({ canvasRef }) => {
         canvasElement.removeEventListener('click', handleCanvasClick);
       }
     };
-  }, [canvasRef]);
+  }, [canvasRef, pendingWire, registeredPins, getElementPosition]);
   
   // Handle clicks on the canvas (to cancel pending wire)
   const handleCanvasClick = (e) => {
@@ -310,16 +345,7 @@ const WireManager = ({ canvasRef }) => {
             }
           };
           
-          // Add event listener for mouse movement
-          useEffect(() => {
-            const canvasElement = canvasRef?.current;
-            if (canvasElement && pendingWire) {
-              canvasElement.addEventListener('mousemove', handleMouseMove);
-              return () => {
-                canvasElement.removeEventListener('mousemove', handleMouseMove);
-              };
-            }
-          }, [pendingWire]);
+          // Mouse movement handled in main useEffect
           
           // Render pending wire path
           const sourcePos = getElementPosition(sourceElement);
@@ -343,18 +369,21 @@ const WireManager = ({ canvasRef }) => {
       )}
       
       {/* Invisible wire click handlers */}
-      {Object.values(registeredPins).map(pin => (
-        <circle
-          key={pin.id}
-          cx={getElementPosition(pin.element).x}
-          cy={getElementPosition(pin.element).y}
-          r={8}
-          fill="transparent"
-          style={{ pointerEvents: 'auto', cursor: 'crosshair' }}
-          onClick={() => handlePinClick(pin.id)}
-          data-pin-id={pin.id}
-        />
-      ))}
+      {Object.values(registeredPins).map(pin => {
+        const position = getElementPosition(pin.element);
+        return (
+          <circle
+            key={pin.id}
+            cx={position.x}
+            cy={position.y}
+            r={8}
+            fill="transparent"
+            style={{ pointerEvents: 'auto', cursor: 'crosshair' }}
+            onClick={() => handlePinClick(pin.id)}
+            data-pin-id={pin.id}
+          />
+        );
+      })}
     </svg>
   );
 };
