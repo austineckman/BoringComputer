@@ -1,298 +1,361 @@
-import { useState, useEffect, useRef } from 'react';
-import * as PathlineModule from 'react-svg-pathline';
-
-// Correctly extract Pathline component based on module structure
-const Pathline = PathlineModule.Pathline || PathlineModule.default || PathlineModule;
+import React, { useState, useEffect, useRef } from 'react';
 
 /**
- * WireManager handles all wire connections between components
- * Features:
- * - Drawing wires between pins using SVG paths
- * - Managing wire connections
- * - Updating wire positions when components move
- * - Creating new connections via UI
+ * WireManager component handles the creation and rendering of wires
+ * between component pins
+ * 
+ * @param {Object} props
+ * @param {RefObject} props.canvasRef - Reference to the canvas element
  */
 const WireManager = ({ canvasRef }) => {
-  // State for tracking pins and connections
-  const [pins, setPins] = useState({});
-  const [connections, setConnections] = useState([]);
-  const [tempWire, setTempWire] = useState(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  // State for pin and wire management
+  const [registeredPins, setRegisteredPins] = useState({});
+  const [wires, setWires] = useState([]);
+  const [pendingWire, setPendingWire] = useState(null);
   
-  // Track which pins are currently connected
-  const [connectedPins, setConnectedPins] = useState(new Set());
-  
-  // Reference to SVG element for wire drawing
+  // SVG reference
   const svgRef = useRef(null);
   
-  // Register pin positions
+  // Register event listeners for pin registration and wire drawing
   useEffect(() => {
+    // Handler for pin registration
     const handleRegisterPin = (e) => {
-      const { id, parentId, pinType, element } = e.detail;
+      const { id, parentId, pinType, label, element } = e.detail;
       
-      setPins(prev => ({
+      setRegisteredPins(prev => ({
         ...prev,
-        [id]: { id, parentId, pinType, element }
+        [id]: { id, parentId, type: pinType, label, element }
       }));
     };
     
+    // Handler for pin unregistration
     const handleUnregisterPin = (e) => {
       const { id } = e.detail;
       
-      setPins(prev => {
+      setRegisteredPins(prev => {
         const newPins = { ...prev };
         delete newPins[id];
         return newPins;
       });
       
-      // Remove any connections to this pin
-      setConnections(prev => prev.filter(conn => 
-        conn.from !== id && conn.to !== id
+      // Remove any wires connected to this pin
+      setWires(prev => prev.filter(wire => 
+        wire.sourceId !== id && wire.targetId !== id
       ));
     };
     
-    // Listen for pin registration events
+    // Handler for wire redrawing (e.g., when components move)
+    const handleRedrawWires = () => {
+      // Force redraw by creating a new array reference
+      setWires(prev => [...prev]);
+    };
+    
+    // Register event listeners
     document.addEventListener('registerPin', handleRegisterPin);
     document.addEventListener('unregisterPin', handleUnregisterPin);
+    document.addEventListener('redrawWires', handleRedrawWires);
+    
+    // Add click handler to the canvas for wire interactions
+    const canvasElement = canvasRef?.current;
+    if (canvasElement) {
+      canvasElement.addEventListener('click', handleCanvasClick);
+    }
     
     return () => {
       document.removeEventListener('registerPin', handleRegisterPin);
       document.removeEventListener('unregisterPin', handleUnregisterPin);
-    };
-  }, []);
-  
-  // Handle redrawing wires when components move
-  useEffect(() => {
-    const handleRedraw = () => {
-      // Force a re-render by updating state
-      setConnections(prev => [...prev]);
-    };
-    
-    document.addEventListener('redrawWires', handleRedraw);
-    
-    return () => {
-      document.removeEventListener('redrawWires', handleRedraw);
-    };
-  }, []);
-  
-  // Track mouse position for drawing temporary wires
-  useEffect(() => {
-    if (!canvasRef?.current || !tempWire) return;
-    
-    const handleMouseMove = (e) => {
-      if (!canvasRef.current) return;
+      document.removeEventListener('redrawWires', handleRedrawWires);
       
-      const rect = canvasRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      setMousePos({ x, y });
+      if (canvasElement) {
+        canvasElement.removeEventListener('click', handleCanvasClick);
+      }
     };
-    
-    canvasRef.current.addEventListener('mousemove', handleMouseMove);
-    
-    return () => {
-      canvasRef.current?.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, [canvasRef, tempWire]);
+  }, [canvasRef]);
   
-  // Start drawing a wire from a pin
-  const startWireFromPin = (pinId) => {
-    if (!pins[pinId]) return;
-    
-    setTempWire({
-      fromId: pinId,
-      fromType: pins[pinId].pinType
-    });
+  // Handle clicks on the canvas (to cancel pending wire)
+  const handleCanvasClick = (e) => {
+    // If click wasn't on a pin, cancel any pending wire
+    if (!e.target.classList.contains('circuit-pin')) {
+      setPendingWire(null);
+    }
   };
   
-  // Complete a wire connection to another pin
-  const completeWireToPin = (pinId) => {
-    if (!tempWire || !pins[pinId] || tempWire.fromId === pinId) {
-      setTempWire(null);
-      return;
-    }
+  // Handler for pin clicks - create or finish a wire
+  const handlePinClick = (pinId) => {
+    const pin = registeredPins[pinId];
+    if (!pin) return;
     
-    // Check if the connection makes sense (output -> input)
-    const fromPin = pins[tempWire.fromId];
-    const toPin = pins[pinId];
-    
-    if (
-      (fromPin.pinType === 'output' && toPin.pinType === 'input') ||
-      (fromPin.pinType === 'input' && toPin.pinType === 'output') ||
-      fromPin.pinType === 'bidirectional' || 
-      toPin.pinType === 'bidirectional'
-    ) {
-      // Determine which is input and which is output
-      let from, to;
+    if (!pendingWire) {
+      // Start a new wire from this pin
+      setPendingWire({
+        sourceId: pinId,
+        sourceType: pin.type,
+        sourceParentId: pin.parentId
+      });
+    } else {
+      // Finishing a wire
+      const { sourceId, sourceType, sourceParentId } = pendingWire;
       
-      if (fromPin.pinType === 'output' || toPin.pinType === 'input') {
-        from = tempWire.fromId;
-        to = pinId;
-      } else {
-        from = pinId;
-        to = tempWire.fromId;
+      // Prevent connecting a pin to itself
+      if (sourceId === pinId) {
+        setPendingWire(null);
+        return;
       }
       
-      // Check if connection already exists
-      const connectionExists = connections.some(
-        conn => conn.from === from && conn.to === to
-      );
-      
-      if (!connectionExists) {
-        setConnections(prev => [
-          ...prev,
-          { id: `${from}-${to}`, from, to }
-        ]);
-        
-        // Update connected pins set
-        setConnectedPins(prev => {
-          const newSet = new Set(prev);
-          newSet.add(from);
-          newSet.add(to);
-          return newSet;
-        });
+      // Prevent connecting pins of the same component
+      if (sourceParentId === pin.parentId) {
+        console.warn('Cannot connect pins on the same component');
+        setPendingWire(null);
+        return;
       }
+      
+      // Check compatibility (input to output or bidirectional)
+      const isCompatible = (
+        (sourceType === 'output' && pin.type === 'input') ||
+        (sourceType === 'input' && pin.type === 'output') ||
+        sourceType === 'bidirectional' ||
+        pin.type === 'bidirectional'
+      );
+      
+      if (!isCompatible) {
+        console.warn(`Cannot connect ${sourceType} to ${pin.type}`);
+        setPendingWire(null);
+        return;
+      }
+      
+      // Add the new wire
+      const newWire = {
+        id: `wire-${Date.now()}`,
+        sourceId,
+        targetId: pinId,
+        sourceType,
+        targetType: pin.type
+      };
+      
+      setWires(prev => [...prev, newWire]);
+      setPendingWire(null);
     }
-    
-    setTempWire(null);
   };
   
-  // Remove a wire connection
-  const removeConnection = (connectionId) => {
-    setConnections(prev => prev.filter(conn => conn.id !== connectionId));
+  // Get element position relative to the canvas
+  const getElementPosition = (element) => {
+    if (!element || !canvasRef?.current) return { x: 0, y: 0 };
     
-    // Update connected pins
-    const [fromId, toId] = connectionId.split('-');
-    setConnectedPins(prev => {
-      const newSet = new Set(prev);
-      
-      // Only remove if pin is not used in any other connection
-      const fromIsStillConnected = connections.some(conn => 
-        (conn.id !== connectionId) && (conn.from === fromId || conn.to === fromId)
-      );
-      
-      const toIsStillConnected = connections.some(conn => 
-        (conn.id !== connectionId) && (conn.from === toId || conn.to === toId)
-      );
-      
-      if (!fromIsStillConnected) newSet.delete(fromId);
-      if (!toIsStillConnected) newSet.delete(toId);
-      
-      return newSet;
-    });
-  };
-  
-  // Get position of a pin relative to the canvas
-  const getPinPosition = (pinId) => {
-    if (!pins[pinId]?.element || !canvasRef?.current) return { x: 0, y: 0 };
-    
-    const pin = pins[pinId].element;
-    const canvas = canvasRef.current;
-    
-    const rect = pin.getBoundingClientRect();
-    const canvasRect = canvas.getBoundingClientRect();
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
     
     return {
-      x: rect.left + rect.width / 2 - canvasRect.left,
-      y: rect.top + rect.height / 2 - canvasRect.top
+      x: elementRect.left - canvasRect.left + elementRect.width / 2,
+      y: elementRect.top - canvasRect.top + elementRect.height / 2
     };
   };
   
-  // Generate path points for a wire
-  const generateWirePath = (fromPos, toPos) => {
-    const midX = (fromPos.x + toPos.x) / 2;
+  // Get wire color based on connection types
+  const getWireColor = (sourceType, targetType) => {
+    // Power connections (VCC, GND, etc.)
+    if (
+      (sourceType === 'output' && targetType === 'input') ||
+      (sourceType === 'input' && targetType === 'output')
+    ) {
+      return '#ef4444'; // Red - power connections
+    }
     
-    return [
-      [fromPos.x, fromPos.y],
-      [midX, fromPos.y],
-      [midX, toPos.y],
-      [toPos.x, toPos.y]
-    ];
+    // Signal connections
+    if (sourceType === 'bidirectional' || targetType === 'bidirectional') {
+      return '#3b82f6'; // Blue - bidirectional signals
+    }
+    
+    // Default color
+    return '#10b981'; // Green - general signal
   };
   
-  // Handle pin click events
-  const handlePinClick = (pinId, pinType, parentId) => {
-    if (tempWire) {
-      completeWireToPin(pinId);
-    } else {
-      startWireFromPin(pinId);
+  // Get wire style based on connection types
+  const getWireStyle = (sourceType, targetType) => {
+    // Power connections
+    if (
+      (sourceType === 'output' && targetType === 'input') ||
+      (sourceType === 'input' && targetType === 'output')
+    ) {
+      return {
+        stroke: getWireColor(sourceType, targetType),
+        strokeWidth: 2.5,
+        strokeLinecap: 'round',
+        fill: 'none'
+      };
     }
+    
+    // Bidirectional connections
+    if (sourceType === 'bidirectional' || targetType === 'bidirectional') {
+      return {
+        stroke: getWireColor(sourceType, targetType),
+        strokeWidth: 2,
+        strokeLinecap: 'round',
+        strokeDasharray: '0',
+        fill: 'none'
+      };
+    }
+    
+    // Default style
+    return {
+      stroke: getWireColor(sourceType, targetType),
+      strokeWidth: 2,
+      strokeLinecap: 'round',
+      fill: 'none'
+    };
   };
   
-  // Cancel wire drawing on canvas click
-  const handleCanvasClick = () => {
-    if (tempWire) {
-      setTempWire(null);
-    }
+  // Calculate SVG path string for a wire
+  const getWirePath = (sourcePos, targetPos) => {
+    const dx = targetPos.x - sourcePos.x;
+    const dy = targetPos.y - sourcePos.y;
+    
+    // Curved path with a control point
+    const controlPointOffset = Math.min(100, Math.max(20, Math.abs(dx) / 3));
+    
+    return `
+      M ${sourcePos.x},${sourcePos.y}
+      C ${sourcePos.x + controlPointOffset},${sourcePos.y}
+        ${targetPos.x - controlPointOffset},${targetPos.y}
+        ${targetPos.x},${targetPos.y}
+    `;
+  };
+  
+  // Handle wire deletion
+  const handleWireDelete = (wireId, e) => {
+    e.stopPropagation();
+    setWires(prev => prev.filter(wire => wire.id !== wireId));
   };
   
   return (
-    <>
-      {/* SVG layer for wire drawing */}
-      <svg
-        ref={svgRef}
-        className="absolute inset-0 w-full h-full pointer-events-none"
-        style={{ zIndex: 2 }}
-      >
-        {/* Draw permanent connections */}
-        {connections.map(({ id, from, to }) => {
-          const fromPos = getPinPosition(from);
-          const toPos = getPinPosition(to);
+    <svg 
+      ref={svgRef}
+      className="absolute inset-0 pointer-events-none z-10"
+      style={{ width: '100%', height: '100%' }}
+    >
+      {/* Draw existing wires */}
+      {wires.map(wire => {
+        // Get source and target elements from registered pins
+        const sourceElement = registeredPins[wire.sourceId]?.element;
+        const targetElement = registeredPins[wire.targetId]?.element;
+        
+        if (!sourceElement || !targetElement) {
+          // One of the pins is no longer available, remove this wire
+          setTimeout(() => {
+            setWires(prev => prev.filter(w => w.id !== wire.id));
+          }, 0);
+          return null;
+        }
+        
+        // Get positions
+        const sourcePos = getElementPosition(sourceElement);
+        const targetPos = getElementPosition(targetElement);
+        
+        // Calculate path and wire style
+        const pathString = getWirePath(sourcePos, targetPos);
+        const wireStyle = getWireStyle(wire.sourceType, wire.targetType);
+        
+        return (
+          <g key={wire.id} className="wire-group">
+            <path
+              d={pathString}
+              {...wireStyle}
+              className="wire"
+              data-wire-id={wire.id}
+              onDoubleClick={(e) => handleWireDelete(wire.id, e)}
+              style={{ pointerEvents: 'auto', cursor: 'crosshair' }}
+            />
+            
+            {/* Wire endpoints */}
+            <circle
+              cx={sourcePos.x}
+              cy={sourcePos.y}
+              r={4}
+              fill={wireStyle.stroke}
+              pointerEvents="none"
+            />
+            <circle
+              cx={targetPos.x}
+              cy={targetPos.y}
+              r={4}
+              fill={wireStyle.stroke}
+              pointerEvents="none"
+            />
+          </g>
+        );
+      })}
+      
+      {/* Draw pending wire */}
+      {pendingWire && (
+        (() => {
+          // Get source element
+          const sourceElement = registeredPins[pendingWire.sourceId]?.element;
+          if (!sourceElement) return null;
           
-          // Determine wire color based on pin IDs
-          let wireColor = '#4a5568'; // Default gray
+          // Get mouse position relative to canvas
+          const handleMouseMove = (e) => {
+            const svg = svgRef.current;
+            if (!svg) return;
+            
+            // Update mouse position for wire visualization
+            const canvasRect = canvasRef.current.getBoundingClientRect();
+            const mouseX = e.clientX - canvasRect.left;
+            const mouseY = e.clientY - canvasRect.top;
+            
+            // Get the current path element and update it
+            const pendingPath = svg.querySelector('.pending-wire');
+            if (pendingPath) {
+              const sourcePos = getElementPosition(sourceElement);
+              const pathString = getWirePath(sourcePos, { x: mouseX, y: mouseY });
+              pendingPath.setAttribute('d', pathString);
+            }
+          };
           
-          // Check pin IDs to determine the type of connection
-          if (from.includes('5v') || from.includes('3v3') || to.includes('5v') || to.includes('3v3')) {
-            wireColor = '#f56565'; // Red for power
-          } else if (from.includes('gnd') || to.includes('gnd')) {
-            wireColor = '#718096'; // Dark gray for ground
-          } else if (from.includes('d') || to.includes('d')) {
-            wireColor = '#4299e1'; // Blue for digital pins
-          } else if (from.includes('a') || to.includes('a')) {
-            wireColor = '#ed8936'; // Orange for analog pins
-          }
+          // Add event listener for mouse movement
+          useEffect(() => {
+            const canvasElement = canvasRef?.current;
+            if (canvasElement && pendingWire) {
+              canvasElement.addEventListener('mousemove', handleMouseMove);
+              return () => {
+                canvasElement.removeEventListener('mousemove', handleMouseMove);
+              };
+            }
+          }, [pendingWire]);
+          
+          // Render pending wire path
+          const sourcePos = getElementPosition(sourceElement);
+          const wireStyle = {
+            stroke: getWireColor(pendingWire.sourceType, 'bidirectional'),
+            strokeWidth: 2,
+            strokeLinecap: 'round',
+            strokeDasharray: '5,5',
+            fill: 'none'
+          };
           
           return (
-            <g key={id} className="wire-connection">
-              <Pathline
-                points={generateWirePath(fromPos, toPos)}
-                stroke={wireColor}
-                strokeWidth={2}
-                fill="none"
-                r={10}
-                className="wire-path"
-              />
-            </g>
+            <path
+              className="pending-wire"
+              d={`M ${sourcePos.x},${sourcePos.y}`}
+              {...wireStyle}
+              pointerEvents="none"
+            />
           );
-        })}
-        
-        {/* Draw temporary wire being created */}
-        {tempWire && (
-          <Pathline
-            points={generateWirePath(
-              getPinPosition(tempWire.fromId),
-              mousePos
-            )}
-            stroke="#90cdf4"
-            strokeWidth={2}
-            strokeDasharray="5,5"
-            fill="none"
-            r={10}
-          />
-        )}
-      </svg>
-      
-      {/* Invisible div to catch clicks for canceling wire drawing */}
-      {tempWire && (
-        <div
-          className="fixed inset-0 cursor-crosshair"
-          onClick={handleCanvasClick}
-          style={{ zIndex: 1 }}
-        />
+        })()
       )}
-    </>
+      
+      {/* Invisible wire click handlers */}
+      {Object.values(registeredPins).map(pin => (
+        <circle
+          key={pin.id}
+          cx={getElementPosition(pin.element).x}
+          cy={getElementPosition(pin.element).y}
+          r={8}
+          fill="transparent"
+          style={{ pointerEvents: 'auto', cursor: 'crosshair' }}
+          onClick={() => handlePinClick(pin.id)}
+          data-pin-id={pin.id}
+        />
+      ))}
+    </svg>
   );
 };
 
