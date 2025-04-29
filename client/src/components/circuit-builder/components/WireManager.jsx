@@ -218,8 +218,18 @@ const WireManager = ({ canvasRef }) => {
       };
       
       console.log(`Creating new wire:`, newWire);
+      // Add the wire to the wires array and clear the pending wire state
       setWires(prev => [...prev, newWire]);
       setPendingWire(null);
+      
+      // Also clear any pending UI state
+      const svg = svgRef.current;
+      if (svg) {
+        const pendingPath = svg.querySelector('.pending-wire');
+        if (pendingPath) {
+          pendingPath.setAttribute('d', '');
+        }
+      }
     }
   }, [pendingWire, registeredPins, getElementPosition]);
   
@@ -520,13 +530,13 @@ const WireManager = ({ canvasRef }) => {
   
   // Add mouse move handler for pending wire visualization
   useEffect(() => {
-    if (!pendingWire || !canvasRef?.current || !svgRef?.current) return;
+    if (!canvasRef?.current || !svgRef?.current) return;
     
     const canvasElement = canvasRef.current;
     
     const handlePendingWireMouseMove = (e) => {
       const svg = svgRef.current;
-      if (!svg) return;
+      if (!svg || !pendingWire) return;
       
       // Update mouse position for wire visualization
       const canvasRect = canvasElement.getBoundingClientRect();
@@ -553,6 +563,17 @@ const WireManager = ({ canvasRef }) => {
         }
       }
     };
+    
+    // When pendingWire is null, clear any lingering wire visualization
+    if (!pendingWire) {
+      const svg = svgRef.current;
+      if (svg) {
+        const pendingPath = svg.querySelector('.pending-wire');
+        if (pendingPath) {
+          pendingPath.setAttribute('d', ''); // Clear the path
+        }
+      }
+    }
     
     canvasElement.addEventListener('mousemove', handlePendingWireMouseMove);
     
