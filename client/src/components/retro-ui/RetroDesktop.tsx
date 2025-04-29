@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, Maximize2, Minimize2, Volume2, VolumeX, Trash2 } from "lucide-react";
+import { FaDiscord } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import RetroStartMenu from "./RetroStartMenu";
@@ -92,6 +93,7 @@ const RetroDesktop: React.FC = () => {
     { id: "lootboxes", name: "HackLock.exe", icon: "picklock", path: "/lootboxes", position: { x: 140, y: 20 } },
     { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 140, y: 120 } },
     { id: "circuitbuilder", name: "buildr.exe", icon: "circuitbuilder", position: { x: 140, y: 220 } },
+    { id: "discord", name: "Discord", icon: "discord", position: { x: 140, y: 320 } },
     
     // Oracle in top right
     { id: "oracle", name: "The Oracle", icon: "oracle", position: { x: 800, y: 20 } },
@@ -282,6 +284,11 @@ const RetroDesktop: React.FC = () => {
   };
   
   const handleIconDoubleClick = (iconId: string, iconPath?: string) => {
+    // Play sound if available for any icon click
+    if (window.sounds) {
+      window.sounds.click();
+    }
+    
     // Handle special icons with custom windows
     if (iconId === "inventory") {
       openInventoryWindow();
@@ -294,46 +301,29 @@ const RetroDesktop: React.FC = () => {
     } else if (iconId === "recyclebin") {
       openRecycleBinWindow();
     } else if (iconId === "quests") {
-      // Play sound if available
-      if (window.sounds) {
-        window.sounds.click();
-      }
-      
       // Only trigger loading state if quests app is currently closed
       if (questsAppState === 'closed') {
         // Show loading screen
         setQuestsAppState('loading');
       }
     } else if (iconId === "oracle") {
-      // Play sound if available
-      if (window.sounds) {
-        window.sounds.click();
-      }
-      
       // Open the Oracle app if it's currently closed
       if (oracleAppState === 'closed') {
         setOracleAppState('open');
       }
     } else if (iconId === "circuitbuilder") {
-      // Play sound if available
-      if (window.sounds) {
-        window.sounds.click();
-      }
-      
       // Open the Circuit Builder app if it's currently closed
       if (circuitBuilderAppState === 'closed') {
         setCircuitBuilderAppState('open');
       }
     } else if (iconId === "lootboxes") {
-      // Play sound if available
-      if (window.sounds) {
-        window.sounds.click();
-      }
-      
       // Open the HackLock app if it's currently closed
       if (lockpickingAppState === 'closed') {
         setLockpickingAppState('open');
       }
+    } else if (iconId === "discord") {
+      // Open Discord link in a new tab
+      window.open("https://craftingtable.com/discord", "_blank");
     } else if (iconPath) {
       // For other icons, navigate to the path if it exists
       navigate(iconPath);
@@ -649,6 +639,8 @@ const RetroDesktop: React.FC = () => {
                   className="w-10 h-10 object-contain" 
                   style={{ imageRendering: 'pixelated' }}
                 />
+              ) : icon.icon === "discord" ? (
+                <FaDiscord size={28} className="text-indigo-600" />
               ) : icon.icon === "trashIcon" ? (
                 <Trash2 size={24} className="text-gray-700" />
               ) : (
