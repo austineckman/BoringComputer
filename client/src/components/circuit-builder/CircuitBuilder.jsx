@@ -12,6 +12,10 @@ import Resistor from './components/Resistor';
 import Photoresistor from './components/Photoresistor';
 import Buzzer from './components/Buzzer';
 import RotaryEncoder from './components/RotaryEncoder';
+import DipSwitch from './components/DipSwitch';
+import SegmentedDisplay from './components/SegmentedDisplay';
+import Keypad from './components/Keypad';
+import OLEDDisplay from './components/OLEDDisplay';
 
 /**
  * Main Circuit Builder component
@@ -221,6 +225,73 @@ const CircuitBuilder = () => {
           canvasRef={canvasRef}
           onPinConnect={handlePinConnect}
           stepSize={component.props?.stepSize || 1}
+        />
+      );
+    }
+    
+    if (component.type === 'dip-switch-3') {
+      return (
+        <DipSwitch
+          key={component.id}
+          id={component.id}
+          initialX={component.x}
+          initialY={component.y}
+          initialRotation={component.rotation}
+          onSelect={() => handleSelectComponent(component.id)}
+          isSelected={component.id === selectedComponentId}
+          canvasRef={canvasRef}
+          onPinConnect={handlePinConnect}
+          initialValue={component.props?.value || [false, false, false]}
+        />
+      );
+    }
+    
+    if (component.type === 'segmented-display') {
+      return (
+        <SegmentedDisplay
+          key={component.id}
+          id={component.id}
+          initialX={component.x}
+          initialY={component.y}
+          initialRotation={component.rotation}
+          onSelect={() => handleSelectComponent(component.id)}
+          isSelected={component.id === selectedComponentId}
+          canvasRef={canvasRef}
+          onPinConnect={handlePinConnect}
+          digits={component.props?.digits || 4}
+          pins={component.props?.pins || "side"}
+        />
+      );
+    }
+    
+    if (component.type === 'custom-keypad') {
+      return (
+        <Keypad
+          key={component.id}
+          id={component.id}
+          initialX={component.x}
+          initialY={component.y}
+          initialRotation={component.rotation}
+          onSelect={() => handleSelectComponent(component.id)}
+          isSelected={component.id === selectedComponentId}
+          canvasRef={canvasRef}
+          onPinConnect={handlePinConnect}
+        />
+      );
+    }
+    
+    if (component.type === 'oled-display') {
+      return (
+        <OLEDDisplay
+          key={component.id}
+          id={component.id}
+          initialX={component.x}
+          initialY={component.y}
+          initialRotation={component.rotation}
+          onSelect={() => handleSelectComponent(component.id)}
+          isSelected={component.id === selectedComponentId}
+          canvasRef={canvasRef}
+          onPinConnect={handlePinConnect}
         />
       );
     }
