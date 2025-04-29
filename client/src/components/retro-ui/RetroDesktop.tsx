@@ -91,7 +91,7 @@ const RetroDesktop: React.FC = () => {
     // Second column (after 4 icons in first column)
     { id: "lootboxes", name: "HackLock.exe", icon: "picklock", path: "/lootboxes", position: { x: 140, y: 20 } },
     { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 140, y: 120 } },
-    { id: "circuitbuilder", name: "Circuit Builder", icon: "🔌", position: { x: 140, y: 220 } },
+    { id: "circuitbuilder", name: "buildr.exe", icon: "circuitbuilder", position: { x: 140, y: 220 } },
     
     // Oracle in top right
     { id: "oracle", name: "The Oracle", icon: "oracle", position: { x: 800, y: 20 } },
