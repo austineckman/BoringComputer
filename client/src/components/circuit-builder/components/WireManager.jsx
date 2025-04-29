@@ -232,7 +232,7 @@ const WireManager = ({ canvasRef }) => {
     return '#10b981'; // Green - general signal
   };
   
-  // Get wire style based on connection types
+  // Get wire style based on connection types - Wokwi style
   const getWireStyle = (sourceType, targetType) => {
     // Power connections - typically from outputs to inputs
     if (
@@ -242,11 +242,12 @@ const WireManager = ({ canvasRef }) => {
       // For power connections (typical LED to resistor, or board to LED)
       return {
         stroke: getWireColor(sourceType, targetType),
-        strokeWidth: 3.5,
+        strokeWidth: 4, // Thicker for power connections
         strokeLinecap: 'round',
-        filter: 'drop-shadow(0px 1px 3px rgba(0, 0, 0, 0.4))',
+        strokeMiterlimit: 10, // Better path corner rendering
+        filter: 'drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.5))',
         fill: 'none',
-        opacity: 0.9
+        opacity: 0.95
       };
     }
     
@@ -254,27 +255,28 @@ const WireManager = ({ canvasRef }) => {
     if (sourceType === 'bidirectional' || targetType === 'bidirectional') {
       return {
         stroke: getWireColor(sourceType, targetType),
-        strokeWidth: 3,
+        strokeWidth: 3.5,
         strokeLinecap: 'round',
-        strokeDasharray: '0',
-        filter: 'drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.25))',
+        strokeMiterlimit: 10,
+        filter: 'drop-shadow(0px 1.5px 2px rgba(0, 0, 0, 0.3))',
         fill: 'none',
-        opacity: 0.85
+        opacity: 0.9
       };
     }
     
     // Default style for other connections
     return {
       stroke: getWireColor(sourceType, targetType),
-      strokeWidth: 3,
+      strokeWidth: 3.5,
       strokeLinecap: 'round',
-      filter: 'drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.2))',
+      strokeMiterlimit: 10,
+      filter: 'drop-shadow(0px 1.5px 2px rgba(0, 0, 0, 0.25))',
       fill: 'none',
-      opacity: 0.8
+      opacity: 0.85
     };
   };
   
-  // Calculate SVG path string for a wire
+  // Calculate SVG path string for a wire following Wokwi's implementation
   const getWirePath = (sourcePos, targetPos) => {
     // Ensure we have valid positions
     if (!sourcePos || !targetPos) {
@@ -286,30 +288,57 @@ const WireManager = ({ canvasRef }) => {
     const dy = targetPos.y - sourcePos.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     
-    // Adjust control point offset based on distance
-    // Minimum 20px, maximum 80px, or distance/4 if in between
-    const controlPointOffset = Math.min(80, Math.max(20, distance / 4));
+    // Calculate a nice curve that follows Wokwi's wire appearance
+    // We'll use multiple segments for better control over the curve shape
     
-    // For horizontal-ish connections (width > 2x height)
-    if (Math.abs(dx) > Math.abs(dy) * 2) {
+    // For very short connections, use a simple curve
+    if (distance < 30) {
+      return `M${sourcePos.x},${sourcePos.y} Q${(sourcePos.x + targetPos.x)/2},${(sourcePos.y + targetPos.y)/2} ${targetPos.x},${targetPos.y}`;
+    }
+    
+    // Determine if this is primarily horizontal, vertical, or diagonal
+    const isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.5; 
+    const isVertical = Math.abs(dy) > Math.abs(dx) * 1.5;
+    
+    // Calculate control points with consideration for the circuit board grid layout
+    // These offsets create the nice curved wires seen in Wokwi
+    
+    // For horizontal-ish wires
+    if (isHorizontal) {
+      const midX = sourcePos.x + dx / 2;
+      const controlDist = Math.min(Math.abs(dx) / 4, 40);
+      
       return `M${sourcePos.x},${sourcePos.y} `+
-             `C${sourcePos.x + controlPointOffset},${sourcePos.y} `+
-             `${targetPos.x - controlPointOffset},${targetPos.y} `+
+             `C${sourcePos.x + controlDist},${sourcePos.y} `+
+             `${midX - controlDist},${targetPos.y} `+ 
+             `${midX},${targetPos.y} `+
+             `S${targetPos.x - controlDist},${targetPos.y} `+
              `${targetPos.x},${targetPos.y}`;
     }
     
-    // For vertical-ish connections (height > 2x width)
-    if (Math.abs(dy) > Math.abs(dx) * 2) {
+    // For vertical-ish wires
+    if (isVertical) {
+      const midY = sourcePos.y + dy / 2;
+      const controlDist = Math.min(Math.abs(dy) / 4, 40);
+      
       return `M${sourcePos.x},${sourcePos.y} `+
-             `C${sourcePos.x},${sourcePos.y + (Math.sign(dy) * controlPointOffset)} `+
-             `${targetPos.x},${targetPos.y - (Math.sign(dy) * controlPointOffset)} `+
+             `C${sourcePos.x},${sourcePos.y + controlDist} `+
+             `${targetPos.x},${midY - controlDist} `+ 
+             `${targetPos.x},${midY} `+
+             `S${targetPos.x},${targetPos.y - controlDist} `+
              `${targetPos.x},${targetPos.y}`;
     }
     
-    // For diagonal connections (default)
+    // For diagonal connections, create a curve with a 45° segment in the middle
+    const midX = sourcePos.x + dx / 2;
+    const midY = sourcePos.y + dy / 2;
+    const controlLen = distance / 4;  // Control point distance as fraction of total distance
+    
     return `M${sourcePos.x},${sourcePos.y} `+
-           `C${sourcePos.x + dx/3},${sourcePos.y + dy/3} `+
-           `${sourcePos.x + dx*2/3},${sourcePos.y + dy*2/3} `+
+           `C${sourcePos.x + Math.sign(dx) * controlLen},${sourcePos.y} `+
+           `${midX - Math.sign(dx) * controlLen/2},${midY - Math.sign(dy) * controlLen/2} `+
+           `${midX},${midY} `+
+           `S${targetPos.x - Math.sign(dx) * controlLen},${targetPos.y} `+
            `${targetPos.x},${targetPos.y}`;
   };
   
