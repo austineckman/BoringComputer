@@ -325,12 +325,16 @@ const CircuitComponent = ({
       onContextMenu={handleContextMenu}
     >
       {/* Component image */}
-      <div className="absolute inset-0 flex items-center justify-center">
+      <div className="absolute inset-0 flex items-center justify-center p-2">
         <img 
           src={image} 
           alt={type} 
-          className="max-w-full max-h-full"
+          className="max-w-full max-h-full object-contain"
           draggable="false"
+          onError={(e) => {
+            console.error(`Failed to load image: ${image}`, e);
+            e.target.src = '/placeholder-component.png';
+          }}
         />
       </div>
       

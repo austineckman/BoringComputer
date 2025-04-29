@@ -2,8 +2,17 @@
  * Available circuit component options for the circuit builder
  */
 
-// Define base path for component images
-const imageBasePath = '/assets/';
+// Import component images directly
+import heroboardImg from '@assets/hero-board.icon.png';
+import ledImg from '@assets/led.icon.png';
+import rgbLedImg from '@assets/rgb-led.icon.png';
+import resistorImg from '@assets/resistor.icon.png';
+import photoresistorImg from '@assets/photoresistor.icon.png';
+import oledDisplayImg from '@assets/oled-display.icon.png';
+import segmentedDisplayImg from '@assets/segmented-display.icon.png';
+import customKeypadImg from '@assets/custom-keypad.icon.png';
+import rotaryEncoderImg from '@assets/rotary-encoder.icon.png';
+import dipSwitchImg from '@assets/dip-switch-3.icon.png';
 
 // List of available components with their properties and pin configurations
 export const componentOptions = [
@@ -12,7 +21,7 @@ export const componentOptions = [
     displayName: 'Hero Board',
     description: 'The main microcontroller board',
     category: 'controllers',
-    imagePath: `${imageBasePath}hero-board.icon.png`,
+    imagePath: heroboardImg,
     pinConfig: [
       { id: 'd0', type: 'bidirectional', label: 'Digital 0' },
       { id: 'd1', type: 'bidirectional', label: 'Digital 1' },
@@ -45,7 +54,7 @@ export const componentOptions = [
     displayName: 'LED',
     description: 'Light-emitting diode',
     category: 'outputs',
-    imagePath: `${imageBasePath}led.icon.png`,
+    imagePath: ledImg,
     pinConfig: [
       { id: 'anode', type: 'input', label: 'Anode (+)' },
       { id: 'cathode', type: 'output', label: 'Cathode (-)' }
@@ -56,7 +65,7 @@ export const componentOptions = [
     displayName: 'RGB LED',
     description: 'Multi-color LED',
     category: 'outputs',
-    imagePath: `${imageBasePath}rgb-led.icon.png`,
+    imagePath: rgbLedImg,
     pinConfig: [
       { id: 'common', type: 'output', label: 'Common' },
       { id: 'red', type: 'input', label: 'Red' },
@@ -69,7 +78,7 @@ export const componentOptions = [
     displayName: 'Resistor',
     description: 'Limits current flow',
     category: 'passives',
-    imagePath: `${imageBasePath}resistor.icon.png`,
+    imagePath: resistorImg,
     pinConfig: [
       { id: 'pin1', type: 'bidirectional', label: 'Pin 1' },
       { id: 'pin2', type: 'bidirectional', label: 'Pin 2' }
@@ -80,7 +89,7 @@ export const componentOptions = [
     displayName: 'Photoresistor',
     description: 'Light-sensitive resistor',
     category: 'sensors',
-    imagePath: `${imageBasePath}photoresistor.icon.png`,
+    imagePath: photoresistorImg,
     pinConfig: [
       { id: 'pin1', type: 'bidirectional', label: 'Pin 1' },
       { id: 'pin2', type: 'bidirectional', label: 'Pin 2' }
@@ -91,7 +100,8 @@ export const componentOptions = [
     displayName: 'Buzzer',
     description: 'Makes sound',
     category: 'outputs',
-    imagePath: `${imageBasePath}buzzer.icon.png`,
+    // Use LED image as fallback since we don't have buzzer image
+    imagePath: ledImg,
     pinConfig: [
       { id: 'positive', type: 'input', label: 'Positive (+)' },
       { id: 'negative', type: 'output', label: 'Negative (-)' }
@@ -102,7 +112,7 @@ export const componentOptions = [
     displayName: 'Custom Keypad',
     description: '4x4 matrix keypad',
     category: 'inputs',
-    imagePath: `${imageBasePath}custom-keypad.icon.png`,
+    imagePath: customKeypadImg,
     pinConfig: [
       { id: 'row1', type: 'output', label: 'Row 1' },
       { id: 'row2', type: 'output', label: 'Row 2' },
@@ -119,7 +129,7 @@ export const componentOptions = [
     displayName: 'Rotary Encoder',
     description: 'Rotation sensor with button',
     category: 'inputs',
-    imagePath: `${imageBasePath}rotary-encoder.icon.png`,
+    imagePath: rotaryEncoderImg,
     pinConfig: [
       { id: 'clk', type: 'output', label: 'CLK' },
       { id: 'dt', type: 'output', label: 'DT' },
@@ -133,7 +143,7 @@ export const componentOptions = [
     displayName: 'OLED Display',
     description: 'Small graphical display',
     category: 'outputs',
-    imagePath: `${imageBasePath}oled-display.icon.png`,
+    imagePath: oledDisplayImg,
     pinConfig: [
       { id: 'sda', type: 'input', label: 'SDA' },
       { id: 'scl', type: 'input', label: 'SCL' },
@@ -146,7 +156,7 @@ export const componentOptions = [
     displayName: '7-Segment Display',
     description: 'Numeric LED display',
     category: 'outputs',
-    imagePath: `${imageBasePath}segmented-display.icon.png`,
+    imagePath: segmentedDisplayImg,
     pinConfig: [
       { id: 'a', type: 'input', label: 'Segment A' },
       { id: 'b', type: 'input', label: 'Segment B' },
@@ -164,7 +174,7 @@ export const componentOptions = [
     displayName: 'DIP Switch (3)',
     description: 'Three-switch DIP package',
     category: 'inputs',
-    imagePath: `${imageBasePath}dip-switch-3.icon.png`,
+    imagePath: dipSwitchImg,
     pinConfig: [
       { id: 'in1', type: 'bidirectional', label: 'Input 1' },
       { id: 'out1', type: 'bidirectional', label: 'Output 1' },
