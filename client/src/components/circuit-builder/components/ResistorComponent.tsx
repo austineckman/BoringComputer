@@ -72,71 +72,22 @@ const ResistorComponent: React.FC<ComponentProps> = ({
       handleMouseDown={handleMouseDown}
       handleDelete={() => handleDeleteComponent(id)}
     >
-      <svg width="60" height="20" viewBox="-30 -10 60 20" xmlns="http://www.w3.org/2000/svg">
-        {/* Resistor body - using actual through-hole resistor shape */}
-        <defs>
-          <linearGradient id={`resistor-grad-${id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#f5efe5" />
-            <stop offset="50%" stopColor="#e8dccb" />
-            <stop offset="100%" stopColor="#d1c7b7" />
-          </linearGradient>
-        </defs>
-        
-        {/* Rounded-end resistor body */}
-        <path 
-          d="M-15,0 
-             C-15,-4 -15,-7 -12,-7 
-             H12 
-             C15,-7 15,-4 15,0 
-             C15,4 15,7 12,7 
-             H-12 
-             C-15,7 -15,4 -15,0 Z" 
-          fill="url(#resistor-grad-${id})" 
-          stroke="#bbb" 
-          strokeWidth="0.5" 
-        />
-        
-        {/* Color bands */}
-        <rect x="-12" y="-7" width="3.5" height="14" rx="0.5" fill={colorBands[0]} />
-        <rect x="-6" y="-7" width="3.5" height="14" rx="0.5" fill={colorBands[1]} />
-        <rect x="0" y="-7" width="3.5" height="14" rx="0.5" fill={colorBands[2]} />
-        <rect x="9" y="-7" width="3.5" height="14" rx="0.5" fill={colorBands[3]} />
-        
-        {/* Leads - metal wire */}
-        <line x1="-25" y1="0" x2="-15" y2="0" stroke="#aaa" strokeWidth="1.2" />
-        <line x1="15" y1="0" x2="25" y2="0" stroke="#aaa" strokeWidth="1.2" />
-        
-        {/* Shadow effect */}
-        <path 
-          d="M-15,0 C-15,4 -15,7 -12,7 H12 C15,7 15,4 15,0" 
-          fill="none" 
-          stroke="#aaa" 
-          strokeWidth="0.5" 
-          opacity="0.3" 
-        />
-        
-        {/* Highlight effect */}
-        <path 
-          d="M-15,0 C-15,-4 -15,-7 -12,-7 H12 C15,-7 15,-4 15,0" 
-          fill="none" 
-          stroke="#fff" 
-          strokeWidth="0.5" 
-          opacity="0.5" 
+      <div className="relative w-full h-full flex items-center justify-center">
+        {/* Use real resistor image */}
+        <img
+          src="/images/components/resistor.icon.png"
+          alt="Resistor Component"
+          className="w-full h-full object-contain"
         />
         
         {/* Value label */}
-        <text 
-          x="0" 
-          y="-12" 
-          fontSize="5" 
-          fontWeight="bold"
-          textAnchor="middle" 
-          fill="#555"
-          style={{ pointerEvents: 'none' }}
+        <div
+          className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-white/80 px-1 rounded text-xs"
+          style={{ fontSize: '8px', pointerEvents: 'none' }}
         >
           {value}Ω
-        </text>
-      </svg>
+        </div>
+      </div>
       
       {/* Connection pins */}
       <CircuitPin
