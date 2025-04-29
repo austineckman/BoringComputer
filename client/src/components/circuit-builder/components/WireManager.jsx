@@ -137,11 +137,11 @@ const WireManager = ({ canvasRef }) => {
         sourceId: pinId,
         sourceType: pin.type || 'bidirectional', // Default to bidirectional if type is missing
         sourceParentId: pin.parentId,
-        points: []  // Store the wire points for segmented routing
+        points: []  // Store the wire points for segmented routing, though direct connections won't use intermediate points
       });
     } else {
-      // Finishing a wire - connecting from source to target
-      const { sourceId, sourceType, sourceParentId, points } = pendingWire;
+      // Finishing a wire - connecting from source to target DIRECTLY without intermediate points
+      const { sourceId, sourceType, sourceParentId } = pendingWire;
       console.log(`Finishing wire: ${sourceId} -> ${pinId}`);
       
       // Prevent connecting a pin to itself
@@ -214,10 +214,10 @@ const WireManager = ({ canvasRef }) => {
         return distToSource > minDistance && distToTarget > minDistance;
       });
       
-      // Create the final array of points from source through intermediate points to target
+      // Create a direct connection from source to target without any intermediate points
+      // For Wokwi compatibility - intermediate points are only added when editing after creation
       const allPoints = [
         sourcePos,
-        ...filteredPoints,
         targetPos
       ];
       
@@ -273,16 +273,15 @@ const WireManager = ({ canvasRef }) => {
     const clickX = e.clientX - canvasRect.left;
     const clickY = e.clientY - canvasRect.top;
     
-    // Handle clicks during wire creation - add intermediate points
+    // IMPORTANT: Do NOT add intermediate points during wire creation
+    // Only allow direct connections from pin to pin
     if (pendingWire) {
-      setPendingWire(prev => {
-        const newPoints = [...(prev.points || []), { x: clickX, y: clickY }];
-        return { ...prev, points: newPoints };
-      });
+      // Ignore canvas clicks during wire creation - require pin to pin connections
       return;
     }
     
     // If a wire is being edited, add a point to it at the clicked position
+    // This allows adding bend points AFTER the wire is already connected
     if (editingWire) {
       setWires(prev => {
         return prev.map(wire => {
@@ -853,40 +852,57 @@ const WireManager = ({ canvasRef }) => {
         )}
       </svg>
       
-      {/* Wire editing toolbar */}
+      {/* Wire editing toolbar with enhanced instructions */}
       {editingWire && (
-        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white p-2 rounded-md z-20 flex gap-2 shadow-lg">
-          <div className="text-xs text-gray-300">
-            Editing wire: Click to add points, double-click points to remove them
+        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white p-3 rounded-md z-20 flex gap-3 shadow-lg border-2 border-blue-500">
+          <div className="text-sm text-white flex flex-col gap-1">
+            <div className="font-semibold">Wire Edit Mode</div>
+            <div className="text-xs text-gray-300">
+              • Click near wire to add bend points<br/>
+              • Double-click points to remove them<br/>
+              • Press ESC to cancel editing
+            </div>
           </div>
           <button 
-            className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700"
+            className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 my-auto"
             onClick={handleFinishEditWire}
           >
-            Done
+            Done Editing
           </button>
         </div>
       )}
       
-      {/* Selected wire controls */}
+      {/* Selected wire controls with improved visual guidance */}
       {selectedWire && !editingWire && (
         <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white p-2 rounded-md z-20 flex gap-2 shadow-lg">
+          <div className="text-xs text-gray-300 flex items-center mr-1">
+            Wire selected:
+          </div>
           <button 
-            className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700"
+            className="bg-blue-600 text-white px-2.5 py-1.5 rounded text-xs hover:bg-blue-700 flex items-center gap-1"
             onClick={(e) => handleStartEditWire(selectedWire, e)}
           >
-            Edit Path
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+            Add Bends
           </button>
           <button 
-            className="bg-purple-600 text-white px-2 py-1 rounded text-xs hover:bg-purple-700"
+            className="bg-purple-600 text-white px-2.5 py-1.5 rounded text-xs hover:bg-purple-700 flex items-center gap-1"
             onClick={(e) => handleOpenColorMenu(selectedWire, e)}
           >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+            </svg>
             Change Color
           </button>
           <button 
-            className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+            className="bg-red-600 text-white px-2.5 py-1.5 rounded text-xs hover:bg-red-700 flex items-center gap-1"
             onClick={(e) => handleWireDelete(selectedWire, e)}
           >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
             Delete
           </button>
         </div>
