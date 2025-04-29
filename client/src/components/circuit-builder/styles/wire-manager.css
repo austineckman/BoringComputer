@@ -1,0 +1,42 @@
+/* Styles for the wire manager component */
+
+/* Enhanced pin visualization with hover effects */
+.pin-connection-point {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pin-connection-point:hover {
+  transform: translate(-50%, -50%) scale(1.4) !important;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5) !important;
+  z-index: 50 !important;
+}
+
+/* Active source pin (when starting a wire) */
+.wire-source-active {
+  box-shadow: 0 0 8px #3b82f6 !important;
+  transform: translate(-50%, -50%) scale(1.5) !important;
+  border-color: #2563eb !important;
+  z-index: 50 !important;
+}
+
+/* Wire path styling */
+.wire-path {
+  cursor: pointer;
+  transition: stroke-width 0.2s ease;
+}
+
+.wire-path:hover {
+  stroke-width: 4px;
+  filter: drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.5));
+}
+
+/* Pending wire style - animated dash */
+.pending-wire {
+  animation: dashdraw 0.5s linear infinite;
+}
+
+@keyframes dashdraw {
+  to {
+    stroke-dashoffset: 16;
+  }
+}

@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { componentOptions, generateId } from './constants/componentOptions';
 import ComponentPalette from './components/ComponentPalette';
-import WireManager from './components/WireManager';
+import SimpleWireManager from './components/SimpleWireManager';
 import CircuitComponent from './components/CircuitComponent';
 import PinTooltip from './components/PinTooltip'; // Import custom tooltip component
 import './styles/tooltips.css'; // Import custom tooltip styles
+import './styles/wire-manager.css'; // Import wire manager styles
 import './lib/pin-tooltips.js'; // Import pin tooltip enhancer
 
 // Import specialized component implementations
@@ -368,7 +369,7 @@ const CircuitBuilder = () => {
         {components.map(renderComponent)}
         
         {/* Wire management layer */}
-        <WireManager canvasRef={canvasRef} />
+        <SimpleWireManager canvasRef={canvasRef} />
         
         {/* Custom pin tooltip component */}
         <PinTooltip />
