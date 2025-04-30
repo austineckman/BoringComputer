@@ -446,16 +446,41 @@ const SimpleWireManager = ({ canvasRef }) => {
     console.log('Wires updated:', wires);
   }, [wires]);
 
-  // Wokwi-style component movement handler - simple and effective
+  // Enhanced Wokwi-style component movement handler
   useEffect(() => {
     // Events that should trigger wire position updates
     const events = ['componentMoved', 'componentMovedFinal', 'redrawWires'];
     
-    // Simple function to force a redraw of all wires - Wokwi-style
-    const handleComponentMove = () => {
-      // This approach simply triggers a re-render that will call getUpdatedWirePositions()
-      // which directly reads pin positions from the DOM
-      setWires(prevWires => [...prevWires]);
+    // Enhanced function to update wire positions when components move
+    const handleComponentMove = (event) => {
+      // Get the component ID from the event if available
+      const componentId = event?.detail?.componentId;
+      
+      // Get the new position from the event if available
+      const newPosition = event?.detail?.newPosition;
+      
+      // Log the component movement event to help with debugging
+      if (componentId) {
+        console.log(`Component ${componentId} moved`, newPosition ? `to (${newPosition.x}, ${newPosition.y})` : '');
+      }
+      
+      // Force immediate pin position recalculation for all wires
+      // This directly reads from the DOM to get current pin positions
+      const updatedWirePositions = getUpdatedWirePositions();
+      
+      // Only update if we got valid positions
+      if (updatedWirePositions.length > 0) {
+        // Use a function that ensures that we're not just spreading the same wires
+        // But actually creating a new array with updated positions
+        setWires(prevWires => {
+          // Map each wire to its updated version or keep it if no update found
+          return prevWires.map(wire => {
+            // Find the matching updated wire by ID
+            const updatedWire = updatedWirePositions.find(w => w.id === wire.id);
+            return updatedWire && !updatedWire.invalid ? updatedWire : wire;
+          });
+        });
+      }
     };
     
     // Register for all events that should update wire positions
@@ -598,18 +623,19 @@ const SimpleWireManager = ({ canvasRef }) => {
       >
         {/* No background grid pattern */}
         
-        {/* Draw permanent wires */}
-        {getUpdatedWirePositions().map(wire => {
+        {/* Draw permanent wires with guaranteed unique keys */}
+        {getUpdatedWirePositions().map((wire, index) => {
           if (!wire.sourcePos || !wire.targetPos) return null;
           
           const path = getWirePath(wire.sourcePos, wire.targetPos);
           const style = getWireStyle(wire.sourceType, wire.targetType, wire.color);
           
-          console.log('Rendering wire:', wire.id);
+          // Use a combination of wire ID and index to ensure key uniqueness
+          const wireKey = `${wire.id}-${index}`;
           
           return (
             <g 
-              key={wire.id} 
+              key={wireKey}
               className={`wire-group ${selectedWireId === wire.id ? 'selected' : ''}`}
               onClick={(e) => handleWireClick(wire.id, e)}
               style={{ pointerEvents: 'all' }}
