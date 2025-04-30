@@ -112,64 +112,6 @@ const SimpleWireManager = ({ canvasRef }) => {
     };
   };
 
-  // Remove duplicate wires - helper function used in multiple places
-  const removeDuplicateWires = (currentWires) => {
-    // Group wires by connection signature (normalized pin IDs)
-    const wiresByConnection = {};
-    const uniqueWires = [];
-    
-    // First pass - group wires by their connection signature
-    currentWires.forEach(wire => {
-      // Create a normalized connection signature (order pins alphabetically to catch connections in both directions)
-      const [pinA, pinB] = [wire.sourceId, wire.targetId].sort();
-      const connectionSignature = `${pinA}:${pinB}`;
-      
-      // Initialize group if it doesn't exist
-      if (!wiresByConnection[connectionSignature]) {
-        wiresByConnection[connectionSignature] = [];
-      }
-      
-      // Add wire to its connection group
-      wiresByConnection[connectionSignature].push(wire);
-    });
-    
-    // Second pass - for each group, keep the best wire (with valid positions)
-    Object.values(wiresByConnection).forEach(connectionWires => {
-      if (connectionWires.length === 1) {
-        // Only one wire for this connection, keep it
-        uniqueWires.push(connectionWires[0]);
-        return;
-      }
-      
-      // Multiple wires between same pins, find the best one
-      console.warn(`Found ${connectionWires.length} wires for same connection`);
-      
-      // Check if any wire has valid positions
-      const wireWithValidPositions = connectionWires.find(wire => 
-        wire.sourcePos && wire.targetPos && 
-        typeof wire.sourcePos.x === 'number' && 
-        typeof wire.targetPos.x === 'number'
-      );
-      
-      if (wireWithValidPositions) {
-        console.log(`Keeping wire with valid positions: ${wireWithValidPositions.id}`);
-        uniqueWires.push(wireWithValidPositions);
-      } else {
-        // No wire has valid positions, just keep the most recent one (highest timestamp)
-        const sortedWires = [...connectionWires].sort((a, b) => {
-          const idA = parseInt(a.id.split('-')[1] || '0', 10);
-          const idB = parseInt(b.id.split('-')[1] || '0', 10);
-          return idB - idA; // Descending order - most recent first
-        });
-        
-        console.log(`No wire has valid positions, keeping the most recent: ${sortedWires[0].id}`);
-        uniqueWires.push(sortedWires[0]);
-      }
-    });
-    
-    return uniqueWires;
-  };
-
   // Handle pin clicks from components
   const handlePinClick = (event) => {
     // Make sure the canvas reference is available
@@ -305,27 +247,6 @@ const SimpleWireManager = ({ canvasRef }) => {
         return;
       }
       
-      // Check if a wire already exists between these pins (in either direction)
-      const [pinA, pinB] = [sourceId, pinId].sort();
-      const connectionSignature = `${pinA}:${pinB}`;
-      
-      const wireAlreadyExists = wires.some(wire => {
-        const [existingPinA, existingPinB] = [wire.sourceId, wire.targetId].sort();
-        return `${existingPinA}:${existingPinB}` === connectionSignature;
-      });
-      
-      if (wireAlreadyExists) {
-        console.warn('Wire already exists between these pins. Ignoring duplicate connection.');
-        setPendingWire(null);
-        
-        // Clean up visual indication
-        document.querySelectorAll('.wire-source-active').forEach(el => {
-          el.classList.remove('wire-source-active');
-          el.style.animation = '';
-        });
-        return;
-      }
-      
       // Log the connection for debugging
       console.log(`Creating wire from ${sourceName} (${sourceId}) to ${pinName} (${pinId})`);
       
@@ -351,9 +272,9 @@ const SimpleWireManager = ({ canvasRef }) => {
         wireColor = '#ffcc66'; // Orange for analog
       }
       
-      // Add the new wire with a unique ID
+      // Add the new wire
       const newWire = {
-        id: `wire-${Date.now()}-${Math.floor(Math.random() * 1000)}`, // More unique ID
+        id: `wire-${Date.now()}`,
         sourceId,
         targetId: pinId,
         sourceType,
@@ -365,9 +286,6 @@ const SimpleWireManager = ({ canvasRef }) => {
         color: wireColor
       };
       
-      console.log('Creating new wire with ID:', newWire.id);
-      
-      // Add the wire to the state
       setWires(prev => [...prev, newWire]);
       setPendingWire(null);
       
@@ -474,7 +392,7 @@ const SimpleWireManager = ({ canvasRef }) => {
     }
   };
 
-  // Setup event listeners and initial cleanup
+  // Setup event listeners for pin clicks and wire drawing
   useEffect(() => {
     // Listen for pin click events
     document.addEventListener('pinClicked', handlePinClick);
@@ -508,15 +426,8 @@ const SimpleWireManager = ({ canvasRef }) => {
     
     window.addEventListener('keydown', handleKeyDown);
     
-    // Initial cleanup of duplicate wires (if any)
-    if (wires.length > 0) {
-      console.log('Initial cleanup - checking for duplicate wires');
-      const uniqueWires = removeDuplicateWires(wires);
-      if (uniqueWires.length !== wires.length) {
-        console.log(`Initial cleanup removed ${wires.length - uniqueWires.length} duplicate wires`);
-        setWires(uniqueWires);
-      }
-    }
+    // Debug - log any existing wires
+    console.log('Current wires:', wires);
     
     // Clean up
     return () => {
@@ -528,8 +439,13 @@ const SimpleWireManager = ({ canvasRef }) => {
         canvasElement.removeEventListener('click', handleCanvasClick);
       }
     };
-  }, [canvasRef, pendingWire, selectedWireId, wires.length]);
+  }, [canvasRef, pendingWire, selectedWireId]);
   
+  // Debug - log when wires array changes
+  useEffect(() => {
+    console.log('Wires updated:', wires);
+  }, [wires]);
+
   // Wokwi-style component movement handler - simple and effective
   useEffect(() => {
     // Events that should trigger wire position updates
@@ -555,7 +471,7 @@ const SimpleWireManager = ({ canvasRef }) => {
     };
   }, []);
 
-  // Get current wire positions - enhanced for accurate pin tracking
+  // Get current wire positions - enhanced for accurate pin tracking with duplicate ID handling
   const getUpdatedWirePositions = () => {
     if (!canvasRef?.current) return [];
     
