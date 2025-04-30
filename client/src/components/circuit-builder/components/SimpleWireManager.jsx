@@ -131,17 +131,38 @@ const SimpleWireManager = ({ canvasRef }) => {
       return;
     }
     
-    const [prefix, componentType, componentId, pinName] = parts;
+    const [prefix, componentType, componentId, ...pinNameParts] = parts;
+    const pinName = pinNameParts.join('-'); // Handle pin names that might contain dashes
     const parentId = `${componentType}-${componentId}`;
     
     // Get pin type from data if available or default to bidirectional
     const pinType = event.detail.pinType || 'bidirectional';
     
-    // Get position from event
-    const position = getPinPosition(event);
+    // Get position from event or try to find the element's position
+    let position;
+    
+    if (event.detail.clientX && event.detail.clientY) {
+      position = {
+        x: event.detail.clientX,
+        y: event.detail.clientY
+      };
+    } else {
+      position = getPinPosition(event);
+    }
     
     // Find the actual pin element by ID after identifying the pin
-    const pinElement = document.getElementById(pinId);
+    // First try with the exact ID format
+    let pinElement = document.getElementById(pinId);
+    
+    // If that fails, try with data-formatted-id attribute which we added to our pins
+    if (!pinElement) {
+      pinElement = document.querySelector(`[data-formatted-id="${pinId}"]`);
+    }
+    
+    // If still not found, try with data-pin-id and data-parent-id combination
+    if (!pinElement) {
+      pinElement = document.querySelector(`[data-pin-id="${pinName}"][data-parent-id="${parentId}"]`);
+    }
     
     console.log(`Pin ${pinName} (${pinType}) of component ${parentId} clicked`);
     
@@ -152,9 +173,9 @@ const SimpleWireManager = ({ canvasRef }) => {
       
       // Try to find pin by substring match
       const similarPins = Array.from(document.querySelectorAll('[data-pin-id]'))
-        .filter(pin => pin.dataset.pinId.includes(componentId) || pin.dataset.pinId.includes(pinName));
+        .filter(pin => pin.dataset.parentId?.includes(componentId) || pin.dataset.pinId?.includes(pinName));
       
-      console.log('Similar pins found:', similarPins.map(p => p.dataset.pinId));
+      console.log('Similar pins found:', similarPins.map(p => `${p.dataset.parentId}-${p.dataset.pinId}`));
     }
     
     if (!pendingWire) {
