@@ -22,12 +22,20 @@
 /* Wire path styling */
 .wire-path {
   cursor: pointer;
-  transition: stroke-width 0.2s ease;
+  transition: stroke-width 0.2s ease, filter 0.2s ease;
 }
 
-.wire-path:hover {
-  stroke-width: 4px;
-  filter: drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.5));
+/* TinkerCad-style hover effect */
+.wire-group:hover .wire-path {
+  stroke-width: 4px !important;
+  filter: drop-shadow(0px 0px 4px rgba(255, 255, 255, 0.7)) !important;
+  z-index: 25;
+}
+
+/* Make wire selection more prominent */
+.wire-group.selected .wire-path {
+  stroke-width: 4px !important;
+  filter: drop-shadow(0px 0px 5px rgba(255, 255, 100, 0.8)) !important;
 }
 
 /* Pending wire style - animated dash */

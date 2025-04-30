@@ -14,6 +14,7 @@ const SimpleWireManager = ({ canvasRef }) => {
   const [wires, setWires] = useState([]);
   const [pendingWire, setPendingWire] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [selectedWireId, setSelectedWireId] = useState(null);
   const svgRef = useRef(null);
 
   // Function to get pin position from event
@@ -27,36 +28,90 @@ const SimpleWireManager = ({ canvasRef }) => {
     };
   };
 
-  // Get path for wire
+  // Get path for wire with enhanced TinkerCad-style routing
   const getWirePath = (start, end) => {
     const dx = end.x - start.x;
     const dy = end.y - start.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
     
-    // Calculate a nice curve using a cubic bezier
-    const controlPointDist = Math.min(Math.abs(dx), 50);
-    
-    return `M ${start.x} ${start.y} 
-            C ${start.x + controlPointDist} ${start.y}, 
-              ${end.x - controlPointDist} ${end.y}, 
-              ${end.x} ${end.y}`;
-  };
-
-  // Get style for wire based on source type
-  const getWireStyle = (sourceType, targetType) => {
-    let color = '#3b82f6'; // Default blue
-    
-    // Power connections are red
-    if (sourceType === 'output' && targetType === 'input' || 
-        sourceType === 'input' && targetType === 'output') {
-      color = '#ef4444';
+    // For short wires, use a simple arc
+    if (distance < 50) {
+      // Arc path with small curvature
+      return `M ${start.x} ${start.y} 
+              Q ${(start.x + end.x) / 2} ${(start.y + end.y) / 2 - 10}, 
+                ${end.x} ${end.y}`;
     }
     
+    // For diagonal wires, determine if we should route horizontally first or vertically first
+    const isHorizontalFirst = Math.abs(dx) > Math.abs(dy);
+    
+    if (isHorizontalFirst) {
+      // Route horizontally first, then vertically (Manhattan routing)
+      const midX = start.x + dx * 0.7; // Go 70% of the way horizontally
+      const bendRadius = Math.min(Math.abs(dy) * 0.3, 20); // Size of the curve at the bend
+      
+      return `M ${start.x} ${start.y}
+              L ${midX - bendRadius * Math.sign(dx)} ${start.y}
+              C ${midX} ${start.y}, 
+                ${midX} ${start.y}, 
+                ${midX} ${start.y + bendRadius * Math.sign(dy)}
+              L ${midX} ${end.y - bendRadius * Math.sign(dy)}
+              C ${midX} ${end.y}, 
+                ${midX} ${end.y}, 
+                ${midX + bendRadius * Math.sign(dx)} ${end.y}
+              L ${end.x} ${end.y}`;
+    } else {
+      // Route vertically first, then horizontally
+      const midY = start.y + dy * 0.7; // Go 70% of the way vertically
+      const bendRadius = Math.min(Math.abs(dx) * 0.3, 20); // Size of the curve at the bend
+      
+      return `M ${start.x} ${start.y}
+              L ${start.x} ${midY - bendRadius * Math.sign(dy)}
+              C ${start.x} ${midY}, 
+                ${start.x} ${midY}, 
+                ${start.x + bendRadius * Math.sign(dx)} ${midY}
+              L ${end.x - bendRadius * Math.sign(dx)} ${midY}
+              C ${end.x} ${midY}, 
+                ${end.x} ${midY}, 
+                ${end.x} ${midY + bendRadius * Math.sign(dy)}
+              L ${end.x} ${end.y}`;
+    }
+  };
+
+  // Get style for wire based on type and color
+  const getWireStyle = (sourceType, targetType, wireColor) => {
+    // If a specific color is provided, use it
+    let color = wireColor || '#3b82f6'; // Default blue
+    
+    // Determine color based on source and target types if not explicitly provided
+    if (!wireColor) {
+      // Power connections are red
+      if (sourceType === 'power' || targetType === 'power' || 
+          sourceType === 'output' && targetType === 'input') {
+        color = '#ff6666'; // Red for power
+      }
+      // Ground connections are gray
+      else if (sourceType === 'ground' || targetType === 'ground') {
+        color = '#aaaaaa'; // Gray for ground
+      }
+      // Digital pin connections
+      else if (sourceType === 'digital' || targetType === 'digital') {
+        color = '#66ffff'; // Cyan for digital
+      }
+      // Analog pin connections
+      else if (sourceType === 'analog' || targetType === 'analog') {
+        color = '#ffcc66'; // Orange for analog
+      }
+    }
+    
+    // TinkerCad-style wire with double line effect
     return {
       stroke: color,
-      strokeWidth: 2,
+      strokeWidth: 2.5,
       fill: 'none',
       strokeLinecap: 'round',
-      filter: 'drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3))'
+      strokeLinejoin: 'round',
+      filter: 'drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.3))'
     };
   };
 
@@ -216,11 +271,29 @@ const SimpleWireManager = ({ canvasRef }) => {
     }
   };
 
-  // Handle clicks on canvas to cancel pending wire
+  // Handle clicks on wires for selection
+  const handleWireClick = (wireId, e) => {
+    e.stopPropagation(); // Prevent canvas click handler from firing
+    console.log('Wire clicked:', wireId);
+    
+    // Toggle wire selection
+    if (selectedWireId === wireId) {
+      setSelectedWireId(null);
+    } else {
+      setSelectedWireId(wireId);
+    }
+  };
+  
+  // Handle clicks on canvas to cancel pending wire and deselect wires
   const handleCanvasClick = (e) => {
     // Ignore if click was on a pin
     if (e.target.classList.contains('pin-connection-point')) {
       return;
+    }
+    
+    // Deselect any selected wire
+    if (selectedWireId) {
+      setSelectedWireId(null);
     }
     
     // Cancel pending wire
@@ -228,6 +301,7 @@ const SimpleWireManager = ({ canvasRef }) => {
       setPendingWire(null);
       document.querySelectorAll('.wire-source-active').forEach(el => {
         el.classList.remove('wire-source-active');
+        el.style.animation = '';
       });
     }
   };
@@ -314,10 +388,27 @@ const SimpleWireManager = ({ canvasRef }) => {
         if (!wire.sourcePos || !wire.targetPos) return null;
         
         const path = getWirePath(wire.sourcePos, wire.targetPos);
-        const style = getWireStyle(wire.sourceType, wire.targetType);
+        const style = getWireStyle(wire.sourceType, wire.targetType, wire.color);
         
         return (
-          <g key={wire.id} className="wire-group">
+          <g 
+            key={wire.id} 
+            className={`wire-group ${selectedWireId === wire.id ? 'selected' : ''}`}
+            onClick={(e) => handleWireClick(wire.id, e)}
+            style={{ pointerEvents: 'all' }}
+          >
+            {/* Background shadow path for TinkerCad-like wire appearance */}
+            <path
+              d={path}
+              style={{
+                ...style,
+                stroke: 'rgba(0,0,0,0.2)',
+                strokeWidth: style.strokeWidth + 2.5,
+                filter: 'blur(1.5px)',
+              }}
+              className="wire-path-shadow"
+            />
+            {/* Main wire path */}
             <path
               d={path}
               style={style}
@@ -329,17 +420,32 @@ const SimpleWireManager = ({ canvasRef }) => {
       
       {/* Draw pending wire */}
       {pendingWire && pendingWire.sourcePos && (
-        <path
-          d={getWirePath(pendingWire.sourcePos, mousePosition)}
-          style={{
-            stroke: '#3b82f6',
-            strokeWidth: 2,
-            fill: 'none',
-            strokeDasharray: '5,3',
-            strokeLinecap: 'round'
-          }}
-          className="pending-wire"
-        />
+        <g className="pending-wire-group">
+          {/* Shadow for pending wire */}
+          <path
+            d={getWirePath(pendingWire.sourcePos, mousePosition)}
+            style={{
+              stroke: 'rgba(0,0,0,0.15)',
+              strokeWidth: 4.5,
+              fill: 'none',
+              strokeLinecap: 'round',
+              filter: 'blur(1.5px)'
+            }}
+            className="pending-wire-shadow"
+          />
+          {/* Animated dashed line */}
+          <path
+            d={getWirePath(pendingWire.sourcePos, mousePosition)}
+            style={{
+              stroke: '#3b82f6',
+              strokeWidth: 2.5,
+              fill: 'none',
+              strokeDasharray: '6,4',
+              strokeLinecap: 'round'
+            }}
+            className="pending-wire"
+          />
+        </g>
       )}
     </svg>
   );
