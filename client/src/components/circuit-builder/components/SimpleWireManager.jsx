@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 /**
  * SimpleWireManager component for:
  * 1. Managing wire connections between components
- * 2. Drawing wires between pins
+ * 2. Drawing wires between pins - implementation matches Wokwi pattern
  * 3. Tracking connected pins
  */
 const SimpleWireManager = ({ canvasRef }) => {
@@ -13,6 +13,9 @@ const SimpleWireManager = ({ canvasRef }) => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [selectedWireId, setSelectedWireId] = useState(null);
   const svgRef = useRef(null);
+  
+  // Pin registry to track pin locations when components move
+  const pinRegistry = useRef(new Map());
 
   // Function to get pin position from event
   const getPinPosition = (event) => {
@@ -25,54 +28,45 @@ const SimpleWireManager = ({ canvasRef }) => {
     };
   };
 
-  // Get path for wire with enhanced TinkerCad-style routing
+  // Get path for wire with Wokwi-style bezier routing
   const getWirePath = (start, end) => {
+    // Get the distance between start and end points
     const dx = end.x - start.x;
     const dy = end.y - start.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     
-    // For short wires, use a simple arc
-    if (distance < 50) {
-      // Arc path with small curvature
-      return `M ${start.x} ${start.y} 
-              Q ${(start.x + end.x) / 2} ${(start.y + end.y) / 2 - 10}, 
-                ${end.x} ${end.y}`;
+    // For very short distances, use straight line
+    if (distance < 20) {
+      return `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
     }
     
-    // For diagonal wires, determine if we should route horizontally first or vertically first
-    const isHorizontalFirst = Math.abs(dx) > Math.abs(dy);
-    
-    if (isHorizontalFirst) {
-      // Route horizontally first, then vertically (Manhattan routing)
-      const midX = start.x + dx * 0.7; // Go 70% of the way horizontally
-      const bendRadius = Math.min(Math.abs(dy) * 0.3, 20); // Size of the curve at the bend
+    // For medium distances, use a simple curved line - like Wokwi's approach
+    if (distance < 100) {
+      // The control point is perpendicular to the line between start and end
+      const mx = (start.x + end.x) / 2;
+      const my = (start.y + end.y) / 2;
       
-      return `M ${start.x} ${start.y}
-              L ${midX - bendRadius * Math.sign(dx)} ${start.y}
-              C ${midX} ${start.y}, 
-                ${midX} ${start.y}, 
-                ${midX} ${start.y + bendRadius * Math.sign(dy)}
-              L ${midX} ${end.y - bendRadius * Math.sign(dy)}
-              C ${midX} ${end.y}, 
-                ${midX} ${end.y}, 
-                ${midX + bendRadius * Math.sign(dx)} ${end.y}
-              L ${end.x} ${end.y}`;
-    } else {
-      // Route vertically first, then horizontally
-      const midY = start.y + dy * 0.7; // Go 70% of the way vertically
-      const bendRadius = Math.min(Math.abs(dx) * 0.3, 20); // Size of the curve at the bend
+      // Perpendicular offset based on distance
+      const offset = Math.min(distance * 0.3, 30);
       
-      return `M ${start.x} ${start.y}
-              L ${start.x} ${midY - bendRadius * Math.sign(dy)}
-              C ${start.x} ${midY}, 
-                ${start.x} ${midY}, 
-                ${start.x + bendRadius * Math.sign(dx)} ${midY}
-              L ${end.x - bendRadius * Math.sign(dx)} ${midY}
-              C ${end.x} ${midY}, 
-                ${end.x} ${midY}, 
-                ${end.x} ${midY + bendRadius * Math.sign(dy)}
-              L ${end.x} ${end.y}`;
+      // Calculate perpendicular direction
+      const perpX = -dy / distance;
+      const perpY = dx / distance;
+      
+      return `M ${start.x} ${start.y} Q ${mx + perpX * offset} ${my + perpY * offset}, ${end.x} ${end.y}`;
     }
+    
+    // For longer wires, use an S-curve (very similar to Wokwi)
+    // Calculate control points distance - increases with wire length but has a max value
+    const ctrlDist = Math.min(distance * 0.4, 80);
+    
+    // Calculate control points
+    const startCtrlX = start.x + (dx > 0 ? ctrlDist : -ctrlDist);
+    const startCtrlY = start.y;
+    const endCtrlX = end.x + (dx < 0 ? ctrlDist : -ctrlDist);
+    const endCtrlY = end.y;
+    
+    return `M ${start.x} ${start.y} C ${startCtrlX} ${startCtrlY}, ${endCtrlX} ${endCtrlY}, ${end.x} ${end.y}`;
   };
 
   // Get style for wire based on type and color
