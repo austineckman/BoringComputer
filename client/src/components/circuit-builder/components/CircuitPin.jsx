@@ -68,18 +68,32 @@ const CircuitPin = ({
     }
     
     // Dispatch a global event for the WireManager to handle
+    const formattedPinId = `pt-${parentId.toLowerCase().split('-')[0]}-${parentId}-${id}`;
+    
+    // Create a data object that contains pin information for simulation
+    // This includes the actual pin specs from component library if available
+    const pinData = (e.currentTarget.dataset.pinData) 
+      ? e.currentTarget.dataset.pinData 
+      : JSON.stringify({
+          name: id, 
+          x: position?.x || 0, 
+          y: position?.y || 0, 
+          signals: []
+      });
+    
     const clickEvent = new CustomEvent('pinClicked', {
       detail: { 
-        id, 
+        id: formattedPinId, 
+        pinData,
         pinType, 
         parentId,
-        position: {
-          x: e.clientX,
-          y: e.clientY
-        }
+        clientX: e.clientX,
+        clientY: e.clientY
       }
     });
     document.dispatchEvent(clickEvent);
+    
+    console.log('Pin clicked on component:', clickEvent.detail);
     
     // Ensure the WireManager always focuses on pin clicks more than other events
     e.stopImmediatePropagation();
@@ -204,8 +218,21 @@ const CircuitPin = ({
     };
   };
   
+  // Create a formatted pin ID that will be consistent across the application
+  const formattedPinId = `pt-${parentId?.toLowerCase().split('-')[0]}-${parentId}-${id}`;
+  
+  // Create pin data object for simulation
+  const pinDataObj = {
+    name: id,
+    x: position?.x || 0,
+    y: position?.y || 0,
+    signals: [],
+    description: getPinDescription(pinType, label)
+  };
+  
   return (
     <div
+      id={formattedPinId}
       ref={pinRef}
       className="absolute rounded-full flex items-center justify-center pin-connection-point"
       style={{
@@ -227,6 +254,8 @@ const CircuitPin = ({
       data-pin-id={id}
       data-pin-type={pinType}
       data-parent-id={parentId}
+      data-formatted-id={formattedPinId}
+      data-pin-data={JSON.stringify(pinDataObj)}
       data-testid={`pin-${id}`}
     >
       {/* Pin dot center */}
