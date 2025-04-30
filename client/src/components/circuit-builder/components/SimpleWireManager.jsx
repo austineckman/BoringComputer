@@ -1,11 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 /**
- * SimpleWireManager - A stripped-down wire manager that works with
- * inventr-component-lib pin events
- * 
- * This component handles:
- * 1. Listening for pin clicks from components
+ * SimpleWireManager component for:
+ * 1. Managing wire connections between components
  * 2. Drawing wires between pins
  * 3. Tracking connected pins
  */
@@ -383,105 +380,138 @@ const SimpleWireManager = ({ canvasRef }) => {
 
   // Get current wire positions
   const getUpdatedWirePositions = () => {
-    return wires.map(wire => {
-      // Find source and target elements
-      const sourceElement = document.getElementById(wire.sourceId);
-      const targetElement = document.getElementById(wire.targetId);
-      
-      if (!sourceElement || !targetElement) {
-        return { ...wire, invalid: true };
-      }
-      
-      // Get positions
-      const canvasRect = canvasRef.current.getBoundingClientRect();
-      const sourceRect = sourceElement.getBoundingClientRect();
-      const targetRect = targetElement.getBoundingClientRect();
-      
-      const sourcePos = {
-        x: sourceRect.left + sourceRect.width/2 - canvasRect.left,
-        y: sourceRect.top + sourceRect.height/2 - canvasRect.top
-      };
-      
-      const targetPos = {
-        x: targetRect.left + targetRect.width/2 - canvasRect.left,
-        y: targetRect.top + targetRect.height/2 - canvasRect.top
-      };
-      
-      return { ...wire, sourcePos, targetPos };
-    }).filter(wire => !wire.invalid);
+    // First, handle our test wires which already have positions
+    const testWires = wires.filter(wire => wire.id.startsWith('test-'));
+    
+    // Then handle dynamic wires that need position updates
+    const dynamicWires = wires
+      .filter(wire => !wire.id.startsWith('test-'))
+      .map(wire => {
+        // Find source and target elements
+        const sourceElement = document.getElementById(wire.sourceId);
+        const targetElement = document.getElementById(wire.targetId);
+        
+        if (!sourceElement || !targetElement) {
+          return { ...wire, invalid: true };
+        }
+        
+        // Get positions
+        if (!canvasRef?.current) {
+          return { ...wire, invalid: true };
+        }
+        
+        const canvasRect = canvasRef.current.getBoundingClientRect();
+        const sourceRect = sourceElement.getBoundingClientRect();
+        const targetRect = targetElement.getBoundingClientRect();
+        
+        const sourcePos = {
+          x: sourceRect.left + sourceRect.width/2 - canvasRect.left,
+          y: sourceRect.top + sourceRect.height/2 - canvasRect.top
+        };
+        
+        const targetPos = {
+          x: targetRect.left + targetRect.width/2 - canvasRect.left,
+          y: targetRect.top + targetRect.height/2 - canvasRect.top
+        };
+        
+        return { ...wire, sourcePos, targetPos };
+      })
+      .filter(wire => !wire.invalid);
+    
+    return [...testWires, ...dynamicWires];
   };
 
+  // Render SVG with wire connections
   return (
-    <svg 
-      ref={svgRef}
-      className="absolute inset-0 z-10"
-      style={{ width: '100%', height: '100%', pointerEvents: 'none' }}
-    >
-      {/* Draw permanent wires */}
-      {getUpdatedWirePositions().map(wire => {
-        if (!wire.sourcePos || !wire.targetPos) return null;
+    <div className="absolute inset-0 z-30" style={{ pointerEvents: 'none' }}>
+      <svg 
+        ref={svgRef}
+        width="100%" 
+        height="100%"
+        style={{ 
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0
+        }}
+      >
+        {/* Background grid pattern */}
+        <defs>
+          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f1f1f1" strokeWidth="0.5"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" style={{ pointerEvents: 'none' }} />
         
-        const path = getWirePath(wire.sourcePos, wire.targetPos);
-        const style = getWireStyle(wire.sourceType, wire.targetType, wire.color);
+        {/* Draw permanent wires */}
+        {getUpdatedWirePositions().map(wire => {
+          if (!wire.sourcePos || !wire.targetPos) return null;
+          
+          const path = getWirePath(wire.sourcePos, wire.targetPos);
+          const style = getWireStyle(wire.sourceType, wire.targetType, wire.color);
+          
+          console.log('Rendering wire:', wire.id);
+          
+          return (
+            <g 
+              key={wire.id} 
+              className={`wire-group ${selectedWireId === wire.id ? 'selected' : ''}`}
+              onClick={(e) => handleWireClick(wire.id, e)}
+              style={{ pointerEvents: 'all' }}
+            >
+              {/* Background shadow path for TinkerCad-like wire appearance */}
+              <path
+                d={path}
+                style={{
+                  ...style,
+                  stroke: 'rgba(0,0,0,0.2)',
+                  strokeWidth: style.strokeWidth + 2.5,
+                  filter: 'blur(1.5px)',
+                }}
+                className="wire-path-shadow"
+              />
+              {/* Main wire path */}
+              <path
+                d={path}
+                style={style}
+                className="wire-path"
+              />
+            </g>
+          );
+        })}
         
-        return (
-          <g 
-            key={wire.id} 
-            className={`wire-group ${selectedWireId === wire.id ? 'selected' : ''}`}
-            onClick={(e) => handleWireClick(wire.id, e)}
-            style={{ pointerEvents: 'all' }}
-          >
-            {/* Background shadow path for TinkerCad-like wire appearance */}
+        {/* Draw pending wire */}
+        {pendingWire && pendingWire.sourcePos && (
+          <g className="pending-wire-group">
+            {/* Shadow for pending wire */}
             <path
-              d={path}
+              d={getWirePath(pendingWire.sourcePos, mousePosition)}
               style={{
-                ...style,
-                stroke: 'rgba(0,0,0,0.2)',
-                strokeWidth: style.strokeWidth + 2.5,
-                filter: 'blur(1.5px)',
+                stroke: 'rgba(0,0,0,0.15)',
+                strokeWidth: 4.5,
+                fill: 'none',
+                strokeLinecap: 'round',
+                filter: 'blur(1.5px)'
               }}
-              className="wire-path-shadow"
+              className="pending-wire-shadow"
             />
-            {/* Main wire path */}
+            {/* Animated dashed line */}
             <path
-              d={path}
-              style={style}
-              className="wire-path"
+              d={getWirePath(pendingWire.sourcePos, mousePosition)}
+              style={{
+                stroke: '#3b82f6',
+                strokeWidth: 2.5,
+                fill: 'none',
+                strokeDasharray: '6,4',
+                strokeLinecap: 'round'
+              }}
+              className="pending-wire"
             />
           </g>
-        );
-      })}
-      
-      {/* Draw pending wire */}
-      {pendingWire && pendingWire.sourcePos && (
-        <g className="pending-wire-group">
-          {/* Shadow for pending wire */}
-          <path
-            d={getWirePath(pendingWire.sourcePos, mousePosition)}
-            style={{
-              stroke: 'rgba(0,0,0,0.15)',
-              strokeWidth: 4.5,
-              fill: 'none',
-              strokeLinecap: 'round',
-              filter: 'blur(1.5px)'
-            }}
-            className="pending-wire-shadow"
-          />
-          {/* Animated dashed line */}
-          <path
-            d={getWirePath(pendingWire.sourcePos, mousePosition)}
-            style={{
-              stroke: '#3b82f6',
-              strokeWidth: 2.5,
-              fill: 'none',
-              strokeDasharray: '6,4',
-              strokeLinecap: 'round'
-            }}
-            className="pending-wire"
-          />
-        </g>
-      )}
-    </svg>
+        )}
+      </svg>
+    </div>
   );
 };
 
