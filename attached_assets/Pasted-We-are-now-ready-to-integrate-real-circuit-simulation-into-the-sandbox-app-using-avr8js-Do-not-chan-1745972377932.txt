@@ -1,0 +1,46 @@
+We are now ready to integrate real circuit simulation into the sandbox app using avr8js. Do not change the visual UI — layout, DOM structure, styles, and component hierarchy must remain exactly as they are. However, you are allowed to completely rewrite the logic behind any existing buttons, pins, or component behavior to support simulation.
+
+⸻
+
+🧠 Planning Instructions (Before Writing Code):
+
+Step 1: Analyze the UI
+	•	Identify where components like buttons, wires, pins, and microcontrollers (e.g., ATmega328P or HeroBoard) are currently defined in code.
+	•	Locate where the “Run” or “Simulate” actions are triggered in the UI — even if they do nothing today.
+
+Step 2: Simulation Engine Planning
+	•	Confirm which board/chip we’ll simulate with avr8js — ideally ATmega328P for compatibility with existing Arduino-based kits.
+	•	Plan a data model to translate:
+	•	UI components (e.g. LED, button, resistor)
+	•	Wiring (start pin, end pin)
+	•	into a virtual circuit state that avr8js can work with.
+
+Step 3: Execution Flow
+	•	On simulation start, initialize a virtual CPU using AVRRunner.
+	•	Load example or user-written firmware (e.g., hex or .ino sketch).
+	•	Route pin state updates to connected UI elements (e.g., LED turning on updates UI class).
+	•	Allow virtual pins to respond to UI interaction (e.g., clicking a button injects signal).
+	•	Simulate the timing loop with AVRTimer or setInterval() using cpu.execute() and timer.tick().
+
+Step 4: Communication
+	•	Wire-to-wire logic should act as a signal bus. If Pin 13 is HIGH, and it’s wired to an LED anode, update the UI LED state.
+	•	Use virtual ports in avr8js to map state changes to your component model.
+
+⸻
+
+Constraints:
+	•	You may rewrite component behavior or event handlers to support simulation.
+	•	You may not alter or remove any existing visual elements or layout structure.
+	•	Use console logging extensively for the initial integration so we can verify pin state, timing, and simulation flow.
+
+⸻
+
+Success Criteria:
+	•	The simulation should start by clicking the existing Run/Simulate button.
+	•	A loaded firmware sketch (hex or compiled code) should drive the ATmega chip and visibly affect pins.
+	•	Changes in the virtual circuit (LEDs on/off, button press, etc.) should be reflected in the UI using the current component visuals.
+	•	All pin behaviors should remain consistent with real-world microcontroller simulation.
+
+⸻
+
+Let me know when the plan is fully mapped and only then begin writing code. I want a working simulation connected to our static UI — not a UI redesign.
