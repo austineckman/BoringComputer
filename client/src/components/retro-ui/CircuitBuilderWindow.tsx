@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, ReactNode } from 'react';
+import type { FC } from 'react';
 import { X, RotateCcw, Trash2, ZoomIn, ZoomOut, Move, Play, Save, FileCode } from 'lucide-react';
 import ace from 'ace-builds';
 
@@ -6,7 +7,7 @@ import ace from 'ace-builds';
 import CircuitBuilder from '../circuit-builder/CircuitBuilder';
 
 // Import simulator components
-import { SimulatorProvider } from '../circuit-builder/simulator/SimulatorContext';
+import { SimulatorProvider, useSimulator } from '../circuit-builder/simulator/SimulatorContext';
 import AVR8Simulator from '../circuit-builder/simulator/AVR8Simulator';
 import SimulationLogPanel from '../circuit-builder/simulator/SimulationLogPanel';
 import { defaultSketch } from '../circuit-builder/simulator/SimulatorUtils';
@@ -40,7 +41,19 @@ interface CircuitBuilderWindowProps {
   onClose: () => void;
 }
 
-const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) => {
+const CircuitBuilderWindow: FC<CircuitBuilderWindowProps> = ({ onClose }): ReactNode => {
+  return (
+    <SimulatorProvider>
+      <SimulatorContentWrapper onClose={onClose} />
+    </SimulatorProvider>
+  );
+};
+
+// Inner component that can use the simulator context
+const SimulatorContentWrapper: FC<CircuitBuilderWindowProps> = ({ onClose }): ReactNode => {
+  // Access the simulator context
+  const simulatorContext = useSimulator();
+  
   // State for components and wires
   const [components, setComponents] = useState<ComponentData[]>([]);
   const [wires, setWires] = useState<WireConnection[]>([]);
@@ -452,19 +465,26 @@ void loop() {
     alert('Project saved! (This is a placeholder - in a real app, this would save to the database)');
   };
 
-  // Simulation state
-  const [isSimulationRunning, setIsSimulationRunning] = useState(false);
+  // Extract simulation state variables from context
+  const { 
+    isSimulationRunning, 
+    startSimulation, 
+    stopSimulation, 
+    updateComponentState, 
+    componentStates 
+  } = simulatorContext;
+  
   const [simulationLogs, setSimulationLogs] = useState<{timestamp: string, message: string}[]>([]);
   
   // Run the simulation
   const runSimulation = () => {
     if (isSimulationRunning) {
       // Stop the simulation
-      setIsSimulationRunning(false);
+      stopSimulation();
       addSimulationLog('Simulation stopped');
     } else {
       // Start the simulation
-      setIsSimulationRunning(true);
+      startSimulation();
       addSimulationLog('Simulation started');
     }
   };
@@ -476,8 +496,10 @@ void loop() {
     console.log(`[Simulator] ${message}`);
   };
 
-  return (
-    <SimulatorProvider>
+  // We no longer need this inner component as we're already using simulatorContext
+  /* Removed SimulatorContent component - we're using the parent component directly */
+    
+    return (
       <div className="flex flex-col w-full h-full bg-gray-800 text-white overflow-hidden">
         {/* Toolbar */}
         <div className="bg-gray-900 p-2 flex items-center justify-between border-b border-gray-700">
@@ -569,7 +591,7 @@ void loop() {
             <AVR8Simulator 
               code={code}
               isRunning={isSimulationRunning}
-              onPinChange={(pinOrComponent, isHigh) => {
+              onPinChange={(pinOrComponent: number | { componentId: string, [key: string]: any }, isHigh: boolean) => {
                 // Handle pin change events from the simulator
                 if (typeof pinOrComponent === 'number') {
                   // This is a pin change event
@@ -656,8 +678,7 @@ void loop() {
           </div>
         </div>
       </div>
-    </SimulatorProvider>
-  );
-};
+    );
+  };
 
 export default CircuitBuilderWindow;
