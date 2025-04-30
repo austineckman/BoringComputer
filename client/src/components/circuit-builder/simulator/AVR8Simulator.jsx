@@ -3,9 +3,9 @@ import {
   CPU, 
   AVRIOPort, 
   PinState, 
-  portB, 
-  portC, 
-  portD,
+  portBConfig, 
+  portCConfig, 
+  portDConfig,
   timer0Config,
   usart0Config
 } from 'avr8js';

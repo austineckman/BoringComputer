@@ -162,3 +162,64 @@ export const calculateCircuitState = (components, connections) => {
   // Return the calculated state of all pins
   return pinStates;
 };
+
+// Extract digitalWrite commands from code
+export const extractDigitalWrites = (code) => {
+  const results = [];
+  const regex = /digitalWrite\s*\(\s*(\d+|LED_BUILTIN)\s*,\s*(HIGH|LOW)\s*\)/g;
+  
+  let match;
+  while ((match = regex.exec(code)) !== null) {
+    const pin = match[1] === 'LED_BUILTIN' ? 13 : parseInt(match[1]);
+    const state = match[2] === 'HIGH';
+    
+    results.push({ pin, state });
+  }
+  
+  return results;
+};
+
+// Extract function body from a function definition
+export const extractFunctionBody = (code, functionName) => {
+  // Look for the function definition
+  const regex = new RegExp(`void\\s+${functionName}\\s*\\(\\s*\\)\\s*{([\\s\\S]*?)}`);
+  const match = regex.exec(code);
+  
+  // Return the function body or empty string if not found
+  return match ? match[1].trim() : '';
+};
+
+// Basic validation of Arduino syntax
+export const validateArduinoSyntax = (code) => {
+  const errors = [];
+  const lines = code.split('\n');
+  
+  // Check for required functions
+  if (!code.includes('void setup()')) {
+    errors.push({ line: 1, message: 'Missing setup() function' });
+  }
+  
+  if (!code.includes('void loop()')) {
+    errors.push({ line: 1, message: 'Missing loop() function' });
+  }
+  
+  // Very basic bracket matching
+  let openBrackets = 0;
+  lines.forEach((line, index) => {
+    for (const char of line) {
+      if (char === '{') openBrackets++;
+      if (char === '}') openBrackets--;
+      
+      if (openBrackets < 0) {
+        errors.push({ line: index + 1, message: 'Unexpected closing bracket' });
+        openBrackets = 0; // Reset to avoid multiple errors
+      }
+    }
+  });
+  
+  if (openBrackets > 0) {
+    errors.push({ line: lines.length, message: 'Missing closing bracket' });
+  }
+  
+  return errors;
+};
