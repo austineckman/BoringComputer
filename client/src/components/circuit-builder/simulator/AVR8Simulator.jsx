@@ -309,11 +309,6 @@ const AVR8Simulator = ({
         return;
       }
       
-      // Log the connection for debugging
-      if (onLog) {
-        onLog(`Wire connects ${sourceInfo.componentType} pin ${sourceInfo.pinName} to ${targetInfo.componentType} pin ${targetInfo.pinName}`);
-      }
-      
       // Map Arduino pins (D0-D13, A0-A5) to connected component pins
       if (isHeroboardPin(sourceId)) {
         const pinKey = sourceInfo.pinName; // e.g., "D5"
@@ -336,9 +331,10 @@ const AVR8Simulator = ({
     setPinConnections(connections);
     console.log("Pin connections mapped:", connections);
     
-    // Print a human-readable summary of the connections
-    if (onLog) {
-      onLog(`Circuit Analysis: ${Object.keys(connections).length} hero board pins connected`);
+    // We'll log this only once when the connections change, not on every render
+    const connectionCount = Object.keys(connections).length;
+    if (onLog && connectionCount > 0) {
+      onLog(`Circuit Analysis: ${connectionCount} hero board pins connected`);
       
       Object.entries(connections).forEach(([pin, connectedPins]) => {
         onLog(`  ${pin} connected to ${connectedPins.length} component pins:`);
@@ -348,7 +344,9 @@ const AVR8Simulator = ({
       });
     }
     
-  }, [wires, components, onLog]);
+  // Important: Only include stable dependencies
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wires, components]);
   
   // Compile Arduino code to binary
   const compileCode = async (sourceCode) => {
@@ -623,7 +621,8 @@ const AVR8Simulator = ({
     } else if (!isRunning && simulationActive) {
       stopSimulation();
     }
-  }, [isRunning, compiledProgram]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRunning, compiledProgram, simulationActive]);
   
   // Clean up on unmount
   useEffect(() => {

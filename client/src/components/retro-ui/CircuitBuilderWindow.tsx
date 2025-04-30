@@ -65,20 +65,39 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
   const [editorReady, setEditorReady] = useState(false);
   
   // Default Arduino code for new projects
-  const defaultCode = `// CircuitBuilder Arduino Code
-  
+  const defaultCode = `// This example blinks an LED connected to pin 13 (or the built-in LED)
+// This is a great first test for your Arduino setup!
+
 void setup() {
-  // Initialize pins
-  pinMode(13, OUTPUT);
+  // Initialize digital pin LED_BUILTIN (usually pin 13) as an output
+  pinMode(LED_BUILTIN, OUTPUT);
+  
+  // Add more pin initializations here if needed
+  // For example: pinMode(10, OUTPUT); // for another LED
 }
 
 void loop() {
-  // Blink the LED on pin 13
-  digitalWrite(13, HIGH);
-  delay(1000);
-  digitalWrite(13, LOW);
-  delay(1000);
-}`;
+  // Turn the LED on
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(1000);  // Wait for 1 second (1000 milliseconds)
+  
+  // Turn the LED off
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(1000);  // Wait for 1 second
+  
+  // The loop repeats indefinitely
+}
+
+/* 
+  Common Arduino functions:
+  
+  - digitalWrite(pin, value): Sets a digital pin to HIGH or LOW
+  - digitalRead(pin): Reads a digital pin, returns HIGH or LOW
+  - analogWrite(pin, value): Sets an analog value (PWM) on a pin (0-255)
+  - analogRead(pin): Reads an analog input, returns 0-1023
+  - delay(ms): Pauses program execution for 'ms' milliseconds
+  - millis(): Returns time since program started in milliseconds
+*/`;
   
   // References
   const canvasRef = useRef<HTMLDivElement>(null);
