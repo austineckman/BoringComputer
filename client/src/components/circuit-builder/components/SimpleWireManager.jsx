@@ -114,6 +114,12 @@ const SimpleWireManager = ({ canvasRef }) => {
 
   // Handle pin clicks from components
   const handlePinClick = (event) => {
+    // Make sure the canvas reference is available
+    if (!canvasRef || !canvasRef.current) {
+      console.error('Canvas reference not available for wire positioning');
+      return;
+    }
+    
     // Extract pin data
     console.log('Pin clicked on component:', event.detail);
     
@@ -138,45 +144,26 @@ const SimpleWireManager = ({ canvasRef }) => {
     // Get pin type from data if available or default to bidirectional
     const pinType = event.detail.pinType || 'bidirectional';
     
-    // Get position from event or try to find the element's position
-    let position;
+    // Find the pin element for accurate positioning
+    const pinElement = document.getElementById(pinId) || 
+                       document.querySelector(`[data-formatted-id="${pinId}"]`) || 
+                       document.querySelector(`[data-pin-id="${pinName}"][data-parent-id="${parentId}"]`);
     
-    if (event.detail.clientX && event.detail.clientY) {
-      position = {
-        x: event.detail.clientX,
-        y: event.detail.clientY
-      };
-    } else {
-      position = getPinPosition(event);
-    }
-    
-    // Find the actual pin element by ID after identifying the pin
-    // First try with the exact ID format
-    let pinElement = document.getElementById(pinId);
-    
-    // If that fails, try with data-formatted-id attribute which we added to our pins
-    if (!pinElement) {
-      pinElement = document.querySelector(`[data-formatted-id="${pinId}"]`);
-    }
-    
-    // If still not found, try with data-pin-id and data-parent-id combination
-    if (!pinElement) {
-      pinElement = document.querySelector(`[data-pin-id="${pinName}"][data-parent-id="${parentId}"]`);
-    }
-    
-    console.log(`Pin ${pinName} (${pinType}) of component ${parentId} clicked`);
-    
-    // Add debug logging to help identify pin click issues
     if (!pinElement) {
       console.warn('Pin element not found in DOM:', pinId);
-      console.log('Available pins:', document.querySelectorAll('[data-pin-id]').length);
-      
-      // Try to find pin by substring match
-      const similarPins = Array.from(document.querySelectorAll('[data-pin-id]'))
-        .filter(pin => pin.dataset.parentId?.includes(componentId) || pin.dataset.pinId?.includes(pinName));
-      
-      console.log('Similar pins found:', similarPins.map(p => `${p.dataset.parentId}-${p.dataset.pinId}`));
+      return;
     }
+    
+    // Get accurate pin position relative to canvas
+    const pinRect = pinElement.getBoundingClientRect();
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    
+    const position = {
+      x: pinRect.left + (pinRect.width / 2) - canvasRect.left,
+      y: pinRect.top + (pinRect.height / 2) - canvasRect.top
+    };
+    
+    console.log(`Pin ${pinName} (${pinType}) of component ${parentId} clicked at position:`, position);
     
     if (!pendingWire) {
       // Start a new wire
@@ -420,70 +407,124 @@ const SimpleWireManager = ({ canvasRef }) => {
     console.log('Wires updated:', wires);
   }, [wires]);
 
-  // After pins move, redraw wires
+  // Enhanced component movement handler for better pin tracking
   useEffect(() => {
     // Listen for component movement
-    const handleComponentMove = () => {
-      // Update wire positions
-      setWires(prevWires => {
-        // Force re-render by creating a new array
-        return [...prevWires];
+    const handleComponentMove = (e) => {
+      console.log('Component moved, updating wire positions');
+      
+      // Get component info from event if available
+      const { componentId } = e.detail || {};
+      
+      // Immediately force a redraw of all wires to follow the moved component
+      requestAnimationFrame(() => {
+        // Update wire positions with the latest pin coordinates
+        setWires(prevWires => {
+          if (componentId) {
+            // If we know which component moved, only update wires connected to it
+            return prevWires.map(wire => {
+              const isSourceAffected = wire.sourceId.includes(componentId);
+              const isTargetAffected = wire.targetId.includes(componentId);
+              
+              if (isSourceAffected || isTargetAffected) {
+                // This wire is connected to the moved component
+                // Force position recalculation by removing the old positions
+                return {
+                  ...wire, 
+                  sourcePos: isSourceAffected ? undefined : wire.sourcePos,
+                  targetPos: isTargetAffected ? undefined : wire.targetPos,
+                  needsUpdate: true
+                };
+              }
+              
+              return wire;
+            });
+          } else {
+            // If we don't know which component moved, update all wires
+            return [...prevWires.map(wire => ({ ...wire, needsUpdate: true }))];
+          }
+        });
       });
     };
-
+    
+    // Register for component movement events
     document.addEventListener('componentMoved', handleComponentMove);
     
+    // Clean up
     return () => {
       document.removeEventListener('componentMoved', handleComponentMove);
     };
   }, []);
 
-  // Get current wire positions
+  // Get current wire positions - enhanced for accurate pin tracking
   const getUpdatedWirePositions = () => {
     if (!canvasRef?.current) return [];
+    
+    const canvasRect = canvasRef.current.getBoundingClientRect();
     
     // Process all dynamic wires and update positions
     return wires
       .map(wire => {
-        // Check if this wire already has valid positions
+        // Check if this wire already has valid positions (used for fallback)
         const hasValidPositions = 
           wire.sourcePos && wire.targetPos && 
           typeof wire.sourcePos.x === 'number' && 
           typeof wire.targetPos.x === 'number';
         
-        // If manual positions are set and valid, use them directly
-        if (hasValidPositions && wire.manualPositions) {
-          return wire;
-        }
-        
-        // Otherwise, try to find the DOM elements and get their positions
+        // Find the exact pin elements by ID for precise positioning
         const sourceElement = document.getElementById(wire.sourceId);
         const targetElement = document.getElementById(wire.targetId);
         
+        // If we can't find the elements, try fallback approaches
         if (!sourceElement || !targetElement) {
+          // Attempt to find elements by alternate selectors
+          const sourceAlt = document.querySelector(`[data-formatted-id="${wire.sourceId}"]`) || 
+                            document.querySelector(`[data-pin-id="${wire.sourceName}"][data-parent-id="${wire.sourceParentId}"]`);
+          
+          const targetAlt = document.querySelector(`[data-formatted-id="${wire.targetId}"]`) || 
+                            document.querySelector(`[data-pin-id="${wire.targetName}"][data-parent-id="${wire.targetParentId}"]`);
+          
+          // If we found alternatives, use those
+          if (sourceAlt && targetAlt) {
+            const sourceRect = sourceAlt.getBoundingClientRect();
+            const targetRect = targetAlt.getBoundingClientRect();
+            
+            return {
+              ...wire,
+              sourcePos: {
+                x: sourceRect.left + (sourceRect.width / 2) - canvasRect.left,
+                y: sourceRect.top + (sourceRect.height / 2) - canvasRect.top
+              },
+              targetPos: {
+                x: targetRect.left + (targetRect.width / 2) - canvasRect.left,
+                y: targetRect.top + (targetRect.height / 2) - canvasRect.top
+              }
+            };
+          }
+          
           console.warn(`Elements not found for wire ${wire.id}: source=${wire.sourceId}, target=${wire.targetId}`);
           
-          // If we have previous positions, use them (better than removing the wire)
+          // If we have previous positions, use them rather than removing the wire
           if (hasValidPositions) {
             return wire;
           }
           
+          // Mark as invalid if we can't find positions
           return { ...wire, invalid: true };
         }
         
-        // Get positions relative to canvas
-        const canvasRect = canvasRef.current.getBoundingClientRect();
+        // Get precise center positions relative to canvas
         const sourceRect = sourceElement.getBoundingClientRect();
         const targetRect = targetElement.getBoundingClientRect();
         
         const sourcePos = {
-          x: sourceRect.left + sourceRect.width/2 - canvasRect.left,
-          y: sourceRect.top + sourceRect.height/2 - canvasRect.top
+          x: sourceRect.left + (sourceRect.width / 2) - canvasRect.left,
+          y: sourceRect.top + (sourceRect.height / 2) - canvasRect.top
         };
         
         const targetPos = {
-          x: targetRect.left + targetRect.width/2 - canvasRect.left,
-          y: targetRect.top + targetRect.height/2 - canvasRect.top
+          x: targetRect.left + (targetRect.width / 2) - canvasRect.left,
+          y: targetRect.top + (targetRect.height / 2) - canvasRect.top
         };
         
         return { ...wire, sourcePos, targetPos };
