@@ -331,7 +331,7 @@ const CircuitComponent = ({
     };
   }, [id, pins, position]);
   
-  // Handle global mouse events for dragging
+  // Enhanced handle global mouse events for dragging with pin movement tracking
   useEffect(() => {
     if (!isDragging) return;
     
@@ -353,12 +353,24 @@ const CircuitComponent = ({
         onMove(id, newX, newY);
       }
       
-      // Notify wire manager to redraw wires
-      document.dispatchEvent(new CustomEvent('redrawWires'));
+      // WOKWI APPROACH: Notify directly that component was moved with its ID
+      // Allowing wire manager to directly lookup pins from this component
+      document.dispatchEvent(new CustomEvent('componentMoved', {
+        detail: {
+          componentId: id,
+          newPosition: { x: newX, y: newY }
+        }
+      }));
     };
     
     const handleMouseUp = () => {
       setIsDragging(false);
+      
+      // Final dispatch to ensure wire positions are updated
+      // This helps with performance by reducing updates during dragging
+      document.dispatchEvent(new CustomEvent('componentMovedFinal', {
+        detail: { componentId: id }
+      }));
     };
     
     window.addEventListener('mousemove', handleMouseMove);
