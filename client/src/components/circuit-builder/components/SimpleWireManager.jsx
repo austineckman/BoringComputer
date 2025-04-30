@@ -446,52 +446,28 @@ const SimpleWireManager = ({ canvasRef }) => {
     console.log('Wires updated:', wires);
   }, [wires]);
 
-  // Enhanced component movement handler for better pin tracking
+  // Wokwi-style component movement handler - simple and effective
   useEffect(() => {
-    // Listen for component movement
-    const handleComponentMove = (e) => {
-      console.log('Component moved, updating wire positions');
-      
-      // Get component info from event if available
-      const { componentId } = e.detail || {};
-      
-      // Immediately force a redraw of all wires to follow the moved component
-      requestAnimationFrame(() => {
-        // Update wire positions with the latest pin coordinates
-        setWires(prevWires => {
-          if (componentId) {
-            // If we know which component moved, only update wires connected to it
-            return prevWires.map(wire => {
-              const isSourceAffected = wire.sourceId.includes(componentId);
-              const isTargetAffected = wire.targetId.includes(componentId);
-              
-              if (isSourceAffected || isTargetAffected) {
-                // This wire is connected to the moved component
-                // Force position recalculation by removing the old positions
-                return {
-                  ...wire, 
-                  sourcePos: isSourceAffected ? undefined : wire.sourcePos,
-                  targetPos: isTargetAffected ? undefined : wire.targetPos,
-                  needsUpdate: true
-                };
-              }
-              
-              return wire;
-            });
-          } else {
-            // If we don't know which component moved, update all wires
-            return [...prevWires.map(wire => ({ ...wire, needsUpdate: true }))];
-          }
-        });
-      });
+    // Events that should trigger wire position updates
+    const events = ['componentMoved', 'componentMovedFinal', 'redrawWires'];
+    
+    // Simple function to force a redraw of all wires - Wokwi-style
+    const handleComponentMove = () => {
+      // This approach simply triggers a re-render that will call getUpdatedWirePositions()
+      // which directly reads pin positions from the DOM
+      setWires(prevWires => [...prevWires]);
     };
     
-    // Register for component movement events
-    document.addEventListener('componentMoved', handleComponentMove);
+    // Register for all events that should update wire positions
+    events.forEach(eventName => {
+      document.addEventListener(eventName, handleComponentMove);
+    });
     
     // Clean up
     return () => {
-      document.removeEventListener('componentMoved', handleComponentMove);
+      events.forEach(eventName => {
+        document.removeEventListener(eventName, handleComponentMove);
+      });
     };
   }, []);
 
