@@ -11,7 +11,25 @@ import React, { useState, useEffect, useRef } from 'react';
  */
 const SimpleWireManager = ({ canvasRef }) => {
   // State for wire connections
-  const [wires, setWires] = useState([]);
+  const [wires, setWires] = useState([
+    // Test wires to ensure rendering works - will be replaced with actual connections
+    {
+      id: 'test-wire-1',
+      sourcePos: { x: 100, y: 100 },
+      targetPos: { x: 200, y: 200 },
+      sourceType: 'output',
+      targetType: 'input',
+      color: '#ff6666'
+    },
+    {
+      id: 'test-wire-2',
+      sourcePos: { x: 150, y: 100 },
+      targetPos: { x: 300, y: 150 },
+      sourceType: 'digital',
+      targetType: 'digital',
+      color: '#66ffff'
+    }
+  ]);
   const [pendingWire, setPendingWire] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [selectedWireId, setSelectedWireId] = useState(null);
@@ -148,9 +166,17 @@ const SimpleWireManager = ({ canvasRef }) => {
     
     console.log(`Pin ${pinName} (${pinType}) of component ${parentId} clicked`);
     
-    // Log mouseleave events
-    document.addEventListener('mouseleave', () => console.log('mouseleave'), { once: true });
-    document.addEventListener('mouseup', () => console.log('mouseup'), { once: true });
+    // Add debug logging to help identify pin click issues
+    if (!pinElement) {
+      console.warn('Pin element not found in DOM:', pinId);
+      console.log('Available pins:', document.querySelectorAll('[data-pin-id]').length);
+      
+      // Try to find pin by substring match
+      const similarPins = Array.from(document.querySelectorAll('[data-pin-id]'))
+        .filter(pin => pin.dataset.pinId.includes(componentId) || pin.dataset.pinId.includes(pinName));
+      
+      console.log('Similar pins found:', similarPins.map(p => p.dataset.pinId));
+    }
     
     if (!pendingWire) {
       // Start a new wire
@@ -318,6 +344,9 @@ const SimpleWireManager = ({ canvasRef }) => {
       canvasElement.addEventListener('click', handleCanvasClick);
     }
     
+    // Debug - log any existing wires
+    console.log('Current wires:', wires);
+    
     // Clean up
     return () => {
       document.removeEventListener('pinClicked', handlePinClick);
@@ -328,6 +357,11 @@ const SimpleWireManager = ({ canvasRef }) => {
       }
     };
   }, [canvasRef, pendingWire]);
+  
+  // Debug - log when wires array changes
+  useEffect(() => {
+    console.log('Wires updated:', wires);
+  }, [wires]);
 
   // After pins move, redraw wires
   useEffect(() => {
@@ -380,8 +414,8 @@ const SimpleWireManager = ({ canvasRef }) => {
   return (
     <svg 
       ref={svgRef}
-      className="absolute inset-0 pointer-events-none z-10"
-      style={{ width: '100%', height: '100%' }}
+      className="absolute inset-0 z-10"
+      style={{ width: '100%', height: '100%', pointerEvents: 'none' }}
     >
       {/* Draw permanent wires */}
       {getUpdatedWirePositions().map(wire => {
