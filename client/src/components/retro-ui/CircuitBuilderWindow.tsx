@@ -582,8 +582,11 @@ void loop() {
                   const { componentId, ...state } = pinOrComponent;
                   console.log(`Simulator: Component ${componentId} state updated`, state);
                   
-                  // Find the component and update its state in the simulator context
-                  addSimulationLog(`Updated component ${componentId}`);
+                  // Update component state in the simulator context
+                  // This ensures all components can see the state change
+                  updateComponentState(componentId, state);
+                  
+                  addSimulationLog(`Updated component ${componentId}: ${JSON.stringify(state)}`);
                 }
               }}
               components={components}
