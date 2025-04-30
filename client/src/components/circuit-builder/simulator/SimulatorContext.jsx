@@ -7,6 +7,8 @@ const SimulatorContext = createContext({
   stopSimulation: () => {},
   setPinState: () => {},
   updateComponentState: () => {},
+  componentStates: {},  // Store component states (e.g., LED on/off)
+  pinStates: {},        // Store pin states (HIGH/LOW)
   logs: [],
   addLog: () => {}
 });
@@ -20,6 +22,9 @@ export const SimulatorProvider = ({ children }) => {
   
   // State for component signal states (connected to pins)
   const [componentStates, setComponentStates] = useState({});
+  
+  // State for pin states (HIGH/LOW)
+  const [pinStates, setPinStates] = useState({});
   
   // State for simulation logs
   const [logs, setLogs] = useState([]);
@@ -48,6 +53,12 @@ export const SimulatorProvider = ({ children }) => {
   
   // Set pin state (for input components like buttons)
   const setPinState = useCallback((pin, isHigh) => {
+    // Update the pin state in our state object
+    setPinStates(prev => ({
+      ...prev,
+      [`D${pin}`]: isHigh
+    }));
+    
     // This will be called by components to update pin states
     // It gets passed to the AVR8Simulator component
     addLog(`Pin ${pin} set to ${isHigh ? 'HIGH' : 'LOW'}`);
@@ -71,6 +82,7 @@ export const SimulatorProvider = ({ children }) => {
     setPinState,
     updateComponentState,
     componentStates,
+    pinStates,
     logs,
     addLog
   };
