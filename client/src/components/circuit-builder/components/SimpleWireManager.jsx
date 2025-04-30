@@ -124,10 +124,18 @@ const SimpleWireManager = ({ canvasRef }) => {
     console.log('Pin clicked on component:', event.detail);
     
     // The event now includes the pin ID
-    const pinId = event.detail.id;
+    let pinId = event.detail.id;
     if (!pinId) {
       console.error('No pin ID found in click event');
       return;
+    }
+    
+    // Fix for duplicated component type in IDs
+    // If the pin ID format has a duplicate component type (pt-componentType-componentType-componentId-pinName)
+    // this fixes it to the standard format (pt-componentType-componentId-pinName)
+    if (pinId.includes('-heroboard-heroboard-') || pinId.includes('-led-led-')) {
+      pinId = pinId.replace(/-(\w+)-\1-/, '-$1-');
+      console.log('Fixed duplicated component type in ID:', pinId);
     }
     
     // Extract component ID and pin name from the pin ID format "pt-componentType-componentId-pinName"
@@ -144,26 +152,57 @@ const SimpleWireManager = ({ canvasRef }) => {
     // Get pin type from data if available or default to bidirectional
     const pinType = event.detail.pinType || 'bidirectional';
     
-    // Find the pin element for accurate positioning
-    const pinElement = document.getElementById(pinId) || 
-                       document.querySelector(`[data-formatted-id="${pinId}"]`) || 
-                       document.querySelector(`[data-pin-id="${pinName}"][data-parent-id="${parentId}"]`);
+    // Get detailed pin information if available
+    const pinData = event.detail.pinData ? JSON.parse(event.detail.pinData) : null;
     
+    // Find the pin element - trying multiple selectors
+    let pinElement = document.getElementById(pinId);
+    
+    // If not found by ID, try alternate selectors
     if (!pinElement) {
-      console.warn('Pin element not found in DOM:', pinId);
-      return;
+      // Try by data attribute
+      pinElement = document.querySelector(`[data-formatted-id="${pinId}"]`);
+      
+      // If still not found, try by pin-id and parent-id combination
+      if (!pinElement) {
+        pinElement = document.querySelector(`[data-pin-id="${pinName}"][data-parent-id="${parentId}"]`);
+        
+        // Final attempt - try looking for similar IDs
+        if (!pinElement) {
+          const similarElements = document.querySelectorAll(`[id*="${componentId}"][id*="${pinName}"]`);
+          if (similarElements.length > 0) {
+            console.log('Found similar pin element by partial match');
+            pinElement = similarElements[0];
+          }
+        }
+      }
     }
     
-    // Get accurate pin position relative to canvas
-    const pinRect = pinElement.getBoundingClientRect();
-    const canvasRect = canvasRef.current.getBoundingClientRect();
-    
-    const position = {
-      x: pinRect.left + (pinRect.width / 2) - canvasRect.left,
-      y: pinRect.top + (pinRect.height / 2) - canvasRect.top
-    };
-    
-    console.log(`Pin ${pinName} (${pinType}) of component ${parentId} clicked at position:`, position);
+    // If we still couldn't find the pin, try to get position from the event details
+    let position;
+    if (!pinElement && event.detail.clientX && event.detail.clientY) {
+      console.warn('Pin element not found in DOM, using event coordinates');
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      position = {
+        x: event.detail.clientX - canvasRect.left,
+        y: event.detail.clientY - canvasRect.top
+      };
+      console.log(`Using event coordinates for pin ${pinName}:`, position);
+    } else if (pinElement) {
+      // Get accurate pin position relative to canvas
+      const pinRect = pinElement.getBoundingClientRect();
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      
+      position = {
+        x: pinRect.left + (pinRect.width / 2) - canvasRect.left,
+        y: pinRect.top + (pinRect.height / 2) - canvasRect.top
+      };
+      
+      console.log(`Pin position calculated from element:`, position);
+    } else {
+      console.error('Could not determine pin position accurately');
+      return;
+    }
     
     if (!pendingWire) {
       // Start a new wire
@@ -456,7 +495,7 @@ const SimpleWireManager = ({ canvasRef }) => {
     };
   }, []);
 
-  // Get current wire positions - enhanced for accurate pin tracking
+  // Get current wire positions - enhanced for accurate pin tracking with duplicate ID handling
   const getUpdatedWirePositions = () => {
     if (!canvasRef?.current) return [];
     
@@ -465,51 +504,77 @@ const SimpleWireManager = ({ canvasRef }) => {
     // Process all dynamic wires and update positions
     return wires
       .map(wire => {
+        // Fix for duplicated component type in source ID
+        let sourceId = wire.sourceId;
+        let targetId = wire.targetId;
+        
+        // Handle duplicated component types in IDs
+        if (sourceId.includes('-heroboard-heroboard-') || sourceId.includes('-led-led-')) {
+          sourceId = sourceId.replace(/-(\w+)-\1-/, '-$1-');
+        }
+        if (targetId.includes('-heroboard-heroboard-') || targetId.includes('-led-led-')) {
+          targetId = targetId.replace(/-(\w+)-\1-/, '-$1-');
+        }
+        
         // Check if this wire already has valid positions (used for fallback)
         const hasValidPositions = 
           wire.sourcePos && wire.targetPos && 
           typeof wire.sourcePos.x === 'number' && 
           typeof wire.targetPos.x === 'number';
         
-        // Find the exact pin elements by ID for precise positioning
-        const sourceElement = document.getElementById(wire.sourceId);
-        const targetElement = document.getElementById(wire.targetId);
+        // Try multiple selector strategies to find the pin elements
         
-        // If we can't find the elements, try fallback approaches
+        // 1. Try direct ID lookup
+        let sourceElement = document.getElementById(sourceId);
+        let targetElement = document.getElementById(targetId);
+        
+        // 2. Try original IDs if the fixed ones don't work
+        if (!sourceElement) sourceElement = document.getElementById(wire.sourceId);
+        if (!targetElement) targetElement = document.getElementById(wire.targetId);
+        
+        // 3. Try formatted data attributes
+        if (!sourceElement) sourceElement = document.querySelector(`[data-formatted-id="${sourceId}"]`);
+        if (!targetElement) targetElement = document.querySelector(`[data-formatted-id="${targetId}"]`);
+        
+        // 4. Try pin-id and parent-id attributes
+        if (!sourceElement) {
+          const sourceParts = sourceId.split('-');
+          if (sourceParts.length >= 4) {
+            const pinName = sourceParts.slice(3).join('-');
+            const parentId = `${sourceParts[1]}-${sourceParts[2]}`;
+            sourceElement = document.querySelector(`[data-pin-id="${pinName}"][data-parent-id="${parentId}"]`);
+          }
+        }
+        
+        if (!targetElement) {
+          const targetParts = targetId.split('-');
+          if (targetParts.length >= 4) {
+            const pinName = targetParts.slice(3).join('-');
+            const parentId = `${targetParts[1]}-${targetParts[2]}`;
+            targetElement = document.querySelector(`[data-pin-id="${pinName}"][data-parent-id="${parentId}"]`);
+          }
+        }
+        
+        // 5. Final attempt - look for any pin element that contains the component and pin IDs
+        if (!sourceElement) {
+          const similarElements = document.querySelectorAll(`[id*="${wire.sourceName}"]`);
+          if (similarElements.length > 0) sourceElement = similarElements[0];
+        }
+        
+        if (!targetElement) {
+          const similarElements = document.querySelectorAll(`[id*="${wire.targetName}"]`);
+          if (similarElements.length > 0) targetElement = similarElements[0];
+        }
+        
+        // If we still can't find the elements and have valid positions, use the old ones
+        if ((!sourceElement || !targetElement) && hasValidPositions) {
+          console.warn(`Using previous positions for wire ${wire.id}`);
+          return wire;
+        }
+        
+        // If we can't find the elements and don't have valid positions, mark as invalid
         if (!sourceElement || !targetElement) {
-          // Attempt to find elements by alternate selectors
-          const sourceAlt = document.querySelector(`[data-formatted-id="${wire.sourceId}"]`) || 
-                            document.querySelector(`[data-pin-id="${wire.sourceName}"][data-parent-id="${wire.sourceParentId}"]`);
-          
-          const targetAlt = document.querySelector(`[data-formatted-id="${wire.targetId}"]`) || 
-                            document.querySelector(`[data-pin-id="${wire.targetName}"][data-parent-id="${wire.targetParentId}"]`);
-          
-          // If we found alternatives, use those
-          if (sourceAlt && targetAlt) {
-            const sourceRect = sourceAlt.getBoundingClientRect();
-            const targetRect = targetAlt.getBoundingClientRect();
-            
-            return {
-              ...wire,
-              sourcePos: {
-                x: sourceRect.left + (sourceRect.width / 2) - canvasRect.left,
-                y: sourceRect.top + (sourceRect.height / 2) - canvasRect.top
-              },
-              targetPos: {
-                x: targetRect.left + (targetRect.width / 2) - canvasRect.left,
-                y: targetRect.top + (targetRect.height / 2) - canvasRect.top
-              }
-            };
-          }
-          
-          console.warn(`Elements not found for wire ${wire.id}: source=${wire.sourceId}, target=${wire.targetId}`);
-          
-          // If we have previous positions, use them rather than removing the wire
-          if (hasValidPositions) {
-            return wire;
-          }
-          
-          // Mark as invalid if we can't find positions
+          console.warn(`Elements not found for wire ${wire.id}: source=${sourceId}, target=${targetId}`);
           return { ...wire, invalid: true };
         }
         
@@ -527,7 +592,15 @@ const SimpleWireManager = ({ canvasRef }) => {
           y: targetRect.top + (targetRect.height / 2) - canvasRect.top
         };
         
-        return { ...wire, sourcePos, targetPos };
+        // Return updated wire with new positions
+        return { 
+          ...wire, 
+          sourcePos, 
+          targetPos,
+          // Store the fixed IDs
+          sourceId,
+          targetId
+        };
       })
       .filter(wire => !wire.invalid);
   };
