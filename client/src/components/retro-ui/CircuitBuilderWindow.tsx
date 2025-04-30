@@ -550,9 +550,22 @@ void loop() {
             <AVR8Simulator 
               code={code}
               isRunning={isSimulationRunning}
-              onPinChange={(pin, isHigh) => {
-                console.log(`Simulator: Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
-                // Component state updates will be handled internally by the simulator
+              onPinChange={(pinOrComponent, isHigh) => {
+                // Handle pin change events from the simulator
+                if (typeof pinOrComponent === 'number') {
+                  // This is a pin change event
+                  const pin = pinOrComponent;
+                  console.log(`Simulator: Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+                  // Standard pin change
+                  addSimulationLog(`Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+                } else if (typeof pinOrComponent === 'object' && pinOrComponent.componentId) {
+                  // This is a component state update
+                  const { componentId, ...state } = pinOrComponent;
+                  console.log(`Simulator: Component ${componentId} state updated`, state);
+                  
+                  // Find the component and update its state in the simulator context
+                  addSimulationLog(`Updated component ${componentId}`);
+                }
               }}
               components={components}
               wires={wires}
