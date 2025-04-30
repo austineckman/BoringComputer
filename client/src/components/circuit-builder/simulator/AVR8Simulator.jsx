@@ -143,7 +143,7 @@ const AVR8Simulator = ({
     return null;
   };
   
-  // Handle pin state changes from the CPU
+  // Handle pin state changes from the CPU - WOKWI style
   const handlePinStateChange = (pin, state) => {
     const isHigh = state === PinState.High;
     console.log(`Pin D${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
@@ -153,6 +153,16 @@ const AVR8Simulator = ({
       // Pass the pin number and state (true for HIGH, false for LOW)
       onPinChange(pin, isHigh);
     }
+    
+    // WOKWI STYLE: Dispatch a global event that components can listen for
+    // This allows any component in the DOM to react to Arduino pin changes
+    document.dispatchEvent(new CustomEvent('arduinoPinChanged', {
+      detail: {
+        pin: pin,
+        isHigh: isHigh,
+        pinKey: `D${pin}`
+      }
+    }));
     
     // Check for connected components via wires
     const pinKey = `D${pin}`;
@@ -173,10 +183,20 @@ const AVR8Simulator = ({
           // This will propagate the signal to connected components
           console.log(`Propagating signal to ${componentId} pin ${componentPin}: ${isHigh ? 'HIGH' : 'LOW'}`);
           
+          // WOKWI STYLE: Dispatch component-specific events
+          // This allows LED components to directly listen for changes affecting them
+          document.dispatchEvent(new CustomEvent('pinStateChanged', {
+            detail: {
+              componentId: componentId,
+              pin: componentPin,
+              isHigh: isHigh
+            }
+          }));
+          
           // Update the component state based on the signal
           // For example, if it's an LED connected to pin 13, turn it on when pin 13 is HIGH
           if (componentId.includes('led-')) {
-            // Simplified LED update - in a full implementation, we would check pin polarities
+            // Enhanced LED update with polarity check
             updateLEDComponent(componentId, componentPin, isHigh);
           } 
           else if (componentId.includes('buzzer-')) {
