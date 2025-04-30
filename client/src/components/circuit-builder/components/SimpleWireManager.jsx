@@ -306,7 +306,26 @@ const SimpleWireManager = ({ canvasRef }) => {
     if (selectedWireId === wireId) {
       setSelectedWireId(null);
     } else {
+      // Deselect any previously selected wire
+      if (selectedWireId) {
+        document.querySelectorAll('.selected-wire-highlight').forEach(el => {
+          el.classList.remove('selected-wire-highlight');
+        });
+      }
+      
+      // Select the new wire
       setSelectedWireId(wireId);
+      
+      // Add visual highlight to help user see the selected wire
+      const wirePath = document.querySelector(`path[data-wire-id="${wireId}"]`);
+      if (wirePath) {
+        wirePath.classList.add('selected-wire-highlight');
+      }
+    }
+    
+    // Add a user message about how to delete the wire
+    if (selectedWireId !== wireId) {
+      console.log('Wire selected. Press DELETE key or click the red X button to remove it.');
     }
   };
   
@@ -487,13 +506,7 @@ const SimpleWireManager = ({ canvasRef }) => {
           bottom: 0
         }}
       >
-        {/* Background grid pattern */}
-        <defs>
-          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f1f1f1" strokeWidth="0.5"/>
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#grid)" style={{ pointerEvents: 'none' }} />
+        {/* No background grid pattern */}
         
         {/* Draw permanent wires */}
         {getUpdatedWirePositions().map(wire => {
@@ -527,7 +540,41 @@ const SimpleWireManager = ({ canvasRef }) => {
                 d={path}
                 style={style}
                 className="wire-path"
+                data-wire-id={wire.id}
               />
+              
+              {/* Delete button that appears when wire is selected */}
+              {selectedWireId === wire.id && (
+                <g 
+                  className="wire-delete-button" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteWire();
+                  }}
+                  style={{ pointerEvents: 'all', cursor: 'pointer' }}
+                  transform={`translate(${(wire.sourcePos.x + wire.targetPos.x) / 2}, ${(wire.sourcePos.y + wire.targetPos.y) / 2})`}
+                >
+                  <circle 
+                    cx="0" 
+                    cy="0" 
+                    r="12" 
+                    fill="white" 
+                    stroke="red" 
+                    strokeWidth="2"
+                  />
+                  <text 
+                    x="0" 
+                    y="1" 
+                    textAnchor="middle" 
+                    dominantBaseline="middle" 
+                    fill="red" 
+                    fontWeight="bold"
+                    fontSize="16px"
+                  >
+                    ×
+                  </text>
+                </g>
+              )}
             </g>
           );
         })}
