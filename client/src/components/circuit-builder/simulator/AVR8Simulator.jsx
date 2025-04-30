@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-// Using simulated classes instead of actual AVR8js imports
+// Using simulated classes for the simulator
 // This is a simplified version for demonstration purposes
 
 // Mock CPU and MCU classes for simulation
