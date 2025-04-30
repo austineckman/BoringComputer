@@ -3,16 +3,19 @@ import {
   CPU, 
   AVRIOPort, 
   PinState, 
-  portBConfig, 
-  portCConfig, 
-  portDConfig,
+  portB, 
+  portC, 
+  portD,
+  timer0Config,
   usart0Config
 } from 'avr8js';
+import { validateArduinoSyntax, extractFunctionBody, extractDigitalWrites } from './SimulatorUtils';
 
 /**
  * AVR8Simulator
  * 
- * Handles the simulation of AVR microcontroller using avr8js
+ * Handles the simulation of AVR microcontroller using avr8js directly from Wokwi's implementation
+ * Following the patterns and techniques used in the Wokwi's AVR8js GitHub repository
  * Connects Arduino sketch code to the circuit components
  */
 const AVR8Simulator = ({ 

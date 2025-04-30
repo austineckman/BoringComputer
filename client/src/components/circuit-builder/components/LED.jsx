@@ -57,27 +57,60 @@ const LED = ({
       console.log(`LED ${id} state updated from simulation context: isLit=${ledState.isLit}`);
     }
     
-    // Set up event listeners for simulation events
+    // Wokwi LED state handling follows these patterns:
+    // 1. Listen for pinStateChanged events that target this component
+    // 2. Listen for componentStateChanged events that target this component
+    // 3. Listen for direct simulation signals from Arduino pins that this LED is connected to
+    
+    // Handler for pin state changes (when a pin this LED is connected to changes)
     const handlePinStateChange = (e) => {
       if (e.detail && e.detail.componentId === id) {
         console.log(`LED ${id} receiving pin state change:`, e.detail);
-        setIsLit(e.detail.isHigh || false);
+        
+        // Determine if the LED should be lit based on which pin changed
+        // and the value it changed to - following Wokwi's LED implementation
+        const pinName = e.detail.pin;
+        const isHigh = e.detail.isHigh;
+        
+        // LED lights when:
+        // - anode is HIGH and cathode is LOW/GND
+        // - or cathode is LOW and anode is HIGH/VCC
+        if (pinName === 'anode' && isHigh) {
+          setIsLit(true);
+        } else if (pinName === 'cathode' && !isHigh) {
+          setIsLit(true);
+        } else {
+          setIsLit(false);
+        }
       }
     };
     
+    // Handler for direct component state updates 
+    // (when the simulation explicitly sets this LED's state)
     const handleComponentStateChange = (e) => {
       if (e.detail && e.detail.componentId === id) {
         console.log(`LED ${id} receiving component state change:`, e.detail);
-        setIsLit(e.detail.isLit || false);
+        if (e.detail.isLit !== undefined) {
+          setIsLit(e.detail.isLit);
+        }
       }
     };
     
+    // Handler for Arduino pin changes that affect connected components
+    // This pattern matches how Wokwi handles global pin state changes
     const handleArduinoPinChange = (e) => {
-      // Check if this is pin 13 (typical LED pin on Arduino boards)
-      // This is a special case for the built-in LED on Arduino boards
-      if (e.detail && e.detail.pin === 13 && id.includes('led-')) {
-        console.log(`Arduino pin 13 changed to ${e.detail.isHigh ? 'HIGH' : 'LOW'}`);
-        setIsLit(e.detail.isHigh || false);
+      // Check all connected components and pins
+      // This implementation assumes connections are tracked elsewhere
+      
+      // Special case: pin 13 is typically connected to the built-in LED
+      // For demonstration/testing purposes
+      if (e.detail && e.detail.pin === 13) {
+        // This is a simplified check - in reality we'd check if this LED
+        // is actually connected to pin 13 via wire connections
+        if (id.includes('led')) {
+          console.log(`Arduino pin 13 changed to ${e.detail.isHigh ? 'HIGH' : 'LOW'}`);
+          setIsLit(e.detail.isHigh);
+        }
       }
     };
     
@@ -86,11 +119,31 @@ const LED = ({
     document.addEventListener('componentStateChanged', handleComponentStateChange);
     document.addEventListener('arduinoPinChanged', handleArduinoPinChange);
     
+    // Special event for simulation start/stop
+    const handleSimulationStarted = () => {
+      console.log(`LED ${id} notified: simulation started`);
+      // Reset LED state when simulation starts
+      if (!isLit) {
+        setIsLit(false);
+      }
+    };
+    
+    const handleSimulationStopped = () => {
+      console.log(`LED ${id} notified: simulation stopped`);
+      // Turn off LED when simulation stops
+      setIsLit(false);
+    };
+    
+    document.addEventListener('simulationStarted', handleSimulationStarted);
+    document.addEventListener('simulationStopped', handleSimulationStopped);
+    
     // Cleanup on unmount
     return () => {
       document.removeEventListener('pinStateChanged', handlePinStateChange);
       document.removeEventListener('componentStateChanged', handleComponentStateChange);
       document.removeEventListener('arduinoPinChanged', handleArduinoPinChange);
+      document.removeEventListener('simulationStarted', handleSimulationStarted);
+      document.removeEventListener('simulationStopped', handleSimulationStopped);
     };
   }, [componentStates, id, isSimulationRunning]);
   
