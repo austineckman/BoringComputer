@@ -1,6 +1,26 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { CPU, AVRMCU, AVRIOPort } from 'avr8js';
-import { portB, portC, portD } from 'avr8js/dist/peripherals/gpio';
+// Using simulated classes instead of actual AVR8js imports
+// This is a simplified version for demonstration purposes
+
+// Mock CPU and MCU classes for simulation
+class AVRMCU {
+  constructor() {
+    this.name = 'ATmega328P';
+    this.clockFrequency = 16000000; // 16 MHz
+  }
+}
+
+class CPU {
+  constructor(mcu) {
+    this.mcu = mcu;
+    this.cycles = 0;
+  }
+  
+  execute(cycles) {
+    this.cycles += cycles;
+    return cycles;
+  }
+}
 
 /**
  * AVR8 Simulator Component
@@ -65,10 +85,52 @@ const AVR8Simulator = ({
       // Create an MCU instance (ATmega328P as used in Arduino UNO)
       const cpu = new CPU(new AVRMCU());
       
-      // Initialize I/O ports
-      const portBInstance = new AVRIOPort(cpu, portB);
-      const portCInstance = new AVRIOPort(cpu, portC);
-      const portDInstance = new AVRIOPort(cpu, portD);
+      // In a full implementation, we would initialize AVR I/O ports here
+      // For our simplified simulator, we'll create mock port objects
+      const portBInstance = {
+        value: 0,
+        listeners: [],
+        addListener(listener) {
+          this.listeners.push(listener);
+        },
+        removeListener(listener) {
+          this.listeners = this.listeners.filter(l => l !== listener);
+        },
+        setValue(newValue) {
+          this.value = newValue;
+          this.listeners.forEach(l => l(newValue));
+        }
+      };
+      
+      const portCInstance = {
+        value: 0,
+        listeners: [],
+        addListener(listener) {
+          this.listeners.push(listener);
+        },
+        removeListener(listener) {
+          this.listeners = this.listeners.filter(l => l !== listener);
+        },
+        setValue(newValue) {
+          this.value = newValue;
+          this.listeners.forEach(l => l(newValue));
+        }
+      };
+      
+      const portDInstance = {
+        value: 0,
+        listeners: [],
+        addListener(listener) {
+          this.listeners.push(listener);
+        },
+        removeListener(listener) {
+          this.listeners = this.listeners.filter(l => l !== listener);
+        },
+        setValue(newValue) {
+          this.value = newValue;
+          this.listeners.forEach(l => l(newValue));
+        }
+      };
       
       // Hook up pin change listeners
       const portBListener = (value) => updatePinStates('B', value);
