@@ -9,7 +9,7 @@ import React, { useState, useEffect, useRef } from 'react';
  * 2. Drawing wires between pins
  * 3. Tracking connected pins
  */
-const SimpleWireManager = ({ canvasRef, onWiresChanged }) => {
+const SimpleWireManager = ({ canvasRef }) => {
   // State for wire connections
   const [wires, setWires] = useState([]);
   const [pendingWire, setPendingWire] = useState(null);
@@ -113,14 +113,7 @@ const SimpleWireManager = ({ canvasRef, onWiresChanged }) => {
         targetPos: position
       };
       
-      const updatedWires = [...wires, newWire];
-      setWires(updatedWires);
-      
-      // Notify parent component about wire change
-      if (onWiresChanged) {
-        onWiresChanged(updatedWires);
-      }
-      
+      setWires(prev => [...prev, newWire]);
       setPendingWire(null);
       
       // Clean up visual indication
