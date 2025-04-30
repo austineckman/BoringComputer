@@ -61,6 +61,54 @@ function handlePinMouseOut() {
   document.dispatchEvent(new CustomEvent('pinLeave'));
 }
 
+// Handle pin clicks for wire creation
+function handlePinClick(event) {
+  event.stopPropagation();
+  
+  const pin = event.target;
+  const pinId = pin.getAttribute('id');
+  
+  if (!pinId) return;
+  
+  // Create uniform pin data
+  const pinName = pin.getAttribute('data-pin-name') || 
+                 pin.querySelector('title')?.textContent || 
+                 pin.getAttribute('title') || 
+                 pinId.split('-').pop() || 
+                 'Pin';
+  
+  // Create the event data
+  const clickData = {
+    id: pinId,
+    name: pinName,
+    clientX: event.clientX,
+    clientY: event.clientY
+  };
+  
+  // Try to get additional data if available
+  const dataValue = pin.getAttribute('data-value');
+  if (dataValue) {
+    try {
+      // If data-value contains JSON data
+      clickData.data = dataValue;
+      const data = JSON.parse(dataValue);
+      if (data) {
+        clickData.pinType = data.type || 'bidirectional';
+      }
+    } catch (e) {
+      // Not JSON, use raw value
+      clickData.data = dataValue;
+    }
+  }
+  
+  console.log(`Pin clicked on component:`, clickData);
+  
+  // Dispatch a custom event for wire manager
+  document.dispatchEvent(new CustomEvent('pinClicked', { 
+    detail: clickData 
+  }));
+}
+
 // Run the enhancement when DOM is loaded
 document.addEventListener('DOMContentLoaded', initPinEnhancement);
 
@@ -248,10 +296,12 @@ function scanForPins(element) {
       // First, remove any existing listeners to avoid duplicates
       pin.removeEventListener('mouseover', handlePinMouseOver);
       pin.removeEventListener('mouseout', handlePinMouseOut);
+      pin.removeEventListener('click', handlePinClick);
       
       // Now add the listeners
       pin.addEventListener('mouseover', handlePinMouseOver);
       pin.addEventListener('mouseout', handlePinMouseOut);
+      pin.addEventListener('click', handlePinClick);
       
       // For debugging
       if (config.debug) {

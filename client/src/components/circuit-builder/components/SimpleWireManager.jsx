@@ -62,16 +62,25 @@ const SimpleWireManager = ({ canvasRef }) => {
 
   // Handle pin clicks from components
   const handlePinClick = (event) => {
-    event.stopPropagation();
-    
     // Extract pin data
-    const pinElement = event.target;
-    const pinId = event.detail.id;
-    const pinType = pinElement.dataset.pinType || 'bidirectional';
-    const parentId = pinElement.dataset.parentId;
+    console.log('Pin clicked on component:', event.detail);
     
-    // Get position of pin from the event
+    // The event now includes the pin ID
+    const pinId = event.detail.id;
+    // Extract component ID and pin name from the pin ID format "pt-componentType-componentId-pinName"
+    const [prefix, componentType, componentId, pinName] = pinId.split('-');
+    const parentId = `${componentType}-${componentId}`;
+    
+    // Get pin type from data if available or default to bidirectional
+    const pinType = event.detail.pinType || 'bidirectional';
+    
+    // Get position from event
     const position = getPinPosition(event);
+    
+    // Find the actual pin element by ID after identifying the pin
+    const pinElement = document.getElementById(pinId);
+    
+    console.log(`Pin ${pinName} (${pinType}) of component ${parentId} clicked`);
     
     if (!pendingWire) {
       // Start a new wire
@@ -79,14 +88,17 @@ const SimpleWireManager = ({ canvasRef }) => {
         sourceId: pinId,
         sourceType: pinType,
         sourceParentId: parentId,
-        sourcePos: position
+        sourcePos: position,
+        sourceName: pinName
       });
       
-      // Add visual indication
-      pinElement.classList.add('wire-source-active');
+      // Add visual indication if element exists
+      if (pinElement) {
+        pinElement.classList.add('wire-source-active');
+      }
     } else {
       // Finish a wire
-      const { sourceId, sourceType, sourceParentId, sourcePos } = pendingWire;
+      const { sourceId, sourceType, sourceParentId, sourcePos, sourceName } = pendingWire;
       
       // Prevent connecting a pin to itself
       if (sourceId === pinId) {
@@ -102,6 +114,9 @@ const SimpleWireManager = ({ canvasRef }) => {
         return;
       }
       
+      // Log the connection for debugging
+      console.log(`Creating wire from ${sourceName} (${sourceId}) to ${pinName} (${pinId})`);
+      
       // Add the new wire
       const newWire = {
         id: `wire-${Date.now()}`,
@@ -110,11 +125,20 @@ const SimpleWireManager = ({ canvasRef }) => {
         sourceType,
         targetType: pinType,
         sourcePos,
-        targetPos: position
+        targetPos: position,
+        sourceName,
+        targetName: pinName
       };
       
       setWires(prev => [...prev, newWire]);
       setPendingWire(null);
+      
+      // Log pin connection for simulation
+      document.dispatchEvent(new CustomEvent('pinConnectionCreated', {
+        detail: {
+          connection: newWire
+        }
+      }));
       
       // Clean up visual indication
       document.querySelectorAll('.wire-source-active').forEach(el => {
