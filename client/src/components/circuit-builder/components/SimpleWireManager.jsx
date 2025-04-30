@@ -8,25 +8,7 @@ import React, { useState, useRef, useEffect } from 'react';
  */
 const SimpleWireManager = ({ canvasRef }) => {
   // State for wire connections
-  const [wires, setWires] = useState([
-    // Test wires to ensure rendering works - will be replaced with actual connections
-    {
-      id: 'test-wire-1',
-      sourcePos: { x: 100, y: 100 },
-      targetPos: { x: 200, y: 200 },
-      sourceType: 'output',
-      targetType: 'input',
-      color: '#ff6666'
-    },
-    {
-      id: 'test-wire-2',
-      sourcePos: { x: 150, y: 100 },
-      targetPos: { x: 300, y: 150 },
-      sourceType: 'digital',
-      targetType: 'digital',
-      color: '#66ffff'
-    }
-  ]);
+  const [wires, setWires] = useState([]);
   const [pendingWire, setPendingWire] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [selectedWireId, setSelectedWireId] = useState(null);
@@ -329,6 +311,21 @@ const SimpleWireManager = ({ canvasRef }) => {
     }
   };
 
+  // Handle delete key for wire removal
+  const handleDeleteWire = () => {
+    if (selectedWireId) {
+      setWires(prev => prev.filter(wire => wire.id !== selectedWireId));
+      setSelectedWireId(null);
+      
+      // Dispatch event to notify simulation of deleted connection
+      document.dispatchEvent(new CustomEvent('pinConnectionRemoved', {
+        detail: { wireId: selectedWireId }
+      }));
+      
+      console.log(`Deleted wire: ${selectedWireId}`);
+    }
+  };
+
   // Setup event listeners for pin clicks and wire drawing
   useEffect(() => {
     // Listen for pin click events
@@ -341,19 +338,42 @@ const SimpleWireManager = ({ canvasRef }) => {
       canvasElement.addEventListener('click', handleCanvasClick);
     }
     
+    // Add keyboard event listener for delete key
+    const handleKeyDown = (e) => {
+      if (e.key === 'Delete' && selectedWireId) {
+        handleDeleteWire();
+      }
+      
+      // Escape key to cancel pending wire or deselect selected wire
+      if (e.key === 'Escape') {
+        if (pendingWire) {
+          setPendingWire(null);
+          document.querySelectorAll('.wire-source-active').forEach(el => {
+            el.classList.remove('wire-source-active');
+            el.style.animation = '';
+          });
+        } else if (selectedWireId) {
+          setSelectedWireId(null);
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    
     // Debug - log any existing wires
     console.log('Current wires:', wires);
     
     // Clean up
     return () => {
       document.removeEventListener('pinClicked', handlePinClick);
+      window.removeEventListener('keydown', handleKeyDown);
       
       if (canvasElement) {
         canvasElement.removeEventListener('mousemove', handleMouseMove);
         canvasElement.removeEventListener('click', handleCanvasClick);
       }
     };
-  }, [canvasRef, pendingWire]);
+  }, [canvasRef, pendingWire, selectedWireId]);
   
   // Debug - log when wires array changes
   useEffect(() => {
@@ -380,26 +400,38 @@ const SimpleWireManager = ({ canvasRef }) => {
 
   // Get current wire positions
   const getUpdatedWirePositions = () => {
-    // First, handle our test wires which already have positions
-    const testWires = wires.filter(wire => wire.id.startsWith('test-'));
+    if (!canvasRef?.current) return [];
     
-    // Then handle dynamic wires that need position updates
-    const dynamicWires = wires
-      .filter(wire => !wire.id.startsWith('test-'))
+    // Process all dynamic wires and update positions
+    return wires
       .map(wire => {
-        // Find source and target elements
+        // Check if this wire already has valid positions
+        const hasValidPositions = 
+          wire.sourcePos && wire.targetPos && 
+          typeof wire.sourcePos.x === 'number' && 
+          typeof wire.targetPos.x === 'number';
+        
+        // If manual positions are set and valid, use them directly
+        if (hasValidPositions && wire.manualPositions) {
+          return wire;
+        }
+        
+        // Otherwise, try to find the DOM elements and get their positions
         const sourceElement = document.getElementById(wire.sourceId);
         const targetElement = document.getElementById(wire.targetId);
         
         if (!sourceElement || !targetElement) {
+          console.warn(`Elements not found for wire ${wire.id}: source=${wire.sourceId}, target=${wire.targetId}`);
+          
+          // If we have previous positions, use them (better than removing the wire)
+          if (hasValidPositions) {
+            return wire;
+          }
+          
           return { ...wire, invalid: true };
         }
         
-        // Get positions
-        if (!canvasRef?.current) {
-          return { ...wire, invalid: true };
-        }
-        
+        // Get positions relative to canvas
         const canvasRect = canvasRef.current.getBoundingClientRect();
         const sourceRect = sourceElement.getBoundingClientRect();
         const targetRect = targetElement.getBoundingClientRect();
@@ -417,8 +449,6 @@ const SimpleWireManager = ({ canvasRef }) => {
         return { ...wire, sourcePos, targetPos };
       })
       .filter(wire => !wire.invalid);
-    
-    return [...testWires, ...dynamicWires];
   };
 
   // Render SVG with wire connections
