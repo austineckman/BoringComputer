@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 /**
  * SimpleWireManager component for:
  * 1. Managing wire connections between components
- * 2. Drawing wires between pins - implementation matches Wokwi pattern
+ * 2. Drawing wires between pins
  * 3. Tracking connected pins
  */
 const SimpleWireManager = ({ canvasRef }) => {
@@ -13,9 +13,6 @@ const SimpleWireManager = ({ canvasRef }) => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [selectedWireId, setSelectedWireId] = useState(null);
   const svgRef = useRef(null);
-  
-  // Pin registry to track pin locations when components move
-  const pinRegistry = useRef(new Map());
 
   // Function to get pin position from event
   const getPinPosition = (event) => {
@@ -28,45 +25,54 @@ const SimpleWireManager = ({ canvasRef }) => {
     };
   };
 
-  // Get path for wire with Wokwi-style bezier routing
+  // Get path for wire with enhanced TinkerCad-style routing
   const getWirePath = (start, end) => {
-    // Get the distance between start and end points
     const dx = end.x - start.x;
     const dy = end.y - start.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     
-    // For very short distances, use straight line
-    if (distance < 20) {
-      return `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+    // For short wires, use a simple arc
+    if (distance < 50) {
+      // Arc path with small curvature
+      return `M ${start.x} ${start.y} 
+              Q ${(start.x + end.x) / 2} ${(start.y + end.y) / 2 - 10}, 
+                ${end.x} ${end.y}`;
     }
     
-    // For medium distances, use a simple curved line - like Wokwi's approach
-    if (distance < 100) {
-      // The control point is perpendicular to the line between start and end
-      const mx = (start.x + end.x) / 2;
-      const my = (start.y + end.y) / 2;
+    // For diagonal wires, determine if we should route horizontally first or vertically first
+    const isHorizontalFirst = Math.abs(dx) > Math.abs(dy);
+    
+    if (isHorizontalFirst) {
+      // Route horizontally first, then vertically (Manhattan routing)
+      const midX = start.x + dx * 0.7; // Go 70% of the way horizontally
+      const bendRadius = Math.min(Math.abs(dy) * 0.3, 20); // Size of the curve at the bend
       
-      // Perpendicular offset based on distance
-      const offset = Math.min(distance * 0.3, 30);
+      return `M ${start.x} ${start.y}
+              L ${midX - bendRadius * Math.sign(dx)} ${start.y}
+              C ${midX} ${start.y}, 
+                ${midX} ${start.y}, 
+                ${midX} ${start.y + bendRadius * Math.sign(dy)}
+              L ${midX} ${end.y - bendRadius * Math.sign(dy)}
+              C ${midX} ${end.y}, 
+                ${midX} ${end.y}, 
+                ${midX + bendRadius * Math.sign(dx)} ${end.y}
+              L ${end.x} ${end.y}`;
+    } else {
+      // Route vertically first, then horizontally
+      const midY = start.y + dy * 0.7; // Go 70% of the way vertically
+      const bendRadius = Math.min(Math.abs(dx) * 0.3, 20); // Size of the curve at the bend
       
-      // Calculate perpendicular direction
-      const perpX = -dy / distance;
-      const perpY = dx / distance;
-      
-      return `M ${start.x} ${start.y} Q ${mx + perpX * offset} ${my + perpY * offset}, ${end.x} ${end.y}`;
+      return `M ${start.x} ${start.y}
+              L ${start.x} ${midY - bendRadius * Math.sign(dy)}
+              C ${start.x} ${midY}, 
+                ${start.x} ${midY}, 
+                ${start.x + bendRadius * Math.sign(dx)} ${midY}
+              L ${end.x - bendRadius * Math.sign(dx)} ${midY}
+              C ${end.x} ${midY}, 
+                ${end.x} ${midY}, 
+                ${end.x} ${midY + bendRadius * Math.sign(dy)}
+              L ${end.x} ${end.y}`;
     }
-    
-    // For longer wires, use an S-curve (very similar to Wokwi)
-    // Calculate control points distance - increases with wire length but has a max value
-    const ctrlDist = Math.min(distance * 0.4, 80);
-    
-    // Calculate control points
-    const startCtrlX = start.x + (dx > 0 ? ctrlDist : -ctrlDist);
-    const startCtrlY = start.y;
-    const endCtrlX = end.x + (dx < 0 ? ctrlDist : -ctrlDist);
-    const endCtrlY = end.y;
-    
-    return `M ${start.x} ${start.y} C ${startCtrlX} ${startCtrlY}, ${endCtrlX} ${endCtrlY}, ${end.x} ${end.y}`;
   };
 
   // Get style for wire based on type and color
@@ -440,41 +446,16 @@ const SimpleWireManager = ({ canvasRef }) => {
     console.log('Wires updated:', wires);
   }, [wires]);
 
-  // Enhanced Wokwi-style component movement handler
+  // Wokwi-style component movement handler - simple and effective
   useEffect(() => {
     // Events that should trigger wire position updates
     const events = ['componentMoved', 'componentMovedFinal', 'redrawWires'];
     
-    // Enhanced function to update wire positions when components move
-    const handleComponentMove = (event) => {
-      // Get the component ID from the event if available
-      const componentId = event?.detail?.componentId;
-      
-      // Get the new position from the event if available
-      const newPosition = event?.detail?.newPosition;
-      
-      // Log the component movement event to help with debugging
-      if (componentId) {
-        console.log(`Component ${componentId} moved`, newPosition ? `to (${newPosition.x}, ${newPosition.y})` : '');
-      }
-      
-      // Force immediate pin position recalculation for all wires
-      // This directly reads from the DOM to get current pin positions
-      const updatedWirePositions = getUpdatedWirePositions();
-      
-      // Only update if we got valid positions
-      if (updatedWirePositions.length > 0) {
-        // Use a function that ensures that we're not just spreading the same wires
-        // But actually creating a new array with updated positions
-        setWires(prevWires => {
-          // Map each wire to its updated version or keep it if no update found
-          return prevWires.map(wire => {
-            // Find the matching updated wire by ID
-            const updatedWire = updatedWirePositions.find(w => w.id === wire.id);
-            return updatedWire && !updatedWire.invalid ? updatedWire : wire;
-          });
-        });
-      }
+    // Simple function to force a redraw of all wires - Wokwi-style
+    const handleComponentMove = () => {
+      // This approach simply triggers a re-render that will call getUpdatedWirePositions()
+      // which directly reads pin positions from the DOM
+      setWires(prevWires => [...prevWires]);
     };
     
     // Register for all events that should update wire positions
@@ -561,98 +542,16 @@ const SimpleWireManager = ({ canvasRef }) => {
           if (similarElements.length > 0) targetElement = similarElements[0];
         }
         
-        // If we still can't find the elements but have valid positions
+        // If we still can't find the elements and have valid positions, use the old ones
         if ((!sourceElement || !targetElement) && hasValidPositions) {
-          // This approach stores the delta between component position and pin position
-          // so we can update wire endpoints even if we can't find the pin elements directly
-          
-          // Extract component IDs from pin IDs
-          const sourceCompId = sourceId.split('-').slice(1, 3).join('-');
-          const targetCompId = targetId.split('-').slice(1, 3).join('-');
-          
-          // Try to find component elements
-          const sourceCompElement = document.getElementById(sourceCompId);
-          const targetCompElement = document.getElementById(targetCompId);
-          
-          // If we found at least one component, try to update the wire position relative to it
-          if (sourceCompElement || targetCompElement) {
-            // Get current positions
-            const updatedWire = { ...wire };
-            
-            // If source component found, update source pin position relative to component
-            if (sourceCompElement) {
-              const sourceCompRect = sourceCompElement.getBoundingClientRect();
-              const sourceCompPos = {
-                x: sourceCompRect.left + (sourceCompRect.width / 2) - canvasRect.left,
-                y: sourceCompRect.top + (sourceCompRect.height / 2) - canvasRect.top
-              };
-              
-              // Update wire source position based on component movement
-              if (wire.sourceCompPos) {
-                // Calculate the pin's offset from the component center
-                const offsetX = wire.sourcePos.x - wire.sourceCompPos.x;
-                const offsetY = wire.sourcePos.y - wire.sourceCompPos.y;
-                
-                // Apply the same offset to the new component position
-                updatedWire.sourcePos = {
-                  x: sourceCompPos.x + offsetX,
-                  y: sourceCompPos.y + offsetY
-                };
-                
-                // Store the new component position for future updates
-                updatedWire.sourceCompPos = sourceCompPos;
-              } else {
-                // First time calculation - store component position for future reference
-                updatedWire.sourceCompPos = sourceCompPos;
-              }
-            }
-            
-            // If target component found, update target pin position relative to component
-            if (targetCompElement) {
-              const targetCompRect = targetCompElement.getBoundingClientRect();
-              const targetCompPos = {
-                x: targetCompRect.left + (targetCompRect.width / 2) - canvasRect.left,
-                y: targetCompRect.top + (targetCompRect.height / 2) - canvasRect.top
-              };
-              
-              // Update wire target position based on component movement
-              if (wire.targetCompPos) {
-                // Calculate the pin's offset from the component center
-                const offsetX = wire.targetPos.x - wire.targetCompPos.x;
-                const offsetY = wire.targetPos.y - wire.targetCompPos.y;
-                
-                // Apply the same offset to the new component position
-                updatedWire.targetPos = {
-                  x: targetCompPos.x + offsetX,
-                  y: targetCompPos.y + offsetY
-                };
-                
-                // Store the new component position for future updates
-                updatedWire.targetCompPos = targetCompPos;
-              } else {
-                // First time calculation - store component position for future reference
-                updatedWire.targetCompPos = targetCompPos;
-              }
-            }
-            
-            console.info(`Updated wire ${wire.id} positions based on component movement`);
-            return updatedWire;
-          }
-          
-          // If we couldn't find components either, use the previous wire positions as fallback
-          console.warn(`Using previous positions for wire ${wire.id} as no components found`);
+          console.warn(`Using previous positions for wire ${wire.id}`);
           return wire;
         }
         
-        // If we can't find the elements and don't have valid positions, mark as invalid but don't remove
+        // If we can't find the elements and don't have valid positions, mark as invalid
         if (!sourceElement || !targetElement) {
           console.warn(`Elements not found for wire ${wire.id}: source=${sourceId}, target=${targetId}`);
-          // Include more debug info
-          return { 
-            ...wire, 
-            invalid: true,
-            _debug: { sourceId, targetId, sourceName: wire.sourceName, targetName: wire.targetName }
-          };
+          return { ...wire, invalid: true };
         }
         
         // Get precise center positions relative to canvas
@@ -669,37 +568,14 @@ const SimpleWireManager = ({ canvasRef }) => {
           y: targetRect.top + (targetRect.height / 2) - canvasRect.top
         };
         
-        // Now also save component positions for relative movement tracking
-        
-        // Get component IDs from pin IDs
-        const sourceCompId = sourceId.split('-').slice(1, 3).join('-');
-        const targetCompId = targetId.split('-').slice(1, 3).join('-');
-        
-        // Find component elements
-        const sourceCompElement = document.getElementById(sourceCompId);
-        const targetCompElement = document.getElementById(targetCompId);
-        
-        // Calculate component center positions for relative offset calculation
-        const sourceCompPos = sourceCompElement ? {
-          x: sourceCompElement.getBoundingClientRect().left + (sourceCompElement.getBoundingClientRect().width / 2) - canvasRect.left,
-          y: sourceCompElement.getBoundingClientRect().top + (sourceCompElement.getBoundingClientRect().height / 2) - canvasRect.top
-        } : null;
-        
-        const targetCompPos = targetCompElement ? {
-          x: targetCompElement.getBoundingClientRect().left + (targetCompElement.getBoundingClientRect().width / 2) - canvasRect.left,
-          y: targetCompElement.getBoundingClientRect().top + (targetCompElement.getBoundingClientRect().height / 2) - canvasRect.top
-        } : null;
-        
-        // Return updated wire with new positions and component reference positions
+        // Return updated wire with new positions
         return { 
           ...wire, 
           sourcePos, 
           targetPos,
-          // Store the fixed IDs and component positions
+          // Store the fixed IDs
           sourceId,
-          targetId,
-          sourceCompPos,
-          targetCompPos
+          targetId
         };
       })
       .filter(wire => !wire.invalid);
@@ -722,19 +598,18 @@ const SimpleWireManager = ({ canvasRef }) => {
       >
         {/* No background grid pattern */}
         
-        {/* Draw permanent wires with guaranteed unique keys */}
-        {getUpdatedWirePositions().map((wire, index) => {
+        {/* Draw permanent wires */}
+        {getUpdatedWirePositions().map(wire => {
           if (!wire.sourcePos || !wire.targetPos) return null;
           
           const path = getWirePath(wire.sourcePos, wire.targetPos);
           const style = getWireStyle(wire.sourceType, wire.targetType, wire.color);
           
-          // Use a combination of wire ID and index to ensure key uniqueness
-          const wireKey = `${wire.id}-${index}`;
+          console.log('Rendering wire:', wire.id);
           
           return (
             <g 
-              key={wireKey}
+              key={wire.id} 
               className={`wire-group ${selectedWireId === wire.id ? 'selected' : ''}`}
               onClick={(e) => handleWireClick(wire.id, e)}
               style={{ pointerEvents: 'all' }}

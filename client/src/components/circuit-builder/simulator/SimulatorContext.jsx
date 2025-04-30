@@ -64,26 +64,14 @@ export const SimulatorProvider = ({ children }) => {
     addLog(`Pin ${pin} set to ${isHigh ? 'HIGH' : 'LOW'}`);
   }, []);
   
-  // Update component state based on pin state - Wokwi style
+  // Update component state based on pin state
   const updateComponentState = useCallback((componentId, newState) => {
-    console.log(`Updating component state for ${componentId}:`, newState);
-    
-    // Update the component state in our state store
     setComponentStates(prev => ({
       ...prev,
       [componentId]: newState
     }));
     
-    // WOKWI STYLE: Also dispatch a DOM event for components to listen for
-    // This allows components to be notified of state changes even if they're rendered after the state is updated
-    document.dispatchEvent(new CustomEvent('componentStateChanged', {
-      detail: {
-        componentId: componentId,
-        ...newState
-      }
-    }));
-    
-    addLog(`Component ${componentId} state updated: ${JSON.stringify(newState)}`);
+    addLog(`Component ${componentId} state updated`);
   }, []);
   
   // Create the context value object

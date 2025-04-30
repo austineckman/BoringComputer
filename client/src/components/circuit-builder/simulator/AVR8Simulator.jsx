@@ -6,16 +6,13 @@ import {
   portBConfig, 
   portCConfig, 
   portDConfig,
-  timer0Config,
   usart0Config
 } from 'avr8js';
-import { validateArduinoSyntax, extractFunctionBody, extractDigitalWrites } from './SimulatorUtils';
 
 /**
  * AVR8Simulator
  * 
- * Handles the simulation of AVR microcontroller using avr8js directly from Wokwi's implementation
- * Following the patterns and techniques used in the Wokwi's AVR8js GitHub repository
+ * Handles the simulation of AVR microcontroller using avr8js
  * Connects Arduino sketch code to the circuit components
  */
 const AVR8Simulator = ({ 
@@ -146,7 +143,7 @@ const AVR8Simulator = ({
     return null;
   };
   
-  // Handle pin state changes from the CPU - WOKWI style
+  // Handle pin state changes from the CPU
   const handlePinStateChange = (pin, state) => {
     const isHigh = state === PinState.High;
     console.log(`Pin D${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
@@ -156,16 +153,6 @@ const AVR8Simulator = ({
       // Pass the pin number and state (true for HIGH, false for LOW)
       onPinChange(pin, isHigh);
     }
-    
-    // WOKWI STYLE: Dispatch a global event that components can listen for
-    // This allows any component in the DOM to react to Arduino pin changes
-    document.dispatchEvent(new CustomEvent('arduinoPinChanged', {
-      detail: {
-        pin: pin,
-        isHigh: isHigh,
-        pinKey: `D${pin}`
-      }
-    }));
     
     // Check for connected components via wires
     const pinKey = `D${pin}`;
@@ -186,20 +173,10 @@ const AVR8Simulator = ({
           // This will propagate the signal to connected components
           console.log(`Propagating signal to ${componentId} pin ${componentPin}: ${isHigh ? 'HIGH' : 'LOW'}`);
           
-          // WOKWI STYLE: Dispatch component-specific events
-          // This allows LED components to directly listen for changes affecting them
-          document.dispatchEvent(new CustomEvent('pinStateChanged', {
-            detail: {
-              componentId: componentId,
-              pin: componentPin,
-              isHigh: isHigh
-            }
-          }));
-          
           // Update the component state based on the signal
           // For example, if it's an LED connected to pin 13, turn it on when pin 13 is HIGH
           if (componentId.includes('led-')) {
-            // Enhanced LED update with polarity check
+            // Simplified LED update - in a full implementation, we would check pin polarities
             updateLEDComponent(componentId, componentPin, isHigh);
           } 
           else if (componentId.includes('buzzer-')) {
@@ -477,9 +454,104 @@ const AVR8Simulator = ({
     }
   };
   
-  // Using imported functions from SimulatorUtils.js instead of defining them here
-  // This ensures consistent behavior across the application
-  // and avoids code duplication
+  // Basic Arduino syntax validator
+  const validateArduinoSyntax = (code) => {
+    const errors = [];
+    const lines = code.split('\n');
+    
+    // Track braces for matching
+    let openBraces = 0;
+    let closeBraces = 0;
+    
+    // Check each line for common syntax errors
+    lines.forEach((line, index) => {
+      const lineNum = index + 1;
+      const trimmedLine = line.trim();
+      
+      // Skip comments and empty lines
+      if (trimmedLine.startsWith("//") || trimmedLine === "") {
+        return;
+      }
+      
+      // Count braces
+      for (const char of trimmedLine) {
+        if (char === '{') openBraces++;
+        if (char === '}') closeBraces++;
+      }
+      
+      // Check for missing semicolons on statements
+      if (trimmedLine.length > 0 && 
+          !trimmedLine.endsWith("{") && 
+          !trimmedLine.endsWith("}") && 
+          !trimmedLine.endsWith(";") &&
+          !trimmedLine.startsWith("#include") &&
+          !trimmedLine.startsWith("void setup") &&
+          !trimmedLine.startsWith("void loop")) {
+        errors.push({
+          line: lineNum,
+          message: `Missing semicolon at the end of statement`
+        });
+      }
+      
+      // Check for common Arduino function syntax
+      if (trimmedLine.includes("digitalRead") || 
+          trimmedLine.includes("digitalWrite") || 
+          trimmedLine.includes("analogRead") || 
+          trimmedLine.includes("analogWrite")) {
+        
+        // Check for missing parentheses
+        if (!trimmedLine.includes("(") || !trimmedLine.includes(")")) {
+          errors.push({
+            line: lineNum,
+            message: `Missing parentheses in function call`
+          });
+        }
+        
+        // Check for missing pin or value parameters
+        if (trimmedLine.includes("()") || 
+            (trimmedLine.includes("(") && trimmedLine.includes(")") && !trimmedLine.includes(","))) {
+          errors.push({
+            line: lineNum,
+            message: `Missing parameters in function call`
+          });
+        }
+      }
+    });
+    
+    // Check for unmatched braces
+    if (openBraces !== closeBraces) {
+      errors.push({
+        line: lines.length,
+        message: `Unmatched braces: ${openBraces} opening vs ${closeBraces} closing`
+      });
+    }
+    
+    return errors;
+  };
+  
+  // Extract the body of a function from the code
+  const extractFunctionBody = (code, functionName) => {
+    const regex = new RegExp(`void\\s+${functionName}\\s*\\(\\)\\s*{([\\s\\S]*?)}`, 'i');
+    const match = code.match(regex);
+    
+    return match ? match[1].trim() : '';
+  };
+  
+  // Extract digitalWrite commands from code
+  const extractDigitalWrites = (code) => {
+    const results = [];
+    const regex = /digitalWrite\s*\(\s*(\d+|LED_BUILTIN)\s*,\s*(HIGH|LOW)\s*\)/g;
+    
+    let match;
+    while ((match = regex.exec(code)) !== null) {
+      const pin = match[1] === 'LED_BUILTIN' ? 13 : parseInt(match[1]);
+      const state = match[2] === 'HIGH';
+      
+      results.push({ pin, state });
+    }
+    
+    return results;
+  };
   
   // Start the simulation
   const startSimulation = () => {

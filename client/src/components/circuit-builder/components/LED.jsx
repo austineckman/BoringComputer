@@ -47,105 +47,14 @@ const LED = ({
   const [initPosLeft, setInitPosLeft] = useState(initialX);
   const [isLit, setIsLit] = useState(false); // Track LED state for simulation
   
-  // Enhanced Wokwi-style LED state management from simulation
+  // Check if this LED has been updated by the simulation
   useEffect(() => {
-    // Check if this LED has been updated by the simulation via context
     if (componentStates && componentStates[id]) {
       const ledState = componentStates[id];
       // Update LED state based on simulation results
       setIsLit(ledState.isLit || false);
-      console.log(`LED ${id} state updated from simulation context: isLit=${ledState.isLit}`);
     }
-    
-    // Wokwi LED state handling follows these patterns:
-    // 1. Listen for pinStateChanged events that target this component
-    // 2. Listen for componentStateChanged events that target this component
-    // 3. Listen for direct simulation signals from Arduino pins that this LED is connected to
-    
-    // Handler for pin state changes (when a pin this LED is connected to changes)
-    const handlePinStateChange = (e) => {
-      if (e.detail && e.detail.componentId === id) {
-        console.log(`LED ${id} receiving pin state change:`, e.detail);
-        
-        // Determine if the LED should be lit based on which pin changed
-        // and the value it changed to - following Wokwi's LED implementation
-        const pinName = e.detail.pin;
-        const isHigh = e.detail.isHigh;
-        
-        // LED lights when:
-        // - anode is HIGH and cathode is LOW/GND
-        // - or cathode is LOW and anode is HIGH/VCC
-        if (pinName === 'anode' && isHigh) {
-          setIsLit(true);
-        } else if (pinName === 'cathode' && !isHigh) {
-          setIsLit(true);
-        } else {
-          setIsLit(false);
-        }
-      }
-    };
-    
-    // Handler for direct component state updates 
-    // (when the simulation explicitly sets this LED's state)
-    const handleComponentStateChange = (e) => {
-      if (e.detail && e.detail.componentId === id) {
-        console.log(`LED ${id} receiving component state change:`, e.detail);
-        if (e.detail.isLit !== undefined) {
-          setIsLit(e.detail.isLit);
-        }
-      }
-    };
-    
-    // Handler for Arduino pin changes that affect connected components
-    // This pattern matches how Wokwi handles global pin state changes
-    const handleArduinoPinChange = (e) => {
-      // Check all connected components and pins
-      // This implementation assumes connections are tracked elsewhere
-      
-      // Special case: pin 13 is typically connected to the built-in LED
-      // For demonstration/testing purposes
-      if (e.detail && e.detail.pin === 13) {
-        // This is a simplified check - in reality we'd check if this LED
-        // is actually connected to pin 13 via wire connections
-        if (id.includes('led')) {
-          console.log(`Arduino pin 13 changed to ${e.detail.isHigh ? 'HIGH' : 'LOW'}`);
-          setIsLit(e.detail.isHigh);
-        }
-      }
-    };
-    
-    // Add all the event listeners - Wokwi style
-    document.addEventListener('pinStateChanged', handlePinStateChange);
-    document.addEventListener('componentStateChanged', handleComponentStateChange);
-    document.addEventListener('arduinoPinChanged', handleArduinoPinChange);
-    
-    // Special event for simulation start/stop
-    const handleSimulationStarted = () => {
-      console.log(`LED ${id} notified: simulation started`);
-      // Reset LED state when simulation starts
-      if (!isLit) {
-        setIsLit(false);
-      }
-    };
-    
-    const handleSimulationStopped = () => {
-      console.log(`LED ${id} notified: simulation stopped`);
-      // Turn off LED when simulation stops
-      setIsLit(false);
-    };
-    
-    document.addEventListener('simulationStarted', handleSimulationStarted);
-    document.addEventListener('simulationStopped', handleSimulationStopped);
-    
-    // Cleanup on unmount
-    return () => {
-      document.removeEventListener('pinStateChanged', handlePinStateChange);
-      document.removeEventListener('componentStateChanged', handleComponentStateChange);
-      document.removeEventListener('arduinoPinChanged', handleArduinoPinChange);
-      document.removeEventListener('simulationStarted', handleSimulationStarted);
-      document.removeEventListener('simulationStopped', handleSimulationStopped);
-    };
-  }, [componentStates, id, isSimulationRunning]);
+  }, [componentStates, id]);
   
   // Create a component data structure that matches what the original code expects
   const componentData = {
@@ -163,11 +72,6 @@ const LED = ({
       brightness: 80
     }
   };
-  
-  // Debug help for LED state 
-  useEffect(() => {
-    console.log(`LED ${id} state updated: isLit=${isLit}, isSimulationRunning=${isSimulationRunning}, rendered value=${componentData.attrs.value}`);
-  }, [isLit, isSimulationRunning]);
 
   // Handle drag or rotate
   const onDragOrRotate = ({ target, beforeTranslate, beforeRotate }) => {
