@@ -268,6 +268,31 @@ const AVR8Simulator = ({
     // Build a map of pin connections
     const connections = {};
     
+    // Function to parse pin ID
+    const parsePinId = (pinId) => {
+      // Format: componentType-uniqueId-pinName
+      // Example: heroboard-123abc-D5, led-456def-anode
+      const parts = pinId.split('-');
+      if (parts.length < 3) return null;
+      
+      const componentType = parts[0];  // heroboard, led, etc.
+      const componentId = `${parts[0]}-${parts[1]}`; // heroboard-123abc
+      
+      // The pin name might have dashes in it, so join the rest of the parts
+      const pinName = parts.slice(2).join('-'); // D5, anode, etc.
+      
+      return { componentType, componentId, pinName };
+    };
+    
+    // Function to check if a pin is a hero board pin
+    const isHeroboardPin = (pinId) => {
+      const parts = parsePinId(pinId);
+      if (!parts) return false;
+      return parts.componentType === 'heroboard' && 
+            (parts.pinName.startsWith('D') || parts.pinName.startsWith('A'));
+    };
+    
+    // Process each wire to build connections
     wires.forEach(wire => {
       const sourceId = wire.sourceId;
       const targetId = wire.targetId;
@@ -275,87 +300,259 @@ const AVR8Simulator = ({
       // Skip incomplete wires
       if (!sourceId || !targetId) return;
       
-      // Map HeroBoard pins (D0-D13, A0-A5) to connected component pins
-      if (sourceId.startsWith('heroboard')) {
-        const pinName = sourceId.split('-')[1]; // e.g., "D5"
-        if (!connections[pinName]) {
-          connections[pinName] = [];
+      // Parse the source and target pins
+      const sourceInfo = parsePinId(sourceId);
+      const targetInfo = parsePinId(targetId);
+      
+      if (!sourceInfo || !targetInfo) {
+        console.warn("Invalid pin ID format:", sourceId, targetId);
+        return;
+      }
+      
+      // Log the connection for debugging
+      if (onLog) {
+        onLog(`Wire connects ${sourceInfo.componentType} pin ${sourceInfo.pinName} to ${targetInfo.componentType} pin ${targetInfo.pinName}`);
+      }
+      
+      // Map Arduino pins (D0-D13, A0-A5) to connected component pins
+      if (isHeroboardPin(sourceId)) {
+        const pinKey = sourceInfo.pinName; // e.g., "D5"
+        if (!connections[pinKey]) {
+          connections[pinKey] = [];
         }
-        connections[pinName].push(`${targetId}`);
+        // Store: componentId:pinName format
+        connections[pinKey].push(`${targetInfo.componentId}:${targetInfo.pinName}`);
       } 
-      else if (targetId.startsWith('heroboard')) {
-        const pinName = targetId.split('-')[1]; // e.g., "D5"
-        if (!connections[pinName]) {
-          connections[pinName] = [];
+      else if (isHeroboardPin(targetId)) {
+        const pinKey = targetInfo.pinName; // e.g., "D5"
+        if (!connections[pinKey]) {
+          connections[pinKey] = [];
         }
-        connections[pinName].push(`${sourceId}`);
+        // Store: componentId:pinName format
+        connections[pinKey].push(`${sourceInfo.componentId}:${sourceInfo.pinName}`);
       }
     });
     
     setPinConnections(connections);
     console.log("Pin connections mapped:", connections);
     
-  }, [wires, components]);
+    // Print a human-readable summary of the connections
+    if (onLog) {
+      onLog(`Circuit Analysis: ${Object.keys(connections).length} hero board pins connected`);
+      
+      Object.entries(connections).forEach(([pin, connectedPins]) => {
+        onLog(`  ${pin} connected to ${connectedPins.length} component pins:`);
+        connectedPins.forEach(connection => {
+          onLog(`    ▶ ${connection}`);
+        });
+      });
+    }
+    
+  }, [wires, components, onLog]);
   
   // Compile Arduino code to binary
   const compileCode = async (sourceCode) => {
-    // For now, we'll use a simple blink example as our compiled program
-    // In a real implementation, you'd need to compile the Arduino code to AVR binary
-    // or use an embedded Arduino compiler like avr-gcc via a WebAssembly bridge
+    try {
+      // First, perform basic syntax validation on the Arduino code
+      const syntaxErrors = validateArduinoSyntax(sourceCode);
+      
+      if (syntaxErrors.length > 0) {
+        if (onLog) {
+          onLog("Compilation failed: Syntax errors detected");
+          syntaxErrors.forEach(error => {
+            onLog(`Error: ${error.message} at line ${error.line}`);
+          });
+        }
+        return null;
+      }
+      
+      // For now, we'll use a simple blink example as our compiled program
+      // In a real implementation, you'd need to compile the Arduino code to AVR binary
+      // or use an embedded Arduino compiler like avr-gcc via a WebAssembly bridge
+      
+      // This is a simplified memory setup for our virtual Arduino
+      // In the real implementation, we would compile the actual sourceCode
+      const memorySize = 0x8000; // 32KB program memory
+      const programBytes = new Uint16Array(memorySize);
+      
+      // Clear memory
+      for (let i = 0; i < programBytes.length; i++) {
+        programBytes[i] = 0;
+      }
+      
+      // Check if the code contains a valid setup and loop function
+      const hasSetup = sourceCode.includes("void setup()");
+      const hasLoop = sourceCode.includes("void loop()");
+      
+      if (!hasSetup || !hasLoop) {
+        if (onLog) {
+          if (!hasSetup) onLog("Error: Missing 'void setup()' function");
+          if (!hasLoop) onLog("Error: Missing 'void loop()' function");
+        }
+        return null;
+      }
+      
+      // Extract pin configurations from the code
+      const setupCode = extractFunctionBody(sourceCode, "setup");
+      const loopCode = extractFunctionBody(sourceCode, "loop");
+      
+      // Check for digitalWrite commands to control pins
+      const digitalWrites = extractDigitalWrites(loopCode);
+      
+      // Simplified program that toggles pin 13 (PB5) on and off
+      let addr = 0;
+      
+      // 1. Set pin 13 (PB5) as output
+      // SBI DDRB, 5 (Set Bit in I/O Register - Data Direction Register B, bit 5)
+      programBytes[addr++] = 0x9A95; // SBI 0x04, 5 (DDRB is at 0x04)
+      
+      // Loop:
+      const loopAddr = addr;
+      
+      // 2. Set pin 13 HIGH
+      // SBI PORTB, 5 (Set Bit in I/O Register - Port B, bit 5)
+      programBytes[addr++] = 0x9A9D; // SBI 0x05, 5 (PORTB is at 0x05)
+      
+      // 3. Delay (simplified - in real code this would be many instructions)
+      for (let i = 0; i < 10; i++) {
+        programBytes[addr++] = 0x0000; // NOP
+      }
+      
+      // 4. Set pin 13 LOW
+      // CBI PORTB, 5 (Clear Bit in I/O Register - Port B, bit 5)
+      programBytes[addr++] = 0x989D; // CBI 0x05, 5 (PORTB is at 0x05)
+      
+      // 5. Delay again
+      for (let i = 0; i < 10; i++) {
+        programBytes[addr++] = 0x0000; // NOP
+      }
+      
+      // 6. Jump back to loop
+      // RJMP to loop address
+      const relJump = (loopAddr - addr - 1) & 0x0FFF; // Relative jump value
+      programBytes[addr++] = 0xC000 | relJump; // RJMP to loopAddr
+      
+      setCompiledProgram(programBytes);
+      
+      if (onLog) {
+        onLog("Program compiled successfully");
+        
+        // Log extracted information about the program
+        if (digitalWrites.length > 0) {
+          onLog(`Found ${digitalWrites.length} digitalWrite commands`);
+          digitalWrites.forEach(dw => {
+            onLog(`  Pin ${dw.pin} set to ${dw.state ? 'HIGH' : 'LOW'}`);
+          });
+        }
+      }
+      
+      return programBytes;
+    } catch (error) {
+      if (onLog) {
+        onLog(`Compilation error: ${error.message}`);
+      }
+      console.error("Error compiling Arduino code:", error);
+      return null;
+    }
+  };
+  
+  // Basic Arduino syntax validator
+  const validateArduinoSyntax = (code) => {
+    const errors = [];
+    const lines = code.split('\n');
     
-    // This is a simplified memory setup for our virtual Arduino
-    // In the real implementation, we would compile the actual sourceCode
+    // Track braces for matching
+    let openBraces = 0;
+    let closeBraces = 0;
     
-    // Initialize program memory with our simplified blink sketch
-    // Each instruction is just a placeholder - not actual AVR assembly
-    const memorySize = 0x8000; // 32KB program memory
-    const programBytes = new Uint16Array(memorySize);
+    // Check each line for common syntax errors
+    lines.forEach((line, index) => {
+      const lineNum = index + 1;
+      const trimmedLine = line.trim();
+      
+      // Skip comments and empty lines
+      if (trimmedLine.startsWith("//") || trimmedLine === "") {
+        return;
+      }
+      
+      // Count braces
+      for (const char of trimmedLine) {
+        if (char === '{') openBraces++;
+        if (char === '}') closeBraces++;
+      }
+      
+      // Check for missing semicolons on statements
+      if (trimmedLine.length > 0 && 
+          !trimmedLine.endsWith("{") && 
+          !trimmedLine.endsWith("}") && 
+          !trimmedLine.endsWith(";") &&
+          !trimmedLine.startsWith("#include") &&
+          !trimmedLine.startsWith("void setup") &&
+          !trimmedLine.startsWith("void loop")) {
+        errors.push({
+          line: lineNum,
+          message: `Missing semicolon at the end of statement`
+        });
+      }
+      
+      // Check for common Arduino function syntax
+      if (trimmedLine.includes("digitalRead") || 
+          trimmedLine.includes("digitalWrite") || 
+          trimmedLine.includes("analogRead") || 
+          trimmedLine.includes("analogWrite")) {
+        
+        // Check for missing parentheses
+        if (!trimmedLine.includes("(") || !trimmedLine.includes(")")) {
+          errors.push({
+            line: lineNum,
+            message: `Missing parentheses in function call`
+          });
+        }
+        
+        // Check for missing pin or value parameters
+        if (trimmedLine.includes("()") || 
+            (trimmedLine.includes("(") && trimmedLine.includes(")") && !trimmedLine.includes(","))) {
+          errors.push({
+            line: lineNum,
+            message: `Missing parameters in function call`
+          });
+        }
+      }
+    });
     
-    // Clear memory
-    for (let i = 0; i < programBytes.length; i++) {
-      programBytes[i] = 0;
+    // Check for unmatched braces
+    if (openBraces !== closeBraces) {
+      errors.push({
+        line: lines.length,
+        message: `Unmatched braces: ${openBraces} opening vs ${closeBraces} closing`
+      });
     }
     
-    // Simplified program that toggles pin 13 (PB5) on and off
-    let addr = 0;
+    return errors;
+  };
+  
+  // Extract the body of a function from the code
+  const extractFunctionBody = (code, functionName) => {
+    const regex = new RegExp(`void\\s+${functionName}\\s*\\(\\)\\s*{([\\s\\S]*?)}`, 'i');
+    const match = code.match(regex);
     
-    // 1. Set pin 13 (PB5) as output
-    // SBI DDRB, 5 (Set Bit in I/O Register - Data Direction Register B, bit 5)
-    programBytes[addr++] = 0x9A95; // SBI 0x04, 5 (DDRB is at 0x04)
+    return match ? match[1].trim() : '';
+  };
+  
+  // Extract digitalWrite commands from code
+  const extractDigitalWrites = (code) => {
+    const results = [];
+    const regex = /digitalWrite\s*\(\s*(\d+|LED_BUILTIN)\s*,\s*(HIGH|LOW)\s*\)/g;
     
-    // Loop:
-    const loopAddr = addr;
-    
-    // 2. Set pin 13 HIGH
-    // SBI PORTB, 5 (Set Bit in I/O Register - Port B, bit 5)
-    programBytes[addr++] = 0x9A9D; // SBI 0x05, 5 (PORTB is at 0x05)
-    
-    // 3. Delay (simplified - in real code this would be many instructions)
-    for (let i = 0; i < 10; i++) {
-      programBytes[addr++] = 0x0000; // NOP
+    let match;
+    while ((match = regex.exec(code)) !== null) {
+      const pin = match[1] === 'LED_BUILTIN' ? 13 : parseInt(match[1]);
+      const state = match[2] === 'HIGH';
+      
+      results.push({ pin, state });
     }
     
-    // 4. Set pin 13 LOW
-    // CBI PORTB, 5 (Clear Bit in I/O Register - Port B, bit 5)
-    programBytes[addr++] = 0x989D; // CBI 0x05, 5 (PORTB is at 0x05)
-    
-    // 5. Delay again
-    for (let i = 0; i < 10; i++) {
-      programBytes[addr++] = 0x0000; // NOP
-    }
-    
-    // 6. Jump back to loop
-    // RJMP to loop address
-    const relJump = (loopAddr - addr - 1) & 0x0FFF; // Relative jump value
-    programBytes[addr++] = 0xC000 | relJump; // RJMP to loopAddr
-    
-    setCompiledProgram(programBytes);
-    
-    if (onLog) {
-      onLog("Program compiled successfully");
-    }
-    
-    return programBytes;
+    return results;
   };
   
   // Start the simulation
