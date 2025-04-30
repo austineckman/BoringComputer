@@ -303,6 +303,9 @@ function scanForPins(element) {
       pin.addEventListener('mouseout', handlePinMouseOut);
       pin.addEventListener('click', handlePinClick);
       
+      // Make sure SVG elements can receive events
+      pin.style.pointerEvents = 'all';
+      
       // For debugging
       if (config.debug) {
         console.log(`Enhanced pin: ${pinName}`);

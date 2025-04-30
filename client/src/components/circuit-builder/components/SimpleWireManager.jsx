@@ -67,8 +67,19 @@ const SimpleWireManager = ({ canvasRef }) => {
     
     // The event now includes the pin ID
     const pinId = event.detail.id;
+    if (!pinId) {
+      console.error('No pin ID found in click event');
+      return;
+    }
+    
     // Extract component ID and pin name from the pin ID format "pt-componentType-componentId-pinName"
-    const [prefix, componentType, componentId, pinName] = pinId.split('-');
+    const parts = pinId.split('-');
+    if (parts.length < 4) {
+      console.error('Invalid pin ID format:', pinId);
+      return;
+    }
+    
+    const [prefix, componentType, componentId, pinName] = parts;
     const parentId = `${componentType}-${componentId}`;
     
     // Get pin type from data if available or default to bidirectional
@@ -81,6 +92,10 @@ const SimpleWireManager = ({ canvasRef }) => {
     const pinElement = document.getElementById(pinId);
     
     console.log(`Pin ${pinName} (${pinType}) of component ${parentId} clicked`);
+    
+    // Log mouseleave events
+    document.addEventListener('mouseleave', () => console.log('mouseleave'), { once: true });
+    document.addEventListener('mouseup', () => console.log('mouseup'), { once: true });
     
     if (!pendingWire) {
       // Start a new wire
@@ -95,6 +110,9 @@ const SimpleWireManager = ({ canvasRef }) => {
       // Add visual indication if element exists
       if (pinElement) {
         pinElement.classList.add('wire-source-active');
+        
+        // Add pulsing animation to show it's active
+        pinElement.style.animation = 'pulse 1.5s infinite';
       }
     } else {
       // Finish a wire
@@ -104,6 +122,10 @@ const SimpleWireManager = ({ canvasRef }) => {
       if (sourceId === pinId) {
         console.log('Cannot connect a pin to itself');
         setPendingWire(null);
+        document.querySelectorAll('.wire-source-active').forEach(el => {
+          el.classList.remove('wire-source-active');
+          el.style.animation = '';
+        });
         return;
       }
       
@@ -111,11 +133,37 @@ const SimpleWireManager = ({ canvasRef }) => {
       if (sourceParentId === parentId) {
         console.log('Cannot connect pins on the same component');
         setPendingWire(null);
+        document.querySelectorAll('.wire-source-active').forEach(el => {
+          el.classList.remove('wire-source-active');
+          el.style.animation = '';
+        });
         return;
       }
       
       // Log the connection for debugging
       console.log(`Creating wire from ${sourceName} (${sourceId}) to ${pinName} (${pinId})`);
+      
+      // Determine proper wire color based on pin names
+      let wireColor = '#3b82f6'; // Default blue
+      
+      // Power connections (5V, 3.3V)
+      if (sourceName?.includes('5V') || sourceName?.includes('3V3') || 
+          pinName?.includes('5V') || pinName?.includes('3V3')) {
+        wireColor = '#ff6666'; // Red for power
+      }
+      // Ground connections
+      else if (sourceName?.includes('GND') || pinName?.includes('GND')) {
+        wireColor = '#aaaaaa'; // Gray for ground
+      }
+      // Digital pin connections
+      else if ((sourceName?.startsWith('D') || pinName?.startsWith('D')) ||
+               (!isNaN(parseInt(sourceName, 10)) || !isNaN(parseInt(pinName, 10)))) {
+        wireColor = '#66ffff'; // Cyan for digital
+      }
+      // Analog pin connections
+      else if (sourceName?.startsWith('A') || pinName?.startsWith('A')) {
+        wireColor = '#ffcc66'; // Orange for analog
+      }
       
       // Add the new wire
       const newWire = {
@@ -127,22 +175,32 @@ const SimpleWireManager = ({ canvasRef }) => {
         sourcePos,
         targetPos: position,
         sourceName,
-        targetName: pinName
+        targetName: pinName,
+        color: wireColor
       };
       
       setWires(prev => [...prev, newWire]);
       setPendingWire(null);
       
-      // Log pin connection for simulation
+      // Log connected pins for simulation
+      const pinConnections = {};
+      pinConnections[sourceId] = pinId;
+      pinConnections[pinId] = sourceId;
+      
+      console.log('Pin connections mapped:', pinConnections);
+      
+      // Dispatch event for simulation
       document.dispatchEvent(new CustomEvent('pinConnectionCreated', {
         detail: {
-          connection: newWire
+          connection: newWire,
+          pinConnections
         }
       }));
       
       // Clean up visual indication
       document.querySelectorAll('.wire-source-active').forEach(el => {
         el.classList.remove('wire-source-active');
+        el.style.animation = '';
       });
     }
   };

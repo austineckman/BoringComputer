@@ -40,3 +40,35 @@
     stroke-dashoffset: 16;
   }
 }
+
+/* Pulsing animation for active pins */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(59, 130, 246, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+/* Enhance SVG pins to ensure they're clickable */
+circle.enhanced-pin {
+  cursor: pointer !important;
+  pointer-events: all !important;
+}
+
+/* Wire connection indicator */
+.connection-active {
+  filter: drop-shadow(0px 0px 4px rgba(100, 255, 100, 0.8)) !important;
+  stroke-width: 2.5px !important;
+}
+
+/* Debug highlight for pins */
+.pin-debug-highlight {
+  stroke: red !important;
+  stroke-width: 2px !important;
+  r: 6px !important;
+}
