@@ -4,8 +4,10 @@ import ComponentPalette from './components/ComponentPalette';
 import SimpleWireManager from './components/SimpleWireManager';
 import CircuitComponent from './components/CircuitComponent';
 import PinTooltip from './components/PinTooltip'; // Import custom tooltip component
+import CircuitSimulator from './simulator/CircuitSimulator'; // Import circuit simulator
 import './styles/tooltips.css'; // Import custom tooltip styles
 import './styles/wire-manager.css'; // Import wire manager styles
+import './styles/circuit-simulator.css'; // Import circuit simulator styles
 import './lib/pin-tooltips.js'; // Import pin tooltip enhancer
 
 // Import specialized component implementations
@@ -29,6 +31,9 @@ const CircuitBuilder = () => {
   // State for circuit components
   const [components, setComponents] = useState([]);
   const [selectedComponentId, setSelectedComponentId] = useState(null);
+  const [showSimulator, setShowSimulator] = useState(false);
+  const [wires, setWires] = useState([]);
+  const [componentStates, setComponentStates] = useState({});
   const canvasRef = useRef(null);
   
   // Get the currently selected component
@@ -347,42 +352,111 @@ const CircuitBuilder = () => {
     );
   };
   
+  // Handle component state change from simulator
+  const handleComponentStateChange = (states) => {
+    setComponentStates(states);
+    
+    // Update component props to reflect state changes (e.g., LED on/off)
+    const updatedComponents = components.map(component => {
+      const newState = states[component.id];
+      
+      // If no state change for this component, return as is
+      if (newState === undefined) return component;
+      
+      // Update component-specific properties based on state
+      let updatedProps = { ...component.props };
+      
+      if (component.type === 'led') {
+        updatedProps = { ...updatedProps, isOn: newState };
+      } else if (component.type === 'buzzer') {
+        updatedProps = { ...updatedProps, hasSignal: newState };
+      } else if (component.type === 'rgb-led') {
+        // For RGB LED, we might get more specific states later
+        updatedProps = { 
+          ...updatedProps, 
+          ledRed: newState ? 255 : 0,
+          ledGreen: 0,
+          ledBlue: 0 
+        };
+      }
+      
+      return { ...component, props: updatedProps };
+    });
+    
+    setComponents(updatedComponents);
+  };
+  
+  // Handle simulator toggle
+  const toggleSimulator = () => {
+    setShowSimulator(!showSimulator);
+  };
+
   return (
-    <div className="flex h-full">
-      {/* Left sidebar - Component palette */}
-      <div className="w-64 h-full overflow-y-auto border-r border-gray-300 p-3">
-        <ComponentPalette onAddComponent={handleAddComponent} />
+    <div className="flex flex-col h-full">
+      {/* Toolbar with simulator toggle */}
+      <div className="bg-gray-800 text-white p-2 flex items-center justify-between">
+        <div className="text-lg font-semibold">Sandbox Circuit Builder</div>
+        <div>
+          <button 
+            onClick={toggleSimulator}
+            className={`px-3 py-1 rounded-md ${showSimulator ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
+          >
+            {showSimulator ? 'Stop Simulation' : 'Start Simulation'}
+          </button>
+        </div>
       </div>
       
-      {/* Main canvas */}
-      <div 
-        className="flex-1 relative h-full overflow-hidden bg-gray-50" 
-        ref={canvasRef}
-        onClick={(e) => {
-          // Only deselect when clicking directly on the canvas background
-          if (e.target === canvasRef.current) {
-            setSelectedComponentId(null);
-          }
-        }}
-      >
-        {/* Circuit components */}
-        {components.map(renderComponent)}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left sidebar - Component palette */}
+        <div className="w-64 h-full overflow-y-auto border-r border-gray-300 p-3">
+          <ComponentPalette onAddComponent={handleAddComponent} />
+        </div>
         
-        {/* Wire management layer */}
-        <SimpleWireManager canvasRef={canvasRef} />
-        
-        {/* Custom pin tooltip component */}
-        <PinTooltip />
-        
-        {/* Empty state */}
-        {components.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-            <div className="text-center">
-              <p className="mb-2">Add components from the palette to get started</p>
-              <p className="text-sm">Click and drag to position components</p>
+        {/* Main canvas */}
+        <div 
+          className="flex-1 relative h-full overflow-hidden bg-gray-50" 
+          ref={canvasRef}
+          onClick={(e) => {
+            // Only deselect when clicking directly on the canvas background
+            if (e.target === canvasRef.current) {
+              setSelectedComponentId(null);
+            }
+          }}
+        >
+          {/* Circuit components */}
+          {components.map(renderComponent)}
+          
+          {/* Wire management layer */}
+          <SimpleWireManager 
+            canvasRef={canvasRef}
+            onWiresChanged={setWires} 
+          />
+          
+          {/* Custom pin tooltip component */}
+          <PinTooltip />
+          
+          {/* Circuit simulator overlay */}
+          {showSimulator && (
+            <div className="absolute bottom-4 right-4 w-3/4 h-1/3 z-50">
+              <CircuitSimulator 
+                components={components.reduce((obj, comp) => ({ ...obj, [comp.id]: comp }), {})}
+                wires={wires}
+                onComponentStateChange={handleComponentStateChange}
+                isVisible={showSimulator}
+              />
             </div>
-          </div>
-        )}
+          )}
+          
+          {/* Empty state */}
+          {components.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+              <div className="text-center">
+                <p className="mb-2">Add components from the palette to get started</p>
+                <p className="text-sm">Click and drag to position components</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       
       {/* Right sidebar - Component properties */}
