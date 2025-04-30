@@ -272,9 +272,27 @@ const SimpleWireManager = ({ canvasRef }) => {
         wireColor = '#ffcc66'; // Orange for analog
       }
       
-      // Add the new wire
+      // Check if a wire already exists between these pins (in either direction)
+      const wireAlreadyExists = wires.some(wire => 
+        (wire.sourceId === sourceId && wire.targetId === pinId) || 
+        (wire.sourceId === pinId && wire.targetId === sourceId)
+      );
+      
+      if (wireAlreadyExists) {
+        console.warn('Wire already exists between these pins. Ignoring duplicate connection.');
+        setPendingWire(null);
+        
+        // Clean up visual indication
+        document.querySelectorAll('.wire-source-active').forEach(el => {
+          el.classList.remove('wire-source-active');
+          el.style.animation = '';
+        });
+        return;
+      }
+      
+      // Add the new wire with a unique ID
       const newWire = {
-        id: `wire-${Date.now()}`,
+        id: `wire-${Date.now()}-${Math.floor(Math.random() * 1000)}`, // More unique ID
         sourceId,
         targetId: pinId,
         sourceType,
@@ -286,6 +304,9 @@ const SimpleWireManager = ({ canvasRef }) => {
         color: wireColor
       };
       
+      console.log('Creating new wire with ID:', newWire.id);
+      
+      // Add the wire to the state
       setWires(prev => [...prev, newWire]);
       setPendingWire(null);
       
@@ -429,6 +450,40 @@ const SimpleWireManager = ({ canvasRef }) => {
     // Debug - log any existing wires
     console.log('Current wires:', wires);
     
+    // IMMEDIATE CLEANUP: Remove any duplicate wires that might already exist 
+    // at component initialization (happens only once)
+    const initialCleanup = () => {
+      const seenConnections = new Set();
+      const uniqueWires = [];
+      const duplicateIds = [];
+      
+      // Process each wire
+      wires.forEach(wire => {
+        // Create a normalized connection signature (order pins alphabetically to catch connections in both directions)
+        const [pinA, pinB] = [wire.sourceId, wire.targetId].sort();
+        const connectionSignature = `${pinA}:${pinB}`;
+        
+        // If we've seen this connection before, it's a duplicate
+        if (seenConnections.has(connectionSignature)) {
+          console.warn(`[INITIAL CLEANUP] Found duplicate wire connection: ${connectionSignature}`);
+          duplicateIds.push(wire.id);
+        } else {
+          // New unique connection
+          seenConnections.add(connectionSignature);
+          uniqueWires.push(wire);
+        }
+      });
+      
+      // If we found duplicates, update the state to remove them
+      if (duplicateIds.length > 0) {
+        console.log(`[INITIAL CLEANUP] Removing ${duplicateIds.length} duplicate wire(s):`, duplicateIds);
+        setWires(uniqueWires);
+      }
+    };
+    
+    // Run the initial cleanup
+    setTimeout(initialCleanup, 200);
+    
     // Clean up
     return () => {
       document.removeEventListener('pinClicked', handlePinClick);
@@ -439,11 +494,45 @@ const SimpleWireManager = ({ canvasRef }) => {
         canvasElement.removeEventListener('click', handleCanvasClick);
       }
     };
-  }, [canvasRef, pendingWire, selectedWireId]);
+  }, [canvasRef, pendingWire, selectedWireId, wires]);
   
-  // Debug - log when wires array changes
+  // Debug - log when wires array changes and clean up duplicate wires
   useEffect(() => {
     console.log('Wires updated:', wires);
+    
+    // This function removes any duplicate wires between the same pins
+    const removeDuplicateWires = () => {
+      // Track seen connections to detect duplicates
+      const seenConnections = new Set();
+      const uniqueWires = [];
+      const duplicateIds = [];
+      
+      // Process each wire
+      wires.forEach(wire => {
+        // Create a normalized connection signature (order pins alphabetically to catch connections in both directions)
+        const [pinA, pinB] = [wire.sourceId, wire.targetId].sort();
+        const connectionSignature = `${pinA}:${pinB}`;
+        
+        // If we've seen this connection before, it's a duplicate
+        if (seenConnections.has(connectionSignature)) {
+          console.warn(`Removing duplicate wire connection: ${connectionSignature}`);
+          duplicateIds.push(wire.id);
+        } else {
+          // New unique connection
+          seenConnections.add(connectionSignature);
+          uniqueWires.push(wire);
+        }
+      });
+      
+      // If we found duplicates, update the state to remove them
+      if (duplicateIds.length > 0) {
+        console.log(`Removing ${duplicateIds.length} duplicate wire(s):`, duplicateIds);
+        setWires(uniqueWires);
+      }
+    };
+    
+    // Wait until next frame to clean up wires (avoids cleaning during render)
+    setTimeout(removeDuplicateWires, 500);
   }, [wires]);
 
   // Wokwi-style component movement handler - simple and effective
