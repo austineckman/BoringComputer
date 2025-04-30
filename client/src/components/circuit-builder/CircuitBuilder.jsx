@@ -35,9 +35,6 @@ const CircuitBuilder = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const canvasRef = useRef(null);
   
-  // Get simulation state from SimulatorContext
-  const { isSimulationRunning, componentStates, updateComponentState } = useSimulator();
-  
   // Get the currently selected component
   const selectedComponent = components.find(c => c.id === selectedComponentId);
   
