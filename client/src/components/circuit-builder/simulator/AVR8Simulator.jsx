@@ -75,14 +75,34 @@ const AVR8Simulator = ({
   
   // Set up listeners for pin state changes
   const setupPinChangeListeners = (port, portName) => {
+    // avr8js doesn't have a direct addPinChangeListener method in the way we're using it
+    // Instead, we'll set up our own listener system by checking port values periodically
+    
+    // Store the initial pin states
+    const initialStates = [];
     for (let i = 0; i < 8; i++) {
-      port.addPinChangeListener(i, (newState) => {
-        const arduinoPin = mapPortPinToArduino(portName, i);
-        if (arduinoPin !== null) {
-          handlePinStateChange(arduinoPin, newState);
-        }
-      });
+      // Use port.readValue() to get the current value of the pin
+      initialStates[i] = port.outputRegister & (1 << i) ? PinState.High : PinState.Low;
     }
+    
+    // Every time the CPU executes, we'll check if pin states have changed
+    port.cpu.onPostCycle = () => {
+      for (let i = 0; i < 8; i++) {
+        // Get the current pin state
+        const currentState = port.outputRegister & (1 << i) ? PinState.High : PinState.Low;
+        
+        // Check if the state has changed
+        if (currentState !== initialStates[i]) {
+          initialStates[i] = currentState;
+          
+          // Map to Arduino pin and handle the state change
+          const arduinoPin = mapPortPinToArduino(portName, i);
+          if (arduinoPin !== null) {
+            handlePinStateChange(arduinoPin, currentState);
+          }
+        }
+      }
+    };
   };
   
   // Map AVR port/pin to Arduino pin numbers
@@ -125,25 +145,120 @@ const AVR8Simulator = ({
   
   // Handle pin state changes from the CPU
   const handlePinStateChange = (pin, state) => {
-    console.log(`Pin D${pin} changed to ${state === PinState.High ? 'HIGH' : 'LOW'}`);
+    const isHigh = state === PinState.High;
+    console.log(`Pin D${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
     
     // Call the onPinChange callback to update UI components
     if (onPinChange) {
-      onPinChange(pin, state === PinState.High);
+      // Pass the pin number and state (true for HIGH, false for LOW)
+      onPinChange(pin, isHigh);
     }
     
     // Check for connected components via wires
-    const connectedPins = pinConnections[`D${pin}`] || [];
+    const pinKey = `D${pin}`;
+    const connectedPins = pinConnections[pinKey] || [];
     
-    // Update connected components
-    connectedPins.forEach(connection => {
-      const [componentId, componentPin] = connection.split(':');
-      if (componentId && componentPin) {
-        // This will propagate the signal to connected components
-        console.log(`Propagating signal to ${componentId} pin ${componentPin}`);
-        // The actual component update will happen in the CircuitBuilder component
+    // Process connected components
+    if (connectedPins.length > 0) {
+      console.log(`Found ${connectedPins.length} connections for pin ${pinKey}`);
+      
+      // Update connected components
+      connectedPins.forEach(connection => {
+        // Parse the connection string - format is "componentId:pinName"
+        const parts = connection.split(':');
+        if (parts.length === 2) {
+          const componentId = parts[0];
+          const componentPin = parts[1];
+          
+          // This will propagate the signal to connected components
+          console.log(`Propagating signal to ${componentId} pin ${componentPin}: ${isHigh ? 'HIGH' : 'LOW'}`);
+          
+          // Update the component state based on the signal
+          // For example, if it's an LED connected to pin 13, turn it on when pin 13 is HIGH
+          if (componentId.includes('led-')) {
+            // Simplified LED update - in a full implementation, we would check pin polarities
+            updateLEDComponent(componentId, componentPin, isHigh);
+          } 
+          else if (componentId.includes('buzzer-')) {
+            // Update buzzer state
+            updateBuzzerComponent(componentId, componentPin, isHigh);
+          }
+          // Add more component types as needed
+        }
+      });
+    }
+  };
+  
+  // Update LED component state when it receives a signal
+  const updateLEDComponent = (ledId, pinName, isHigh) => {
+    // Find the LED in the components list
+    const led = components.find(c => c.id === ledId);
+    if (!led) return;
+    
+    // We need to make sure this isn't directly modifying the components array
+    const updatedLED = { ...led };
+    
+    // For a simple LED:
+    // If the pin is the anode and isHigh, or pin is cathode and !isHigh, LED lights up
+    // This implementation assumes we have a common ground
+    if (pinName === 'anode' && isHigh) {
+      console.log(`LED ${ledId} ON`);
+      
+      // Call the main onPinChange callback with component updates
+      if (onPinChange) {
+        onPinChange({ 
+          componentId: ledId, 
+          isLit: true 
+        });
       }
-    });
+    } else if (pinName === 'cathode' && !isHigh) {
+      console.log(`LED ${ledId} ON`);
+      
+      // Call the main onPinChange callback with component updates
+      if (onPinChange) {
+        onPinChange({ 
+          componentId: ledId, 
+          isLit: true 
+        });
+      }
+    } else {
+      console.log(`LED ${ledId} OFF`);
+      
+      // Call the main onPinChange callback with component updates
+      if (onPinChange) {
+        onPinChange({ 
+          componentId: ledId, 
+          isLit: false 
+        });
+      }
+    }
+  };
+  
+  // Update Buzzer component state when it receives a signal
+  const updateBuzzerComponent = (buzzerId, pinName, isHigh) => {
+    // Similar to LED update logic, but for a buzzer
+    // If the pin is the positive and isHigh, buzzer gets signal
+    if (pinName === 'positive' && isHigh) {
+      console.log(`Buzzer ${buzzerId} ON`);
+      
+      // Call the main onPinChange callback with component updates
+      if (onPinChange) {
+        onPinChange({ 
+          componentId: buzzerId, 
+          hasSignal: true 
+        });
+      }
+    } else {
+      console.log(`Buzzer ${buzzerId} OFF`);
+      
+      // Call the main onPinChange callback with component updates
+      if (onPinChange) {
+        onPinChange({ 
+          componentId: buzzerId, 
+          hasSignal: false 
+        });
+      }
+    }
   };
   
   // Analyze the circuit and build connection map
@@ -186,17 +301,53 @@ const AVR8Simulator = ({
   const compileCode = async (sourceCode) => {
     // For now, we'll use a simple blink example as our compiled program
     // In a real implementation, you'd need to compile the Arduino code to AVR binary
+    // or use an embedded Arduino compiler like avr-gcc via a WebAssembly bridge
     
-    // This is a pre-assembled binary of a simple blink program
-    // In a full implementation, this would be replaced with a real Arduino sketch compiler
+    // This is a simplified memory setup for our virtual Arduino
+    // In the real implementation, we would compile the actual sourceCode
     
-    const programBytes = new Uint16Array([
-      0x2400, // digitalWrite(13, HIGH) simulation
-      0x2411, // delay(1000) simulation
-      0x2401, // digitalWrite(13, LOW) simulation
-      0x2411, // delay(1000) simulation
-      0xCFFF  // Jump back to start
-    ]);
+    // Initialize program memory with our simplified blink sketch
+    // Each instruction is just a placeholder - not actual AVR assembly
+    const memorySize = 0x8000; // 32KB program memory
+    const programBytes = new Uint16Array(memorySize);
+    
+    // Clear memory
+    for (let i = 0; i < programBytes.length; i++) {
+      programBytes[i] = 0;
+    }
+    
+    // Simplified program that toggles pin 13 (PB5) on and off
+    let addr = 0;
+    
+    // 1. Set pin 13 (PB5) as output
+    // SBI DDRB, 5 (Set Bit in I/O Register - Data Direction Register B, bit 5)
+    programBytes[addr++] = 0x9A95; // SBI 0x04, 5 (DDRB is at 0x04)
+    
+    // Loop:
+    const loopAddr = addr;
+    
+    // 2. Set pin 13 HIGH
+    // SBI PORTB, 5 (Set Bit in I/O Register - Port B, bit 5)
+    programBytes[addr++] = 0x9A9D; // SBI 0x05, 5 (PORTB is at 0x05)
+    
+    // 3. Delay (simplified - in real code this would be many instructions)
+    for (let i = 0; i < 10; i++) {
+      programBytes[addr++] = 0x0000; // NOP
+    }
+    
+    // 4. Set pin 13 LOW
+    // CBI PORTB, 5 (Clear Bit in I/O Register - Port B, bit 5)
+    programBytes[addr++] = 0x989D; // CBI 0x05, 5 (PORTB is at 0x05)
+    
+    // 5. Delay again
+    for (let i = 0; i < 10; i++) {
+      programBytes[addr++] = 0x0000; // NOP
+    }
+    
+    // 6. Jump back to loop
+    // RJMP to loop address
+    const relJump = (loopAddr - addr - 1) & 0x0FFF; // Relative jump value
+    programBytes[addr++] = 0xC000 | relJump; // RJMP to loopAddr
     
     setCompiledProgram(programBytes);
     
