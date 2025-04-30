@@ -567,16 +567,98 @@ const SimpleWireManager = ({ canvasRef }) => {
           if (similarElements.length > 0) targetElement = similarElements[0];
         }
         
-        // If we still can't find the elements and have valid positions, use the old ones
+        // If we still can't find the elements but have valid positions
         if ((!sourceElement || !targetElement) && hasValidPositions) {
-          console.warn(`Using previous positions for wire ${wire.id}`);
+          // This approach stores the delta between component position and pin position
+          // so we can update wire endpoints even if we can't find the pin elements directly
+          
+          // Extract component IDs from pin IDs
+          const sourceCompId = sourceId.split('-').slice(1, 3).join('-');
+          const targetCompId = targetId.split('-').slice(1, 3).join('-');
+          
+          // Try to find component elements
+          const sourceCompElement = document.getElementById(sourceCompId);
+          const targetCompElement = document.getElementById(targetCompId);
+          
+          // If we found at least one component, try to update the wire position relative to it
+          if (sourceCompElement || targetCompElement) {
+            // Get current positions
+            const updatedWire = { ...wire };
+            
+            // If source component found, update source pin position relative to component
+            if (sourceCompElement) {
+              const sourceCompRect = sourceCompElement.getBoundingClientRect();
+              const sourceCompPos = {
+                x: sourceCompRect.left + (sourceCompRect.width / 2) - canvasRect.left,
+                y: sourceCompRect.top + (sourceCompRect.height / 2) - canvasRect.top
+              };
+              
+              // Update wire source position based on component movement
+              if (wire.sourceCompPos) {
+                // Calculate the pin's offset from the component center
+                const offsetX = wire.sourcePos.x - wire.sourceCompPos.x;
+                const offsetY = wire.sourcePos.y - wire.sourceCompPos.y;
+                
+                // Apply the same offset to the new component position
+                updatedWire.sourcePos = {
+                  x: sourceCompPos.x + offsetX,
+                  y: sourceCompPos.y + offsetY
+                };
+                
+                // Store the new component position for future updates
+                updatedWire.sourceCompPos = sourceCompPos;
+              } else {
+                // First time calculation - store component position for future reference
+                updatedWire.sourceCompPos = sourceCompPos;
+              }
+            }
+            
+            // If target component found, update target pin position relative to component
+            if (targetCompElement) {
+              const targetCompRect = targetCompElement.getBoundingClientRect();
+              const targetCompPos = {
+                x: targetCompRect.left + (targetCompRect.width / 2) - canvasRect.left,
+                y: targetCompRect.top + (targetCompRect.height / 2) - canvasRect.top
+              };
+              
+              // Update wire target position based on component movement
+              if (wire.targetCompPos) {
+                // Calculate the pin's offset from the component center
+                const offsetX = wire.targetPos.x - wire.targetCompPos.x;
+                const offsetY = wire.targetPos.y - wire.targetCompPos.y;
+                
+                // Apply the same offset to the new component position
+                updatedWire.targetPos = {
+                  x: targetCompPos.x + offsetX,
+                  y: targetCompPos.y + offsetY
+                };
+                
+                // Store the new component position for future updates
+                updatedWire.targetCompPos = targetCompPos;
+              } else {
+                // First time calculation - store component position for future reference
+                updatedWire.targetCompPos = targetCompPos;
+              }
+            }
+            
+            console.info(`Updated wire ${wire.id} positions based on component movement`);
+            return updatedWire;
+          }
+          
+          // If we couldn't find components either, use the previous wire positions as fallback
+          console.warn(`Using previous positions for wire ${wire.id} as no components found`);
           return wire;
         }
         
-        // If we can't find the elements and don't have valid positions, mark as invalid
+        // If we can't find the elements and don't have valid positions, mark as invalid but don't remove
         if (!sourceElement || !targetElement) {
           console.warn(`Elements not found for wire ${wire.id}: source=${sourceId}, target=${targetId}`);
-          return { ...wire, invalid: true };
+          // Include more debug info
+          return { 
+            ...wire, 
+            invalid: true,
+            _debug: { sourceId, targetId, sourceName: wire.sourceName, targetName: wire.targetName }
+          };
         }
         
         // Get precise center positions relative to canvas
@@ -593,14 +675,37 @@ const SimpleWireManager = ({ canvasRef }) => {
           y: targetRect.top + (targetRect.height / 2) - canvasRect.top
         };
         
-        // Return updated wire with new positions
+        // Now also save component positions for relative movement tracking
+        
+        // Get component IDs from pin IDs
+        const sourceCompId = sourceId.split('-').slice(1, 3).join('-');
+        const targetCompId = targetId.split('-').slice(1, 3).join('-');
+        
+        // Find component elements
+        const sourceCompElement = document.getElementById(sourceCompId);
+        const targetCompElement = document.getElementById(targetCompId);
+        
+        // Calculate component center positions for relative offset calculation
+        const sourceCompPos = sourceCompElement ? {
+          x: sourceCompElement.getBoundingClientRect().left + (sourceCompElement.getBoundingClientRect().width / 2) - canvasRect.left,
+          y: sourceCompElement.getBoundingClientRect().top + (sourceCompElement.getBoundingClientRect().height / 2) - canvasRect.top
+        } : null;
+        
+        const targetCompPos = targetCompElement ? {
+          x: targetCompElement.getBoundingClientRect().left + (targetCompElement.getBoundingClientRect().width / 2) - canvasRect.left,
+          y: targetCompElement.getBoundingClientRect().top + (targetCompElement.getBoundingClientRect().height / 2) - canvasRect.top
+        } : null;
+        
+        // Return updated wire with new positions and component reference positions
         return { 
           ...wire, 
           sourcePos, 
           targetPos,
-          // Store the fixed IDs
+          // Store the fixed IDs and component positions
           sourceId,
-          targetId
+          targetId,
+          sourceCompPos,
+          targetCompPos
         };
       })
       .filter(wire => !wire.invalid);
