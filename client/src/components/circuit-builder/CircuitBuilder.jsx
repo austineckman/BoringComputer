@@ -32,10 +32,29 @@ const CircuitBuilder = () => {
   // State for circuit components
   const [components, setComponents] = useState([]);
   const [selectedComponentId, setSelectedComponentId] = useState(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const canvasRef = useRef(null);
   
   // Get the currently selected component
   const selectedComponent = components.find(c => c.id === selectedComponentId);
+  
+  // Track mouse position for wire connections
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!canvasRef?.current) return;
+      
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      setMousePosition({
+        x: e.clientX - canvasRect.left,
+        y: e.clientY - canvasRect.top
+      });
+    };
+    
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [canvasRef]);
   
   // Add a new component to the canvas
   const handleAddComponent = (type) => {
@@ -84,7 +103,28 @@ const CircuitBuilder = () => {
   // Handle pin connections
   const handlePinConnect = (pinId, pinType, componentId) => {
     console.log(`Pin ${pinId} (${pinType}) of component ${componentId} clicked`);
-    // Wire connections are handled by WireManager
+    
+    // Create proper format for pin ID that matches our wire manager expectations
+    const formattedPinId = `pt-${componentId.toLowerCase().split('-')[0]}-${componentId}-${pinId}`;
+    
+    // Get mouse position or component position
+    const component = components.find(c => c.id === componentId);
+    const clientX = mousePosition?.x || component?.x || 0;
+    const clientY = mousePosition?.y || component?.y || 0;
+    
+    // Create a custom pin click event to trigger the wire manager
+    const pinClickEvent = new CustomEvent('pinClicked', {
+      detail: {
+        id: formattedPinId,
+        pinType: pinType || 'bidirectional',
+        parentId: componentId,
+        clientX,
+        clientY
+      }
+    });
+    
+    // Dispatch the event to be captured by the SimpleWireManager
+    document.dispatchEvent(pinClickEvent);
   };
   
   // Handle component deletion
