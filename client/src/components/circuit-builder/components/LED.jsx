@@ -4,6 +4,9 @@ import {
 } from "../lib/inventr-component-lib.es.js";
 import Moveable from "react-moveable";
 
+// Import simulator context if needed for simulation integration
+import { useSimulator } from "../simulator/SimulatorContext";
+
 // Define MOVE_SETTINGS to match what the original code expects
 const MOVE_SETTINGS = {
   DRAGGABLE: true,
@@ -31,6 +34,9 @@ const LED = ({
   const moveableRef = useRef();
   const oldDataRef = useRef();
 
+  // Access simulator context for simulation state
+  const { isSimulationRunning, componentStates } = useSimulator();
+  
   const [ledColor, setLedColor] = useState(color);
   const [rotationAngle, setRotationAngle] = useState(initialRotation);
   const [pinInfo, setPinInfo] = useState();
@@ -39,7 +45,17 @@ const LED = ({
   const [posLeft, setPosLeft] = useState(initialX);
   const [initPosTop, setInitPosTop] = useState(initialY);
   const [initPosLeft, setInitPosLeft] = useState(initialX);
-
+  const [isLit, setIsLit] = useState(false); // Track LED state for simulation
+  
+  // Check if this LED has been updated by the simulation
+  useEffect(() => {
+    if (componentStates && componentStates[id]) {
+      const ledState = componentStates[id];
+      // Update LED state based on simulation results
+      setIsLit(ledState.isLit || false);
+    }
+  }, [componentStates, id]);
+  
   // Create a component data structure that matches what the original code expects
   const componentData = {
     id,
@@ -49,7 +65,9 @@ const LED = ({
       top: posTop,
       left: posLeft,
       zIndex: 10,
-      value: isSelected ? 1 : 0, // For visual feedback when selected
+      // LED is lit if simulation is running and the LED state is ON
+      // OR if not simulating and the component is selected (for visual feedback)
+      value: isSimulationRunning ? (isLit ? 1 : 0) : (isSelected ? 1 : 0),
       color: ledColor,
       brightness: 80
     }

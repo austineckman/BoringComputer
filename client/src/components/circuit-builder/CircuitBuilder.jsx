@@ -8,6 +8,9 @@ import './styles/tooltips.css'; // Import custom tooltip styles
 import './styles/wire-manager.css'; // Import wire manager styles
 import './lib/pin-tooltips.js'; // Import pin tooltip enhancer
 
+// Import simulator context to pass down simulation state to components
+import { useSimulator } from './simulator/SimulatorContext';
+
 // Import specialized component implementations
 import HeroBoard from './components/HeroBoard';
 import LED from './components/LED';
