@@ -34,6 +34,7 @@ import ledIconImage from "@assets/led.icon.png";
 import oracleIconImage from "@assets/hooded-figure.png";
 import picklockImage from "@assets/Untitled design - 2025-04-26T171551.402.png";
 import craftingImage from "@assets/Untitled design - 2025-04-26T171858.770.png";
+import bughuntIconImage from "@assets/bughunt-logo.png";
 
 // Type definitions
 interface Position {
@@ -105,7 +106,7 @@ const RetroDesktop: React.FC = () => {
     { id: "lootboxes", name: "HackLock.exe", icon: "picklock", path: "/lootboxes", position: { x: 140, y: 20 } },
     { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 140, y: 120 } },
     { id: "circuitbuilder", name: "Sandbox", icon: "circuitbuilder", position: { x: 140, y: 220 } },
-    { id: "codequiz", name: "BugHunt", icon: "questgrimoire", position: { x: 140, y: 320 } },
+    { id: "codequiz", name: "BugHunt", icon: "bughunt", position: { x: 140, y: 320 } },
     { id: "discord", name: "Discord", icon: "discord", position: { x: 140, y: 420 } },
     
     // Oracle in top right
@@ -484,6 +485,20 @@ const RetroDesktop: React.FC = () => {
   // Admin functions removed as requested
 
   // Specific window content functions
+  const openCodeQuizWindow = () => {
+    openWindow(
+      "codequiz", 
+      "BugHunt", 
+      <CodeQuizWindow 
+        onClose={() => closeWindow("codequiz")} 
+        onMinimize={() => minimizeWindow("codequiz")}
+        isActive={windows.some(w => w.id === "codequiz" && w.isActive)}
+      />, 
+      "questgrimoire",
+      { width: 700, height: 600 }
+    );
+  };
+
   const openPartyKittyWindow = () => {
     openWindow(
       "partykitty", 
@@ -605,20 +620,6 @@ const RetroDesktop: React.FC = () => {
     );
   };
   
-  const openCodeQuizWindow = () => {
-    openWindow(
-      "codequiz", 
-      "BugHunt", 
-      <CodeQuizWindow 
-        onClose={() => closeWindow("codequiz")} 
-        onMinimize={() => minimizeWindow("codequiz")}
-        isActive={windows.some(w => w.id === "codequiz" && w.isActive)}
-      />, 
-      "questgrimoire",
-      { width: 700, height: 600 }
-    );
-  };
-
   const openWelcomeWindow = () => {
     const welcomeContent = (
       <div className="p-4 retro-window-content">
@@ -779,6 +780,13 @@ const RetroDesktop: React.FC = () => {
                   className="w-10 h-10 object-contain" 
                   style={{ imageRendering: 'pixelated' }}
                 />
+              ) : icon.icon === "bughunt" ? (
+                <img 
+                  src={bughuntIconImage} 
+                  alt="BugHunt" 
+                  className="w-10 h-10 object-contain" 
+                  style={{ imageRendering: 'pixelated' }}
+                />
               ) : icon.icon === "shopcoin" ? (
                 <img 
                   src={shopCoinImage} 
@@ -900,6 +908,13 @@ const RetroDesktop: React.FC = () => {
                   <img 
                     src={jukeboxIconImage} 
                     alt="Jukebox" 
+                    className="mr-2 w-6 h-6 object-contain" 
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                ) : window.icon === "bughunt" ? (
+                  <img 
+                    src={bughuntIconImage} 
+                    alt="BugHunt" 
                     className="mr-2 w-6 h-6 object-contain" 
                     style={{ imageRendering: 'pixelated' }}
                   />
