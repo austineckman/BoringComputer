@@ -256,6 +256,25 @@
   margin: 15px 0;
   white-space: pre;
   line-height: 1.5;
+  display: flex;
+}
+
+.line-numbers {
+  user-select: none;
+  text-align: right;
+  padding-right: 10px;
+  margin-right: 10px;
+  border-right: 1px solid #444;
+  color: #888;
+  min-width: 30px;
+}
+
+.code-content {
+  flex: 1;
+}
+
+.highlighted-line {
+  background-color: rgba(255, 255, 0, 0.15);
 }
 
 .answer-options {
