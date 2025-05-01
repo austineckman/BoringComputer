@@ -1,18 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { pythonQuestions } from './quiz-data/python-questions';
 import { cppQuestions } from './quiz-data/cpp-questions';
+import { Question } from './quiz-data/questions-interface';
 import './retro-ui.css';
-
-interface Question {
-  id: number;
-  type: 'output' | 'error' | 'fix';
-  difficulty: 'Easy' | 'Medium' | 'Hard';
-  code: string;
-  options?: string[];
-  correctAnswer: string | number;
-  lineToFix?: number;
-  explanation: string;
-}
 
 interface CodeQuizWindowProps {
   onClose: () => void;
