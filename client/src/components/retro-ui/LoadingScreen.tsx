@@ -199,7 +199,8 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
     
     // Add ASCII logo as the first message at the start
     if (messages.length === 0) {
-      setMessages([CRAFTABLE_ASCII_ART]);
+      // Add the ASCII art with some newlines to ensure it's visible
+      setMessages([`\n\n${CRAFTABLE_ASCII_ART}\n\n`]);
     }
     
     // Terminal cursor blink effect
@@ -303,6 +304,8 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
                  "STATUS: CRITICAL"}</span>
         </div>
         
+        {/* ASCII art is now displayed in the terminal window */}
+        
         {/* Terminal output - scrollable */}
         <div 
           ref={terminalRef}
@@ -314,7 +317,10 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
           }}
         >
           {messages.map((msg, index) => (
-            <div key={index} className={`mb-1 ${loadingProgress > 80 && Math.random() > 0.7 ? 'text-green-400' : ''} ${index === 0 ? 'text-[0.35rem] leading-[0.3rem] whitespace-pre font-mono text-yellow-500 mt-2' : ''}`}>
+            <div key={index} 
+              className={`mb-1 
+                ${loadingProgress > 80 && Math.random() > 0.7 ? 'text-green-400' : ''}
+                ${index === 0 ? 'whitespace-pre font-mono text-amber-500 text-[4px] leading-[3px] scale-[0.9] origin-top-left block transform opacity-90' : ''}`}>
               {index === 0 ? msg : `$ ${msg}`}
             </div>
           ))}
