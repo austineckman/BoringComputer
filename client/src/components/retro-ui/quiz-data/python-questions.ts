@@ -8,7 +8,7 @@ export const pythonQuestions: Question[] = [
     difficulty: 'Easy',
     code: `x = 5\ny = 3\nprint(x + y * 2)`,
     options: ['8', '11', '16', 'Error'],
-    correctAnswer: '11',
+    correctAnswer: 1,
     explanation: 'The expression evaluates to 5 + (3 * 2) = 5 + 6 = 11. Multiplication has higher precedence than addition.'
   },
   {
@@ -17,7 +17,7 @@ export const pythonQuestions: Question[] = [
     difficulty: 'Easy',
     code: `def greet(name):\n    return f"Hello, {name}!"\n\nresult = greet("Gizbo")\nprint(result)`,
     options: ['Hello, Gizbo!', 'Hello, name!', 'Hello, "Gizbo"!', 'None'],
-    correctAnswer: 'Hello, Gizbo!',
+    correctAnswer: 1,
     explanation: 'The function returns a formatted string where {name} is replaced with the argument "Gizbo".'
   },
   {
@@ -26,7 +26,7 @@ export const pythonQuestions: Question[] = [
     difficulty: 'Medium',
     code: `numbers = [1, 2, 3, 4, 5]\nresult = [n * 2 for n in numbers if n % 2 == 0]\nprint(result)`,
     options: ['[2, 4, 6, 8, 10]', '[2, 6, 10]', '[4, 8]', '[2, 4, 6, 8]'],
-    correctAnswer: '[4, 8]',
+    correctAnswer: 3,
     explanation: 'This list comprehension filters even numbers (2, 4) and then multiplies them by 2, resulting in [4, 8].'
   },
   {
@@ -35,7 +35,7 @@ export const pythonQuestions: Question[] = [
     difficulty: 'Medium',
     code: `def recursive_sum(n):\n    if n <= 1:\n        return n\n    return n + recursive_sum(n-1)\n\nprint(recursive_sum(5))`,
     options: ['5', '10', '15', '120'],
-    correctAnswer: '15',
+    correctAnswer: 3,
     explanation: 'The recursive function calculates 5 + 4 + 3 + 2 + 1 = 15.'
   },
   {
@@ -44,7 +44,7 @@ export const pythonQuestions: Question[] = [
     difficulty: 'Hard',
     code: `x = 10\nif x > 5:\n    y = x + 2\nelif x < 5:\n    y = x - 2\nelse:\n    y = x * 2\n\ndef modify(y):\n    y = y + 5\n    return y\n    \nz = modify(y)\nprint(y)`,
     options: ['10', '12', '17', 'Error'],
-    correctAnswer: '12',
+    correctAnswer: 2,
     explanation: 'x is 10, so y becomes 12. The function modify creates a new local variable y, which doesn\'t affect the outer y. So print(y) shows 12.'
   },
 
@@ -54,13 +54,7 @@ export const pythonQuestions: Question[] = [
     type: 'error',
     difficulty: 'Easy',
     code: `def calculate_average(numbers):\n    total = 0\n    for num in numbers:\n        total += num\n    return total / count\n\navg = calculate_average([1, 2, 3, 4, 5])`,
-    options: [
-      'NameError: name \'count\' is not defined', 
-      'TypeError: unsupported operand type', 
-      'ZeroDivisionError: division by zero', 
-      'IndentationError: unexpected indent'
-    ],
-    correctAnswer: 'NameError: name \'count\' is not defined',
+    correctAnswer: 5,
     explanation: 'The variable "count" is used but never defined. It should be len(numbers) instead.'
   },
   {
@@ -68,13 +62,7 @@ export const pythonQuestions: Question[] = [
     type: 'error',
     difficulty: 'Easy',
     code: `fruits = ["apple", "banana", "cherry"]\nprint(fruits[3])`,
-    options: [
-      'IndexError: list index out of range', 
-      'TypeError: list indices must be integers', 
-      'KeyError: 3', 
-      'ValueError: list index out of bounds'
-    ],
-    correctAnswer: 'IndexError: list index out of range',
+    correctAnswer: 2,
     explanation: 'List indices start at 0, so a list with 3 elements has indices 0, 1, and 2. Trying to access index 3 results in IndexError.'
   },
   {
@@ -82,13 +70,7 @@ export const pythonQuestions: Question[] = [
     type: 'error',
     difficulty: 'Medium',
     code: `def process_items(items):\n    result = []\n    for i in range(len(items)):\n        if items[i] > 10:\n            result.append(items[i])\n    return result\n\nnumbers = [5, 15, "20", 25]\nfiltered = process_items(numbers)`,
-    options: [
-      'TypeError: \'>\' not supported between instances of \'str\' and \'int\'', 
-      'ValueError: invalid literal for int()', 
-      'IndexError: list index out of range', 
-      'AttributeError: list object has no attribute \'>\'' 
-    ],
-    correctAnswer: 'TypeError: \'>\' not supported between instances of \'str\' and \'int\'',
+    correctAnswer: 4,
     explanation: 'The function tries to compare a string "20" with the integer 10, which causes a TypeError because these types can\'t be compared with >.'
   },
   {
@@ -102,7 +84,7 @@ export const pythonQuestions: Question[] = [
       'AttributeError: \'Pet\' object has no attribute \'speak\'', 
       'SyntaxError: invalid syntax'
     ],
-    correctAnswer: 'No error but returns a method reference instead of "Meow!"',
+    correctAnswer: 2,
     explanation: 'The code doesn\'t call the speak method - it should be pet1.speak() with parentheses. Without the parentheses, it just returns a reference to the method.'
   },
   {
@@ -116,7 +98,7 @@ export const pythonQuestions: Question[] = [
       'SyntaxError: can\'t assign to variable in enclosing scope', 
       'TypeError: \'int\' object is not callable'
     ],
-    correctAnswer: 'UnboundLocalError: local variable \'counter\' referenced before assignment',
+    correctAnswer: 1,
     explanation: 'Python treats counter as a local variable in inner_function when we try to modify it. To fix this, we need to declare it as nonlocal.'
   },
 
