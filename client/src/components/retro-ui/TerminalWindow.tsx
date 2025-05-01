@@ -14,15 +14,28 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory }) =>
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [commandInput, setCommandInput] = useState("");
-  const [terminalOutput, setTerminalOutput] = useState<Array<{type: string, content: string}>>([
-    { type: "system", content: "CraftingTableOS [Version 1.0.4815]" },
-    { type: "system", content: "(c) 2025 CraftingTable LLC. Good luck on your hunt for the three golden keys" },
-    { type: "system", content: "" },
-    { type: "prompt", content: `${currentDirectory}>` }
-  ]);
+  const [terminalOutput, setTerminalOutput] = useState<Array<{type: string, content: string}>>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const outputRef = useRef<HTMLDivElement>(null);
   const [terminalColor, setTerminalColor] = useState("green");
+  const [commandProcessor, setCommandProcessor] = useState<(cmd: string) => void | null>(null);
+  
+  // Hacker mode state
+  const [hackerMode, setHackerMode] = useState(false);
+  const [activeHackerTool, setActiveHackerTool] = useState<string | null>(null);
+  const [hackerToolStage, setHackerToolStage] = useState(0);
+  const [matrixActive, setMatrixActive] = useState(false);
+  const hackerAnimationId = useRef<number | null>(null);
+
+  // Initialize terminal output
+  useEffect(() => {
+    setTerminalOutput([
+      { type: "system", content: "CraftingTableOS [Version 1.0.4815]" },
+      { type: "system", content: "(c) 2025 CraftingTable LLC. Good luck on your hunt for the three golden keys" },
+      { type: "system", content: "" },
+      { type: "prompt", content: `${currentDirectory}>` }
+    ]);
+  }, []);
 
   // Create a dynamic file system with the user's directory
   const fileSystem: any = {
@@ -70,6 +83,7 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory }) =>
     "calc": "Simple calculator (Usage: calc 5+5)",
     "hack": "Opens the hacking toolkit (Usage: hack)",
     "haxtool": "Alias for hack command",
+    "wanted": "Displays the wanted poster for Gizbo",
     "exit": "Closes the terminal window"
   };
 
@@ -98,177 +112,152 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory }) =>
       logo: `
         ╔═╗╔╗╔═╗╔╦╗╔═╗╦ ╦╦═╗╔═╗╔═╗╦═╗
         ║╣ ╠╩╗╚═╗ ║ ║ ║║ ║╠╦╝╠╣ ║╣ ╠╦╝
-        ╚═╝╚═╝╚═╝ ╩ ╚═╝╚═╝╩╚═╚  ╚═╝╩╚═  v3.1.4
+        ╚═╝╚═╝╚═╝ ╩ ╚═╝╚═╝╩╚═╚  ╚═╝╩╚═
       `,
       stages: [
-        { message: "Initializing network interface...", duration: 800 },
-        { message: "Scanning target network topology...", duration: 1200 },
-        { message: "Analyzing network protocols...", duration: 1000 },
-        { message: "Enumerating connected devices...", duration: 1500 },
-        { message: "Detecting operating systems...", duration: 1300 },
-        { message: "Scanning for open ports...", duration: 2000 },
-        { message: "Identifying vulnerable services...", duration: 1800 },
-        { message: "Testing firewall configurations...", duration: 1400 },
-        { message: "Mapping network paths...", duration: 1600 },
-        { message: "Creating infiltration vectors...", duration: 2200 },
-        { message: "ACCESS GRANTED - Network compromised", duration: 1000 },
+        { message: "Initializing network scanner...", duration: 1500 },
+        { message: "Scanning for active hosts...", duration: 2000 },
+        { message: "Identifying open ports and services...", duration: 2500 },
+        { message: "Fingerprinting operating systems...", duration: 1800 },
+        { message: "Detecting vulnerabilities in network services...", duration: 2200 },
+        { message: "Gathering networking intelligence...", duration: 1700 },
+        { message: "Compiling scan results...", duration: 1500 },
       ],
       discoveredDevices: [
-        { ip: "192.168.1.1", type: "Router", ports: [80, 443, 22], os: "DD-WRT" },
-        { ip: "192.168.1.5", type: "Server", ports: [80, 443, 3306, 22], os: "Linux 5.4.0" },
-        { ip: "192.168.1.10", type: "Workstation", ports: [139, 445], os: "Windows 11" },
-        { ip: "192.168.1.15", type: "IoT Device", ports: [80, 8080, 1883], os: "Custom Firmware" },
-        { ip: "192.168.1.20", type: "NAS", ports: [80, 443, 445, 548], os: "FreeBSD 13.1" },
+        { ip: "192.168.1.1", type: "Router", ports: [80, 443, 22], os: "VxWorks 5.4" },
+        { ip: "192.168.1.5", type: "Desktop", ports: [135, 139, 445, 3389], os: "Windows 10" },
+        { ip: "192.168.1.10", type: "Server", ports: [21, 22, 80, 443, 3306], os: "Ubuntu 22.04 LTS" },
+        { ip: "192.168.1.15", type: "IoT Device", ports: [80, 1883, 8883], os: "Custom Linux 4.14" },
+        { ip: "192.168.1.20", type: "Mobile", ports: [62078], os: "iOS 16.0" },
       ],
       vulnerabilities: [
-        { id: "CVE-2023-3842", severity: "HIGH", description: "Buffer overflow in HTTP server" },
-        { id: "CVE-2023-7721", severity: "CRITICAL", description: "Authentication bypass in admin panel" },
-        { id: "CVE-2022-9152", severity: "MEDIUM", description: "Session fixation vulnerability" },
-        { id: "CVE-2023-2155", severity: "HIGH", description: "SQL injection in login form" },
+        { id: "CVE-2022-1234", severity: "Critical", description: "Remote code execution in VxWorks web interface" },
+        { id: "CVE-2021-4321", severity: "High", description: "SMB protocol vulnerability allows privilege escalation" },
+        { id: "CVE-2023-5678", severity: "Medium", description: "MQTT broker authentication bypass" },
+        { id: "CVE-2022-9876", severity: "Low", description: "Information disclosure in HTTP headers" },
       ]
     },
     "CRYPTbreaker": {
       description: "Password cracking & cryptography tool",
       version: "2.7.1",
-      author: "Ph4ntom_Cr4ck3r", 
+      author: "Thr3adr1pp3r",
       logo: `
-        ╔═╗╦═╗╦ ╦╔═╗╔╦╗╔╗ ╦═╗╔═╗╔═╗╦╔═╔═╗╦═╗
-        ║  ╠╦╝╚╦╝╠═╝ ║ ╠╩╗╠╦╝║╣ ╠═╣╠╩╗║╣ ╠╦╝
-        ╚═╝╩╚═ ╩ ╩   ╩ ╚═╝╩╚═╚═╝╩ ╩╩ ╩╚═╝╩╚═  v2.7.1
+        ┏┓┏┓┏┓   ┏┓
+        ┃┃┃┃┗┓┏┳━┫┗┓
+        ┣┛┃┃ ┃┃┃━┫┏┫
+        ┗━┗┛ ┗┻┻━┻━┛
       `,
       stages: [
-        { message: "Initializing cryptographic engine...", duration: 800 },
-        { message: "Loading password dictionaries...", duration: 1200 },
-        { message: "Analyzing hash algorithm...", duration: 1000 },
-        { message: "Calculating hash entropy...", duration: 1300 },
-        { message: "Starting dictionary attack...", duration: 1500 },
-        { message: "Testing common password patterns...", duration: 1800 },
-        { message: "Switching to brute force approach...", duration: 2000 },
-        { message: "Optimizing attack vectors...", duration: 1600 },
-        { message: "Calculating probability matrices...", duration: 1400 },
-        { message: "Testing hash collision techniques...", duration: 2200 },
-        { message: "ACCESS GRANTED - Password cracked", duration: 1000 },
+        { message: "Loading encryption dictionaries...", duration: 1200 },
+        { message: "Analyzing hash patterns...", duration: 1800 },
+        { message: "Identifying encryption algorithms...", duration: 2000 },
+        { message: "Running dictionary attack...", duration: 2500 },
+        { message: "Attempting rainbow table lookups...", duration: 1500 },
+        { message: "Executing brute force attack...", duration: 3000 },
+        { message: "Decrypting secured files...", duration: 2200 },
       ],
       passwordCandidates: [
-        "password123", "qwerty", "letmein", "admin1234", "welcome", 
-        "123456789", "football", "princess", "dragon", "master",
-        "sunshine", "iloveyou", "monkey", "login", "bailey",
-        "access", "admin", "trustno1", "shadow", "secret"
+        "Passw0rd123!", "Summer2023", "letmein", "qwerty123", "admin1234", 
+        "welcome1", "123456789", "iloveyou", "1q2w3e4r", "football"
       ],
-      hashTypes: [
-        "MD5", "SHA-1", "SHA-256", "bcrypt", "Argon2", "NTLM", "Scrypt", "PBKDF2"
-      ],
+      hashTypes: ["MD5", "SHA-1", "SHA-256", "bcrypt", "NTLM"],
       encryptedFiles: [
-        { name: "users.db", size: "1.2 MB", encryption: "AES-256" },
-        { name: "financial.xlsx", size: "4.7 MB", encryption: "AES-128" },
-        { name: "credentials.json", size: "0.3 MB", encryption: "RC4" },
-        { name: "messages.enc", size: "2.1 MB", encryption: "3DES" },
+        { name: "financial_records.xlsx", size: "2.4 MB", encryption: "AES-256" },
+        { name: "project_plans.docx", size: "1.8 MB", encryption: "AES-128" },
+        { name: "customer_database.sql", size: "15.2 MB", encryption: "Triple DES" },
+        { name: "keychain.dat", size: "256 KB", encryption: "Blowfish" },
+        { name: "private_messages.txt", size: "782 KB", encryption: "RSA-2048" },
       ]
     },
     "SECURITYghost": {
       description: "System vulnerability scanner",
       version: "4.0.2",
-      author: "S3cur1ty_R00t",
+      author: "Ph4nt0mR00t",
       logo: `
-        ╔═╗╔═╗╔═╗╦ ╦╦═╗╦╔╦╗╦ ╦╔═╗╦ ╦╔═╗╔═╗╔╦╗
-        ╚═╗║╣ ║  ║ ║╠╦╝║ ║ ╚╦╝║ ╦╠═╣║ ║╚═╗ ║ 
-        ╚═╝╚═╝╚═╝╚═╝╩╚═╩ ╩  ╩ ╚═╝╩ ╩╚═╝╚═╝ ╩  v4.0.2
+        ╔═╗╔═╗╔═╗╦ ╦╦═╗╦╔╦╗╦ ╦
+        ╚═╗║╣ ║  ║ ║╠╦╝║ ║ ╚╦╝
+        ╚═╝╚═╝╚═╝╚═╝╩╚═╩ ╩  ╩ 
+                ╔═╗╦ ╦╔═╗╔═╗╔╦╗
+                ║ ╦╠═╣║ ║╚═╗ ║ 
+                ╚═╝╩ ╩╚═╝╚═╝ ╩ 
       `,
       stages: [
-        { message: "Initializing security scanner...", duration: 800 },
-        { message: "Loading vulnerability database...", duration: 1200 },
-        { message: "Checking OS security patches...", duration: 1500 },
-        { message: "Scanning running processes...", duration: 1400 },
-        { message: "Analyzing installed software...", duration: 1300 },
-        { message: "Checking filesystem permissions...", duration: 1600 },
-        { message: "Reviewing authentication mechanisms...", duration: 1800 },
-        { message: "Analyzing network security config...", duration: 2000 },
-        { message: "Scanning for malware signatures...", duration: 2200 },
-        { message: "Running exploit simulations...", duration: 1700 },
-        { message: "SCAN COMPLETE - Security report ready", duration: 1000 },
+        { message: "Initializing security audit...", duration: 1400 },
+        { message: "Scanning system configurations...", duration: 1800 },
+        { message: "Checking installed software versions...", duration: 2000 },
+        { message: "Analyzing user permissions...", duration: 1700 },
+        { message: "Auditing network services...", duration: 2200 },
+        { message: "Reviewing security policies...", duration: 1500 },
+        { message: "Generating security report...", duration: 2000 },
       ],
       threatLevels: [
-        { name: "Authentication", level: 72, color: "amber" },
-        { name: "Network Security", level: 45, color: "red" },
-        { name: "OS Patching", level: 83, color: "green" },
-        { name: "Application Security", level: 61, color: "amber" },
-        { name: "Malware Protection", level: 90, color: "green" },
+        { name: "OS Security", level: 65, color: "yellow" },
+        { name: "Network Configuration", level: 42, color: "red" },
+        { name: "Application Security", level: 78, color: "green" },
+        { name: "User Permissions", level: 91, color: "green" },
+        { name: "Data Encryption", level: 35, color: "red" },
+        { name: "Physical Security", level: 83, color: "green" },
       ],
       vulnerabilities: [
-        { id: "CVE-2023-4218", severity: "HIGH", component: "Network Stack", risk: "Remote Code Execution" },
-        { id: "CVE-2022-8817", severity: "MEDIUM", component: "Web Server", risk: "Information Disclosure" },
-        { id: "CVE-2023-5501", severity: "CRITICAL", component: "Authentication Service", risk: "Privilege Escalation" },
-        { id: "CVE-2022-7361", severity: "LOW", component: "File System", risk: "Denial of Service" },
+        { id: "OS-1234", severity: "Medium", component: "Kernel", risk: "Outdated version with known memory leaks" },
+        { id: "NET-5678", severity: "Critical", component: "Firewall", risk: "Multiple ports exposed to WAN without filtering" },
+        { id: "APP-9101", severity: "Low", component: "Browser", risk: "Cookie security policy not enforced" },
+        { id: "ENC-1122", severity: "High", component: "Disk Encryption", risk: "Weak encryption algorithm (DES) in use" },
       ],
       recommendations: [
-        "Update system to patch CVE-2023-5501 immediately",
-        "Implement two-factor authentication",
-        "Close unnecessary open ports (esp. 8080, 1433)",
-        "Review file permissions in /config directory",
-        "Update antivirus definitions",
+        "Update kernel to version 5.15 or higher",
+        "Configure firewall to block all incoming connections by default",
+        "Enable HTTPS-only mode in all browsers",
+        "Upgrade disk encryption to AES-256",
+        "Implement two-factor authentication for all admin accounts",
+        "Set up regular security audits and penetration testing",
       ]
     }
   };
 
-  // Fake IP addresses for hacker tools
-  const fakeIPs = [
-    "192.168.1.1", "10.0.0.138", "172.16.254.1", "169.254.0.1", "192.0.2.146", 
-    "198.51.100.23", "203.0.113.42", "240.0.0.212", "127.0.0.1", "224.0.0.1",
-    "233.252.0.123", "169.254.169.254", "192.88.99.1", "198.18.0.19", "192.0.0.8"
-  ];
-
-  // Hacking tool state
-  const [hackerMode, setHackerMode] = useState(false);
-  const [activeHackerTool, setActiveHackerTool] = useState<string | null>(null);
-  const [hackerToolStage, setHackerToolStage] = useState(0);
-  const [matrixActive, setMatrixActive] = useState(false);
-  const hackerAnimationId = useRef<number | null>(null);
-
-  // Function to generate random fake technical jargon
-  const getRandomTechnicalJargon = () => {
-    const protocols = ["TCP", "UDP", "HTTP", "FTP", "SSH", "SMTP", "POP3", "IMAP", "DNS", "DHCP"];
-    const actions = ["connecting", "scanning", "analyzing", "probing", "exploiting", "tunneling", "routing", "injecting"];
-    const targets = ["endpoint", "server", "database", "mainframe", "firewall", "gateway", "application", "service"];
-    
-    const protocol = protocols[Math.floor(Math.random() * protocols.length)];
-    const action = actions[Math.floor(Math.random() * actions.length)];
-    const target = targets[Math.floor(Math.random() * targets.length)];
-    const ip = fakeIPs[Math.floor(Math.random() * fakeIPs.length)];
-    const port = Math.floor(Math.random() * 65535) + 1;
-    
-    return `${protocol}: ${action} ${target} at ${ip}:${port}`;
-  };
-
-  // Fortune cookie messages
+  // Random fortunes array
   const fortunes = [
-    "A journey of a thousand miles begins with a single step.",
-    "The greatest risk is not taking one.",
-    "Code today, debug tomorrow.",
-    "Hidden treasures await those who explore every directory.",
-    "Your next quest will bring unexpected rewards.",
-    "The circuit board of life has many connections.",
-    "When the code works on the first try, be suspicious.",
-    "Great adventures await in the digital realm.",
+    "You will find a hidden treasure where you least expect it.",
+    "A mysterious stranger will soon enter your life.",
+    "The next crafting recipe you try will yield unexpected results.",
+    "Your coding skills are improving every day.",
+    "A great adventure awaits you in the digital realm.",
+    "Today is a good day to debug that persistent bug.",
+    "Look to the old archives for ancient knowledge.",
+    "You will soon discover a hidden feature in your favorite tool.",
+    "The error message contains the key to your solution.",
+    "Your persistence will pay off with a rare discovery.",
+    "Don't forget to save your progress before venturing into the unknown.",
+    "A breakthrough in your current project is just around the corner.",
+    "Challenge yourself with a new quest today.",
     "Your programming skills will improve with practice.",
     "The best error message is the one that never shows up."
   ];
 
   // ASCII art collection
   const asciiArt = {
+    gizbo: `
+███████████████████████████████████████████████████████████
+██████▓▓▓▓▒▒▒▒▒▒▒▒▒▓▒▓██▓▓▒▒▒▒▒▒▒▒▒▓▓▓███████▓▒▒▒▒▒▒▒▒▒▓▒▒██
+█████▓▓▓▓▓▓▓▓▓▒▒▒▒░▒▒▒▓▓▒▒▒░░▒▒▒▒▒▒▒░░░▒▒▒▒▒▒░░░░░░░░▒▒▒░░░░
+█████▓▒▒▓▒▓█▓▓▒▒░░▒▒▒▒▒▒▒▒▒▒░░░░░░░░░░░▒▒░░░░░░░░░░░ ░░░▒░
+█████▒▒▒▒▒▓▓▓▓▒░░░░▒▒░░░░░░░░░     ░▒░░░░░░░░░░░░░   ░░░░░
+████▓▒▒▒▒▒▒▒▒▒▒▒░░░░░░░░░░░░░░░      ░░░░░░░░░░░░░░ ░░░░ ░
+████▓▒▒▒▒░░░░░▓▓▓▓▓▓▓▒░░░▒▓░░░░▒▒▒▒▒▒░░░▓▓▓▓▒▒▒▒░░░░▒▓▓▓▒ ░
+█████▒▒▒▒▒▒░░░███████▓░░░▒█▓░░░██████░░░███████▓░░░░▓████▒ 
+█████▓▒░░░░░░░░▓████▓▒  ▒██▓░  ░▓███    ░█████▓▒░   ░▓████▓
+██████▓▒▒░░░░░░░█████▓░▒████░  ▓███░    ███▓███▒░░░░░▓█████
+               
+     !!  WANTED: GIZBO THE INVENTOR  !!
+       REWARD: 500 GOLD AND 3 CRYSTALS
+     !!   FOR UNAUTHORIZED CRAFTING   !!
+    `,
     robot: `
-      ,::////;::-.
-    /:'///// \`::::/|/
-    /'    /   / \`::/'
-   /_    \`  \`.  \`\\ /
-  //  \`-.   \`.   ///
- / /--. \`-.  \`-.////
-/ /   \`.  \`-.  \`-.//
-|/      \`-.  \`-.  /
-'-._______.-'--._/
+      ,::////;::-.\n    /:'///// \`::::/|/\n    /'    /   / \`::/'\n   /_    \`  \.  \`\ /\n  //  \`-.   \.   ///\n / /--. \`-.  \`-.////\n/ /   \.  \`-.  \`-.//\n|/      \`-.  \`-.  /\n'-._______.-'--._/
     `,
     castle: `
-       /\\                 /\\
-    __/  \\_______________/  \\__
+       /\                 /\
+    __/  \_______________/  \__
     |_____|_____________|_____|
     |     |             |     |
  ___|_____|_____________|_____|___
@@ -277,14 +266,14 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory }) =>
  |_|___|___|___|___|___|___|_|_|
     `,
     dragon: `
-      <\\\\\\\\>//
-      /<O> <O>\\
-     /   V    \\
-    /___n_n___\\
-   /           \\
-  /             \\
- /               \\
-/_________________\\
+      <\\>//
+      /<O> <O>\
+     /   V    \
+    /___n_n___\
+   /           \
+  /             \
+ /               \
+/_________________\
     `
   };
 
@@ -334,6 +323,34 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory }) =>
   // Add prompt line after command execution
   const addPrompt = () => {
     addToOutput("prompt", `${currentDirectory}>`);
+  };
+
+  // Get random technical jargon for hacker effect
+  const getRandomTechnicalJargon = () => {
+    const technicalTerms = [
+      "Running subroutine 0x7A42F...",
+      "Executing packet handshake protocol...",
+      "Bypassing security layer...",
+      "Decrypting XOR cipher...",
+      "Injecting payload to memory address 0x8CF2E...",
+      "Signal strength: 87%",
+      "Routing through proxy servers...",
+      "Initializing buffer overflow sequence...",
+      "Compiling machine code instructions...",
+      "Deploying rootkit to target system...",
+      "Calculating hash values...",
+      "Scanning for active countermeasures...",
+      "Disabling IDS/IPS systems...",
+      "Establishing encrypted tunnel...",
+      "Memory allocation successful.",
+      "Binary pattern matching in progress...",
+      "Extracting registry keys...",
+      "System timestamp modified.",
+      "Backdoor installed at port 4721.",
+      "SSL certificate successfully spoofed."
+    ];
+
+    return technicalTerms[Math.floor(Math.random() * technicalTerms.length)];
   };
 
   // Get path components from a path string
@@ -481,38 +498,38 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory }) =>
         // Show completion message
         addToOutput("hack-success", "\n--- Operation complete ---\n");
         
-        if (activeHackerTool === "NETsurfer") {
+        if (activeHackerTool === "NETsurfer" && tool.discoveredDevices && tool.vulnerabilities) {
           // Show discovered devices for NETsurfer
           addToOutput("hack-data", "DISCOVERED DEVICES:");
-          tool.discoveredDevices.forEach((device: any) => {
+          tool.discoveredDevices.forEach((device) => {
             addToOutput("hack-data", `[${device.ip}] ${device.type} - ${device.os}\n  Open ports: ${device.ports.join(", ")}`);
           });
           addToOutput("hack-data", "\nVULNERABILITIES:");
-          tool.vulnerabilities.forEach((vuln: any) => {
+          (tool.vulnerabilities as {id: string; severity: string; description: string}[]).forEach((vuln) => {
             addToOutput("hack-data", `[${vuln.id}] ${vuln.severity} - ${vuln.description}`);
           });
-        } else if (activeHackerTool === "CRYPTbreaker") {
+        } else if (activeHackerTool === "CRYPTbreaker" && tool.passwordCandidates && tool.encryptedFiles) {
           // Show cracked password for CRYPTbreaker
           const password = tool.passwordCandidates[Math.floor(Math.random() * tool.passwordCandidates.length)];
           addToOutput("hack-data", `PASSWORD CRACKED: ${password}`);
           addToOutput("hack-data", "\nENCRYPTED FILES DECRYPTED:");
-          tool.encryptedFiles.forEach((file: any) => {
+          tool.encryptedFiles.forEach((file) => {
             addToOutput("hack-data", `[${file.encryption}] ${file.name} (${file.size})`);
           });
-        } else if (activeHackerTool === "SECURITYghost") {
+        } else if (activeHackerTool === "SECURITYghost" && tool.threatLevels && tool.vulnerabilities && tool.recommendations) {
           // Show security report for SECURITYghost
           addToOutput("hack-data", "SECURITY ASSESSMENT:");
-          tool.threatLevels.forEach((threat: any) => {
+          tool.threatLevels.forEach((threat) => {
             const bars = Math.floor(threat.level / 10);
             const barDisplay = '[' + '█'.repeat(bars) + ' '.repeat(10 - bars) + ']';
             addToOutput("hack-data", `${threat.name.padEnd(20)} ${barDisplay} ${threat.level}%`);
           });
           addToOutput("hack-data", "\nVULNERABILITIES DETECTED:");
-          tool.vulnerabilities.forEach((vuln: any) => {
+          (tool.vulnerabilities as {id: string; severity: string; component: string; risk: string}[]).forEach((vuln) => {
             addToOutput("hack-data", `[${vuln.id}] ${vuln.severity} - ${vuln.component} - ${vuln.risk}`);
           });
           addToOutput("hack-data", "\nRECOMMENDATIONS:");
-          tool.recommendations.forEach((rec: any, i: number) => {
+          tool.recommendations.forEach((rec, i) => {
             addToOutput("hack-data", `${i + 1}. ${rec}`);
           });
         }
@@ -526,7 +543,7 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory }) =>
         // Reset terminal color
         setTerminalColor("green");
         
-        addToOutput("prompt", `${currentDirectory}>`);
+        addPrompt();
       }, 2000);
       return;
     }
@@ -547,7 +564,7 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory }) =>
     }, currentStage.duration);
     
     return () => clearTimeout(timer);
-  }, [hackerMode, activeHackerTool, hackerToolStage]);
+  }, [hackerMode, activeHackerTool, hackerToolStage, currentDirectory]);
 
   // Process the user's command
   const processCommand = (cmd: string) => {
@@ -808,7 +825,7 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory }) =>
         // Show random fortune cookie message
         const randomIndex = Math.floor(Math.random() * fortunes.length);
         addToOutput("output", "Your fortune:");
-        addToOutput("output", `"${fortunes[randomIndex]}"`);
+        addToOutput("output", `"${fortunes[randomIndex]}"`);        
         break;
         
       case "credits":
@@ -827,16 +844,17 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory }) =>
       case "ascii-art":
         // Display ASCII art
         if (args.length === 0) {
-          addToOutput("output", "Usage: ascii-art robot|castle|dragon");
+          addToOutput("output", "Usage: ascii-art robot|castle|dragon|gizbo");
         } else {
           const artType = args[0].toLowerCase();
           if (asciiArt[artType as keyof typeof asciiArt]) {
+            // Split art into lines and add each line to output
             asciiArt[artType as keyof typeof asciiArt].trim().split('\n').forEach(line => {
               addToOutput("output", line);
             });
           } else {
-            addToOutput("error", `Art type '${artType}' not found.`);
-            addToOutput("output", "Available types: robot, castle, dragon");
+            addToOutput("error", `Unknown art type: ${artType}`);
+            addToOutput("output", "Available types: robot, castle, dragon, gizbo");
           }
         }
         break;
@@ -844,19 +862,123 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory }) =>
       case "calc":
         // Simple calculator
         if (args.length === 0) {
-          addToOutput("output", "Usage: calc EXPRESSION (e.g., calc 5+5)");
+          addToOutput("output", "Usage: calc <expression> (e.g., calc 5+5)");
         } else {
-          const expression = args.join("");
           try {
-            // Note: Using eval for simplicity in this demo - in production, a proper math parser would be better
-            const result = eval(expression);
-            addToOutput("output", `${expression} = ${result}`);
-          } catch (error) {
-            addToOutput("error", `Invalid expression: ${expression}`);
+            // Basic calculator using eval (be careful with this in production!)
+            const expression = args.join('');
+            // Check if expression only contains numbers and basic operators
+            if (/^[0-9+\-*/().\s]+$/.test(expression)) {
+              // eslint-disable-next-line no-eval
+              const result = eval(expression);
+              addToOutput("output", `${expression} = ${result}`);
+            } else {
+              addToOutput("error", "Invalid expression. Only numbers and basic operators (+, -, *, /) are allowed.");
+            }
+          } catch (e) {
+            addToOutput("error", "Error calculating result. Check your expression.");
           }
         }
         break;
         
+      case "wanted":
+        // Display Gizbo's wanted poster
+        asciiArt["gizbo"].trim().split('\n').forEach(line => {
+          addToOutput("output", line);
+        });
+        break;
+        
+      case "hack":
+      case "haxtool":
+        // Open the hacking toolkit
+        if (hackerMode) {
+          addToOutput("error", "A hacking operation is already in progress!");
+          break;
+        }
+        
+        // Display hacking toolkit menu
+        addToOutput("output", "\n=== HACKING TOOLKIT v3.5 ===\n");
+        addToOutput("output", "AVAILABLE TOOLS:");
+        addToOutput("output", "1. NETsurfer - Network scanning & infiltration tool");
+        addToOutput("output", "2. CRYPTbreaker - Password cracking & cryptography tool");
+        addToOutput("output", "3. SECURITYghost - System vulnerability scanner");
+        addToOutput("output", "\nEnter tool number or 'exit': ");
+        
+        // Set up a special listener for the next command
+        const originalProcessCommand = processCommand;
+        const handleHackToolSelection = (toolChoice: string) => {
+          if (toolChoice.trim().toLowerCase() === "exit" || 
+              toolChoice.trim().toLowerCase() === "quit" || 
+              toolChoice.trim().toLowerCase() === "q") {
+            addToOutput("output", "Exiting hacking toolkit...");
+            return;
+          }
+          
+          let selectedTool: string | null = null;
+          if (toolChoice === "1" || toolChoice.toLowerCase() === "netsurfer") {
+            selectedTool = "NETsurfer";
+          } else if (toolChoice === "2" || toolChoice.toLowerCase() === "cryptbreaker") {
+            selectedTool = "CRYPTbreaker";
+          } else if (toolChoice === "3" || toolChoice.toLowerCase() === "securityghost") {
+            selectedTool = "SECURITYghost";
+          } else {
+            addToOutput("error", `Invalid tool selection: ${toolChoice}`);
+            return;
+          }
+          
+          // Start the hacking tool
+          const tool = hackerTools[selectedTool as keyof typeof hackerTools];
+          if (tool) {
+            addToOutput("output", `\nLaunching ${selectedTool} v${tool.version} by ${tool.author}...\n`);
+            
+            // Display the tool logo
+            tool.logo.trim().split('\n').forEach(line => {
+              addToOutput("hack-logo", line);
+            });
+            
+            // Start hacker mode
+            setHackerMode(true);
+            setActiveHackerTool(selectedTool);
+            setHackerToolStage(0);
+            setMatrixActive(true);
+            setTerminalColor("green");
+          } else {
+            addToOutput("error", `Tool initialization failed: ${selectedTool}`);
+          }
+        };
+        
+        // Store the original command input handler
+        const originalCommandInputHandler = handleCommandSubmit;
+        
+        // Replace it with our special handler just for this interaction
+        const handleHackToolInput = (e: React.FormEvent) => {
+          e.preventDefault();
+          
+          if (!commandInput.trim()) return;
+          
+          // Add command to history
+          setCommandHistory(prev => [...prev, commandInput]);
+          setHistoryIndex(-1);
+          
+          // Add command to output
+          addToOutput("command", commandInput);
+          
+          // Process the hack tool selection
+          handleHackToolSelection(commandInput);
+          
+          // Clear input
+          setCommandInput("");
+          
+          // Restore original handler
+          document.querySelector('form')?.removeEventListener('submit', handleHackToolInput as any);
+          document.querySelector('form')?.addEventListener('submit', originalCommandInputHandler as any);
+        };
+        
+        // Replace the form submit handler
+        document.querySelector('form')?.removeEventListener('submit', originalCommandInputHandler as any);
+        document.querySelector('form')?.addEventListener('submit', handleHackToolInput as any);
+        break;
+      
       case "exit":
         // This will be handled by the parent component
         addToOutput("output", "Closing terminal window...");
@@ -927,6 +1049,14 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory }) =>
     
     if (type === "error") {
       return { ...baseStyle, color: "#FF5555" };
+    } else if (type === "hack-progress") {
+      return { ...baseStyle, color: "#33FF33", fontWeight: "bold" };
+    } else if (type === "hack-data") {
+      return { ...baseStyle, color: "#33AAFF" };
+    } else if (type === "hack-success") {
+      return { ...baseStyle, color: "#FFFF33", fontWeight: "bold" };
+    } else if (type === "hack-logo") {
+      return { ...baseStyle, color: "#FF3333", fontWeight: "bold" };
     }
     
     return baseStyle;
