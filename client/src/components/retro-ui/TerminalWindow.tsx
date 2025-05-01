@@ -668,7 +668,7 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({
       { type: 'text', content: 'Launching G1ZB0\'s Hacking Toolkit...', color: '#00ff00' },
       { type: 'ascii', content: HACKER_LOGO, color: '#00ff00' },
       { type: 'text', content: 'Welcome to G1ZB0-TERM v3.1.4 - The Ultimate Hacking Simulation', color: '#00ffff' },
-      { type: 'text', content: 'Type "help" to see available commands or "exit" to return to normal terminal', color: '#ffff00' },
+      { type: 'text', content: 'Choose a mode: Type "ui" for visual interface or "cli" for command line', color: '#ffff00' },
       { type: 'text', content: '========================================', color: '#ff00ff' },
     ]);
     setCommandMode('hackertool');
@@ -693,6 +693,15 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({
     
     // Process hacker tool commands
     switch(mainCmd) {
+      case 'ui':
+        setShowHackerToolUI(true);
+        response = [{ type: 'text', content: 'Launching visual hacking interface...', color: '#00ffff' }];
+        break;
+        
+      case 'cli':
+        setShowHackerToolUI(false);
+        response = [{ type: 'text', content: 'Using command-line interface mode.', color: '#00ffff' }];
+        break;
       case 'help':
         response = [
           { type: 'text', content: '=== Available Hacker Commands ===', color: '#00ffff' },
@@ -1299,57 +1308,211 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({
       {/* Terminal content */}
       <div 
         ref={terminalRef}
-        className={`flex-1 p-3 overflow-y-auto font-mono text-sm bg-black text-green-400 ${commandMode === 'hackertool' && glitchEffects ? 'terminal-glitch' : ''}`}
+        className={`flex-1 p-3 overflow-y-auto font-mono text-sm bg-black text-green-400 ${commandMode === 'hackertool' && glitchEffects ? 'terminal-glitch' : ''} ${commandMode === 'hackertool' && showHackerToolUI ? 'flex' : ''}`}
       >
-        {output.map((line, index) => {
-          if (line.type === 'command') {
-            return (
-              <div key={index} className="mb-1 font-bold" style={{ color: line.color || '#FFC107' }}>
-                {line.content}
+        {commandMode === 'hackertool' && showHackerToolUI ? (
+          <div className="w-full h-full flex flex-col">
+            <div className="bg-black text-green-400 p-4 flex flex-col">
+              <h2 className="text-xl font-bold text-center mb-4 text-cyan-400">G1ZB0 HACKING TOOLKIT v3.1.4</h2>
+              
+              {/* Tools and Targets sections */}
+              <div className="flex gap-4">
+                {/* Tools section */}
+                <div className="flex-1 border border-gray-700 rounded-md p-3">
+                  <h3 className="text-md font-bold mb-2 text-pink-400">Hacking Tools</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {HACKING_TOOLS.map((tool, index) => (
+                      <button
+                        key={index}
+                        className={`flex items-center gap-2 p-2 rounded ${selectedTool === index ? 'bg-gray-800 border border-gray-600' : 'hover:bg-gray-900'}`}
+                        onClick={() => setSelectedTool(index)}
+                        style={{ color: tool.color }}
+                      >
+                        {tool.icon}
+                        <span>{tool.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Targets section */}
+                <div className="flex-1 border border-gray-700 rounded-md p-3">
+                  <h3 className="text-md font-bold mb-2 text-yellow-400">Target Systems</h3>
+                  <div className="flex flex-col gap-2">
+                    {TARGET_SYSTEMS.map((target, index) => {
+                      const difficultyColor = 
+                        target.difficulty === 'Legendary' ? '#ff0000' :
+                        target.difficulty === 'Epic' ? '#ff00ff' :
+                        target.difficulty === 'Rare' ? '#0000ff' :
+                        target.difficulty === 'Uncommon' ? '#00ff00' : '#ffffff';
+                        
+                      return (
+                        <button
+                          key={index}
+                          className={`text-left p-2 rounded ${selectedTarget === index ? 'bg-gray-800 border border-gray-600' : 'hover:bg-gray-900'}`}
+                          onClick={() => setSelectedTarget(index)}
+                        >
+                          <div className="font-bold">{target.name}</div>
+                          <div className="flex justify-between text-sm">
+                            <span style={{ color: difficultyColor }}>{target.difficulty}</span>
+                            <span className="text-cyan-400">Reward: {target.reward}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-            );
-          } else if (line.type === 'error') {
-            return (
-              <div key={index} className="mb-1" style={{ color: line.color || '#FF5252' }}>
-                {line.content}
+              
+              {/* Control panel */}
+              <div className="mt-4 border border-gray-700 rounded-md p-3">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-bold text-cyan-400">Operation Control</h3>
+                  {hackingStatus === 'running' && (
+                    <div className="text-yellow-400 animate-pulse">HACKING IN PROGRESS...</div>
+                  )}
+                  {hackingStatus === 'success' && (
+                    <div className="text-green-400">HACK SUCCESSFUL!</div>
+                  )}
+                  {hackingStatus === 'failed' && (
+                    <div className="text-red-400">HACK FAILED!</div>
+                  )}
+                </div>
+                
+                {/* Progress bar */}
+                {hackingStatus === 'running' && (
+                  <div className="w-full bg-gray-800 rounded-full h-2.5 mb-4">
+                    <div 
+                      className="bg-green-500 h-2.5 rounded-full" 
+                      style={{ width: `${hackingProgress}%` }}
+                    ></div>
+                  </div>
+                )}
+                
+                {/* Control buttons */}
+                <div className="flex gap-2">
+                  <button
+                    className={`flex-1 py-2 rounded-md font-bold ${selectedTool !== null && selectedTarget !== null ? 'bg-green-800 hover:bg-green-700 text-white' : 'bg-gray-700 text-gray-400 cursor-not-allowed'}`}
+                    disabled={selectedTool === null || selectedTarget === null || hackingStatus === 'running'}
+                    onClick={() => {
+                      if (selectedTool !== null && selectedTarget !== null) {
+                        const tool = HACKING_TOOLS[selectedTool];
+                        const target = TARGET_SYSTEMS[selectedTarget];
+                        setHackingStatus('running');
+                        setHackingProgress(0);
+                        setOutput(prev => [
+                          ...prev,
+                          { type: 'text', content: `Initializing ${tool.name} attack on ${target.name}...`, color: '#00ff00' },
+                          { type: 'text', content: 'Establishing secure connection...', color: '#00ffff' },
+                        ]);
+                      }
+                    }}
+                  >
+                    LAUNCH ATTACK
+                  </button>
+                  <button
+                    className="px-4 py-2 rounded-md bg-red-800 hover:bg-red-700 text-white font-bold"
+                    onClick={() => {
+                      setShowHackerToolUI(false);
+                      setOutput(prev => [
+                        ...prev,
+                        { type: 'text', content: 'Returning to terminal mode...', color: '#66BB6A' },
+                      ]);
+                    }}
+                  >
+                    BACK TO TERMINAL
+                  </button>
+                </div>
               </div>
-            );
-          } else if (line.type === 'file') {
-            return (
-              <div key={index} className="mb-1 pl-4 border-l-2 border-gray-700" style={{ color: line.color || '#FFFFFF' }}>
-                {line.content.split('\n').map((textLine, lineIndex) => (
-                  <div key={lineIndex}>{textLine}</div>
-                ))}
-              </div>
-            );
-          } else if (line.type === 'ascii') {
-            return (
-              <pre key={index} className="text-xs whitespace-pre font-mono mb-2" style={{ color: line.color || '#FFC107' }}>
-                {line.content}
-              </pre>
-            );
-          } else {
-            return (
-              <div key={index} className="mb-1" style={{ color: line.color || '#FFFFFF' }}>
-                {line.content}
-              </div>
-            );
-          }
-        })}
+            </div>
+          </div>
+        ) : (
+          <>
+            {output.map((line, index) => {
+              if (line.type === 'command') {
+                return (
+                  <div key={index} className="mb-1 font-bold" style={{ color: line.color || '#FFC107' }}>
+                    {line.content}
+                  </div>
+                );
+              } else if (line.type === 'error') {
+                return (
+                  <div key={index} className="mb-1" style={{ color: line.color || '#FF5252' }}>
+                    {line.content}
+                  </div>
+                );
+              } else if (line.type === 'file') {
+                return (
+                  <div key={index} className="mb-1 pl-4 border-l-2 border-gray-700" style={{ color: line.color || '#FFFFFF' }}>
+                    {line.content.split('\n').map((textLine, lineIndex) => (
+                      <div key={lineIndex}>{textLine}</div>
+                    ))}
+                  </div>
+                );
+              } else if (line.type === 'ascii') {
+                return (
+                  <pre key={index} className="text-xs whitespace-pre font-mono mb-2" style={{ color: line.color || '#FFC107' }}>
+                    {line.content}
+                  </pre>
+                );
+              } else {
+                return (
+                  <div key={index} className="mb-1" style={{ color: line.color || '#FFFFFF' }}>
+                    {line.content}
+                  </div>
+                );
+              }
+            })}
+          </>
+        )}
       </div>
       
-      {/* Command input */}
-      <form onSubmit={handleSubmit} className="flex border-t-2 border-gray-700 bg-black">
-        <div className="p-2 text-cyan-400 font-mono">{prompt}</div>
-        <input
-          ref={inputRef}
-          type="text"
-          value={currentCommand}
-          onChange={(e) => setCurrentCommand(e.target.value)}
-          className="flex-1 bg-black text-green-400 font-mono p-2 focus:outline-none"
-          autoFocus={isActive}
-        />
-      </form>
+      {/* Command input - Hide when in hacker UI mode */}
+      {!(commandMode === 'hackertool' && showHackerToolUI) && (
+        <form onSubmit={handleSubmit} className="flex border-t-2 border-gray-700 bg-black">
+          <div className="p-2 text-cyan-400 font-mono">{prompt}</div>
+          <input
+            ref={inputRef}
+            type="text"
+            value={currentCommand}
+            onChange={(e) => setCurrentCommand(e.target.value)}
+            className="flex-1 bg-black text-green-400 font-mono p-2 focus:outline-none"
+            autoFocus={isActive}
+          />
+        </form>
+      )}
+
+      {/* Show PartyKitty Window when active */}
+      {showPartyKittyWindow && (
+        <div className="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center z-10">
+          <div className="bg-gray-900 border-4 border-orange-500 rounded-lg shadow-lg max-w-md w-full">
+            <div className="flex justify-between items-center p-2 bg-orange-500 text-white">
+              <h3 className="font-bold">🎉 Party Kitty! 🎉</h3>
+              <button 
+                onClick={() => setShowPartyKittyWindow(false)}
+                className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-800 hover:bg-gray-700"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <div className="p-4 flex flex-col items-center">
+              <img 
+                src={partyKittyImage} 
+                alt="Party Kitty" 
+                className="rounded-md border-2 border-orange-400 mb-4 max-w-full"
+              />
+              <p className="text-center text-orange-300 font-bold text-lg mb-2">Party Kitty is here!</p>
+              <p className="text-center text-gray-300">Time to celebrate with Party Kitty!</p>
+              <button 
+                onClick={() => setShowPartyKittyWindow(false)}
+                className="mt-4 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-md"
+              >
+                Party On!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cyberpunk glitch effects for hacker mode */}
       <style dangerouslySetInnerHTML={{ __html: `
