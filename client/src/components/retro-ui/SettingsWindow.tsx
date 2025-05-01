@@ -15,12 +15,14 @@ interface SettingsWindowProps {
   onDateFormatChange: (dateFormat: string) => void;
   onTimezoneChange: (timezone: string) => void;
   onIconSizeChange: (size: 'small' | 'medium' | 'large') => void;
+  onColorSchemeChange: (scheme: 'blue' | 'black' | 'orange' | 'green' | 'red') => void;
   currentWallpaper: string;
   crtEnabled: boolean;
   use24HourClock: boolean;
   dateFormat: string;
   timezone: string;
   iconSize: 'small' | 'medium' | 'large';
+  colorScheme: 'blue' | 'black' | 'orange' | 'green' | 'red';
 }
 
 const SettingsWindow: React.FC<SettingsWindowProps> = ({ 
@@ -31,12 +33,14 @@ const SettingsWindow: React.FC<SettingsWindowProps> = ({
   onDateFormatChange,
   onTimezoneChange,
   onIconSizeChange,
+  onColorSchemeChange,
   currentWallpaper,
   crtEnabled,
   use24HourClock,
   dateFormat,
   timezone,
-  iconSize
+  iconSize,
+  colorScheme
 }) => {
   const [selectedWallpaper, setSelectedWallpaper] = useState<string>(currentWallpaper);
   const [isCrtEnabled, setIsCrtEnabled] = useState<boolean>(crtEnabled);
@@ -45,6 +49,7 @@ const SettingsWindow: React.FC<SettingsWindowProps> = ({
   const [selectedDateFormat, setSelectedDateFormat] = useState<string>(dateFormat);
   const [selectedTimezone, setSelectedTimezone] = useState<string>(timezone);
   const [selectedIconSize, setSelectedIconSize] = useState<'small' | 'medium' | 'large'>(iconSize);
+  const [selectedColorScheme, setSelectedColorScheme] = useState<'blue' | 'black' | 'orange' | 'green' | 'red'>(colorScheme);
   
   // Available wallpapers
   const wallpapers = [
@@ -109,6 +114,15 @@ const SettingsWindow: React.FC<SettingsWindowProps> = ({
     { id: 'large', name: 'Large', width: 32, height: 32 }
   ];
   
+  // Available color schemes with display information
+  const colorSchemes = [
+    { id: 'blue', name: 'Blue', primary: 'bg-blue-600', secondary: 'bg-blue-800' },
+    { id: 'black', name: 'Black', primary: 'bg-gray-900', secondary: 'bg-gray-800' },
+    { id: 'orange', name: 'Orange', primary: 'bg-orange-600', secondary: 'bg-orange-800' },
+    { id: 'green', name: 'Green', primary: 'bg-green-600', secondary: 'bg-green-800' },
+    { id: 'red', name: 'Red', primary: 'bg-red-600', secondary: 'bg-red-800' },
+  ];
+  
   // Handle save settings
   const handleSaveSettings = () => {
     // Apply wallpaper setting
@@ -135,6 +149,9 @@ const SettingsWindow: React.FC<SettingsWindowProps> = ({
     
     // Apply icon size setting
     onIconSizeChange(selectedIconSize);
+    
+    // Apply color scheme setting
+    onColorSchemeChange(selectedColorScheme);
     
     // Close the settings window
     onClose();
@@ -314,6 +331,34 @@ const SettingsWindow: React.FC<SettingsWindowProps> = ({
             ))}
           </select>
         </div>
+      </div>
+      
+      {/* Color Scheme Settings */}
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold mb-2">Color Scheme</h3>
+        <div className="grid grid-cols-5 gap-2 mb-3">
+          {colorSchemes.map((scheme) => (
+            <div 
+              key={scheme.id}
+              className={`relative border-2 cursor-pointer overflow-hidden p-3 ${selectedColorScheme === scheme.id ? 'border-blue-500' : 'border-gray-300'}`}
+              onClick={() => setSelectedColorScheme(scheme.id as 'blue' | 'black' | 'orange' | 'green' | 'red')}
+            >
+              <div className="flex flex-col items-center justify-center">
+                <div className="mb-2 flex flex-col rounded overflow-hidden w-full">
+                  <div className={`h-4 w-full ${scheme.primary}`}></div>
+                  <div className={`h-3 w-full ${scheme.secondary}`}></div>
+                </div>
+                <span className="text-xs">{scheme.name}</span>
+              </div>
+              {selectedColorScheme === scheme.id && (
+                <div className="absolute top-1 right-1 bg-blue-500 text-white rounded-full p-1">
+                  <Check size={8} />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-gray-500 mt-1">Change the colors used for window title bars and taskbar</p>
       </div>
       
       {/* Buttons */}
