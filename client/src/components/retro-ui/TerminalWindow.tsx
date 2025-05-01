@@ -456,8 +456,11 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({
 
   // Handle simulated hacking progress
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    let hackingInterval: NodeJS.Timeout;
+    
     if (hackingStatus === 'running') {
-      const hackingInterval = setInterval(() => {
+      hackingInterval = setInterval(() => {
         setHackingProgress(prev => {
           // Random progress with occasional setbacks for realism
           const increment = Math.random() * 5 - (Math.random() > 0.8 ? 2 : 0);
@@ -471,7 +474,7 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({
             return 100;
           }
           
-          // Random chance of failure
+          // Random chance of failure (1% chance per tick)
           if (Math.random() < 0.01) {
             clearInterval(hackingInterval);
             setHackingStatus('failed');
@@ -484,6 +487,13 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({
       }, 200);
       
       return () => clearInterval(hackingInterval);
+    } else if (hackingStatus === 'success' || hackingStatus === 'failed') {
+      // Auto-reset hacking status after 5 seconds
+      timeoutId = setTimeout(() => {
+        setHackingStatus('idle');
+      }, 5000);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [hackingStatus]);
 
