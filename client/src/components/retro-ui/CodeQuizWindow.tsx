@@ -81,7 +81,13 @@ const CodeQuizWindow: React.FC<CodeQuizWindowProps> = ({ onClose, onMinimize, is
     } else {
       let correctAnswerText = '';
       if (currentQuestion.type === 'output') {
-        correctAnswerText = `The correct answer was: ${currentQuestion.options?.[currentQuestion.correctAnswer as number - 1]}`;
+        // For output questions, correctAnswer is the index (as a string) of the correct option
+        const correctAnswerIndex = parseInt(currentQuestion.correctAnswer.toString()) - 1;
+        if (currentQuestion.options && correctAnswerIndex >= 0 && correctAnswerIndex < currentQuestion.options.length) {
+          correctAnswerText = `The correct answer was: ${currentQuestion.options[correctAnswerIndex]}`;
+        } else {
+          correctAnswerText = `The correct answer was: ${currentQuestion.correctAnswer}`;
+        }
       } else if (currentQuestion.type === 'error') {
         correctAnswerText = `The correct answer was: line ${currentQuestion.correctAnswer}`;
       } else {
