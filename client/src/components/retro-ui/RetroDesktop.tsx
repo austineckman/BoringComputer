@@ -572,12 +572,14 @@ const RetroDesktop: React.FC = () => {
         onDateFormatChange={handleDateFormatChange}
         onTimezoneChange={handleTimezoneChange}
         onIconSizeChange={handleIconSizeChange}
+        onColorSchemeChange={handleColorSchemeChange}
         currentWallpaper={currentWallpaper}
         crtEnabled={crtEnabled}
         use24HourClock={use24HourClock}
         dateFormat={dateFormat}
         timezone={timezone}
         iconSize={iconSize}
+        colorScheme={colorScheme}
       />, 
       "monitor",
       { width: 680, height: 620 }
