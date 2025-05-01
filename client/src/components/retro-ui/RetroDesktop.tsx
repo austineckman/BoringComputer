@@ -105,7 +105,8 @@ const RetroDesktop: React.FC = () => {
     { id: "lootboxes", name: "HackLock.exe", icon: "picklock", path: "/lootboxes", position: { x: 140, y: 20 } },
     { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 140, y: 120 } },
     { id: "circuitbuilder", name: "Sandbox", icon: "circuitbuilder", position: { x: 140, y: 220 } },
-    { id: "discord", name: "Discord", icon: "discord", position: { x: 140, y: 320 } },
+    { id: "codequiz", name: "BugHunt", icon: "questgrimoire", position: { x: 140, y: 320 } },
+    { id: "discord", name: "Discord", icon: "discord", position: { x: 140, y: 420 } },
     
     // Oracle in top right
     { id: "oracle", name: "The Oracle", icon: "oracle", position: { x: 800, y: 20 } },
@@ -406,6 +407,8 @@ const RetroDesktop: React.FC = () => {
       openShopWindow();
     } else if (iconId === "recyclebin") {
       openRecycleBinWindow();
+    } else if (iconId === "codequiz") {
+      openCodeQuizWindow();
     } else if (iconId === "quests") {
       // Only trigger loading state if quests app is currently closed
       if (questsAppState === 'closed') {
@@ -599,6 +602,20 @@ const RetroDesktop: React.FC = () => {
       <RecycleBinWindow onClose={() => closeWindow("recyclebin")} />, 
       "trashIcon",
       { width: 800, height: 600 }
+    );
+  };
+  
+  const openCodeQuizWindow = () => {
+    openWindow(
+      "codequiz", 
+      "BugHunt", 
+      <CodeQuizWindow 
+        onClose={() => closeWindow("codequiz")} 
+        onMinimize={() => minimizeWindow("codequiz")}
+        isActive={windows.some(w => w.id === "codequiz" && w.isActive)}
+      />, 
+      "questgrimoire",
+      { width: 700, height: 600 }
     );
   };
 
