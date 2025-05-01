@@ -1102,10 +1102,18 @@ const RetroDesktop: React.FC = () => {
           {/* Clock */}
           <div className="bg-blue-800 border border-blue-500 rounded-sm px-3 py-1.5 text-white flex flex-col items-end">
             <div className="text-xs font-mono">
-              {formatTime()}
+              {use24HourClock ? 
+                currentTime.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', hour12: false}) : 
+                currentTime.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', hour12: true})
+              }
             </div>
             <div className="text-[10px] font-mono text-gray-300">
-              {formatDate()}
+              {currentTime.toLocaleDateString([], {
+                month: dateFormat.includes('MMM') ? 'short' : '2-digit',
+                day: '2-digit',
+                year: 'numeric',
+                timeZone: timezone
+              })}
             </div>
           </div>
         </div>
