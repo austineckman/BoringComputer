@@ -157,7 +157,14 @@ const CodeQuizWindow: React.FC<CodeQuizWindowProps> = ({ onClose, onMinimize, is
           {currentQuestion.type === 'output' && (
             <>
               <p>What will the following code output?</p>
-              <pre className="code-block">{currentQuestion.code}</pre>
+              <pre className="code-block">
+                <div className="line-numbers">
+                  {currentQuestion.code.split('\n').map((_, i) => (
+                    <div key={i}>{i + 1}</div>
+                  ))}
+                </div>
+                <div className="code-content">{currentQuestion.code}</div>
+              </pre>
               <div className="answer-options">
                 {currentQuestion.options?.map((option, index) => (
                   <div key={index} className="answer-option">
@@ -179,7 +186,14 @@ const CodeQuizWindow: React.FC<CodeQuizWindowProps> = ({ onClose, onMinimize, is
           {currentQuestion.type === 'error' && (
             <>
               <p>Which line contains the error?</p>
-              <pre className="code-block">{currentQuestion.code}</pre>
+              <pre className="code-block">
+                <div className="line-numbers">
+                  {currentQuestion.code.split('\n').map((_, i) => (
+                    <div key={i}>{i + 1}</div>
+                  ))}
+                </div>
+                <div className="code-content">{currentQuestion.code}</div>
+              </pre>
               <div className="answer-input">
                 <label>Line number: </label>
                 <input 
@@ -196,7 +210,28 @@ const CodeQuizWindow: React.FC<CodeQuizWindowProps> = ({ onClose, onMinimize, is
           {currentQuestion.type === 'fix' && (
             <>
               <p>Fix line {currentQuestion.lineToFix} by typing the correct code:</p>
-              <pre className="code-block">{currentQuestion.code}</pre>
+              <pre className="code-block">
+                <div className="line-numbers">
+                  {currentQuestion.code.split('\n').map((_, i) => (
+                    <div 
+                      key={i} 
+                      className={i+1 === currentQuestion.lineToFix ? 'highlighted-line' : ''}
+                    >
+                      {i + 1}
+                    </div>
+                  ))}
+                </div>
+                <div className="code-content">
+                  {currentQuestion.code.split('\n').map((line, i) => (
+                    <div 
+                      key={i} 
+                      className={i+1 === currentQuestion.lineToFix ? 'highlighted-line' : ''}
+                    >
+                      {line}
+                    </div>
+                  ))}
+                </div>
+              </pre>
               <div className="answer-input">
                 <label>Corrected line {currentQuestion.lineToFix}: </label>
                 <input 
