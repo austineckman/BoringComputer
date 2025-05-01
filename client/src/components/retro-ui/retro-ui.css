@@ -200,7 +200,7 @@
 .code-quiz-window {
   width: 700px;
   height: 600px;
-  background-color: #0c0c0c;
+  background-color: #000000;
   color: #33ff33;
   font-family: 'VT323', monospace, 'Courier New', Courier, monospace;
 }
@@ -210,6 +210,7 @@
   display: flex;
   flex-direction: column;
   padding: 10px;
+  background-color: #000000;
 }
 
 .code-quiz-header {
@@ -230,6 +231,7 @@
   flex: 1;
   overflow-y: auto;
   padding: 10px;
+  background-color: #000000;
 }
 
 .cartel-quote {
@@ -247,7 +249,7 @@
 }
 
 .code-block {
-  background-color: #1a1a1a;
+  background-color: #000000;
   padding: 15px;
   border-radius: 4px;
   overflow-x: auto;
@@ -257,6 +259,7 @@
   white-space: pre;
   line-height: 1.5;
   display: flex;
+  color: #33ff33;
 }
 
 .line-numbers {
