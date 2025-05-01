@@ -68,7 +68,175 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory }) =>
     "ascii-art": "Displays ASCII art (Usage: ascii-art robot|castle|dragon)",
     "partykitty": "Shows the party kitty image in a popup window",
     "calc": "Simple calculator (Usage: calc 5+5)",
+    "hack": "Opens the hacking toolkit (Usage: hack)",
+    "haxtool": "Alias for hack command",
     "exit": "Closes the terminal window"
+  };
+
+  // Define type for hacker tools to fix TypeScript errors
+  type HackerToolType = {
+    description: string;
+    version: string;
+    author: string;
+    logo: string;
+    stages: { message: string; duration: number }[];
+    discoveredDevices?: { ip: string; type: string; ports: number[]; os: string }[];
+    vulnerabilities?: { id: string; severity: string; description: string }[] | { id: string; severity: string; component: string; risk: string }[];
+    passwordCandidates?: string[];
+    hashTypes?: string[];
+    encryptedFiles?: { name: string; size: string; encryption: string }[];
+    threatLevels?: { name: string; level: number; color: string }[];
+    recommendations?: string[];
+  };
+
+  // Hacker tools configuration
+  const hackerTools: Record<string, HackerToolType> = {
+    "NETsurfer": {
+      description: "Network scanning & infiltration tool",
+      version: "3.1.4",
+      author: "0xDEADC0DE",
+      logo: `
+        ╔═╗╔╗╔═╗╔╦╗╔═╗╦ ╦╦═╗╔═╗╔═╗╦═╗
+        ║╣ ╠╩╗╚═╗ ║ ║ ║║ ║╠╦╝╠╣ ║╣ ╠╦╝
+        ╚═╝╚═╝╚═╝ ╩ ╚═╝╚═╝╩╚═╚  ╚═╝╩╚═  v3.1.4
+      `,
+      stages: [
+        { message: "Initializing network interface...", duration: 800 },
+        { message: "Scanning target network topology...", duration: 1200 },
+        { message: "Analyzing network protocols...", duration: 1000 },
+        { message: "Enumerating connected devices...", duration: 1500 },
+        { message: "Detecting operating systems...", duration: 1300 },
+        { message: "Scanning for open ports...", duration: 2000 },
+        { message: "Identifying vulnerable services...", duration: 1800 },
+        { message: "Testing firewall configurations...", duration: 1400 },
+        { message: "Mapping network paths...", duration: 1600 },
+        { message: "Creating infiltration vectors...", duration: 2200 },
+        { message: "ACCESS GRANTED - Network compromised", duration: 1000 },
+      ],
+      discoveredDevices: [
+        { ip: "192.168.1.1", type: "Router", ports: [80, 443, 22], os: "DD-WRT" },
+        { ip: "192.168.1.5", type: "Server", ports: [80, 443, 3306, 22], os: "Linux 5.4.0" },
+        { ip: "192.168.1.10", type: "Workstation", ports: [139, 445], os: "Windows 11" },
+        { ip: "192.168.1.15", type: "IoT Device", ports: [80, 8080, 1883], os: "Custom Firmware" },
+        { ip: "192.168.1.20", type: "NAS", ports: [80, 443, 445, 548], os: "FreeBSD 13.1" },
+      ],
+      vulnerabilities: [
+        { id: "CVE-2023-3842", severity: "HIGH", description: "Buffer overflow in HTTP server" },
+        { id: "CVE-2023-7721", severity: "CRITICAL", description: "Authentication bypass in admin panel" },
+        { id: "CVE-2022-9152", severity: "MEDIUM", description: "Session fixation vulnerability" },
+        { id: "CVE-2023-2155", severity: "HIGH", description: "SQL injection in login form" },
+      ]
+    },
+    "CRYPTbreaker": {
+      description: "Password cracking & cryptography tool",
+      version: "2.7.1",
+      author: "Ph4ntom_Cr4ck3r", 
+      logo: `
+        ╔═╗╦═╗╦ ╦╔═╗╔╦╗╔╗ ╦═╗╔═╗╔═╗╦╔═╔═╗╦═╗
+        ║  ╠╦╝╚╦╝╠═╝ ║ ╠╩╗╠╦╝║╣ ╠═╣╠╩╗║╣ ╠╦╝
+        ╚═╝╩╚═ ╩ ╩   ╩ ╚═╝╩╚═╚═╝╩ ╩╩ ╩╚═╝╩╚═  v2.7.1
+      `,
+      stages: [
+        { message: "Initializing cryptographic engine...", duration: 800 },
+        { message: "Loading password dictionaries...", duration: 1200 },
+        { message: "Analyzing hash algorithm...", duration: 1000 },
+        { message: "Calculating hash entropy...", duration: 1300 },
+        { message: "Starting dictionary attack...", duration: 1500 },
+        { message: "Testing common password patterns...", duration: 1800 },
+        { message: "Switching to brute force approach...", duration: 2000 },
+        { message: "Optimizing attack vectors...", duration: 1600 },
+        { message: "Calculating probability matrices...", duration: 1400 },
+        { message: "Testing hash collision techniques...", duration: 2200 },
+        { message: "ACCESS GRANTED - Password cracked", duration: 1000 },
+      ],
+      passwordCandidates: [
+        "password123", "qwerty", "letmein", "admin1234", "welcome", 
+        "123456789", "football", "princess", "dragon", "master",
+        "sunshine", "iloveyou", "monkey", "login", "bailey",
+        "access", "admin", "trustno1", "shadow", "secret"
+      ],
+      hashTypes: [
+        "MD5", "SHA-1", "SHA-256", "bcrypt", "Argon2", "NTLM", "Scrypt", "PBKDF2"
+      ],
+      encryptedFiles: [
+        { name: "users.db", size: "1.2 MB", encryption: "AES-256" },
+        { name: "financial.xlsx", size: "4.7 MB", encryption: "AES-128" },
+        { name: "credentials.json", size: "0.3 MB", encryption: "RC4" },
+        { name: "messages.enc", size: "2.1 MB", encryption: "3DES" },
+      ]
+    },
+    "SECURITYghost": {
+      description: "System vulnerability scanner",
+      version: "4.0.2",
+      author: "S3cur1ty_R00t",
+      logo: `
+        ╔═╗╔═╗╔═╗╦ ╦╦═╗╦╔╦╗╦ ╦╔═╗╦ ╦╔═╗╔═╗╔╦╗
+        ╚═╗║╣ ║  ║ ║╠╦╝║ ║ ╚╦╝║ ╦╠═╣║ ║╚═╗ ║ 
+        ╚═╝╚═╝╚═╝╚═╝╩╚═╩ ╩  ╩ ╚═╝╩ ╩╚═╝╚═╝ ╩  v4.0.2
+      `,
+      stages: [
+        { message: "Initializing security scanner...", duration: 800 },
+        { message: "Loading vulnerability database...", duration: 1200 },
+        { message: "Checking OS security patches...", duration: 1500 },
+        { message: "Scanning running processes...", duration: 1400 },
+        { message: "Analyzing installed software...", duration: 1300 },
+        { message: "Checking filesystem permissions...", duration: 1600 },
+        { message: "Reviewing authentication mechanisms...", duration: 1800 },
+        { message: "Analyzing network security config...", duration: 2000 },
+        { message: "Scanning for malware signatures...", duration: 2200 },
+        { message: "Running exploit simulations...", duration: 1700 },
+        { message: "SCAN COMPLETE - Security report ready", duration: 1000 },
+      ],
+      threatLevels: [
+        { name: "Authentication", level: 72, color: "amber" },
+        { name: "Network Security", level: 45, color: "red" },
+        { name: "OS Patching", level: 83, color: "green" },
+        { name: "Application Security", level: 61, color: "amber" },
+        { name: "Malware Protection", level: 90, color: "green" },
+      ],
+      vulnerabilities: [
+        { id: "CVE-2023-4218", severity: "HIGH", component: "Network Stack", risk: "Remote Code Execution" },
+        { id: "CVE-2022-8817", severity: "MEDIUM", component: "Web Server", risk: "Information Disclosure" },
+        { id: "CVE-2023-5501", severity: "CRITICAL", component: "Authentication Service", risk: "Privilege Escalation" },
+        { id: "CVE-2022-7361", severity: "LOW", component: "File System", risk: "Denial of Service" },
+      ],
+      recommendations: [
+        "Update system to patch CVE-2023-5501 immediately",
+        "Implement two-factor authentication",
+        "Close unnecessary open ports (esp. 8080, 1433)",
+        "Review file permissions in /config directory",
+        "Update antivirus definitions",
+      ]
+    }
+  };
+
+  // Fake IP addresses for hacker tools
+  const fakeIPs = [
+    "192.168.1.1", "10.0.0.138", "172.16.254.1", "169.254.0.1", "192.0.2.146", 
+    "198.51.100.23", "203.0.113.42", "240.0.0.212", "127.0.0.1", "224.0.0.1",
+    "233.252.0.123", "169.254.169.254", "192.88.99.1", "198.18.0.19", "192.0.0.8"
+  ];
+
+  // Hacking tool state
+  const [hackerMode, setHackerMode] = useState(false);
+  const [activeHackerTool, setActiveHackerTool] = useState<string | null>(null);
+  const [hackerToolStage, setHackerToolStage] = useState(0);
+  const [matrixActive, setMatrixActive] = useState(false);
+  const hackerAnimationId = useRef<number | null>(null);
+
+  // Function to generate random fake technical jargon
+  const getRandomTechnicalJargon = () => {
+    const protocols = ["TCP", "UDP", "HTTP", "FTP", "SSH", "SMTP", "POP3", "IMAP", "DNS", "DHCP"];
+    const actions = ["connecting", "scanning", "analyzing", "probing", "exploiting", "tunneling", "routing", "injecting"];
+    const targets = ["endpoint", "server", "database", "mainframe", "firewall", "gateway", "application", "service"];
+    
+    const protocol = protocols[Math.floor(Math.random() * protocols.length)];
+    const action = actions[Math.floor(Math.random() * actions.length)];
+    const target = targets[Math.floor(Math.random() * targets.length)];
+    const ip = fakeIPs[Math.floor(Math.random() * fakeIPs.length)];
+    const port = Math.floor(Math.random() * 65535) + 1;
+    
+    return `${protocol}: ${action} ${target} at ${ip}:${port}`;
   };
 
   // Fortune cookie messages
@@ -203,6 +371,183 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ startingDirectory }) =>
     
     return parent !== null && typeof parent[fileName] === 'string';
   };
+
+  // Matrix rain effect for hacker mode
+  useEffect(() => {
+    if (!matrixActive || !hackerMode) return;
+    
+    // Create canvas for matrix effect if it doesn't exist
+    let canvas = document.getElementById('matrix-canvas') as HTMLCanvasElement;
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.id = 'matrix-canvas';
+      canvas.style.position = 'absolute';
+      canvas.style.top = '0';
+      canvas.style.left = '0';
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+      canvas.style.zIndex = '1';
+      canvas.style.opacity = '0.1';
+      
+      const terminalEl = document.querySelector('.font-mono') as HTMLElement;
+      if (terminalEl && terminalEl.parentNode) {
+        terminalEl.parentNode.insertBefore(canvas, terminalEl);
+      }
+    }
+    
+    // Initialize canvas size
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Matrix rain characters
+    const chars = '01アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン[]{}+-*/=0123456789ABCDEF';
+    
+    // Columns configuration
+    const fontSize = 14;
+    const columns = Math.floor(canvas.width / fontSize);
+    const drops: number[] = [];
+    
+    // Initialize drops at random positions
+    for (let i = 0; i < columns; i++) {
+      drops[i] = Math.random() * -canvas.height / fontSize;
+    }
+    
+    // Drawing function
+    const drawMatrix = () => {
+      // Semi-transparent black to create trails
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Set the character style
+      ctx.fillStyle = '#0F0'; // Green text
+      ctx.font = fontSize + 'px monospace';
+      
+      // Draw characters
+      for (let i = 0; i < drops.length; i++) {
+        // Random character
+        const text = chars[Math.floor(Math.random() * chars.length)];
+        
+        // Draw the character
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+        
+        // Move drops down for next frame
+        drops[i]++;
+        
+        // Reset drops to top with randomness
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+          drops[i] = Math.random() * -10;
+        }
+      }
+      
+      // Only continue animation if matrix is still active
+      if (matrixActive) {
+        hackerAnimationId.current = requestAnimationFrame(drawMatrix);
+      } else {
+        // Clean up canvas if matrix effect is disabled
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    };
+    
+    // Start the animation
+    hackerAnimationId.current = requestAnimationFrame(drawMatrix);
+    
+    // Cleanup on unmount
+    return () => {
+      if (hackerAnimationId.current) {
+        cancelAnimationFrame(hackerAnimationId.current);
+      }
+      if (canvas && canvas.parentNode) {
+        canvas.parentNode.removeChild(canvas);
+      }
+    };
+  }, [matrixActive, hackerMode]);
+
+  // Hacker tool simulation effect
+  useEffect(() => {
+    if (!hackerMode || !activeHackerTool) return;
+    
+    // Get tool configuration
+    const tool = hackerTools[activeHackerTool as keyof typeof hackerTools];
+    if (!tool) return;
+    
+    // Get current stage info
+    const currentStage = tool.stages[hackerToolStage];
+    if (!currentStage) {
+      // If we've reached the end of stages, exit hacker mode
+      setTimeout(() => {
+        // Show completion message
+        addToOutput("hack-success", "\n--- Operation complete ---\n");
+        
+        if (activeHackerTool === "NETsurfer") {
+          // Show discovered devices for NETsurfer
+          addToOutput("hack-data", "DISCOVERED DEVICES:");
+          tool.discoveredDevices.forEach((device: any) => {
+            addToOutput("hack-data", `[${device.ip}] ${device.type} - ${device.os}\n  Open ports: ${device.ports.join(", ")}`);
+          });
+          addToOutput("hack-data", "\nVULNERABILITIES:");
+          tool.vulnerabilities.forEach((vuln: any) => {
+            addToOutput("hack-data", `[${vuln.id}] ${vuln.severity} - ${vuln.description}`);
+          });
+        } else if (activeHackerTool === "CRYPTbreaker") {
+          // Show cracked password for CRYPTbreaker
+          const password = tool.passwordCandidates[Math.floor(Math.random() * tool.passwordCandidates.length)];
+          addToOutput("hack-data", `PASSWORD CRACKED: ${password}`);
+          addToOutput("hack-data", "\nENCRYPTED FILES DECRYPTED:");
+          tool.encryptedFiles.forEach((file: any) => {
+            addToOutput("hack-data", `[${file.encryption}] ${file.name} (${file.size})`);
+          });
+        } else if (activeHackerTool === "SECURITYghost") {
+          // Show security report for SECURITYghost
+          addToOutput("hack-data", "SECURITY ASSESSMENT:");
+          tool.threatLevels.forEach((threat: any) => {
+            const bars = Math.floor(threat.level / 10);
+            const barDisplay = '[' + '█'.repeat(bars) + ' '.repeat(10 - bars) + ']';
+            addToOutput("hack-data", `${threat.name.padEnd(20)} ${barDisplay} ${threat.level}%`);
+          });
+          addToOutput("hack-data", "\nVULNERABILITIES DETECTED:");
+          tool.vulnerabilities.forEach((vuln: any) => {
+            addToOutput("hack-data", `[${vuln.id}] ${vuln.severity} - ${vuln.component} - ${vuln.risk}`);
+          });
+          addToOutput("hack-data", "\nRECOMMENDATIONS:");
+          tool.recommendations.forEach((rec: any, i: number) => {
+            addToOutput("hack-data", `${i + 1}. ${rec}`);
+          });
+        }
+        
+        // Exit hacker mode
+        setHackerMode(false);
+        setActiveHackerTool(null);
+        setHackerToolStage(0);
+        setMatrixActive(false);
+        
+        // Reset terminal color
+        setTerminalColor("green");
+        
+        addToOutput("prompt", `${currentDirectory}>`);
+      }, 2000);
+      return;
+    }
+    
+    // Type out the current stage message
+    addToOutput("hack-progress", currentStage.message);
+    
+    // Add some random technical jargon for effect
+    for (let i = 0; i < 3; i++) {
+      setTimeout(() => {
+        addToOutput("hack-data", getRandomTechnicalJargon());
+      }, Math.random() * 500);
+    }
+    
+    // Move to next stage after duration
+    const timer = setTimeout(() => {
+      setHackerToolStage(prev => prev + 1);
+    }, currentStage.duration);
+    
+    return () => clearTimeout(timer);
+  }, [hackerMode, activeHackerTool, hackerToolStage]);
 
   // Process the user's command
   const processCommand = (cmd: string) => {
