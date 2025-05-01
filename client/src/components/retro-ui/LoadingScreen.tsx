@@ -320,7 +320,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
             <div key={index} 
               className={`mb-1 
                 ${loadingProgress > 80 && Math.random() > 0.7 ? 'text-green-400' : ''}
-                ${index === 0 ? 'whitespace-pre font-mono text-amber-500 text-[4px] leading-[3px] scale-[0.9] origin-top-left block transform opacity-90' : ''}`}>
+                ${index === 0 ? 'ascii-art whitespace-pre font-mono text-amber-500' : ''}`}>
               {index === 0 ? msg : `$ ${msg}`}
             </div>
           ))}
@@ -350,7 +350,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
         </div>
       </div>
       
-      {/* Add some CSS for the glitch effect */}
+      {/* Add some CSS for custom effects */}
       <style>{`
         .glitch-effect {
           animation: glitch 0.3s infinite;
@@ -378,6 +378,24 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
             transform: translate(2px, 0);
             text-shadow: 2px 0 #ff0000, -2px 0 #00ff00;
           }
+        }
+        
+        /* ASCII art styling */
+        .ascii-art {
+          font-size: 3px;
+          line-height: 3px;
+          letter-spacing: -0.2px;
+          font-family: monospace;
+          white-space: pre;
+          margin-bottom: 1rem;
+          color: #fbbf24; /* amber-500 */
+          text-shadow: 0 0 2px rgba(251, 191, 36, 0.7);
+          transform: scale(0.85);
+          transform-origin: top left;
+          display: block;
+          position: relative;
+          opacity: 0.95;
+          overflow-x: hidden;
         }
       `}</style>
     </div>
