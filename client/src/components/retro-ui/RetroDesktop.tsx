@@ -90,6 +90,7 @@ const RetroDesktop: React.FC = () => {
   const [dateFormat, setDateFormat] = useState<string>("MM/DD/YYYY");
   const [timezone, setTimezone] = useState<string>("America/New_York");
   const [iconSize, setIconSize] = useState<'small' | 'medium' | 'large'>('medium');
+  const [colorScheme, setColorScheme] = useState<'blue' | 'black' | 'orange' | 'green' | 'red'>('blue');
   
   // Desktop icons (regular icons visible to all users)
   const [desktopIcons, setDesktopIcons] = useState<DesktopIcon[]>([
@@ -179,6 +180,13 @@ const RetroDesktop: React.FC = () => {
     // Save preference in local storage
     localStorage.setItem('iconSize', size);
   }, []);
+  
+  // Handler for changing color scheme
+  const handleColorSchemeChange = useCallback((scheme: 'blue' | 'black' | 'orange' | 'green' | 'red') => {
+    setColorScheme(scheme);
+    // Save preference in local storage
+    localStorage.setItem('colorScheme', scheme);
+  }, []);
 
   // Load user preferences from local storage
   useEffect(() => {
@@ -204,6 +212,12 @@ const RetroDesktop: React.FC = () => {
     const savedIconSize = localStorage.getItem('iconSize') as 'small' | 'medium' | 'large' | null;
     if (savedIconSize && ['small', 'medium', 'large'].includes(savedIconSize)) {
       setIconSize(savedIconSize as 'small' | 'medium' | 'large');
+    }
+    
+    // Load color scheme preference
+    const savedColorScheme = localStorage.getItem('colorScheme') as 'blue' | 'black' | 'orange' | 'green' | 'red' | null;
+    if (savedColorScheme && ['blue', 'black', 'orange', 'green', 'red'].includes(savedColorScheme)) {
+      setColorScheme(savedColorScheme as 'blue' | 'black' | 'orange' | 'green' | 'red');
     }
   }, []);
   
@@ -804,7 +818,12 @@ const RetroDesktop: React.FC = () => {
             <div 
               className={`flex items-center justify-between px-3 py-1.5 ${
                 window.isActive 
-                  ? 'bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500' 
+                  ? colorScheme === 'blue' ? 'bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500' :
+                    colorScheme === 'black' ? 'bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700' :
+                    colorScheme === 'orange' ? 'bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500' :
+                    colorScheme === 'green' ? 'bg-gradient-to-r from-green-600 via-green-500 to-emerald-500' :
+                    colorScheme === 'red' ? 'bg-gradient-to-r from-red-600 via-red-500 to-rose-500' :
+                    'bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500'
                   : 'bg-gradient-to-r from-gray-700 to-gray-600'
               } text-white`}
               onMouseDown={(e) => startDrag(e, window.id)}
