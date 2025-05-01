@@ -44,7 +44,7 @@ const SettingsWindow: React.FC<SettingsWindowProps> = ({
 }) => {
   const [selectedWallpaper, setSelectedWallpaper] = useState<string>(currentWallpaper);
   const [isCrtEnabled, setIsCrtEnabled] = useState<boolean>(crtEnabled);
-  const [customWallpaper, setCustomWallpaper] = useState<string | null>(null);
+  // Custom wallpaper state removed to improve performance
   const [is24HourClock, setIs24HourClock] = useState<boolean>(use24HourClock);
   const [selectedDateFormat, setSelectedDateFormat] = useState<string>(dateFormat);
   const [selectedTimezone, setSelectedTimezone] = useState<string>(timezone);
@@ -70,22 +70,7 @@ const SettingsWindow: React.FC<SettingsWindowProps> = ({
     setIsCrtEnabled(!isCrtEnabled);
   };
   
-  // Handle custom file upload
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      
-      reader.onload = (event) => {
-        if (event.target && typeof event.target.result === 'string') {
-          setCustomWallpaper(event.target.result);
-          setSelectedWallpaper('custom');
-        }
-      };
-      
-      reader.readAsDataURL(file);
-    }
-  };
+  // Custom file upload handler removed to improve performance
   
   // Available date formats
   const dateFormats = [
@@ -126,13 +111,9 @@ const SettingsWindow: React.FC<SettingsWindowProps> = ({
   // Handle save settings
   const handleSaveSettings = () => {
     // Apply wallpaper setting
-    if (selectedWallpaper === 'custom' && customWallpaper) {
-      onWallpaperChange(customWallpaper);
-    } else {
-      const selectedWp = wallpapers.find(wp => wp.id === selectedWallpaper);
-      if (selectedWp) {
-        onWallpaperChange(selectedWp.src);
-      }
+    const selectedWp = wallpapers.find(wp => wp.id === selectedWallpaper);
+    if (selectedWp) {
+      onWallpaperChange(selectedWp.src);
     }
     
     // Apply CRT effect setting
@@ -188,44 +169,10 @@ const SettingsWindow: React.FC<SettingsWindowProps> = ({
             </div>
           ))}
           
-          {/* Custom wallpaper preview */}
-          {customWallpaper && (
-            <div 
-              className={`relative border-2 cursor-pointer overflow-hidden h-24 ${selectedWallpaper === 'custom' ? 'border-blue-500' : 'border-gray-300'}`}
-              onClick={() => handleWallpaperSelect('custom')}
-            >
-              <img 
-                src={customWallpaper} 
-                alt="Custom" 
-                className="w-full h-full object-cover"
-                style={{ imageRendering: 'pixelated' }}
-              />
-              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs p-1">
-                Custom
-              </div>
-              {selectedWallpaper === 'custom' && (
-                <div className="absolute top-2 right-2 bg-blue-500 text-white rounded-full p-1">
-                  <Check size={12} />
-                </div>
-              )}
-            </div>
-          )}
+          {/* Custom wallpaper preview option removed to improve performance */}
         </div>
         
-        {/* Upload custom wallpaper */}
-        <div className="mb-4">
-          <label className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 py-2 px-3 rounded cursor-pointer w-fit">
-            <Upload size={16} />
-            <span>Upload Image</span>
-            <input 
-              type="file" 
-              accept="image/*" 
-              className="hidden"
-              onChange={handleFileUpload}
-            />
-          </label>
-          <p className="text-xs text-gray-500 mt-1">Recommended size: 1920x1080px</p>
-        </div>
+        {/* Custom wallpaper upload removed to improve performance */}
       </div>
       
       {/* CRT Effect Setting */}
