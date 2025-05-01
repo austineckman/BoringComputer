@@ -1,7 +1,7 @@
 /* Retro UI CSS Styles */
 
 /* CRT Effect */
-.retro-desktop::before {
+.retro-desktop:not(.crt-effect-disabled)::before {
   content: " ";
   display: block;
   position: absolute;
@@ -16,7 +16,7 @@
 }
 
 /* Add scanlines */
-.retro-desktop::after {
+.retro-desktop:not(.crt-effect-disabled)::after {
   content: " ";
   display: block;
   position: absolute;
@@ -192,6 +192,6 @@
   }
 }
 
-.retro-desktop::before {
+.retro-desktop:not(.crt-effect-disabled)::before {
   animation: scan 7.5s linear 0s infinite;
 }

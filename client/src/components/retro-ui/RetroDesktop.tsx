@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { X, Maximize2, Minimize2, Volume2, VolumeX, Trash2 } from "lucide-react";
 import { FaDiscord } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +18,7 @@ import FullscreenOracleApp from "./FullscreenOracleApp";
 import FullscreenCircuitBuilderApp from "./FullscreenCircuitBuilderApp";
 import FullscreenLockpickingApp from "./FullscreenLockpickingApp";
 import RecycleBinWindow from "./RecycleBinWindow";
+import SettingsWindow from "./SettingsWindow";
 import QuestLoadingScreen from "./QuestLoadingScreen";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import wallpaperImage from "@assets/wallpaper.png";
@@ -82,6 +83,10 @@ const RetroDesktop: React.FC = () => {
   // Use global audio player context
   const { isPlaying: isMusicPlaying, toggleMute } = useAudioPlayer();
   
+  // State for computer settings
+  const [currentWallpaper, setCurrentWallpaper] = useState<string>(wallpaperImage);
+  const [crtEnabled, setCrtEnabled] = useState<boolean>(true);
+  
   // Desktop icons (regular icons visible to all users)
   const [desktopIcons, setDesktopIcons] = useState<DesktopIcon[]>([
     // First column (recyclebin at top left)
@@ -122,6 +127,26 @@ const RetroDesktop: React.FC = () => {
   }, []);
   
   // No resize handlers needed for admin folder anymore
+  
+  // Handler for toggling CRT effect
+  const handleCrtToggle = useCallback((enabled: boolean) => {
+    setCrtEnabled(enabled);
+    
+    // Add or remove the CRT effect class
+    const desktopElement = document.querySelector('.retro-desktop');
+    if (desktopElement) {
+      if (!enabled) {
+        desktopElement.classList.add('crt-effect-disabled');
+      } else {
+        desktopElement.classList.remove('crt-effect-disabled');
+      }
+    }
+  }, []);
+  
+  // Handler for changing wallpaper
+  const handleWallpaperChange = useCallback((wallpaper: string) => {
+    setCurrentWallpaper(wallpaper);
+  }, []);
 
   // Open Welcome window when component mounts
   useEffect(() => {
@@ -150,11 +175,16 @@ const RetroDesktop: React.FC = () => {
       openJukeboxWindow();
     };
     
+    const handleOpenSettings = () => {
+      openSettingsWindow();
+    };
+    
     window.addEventListener('openTerminal', handleOpenTerminal);
     window.addEventListener('openBrowser', handleOpenBrowser);
     window.addEventListener('openProfile', handleOpenProfile);
     window.addEventListener('openPartyKitty', handleOpenPartyKitty);
     window.addEventListener('openJukebox', handleOpenJukebox);
+    window.addEventListener('openSettings', handleOpenSettings);
     
     return () => {
       window.removeEventListener('openTerminal', handleOpenTerminal);
@@ -162,6 +192,7 @@ const RetroDesktop: React.FC = () => {
       window.removeEventListener('openProfile', handleOpenProfile);
       window.removeEventListener('openPartyKitty', handleOpenPartyKitty);
       window.removeEventListener('openJukebox', handleOpenJukebox);
+      window.removeEventListener('openSettings', handleOpenSettings);
     };
   }, []);
   
@@ -456,6 +487,22 @@ const RetroDesktop: React.FC = () => {
     );
   };
   
+  const openSettingsWindow = () => {
+    openWindow(
+      "settings", 
+      "Computer Settings", 
+      <SettingsWindow 
+        onClose={() => closeWindow("settings")} 
+        onWallpaperChange={handleWallpaperChange}
+        onCrtToggle={handleCrtToggle}
+        currentWallpaper={currentWallpaper}
+        crtEnabled={crtEnabled}
+      />, 
+      "monitor",
+      { width: 680, height: 520 }
+    );
+  };
+  
   const openRecycleBinWindow = () => {
     openWindow(
       "recyclebin", 
@@ -508,9 +555,9 @@ const RetroDesktop: React.FC = () => {
   
   return (
     <div 
-      className="retro-desktop relative flex-1 min-h-full h-full overflow-hidden text-black"
+      className={`retro-desktop relative flex-1 min-h-full h-full overflow-hidden text-black ${!crtEnabled ? 'crt-effect-disabled' : ''}`}
       style={{
-        backgroundImage: `url(${wallpaperImage})`,
+        backgroundImage: `url(${currentWallpaper})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',

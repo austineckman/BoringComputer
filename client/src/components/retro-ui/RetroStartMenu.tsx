@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Wrench, Terminal, Globe, Music } from "lucide-react";
+import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Wrench, Terminal, Globe, Music, Monitor } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import logoImage from "@assets/Asset 6@2x-8.png";
@@ -90,6 +90,16 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
       onClick: () => {
         // Send event to open jukebox
         const event = new CustomEvent('openJukebox');
+        window.dispatchEvent(event);
+      }
+    },
+    {
+      id: "settings",
+      label: "Computer Settings",
+      icon: <Monitor size={16} />,
+      onClick: () => {
+        // Send event to open settings
+        const event = new CustomEvent('openSettings');
         window.dispatchEvent(event);
       }
     },
