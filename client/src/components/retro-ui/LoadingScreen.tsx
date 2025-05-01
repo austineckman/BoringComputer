@@ -2,34 +2,21 @@ import React, { useState, useEffect, useRef } from "react";
 
 // ASCII art - new retro computer terminal design
 const SMALL_ASCII_ART = `
-             ________________________________________________
-            /                                                \\
-           |    _________________________________________     |
-           |   |                                         |    |
-           |   |  C:\\> CRAFTING TABLE OS v1.0.4815       |    |
-           |   |  C:\\> BOOT SEQUENCE INITIATED           |    |
-           |   |  C:\\> LOADING CORE MODULES...           |    |
-           |   |                                         |    |
-           |   |  C:\\> SYSTEM STATUS: NOMINAL            |    |
-           |   |  C:\\> MEMORY CHECK: PASSED              |    |
-           |   |  C:\\> QUANTUM ARRAY: OPERATIONAL        |    |
-           |   |                                         |    |
-           |   |  C:\\> FIND THE KEYS                     |    |
-           |   |  C:\\> CRAFTING WORLD INITIALIZED        |    |
-           |   |  C:\\> _                                 |    |
-           |   |                                         |    |
-           |   |_________________________________________|    |
-           |                                                  |
-            \\_________________________________________________/
-                   \\___________________________________/
-                ___________________________________________
-             _-'    .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.  --- \`-_
-          _-'.-.-. .---.-.-.-.-.-.-.-.-.-.-.-.-.-.-.--.  .-.-..\`-_
-       _-'.-.-.-. .---.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-\`__\`. .-.-.-..\`-_
-    _-'.-.-.-.-. .-----.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-----. .-.-.-.-..\`-_
- _-'.-.-.-.-.-. .---.-. .-------------------------. .-.---. .---.-.-.-..\`-_
-:-------------------------------------------------------------------------:
-\`---._.-------------------------------------------------------------._.---'
+     _______________
+    /               \\
+    |  ___________  |
+    | |           | |
+    | | C:\\>BOOT  | |
+    | | >LOADING..| |
+    | | >READY_   | |
+    | |___________| |
+    |               |
+    \\_______________/
+         \\______/
+       ____________
+     _/------------\\_
+    /------------------\\
+    \\__________________/
 `;
 
 // List of loading messages for the terminal
@@ -70,7 +57,7 @@ const GLITCH_MESSAGES = [
   "DIMENSIONAL_RIFT_CLOSING...",
   "REALITY.PARAMETERS.NORMALIZING...",
   "SYSTEM.REBOOT.IMMINENT...3...2...1...",
-];
+]
 
 interface LoadingScreenProps {
   onLoadComplete: () => void;
@@ -109,85 +96,22 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
         
         // When we reach 100%, signal that loading is complete
         if (newProgress >= 100 && prev < 100) {
-          // Let the user see the final state for a moment before transitioning
           setTimeout(() => {
             onLoadComplete();
-          }, 500); // Faster completion
+          }, 800);
         }
         
         return newProgress;
       });
     };
     
-    const interval = setInterval(simulateLoading, 90); // Faster interval
+    // Run the loading simulation more frequently to make loading faster
+    const interval = setInterval(simulateLoading, 150); // Update more frequently
+    
     return () => clearInterval(interval);
   }, [onLoadComplete]);
   
-  // Show loading messages
-  useEffect(() => {
-    let messageTimer: NodeJS.Timeout;
-    let messageIndex = 0;
-    
-    const showNextMessage = () => {
-      let message: string;
-      
-      // Decide if we show a normal message or a glitched message based on progress
-      if (loadingProgress < 50 || (loadingProgress < 85 && Math.random() > 0.3)) {
-        // Normal message
-        message = LOADING_MESSAGES[messageIndex % LOADING_MESSAGES.length];
-        messageIndex++;
-      } else {
-        // Glitched message - more likely as we approach 100%
-        const glitchIndex = Math.floor(Math.random() * GLITCH_MESSAGES.length);
-        message = GLITCH_MESSAGES[glitchIndex];
-        
-        // Add some random glitch characters for extra effect
-        if (loadingProgress > 85) {
-          const glitchChars = "@#$%^&*!~`';:.,<>/?\\|{}[]";
-          const numGlitches = Math.floor(Math.random() * 3) + 1;
-          for (let i = 0; i < numGlitches; i++) {
-            const position = Math.floor(Math.random() * message.length);
-            const glitchChar = glitchChars[Math.floor(Math.random() * glitchChars.length)];
-            message = message.substring(0, position) + glitchChar + message.substring(position + 1);
-          }
-        }
-      }
-      
-      // Set the current message and add it to the messages array
-      setCurrentMessage(message);
-      messageTimer = setTimeout(() => {
-        setMessages(prev => [...prev, message]);
-        setCurrentMessage("");
-        
-        // Schedule the next message
-        showNextMessage();
-      }, messageSpeed);
-    };
-    
-    showNextMessage();
-    
-    return () => {
-      clearTimeout(messageTimer);
-    };
-  }, [loadingProgress, messageSpeed]);
-  
-  // Keep terminal scrolled to bottom
-  useEffect(() => {
-    if (terminalRef.current) {
-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
-    }
-  }, [messages, currentMessage]);
-  
-  // Blinking cursor effect
-  useEffect(() => {
-    const cursorInterval = setInterval(() => {
-      setTerminalCursor(prev => !prev);
-    }, 530);
-    
-    return () => clearInterval(cursorInterval);
-  }, []);
-  
-  // Render random "matrix-like" characters in the background
+  // Initialize the matrix rain animation
   useEffect(() => {
     const canvas = document.getElementById('matrix-canvas') as HTMLCanvasElement;
     if (!canvas) return;
@@ -198,44 +122,48 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-={}[]|;:,.<>?/';
-    const fontSize = 16;
-    const columns = canvas.width / fontSize;
+    // Matrix characters - use more code-like symbols
+    const chars = '01アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン[]{}+-*/=0123456789ABCDEF';
+    const columns = Math.floor(canvas.width / 14); // Character width
+    const drops: number[] = [];
     
-    let drops: number[] = [];
+    // Initialize drops at random positions
     for (let i = 0; i < columns; i++) {
-      drops[i] = Math.floor(Math.random() * -20);
+      drops[i] = Math.random() * -100;
     }
     
     const drawMatrix = () => {
+      // Semi-transparent black to create trails
       ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // Start with orange-ish color
-      const baseColor = 'rgba(255, 165, 0, ';
+      ctx.fillStyle = '#0F0'; // Green text
+      ctx.font = '14px monospace';
       
+      // Draw characters
       for (let i = 0; i < drops.length; i++) {
-        // Generate a more orangeish color with varying opacity
-        const alpha = Math.random() * 0.5 + 0.5;
-        ctx.fillStyle = baseColor + alpha + ')';
-        
+        // Random character
         const text = chars[Math.floor(Math.random() * chars.length)];
-        ctx.font = `${fontSize}px monospace`;
-        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+        // x coordinate dependent on column, y on drop position
+        ctx.fillText(text, i * 14, drops[i] * 14);
         
-        // Reset drops when they go off screen
-        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-          drops[i] = 0;
-        }
-        
+        // Move drops down for next frame
         drops[i]++;
+        
+        // Reset drop when it reaches the bottom with some randomness
+        if (drops[i] * 14 > canvas.height && Math.random() > 0.975) {
+          drops[i] = Math.random() * -20;
+        }
       }
       
+      // Request next frame
       animationFrameRef.current = requestAnimationFrame(drawMatrix);
     };
     
+    // Start the animation
     drawMatrix();
     
+    // Clean up on unmount
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -243,12 +171,57 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
     };
   }, []);
   
-  // Random glitch effect on terminal text at intervals
+  // Handle the terminal message display
   useEffect(() => {
-    if (loadingProgress < 70) return;
+    // Skip if we've reached the end
+    if (loadingProgress >= 100) return;
     
+    // Terminal cursor blink effect
+    const cursorInterval = setInterval(() => {
+      setTerminalCursor(prev => !prev);
+    }, 500);
+    
+    // Show a new message based on loading progress
+    const messageInterval = setInterval(() => {
+      let messagePool = LOADING_MESSAGES;
+      
+      // Show glitched messages more frequently as we approach 100%
+      if (loadingProgress > 75 && Math.random() > 0.5) {
+        messagePool = GLITCH_MESSAGES;
+      }
+      
+      const newMessage = messagePool[Math.floor(Math.random() * messagePool.length)];
+      
+      // Type-writer effect for the message
+      let charIndex = 0;
+      setCurrentMessage('');
+      
+      const typeInterval = setInterval(() => {
+        if (charIndex < newMessage.length) {
+          setCurrentMessage(prev => prev + newMessage.charAt(charIndex));
+          charIndex++;
+        } else {
+          clearInterval(typeInterval);
+          
+          // After typing is done, add to message history and clear current
+          setTimeout(() => {
+            setMessages(prev => [...prev, newMessage]);
+            setCurrentMessage('');
+            
+            // Scroll to bottom of terminal output
+            if (terminalRef.current) {
+              terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+            }
+          }, 200);
+        }
+      }, 25); // Type faster (was 40ms)
+      
+      return () => clearInterval(typeInterval);
+    }, messageSpeed); // Controlled by loading progress
+    
+    // Occasionally add glitch effect to the terminal
     const glitchInterval = setInterval(() => {
-      if (Math.random() > 0.7) {
+      if (Math.random() > 0.9) {
         const terminalElement = document.getElementById('terminal-output');
         if (terminalElement) {
           terminalElement.classList.add('glitch-effect');
@@ -259,8 +232,12 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
       }
     }, 1000);
     
-    return () => clearInterval(glitchInterval);
-  }, [loadingProgress]);
+    return () => {
+      clearInterval(cursorInterval);
+      clearInterval(messageInterval);
+      clearInterval(glitchInterval);
+    };
+  }, [loadingProgress, messageSpeed]);
   
   return (
     <div className="fixed inset-0 bg-black flex flex-col items-center justify-center z-50 overflow-hidden">
