@@ -202,14 +202,25 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
       // First add the ASCII art to the terminal - add additional strings to push it fully to view
       setMessages([`${CRAFTABLE_ASCII_ART}`]);
       
-      // After a short delay, add some initial system messages to start pushing the ASCII art up
+      // After a short delay, add more initial system messages to quickly push the ASCII art up
       setTimeout(() => {
         const initialMessages = [
           'SYSTEM: Initializing boot sequence...',
           'KERNEL: Loading system modules...',
           'MEMORY: Performing memory check...',
-          'CPU: Initializing processor...',
+          'CPU: Initializing processor cores...',
+          'SYSTEM: Checking system integrity...',
+          'HARDWARE: Detecting connected devices...',
+          'STORAGE: Mounting filesystems...',
+          'NETWORK: Initializing virtual interfaces...',
+          'SERVICES: Starting system services...',
+          'SECURITY: Initializing protection modules...',
+          'DRIVERS: Loading device drivers...',
+          'GRAPHICS: Initializing display adapter...',
           'SYSTEM: Loading desktop environment...',
+          'UI: Preparing interface elements...',
+          'APPLICATIONS: Preloading system applications...',
+          'SYSTEM: Running startup scripts...',
         ];
         
         // Add each message with a delay to create a staggered effect
@@ -217,9 +228,10 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
           setTimeout(() => {
             setMessages(prev => [...prev, msg]);
             
-            // Ensure we scroll to reveal new content
+            // Ensure we auto-scroll to show new content without scrollbars
             if (terminalRef.current) {
-              terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+              const terminalContent = terminalRef.current;
+              terminalContent.scrollTop = terminalContent.scrollHeight;
             }
           }, index * 200);
         });
@@ -258,9 +270,16 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
             setMessages(prev => [...prev, newMessage]);
             setCurrentMessage('');
             
-            // Scroll to bottom of terminal output
+            // Auto-scroll terminal output programmatically without scrollbars
             if (terminalRef.current) {
-              terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+              const terminalContent = terminalRef.current;
+              // Create scrolling effect by manipulating the content transform instead of scrollTop
+              // This allows scrolling without showing scrollbars
+              const currentContent = terminalContent.innerHTML;
+              const scrollHeight = terminalContent.scrollHeight;
+              
+              // Force scroll to always show latest content
+              terminalContent.scrollTop = scrollHeight;
             }
           }, 200);
         }
@@ -333,7 +352,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
         <div 
           ref={terminalRef}
           id="terminal-output"
-          className="bg-black flex-1 font-mono text-sm overflow-y-auto p-2 text-orange-400"
+          className="bg-black flex-1 font-mono text-sm overflow-hidden p-2 text-orange-400"
           style={{ 
             maxHeight: 'calc(80vh - 200px)',
             boxShadow: 'inset 0 0 10px rgba(255, 165, 0, 0.2)'
