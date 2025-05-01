@@ -195,3 +195,131 @@
 .retro-desktop:not(.crt-effect-disabled)::before {
   animation: scan 7.5s linear 0s infinite;
 }
+
+/* CodeQuiz Window Styles */
+.code-quiz-window {
+  width: 700px;
+  height: 600px;
+  background-color: #0c0c0c;
+  color: #33ff33;
+  font-family: 'VT323', monospace, 'Courier New', Courier, monospace;
+}
+
+.code-quiz-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
+.code-quiz-header {
+  margin-bottom: 15px;
+  border-bottom: 1px solid #33ff33;
+  padding-bottom: 10px;
+}
+
+.ascii-header {
+  font-family: monospace;
+  white-space: pre;
+  color: #33ff33;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.code-quiz-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.cartel-quote {
+  color: #ff00ff;
+  font-style: italic;
+  margin: 15px 0;
+  text-align: center;
+}
+
+.language-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 30px;
+}
+
+.code-block {
+  background-color: #1a1a1a;
+  padding: 15px;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-family: 'Courier New', Courier, monospace;
+  border-left: 3px solid #33ff33;
+  margin: 15px 0;
+  white-space: pre;
+  line-height: 1.5;
+}
+
+.answer-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.answer-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.answer-input {
+  margin: 15px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.answer-input input {
+  background-color: #1a1a1a;
+  border: 1px solid #33ff33;
+  color: #ffffff;
+  padding: 8px;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.quiz-buttons, .feedback-buttons, .game-over-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.code-quiz-feedback {
+  padding: 15px;
+  border-radius: 4px;
+  margin: 15px 0;
+}
+
+.code-quiz-feedback.correct {
+  background-color: rgba(0, 128, 0, 0.2);
+  border: 1px solid #00ff00;
+}
+
+.code-quiz-feedback.incorrect {
+  background-color: rgba(128, 0, 0, 0.2);
+  border: 1px solid #ff0000;
+}
+
+.explanation {
+  background-color: #1a1a1a;
+  padding: 15px;
+  border-radius: 4px;
+  margin-top: 20px;
+  border-left: 3px solid #ffcc00;
+}
+
+.cartel-message {
+  color: #ffcc00;
+  text-align: center;
+  font-size: 1.2em;
+  margin: 20px 0;
+}
