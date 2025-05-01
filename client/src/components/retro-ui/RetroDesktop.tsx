@@ -20,6 +20,7 @@ import FullscreenLockpickingApp from "./FullscreenLockpickingApp";
 import RecycleBinWindow from "./RecycleBinWindow";
 import SettingsWindow from "./SettingsWindow";
 import QuestLoadingScreen from "./QuestLoadingScreen";
+import CodeQuizWindow from "./CodeQuizWindow";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import wallpaperImage from "@assets/wallpaper.png";
 import goldCrateImage from "@assets/goldcrate.png";
