@@ -523,10 +523,15 @@ const RetroDesktop: React.FC = () => {
   const openTerminalWindow = () => {
     openWindow(
       "terminal", 
-      "Command Prompt", 
-      <TerminalWindow />, 
+      "G1ZB0-TERM v3.1.4", 
+      <TerminalWindow 
+        onClose={() => closeWindow("terminal")}
+        onMinimize={() => minimizeWindow("terminal")}
+        isActive={windows.some(w => w.id === "terminal" && w.isActive)}
+        username={user?.username || "hacker"}
+      />, 
       "💻",
-      { width: 650, height: 450 }
+      { width: 800, height: 600 }
     );
   };
   
