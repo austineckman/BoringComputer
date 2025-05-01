@@ -64,12 +64,51 @@ const CodeQuizWindow: React.FC<CodeQuizWindowProps> = ({ onClose, onMinimize, is
     const currentQuestion = questions[currentQuestionIndex];
     let isAnswerCorrect = false;
 
+    // Debug logged to help understand what's happening with the comparison
+    console.log('Question type:', currentQuestion.type);
+    console.log('User answer:', userAnswer);
+    console.log('Correct answer:', currentQuestion.correctAnswer);
+    console.log('Types:', typeof userAnswer, typeof currentQuestion.correctAnswer);
+    
     if (currentQuestion.type === 'output') {
-      // For multiple choice output questions, convert both to strings for comparison
-      isAnswerCorrect = userAnswer === currentQuestion.correctAnswer.toString();
+      // Get the answer content based on whether correctAnswer is index or direct content
+      if (typeof currentQuestion.correctAnswer === 'number') {
+        // If it's a number (1, 2, 3, etc.) it means which option (by index) is correct
+        // User selects radio buttons which give values like "1", "2", etc.
+        isAnswerCorrect = userAnswer === currentQuestion.correctAnswer.toString();
+      } else if (!isNaN(Number(currentQuestion.correctAnswer))) {
+        // If it's a numeric string ("1", "2", "3", etc.), convert both to numbers
+        isAnswerCorrect = parseInt(userAnswer) === parseInt(currentQuestion.correctAnswer.toString());
+      } else {
+        // If correctAnswer is string content (e.g., "[4, 8]"), check if user selected the matching option
+        // Find which option (by index) has this content
+        const correctIndex = currentQuestion.options?.findIndex(opt => 
+          opt.trim() === currentQuestion.correctAnswer.toString().trim());
+        
+        if (correctIndex !== undefined && correctIndex >= 0) {
+          // Convert to 1-based index and compare with user's selected radio button
+          isAnswerCorrect = userAnswer === (correctIndex + 1).toString();
+        } else {
+          // Direct string comparison as fallback
+          isAnswerCorrect = userAnswer.trim() === currentQuestion.correctAnswer.toString().trim();
+        }
+      }
     } else if (currentQuestion.type === 'error') {
-      // For error line identification, convert both to strings for comparison
-      isAnswerCorrect = userAnswer === currentQuestion.correctAnswer.toString();
+      // For error line identification questions
+      if (typeof currentQuestion.correctAnswer === 'number') {
+        isAnswerCorrect = parseInt(userAnswer) === currentQuestion.correctAnswer;
+      } else {
+        // If the correct answer is one of the options directly
+        // This would be the case if the error message itself is the correct answer
+        const correctIndex = currentQuestion.options?.findIndex(opt => 
+          opt === currentQuestion.correctAnswer);
+          
+        if (correctIndex !== undefined && correctIndex >= 0) {
+          isAnswerCorrect = userAnswer === (correctIndex + 1).toString();
+        } else {
+          isAnswerCorrect = userAnswer.trim() === currentQuestion.correctAnswer.toString().trim();
+        }
+      }
     } else if (currentQuestion.type === 'fix') {
       // For code fixing questions, compare after trimming whitespace
       isAnswerCorrect = userAnswer.trim() === currentQuestion.correctAnswer.toString().trim();
@@ -81,15 +120,58 @@ const CodeQuizWindow: React.FC<CodeQuizWindowProps> = ({ onClose, onMinimize, is
     } else {
       let correctAnswerText = '';
       if (currentQuestion.type === 'output') {
-        // For output questions, correctAnswer is the index (as a string) of the correct option
-        const correctAnswerIndex = parseInt(currentQuestion.correctAnswer.toString()) - 1;
-        if (currentQuestion.options && correctAnswerIndex >= 0 && correctAnswerIndex < currentQuestion.options.length) {
-          correctAnswerText = `The correct answer was: ${currentQuestion.options[correctAnswerIndex]}`;
+        // Handle different types of correctAnswer for output questions
+        if (typeof currentQuestion.correctAnswer === 'number') {
+          // If correctAnswer is a number (index), get the actual text from the options
+          const index = currentQuestion.correctAnswer - 1;
+          if (currentQuestion.options && index >= 0 && index < currentQuestion.options.length) {
+            correctAnswerText = `The correct answer was: ${currentQuestion.options[index]}`;
+          } else {
+            correctAnswerText = `The correct answer was: option ${currentQuestion.correctAnswer}`;
+          }
+        } else if (!isNaN(Number(currentQuestion.correctAnswer))) {
+          // If correctAnswer is a string number ("1", "2"), get the corresponding option
+          const index = parseInt(currentQuestion.correctAnswer.toString()) - 1;
+          if (currentQuestion.options && index >= 0 && index < currentQuestion.options.length) {
+            correctAnswerText = `The correct answer was: ${currentQuestion.options[index]}`;
+          } else {
+            correctAnswerText = `The correct answer was: option ${currentQuestion.correctAnswer}`;
+          }
         } else {
-          correctAnswerText = `The correct answer was: ${currentQuestion.correctAnswer}`;
+          // If correctAnswer is a string directly matching an option
+          if (currentQuestion.options) {
+            const index = currentQuestion.options.findIndex(opt => 
+              opt.trim() === currentQuestion.correctAnswer.toString().trim());
+            
+            if (index >= 0) {
+              correctAnswerText = `The correct answer was: ${currentQuestion.options[index]}`;
+            } else {
+              // Fallback to showing the actual content
+              correctAnswerText = `The correct answer was: ${currentQuestion.correctAnswer}`;
+            }
+          } else {
+            correctAnswerText = `The correct answer was: ${currentQuestion.correctAnswer}`;
+          }
         }
       } else if (currentQuestion.type === 'error') {
-        correctAnswerText = `The correct answer was: line ${currentQuestion.correctAnswer}`;
+        // For error questions, check if it's a line number or an error message
+        if (typeof currentQuestion.correctAnswer === 'number' || !isNaN(Number(currentQuestion.correctAnswer))) {
+          correctAnswerText = `The correct answer was: line ${currentQuestion.correctAnswer}`;
+        } else {
+          // If it's a string (error message), check if it's in the options
+          if (currentQuestion.options) {
+            const index = currentQuestion.options.findIndex(opt => 
+              opt === currentQuestion.correctAnswer);
+              
+            if (index >= 0) {
+              correctAnswerText = `The correct answer was: ${currentQuestion.options[index]}`;
+            } else {
+              correctAnswerText = `The correct answer was: ${currentQuestion.correctAnswer}`;
+            }
+          } else {
+            correctAnswerText = `The correct answer was: ${currentQuestion.correctAnswer}`;
+          }
+        }
       } else {
         correctAnswerText = `The correct answer was: ${currentQuestion.correctAnswer}`;
       }
