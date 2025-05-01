@@ -104,13 +104,13 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
         
         const newProgress = Math.min(prev + increment, 100);
         
-        // Speed up messages as loading progresses - all speeds reduced
+        // Speed up messages as loading progresses - faster to scroll ASCII art
         if (prev < 30 && newProgress >= 30) {
-          setMessageSpeed(400); // Speed up a bit
+          setMessageSpeed(300); // Speed up a bit
         } else if (prev < 60 && newProgress >= 60) {
-          setMessageSpeed(250); // Speed up more
+          setMessageSpeed(200); // Speed up more
         } else if (prev < 85 && newProgress >= 85) {
-          setMessageSpeed(150); // Speed up a lot
+          setMessageSpeed(120); // Speed up a lot
         } else if (prev < 95 && newProgress >= 95) {
           setMessageSpeed(50); // Very fast at the end
         }
@@ -199,8 +199,31 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
     
     // Add ASCII logo as the first message at the start
     if (messages.length === 0) {
-      // Add the ASCII art with some newlines to ensure it's visible
-      setMessages([`\n\n${CRAFTABLE_ASCII_ART}\n\n`]);
+      // First add the ASCII art to the terminal - add additional strings to push it fully to view
+      setMessages([`${CRAFTABLE_ASCII_ART}`]);
+      
+      // After a short delay, add some initial system messages to start pushing the ASCII art up
+      setTimeout(() => {
+        const initialMessages = [
+          'SYSTEM: Initializing boot sequence...',
+          'KERNEL: Loading system modules...',
+          'MEMORY: Performing memory check...',
+          'CPU: Initializing processor...',
+          'SYSTEM: Loading desktop environment...',
+        ];
+        
+        // Add each message with a delay to create a staggered effect
+        initialMessages.forEach((msg, index) => {
+          setTimeout(() => {
+            setMessages(prev => [...prev, msg]);
+            
+            // Ensure we scroll to reveal new content
+            if (terminalRef.current) {
+              terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+            }
+          }, index * 200);
+        });
+      }, 1000);
     }
     
     // Terminal cursor blink effect
@@ -382,20 +405,21 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
         
         /* ASCII art styling */
         .ascii-art {
-          font-size: 3px;
-          line-height: 3px;
-          letter-spacing: -0.2px;
+          font-size: 9px;
+          line-height: 9px;
+          letter-spacing: 0px;
           font-family: monospace;
           white-space: pre;
           margin-bottom: 1rem;
           color: #fbbf24; /* amber-500 */
-          text-shadow: 0 0 2px rgba(251, 191, 36, 0.7);
-          transform: scale(0.85);
+          text-shadow: 0 0 3px rgba(251, 191, 36, 0.8);
+          transform: scale(1.0);
           transform-origin: top left;
           display: block;
           position: relative;
-          opacity: 0.95;
+          opacity: 1;
           overflow-x: hidden;
+          max-width: 100%;
         }
       `}</style>
     </div>
