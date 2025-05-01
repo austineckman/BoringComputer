@@ -34,7 +34,7 @@ import ledIconImage from "@assets/led.icon.png";
 import oracleIconImage from "@assets/hooded-figure.png";
 import picklockImage from "@assets/Untitled design - 2025-04-26T171551.402.png";
 import craftingImage from "@assets/Untitled design - 2025-04-26T171858.770.png";
-import bughuntIconImage from "@assets/bughunt-logo.png";
+import bughuntIconImage from "@assets/Untitled design - 2025-05-01T164432.025.png";
 
 // Type definitions
 interface Position {
@@ -494,7 +494,7 @@ const RetroDesktop: React.FC = () => {
         onMinimize={() => minimizeWindow("codequiz")}
         isActive={windows.some(w => w.id === "codequiz" && w.isActive)}
       />, 
-      "questgrimoire",
+      "bughunt",
       { width: 700, height: 600 }
     );
   };
