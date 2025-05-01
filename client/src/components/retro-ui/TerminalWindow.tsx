@@ -622,6 +622,11 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({
         showAsciiArt('robot');
         break;
       
+      case 'bazaar':
+      case 'market':
+        showBlackMarket(args[0]);
+        break;
+      
       case 'exit':
         onClose();
         break;
@@ -906,6 +911,286 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({
         ...prev,
         { type: 'error', content: `ASCII art '${artName}' not found.`, color: '#FF5252' }
       ]);
+    }
+  };
+
+  // Market data
+  const MARKET_ITEMS = [
+    { id: 'R45-X3', name: 'Reality Anchor Stabilizer', price: 12500, seller: 'CyberWrench', rarity: 'Epic', stock: 1, lastUpdated: '17:43:21' },
+    { id: 'C0D3-BR34K3R', name: 'Neural Firewall Disruptor', price: 8750, seller: 'ByteRunner', rarity: 'Rare', stock: 3, lastUpdated: '15:22:05' },
+    { id: 'QM-SYNTH', name: 'Quantum Membrane Synthesizer', price: 6200, seller: 'DocMatrix', rarity: 'Rare', stock: 2, lastUpdated: '18:05:33' },
+    { id: 'GR4V-B00T5', name: 'Gravitic Dampener Boots', price: 5000, seller: 'ZeroGMerch', rarity: 'Uncommon', stock: 5, lastUpdated: '12:19:47' },
+    { id: 'MK7-OPTICS', name: 'Enhanced Spectrum Optics', price: 3200, seller: 'VisionQuest', rarity: 'Uncommon', stock: 7, lastUpdated: '14:37:02' },
+    { id: 'NEURO-STIM', name: 'Cognitive Enhancement Module', price: 2800, seller: 'BrainBox', rarity: 'Uncommon', stock: 4, lastUpdated: '16:51:19' },
+    { id: 'P0CK3T-EMP', name: 'Pocket EMP Generator', price: 1500, seller: 'JunkJack', rarity: 'Common', stock: 12, lastUpdated: '13:08:55' },
+    { id: 'SCRAP-MODS', name: 'Makeshift Armor Modifications', price: 800, seller: 'SalvageSam', rarity: 'Common', stock: 23, lastUpdated: '11:27:38' },
+    { id: 'MEM-B00ST', name: 'RAM Overclock Crystal', price: 450, seller: 'ChipChop', rarity: 'Common', stock: 19, lastUpdated: '10:14:22' },
+  ];
+
+  const MARKET_TRANSACTIONS = [
+    { time: '19:32:04', action: 'SOLD', item: 'Neural Interceptor', amount: 5750, seller: 'GhostWire', buyer: 'DataDancer' },
+    { time: '19:28:17', action: 'BOUGHT', item: 'Graviton Displacer', amount: 12000, seller: 'OrbitalTech', buyer: 'PhantomStep' },
+    { time: '19:24:53', action: 'LISTED', item: 'Reality Anchor Stabilizer', amount: 12500, seller: 'CyberWrench', buyer: null },
+    { time: '19:20:11', action: 'SOLD', item: 'Encrypted Datacrystal', amount: 3250, seller: 'BitHoarder', buyer: 'NullSector' },
+    { time: '19:17:46', action: 'BOUGHT', item: 'Synthetic Neurolinks', amount: 6800, seller: 'SynapseInc', buyer: 'CortexKid' },
+    { time: '19:15:02', action: 'SOLD', item: 'Quantum Fluctuator', amount: 9200, seller: 'WaveRider', buyer: 'ByteMason' },
+    { time: '19:08:39', action: 'LISTED', item: 'Enhanced Spectrum Optics', amount: 3200, seller: 'VisionQuest', buyer: null },
+    { time: '19:03:21', action: 'BOUGHT', item: 'Chrono-Disruptor Field', amount: 7500, seller: 'TimeSlicer', buyer: 'RiftWalker' },
+    { time: '18:58:45', action: 'SOLD', item: 'Molecular Deconstructor', amount: 4200, seller: 'AtomSmasher', buyer: 'DustMaker' },
+    { time: '18:54:13', action: 'LISTED', item: 'Makeshift Armor Modifications', amount: 800, seller: 'SalvageSam', buyer: null },
+    { time: '18:49:27', action: 'BOUGHT', item: 'Protocol Breacher', amount: 5100, seller: 'CodeBreak', buyer: 'FirewallSlayer' },
+  ];
+
+  // Bazaar active users (randomly online)
+  const MARKET_USERS = [
+    { handle: 'GizboSparkwrench', status: 'admin', reputation: 'Legendary', lastSeen: 'now' },
+    { handle: 'ByteRunner', status: 'online', reputation: 'Trusted', lastSeen: 'now' },
+    { handle: 'NeonSpectre', status: 'online', reputation: 'Verified', lastSeen: 'now' },
+    { handle: 'QuantumQuill', status: 'online', reputation: 'Trusted', lastSeen: 'now' },
+    { handle: 'CipherShadow', status: 'online', reputation: 'Unverified', lastSeen: 'now' },
+    { handle: 'VoidWeaver', status: 'away', reputation: 'Trusted', lastSeen: '5m ago' },
+    { handle: 'ChromeCourier', status: 'online', reputation: 'Verified', lastSeen: 'now' },
+    { handle: 'DataDancer', status: 'online', reputation: 'Unverified', lastSeen: 'now' },
+    { handle: 'SynapseInc', status: 'away', reputation: 'Trusted', lastSeen: '12m ago' },
+    { handle: 'WarpWitch', status: 'offline', reputation: 'Verified', lastSeen: '1h ago' },
+    { handle: 'GlitchGoblin', status: 'online', reputation: 'Trusted', lastSeen: 'now' },
+    { handle: 'StaticWhisper', status: 'offline', reputation: 'Unverified', lastSeen: '3h ago' },
+  ];
+
+  // Show Black Market bazaar
+  const showBlackMarket = (command?: string) => {
+    const BAZAAR_LOGO = `
+    ╔═════════════════════════════════════════════════════════╗
+    ║                                                         ║
+    ║   ███████╗ ██████╗██████╗  █████╗ ██████╗ ██╗     ██╗   ║
+    ║   ██╔════╝██╔════╝██╔══██╗██╔══██╗██╔══██╗██║     ██║   ║
+    ║   ███████╗██║     ██████╔╝███████║██████╔╝██║     ██║   ║
+    ║   ╚════██║██║     ██╔══██╗██╔══██║██╔═══╝ ██║     ██║   ║
+    ║   ███████║╚██████╗██║  ██║██║  ██║██║     ███████╗███████╗  ║
+    ║   ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚══════╝╚══════╝  ║
+    ║                                                         ║
+    ║               UNDERGROUND TRADING NETWORK              ║
+    ║                                                         ║
+    ╚═════════════════════════════════════════════════════════╝
+    `;
+
+    const helpInfo = [
+      { type: 'text', content: '=== SCRAPLIGHT BAZAAR COMMANDS ===', color: '#00ffff' },
+      { type: 'text', content: 'bazaar - Shows this help message', color: '#ffffff' },
+      { type: 'text', content: 'bazaar list - Lists available items for sale', color: '#ffffff' },
+      { type: 'text', content: 'bazaar history - Shows recent market transactions', color: '#ffffff' },
+      { type: 'text', content: 'bazaar users - Shows active users on the market', color: '#ffffff' },
+      { type: 'text', content: 'bazaar info <item-id> - Shows detailed info about an item', color: '#ffffff' },
+      { type: 'text', content: '===========================', color: '#00ffff' },
+    ];
+
+    // If no command, show the main bazaar interface
+    if (!command) {
+      // Generate a connection signature for visuals
+      const connSig = Array(32).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+      const timestamp = new Date().toISOString().replace('T', ' ').substr(0, 19);
+
+      setOutput(prev => [
+        ...prev,
+        { type: 'text', content: `Establishing secure connection to Scraplight Bazaar...`, color: '#ffff00' },
+        { type: 'text', content: `Routing through ${Math.floor(Math.random() * 7) + 3} proxy nodes...`, color: '#00ffff' },
+        { type: 'text', content: `Connection established: ${timestamp} [${connSig}]`, color: '#00ff00' },
+        { type: 'ascii', content: BAZAAR_LOGO, color: '#ff00ff' },
+        { type: 'text', content: `Welcome to Scraplight Bazaar, ${username}! What'll it be today?`, color: '#00ffff' },
+        ...helpInfo
+      ]);
+      return;
+    }
+
+    // Process market sub-commands
+    switch(command.toLowerCase()) {
+      case 'list': {
+        const listHeader = [
+          { type: 'text', content: '====== AVAILABLE ITEMS ======', color: '#00ffff' },
+          { type: 'text', content: 'ID          | ITEM                          | PRICE    | STOCK | SELLER        | RARITY', color: '#ffff00' },
+          { type: 'text', content: '------------|-------------------------------|----------|-------|---------------|-------------', color: '#ffff00' },
+        ];
+
+        const itemList = MARKET_ITEMS.map(item => {
+          // Color by rarity
+          const rarityColor = 
+            item.rarity === 'Epic' ? '#ff00ff' :
+            item.rarity === 'Rare' ? '#0088ff' :
+            item.rarity === 'Uncommon' ? '#00ff00' : 
+            '#ffffff';
+            
+          return {
+            type: 'text',
+            content: `${item.id.padEnd(12)}| ${item.name.padEnd(31)}| ${item.price.toString().padStart(8)} | ${item.stock.toString().padStart(5)} | ${item.seller.padEnd(15)}| ${item.rarity}`,
+            color: rarityColor
+          };
+        });
+
+        setOutput(prev => [
+          ...prev,
+          ...listHeader,
+          ...itemList,
+          { type: 'text', content: `\nTotal items available: ${MARKET_ITEMS.length}`, color: '#00ffff' },
+          { type: 'text', content: `Last database sync: ${new Date().toTimeString().split(' ')[0]}`, color: '#888888' },
+        ]);
+        break;
+      }
+
+      case 'history': {
+        const historyHeader = [
+          { type: 'text', content: '====== RECENT TRANSACTIONS ======', color: '#00ffff' },
+          { type: 'text', content: 'TIME      | ACTION | ITEM                          | AMOUNT   | PARTIES', color: '#ffff00' },
+          { type: 'text', content: '----------|--------|-------------------------------|----------|-------------------------', color: '#ffff00' },
+        ];
+
+        const transactionsList = MARKET_TRANSACTIONS.map(tx => {
+          // Color by action
+          const actionColor = 
+            tx.action === 'SOLD' ? '#00ff00' :
+            tx.action === 'BOUGHT' ? '#0088ff' : 
+            '#ffff00';
+            
+          const parties = tx.action === 'LISTED' ? 
+            `Listed by ${tx.seller}` : 
+            `${tx.seller} → ${tx.buyer}`;
+            
+          return {
+            type: 'text',
+            content: `${tx.time} | ${tx.action.padEnd(6)}| ${tx.item.padEnd(31)}| ${tx.amount.toString().padStart(8)} | ${parties}`,
+            color: actionColor
+          };
+        });
+
+        setOutput(prev => [
+          ...prev,
+          ...historyHeader,
+          ...transactionsList,
+          { type: 'text', content: `\nShowing last ${MARKET_TRANSACTIONS.length} transactions`, color: '#00ffff' },
+          { type: 'text', content: `Market activity level: High`, color: '#00ff00' },
+        ]);
+        break;
+      }
+
+      case 'users': {
+        const usersHeader = [
+          { type: 'text', content: '====== ACTIVE USERS ======', color: '#00ffff' },
+          { type: 'text', content: 'HANDLE             | STATUS   | REPUTATION     | LAST SEEN', color: '#ffff00' },
+          { type: 'text', content: '-------------------|----------|----------------|------------------', color: '#ffff00' },
+        ];
+
+        const usersList = MARKET_USERS.map(user => {
+          // Color by status
+          const statusColor = 
+            user.status === 'admin' ? '#ff00ff' :
+            user.status === 'online' ? '#00ff00' :
+            user.status === 'away' ? '#ffff00' : 
+            '#888888';
+
+          // Color by reputation
+          const repColor = 
+            user.reputation === 'Legendary' ? '#ff00ff' :
+            user.reputation === 'Trusted' ? '#00ff00' :
+            user.reputation === 'Verified' ? '#00ffff' : 
+            '#888888';
+            
+          return {
+            type: 'text',
+            content: `${user.handle.padEnd(19)}| ${user.status.padEnd(8)}| ${user.reputation.padEnd(16)}| ${user.lastSeen}`,
+            color: statusColor
+          };
+        });
+
+        // Calculate online percentage
+        const onlineCount = MARKET_USERS.filter(u => u.status === 'online' || u.status === 'admin').length;
+        const onlinePercentage = Math.round((onlineCount / MARKET_USERS.length) * 100);
+
+        setOutput(prev => [
+          ...prev,
+          ...usersHeader,
+          ...usersList,
+          { type: 'text', content: `\nActive users: ${onlineCount}/${MARKET_USERS.length} (${onlinePercentage}%)`, color: '#00ffff' },
+          { type: 'text', content: `Network traffic: Moderate`, color: '#ffff00' },
+        ]);
+        break;
+      }
+
+      case 'info': {
+        // Check if we have a third argument (item ID)
+        const parts = command.split(' ');
+        const itemId = parts.length > 1 ? parts[1] : null;
+        
+        if (!itemId) {
+          setOutput(prev => [
+            ...prev,
+            { type: 'error', content: 'Please specify an item ID. Example: bazaar info R45-X3', color: '#ff0000' },
+          ]);
+          return;
+        }
+
+        const item = MARKET_ITEMS.find(i => i.id.toLowerCase() === itemId.toLowerCase());
+
+        if (!item) {
+          setOutput(prev => [
+            ...prev,
+            { type: 'error', content: `Item with ID "${itemId}" not found in the market database.`, color: '#ff0000' },
+            { type: 'text', content: `Try 'bazaar list' to see available items.`, color: '#ffff00' },
+          ]);
+          return;
+        }
+
+        // Generate random usage description and history
+        const usages = [
+          "Originally designed for quantum field stabilization in deep space.",
+          "Modified from scavenged alien technology found in the Great Collapse.",
+          "A Scraplight Cartel specialty, built from salvaged corporate tech.",
+          "Gizbo's personal design, perfect for reality fabric manipulation.",
+          "Rare find from the depths of the Clockwork Leviathan.",
+          "Engineered during the Squirrel Uprising to placate the enhanced rodents.",
+          "Combine with other tech to create unstable but powerful enhancements.",
+        ];
+
+        // Item rarity color
+        const rarityColor = 
+          item.rarity === 'Epic' ? '#ff00ff' :
+          item.rarity === 'Rare' ? '#0088ff' :
+          item.rarity === 'Uncommon' ? '#00ff00' : 
+          '#ffffff';
+
+        // Generate ASCII art preview of the item
+        const itemPreview = `
+        ╔══════[${item.id}]══════╗
+        ║                     ║
+        ║      [${item.rarity}]      ║
+        ║                     ║
+        ║   < DATA STORED >   ║
+        ║                     ║
+        ╚═════════════════════╝
+        `;
+
+        setOutput(prev => [
+          ...prev,
+          { type: 'text', content: `====== ITEM DETAILS: ${item.id} ======`, color: '#00ffff' },
+          { type: 'ascii', content: itemPreview, color: rarityColor },
+          { type: 'text', content: `Name: ${item.name}`, color: '#ffffff' },
+          { type: 'text', content: `Price: ${item.price} credits`, color: '#ffff00' },
+          { type: 'text', content: `Rarity: ${item.rarity}`, color: rarityColor },
+          { type: 'text', content: `Stock: ${item.stock} unit(s)`, color: '#00ffff' },
+          { type: 'text', content: `Seller: ${item.seller}`, color: '#00ff00' },
+          { type: 'text', content: `Listed: ${item.lastUpdated}`, color: '#888888' },
+          { type: 'text', content: `Description:`, color: '#ffffff' },
+          { type: 'text', content: usages[Math.floor(Math.random() * usages.length)], color: '#00ffff' },
+          { type: 'text', content: `Warning: No warranty provided. The Scraplight Cartel is not responsible for dimensional rifts.`, color: '#ff0000' },
+        ]);
+        break;
+      }
+
+      default:
+        setOutput(prev => [
+          ...prev,
+          { type: 'error', content: `Unknown bazaar command: ${command}`, color: '#ff0000' },
+          ...helpInfo
+        ]);
+        break;
     }
   };
 
