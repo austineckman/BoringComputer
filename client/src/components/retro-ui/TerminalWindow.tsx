@@ -624,7 +624,12 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({
       
       case 'bazaar':
       case 'market':
-        showBlackMarket(args[0]);
+        // If we have a bazaar info command with an ID parameter
+        if (args[0] === 'info' && args.length > 1) {
+          showBlackMarket(`info ${args[1]}`);
+        } else {
+          showBlackMarket(args[0]);
+        }
         break;
       
       case 'exit':
@@ -1208,6 +1213,7 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({
         { type: 'text', content: 'pwd - Print working directory', color: '#B0BEC5' },
         { type: 'text', content: 'echo <msg> - Display message', color: '#B0BEC5' },
         { type: 'text', content: 'clear - Clear the terminal', color: '#B0BEC5' },
+        { type: 'text', content: 'bazaar [command] - Access Scraplight black market', color: '#FF00FF' },
         { type: 'text', content: 'date - Display the current date and time', color: '#B0BEC5' },
         { type: 'text', content: 'whoami - Display current user', color: '#B0BEC5' },
         { type: 'text', content: 'find -name <pattern> - Search for files', color: '#B0BEC5' },
@@ -1255,6 +1261,21 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({
             { type: 'text', content: 'Launches the terminal-based hacking simulation interface.', color: '#B0BEC5' },
             { type: 'text', content: 'Use this tool to simulate hacking operations on various targets.', color: '#B0BEC5' },
             { type: 'text', content: 'Type "help" within the hacking interface for more commands.', color: '#B0BEC5' },
+          ]);
+          break;
+          
+        case 'bazaar':
+        case 'market':
+          setOutput(prev => [
+            ...prev,
+            { type: 'text', content: 'bazaar [command] - Access Scraplight Cartel\'s underground marketplace', color: '#FF00FF' },
+            { type: 'text', content: 'Available subcommands:', color: '#B0BEC5' },
+            { type: 'text', content: '  list - View available items for sale', color: '#B0BEC5' },
+            { type: 'text', content: '  history - View recent market transactions', color: '#B0BEC5' },
+            { type: 'text', content: '  users - See who\'s currently active in the bazaar', color: '#B0BEC5' },
+            { type: 'text', content: '  info <item-id> - Get detailed info about a specific item', color: '#B0BEC5' },
+            { type: 'text', content: 'This marketplace is run by the Scraplight Cartel, Gizbo\'s "loose business cooperative."', color: '#00FFFF' },
+            { type: 'text', content: 'Warning: The Cartel is not responsible for dimensional rifts caused by purchased items.', color: '#FF5252' },
           ]);
           break;
         
