@@ -408,6 +408,8 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({
   const [hackingProgress, setHackingProgress] = useState<number>(0);
   const [hackingStatus, setHackingStatus] = useState<'idle' | 'running' | 'success' | 'failed'>('idle');
   const [glitchEffects, setGlitchEffects] = useState<boolean>(false);
+  const [showHackerToolUI, setShowHackerToolUI] = useState<boolean>(false);
+  const [showPartyKittyWindow, setShowPartyKittyWindow] = useState<boolean>(false);
   
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -592,6 +594,22 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({
       
       case 'hackertool':
         launchHackerTool();
+        break;
+      
+      case 'partykitty':
+        showPartyKitty();
+        break;
+
+      case 'dragon':
+        showAsciiArt('dragon');
+        break;
+
+      case 'castle':
+        showAsciiArt('castle');
+        break;
+
+      case 'robot':
+        showAsciiArt('robot');
         break;
       
       case 'exit':
@@ -846,6 +864,32 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({
     setHackingStatus('idle');
   };
 
+  // Show PartyKitty command
+  const showPartyKitty = () => {
+    setOutput(prev => [
+      ...prev, 
+      { type: 'text', content: 'Launching Party Kitty celebration...', color: '#FF9800' },
+      { type: 'text', content: 'Meow! Party Kitty is here to brighten your day!', color: '#E91E63' },
+    ]);
+    setShowPartyKittyWindow(true);
+  };
+
+  // Show ASCII art
+  const showAsciiArt = (artName: string) => {
+    if (artName in ASCII_ART) {
+      const art = ASCII_ART[artName as keyof typeof ASCII_ART];
+      setOutput(prev => [
+        ...prev,
+        { type: 'ascii', content: art, color: '#FFC107' }
+      ]);
+    } else {
+      setOutput(prev => [
+        ...prev,
+        { type: 'error', content: `ASCII art '${artName}' not found.`, color: '#FF5252' }
+      ]);
+    }
+  };
+
   // Show help for commands
   const showHelp = (command?: string) => {
     if (!command) {
@@ -865,6 +909,10 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({
         { type: 'text', content: 'find -name <pattern> - Search for files', color: '#B0BEC5' },
         { type: 'text', content: 'grep <pattern> <file> - Search for text in file', color: '#B0BEC5' },
         { type: 'text', content: 'hack - Launch Gizbo\'s Hacking Toolkit', color: '#00ff00' },
+        { type: 'text', content: 'partykitty - Show the party kitty', color: '#FF9800' },
+        { type: 'text', content: 'dragon - Display dragon ASCII art', color: '#FFC107' },
+        { type: 'text', content: 'castle - Display castle ASCII art', color: '#FFC107' },
+        { type: 'text', content: 'robot - Display robot ASCII art', color: '#FFC107' },
         { type: 'text', content: 'exit - Close terminal', color: '#B0BEC5' },
         { type: 'text', content: '===========================', color: '#42A5F5' },
       ]);
