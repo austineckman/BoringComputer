@@ -1,22 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 
-// ASCII art - new retro computer terminal design
+// ASCII art - smaller retro computer terminal design
 const SMALL_ASCII_ART = `
-     _______________
-    /               \\
-    |  ___________  |
-    | |           | |
-    | | C:\\>BOOT  | |
-    | | >LOADING..| |
-    | | >READY_   | |
-    | |___________| |
-    |               |
-    \\_______________/
-         \\______/
-       ____________
-     _/------------\\_
-    /------------------\\
-    \\__________________/
+   _________
+  /         \\
+ |  _______  |
+ | |       | |
+ | | C:\\>_ | |
+ | |_______| |
+ |           |
+  \\_________/
+     \\___/
+    _______
+   /_______\\
 `;
 
 // List of loading messages for the terminal
