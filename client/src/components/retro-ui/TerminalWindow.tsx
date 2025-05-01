@@ -962,6 +962,23 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({
     { handle: 'StaticWhisper', status: 'offline', reputation: 'Unverified', lastSeen: '3h ago' },
   ];
 
+  // Animation frames for the loading indicator
+  const LOADING_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+  
+  // Random ticker data generator
+  const generateRandomTicker = () => {
+    const symbols = ['QNT', 'NEO', 'CRD', 'PHX', 'VTX', 'ARC', 'BIT', 'DRK', 'HEX', 'PLS', 'CRB', 'MRK'];
+    const directions = ['+', '-'];
+    const changes = Array(12).fill(0).map(() => (Math.random() * 12).toFixed(2));
+    
+    return symbols.map((sym, i) => ({
+      symbol: sym,
+      direction: Math.random() > 0.5 ? directions[0] : directions[1],
+      change: changes[i],
+      volume: Math.floor(Math.random() * 10000),
+    }));
+  };
+  
   // Show Black Market bazaar
   const showBlackMarket = (command?: string) => {
     const BAZAAR_LOGO = `
@@ -994,132 +1011,387 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({
       // Generate a connection signature for visuals
       const connSig = Array(32).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join('');
       const timestamp = new Date().toISOString().replace('T', ' ').substr(0, 19);
-
+      
+      // Generate a market ticker
+      const ticker = generateRandomTicker();
+      const tickerDisplay = ticker.map(t => {
+        const colorCode = t.direction === '+' ? '#00ff00' : '#ff0000';
+        return `${t.symbol}: ${t.direction}${t.change}% [${t.volume}]`;
+      }).join('  ');
+      
+      // System status indicators
+      const securityLevel = ['CRITICAL', 'HIGH', 'MODERATE', 'LOW'][Math.floor(Math.random() * 4)];
+      const securityColor = 
+        securityLevel === 'CRITICAL' ? '#ff0000' :
+        securityLevel === 'HIGH' ? '#ff9900' :
+        securityLevel === 'MODERATE' ? '#ffff00' :
+        '#00ff00';
+      
+      // Network stats
+      const networkNodes = Math.floor(Math.random() * 43) + 58;
+      const activeConnections = Math.floor(Math.random() * 2000) + 1000;
+      const encryptionType = ['AES-512', 'QUANTUM MESH', 'NEURAL ENCRYPT', 'FRACTALCIPHER'][Math.floor(Math.random() * 4)];
+      
+      // Generate random frame number for animation effect
+      const frame = Math.floor(Math.random() * LOADING_FRAMES.length);
+      const loadingChar = LOADING_FRAMES[frame];
+      
+      // Define live feed entries - randomized messages that appear real-time
+      const liveFeed = [
+        `[${new Date().toLocaleTimeString()}] User GhostWire has listed 3 new items`,
+        `[${new Date().toLocaleTimeString()}] System scan complete; ${Math.floor(Math.random() * 5)} threats neutralized`,
+        `[${new Date().toLocaleTimeString()}] Market volatility index: ${(Math.random() * 80 + 20).toFixed(2)}%`,
+        `[${new Date().toLocaleTimeString()}] Scraplight security alert: Unauthorized access attempt blocked`,
+        `[${new Date().toLocaleTimeString()}] Gizbo broadcast: New rare items expected in next shipment`,
+        `[${new Date().toLocaleTimeString()}] Credits exchanged today: ${Math.floor(Math.random() * 9000) + 1000}K`,
+      ];
+      
+      // Random glitch effects to make it feel alive
+      const glitchText = `C0RrUpt10n d3T3cT3d... ${Math.random().toString(36).substring(2, 8)} ... R3P41r1nG`;
+      
       setOutput(prev => [
         ...prev,
-        { type: 'text', content: `Establishing secure connection to Scraplight Bazaar...`, color: '#ffff00' },
-        { type: 'text', content: `Routing through ${Math.floor(Math.random() * 7) + 3} proxy nodes...`, color: '#00ffff' },
-        { type: 'text', content: `Connection established: ${timestamp} [${connSig}]`, color: '#00ff00' },
+        { type: 'text', content: `${loadingChar} Establishing secure connection to Scraplight Bazaar...`, color: '#ffff00' },
+        { type: 'text', content: `${loadingChar} Routing through ${Math.floor(Math.random() * 7) + 3} proxy nodes...`, color: '#00ffff' },
+        { type: 'text', content: `${loadingChar} Scanning for surveillance...`, color: '#ff00ff' },
+        { type: 'text', content: `${loadingChar} Encrypting traffic with ${encryptionType}...`, color: '#0088ff' },
+        { type: 'text', content: `${loadingChar} Connection established: ${timestamp} [${connSig}]`, color: '#00ff00' },
         { type: 'ascii', content: BAZAAR_LOGO, color: '#ff00ff' },
+        { type: 'text', content: `SECURITY: ${securityLevel} | NODES: ${networkNodes} | CONNECTIONS: ${activeConnections}`, color: securityColor },
+        { type: 'text', content: `----[ MARKET TICKER ]---- ${tickerDisplay} ---`, color: '#00ffff' },
         { type: 'text', content: `Welcome to Scraplight Bazaar, ${username}! What'll it be today?`, color: '#00ffff' },
+        { type: 'text', content: `----[ LIVE FEED ]----`, color: '#ff00ff' },
+        { type: 'text', content: liveFeed[Math.floor(Math.random() * liveFeed.length)], color: '#00ff88' },
+        { type: 'text', content: liveFeed[Math.floor(Math.random() * liveFeed.length)], color: '#00ff88' },
+        { type: 'text', content: glitchText, color: '#ff0000' },
         ...helpInfo
       ]);
+      
+      // Create continuous activity with timed updates
+      setTimeout(() => {
+        if (commandMode === 'terminal') {
+          setOutput(prev => [
+            ...prev,
+            { type: 'text', content: liveFeed[Math.floor(Math.random() * liveFeed.length)], color: '#00ff88' },
+          ]);
+        }
+      }, 5000);
+      
       return;
     }
 
     // Process market sub-commands
     switch(command.toLowerCase()) {
       case 'list': {
-        const listHeader = [
-          { type: 'text', content: '====== AVAILABLE ITEMS ======', color: '#00ffff' },
-          { type: 'text', content: 'ID          | ITEM                          | PRICE    | STOCK | SELLER        | RARITY', color: '#ffff00' },
-          { type: 'text', content: '------------|-------------------------------|----------|-------|---------------|-------------', color: '#ffff00' },
-        ];
-
-        const itemList = MARKET_ITEMS.map(item => {
-          // Color by rarity
-          const rarityColor = 
-            item.rarity === 'Epic' ? '#ff00ff' :
-            item.rarity === 'Rare' ? '#0088ff' :
-            item.rarity === 'Uncommon' ? '#00ff00' : 
-            '#ffffff';
-            
-          return {
-            type: 'text',
-            content: `${item.id.padEnd(12)}| ${item.name.padEnd(31)}| ${item.price.toString().padStart(8)} | ${item.stock.toString().padStart(5)} | ${item.seller.padEnd(15)}| ${item.rarity}`,
-            color: rarityColor
-          };
-        });
-
+        // Generate a random frame for loading indicator animation
+        const frame = Math.floor(Math.random() * LOADING_FRAMES.length);
+        const loadingChar = LOADING_FRAMES[frame];
+        
+        // Add price fluctuation to make it feel alive
+        const fluctuatedItems = MARKET_ITEMS.map(item => ({
+          ...item,
+          // Random small price fluctuation
+          price: Math.floor(item.price * (1 + (Math.random() * 0.1 - 0.05))),
+          // Occasionally change stock levels
+          stock: Math.random() > 0.7 ? Math.max(1, item.stock + (Math.random() > 0.5 ? 1 : -1)) : item.stock,
+        }));
+        
+        // Add market scanning message sequence for dramatic effect
         setOutput(prev => [
           ...prev,
-          ...listHeader,
-          ...itemList,
-          { type: 'text', content: `\nTotal items available: ${MARKET_ITEMS.length}`, color: '#00ffff' },
-          { type: 'text', content: `Last database sync: ${new Date().toTimeString().split(' ')[0]}`, color: '#888888' },
+          { type: 'text', content: `${loadingChar} Scanning market nodes...`, color: '#ffff00' },
         ]);
+        
+        // Delay to create effect of scanning
+        setTimeout(() => {
+          // Market connection details
+          const nodeCount = Math.floor(Math.random() * 15) + 10;
+          const scanTime = (Math.random() * 150 + 50).toFixed(2);
+          const marketStatus = ['ACTIVE', 'HIGH VOLUME', 'VOLATILE', 'STABLE'][Math.floor(Math.random() * 4)];
+          
+          const listHeader = [
+            { type: 'text', content: `====== MARKET SCAN COMPLETE [${scanTime}ms] ======`, color: '#00ffff' },
+            { type: 'text', content: `NODES: ${nodeCount} | STATUS: ${marketStatus} | SECURITY: ENCRYPTED`, color: '#00ff88' },
+            { type: 'text', content: 'ID          | ITEM                          | PRICE    | STOCK | SELLER        | RARITY', color: '#ffff00' },
+            { type: 'text', content: '------------|-------------------------------|----------|-------|---------------|-------------', color: '#ffff00' },
+          ];
+
+          const itemList = fluctuatedItems.map(item => {
+            // Color by rarity
+            const rarityColor = 
+              item.rarity === 'Epic' ? '#ff00ff' :
+              item.rarity === 'Rare' ? '#0088ff' :
+              item.rarity === 'Uncommon' ? '#00ff00' : 
+              '#ffffff';
+              
+            // Add price trend indicators
+            const priceIndicator = Math.random() > 0.5 ? '↑' : '↓';
+            const priceDisplay = `${item.price.toString().padStart(6)} ${priceIndicator}`;
+              
+            return {
+              type: 'text',
+              content: `${item.id.padEnd(12)}| ${item.name.padEnd(31)}| ${priceDisplay} | ${item.stock.toString().padStart(5)} | ${item.seller.padEnd(15)}| ${item.rarity}`,
+              color: rarityColor
+            };
+          });
+          
+          // Random market insights
+          const insights = [
+            `Highest demand: ${fluctuatedItems[Math.floor(Math.random() * fluctuatedItems.length)].name}`,
+            `Predicted shortage: ${fluctuatedItems[Math.floor(Math.random() * fluctuatedItems.length)].name}`,
+            `Market volatility index: ${(Math.random() * 100).toFixed(2)}%`,
+            `Current trade volume: ${Math.floor(Math.random() * 50000) + 10000} credits/hour`, 
+            `Security clearance required for ${Math.floor(Math.random() * 3) + 1} hidden listings`,
+          ];
+
+          setOutput(prev => [
+            ...prev,
+            ...listHeader,
+            ...itemList,
+            { type: 'text', content: `\nTotal items available: ${fluctuatedItems.length}`, color: '#00ffff' },
+            { type: 'text', content: `Last database sync: ${new Date().toTimeString().split(' ')[0]}`, color: '#00ff88' },
+            { type: 'text', content: `Market intelligence: ${insights[Math.floor(Math.random() * insights.length)]}`, color: '#ff00ff' },
+            { type: 'text', content: `Transaction activity: ${['Low', 'Moderate', 'High', 'Extreme'][Math.floor(Math.random() * 4)]}`, color: '#ffff00' },
+          ]);
+        }, 1200);
+        
         break;
       }
 
       case 'history': {
-        const historyHeader = [
-          { type: 'text', content: '====== RECENT TRANSACTIONS ======', color: '#00ffff' },
-          { type: 'text', content: 'TIME      | ACTION | ITEM                          | AMOUNT   | PARTIES', color: '#ffff00' },
-          { type: 'text', content: '----------|--------|-------------------------------|----------|-------------------------', color: '#ffff00' },
-        ];
+        // Generate a random frame for loading indicator animation
+        const frame = Math.floor(Math.random() * LOADING_FRAMES.length);
+        const loadingChar = LOADING_FRAMES[frame];
 
-        const transactionsList = MARKET_TRANSACTIONS.map(tx => {
-          // Color by action
-          const actionColor = 
-            tx.action === 'SOLD' ? '#00ff00' :
-            tx.action === 'BOUGHT' ? '#0088ff' : 
-            '#ffff00';
-            
-          const parties = tx.action === 'LISTED' ? 
-            `Listed by ${tx.seller}` : 
-            `${tx.seller} → ${tx.buyer}`;
-            
-          return {
-            type: 'text',
-            content: `${tx.time} | ${tx.action.padEnd(6)}| ${tx.item.padEnd(31)}| ${tx.amount.toString().padStart(8)} | ${parties}`,
-            color: actionColor
-          };
-        });
-
+        // Add encryption animation for dramatic effect
         setOutput(prev => [
           ...prev,
-          ...historyHeader,
-          ...transactionsList,
-          { type: 'text', content: `\nShowing last ${MARKET_TRANSACTIONS.length} transactions`, color: '#00ffff' },
-          { type: 'text', content: `Market activity level: High`, color: '#00ff00' },
+          { type: 'text', content: `${loadingChar} Decrypting transaction ledger...`, color: '#ff00ff' },
+          { type: 'text', content: `${loadingChar} Bypassing cartel security protocols...`, color: '#ff0000' },
         ]);
+        
+        // Generate a few new random transactions to add to the list
+        const currentTime = new Date();
+        const randomMinutesAgo = (max = 10) => {
+          const minutesAgo = Math.floor(Math.random() * max) + 1;
+          const time = new Date(currentTime.getTime() - (minutesAgo * 60000));
+          return time.toLocaleTimeString('en-US', { hour12: false }).substring(0, 8);
+        };
+        
+        // Add some new random transactions
+        const newTransactions = [
+          {
+            time: randomMinutesAgo(2),
+            action: Math.random() > 0.5 ? 'SOLD' : 'BOUGHT',
+            item: MARKET_ITEMS[Math.floor(Math.random() * MARKET_ITEMS.length)].name,
+            amount: Math.floor(Math.random() * 10000) + 100,
+            seller: MARKET_USERS[Math.floor(Math.random() * MARKET_USERS.length)].handle,
+            buyer: MARKET_USERS[Math.floor(Math.random() * MARKET_USERS.length)].handle,
+          },
+          {
+            time: randomMinutesAgo(1),
+            action: 'LISTED',
+            item: MARKET_ITEMS[Math.floor(Math.random() * MARKET_ITEMS.length)].name,
+            amount: Math.floor(Math.random() * 10000) + 500,
+            seller: MARKET_USERS[Math.floor(Math.random() * MARKET_USERS.length)].handle,
+            buyer: null,
+          }
+        ];
+        
+        // Combine with existing transactions
+        const combinedTransactions = [...newTransactions, ...MARKET_TRANSACTIONS.slice(0, MARKET_TRANSACTIONS.length - 2)];
+        
+        // Create fake transaction analytics
+        const totalVolume = combinedTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+        const avgPrice = Math.round(totalVolume / combinedTransactions.length);
+        const highestValue = Math.max(...combinedTransactions.map(tx => tx.amount));
+        const mostActiveTrader = combinedTransactions
+          .flatMap(tx => [tx.seller, tx.buyer])
+          .filter(Boolean)
+          .reduce((acc, trader) => {
+            acc[trader as string] = (acc[trader as string] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>);
+
+        const topTrader = Object.entries(mostActiveTrader)
+          .sort((a, b) => b[1] - a[1])[0][0];
+
+        // Add brief delay to simulate decryption
+        setTimeout(() => {
+          const historyHeader = [
+            { type: 'text', content: '====== DECRYPTION COMPLETE ======', color: '#00ffff' },
+            { type: 'text', content: `SECURE ACCESS GRANTED - LEDGER TIMESTAMP: ${currentTime.toISOString()}`, color: '#ff00ff' },
+            { type: 'text', content: 'TIME      | ACTION | ITEM                          | AMOUNT   | PARTIES', color: '#ffff00' },
+            { type: 'text', content: '----------|--------|-------------------------------|----------|-------------------------', color: '#ffff00' },
+          ];
+
+          const transactionsList = combinedTransactions.map(tx => {
+            // Add highlight for new transactions
+            const isNew = newTransactions.some(ntx => ntx.time === tx.time && ntx.item === tx.item);
+            
+            // Color by action and newness
+            const actionColor = isNew ? '#ff00ff' :
+              tx.action === 'SOLD' ? '#00ff00' :
+              tx.action === 'BOUGHT' ? '#0088ff' : 
+              '#ffff00';
+              
+            const parties = tx.action === 'LISTED' ? 
+              `Listed by ${tx.seller}` : 
+              `${tx.seller} → ${tx.buyer}`;
+            
+            // Add status indicator for new transactions
+            const statusPrefix = isNew ? '[NEW] ' : '';
+              
+            return {
+              type: 'text',
+              content: `${tx.time} | ${tx.action.padEnd(6)}| ${statusPrefix}${tx.item.padEnd(30 - statusPrefix.length)}| ${tx.amount.toString().padStart(8)} | ${parties}`,
+              color: actionColor
+            };
+          });
+
+          // Market insights and analytics
+          const analytics = [
+            { type: 'text', content: `\n==== MARKET ANALYTICS ====`, color: '#ff00ff' },
+            { type: 'text', content: `Total Volume: ${totalVolume} credits`, color: '#00ffff' },
+            { type: 'text', content: `Average Transaction: ${avgPrice} credits`, color: '#00ffff' },
+            { type: 'text', content: `Peak Transaction: ${highestValue} credits`, color: '#ffff00' },
+            { type: 'text', content: `Most Active Trader: ${topTrader}`, color: '#00ff00' },
+            { type: 'text', content: `Trading Activity: ${['Low', 'Moderate', 'High', 'Very High'][Math.floor(Math.random() * 4)]}`, color: '#00ff00' },
+            { type: 'text', content: `Cartel Security Level: ${['Standard', 'Enhanced', 'Maximum'][Math.floor(Math.random() * 3)]}`, color: '#ff0000' },
+          ];
+
+          setOutput(prev => [
+            ...prev,
+            ...historyHeader,
+            ...transactionsList,
+            ...analytics,
+          ]);
+        }, 1500);
+        
         break;
       }
 
       case 'users': {
-        const usersHeader = [
-          { type: 'text', content: '====== ACTIVE USERS ======', color: '#00ffff' },
-          { type: 'text', content: 'HANDLE             | STATUS   | REPUTATION     | LAST SEEN', color: '#ffff00' },
-          { type: 'text', content: '-------------------|----------|----------------|------------------', color: '#ffff00' },
-        ];
-
-        const usersList = MARKET_USERS.map(user => {
-          // Color by status
-          const statusColor = 
-            user.status === 'admin' ? '#ff00ff' :
-            user.status === 'online' ? '#00ff00' :
-            user.status === 'away' ? '#ffff00' : 
-            '#888888';
-
-          // Color by reputation
-          const repColor = 
-            user.reputation === 'Legendary' ? '#ff00ff' :
-            user.reputation === 'Trusted' ? '#00ff00' :
-            user.reputation === 'Verified' ? '#00ffff' : 
-            '#888888';
-            
-          return {
-            type: 'text',
-            content: `${user.handle.padEnd(19)}| ${user.status.padEnd(8)}| ${user.reputation.padEnd(16)}| ${user.lastSeen}`,
-            color: statusColor
-          };
-        });
-
-        // Calculate online percentage
-        const onlineCount = MARKET_USERS.filter(u => u.status === 'online' || u.status === 'admin').length;
-        const onlinePercentage = Math.round((onlineCount / MARKET_USERS.length) * 100);
-
+        // Generate a random frame for loading indicator animation
+        const frame = Math.floor(Math.random() * LOADING_FRAMES.length);
+        const loadingChar = LOADING_FRAMES[frame];
+        
+        // Show scanning animation
         setOutput(prev => [
           ...prev,
-          ...usersHeader,
-          ...usersList,
-          { type: 'text', content: `\nActive users: ${onlineCount}/${MARKET_USERS.length} (${onlinePercentage}%)`, color: '#00ffff' },
-          { type: 'text', content: `Network traffic: Moderate`, color: '#ffff00' },
+          { type: 'text', content: `${loadingChar} Scanning active network connections...`, color: '#ffff00' },
+          { type: 'text', content: `${loadingChar} Intercepting user signatures...`, color: '#ff00ff' },
         ]);
+        
+        // Add some random activity to the existing user list
+        const activeUsers = [...MARKET_USERS].map(user => {
+          // Randomly change some statuses
+          if (Math.random() > 0.7) {
+            if (user.status === 'online') {
+              return { ...user, status: Math.random() > 0.5 ? 'away' : 'online' };
+            } else if (user.status === 'away') {
+              return { ...user, status: Math.random() > 0.5 ? 'online' : 'away' };
+            } else if (user.status === 'offline') {
+              return { ...user, status: Math.random() > 0.8 ? 'online' : 'offline' };
+            }
+          }
+          return user;
+        });
+        
+        // Add a simulated new user occasionally
+        if (Math.random() > 0.7) {
+          const newUserHandles = [
+            'DarkSpectre', 'DataWraith', 'PhantomByte', 'ShadowScript', 
+            'BitMancer', 'VoidRunner', 'CipherGhost', 'FluxRider'
+          ];
+          const newReputations = ['Unverified', 'Verified', 'Trusted'];
+          
+          activeUsers.push({
+            handle: newUserHandles[Math.floor(Math.random() * newUserHandles.length)],
+            status: 'online',
+            reputation: newReputations[Math.floor(Math.random() * newReputations.length)],
+            lastSeen: 'now'
+          });
+        }
+        
+        setTimeout(() => {
+          // Generate security alert and network stats
+          const securityStatus = ['SECURE', 'MODERATE', 'ALERT', 'COMPROMISED'][Math.floor(Math.random() * 4)];
+          const securityColor = 
+            securityStatus === 'SECURE' ? '#00ff00' :
+            securityStatus === 'MODERATE' ? '#ffff00' :
+            securityStatus === 'ALERT' ? '#ff9900' :
+            '#ff0000';
+          
+          const bandwidthUsage = Math.floor(Math.random() * 950) + 50;
+          const encryptionProtocol = ['QUANTUM', 'NEURALBLADE', 'RSA-4096', 'POLYMORPHIC'][Math.floor(Math.random() * 4)];
+          
+          const usersHeader = [
+            { type: 'text', content: '====== USER SCAN COMPLETE ======', color: '#00ffff' },
+            { type: 'text', content: `SECURITY: ${securityStatus} | BANDWIDTH: ${bandwidthUsage}Mbps | ENCRYPTION: ${encryptionProtocol}`, color: securityColor },
+            { type: 'text', content: 'HANDLE             | STATUS   | REPUTATION     | LAST SEEN', color: '#ffff00' },
+            { type: 'text', content: '-------------------|----------|----------------|------------------', color: '#ffff00' },
+          ];
+
+          const usersList = activeUsers.map(user => {
+            // Color by status
+            const statusColor = 
+              user.status === 'admin' ? '#ff00ff' :
+              user.status === 'online' ? '#00ff00' :
+              user.status === 'away' ? '#ffff00' : 
+              '#888888';
+
+            // Color by reputation
+            const repColor = 
+              user.reputation === 'Legendary' ? '#ff00ff' :
+              user.reputation === 'Trusted' ? '#00ff00' :
+              user.reputation === 'Verified' ? '#00ffff' : 
+              '#888888';
+              
+            // Add activity indicators
+            const activityIcon = user.status === 'online' ? '⚫' : user.status === 'away' ? '⚪' : '○';
+              
+            return {
+              type: 'text',
+              content: `${user.handle.padEnd(19)}| ${activityIcon} ${user.status.padEnd(6)}| ${user.reputation.padEnd(16)}| ${user.lastSeen}`,
+              color: statusColor
+            };
+          });
+
+          // Calculate online percentage
+          const onlineCount = activeUsers.filter(u => u.status === 'online' || u.status === 'admin').length;
+          const onlinePercentage = Math.round((onlineCount / activeUsers.length) * 100);
+
+          // Generate user insights
+          const suspiciousActivity = Math.random() > 0.7 ? 
+            { type: 'text', content: `${LOADING_FRAMES[Math.floor(Math.random() * LOADING_FRAMES.length)]} WARNING: Suspicious activity detected from ${activeUsers[Math.floor(Math.random() * activeUsers.length)].handle}`, color: '#ff0000' } :
+            null;
+
+          const activityInsights = [
+            { type: 'text', content: `\n==== NETWORK ANALYTICS ====`, color: '#ff00ff' },
+            { type: 'text', content: `Active users: ${onlineCount}/${activeUsers.length} (${onlinePercentage}%)`, color: '#00ffff' },
+            { type: 'text', content: `Peak traffic time: ${new Date().getHours() > 12 ? (new Date().getHours() - 12) : new Date().getHours()}:${new Date().getMinutes() < 10 ? '0' + new Date().getMinutes() : new Date().getMinutes()} ${new Date().getHours() >= 12 ? 'PM' : 'AM'}`, color: '#00ff88' },
+            { type: 'text', content: `Network stability: ${['Stable', 'Fluctuating', 'Degraded', 'Optimal'][Math.floor(Math.random() * 4)]}`, color: '#ffff00' },
+            { type: 'text', content: `Current market trend: ${['Bullish', 'Bearish', 'Volatile', 'Stagnant'][Math.floor(Math.random() * 4)]}`, color: '#00ff00' },
+          ];
+
+          setOutput(prev => [
+            ...prev,
+            ...usersHeader,
+            ...usersList,
+            ...(suspiciousActivity ? [suspiciousActivity] : []),
+            ...activityInsights,
+          ]);
+        }, 1200);
+        
         break;
       }
 
       case 'info': {
+        // Generate a random frame for loading indicator animation
+        const frame = Math.floor(Math.random() * LOADING_FRAMES.length);
+        const loadingChar = LOADING_FRAMES[frame];
+        
         // Check if we have a third argument (item ID)
         const parts = command.split(' ');
         const itemId = parts.length > 1 ? parts[1] : null;
@@ -1132,60 +1404,116 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({
           return;
         }
 
-        const item = MARKET_ITEMS.find(i => i.id.toLowerCase() === itemId.toLowerCase());
-
-        if (!item) {
-          setOutput(prev => [
-            ...prev,
-            { type: 'error', content: `Item with ID "${itemId}" not found in the market database.`, color: '#ff0000' },
-            { type: 'text', content: `Try 'bazaar list' to see available items.`, color: '#ffff00' },
-          ]);
-          return;
-        }
-
-        // Generate random usage description and history
-        const usages = [
-          "Originally designed for quantum field stabilization in deep space.",
-          "Modified from scavenged alien technology found in the Great Collapse.",
-          "A Scraplight Cartel specialty, built from salvaged corporate tech.",
-          "Gizbo's personal design, perfect for reality fabric manipulation.",
-          "Rare find from the depths of the Clockwork Leviathan.",
-          "Engineered during the Squirrel Uprising to placate the enhanced rodents.",
-          "Combine with other tech to create unstable but powerful enhancements.",
-        ];
-
-        // Item rarity color
-        const rarityColor = 
-          item.rarity === 'Epic' ? '#ff00ff' :
-          item.rarity === 'Rare' ? '#0088ff' :
-          item.rarity === 'Uncommon' ? '#00ff00' : 
-          '#ffffff';
-
-        // Generate ASCII art preview of the item
-        const itemPreview = `
-        ╔══════[${item.id}]══════╗
-        ║                     ║
-        ║      [${item.rarity}]      ║
-        ║                     ║
-        ║   < DATA STORED >   ║
-        ║                     ║
-        ╚═════════════════════╝
-        `;
-
+        // Add scanning animation
         setOutput(prev => [
           ...prev,
-          { type: 'text', content: `====== ITEM DETAILS: ${item.id} ======`, color: '#00ffff' },
-          { type: 'ascii', content: itemPreview, color: rarityColor },
-          { type: 'text', content: `Name: ${item.name}`, color: '#ffffff' },
-          { type: 'text', content: `Price: ${item.price} credits`, color: '#ffff00' },
-          { type: 'text', content: `Rarity: ${item.rarity}`, color: rarityColor },
-          { type: 'text', content: `Stock: ${item.stock} unit(s)`, color: '#00ffff' },
-          { type: 'text', content: `Seller: ${item.seller}`, color: '#00ff00' },
-          { type: 'text', content: `Listed: ${item.lastUpdated}`, color: '#888888' },
-          { type: 'text', content: `Description:`, color: '#ffffff' },
-          { type: 'text', content: usages[Math.floor(Math.random() * usages.length)], color: '#00ffff' },
-          { type: 'text', content: `Warning: No warranty provided. The Scraplight Cartel is not responsible for dimensional rifts.`, color: '#ff0000' },
+          { type: 'text', content: `${loadingChar} Locating item in Scraplight database...`, color: '#ffff00' },
+          { type: 'text', content: `${loadingChar} Scanning item signature...`, color: '#00ffff' },
         ]);
+        
+        // Process with a slight delay to show the scanning effect
+        setTimeout(() => {
+          const item = MARKET_ITEMS.find(i => i.id.toLowerCase() === itemId.toLowerCase());
+          
+          if (!item) {
+            setOutput(prev => [
+              ...prev,
+              { type: 'error', content: `Item with ID "${itemId}" not found in the market database.`, color: '#ff0000' },
+              { type: 'text', content: `Try 'bazaar list' to see available items.`, color: '#ffff00' },
+            ]);
+            return;
+          }
+          
+          // Successfully found the item
+          setOutput(prev => [
+            ...prev,
+            { type: 'text', content: `${loadingChar} Item found! Decrypting metadata...`, color: '#00ff00' },
+          ]);
+          
+          // Add another delay for the analysis effect
+          setTimeout(() => {
+            // Generate random usage description and history
+            const usages = [
+              "Originally designed for quantum field stabilization in deep space.",
+              "Modified from scavenged alien technology found in the Great Collapse.",
+              "A Scraplight Cartel specialty, built from salvaged corporate tech.",
+              "Gizbo's personal design, perfect for reality fabric manipulation.",
+              "Rare find from the depths of the Clockwork Leviathan.",
+              "Engineered during the Squirrel Uprising to placate the enhanced rodents.",
+              "Combine with other tech to create unstable but powerful enhancements.",
+            ];
+
+            // Item rarity color
+            const rarityColor = 
+              item.rarity === 'Epic' ? '#ff00ff' :
+              item.rarity === 'Rare' ? '#0088ff' :
+              item.rarity === 'Uncommon' ? '#00ff00' : 
+              '#ffffff';
+
+            // Generate ASCII art preview of the item
+            const itemPreview = `
+            ╔══════[${item.id}]══════╗
+            ║                     ║
+            ║      [${item.rarity}]      ║
+            ║                     ║
+            ║   < DATA STORED >   ║
+            ║                     ║
+            ╚═════════════════════╝
+            `;
+            
+            // Generate simulated market data to make it more engaging
+            const priceHistory = Array(7).fill(0).map((_, i) => {
+              // Random price fluctuation ±15%
+              return Math.floor(item.price * (1 + (Math.random() * 0.3 - 0.15)));
+            });
+            
+            const averagePrice = Math.floor(priceHistory.reduce((a, b) => a + b, 0) / priceHistory.length);
+            const priceChange = (((item.price / averagePrice) - 1) * 100).toFixed(2);
+            const priceIndicator = parseFloat(priceChange) >= 0 ? '↑' : '↓';
+            const priceColor = parseFloat(priceChange) >= 0 ? '#00ff00' : '#ff0000';
+            
+            // Randomly generate market demand levels
+            const demandLevel = ['Low', 'Moderate', 'High', 'Extreme'][Math.floor(Math.random() * 4)];
+            const demandColor = 
+              demandLevel === 'Low' ? '#888888' :
+              demandLevel === 'Moderate' ? '#ffff00' :
+              demandLevel === 'High' ? '#00ff00' :
+              '#ff00ff';
+
+            // Risk assessment
+            const riskLevel = ['Low', 'Moderate', 'High', 'EXTREME'][Math.floor(Math.random() * 4)];
+            const riskColor = 
+              riskLevel === 'Low' ? '#00ff00' :
+              riskLevel === 'Moderate' ? '#ffff00' :
+              riskLevel === 'High' ? '#ff9900' :
+              '#ff0000';
+
+            // Show results with a glitch effect
+            const securityKey = Array(8).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+            
+            setOutput(prev => [
+              ...prev,
+              { type: 'text', content: `====== ITEM ANALYSIS COMPLETE [SEC:${securityKey}] ======`, color: '#00ffff' },
+              { type: 'ascii', content: itemPreview, color: rarityColor },
+              { type: 'text', content: `>>> PRIMARY DATA`, color: '#ff00ff' },
+              { type: 'text', content: `Name: ${item.name}`, color: '#ffffff' },
+              { type: 'text', content: `Price: ${item.price} credits ${priceIndicator} ${priceChange}%`, color: priceColor },
+              { type: 'text', content: `Rarity: ${item.rarity}`, color: rarityColor },
+              { type: 'text', content: `Stock: ${item.stock} unit(s)`, color: '#00ffff' },
+              { type: 'text', content: `Seller: ${item.seller}`, color: '#00ff00' },
+              { type: 'text', content: `Listed: ${item.lastUpdated}`, color: '#888888' },
+              { type: 'text', content: `>>> MARKET ANALYSIS`, color: '#ff00ff' },
+              { type: 'text', content: `Market demand: ${demandLevel}`, color: demandColor },
+              { type: 'text', content: `7-Day avg price: ${averagePrice} credits`, color: '#00ffff' },
+              { type: 'text', content: `Risk assessment: ${riskLevel}`, color: riskColor },
+              { type: 'text', content: `Potential buyers: ${Math.floor(Math.random() * 15) + 1}`, color: '#00ff88' },
+              { type: 'text', content: `>>> CARTEL NOTES`, color: '#ff00ff' },
+              { type: 'text', content: usages[Math.floor(Math.random() * usages.length)], color: '#00ffff' },
+              { type: 'text', content: `WARNING: No warranty provided. The Scraplight Cartel is not responsible for dimensional rifts.`, color: '#ff0000' },
+              { type: 'text', content: `TIP: Items with ${demandLevel.toLowerCase()} demand and ${riskLevel.toLowerCase()} risk have an approximately ${Math.floor(Math.random() * 30) + 70}% profit margin.`, color: '#ffff00' },
+            ]);
+          }, 1200);
+        }, 1000);
         break;
       }
 
