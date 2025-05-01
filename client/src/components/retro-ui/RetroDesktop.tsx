@@ -86,6 +86,10 @@ const RetroDesktop: React.FC = () => {
   // State for computer settings
   const [currentWallpaper, setCurrentWallpaper] = useState<string>(wallpaperImage);
   const [crtEnabled, setCrtEnabled] = useState<boolean>(true);
+  const [use24HourClock, setUse24HourClock] = useState<boolean>(false);
+  const [dateFormat, setDateFormat] = useState<string>("MM/DD/YYYY");
+  const [timezone, setTimezone] = useState<string>("America/New_York");
+  const [iconSize, setIconSize] = useState<'small' | 'medium' | 'large'>('medium');
   
   // Desktop icons (regular icons visible to all users)
   const [desktopIcons, setDesktopIcons] = useState<DesktopIcon[]>([
@@ -147,7 +151,62 @@ const RetroDesktop: React.FC = () => {
   const handleWallpaperChange = useCallback((wallpaper: string) => {
     setCurrentWallpaper(wallpaper);
   }, []);
+  
+  // Handler for changing clock format
+  const handleClockFormatChange = useCallback((use24Hour: boolean) => {
+    setUse24HourClock(use24Hour);
+    // Save preference in local storage
+    localStorage.setItem('use24HourClock', use24Hour.toString());
+  }, []);
+  
+  // Handler for changing date format
+  const handleDateFormatChange = useCallback((format: string) => {
+    setDateFormat(format);
+    // Save preference in local storage
+    localStorage.setItem('dateFormat', format);
+  }, []);
+  
+  // Handler for changing timezone
+  const handleTimezoneChange = useCallback((tz: string) => {
+    setTimezone(tz);
+    // Save preference in local storage
+    localStorage.setItem('timezone', tz);
+  }, []);
+  
+  // Handler for changing icon size
+  const handleIconSizeChange = useCallback((size: 'small' | 'medium' | 'large') => {
+    setIconSize(size);
+    // Save preference in local storage
+    localStorage.setItem('iconSize', size);
+  }, []);
 
+  // Load user preferences from local storage
+  useEffect(() => {
+    // Load clock format preference
+    const savedClockFormat = localStorage.getItem('use24HourClock');
+    if (savedClockFormat !== null) {
+      setUse24HourClock(savedClockFormat === 'true');
+    }
+    
+    // Load date format preference
+    const savedDateFormat = localStorage.getItem('dateFormat');
+    if (savedDateFormat) {
+      setDateFormat(savedDateFormat);
+    }
+    
+    // Load timezone preference
+    const savedTimezone = localStorage.getItem('timezone');
+    if (savedTimezone) {
+      setTimezone(savedTimezone);
+    }
+    
+    // Load icon size preference
+    const savedIconSize = localStorage.getItem('iconSize') as 'small' | 'medium' | 'large' | null;
+    if (savedIconSize && ['small', 'medium', 'large'].includes(savedIconSize)) {
+      setIconSize(savedIconSize as 'small' | 'medium' | 'large');
+    }
+  }, []);
+  
   // Open Welcome window when component mounts
   useEffect(() => {
     setTimeout(() => {
@@ -495,11 +554,19 @@ const RetroDesktop: React.FC = () => {
         onClose={() => closeWindow("settings")} 
         onWallpaperChange={handleWallpaperChange}
         onCrtToggle={handleCrtToggle}
+        onClockFormatChange={handleClockFormatChange}
+        onDateFormatChange={handleDateFormatChange}
+        onTimezoneChange={handleTimezoneChange}
+        onIconSizeChange={handleIconSizeChange}
         currentWallpaper={currentWallpaper}
         crtEnabled={crtEnabled}
+        use24HourClock={use24HourClock}
+        dateFormat={dateFormat}
+        timezone={timezone}
+        iconSize={iconSize}
       />, 
       "monitor",
-      { width: 680, height: 520 }
+      { width: 680, height: 620 }
     );
   };
   
@@ -640,7 +707,7 @@ const RetroDesktop: React.FC = () => {
             }}
           >
             {/* Icon image */}
-            <div className={`flex items-center justify-center w-12 h-12 rounded-sm shadow-md mb-1 ${
+            <div className={`flex items-center justify-center rounded-sm shadow-md mb-1 ${iconSize === 'small' ? 'w-8 h-8' : iconSize === 'large' ? 'w-16 h-16' : 'w-12 h-12'} ${
               icon.icon === "oracle" 
                 ? "bg-gradient-to-br from-amber-200 to-yellow-500 border border-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.6)]" 
                 : "bg-gradient-to-br from-blue-100 to-blue-300 border border-blue-400"
@@ -649,7 +716,7 @@ const RetroDesktop: React.FC = () => {
                 <img 
                   src={picklockImage} 
                   alt="HackLock" 
-                  className="w-10 h-10 object-contain" 
+                  className={`${iconSize === 'small' ? 'w-6 h-6' : iconSize === 'large' ? 'w-14 h-14' : 'w-10 h-10'} object-contain`} 
                   style={{ imageRendering: 'pixelated' }}
                 />
               ) : icon.icon === "ironbag" ? (
@@ -704,7 +771,9 @@ const RetroDesktop: React.FC = () => {
             </div>
             
             {/* Icon label */}
-            <div className="text-center text-sm font-bold text-white bg-black/60 px-1 py-0.5 rounded shadow-sm w-full">
+            <div className="text-center text-sm font-bold text-white bg-black/60 px-1 py-0.5 rounded shadow-sm w-full"
+              style={{ fontSize: iconSize === 'small' ? '0.75rem' : iconSize === 'large' ? '1rem' : '0.875rem' }}
+            >
               {icon.name}
             </div>
           </div>
@@ -1031,8 +1100,13 @@ const RetroDesktop: React.FC = () => {
           </button>
           
           {/* Clock */}
-          <div className="bg-blue-800 border border-blue-500 rounded-sm px-3 py-1.5 text-xs font-mono text-white">
-            {currentTime.toLocaleTimeString()} | {currentTime.toLocaleDateString()}
+          <div className="bg-blue-800 border border-blue-500 rounded-sm px-3 py-1.5 text-white flex flex-col items-end">
+            <div className="text-xs font-mono">
+              {formatTime()}
+            </div>
+            <div className="text-[10px] font-mono text-gray-300">
+              {formatDate()}
+            </div>
           </div>
         </div>
       </div>
