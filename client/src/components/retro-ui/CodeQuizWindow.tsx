@@ -118,7 +118,7 @@ const CodeQuizWindow: React.FC<CodeQuizWindowProps> = ({ onClose, onMinimize, is
       <div className="code-quiz-content">
         <div className="code-quiz-header">
           <pre className="ascii-header">
-{`╔════════ SCRAPLIGHT CODE QUIZ ════════╗
+{`╔═══════════ BUGHUNT ════════════╗
 ║                                      ║
 ║  Choose your language:               ║
 ║  [1] Python                          ║
@@ -248,11 +248,11 @@ const CodeQuizWindow: React.FC<CodeQuizWindowProps> = ({ onClose, onMinimize, is
       <div className="code-quiz-content">
         <div className="code-quiz-header">
           <pre className="ascii-header">
-{`╔════════ FINAL SCORE ════════╗
-║                             ║
-║     ${score.toString().padStart(2, ' ')}/${questions.length}    ║
-║                             ║
-╚═════════════════════════════╝`}
+{`╔═════════ BUGHUNT RESULTS ═════════╗
+║                                ║
+║     BUGS SQUASHED: ${score.toString().padStart(2, ' ')}/${questions.length}    ║
+║                                ║
+╚════════════════════════════════════╝`}
           </pre>
         </div>
         <div className="code-quiz-body">
@@ -276,7 +276,7 @@ const CodeQuizWindow: React.FC<CodeQuizWindowProps> = ({ onClose, onMinimize, is
   return (
     <div className={`window code-quiz-window ${isActive ? 'active' : ''}`}>
       <div className="window-header">
-        <div className="window-title">Scraplight Code Quiz</div>
+        <div className="window-title">BugHunt</div>
         <div className="window-controls">
           <button className="window-minimize" onClick={onMinimize}>_</button>
           <button className="window-close" onClick={onClose}>×</button>
