@@ -46,10 +46,20 @@ const CodeQuizWindow: React.FC<CodeQuizWindowProps> = ({ onClose, onMinimize, is
 
   useEffect(() => {
     if (language) {
-      // Load questions based on language and shuffle them
+      // Load questions based on language
       const allQuestions = language === 'python' ? pythonQuestions : cppQuestions;
-      const shuffled = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 30);
-      setQuestions(shuffled);
+      
+      // Sort questions by difficulty (Easy, Medium, Hard)
+      const sortedQuestions = [...allQuestions].sort((a, b) => {
+        const difficultyOrder: Record<string, number> = { 'Easy': 1, 'Medium': 2, 'Hard': 3 };
+        return difficultyOrder[a.difficulty as keyof typeof difficultyOrder] - 
+               difficultyOrder[b.difficulty as keyof typeof difficultyOrder];
+      });
+      
+      // Limit to 30 questions if there are more
+      const limitedQuestions = sortedQuestions.slice(0, 30);
+      
+      setQuestions(limitedQuestions);
       setCurrentQuestionIndex(0);
       setScore(0);
       setGameState('question');
@@ -64,9 +74,12 @@ const CodeQuizWindow: React.FC<CodeQuizWindowProps> = ({ onClose, onMinimize, is
     const currentQuestion = questions[currentQuestionIndex];
     let isAnswerCorrect = false;
 
-    if (currentQuestion.type === 'output' || currentQuestion.type === 'error') {
-      // For multiple choice questions
-      isAnswerCorrect = parseInt(userAnswer) === currentQuestion.correctAnswer;
+    if (currentQuestion.type === 'output') {
+      // For multiple choice output questions, convert both to strings for comparison
+      isAnswerCorrect = userAnswer === currentQuestion.correctAnswer.toString();
+    } else if (currentQuestion.type === 'error') {
+      // For error line identification, convert both to strings for comparison
+      isAnswerCorrect = userAnswer === currentQuestion.correctAnswer.toString();
     } else if (currentQuestion.type === 'fix') {
       // For code fixing questions, compare after trimming whitespace
       isAnswerCorrect = userAnswer.trim() === currentQuestion.correctAnswer.toString().trim();
