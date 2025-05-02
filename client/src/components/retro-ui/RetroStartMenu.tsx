@@ -114,6 +114,16 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
               }
             }
           ]
+        },
+        {
+          id: "code-reference",
+          label: "Code Reference Guide",
+          icon: <FileText size={16} />,
+          onClick: () => {
+            // Send event to open Code Reference Guide
+            const event = new CustomEvent('openCodeReference');
+            window.dispatchEvent(event);
+          }
         }
       ]
     },
