@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Minimize2, Search, Book, Code, FileCode, Terminal, ExternalLink, ChevronRight } from 'lucide-react';
-import './retro-ui.css';
+import { Code, FileCode, Terminal, Minimize2, X, Search, ExternalLink } from 'lucide-react';
 
 interface CodeReferenceWindowProps {
   onClose: () => void;
@@ -23,20 +22,23 @@ interface ReferenceSection {
   subSections?: ReferenceSection[];
 }
 
+interface CodeTerm {
+  term: string;
+  category: 'data-type' | 'function' | 'keyword' | 'operator' | 'directive' | 'class';
+  language: 'python' | 'cpp' | 'arduino' | 'general';
+  description: string;
+  syntax: string;
+  examples: string[];
+  notes: string;
+}
+
 interface ReferenceLanguage {
   id: string;
   name: string;
   description: string;
   icon: React.ReactNode;
   sections: ReferenceSection[];
-  resources: ResourceLink[];
-}
-
-interface ResourceLink {
-  title: string;
-  url: string;
-  description: string;
-  category: 'Documentation' | 'Tutorial' | 'Community' | 'Tool' | 'Reference';
+  terms: CodeTerm[];
 }
 
 // Python reference data
@@ -207,36 +209,248 @@ print(arr)  # Output: [1 2 3]`,
       ]
     }
   ],
-  resources: [
+  terms: [
+    // Data Types
     {
-      title: 'Python Official Documentation',
-      url: 'https://docs.python.org/',
-      description: 'Comprehensive documentation for all Python versions.',
-      category: 'Documentation'
+      term: 'int',
+      category: 'data-type',
+      language: 'python',
+      description: 'Integer data type in Python. Represents whole numbers without a decimal point.',
+      syntax: 'x = 5',
+      examples: [
+        'age = 25',
+        'count = -10',
+        'result = int("42")  # Convert string to integer'
+      ],
+      notes: 'Python integers have unlimited precision, meaning they can grow to arbitrary sizes limited only by available memory.'
     },
     {
-      title: 'Real Python',
-      url: 'https://realpython.com/',
-      description: 'Tutorials, articles, and news about Python programming.',
-      category: 'Tutorial'
+      term: 'float',
+      category: 'data-type',
+      language: 'python',
+      description: 'Floating-point data type in Python. Represents numbers with a decimal point.',
+      syntax: 'x = 3.14',
+      examples: [
+        'pi = 3.14159',
+        'temperature = -2.5',
+        'result = float("3.14")  # Convert string to float'
+      ],
+      notes: 'Floating-point arithmetic may lead to precision issues due to how computers represent decimals in binary.'
     },
     {
-      title: 'Python Package Index (PyPI)',
-      url: 'https://pypi.org/',
-      description: 'Repository of software for the Python programming language.',
-      category: 'Tool'
+      term: 'str',
+      category: 'data-type',
+      language: 'python',
+      description: 'String data type in Python. Represents sequences of characters.',
+      syntax: 'x = "hello"',
+      examples: [
+        'name = "Alice"',
+        'message = "Hello, World!"',
+        'multiline = """This is a\nmultiline string"""'
+      ],
+      notes: 'Strings in Python are immutable, meaning they cannot be changed after creation.'
     },
     {
-      title: 'Stack Overflow - Python',
-      url: 'https://stackoverflow.com/questions/tagged/python',
-      description: 'Community-driven Q&A for Python programmers.',
-      category: 'Community'
+      term: 'list',
+      category: 'data-type',
+      language: 'python',
+      description: 'A mutable, ordered collection of items in Python. Can contain items of different types.',
+      syntax: 'x = [1, 2, 3]',
+      examples: [
+        'numbers = [1, 2, 3, 4, 5]',
+        'mixed = [1, "hello", 3.14, True]',
+        'nested = [[1, 2], [3, 4]]'
+      ],
+      notes: 'Lists are mutable (can be modified after creation) and can store elements of different data types.'
+    },
+    
+    // Python Built-ins
+    {
+      term: 'print()',
+      category: 'function',
+      language: 'python',
+      description: 'Prints the specified message to the screen or other standard output device.',
+      syntax: 'print(value1, value2, ..., sep=" ", end="\n", file=sys.stdout, flush=False)',
+      examples: [
+        'print("Hello, World!")',
+        'print("Value:", 42)',
+        'print("X:", x, "Y:", y, sep="-")'
+      ],
+      notes: 'The print function takes multiple arguments and has optional parameters to control output format.'
     },
     {
-      title: 'Python Cheat Sheet',
-      url: 'https://www.pythoncheatsheet.org/',
-      description: 'A comprehensive Python cheatsheet for quick reference.',
-      category: 'Reference'
+      term: 'range()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns a sequence of numbers, starting from 0 by default, and increments by 1 by default, and stops before a specified number.',
+      syntax: 'range(stop) or range(start, stop[, step])',
+      examples: [
+        'for i in range(5):  # 0, 1, 2, 3, 4',
+        'for i in range(1, 6):  # 1, 2, 3, 4, 5',
+        'for i in range(0, 10, 2):  # 0, 2, 4, 6, 8'
+      ],
+      notes: 'The range() function returns an immutable sequence object, not a list. To get a list, use list(range()).'
+    },
+    {
+      term: 'len()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns the number of items in an object.',
+      syntax: 'len(object)',
+      examples: [
+        'len("hello")  # Returns 5',
+        'len([1, 2, 3])  # Returns 3',
+        'len({"a": 1, "b": 2})  # Returns 2'
+      ],
+      notes: 'Works with strings, lists, tuples, dictionaries, sets, and most collection objects.'
+    },
+    
+    // C++ Terms
+    {
+      term: 'int',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Integer data type in C++. Represents whole numbers without a decimal point.',
+      syntax: 'int x = 5;',
+      examples: [
+        'int age = 25;',
+        'int count = -10;',
+        'int result = std::stoi("42");  // Convert string to integer'
+      ],
+      notes: 'The size of int is usually 4 bytes, giving a typical range of -2,147,483,648 to 2,147,483,647.'
+    },
+    {
+      term: 'float',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Floating-point data type in C++. Represents numbers with a decimal point.',
+      syntax: 'float x = 3.14f;',
+      examples: [
+        'float pi = 3.14159f;',
+        'float temperature = -2.5f;',
+        'float result = std::stof("3.14");  // Convert string to float'
+      ],
+      notes: 'The suffix "f" indicates a float literal. Without it, decimal literals are treated as double by default.'
+    },
+    {
+      term: 'std::string',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'String class in C++ that represents sequences of characters.',
+      syntax: 'std::string s = "hello";',
+      examples: [
+        '#include <string>',
+        'std::string name = "Alice";',
+        'std::string message = "Hello, World!";',
+        'std::string combined = first + " " + last;  // String concatenation'
+      ],
+      notes: 'Requires the <string> header. Unlike C strings, std::string handles memory allocation automatically.'
+    },
+    
+    // Arduino/Wiring Functions
+    {
+      term: 'Serial.println()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Prints data to the serial port followed by a carriage return and newline characters.',
+      syntax: 'Serial.println(val) or Serial.println(val, format)',
+      examples: [
+        'Serial.println("Hello, Arduino!");',
+        'Serial.println(analogValue);',
+        'Serial.println(sensorValue, DEC);  // Print in decimal format'
+      ],
+      notes: 'Serial must be initialized with Serial.begin() before using Serial.println(). Common baud rates are 9600 or 115200.'
+    },
+    {
+      term: 'digitalWrite()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Writes a HIGH or LOW value to a digital pin.',
+      syntax: 'digitalWrite(pin, value)',
+      examples: [
+        'digitalWrite(13, HIGH);  // Turn LED on',
+        'digitalWrite(13, LOW);   // Turn LED off',
+        'digitalWrite(outputPin, state);  // Set pin to variable state'
+      ],
+      notes: 'The pin must be set as OUTPUT using pinMode() before using digitalWrite().'
+    },
+    {
+      term: 'digitalRead()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Reads the value from a specified digital pin, either HIGH or LOW.',
+      syntax: 'digitalRead(pin)',
+      examples: [
+        'int buttonState = digitalRead(2);',
+        'if (digitalRead(buttonPin) == HIGH) {',
+        '  // do something when button is pressed',
+        '}'
+      ],
+      notes: 'The pin should be set as INPUT using pinMode() before using digitalRead().'
+    },
+    {
+      term: 'analogRead()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Reads the value from a specified analog pin.',
+      syntax: 'analogRead(pin)',
+      examples: [
+        'int sensorValue = analogRead(A0);',
+        'float voltage = analogRead(A0) * (5.0 / 1023.0);'
+      ],
+      notes: 'Returns a value between 0 and 1023, representing voltages between 0 and the operating voltage (usually 5V or 3.3V).'
+    },
+    {
+      term: 'analogWrite()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Writes an analog value (PWM) to a pin.',
+      syntax: 'analogWrite(pin, value)',
+      examples: [
+        'analogWrite(9, 128);  // 50% duty cycle',
+        'analogWrite(9, 255);  // 100% duty cycle',
+        'analogWrite(ledPin, brightness);'
+      ],
+      notes: 'Works only on pins with PWM capability. Value range is 0-255, where 0 is off and 255 is fully on.'
+    },
+    {
+      term: 'delay()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Pauses the program for the specified amount of time (in milliseconds).',
+      syntax: 'delay(ms)',
+      examples: [
+        'delay(1000);  // pause for one second',
+        'delay(50);    // pause for 50 milliseconds'
+      ],
+      notes: 'During the delay, the microcontroller cannot read sensors, compute, or perform other tasks.'
+    },
+    {
+      term: 'millis()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Returns the number of milliseconds since the Arduino board began running the current program.',
+      syntax: 'millis()',
+      examples: [
+        'unsigned long currentTime = millis();',
+        'if (millis() - previousTime > interval) {',
+        '  // do something periodically without using delay()',
+        '}'
+      ],
+      notes: 'Overflows after approximately 50 days. Returns an unsigned long value.'
+    },
+    {
+      term: 'bit()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Computes the value of the specified bit (bit 0 is 1, bit 1 is 2, bit 2 is 4, etc.).',
+      syntax: 'bit(n)',
+      examples: [
+        'bit(3);  // Returns 8 (2^3)',
+        'PORTD |= bit(5);  // Set bit 5 on PORTD',
+        'PORTB &= ~bit(2);  // Clear bit 2 on PORTB'
+      ],
+      notes: 'Useful for setting and clearing individual bits in registers. Equivalent to (1 << n).'
     }
   ]
 };
@@ -247,6 +461,7 @@ const cppReference: ReferenceLanguage = {
   name: 'C++',
   description: 'C++ is a powerful general-purpose programming language that extends C with object-oriented features. It\'s used for system/software development, game development, and more.',
   icon: <Code size={24} className="text-blue-800" />,
+  terms: [],
   sections: [
     {
       id: 'basics',
@@ -262,326 +477,8 @@ int main() {
     return 0;
 }`,
           explanation: 'This is the minimal C++ program that prints "Hello, World!" to the console.'
-        },
-        {
-          title: 'Basic Control Structures',
-          code: `#include <iostream>
-using namespace std;
-
-int main() {
-    // If-else statement
-    int x = 10;
-    if (x > 5) {
-        cout << "x is greater than 5" << endl;
-    } else {
-        cout << "x is not greater than 5" << endl;
-    }
-    
-    // For loop
-    for (int i = 0; i < 5; i++) {
-        cout << i << " ";
-    }
-    cout << endl;
-    
-    // While loop
-    int j = 0;
-    while (j < 5) {
-        cout << j << " ";
-        j++;
-    }
-    cout << endl;
-    
-    return 0;
-}`,
-          explanation: 'This example shows basic control structures in C++: if-else statement, for loop, and while loop.'
-        }
-      ],
-      subSections: [
-        {
-          id: 'variables',
-          title: 'Variables',
-          content: 'In C++, variables must be declared with their data type before they can be used.',
-          examples: [
-            {
-              title: 'Variable Declaration and Initialization',
-              code: `#include <iostream>
-#include <string>
-using namespace std;
-
-int main() {
-    // Integer
-    int x = 5;
-    
-    // Float and double
-    float f = 3.14f;
-    double d = 3.14159;
-    
-    // Character
-    char c = 'A';
-    
-    // Boolean
-    bool isTrue = true;
-    
-    // String (from C++ standard library)
-    string str = "Hello, C++!";
-    
-    cout << "x = " << x << endl;
-    cout << "f = " << f << endl;
-    cout << "d = " << d << endl;
-    cout << "c = " << c << endl;
-    cout << "isTrue = " << isTrue << endl;
-    cout << "str = " << str << endl;
-    
-    return 0;
-}`,
-              explanation: 'Unlike Python, C++ is statically typed, meaning variable types must be explicitly declared.'
-            }
-          ]
-        },
-        {
-          id: 'data-types',
-          title: 'Data Types',
-          content: 'C++ has several built-in data types for different kinds of values.',
-          examples: [
-            {
-              title: 'Common Data Types',
-              code: `#include <iostream>
-#include <string>
-#include <vector>
-#include <map>
-using namespace std;
-
-int main() {
-    // Fundamental types
-    int i = 42;
-    float f = 3.14f;
-    double d = 2.71828;
-    char c = 'X';
-    bool b = true;
-    
-    // Complex types
-    string s = "C++ String";
-    
-    // Container types
-    vector<int> v = {1, 2, 3, 4, 5};
-    map<string, int> m = {{
-        {"one", 1},
-        {"two", 2},
-        {"three", 3}
-    }};
-    
-    // Iterating through vector
-    cout << "Vector elements: ";
-    for (const auto& element : v) {
-        cout << element << " ";
-    }
-    cout << endl;
-    
-    // Accessing map elements
-    cout << "Map elements:" << endl;
-    for (const auto& [key, value] : m) {
-        cout << key << ": " << value << endl;
-    }
-    
-    return 0;
-}`,
-              explanation: 'C++ provides various data types for different use cases, including primitive types and container types from the Standard Template Library (STL).'
-            }
-          ]
         }
       ]
-    },
-    {
-      id: 'functions',
-      title: 'Functions',
-      content: 'Functions in C++ are defined with a return type, name, and parameters.',
-      examples: [
-        {
-          title: 'Function Definition and Call',
-          code: `#include <iostream>
-using namespace std;
-
-// Function declaration
-int add(int a, int b);
-
-int main() {
-    int result = add(5, 3);
-    cout << "5 + 3 = " << result << endl;
-    return 0;
-}
-
-// Function definition
-int add(int a, int b) {
-    return a + b;
-}`,
-          explanation: 'Functions in C++ can be declared before they are defined. This example shows how to define and call a simple function.'
-        },
-        {
-          title: 'Default Parameters',
-          code: `#include <iostream>
-using namespace std;
-
-// Function with default parameters
-void greet(string name = "User", string greeting = "Hello") {
-    cout << greeting << ", " << name << "!" << endl;
-}
-
-int main() {
-    greet();                // Uses both defaults
-    greet("Alice");         // Uses default greeting
-    greet("Bob", "Hi");     // Uses no defaults
-    return 0;
-}`,
-          explanation: 'C++ functions can have default parameter values, which are used when the caller doesn\'t provide that argument.'
-        }
-      ]
-    },
-    {
-      id: 'classes',
-      title: 'Classes and Objects',
-      content: 'C++ is an object-oriented programming language where data and functions can be encapsulated in classes.',
-      examples: [
-        {
-          title: 'Class Definition',
-          code: `#include <iostream>
-#include <string>
-using namespace std;
-
-class Person {
-private:
-    string name;
-    int age;
-    
-public:
-    // Constructor
-    Person(string name, int age) {
-        this->name = name;
-        this->age = age;
-    }
-    
-    // Member function
-    void greet() {
-        cout << "Hello, my name is " << name << 
-                " and I am " << age << " years old." << endl;
-    }
-    
-    // Getters and setters
-    string getName() { return name; }
-    void setName(string name) { this->name = name; }
-    int getAge() { return age; }
-    void setAge(int age) { this->age = age; }
-};
-
-int main() {
-    // Create an object
-    Person person("Alice", 25);
-    person.greet();
-    
-    // Use getters and setters
-    person.setName("Bob");
-    cout << "New name: " << person.getName() << endl;
-    
-    return 0;
-}`,
-          explanation: 'This example shows how to define a class in C++ with private data members, a constructor, member functions, and getters/setters.'
-        }
-      ]
-    },
-    {
-      id: 'memory',
-      title: 'Memory Management',
-      content: 'C++ allows manual memory management using new and delete operators, as well as smart pointers for automatic memory management.',
-      examples: [
-        {
-          title: 'Dynamic Memory Allocation',
-          code: `#include <iostream>
-using namespace std;
-
-int main() {
-    // Dynamic allocation of a single integer
-    int* p = new int;
-    *p = 10;
-    cout << "Value: " << *p << endl;
-    delete p;  // Free the memory
-    
-    // Dynamic allocation of an array
-    int* arr = new int[5];
-    for (int i = 0; i < 5; i++) {
-        arr[i] = i * 2;
-    }
-    for (int i = 0; i < 5; i++) {
-        cout << arr[i] << " ";
-    }
-    cout << endl;
-    delete[] arr;  // Free the array memory
-    
-    return 0;
-}`,
-          explanation: 'C++ allows dynamic memory allocation using new and delete operators. It\'s important to free the allocated memory to avoid memory leaks.'
-        },
-        {
-          title: 'Smart Pointers',
-          code: `#include <iostream>
-#include <memory>
-using namespace std;
-
-class Resource {
-public:
-    Resource() { cout << "Resource acquired" << endl; }
-    ~Resource() { cout << "Resource released" << endl; }
-    void use() { cout << "Resource being used" << endl; }
-};
-
-int main() {
-    // Unique pointer - exclusive ownership
-    unique_ptr<Resource> res1 = make_unique<Resource>();
-    res1->use();
-    
-    // Shared pointer - shared ownership
-    shared_ptr<Resource> res2 = make_shared<Resource>();
-    {
-        shared_ptr<Resource> res3 = res2;  // Reference count = 2
-        res3->use();
-    }  // res3 goes out of scope, but resource is not deleted yet
-    res2->use();  // Resource still accessible through res2
-    
-    return 0;
-}  // Both res1 and res2 go out of scope, resources are automatically released`,
-          explanation: 'Smart pointers in C++ provide automatic memory management. unique_ptr represents exclusive ownership, while shared_ptr allows shared ownership of a resource.'
-        }
-      ]
-    }
-  ],
-  resources: [
-    {
-      title: 'CPP Reference',
-      url: 'https://en.cppreference.com/',
-      description: 'Comprehensive reference for C and C++ languages and standard libraries.',
-      category: 'Documentation'
-    },
-    {
-      title: 'Learn CPP',
-      url: 'https://www.learncpp.com/',
-      description: 'A free website devoted to teaching you how to program in C++.',
-      category: 'Tutorial'
-    },
-    {
-      title: 'C++ Core Guidelines',
-      url: 'https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines',
-      description: 'A set of core guidelines for modern C++ developed by Bjarne Stroustrup and Herb Sutter.',
-      category: 'Reference'
-    },
-    {
-      title: 'Stack Overflow - C++',
-      url: 'https://stackoverflow.com/questions/tagged/c%2B%2B',
-      description: 'Community-driven Q&A for C++ programmers.',
-      category: 'Community'
-    },
-    {
-      title: 'Compiler Explorer',
-      url: 'https://godbolt.org/',
-      description: 'An interactive online compiler which shows the assembly output of compiled C++ code.',
-      category: 'Tool'
     }
   ]
 };
@@ -592,6 +489,7 @@ const wiringReference: ReferenceLanguage = {
   name: 'Arduino/Wiring',
   description: 'Wiring is a programming framework for microcontrollers. Arduino uses a variant of this language, which is essentially C++ with specific libraries for hardware interaction.',
   icon: <Terminal size={24} className="text-green-600" />,
+  terms: [],
   sections: [
     {
       id: 'basics',
@@ -620,214 +518,6 @@ void loop() {
           explanation: 'Arduino programs have two main functions: setup() runs once at the beginning, and loop() runs repeatedly afterwards.'
         }
       ]
-    },
-    {
-      id: 'digital-io',
-      title: 'Digital Input/Output',
-      content: 'Digital pins can be set as input or output and read or written to as HIGH (1) or LOW (0).',
-      examples: [
-        {
-          title: 'Digital Output - LED Control',
-          code: `const int ledPin = 13;  // Built-in LED on many Arduino boards
-
-void setup() {
-  pinMode(ledPin, OUTPUT);  // Set the pin as output
-}
-
-void loop() {
-  digitalWrite(ledPin, HIGH);  // Turn LED on (HIGH is voltage level)
-  delay(1000);                 // Wait for a second
-  digitalWrite(ledPin, LOW);   // Turn LED off by making the voltage LOW
-  delay(1000);                 // Wait for a second
-}`,
-          explanation: 'This example shows how to control a digital output pin to blink an LED.'
-        },
-        {
-          title: 'Digital Input - Button',
-          code: `const int buttonPin = 2;  // Pin connected to pushbutton
-const int ledPin = 13;     // Pin connected to LED
-
-// Variables will change:
-int buttonState = 0;       // Variable for reading button status
-
-void setup() {
-  pinMode(ledPin, OUTPUT);    // Initialize LED pin as output
-  pinMode(buttonPin, INPUT);  // Initialize button pin as input
-}
-
-void loop() {
-  // Read the state of the pushbutton
-  buttonState = digitalRead(buttonPin);
-
-  // Check if button is pressed
-  if (buttonState == HIGH) {
-    digitalWrite(ledPin, HIGH);  // Turn LED on
-  } else {
-    digitalWrite(ledPin, LOW);   // Turn LED off
-  }
-}`,
-          explanation: 'This example shows how to read a digital input from a button and control an LED based on the button state.'
-        }
-      ]
-    },
-    {
-      id: 'analog-io',
-      title: 'Analog Input/Output',
-      content: 'Analog pins can read variable voltage levels, and PWM pins can simulate analog output.',
-      examples: [
-        {
-          title: 'Analog Input - Reading a Potentiometer',
-          code: `const int potPin = A0;  // Analog input pin connected to potentiometer
-int potValue = 0;       // Value from the analog pin
-
-void setup() {
-  Serial.begin(9600);  // Initialize serial communication
-}
-
-void loop() {
-  // Read the analog input
-  potValue = analogRead(potPin);  // Returns value between 0-1023
-  
-  // Print the result
-  Serial.print("Potentiometer value: ");
-  Serial.println(potValue);
-  
-  delay(100);  // Small delay for stability
-}`,
-          explanation: 'This example shows how to read analog values from a potentiometer connected to an analog pin.'
-        },
-        {
-          title: 'Analog Output (PWM) - LED Fading',
-          code: `const int ledPin = 9;  // PWM pin connected to LED
-
-void setup() {
-  // No need to declare pinMode for analogWrite
-}
-
-void loop() {
-  // Fade in (from min to max)
-  for (int fadeValue = 0; fadeValue <= 255; fadeValue += 5) {
-    analogWrite(ledPin, fadeValue);  // Sets the value (0-255)
-    delay(30);  // Wait for 30 milliseconds
-  }
-  
-  // Fade out (from max to min)
-  for (int fadeValue = 255; fadeValue >= 0; fadeValue -= 5) {
-    analogWrite(ledPin, fadeValue);
-    delay(30);
-  }
-}`,
-          explanation: 'This example demonstrates how to use analogWrite() for PWM output to fade an LED between off and fully on.'
-        }
-      ]
-    },
-    {
-      id: 'serial',
-      title: 'Serial Communication',
-      content: 'Arduino boards can communicate with a computer or other devices via serial communication.',
-      examples: [
-        {
-          title: 'Basic Serial Communication',
-          code: `void setup() {
-  Serial.begin(9600);  // Initialize serial at 9600 baud rate
-  Serial.println("Arduino is ready");
-}
-
-void loop() {
-  // Send data to the serial port
-  Serial.println("Hello from Arduino!");
-  
-  // Check if data is available to read
-  if (Serial.available() > 0) {
-    // Read the incoming byte
-    char incomingByte = Serial.read();
-    
-    // Echo the incoming byte back
-    Serial.print("I received: ");
-    Serial.println(incomingByte);
-  }
-  
-  delay(1000);  // Wait for a second
-}`,
-          explanation: 'This example shows how to set up serial communication, send data, and receive data from the serial port.'
-        }
-      ]
-    },
-    {
-      id: 'sensors',
-      title: 'Working with Sensors',
-      content: 'Arduino can interface with various sensors to read data from the physical environment.',
-      examples: [
-        {
-          title: 'Temperature Sensor (DHT11/DHT22)',
-          code: `#include <DHT.h>
-
-#define DHTPIN 2      // Pin connected to DHT sensor
-#define DHTTYPE DHT11 // DHT 11 or DHT22 sensor type
-
-DHT dht(DHTPIN, DHTTYPE);  // Initialize DHT sensor
-
-void setup() {
-  Serial.begin(9600);
-  dht.begin();  // Initialize the DHT sensor
-}
-
-void loop() {
-  // Wait a few seconds between measurements
-  delay(2000);
-  
-  // Reading temperature or humidity takes about 250 milliseconds
-  float h = dht.readHumidity();     // Read humidity
-  float t = dht.readTemperature();  // Read temperature in Celsius
-  
-  // Check if any reads failed and exit early
-  if (isnan(h) || isnan(t)) {
-    Serial.println("Failed to read from DHT sensor!");
-    return;
-  }
-  
-  Serial.print("Humidity: ");
-  Serial.print(h);
-  Serial.print(" %\t");
-  Serial.print("Temperature: ");
-  Serial.print(t);
-  Serial.println(" °C");
-}`,
-          explanation: 'This example shows how to read temperature and humidity data from a DHT11 or DHT22 sensor using the DHT library.'
-        }
-      ]
-    }
-  ],
-  resources: [
-    {
-      title: 'Arduino Reference',
-      url: 'https://www.arduino.cc/reference/en/',
-      description: 'Official Arduino language reference documentation.',
-      category: 'Documentation'
-    },
-    {
-      title: 'Arduino Tutorials',
-      url: 'https://www.arduino.cc/en/Tutorial/HomePage',
-      description: 'Official tutorials for Arduino projects and features.',
-      category: 'Tutorial'
-    },
-    {
-      title: 'Arduino Forum',
-      url: 'https://forum.arduino.cc/',
-      description: 'Official Arduino forum for community discussion and support.',
-      category: 'Community'
-    },
-    {
-      title: 'Arduino IDE',
-      url: 'https://www.arduino.cc/en/software',
-      description: 'Integrated Development Environment for Arduino programming.',
-      category: 'Tool'
-    },
-    {
-      title: 'Arduino Cheat Sheet',
-      url: 'https://github.com/liffiton/Arduino-Cheat-Sheet',
-      description: 'A comprehensive Arduino/Wiring cheat sheet for quick reference.',
-      category: 'Reference'
     }
   ]
 };
@@ -845,6 +535,11 @@ const CodeReferenceWindow: React.FC<CodeReferenceWindowProps> = ({ onClose, onMi
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
+  
+  // Term lookup state
+  const [termLookup, setTermLookup] = useState<string>("");
+  const [foundTerms, setFoundTerms] = useState<CodeTerm[]>([]);
+  const [selectedTerm, setSelectedTerm] = useState<CodeTerm | null>(null);
   
   // Language selection handler
   const handleLanguageSelect = (language: ReferenceLanguage) => {
@@ -864,7 +559,40 @@ const CodeReferenceWindow: React.FC<CodeReferenceWindowProps> = ({ onClose, onMi
     setCurrentSubSection(subSection);
   };
   
-  // Effect for searching
+  // Term lookup handler
+  const handleTermLookup = (term: string) => {
+    setTermLookup(term);
+    setSelectedTerm(null);
+    
+    if (term.trim() === "") {
+      setFoundTerms([]);
+      return;
+    }
+    
+    const terms: CodeTerm[] = [];
+    
+    // Search for matching terms across all languages
+    LANGUAGES.forEach(language => {
+      language.terms.forEach(codeTerm => {
+        // Check if the term or part of it matches
+        if (codeTerm.term.toLowerCase().includes(term.toLowerCase()) || 
+            term.toLowerCase() === codeTerm.term.toLowerCase()) {
+          terms.push(codeTerm);
+        }
+      });
+    });
+    
+    setFoundTerms(terms);
+  };
+  
+  // Handle term selection
+  const handleTermSelect = (term: CodeTerm) => {
+    setSelectedTerm(term);
+    setFoundTerms([]);
+    setTermLookup("");
+  };
+  
+  // Effect for searching documentation content
   useEffect(() => {
     if (searchTerm.trim() === "") {
       setSearchResults([]);
@@ -940,14 +668,14 @@ const CodeReferenceWindow: React.FC<CodeReferenceWindowProps> = ({ onClose, onMi
         });
       });
       
-      // Search in resources
-      language.resources.forEach(resource => {
-        if (resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            resource.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            resource.category.toLowerCase().includes(searchTerm.toLowerCase())) {
+      // Search in terms
+      language.terms.forEach(term => {
+        if (term.term.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            term.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            term.syntax.toLowerCase().includes(searchTerm.toLowerCase())) {
           results.push({
-            type: 'resource',
-            item: resource,
+            type: 'term',
+            item: term,
             language: language
           });
         }
@@ -955,6 +683,7 @@ const CodeReferenceWindow: React.FC<CodeReferenceWindowProps> = ({ onClose, onMi
     });
     
     setSearchResults(results);
+    setIsSearching(false);
   }, [searchTerm]);
   
   // Function to render syntax-highlighted code
@@ -1029,44 +758,19 @@ const CodeReferenceWindow: React.FC<CodeReferenceWindowProps> = ({ onClose, onMi
                   </div>
                 </div>
               );
-            } else if (result.type === 'subsection') {
+            } else if (result.type === 'term') {
               return (
                 <div 
-                  key={`subsection-${index}`} 
-                  className="p-3 bg-purple-50 rounded-md border border-purple-200 cursor-pointer hover:bg-purple-100 transition-colors"
+                  key={`term-${index}`}
+                  className="p-3 bg-indigo-50 rounded-md border border-indigo-200 cursor-pointer hover:bg-indigo-100 transition-colors"
                   onClick={() => {
-                    handleLanguageSelect(result.language);
-                    handleSectionSelect(result.section);
-                    handleSubSectionSelect(result.item);
+                    handleTermSelect(result.item);
                     setSearchTerm('');
                   }}
                 >
-                  <h3 className="text-md font-bold">{result.item.title}</h3>
-                  <p className="text-sm text-gray-600">{result.language.name} - {result.section.title}</p>
-                  <p>{result.item.content}</p>
-                </div>
-              );
-            } else if (result.type === 'resource') {
-              return (
-                <div 
-                  key={`resource-${index}`} 
-                  className="p-3 bg-indigo-50 rounded-md border border-indigo-200 hover:bg-indigo-100 transition-colors"
-                >
-                  <h3 className="text-md font-bold flex justify-between">
-                    <span>{result.item.title}</span>
-                    <a 
-                      href={result.item.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 flex items-center"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <ExternalLink size={14} className="mr-1" />
-                      <span>Visit</span>
-                    </a>
-                  </h3>
+                  <h3 className="text-md font-bold font-mono">{result.item.term}</h3>
                   <p className="text-sm text-gray-600">{result.language.name} - {result.item.category}</p>
-                  <p>{result.item.description}</p>
+                  <p>{result.item.description.substring(0, 100)}{result.item.description.length > 100 ? '...' : ''}</p>
                 </div>
               );
             }
@@ -1138,25 +842,106 @@ const CodeReferenceWindow: React.FC<CodeReferenceWindowProps> = ({ onClose, onMi
             ))}
           </div>
           
-          <h3 className="text-lg font-bold mb-2">Resources</h3>
-          <div className="space-y-2">
-            {currentLanguage.resources.map((resource, index) => (
-              <a 
-                key={index}
-                href={resource.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex justify-between items-center p-3 bg-blue-50 rounded-md border border-blue-100 hover:bg-blue-100 transition-colors"
-              >
-                <div>
-                  <h4 className="font-bold">{resource.title}</h4>
-                  <p className="text-sm text-gray-600">{resource.description}</p>
+          <h3 className="text-lg font-bold mb-2">Term Lookup</h3>
+          <div className="space-y-4">
+            <div className="p-3 bg-white rounded-md border border-gray-200">
+              <p className="mb-2">Look up coding terms, functions, data types, and more:</p>
+              <div className="flex">
+                <input
+                  type="text"
+                  value={termLookup}
+                  onChange={(e) => handleTermLookup(e.target.value)}
+                  placeholder="e.g., int, Serial.println(), bit()..."
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+                <button 
+                  onClick={() => handleTermLookup(termLookup)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                >
+                  Search
+                </button>
+              </div>
+              
+              {/* Search results */}
+              {foundTerms.length > 0 && (
+                <div className="mt-3 max-h-60 overflow-y-auto">
+                  <p className="text-sm text-gray-500 mb-2">{foundTerms.length} result(s) found</p>
+                  <div className="space-y-2">
+                    {foundTerms.map((term, idx) => (
+                      <div 
+                        key={idx}
+                        onClick={() => handleTermSelect(term)}
+                        className="p-2 bg-gray-50 rounded border border-gray-200 cursor-pointer hover:bg-gray-100"
+                      >
+                        <div className="flex justify-between items-center">
+                          <div className="font-mono font-medium">{term.term}</div>
+                          <div>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              term.language === 'python' ? 'bg-blue-100 text-blue-800' :
+                              term.language === 'cpp' ? 'bg-purple-100 text-purple-800' :
+                              'bg-green-100 text-green-800'
+                            }`}>
+                              {term.language === 'python' ? 'Python' :
+                               term.language === 'cpp' ? 'C++' : 'Arduino'}
+                            </span>
+                            <span className="ml-1 px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">{term.category}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">{resource.category}</span>
+              )}
+            </div>
+            
+            {/* Selected term details */}
+            {selectedTerm && (
+              <div className="p-4 bg-white rounded-md border border-gray-200 shadow">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="text-lg font-mono font-bold">{selectedTerm.term}</h4>
+                  <div>
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      selectedTerm.language === 'python' ? 'bg-blue-100 text-blue-800' :
+                      selectedTerm.language === 'cpp' ? 'bg-purple-100 text-purple-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {selectedTerm.language === 'python' ? 'Python' :
+                       selectedTerm.language === 'cpp' ? 'C++' : 'Arduino'}
+                    </span>
+                    <span className="ml-1 px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">{selectedTerm.category}</span>
+                  </div>
                 </div>
-              </a>
-            ))}
+                
+                <div className="mb-3">
+                  <p className="text-gray-700">{selectedTerm.description}</p>
+                </div>
+                
+                <div className="mb-3">
+                  <h5 className="font-bold mb-1">Syntax:</h5>
+                  <pre className="bg-gray-900 text-gray-100 p-2 rounded-md overflow-x-auto font-mono text-sm">
+                    <code>{selectedTerm.syntax}</code>
+                  </pre>
+                </div>
+                
+                <div className="mb-3">
+                  <h5 className="font-bold mb-1">Examples:</h5>
+                  <div className="space-y-2">
+                    {selectedTerm.examples.map((example, idx) => (
+                      <pre key={idx} className="bg-gray-900 text-gray-100 p-2 rounded-md overflow-x-auto font-mono text-sm">
+                        <code>{example}</code>
+                      </pre>
+                    ))}
+                  </div>
+                </div>
+                
+                {selectedTerm.notes && (
+                  <div>
+                    <h5 className="font-bold mb-1">Notes:</h5>
+                    <p className="text-gray-700">{selectedTerm.notes}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       );
