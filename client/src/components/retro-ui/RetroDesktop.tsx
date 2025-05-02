@@ -279,6 +279,10 @@ const RetroDesktop: React.FC = () => {
       openHelpCenterWindow();
     };
     
+    const handleOpenElectronicsCheatSheet = () => {
+      openElectronicsCheatSheetWindow();
+    };
+    
     window.addEventListener('openTerminal', handleOpenTerminal);
     window.addEventListener('openBrowser', handleOpenBrowser);
     window.addEventListener('openProfile', handleOpenProfile);
@@ -290,6 +294,7 @@ const RetroDesktop: React.FC = () => {
     window.addEventListener('openComponentGlossary', handleOpenComponentGlossary);
     window.addEventListener('openCodeReference', handleOpenCodeReference);
     window.addEventListener('openHelpCenter', handleOpenHelpCenter);
+    window.addEventListener('openElectronicsCheatSheet', handleOpenElectronicsCheatSheet);
     
     return () => {
       window.removeEventListener('openTerminal', handleOpenTerminal);
@@ -303,6 +308,7 @@ const RetroDesktop: React.FC = () => {
       window.removeEventListener('openComponentGlossary', handleOpenComponentGlossary);
       window.removeEventListener('openCodeReference', handleOpenCodeReference);
       window.removeEventListener('openHelpCenter', handleOpenHelpCenter);
+      window.removeEventListener('openElectronicsCheatSheet', handleOpenElectronicsCheatSheet);
     };
   }, []);
   
@@ -706,6 +712,20 @@ const RetroDesktop: React.FC = () => {
         isActive={windows.some(w => w.id === "codereference" && w.isActive)}
       />, 
       "📘",
+      { width: 900, height: 700 }
+    );
+  };
+  
+  const openElectronicsCheatSheetWindow = () => {
+    openWindow(
+      "electronicscheatsheet", 
+      "Electronics Cheat Sheets", 
+      <ElectronicsCheatSheetWindow 
+        onClose={() => closeWindow("electronicscheatsheet")} 
+        onMinimize={() => minimizeWindow("electronicscheatsheet")}
+        isActive={windows.some(w => w.id === "electronicscheatsheet" && w.isActive)}
+      />, 
+      "📊",
       { width: 900, height: 700 }
     );
   };
