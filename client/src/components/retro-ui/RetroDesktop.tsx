@@ -681,6 +681,20 @@ const RetroDesktop: React.FC = () => {
     );
   };
   
+  const openHelpCenterWindow = () => {
+    openWindow(
+      "helpcenter", 
+      "Help Center", 
+      <HelpCenterWindow 
+        onClose={() => closeWindow("helpcenter")} 
+        onMinimize={() => minimizeWindow("helpcenter")}
+        isActive={windows.some(w => w.id === "helpcenter" && w.isActive)}
+      />, 
+      "❓",
+      { width: 850, height: 650 }
+    );
+  };
+
   const openCodeReferenceWindow = () => {
     openWindow(
       "codereference", 
