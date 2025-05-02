@@ -870,6 +870,9 @@ void loop() {
 const LANGUAGES: ReferenceLanguage[] = [pythonReference, cppReference, wiringReference];
 
 const CodeReferenceWindow: React.FC<CodeReferenceWindowProps> = ({ onClose, onMinimize, isActive }) => {
+  // Track recent terms for history feature
+  const [recentTerms, setRecentTerms] = useState<CodeTerm[]>([]);
+  const [showHistory, setShowHistory] = useState<boolean>(false);
   // State for currently selected language, section, and subsection
   const [currentLanguage, setCurrentLanguage] = useState<ReferenceLanguage | null>(null);
   const [currentSection, setCurrentSection] = useState<ReferenceSection | null>(null);
@@ -934,6 +937,11 @@ const CodeReferenceWindow: React.FC<CodeReferenceWindowProps> = ({ onClose, onMi
     setSelectedTerm(term);
     setFoundTerms([]);
     setTermLookup("");
+    
+    // Add to recent terms history (avoid duplicates)
+    if (!recentTerms.some(t => t.term === term.term && t.language === term.language)) {
+      setRecentTerms(prev => [term, ...prev].slice(0, 10)); // Keep last 10 terms
+    }
   };
   
   // Effect for searching documentation content
@@ -1031,10 +1039,26 @@ const CodeReferenceWindow: React.FC<CodeReferenceWindowProps> = ({ onClose, onMi
   }, [searchTerm]);
   
   // Function to render syntax-highlighted code
-  const renderCode = (code: string) => {
+  const renderCode = (code: string, language = 'text') => {
+    // Use different syntax highlighting colors based on common patterns
+    const codeWithHighlighting = code
+      // Highlight keywords
+      .replace(/\b(if|else|for|while|return|function|class|def|import|from|void|int|float|double|bool|char|string|const|let|var)\b/g, 
+               '<span class="text-purple-400">$1</span>')
+      // Highlight strings
+      .replace(/(["'])(.*?)\1/g, '<span class="text-amber-400">$1$2$1</span>')
+      // Highlight numbers
+      .replace(/\b(\d+)\b/g, '<span class="text-cyan-400">$1</span>')
+      // Highlight comments
+      .replace(/(\/\/.*)|(\/\*[\s\S]*?\*\/)|(#.*)/g, '<span class="text-green-400">$1$2$3</span>')
+      // Highlight functions
+      .replace(/\b([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g, '<span class="text-blue-400">$1</span>(')
+      // Highlight brackets and semicolons
+      .replace(/([\{\}\(\)\[\]\;])/g, '<span class="text-gray-500">$1</span>');
+      
     return (
       <pre className="bg-gray-900 text-gray-100 p-4 rounded-md overflow-x-auto font-mono text-sm">
-        <code>{code}</code>
+        <code dangerouslySetInnerHTML={{ __html: codeWithHighlighting }} />
       </pre>
     );
   };
@@ -1132,16 +1156,60 @@ const CodeReferenceWindow: React.FC<CodeReferenceWindowProps> = ({ onClose, onMi
       return renderSearchResults();
     }
     
-    // If no language selected, show language selection
+    // If no language selected, show language selection with additional info
     if (!currentLanguage) {
       return (
         <div className="p-4">
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+            <h2 className="text-xl font-bold mb-2">Programming Reference Guide</h2>
+            <p className="mb-3">Welcome to the interactive programming reference guide! Browse language documentation, look up specific terms, or search for code examples.</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className="bg-white p-3 rounded-md border border-gray-200 shadow-sm">
+                <h3 className="font-bold flex items-center text-purple-800">
+                  <span className="inline-block w-3 h-3 bg-purple-500 mr-2 rounded-full"></span>
+                  Quick Tips
+                </h3>
+                <ul className="mt-2 space-y-1 text-sm">
+                  <li className="flex items-start">
+                    <span className="text-green-500 mr-1">✓</span> 
+                    <span>Search for terms like <code className="text-red-600 bg-gray-100 px-1 rounded">int</code>, <code className="text-red-600 bg-gray-100 px-1 rounded">for</code>, or <code className="text-red-600 bg-gray-100 px-1 rounded">Serial.println()</code></span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-green-500 mr-1">✓</span> 
+                    <span>Browse by language and topic using the cards below</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-green-500 mr-1">✓</span> 
+                    <span>View your recently accessed terms with the history button</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <div className="bg-white p-3 rounded-md border border-gray-200 shadow-sm">
+                <h3 className="font-bold flex items-center text-amber-800">
+                  <span className="inline-block w-3 h-3 bg-amber-500 mr-2 rounded-full"></span>
+                  Content Included
+                </h3>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <div className="text-xs p-1 bg-blue-50 rounded text-center">Functions & Methods</div>
+                  <div className="text-xs p-1 bg-blue-50 rounded text-center">Data Types</div>
+                  <div className="text-xs p-1 bg-blue-50 rounded text-center">Keywords</div>
+                  <div className="text-xs p-1 bg-blue-50 rounded text-center">Operators</div>
+                  <div className="text-xs p-1 bg-blue-50 rounded text-center">Syntax Rules</div>
+                  <div className="text-xs p-1 bg-blue-50 rounded text-center">Code Examples</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
           <h2 className="text-xl font-bold mb-4">Select a Programming Language</h2>
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {LANGUAGES.map((language) => (
               <div 
                 key={language.id}
-                className="p-4 bg-white rounded-md border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                className="p-4 bg-white rounded-md border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-shadow cursor-pointer"
                 onClick={() => handleLanguageSelect(language)}
               >
                 <div className="flex items-center mb-2">
@@ -1149,15 +1217,78 @@ const CodeReferenceWindow: React.FC<CodeReferenceWindowProps> = ({ onClose, onMi
                   <h3 className="text-lg font-bold ml-2">{language.name}</h3>
                 </div>
                 <p className="text-sm text-gray-600">{language.description}</p>
+                <div className="flex justify-between mt-3">
+                  <div className="text-xs text-gray-500">{language.terms.length} terms</div>
+                  <div className="text-xs text-blue-600">Browse &rarr;</div>
+                </div>
               </div>
             ))}
+          </div>
+          
+          <div className="mt-6 p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <h3 className="font-medium text-gray-700 mb-2">Programming Paradigms Overview</h3>
+            <div className="text-sm text-gray-600">
+              <p className="mb-2">Different programming languages support different <strong>paradigms</strong> or styles of programming:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li><strong>Procedural:</strong> Step-by-step instructions (C, Python)</li>
+                <li><strong>Object-Oriented:</strong> Organized around objects and classes (Java, C++, Python)</li>
+                <li><strong>Functional:</strong> Functions as first-class citizens (Haskell, JavaScript)</li>
+                <li><strong>Event-Driven:</strong> Flow determined by events (JavaScript for web)</li>
+              </ul>
+            </div>
           </div>
         </div>
       );
     }
     
-    // If language selected but no section, show section selection
+    // If language selected but no section, show section selection with improved organization
     if (!currentSection) {
+      // Group sections by categories for better organization
+      const sectionCategories = {
+        basics: ['syntax', 'basic', 'fundamental', 'structure', 'concept'],
+        dataAndTypes: ['data', 'type', 'variable', 'array', 'object'],
+        controlFlow: ['control', 'condition', 'loop', 'flow'],
+        functions: ['function', 'method', 'procedure'],
+        advanced: ['class', 'object', 'exception', 'thread', 'advanced', 'library']
+      };
+      
+      // Categorize sections
+      const categorizedSections = {
+        basics: [],
+        dataAndTypes: [],
+        controlFlow: [],
+        functions: [],
+        advanced: [],
+        other: []
+      };
+      
+      currentLanguage.sections.forEach(section => {
+        const lowerTitle = section.title.toLowerCase();
+        let categorized = false;
+        
+        for (const [category, keywords] of Object.entries(sectionCategories)) {
+          if (keywords.some(keyword => lowerTitle.includes(keyword))) {
+            categorizedSections[category].push(section);
+            categorized = true;
+            break;
+          }
+        }
+        
+        if (!categorized) {
+          categorizedSections.other.push(section);
+        }
+      });
+      
+      // Category display names
+      const categoryNames = {
+        basics: 'Language Basics',
+        dataAndTypes: 'Data Types & Variables',
+        controlFlow: 'Control Flow',
+        functions: 'Functions & Methods',
+        advanced: 'Advanced Topics',
+        other: 'Additional Topics'
+      };
+      
       return (
         <div className="p-4">
           <div className="flex items-center mb-4">
@@ -1170,21 +1301,74 @@ const CodeReferenceWindow: React.FC<CodeReferenceWindowProps> = ({ onClose, onMi
             <h2 className="text-xl font-bold">{currentLanguage.name} Reference</h2>
           </div>
           
-          <p className="mb-4">{currentLanguage.description}</p>
-          
-          <h3 className="text-lg font-bold mb-2">Topics</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-            {currentLanguage.sections.map((section) => (
-              <div 
-                key={section.id}
-                className="p-3 bg-white rounded-md border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition cursor-pointer"
-                onClick={() => handleSectionSelect(section)}
-              >
-                <h4 className="font-bold">{section.title}</h4>
-                <p className="text-sm text-gray-600">{section.content.substring(0, 100)}...</p>
+          <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex mb-3">
+              <div className={`p-2 rounded-md bg-${currentLanguage.id === 'python' ? 'blue' : currentLanguage.id === 'cpp' ? 'purple' : 'green'}-200 mr-3`}>
+                {currentLanguage.icon}
               </div>
-            ))}
+              <div>
+                <h3 className="font-bold text-lg">{currentLanguage.name}</h3>
+                <p className="text-gray-700">{currentLanguage.description}</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+              <div className="p-1 bg-white rounded flex justify-between items-center border border-gray-200">
+                <span>Terms Available:</span>
+                <span className="font-semibold">{currentLanguage.terms.length}</span>
+              </div>
+              <div className="p-1 bg-white rounded flex justify-between items-center border border-gray-200">
+                <span>Topics:</span>
+                <span className="font-semibold">{currentLanguage.sections.length}</span>
+              </div>
+              <div className="p-1 bg-white rounded flex justify-between items-center border border-gray-200">
+                <span>Skill Level:</span>
+                <span className="font-semibold">Beginner-Advanced</span>
+              </div>
+              <div className="p-1 bg-white rounded flex justify-between items-center border border-gray-200">
+                <span>Last Updated:</span>
+                <span className="font-semibold">May 2, 2025</span>
+              </div>
+            </div>
           </div>
+          
+          {/* Render each category of sections */}
+          {Object.entries(categorizedSections).map(([category, sections]) => {
+            if (sections.length === 0) return null;
+            
+            return (
+              <div key={category} className="mb-6">
+                <h3 className="text-lg font-bold mb-3 flex items-center">
+                  <span className={`inline-block w-3 h-3 rounded-full mr-2 bg-${
+                    category === 'basics' ? 'green' : 
+                    category === 'dataAndTypes' ? 'blue' : 
+                    category === 'controlFlow' ? 'purple' : 
+                    category === 'functions' ? 'yellow' :
+                    category === 'advanced' ? 'red' : 'gray'
+                  }-500`}></span>
+                  {categoryNames[category]}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {sections.map((section) => (
+                    <div 
+                      key={section.id}
+                      className="p-3 bg-white rounded-md border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition cursor-pointer"
+                      onClick={() => handleSectionSelect(section)}
+                    >
+                      <h4 className="font-bold">{section.title}</h4>
+                      <p className="text-sm text-gray-600 line-clamp-2">{section.content.substring(0, 100)}...</p>
+                      <div className="flex justify-between mt-2">
+                        <div className="text-xs text-gray-500">
+                          {section.examples ? `${section.examples.length} example${section.examples.length !== 1 ? 's' : ''}` : 'No examples'}
+                        </div>
+                        <div className="text-xs text-blue-600">Read more →</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
           
           <h3 className="text-lg font-bold mb-2">Term Lookup</h3>
           <div className="space-y-4">
@@ -1240,50 +1424,91 @@ const CodeReferenceWindow: React.FC<CodeReferenceWindowProps> = ({ onClose, onMi
             
             {/* Selected term details */}
             {selectedTerm && (
-              <div className="p-4 bg-white rounded-md border border-gray-200 shadow">
-                <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-lg font-mono font-bold">{selectedTerm.term}</h4>
-                  <div>
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      selectedTerm.language === 'python' ? 'bg-blue-100 text-blue-800' :
-                      selectedTerm.language === 'cpp' ? 'bg-purple-100 text-purple-800' :
-                      'bg-green-100 text-green-800'
-                    }`}>
-                      {selectedTerm.language === 'python' ? 'Python' :
-                       selectedTerm.language === 'cpp' ? 'C++' : 'Arduino'}
-                    </span>
-                    <span className="ml-1 px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">{selectedTerm.category}</span>
+              <div className="p-0 bg-white rounded-md border border-gray-200 shadow overflow-hidden">
+                {/* Header with term name and badges */}
+                <div className={`p-3 ${selectedTerm.language === 'python' ? 'bg-blue-50' : selectedTerm.language === 'cpp' ? 'bg-purple-50' : 'bg-green-50'} border-b`}>
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-lg font-mono font-bold flex items-center">
+                      <span className={`inline-block w-2 h-2 rounded-full mr-2 ${selectedTerm.language === 'python' ? 'bg-blue-500' : selectedTerm.language === 'cpp' ? 'bg-purple-500' : 'bg-green-500'}`}></span>
+                      {selectedTerm.term}
+                    </h4>
+                    <div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        selectedTerm.language === 'python' ? 'bg-blue-100 text-blue-800' :
+                        selectedTerm.language === 'cpp' ? 'bg-purple-100 text-purple-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
+                        {selectedTerm.language === 'python' ? 'Python' :
+                         selectedTerm.language === 'cpp' ? 'C++' : 'Arduino'}
+                      </span>
+                      <span className="ml-1 px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">{selectedTerm.category}</span>
+                    </div>
                   </div>
                 </div>
                 
-                <div className="mb-3">
-                  <p className="text-gray-700">{selectedTerm.description}</p>
-                </div>
-                
-                <div className="mb-3">
-                  <h5 className="font-bold mb-1">Syntax:</h5>
-                  <pre className="bg-gray-900 text-gray-100 p-2 rounded-md overflow-x-auto font-mono text-sm">
-                    <code>{selectedTerm.syntax}</code>
-                  </pre>
-                </div>
-                
-                <div className="mb-3">
-                  <h5 className="font-bold mb-1">Examples:</h5>
-                  <div className="space-y-2">
-                    {selectedTerm.examples.map((example, idx) => (
-                      <pre key={idx} className="bg-gray-900 text-gray-100 p-2 rounded-md overflow-x-auto font-mono text-sm">
-                        <code>{example}</code>
-                      </pre>
-                    ))}
+                {/* Main content */}
+                <div className="p-4">
+                  <div className="mb-4">
+                    <p className="text-gray-700">{selectedTerm.description}</p>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <h5 className="font-bold mb-2 flex items-center">
+                      <span className="inline-block w-3 h-3 bg-yellow-400 mr-2"></span>
+                      Syntax
+                    </h5>
+                    {renderCode(selectedTerm.syntax, selectedTerm.language)}
+                  </div>
+                  
+                  <div className="mb-4">
+                    <h5 className="font-bold mb-2 flex items-center">
+                      <span className="inline-block w-3 h-3 bg-green-400 mr-2"></span>
+                      Examples
+                    </h5>
+                    <div className="space-y-3">
+                      {selectedTerm.examples.map((example, idx) => (
+                        <div key={idx} className="rounded-md overflow-hidden border border-gray-200">
+                          <div className="bg-gray-100 px-3 py-1 text-xs text-gray-600 border-b">Example {idx + 1}</div>
+                          {renderCode(example, selectedTerm.language)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {selectedTerm.notes && (
+                    <div className="mb-1">
+                      <h5 className="font-bold mb-2 flex items-center">
+                        <span className="inline-block w-3 h-3 bg-blue-400 mr-2"></span>
+                        Notes
+                      </h5>
+                      <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+                        <p className="text-gray-700">{selectedTerm.notes}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Related terms - visually suggest other terms but not functional yet */}
+                  <div className="mt-4 pt-3 border-t border-gray-200">
+                    <h5 className="text-sm font-medium text-gray-500 mb-2">Related Terms</h5>
+                    <div className="flex flex-wrap gap-2">
+                      {LANGUAGES.filter(lang => lang.id === selectedTerm.language)
+                        .flatMap(lang => lang.terms)
+                        .filter(term => 
+                          term.category === selectedTerm.category && 
+                          term.term !== selectedTerm.term)
+                        .slice(0, 5)
+                        .map((term, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => handleTermSelect(term)}
+                            className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          >
+                            {term.term}
+                          </button>
+                        ))}
+                    </div>
                   </div>
                 </div>
-                
-                {selectedTerm.notes && (
-                  <div>
-                    <h5 className="font-bold mb-1">Notes:</h5>
-                    <p className="text-gray-700">{selectedTerm.notes}</p>
-                  </div>
-                )}
               </div>
             )}
           </div>
@@ -1385,8 +1610,8 @@ const CodeReferenceWindow: React.FC<CodeReferenceWindowProps> = ({ onClose, onMi
       </div>
       
       <div className="windowContent" style={{ height: 'calc(100% - 28px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {/* Search bar */}
-        <div className="p-2 border-b border-gray-300 bg-gray-100">
+        {/* Top navigation bar with search */}
+        <div className="p-2 border-b border-gray-300 bg-gray-100 flex flex-col gap-2">
           <div className="relative">
             <input
               type="text"
@@ -1405,6 +1630,58 @@ const CodeReferenceWindow: React.FC<CodeReferenceWindowProps> = ({ onClose, onMi
               </button>
             )}
           </div>
+          
+          {/* History toggle and navigation buttons */}
+          <div className="flex justify-between items-center">
+            <div>
+              <button 
+                onClick={() => setShowHistory(!showHistory)}
+                className={`text-sm px-3 py-1 rounded ${showHistory ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+              >
+                Recent Terms {showHistory ? '▼' : '▶'}
+              </button>
+            </div>
+            <div className="flex gap-2">
+              {recentTerms.length > 0 && (
+                <button 
+                  onClick={() => handleTermSelect(recentTerms[0])}
+                  className="text-sm px-3 py-1 rounded bg-indigo-100 text-indigo-800 hover:bg-indigo-200"
+                  title={`Go to ${recentTerms[0]?.term}`}
+                >
+                  Last Term
+                </button>
+              )}
+              <button 
+                onClick={() => {
+                  setCurrentLanguage(null);
+                  setCurrentSection(null);
+                  setCurrentSubSection(null);
+                  setSelectedTerm(null);
+                }}
+                className="text-sm px-3 py-1 rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
+              >
+                Home
+              </button>
+            </div>
+          </div>
+          
+          {/* History panel */}
+          {showHistory && recentTerms.length > 0 && (
+            <div className="mt-2 p-2 bg-indigo-50 rounded-md border border-indigo-200 max-h-32 overflow-y-auto">
+              <div className="text-sm font-medium mb-1">Recently Viewed Terms:</div>
+              <div className="flex flex-wrap gap-2">
+                {recentTerms.map((term, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleTermSelect(term)}
+                    className={`text-xs px-2 py-1 rounded-full ${term.language === 'python' ? 'bg-blue-100 text-blue-800' : term.language === 'cpp' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'} hover:opacity-80`}
+                  >
+                    {term.term}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         
         {/* Main content area with scrolling */}
