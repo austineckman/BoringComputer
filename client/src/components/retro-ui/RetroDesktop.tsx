@@ -25,6 +25,7 @@ import CodeGuessWindow from "./CodeGuessWindow";
 import ComponentGlossaryWindow from "./ComponentGlossaryWindow";
 import CodeReferenceWindow from "./CodeReferenceWindow";
 import HelpCenterWindow from "./HelpCenterWindow";
+import ElectronicsCheatSheetWindow from "./ElectronicsCheatSheetWindow";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import wallpaperImage from "@assets/wallpaper.png";
 import goldCrateImage from "@assets/goldcrate.png";
