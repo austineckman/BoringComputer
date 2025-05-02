@@ -78,6 +78,16 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
             const event = new CustomEvent('openBugHunt');
             window.dispatchEvent(event);
           }
+        },
+        {
+          id: "codeguess",
+          label: "CodeGuess",
+          icon: <Terminal size={16} />,
+          onClick: () => {
+            // Send event to open CodeGuess
+            const event = new CustomEvent('openCodeGuess');
+            window.dispatchEvent(event);
+          }
         }
         // More mini-games can be added here in the future
       ]
