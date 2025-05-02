@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Minimize2, Book, FileText, Cpu, Zap, FileSpreadsheet, Calculator } from 'lucide-react';
+import { X, Minimize2, Book, FileText, Cpu, Zap, FileSpreadsheet, Calculator, Search, Sparkles, AlertTriangle, CheckCircle2, ThumbsUp } from 'lucide-react';
+import gizboImage from '@assets/gizbo.png';
 
 interface ElectronicsCheatSheetWindowProps {
   onClose: () => void;
@@ -14,11 +15,16 @@ const ElectronicsCheatSheetWindow: React.FC<ElectronicsCheatSheetWindowProps> = 
 }) => {
   const [selectedTab, setSelectedTab] = useState(0);
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showSecret, setShowSecret] = useState(false);
+
   const categories = [
     { id: 0, name: 'Formulas', icon: <FileText className="w-4 h-4" /> },
     { id: 1, name: 'Pin Mappings', icon: <Cpu className="w-4 h-4" /> },
     { id: 2, name: 'Common Circuits', icon: <Zap className="w-4 h-4" /> },
     { id: 3, name: 'Reference Tables', icon: <FileSpreadsheet className="w-4 h-4" /> },
+    { id: 4, name: 'Troubleshooting', icon: <AlertTriangle className="w-4 h-4" /> },
+    { id: 5, name: 'Gizbo\'s Notes', icon: <Sparkles className="w-4 h-4" /> },
   ];
 
   const formulas = [
@@ -219,6 +225,198 @@ const ElectronicsCheatSheetWindow: React.FC<ElectronicsCheatSheetWindowProps> = 
       example: "For a 5V control, 100mA load, and transistor gain of 100: (5V - 0.7V) / (0.1A / 100) = 4.3kΩ",
       notes: "Use a diode across inductive loads (motors, relays) to prevent voltage spikes when switching off."
     },
+  ];
+
+  const troubleshootingGuides = [
+    {
+      problem: "LED Not Lighting Up",
+      possibleCauses: [
+        "LED is connected backward (reverse polarity)",
+        "Current-limiting resistor value is too high",
+        "Faulty LED",
+        "Insufficient voltage supply",
+        "Poor connection or broken wire",
+        "Microcontroller pin not configured as output"
+      ],
+      solutions: [
+        "Check LED orientation - longer leg (anode) should connect to the positive side through a resistor",
+        "Try a smaller resistor value (e.g., 220Ω instead of 1kΩ)",
+        "Test the LED with a simple battery and resistor",
+        "Verify power supply voltage is sufficient (typically 2V+ for most LEDs)",
+        "Check all connections with a multimeter for continuity",
+        "Ensure the pin is set as OUTPUT in your code"
+      ],
+      preventionTips: "Always include a current-limiting resistor with LEDs. Double-check LED polarity before powering your circuit."
+    },
+    {
+      problem: "Inconsistent Button/Switch Behavior",
+      possibleCauses: [
+        "Switch bouncing (mechanical switches make multiple contacts when pressed)",
+        "Missing pull-up or pull-down resistor",
+        "Poor connection or oxidized contacts",
+        "Incorrect pin configuration in code"
+      ],
+      solutions: [
+        "Add a debounce capacitor (0.1μF) across the switch terminals or implement debounce in software",
+        "Add a pull-up resistor (10kΩ) between the input pin and power or enable internal pull-up resistors in code",
+        "Clean switch contacts or replace the switch",
+        "Verify pin configuration in code (INPUT or INPUT_PULLUP)"
+      ],
+      preventionTips: "Always use pull-up/pull-down resistors with switches and buttons. Consider implementing debouncing for reliable readings."
+    },
+    {
+      problem: "Overheating Components",
+      possibleCauses: [
+        "Exceeding component power ratings",
+        "Incorrect resistor values causing too much current",
+        "Short circuit",
+        "Poor ventilation"
+      ],
+      solutions: [
+        "Verify all components are within their power rating specifications",
+        "Calculate and use appropriate resistor values to limit current",
+        "Check for unintended connections or solder bridges",
+        "Add cooling or improve air circulation around hot components"
+      ],
+      preventionTips: "Always calculate expected current and power dissipation before building circuits. Use components with appropriate power ratings."
+    },
+    {
+      problem: "Unpredictable Behavior with Sensors",
+      possibleCauses: [
+        "Noisy power supply",
+        "Missing filter capacitors",
+        "Ground loops or poor grounding",
+        "Signal interference"
+      ],
+      solutions: [
+        "Use a clean, stable power supply",
+        "Add decoupling capacitors (0.1μF) near sensor power pins",
+        "Implement a single-point grounding strategy",
+        "Use shielded cables and keep wires short"
+      ],
+      preventionTips: "For sensitive analog sensors, always add decoupling capacitors and consider filtering in software."
+    },
+    {
+      problem: "Microcontroller Not Programming",
+      possibleCauses: [
+        "Incorrect USB connection",
+        "Board not in bootloader mode",
+        "Wrong board selected in IDE",
+        "Damaged USB port or cable",
+        "Missing drivers"
+      ],
+      solutions: [
+        "Try a different USB port or cable",
+        "Press reset button while initiating upload (or hold BOOTSEL while connecting for RP2040)",
+        "Verify correct board selection in your IDE",
+        "Test the cable with another device",
+        "Install required drivers for your board/chip"
+      ],
+      preventionTips: "Keep a known-good USB cable specifically for programming. Document the exact steps needed to put your specific board in bootloader mode."
+    },
+    {
+      problem: "I2C Communication Failing",
+      possibleCauses: [
+        "Incorrect address for I2C device",
+        "Missing pull-up resistors on SDA/SCL lines",
+        "Bus capacitance too high for speed",
+        "Power supply issues",
+        "Wiring errors"
+      ],
+      solutions: [
+        "Verify device address (use an I2C scanner sketch if needed)",
+        "Add 4.7kΩ pullup resistors to both SDA and SCL lines",
+        "Lower I2C clock speed in code",
+        "Ensure all devices share a common ground",
+        "Double-check all wiring connections"
+      ],
+      preventionTips: "I2C requires pullup resistors! Start with lower clock speeds (100kHz) until communication is working, then optimize if needed."
+    },
+    {
+      problem: "Serial Communication Issues",
+      possibleCauses: [
+        "Mismatched baud rates",
+        "TX/RX connections swapped",
+        "Different voltage levels",
+        "Missing common ground",
+        "Buffer overflow"
+      ],
+      solutions: [
+        "Ensure both devices use the same baud rate",
+        "Connect TX to RX and RX to TX between devices",
+        "Use level shifters for devices with different logic levels",
+        "Connect grounds between devices",
+        "Implement flow control or larger buffers"
+      ],
+      preventionTips: "Serial is one of the simplest protocols but remember: TX connects to RX (not TX-TX), and always establish a common ground."
+    },
+    {
+      problem: "Motor Not Spinning",
+      possibleCauses: [
+        "Insufficient power supply",
+        "Motor driver/transistor not powerful enough",
+        "Missing flyback diode for inductive load",
+        "Incorrect wiring",
+        "Damaged motor or driver"
+      ],
+      solutions: [
+        "Use an adequate power supply (most motors need more current than USB can provide)",
+        "Select an appropriate motor driver for your motor's voltage and current requirements",
+        "Add a flyback diode across motor terminals",
+        "Verify all connections according to driver documentation",
+        "Test motor directly with a battery"
+      ],
+      preventionTips: "Motors need more current than microcontrollers can provide directly. Always use a proper driver circuit and separate power supply."
+    },
+    {
+      problem: "Erratic Behavior After Adding New Components",
+      possibleCauses: [
+        "Power supply overloaded",
+        "Ground connections not properly shared",
+        "Signal interference between components",
+        "Incompatible voltage levels"
+      ],
+      solutions: [
+        "Upgrade power supply or add separate supplies with common ground",
+        "Ensure all components share a common ground",
+        "Physically separate sensitive analog circuits from digital noise sources",
+        "Add level shifters between components with different voltage requirements"
+      ],
+      preventionTips: "Build and test your circuit incrementally. Add one component at a time and verify operation before continuing."
+    }
+  ];
+
+  const gizboNotes = [
+    {
+      title: "Gizbo's First Law of Electronics",
+      content: "Smoke is always a bad sign. If you see the magic smoke escape from a component, it's never coming back! Treat your components with respect, check your wiring twice, and measure your voltages once.",
+      tips: "Power off your circuit before making changes. Calculate current limits before applying power. Start with lower voltages when testing new circuits."
+    },
+    {
+      title: "The Goblin Guide to Debugging",
+      content: "Even master tinkers like myself spend 90% of our time finding bugs and 10% fixing them. The best way to find a bug is to change one thing at a time! Random changes will only create more chaos—and while I love chaos, it doesn't fix circuits.",
+      tips: "Document what you've tried. Use a multimeter liberally. Test components individually before combining them."
+    },
+    {
+      title: "Secret Workshop Wisdom",
+      content: "Your most powerful tool isn't your soldering iron or even your multimeter—it's your notebook! The best engineers keep detailed notes about what works, what doesn't, and most importantly, WHY something failed. Future you will thank past you for good notes.",
+      tips: "Draw your circuits. Note unexpected behavior. Record successful component values."
+    },
+    {
+      title: "Gizbo's Theory of Explosions",
+      content: "While explosions are fun (and I've caused my fair share in the name of science), they're generally not great for electronics. Always check polarity on capacitors and diodes. The bigger the capacitor, the bigger the boom!",
+      tips: "Electrolytic capacitors are polarized—connect them backward and they go boom! LEDs are diodes—they only work one way."
+    },
+    {
+      title: "The Forge and The Workbench",
+      content: "In my forge, I melt metals and shape items of power. In your workshop, you're doing the same with electrons! Treat your builds with the same care as a master craftsman, and they'll serve you well.",
+      tips: "Keep your workspace clean. Organize components. Label wires and connections."
+    },
+    {
+      title: "Hidden Knowledge: The Resistor Dance",
+      content: "*This note appears to be written in a different handwriting and glows slightly when you read it*\n\nWhen resistors are placed just so, in the sacred formation known as the Wheatstone Bridge, they can detect the smallest changes in the magical flow. The ancient ones used this to seek balance between realms.",
+      tips: "A balanced bridge produces zero voltage across the middle when all ratios are equal. Any imbalance produces a voltage proportional to the difference."
+    }
   ];
 
   const referenceTables = [
@@ -448,15 +646,231 @@ const ElectronicsCheatSheetWindow: React.FC<ElectronicsCheatSheetWindowProps> = 
   );
 
   // Helper function to render active tab content
+  // Create the troubleshooting content
+  const troubleshootingContent = (
+    <div className="p-4 overflow-auto h-full">
+      <h2 className="text-lg font-bold mb-3 text-blue-700">Troubleshooting Guide</h2>
+      
+      <div className="flex items-center bg-blue-50 p-3 rounded-lg border border-blue-100 mb-4">
+        <ThumbsUp className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0" />
+        <p className="text-sm text-blue-700">
+          Having issues with your circuit? Check these common problems and solutions.
+          Remember to always disconnect power before making changes to your circuit!
+        </p>
+      </div>
+      
+      <div className="space-y-4">
+        {troubleshootingGuides.map((guide, idx) => (
+          <div key={idx} className="bg-white p-4 rounded shadow border border-gray-200">
+            <h3 className="text-md font-bold text-red-600 flex items-center">
+              <AlertTriangle className="h-5 w-5 mr-2" />
+              {guide.problem}
+            </h3>
+            
+            <div className="mt-3">
+              <h4 className="font-semibold text-sm text-gray-700 mb-1">Possible Causes:</h4>
+              <ul className="list-disc list-inside ml-2 text-sm space-y-1">
+                {guide.possibleCauses.map((cause, causeIdx) => (
+                  <li key={causeIdx} className="text-gray-700">{cause}</li>
+                ))}
+              </ul>
+            </div>
+            
+            <div className="mt-3 bg-green-50 p-3 rounded border border-green-100">
+              <h4 className="font-semibold text-sm text-gray-700 mb-1 flex items-center">
+                <CheckCircle2 className="h-4 w-4 text-green-500 mr-1" />
+                Solutions:
+              </h4>
+              <ol className="list-decimal list-inside ml-2 text-sm space-y-1">
+                {guide.solutions.map((solution, solIdx) => (
+                  <li key={solIdx} className="text-gray-700">{solution}</li>
+                ))}
+              </ol>
+            </div>
+            
+            <div className="mt-3 bg-yellow-50 p-2 rounded border border-yellow-200 text-sm">
+              <span className="font-semibold">Prevention Tips:</span> {guide.preventionTips}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Create Gizbo's notes content
+  const gizboNotesContent = (
+    <div className="p-4 overflow-auto h-full">
+      <h2 className="text-lg font-bold mb-3 text-blue-700 flex items-center">
+        <span>Gizbo's Workshop Notes</span>
+        <Sparkles className="ml-2 h-5 w-5 text-yellow-400" />
+      </h2>
+      
+      <div className="flex mb-4">
+        <img 
+          src={gizboImage} 
+          alt="Gizbo the Goblin" 
+          className="w-24 h-24 object-contain rounded mr-4 border-2 border-gray-300"  
+        />
+        <div className="bg-gray-50 p-3 rounded-lg border border-gray-300 flex-1">
+          <p className="italic text-sm text-gray-700">
+            "Welcome to my collection of arcane electronic wisdom! I've jotted down some notes from 
+            my centuries of tinkering. Some might call it 'trade secrets' but knowledge should be 
+            shared! Just don't tell the other goblins I'm giving away our secrets..."
+            <span className="block mt-1 text-right font-semibold">— Gizbo, Master Tinker</span>
+          </p>
+        </div>
+      </div>
+      
+      <div className="space-y-4">
+        {gizboNotes.map((note, idx) => (
+          <div 
+            key={idx} 
+            className={`bg-white p-4 rounded shadow border ${note.title.includes('Hidden Knowledge') ? 'border-purple-300 bg-purple-50' : 'border-gray-200'}`}
+          >
+            <h3 className={`text-md font-bold flex items-center ${note.title.includes('Hidden Knowledge') ? 'text-purple-700' : 'text-yellow-600'}`}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              {note.title}
+            </h3>
+            
+            <div className="my-3">
+              <p className="text-sm text-gray-700 whitespace-pre-line">{note.content}</p>
+            </div>
+            
+            <div className="mt-4 bg-amber-50 p-2 rounded border border-amber-200 text-sm">
+              <span className="font-semibold">Gizbo's Tips:</span> {note.tips}
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {showSecret && (
+        <div className="mt-8 border-2 border-purple-300 rounded-lg p-4 bg-purple-50 shadow-lg">
+          <h3 className="text-md font-bold text-purple-700 flex items-center">
+            <Sparkles className="h-5 w-5 mr-2" />
+            Secret Goblin Lore Unlocked!
+          </h3>
+          <p className="my-2 text-sm text-purple-800 font-medium">
+            You've discovered my hidden note! Well done, curious one. As a reward, here's a bit of ancient goblin wisdom:
+          </p>
+          <div className="p-3 bg-purple-100 rounded border border-purple-200 font-mono text-sm">
+            "The best circuit is one that works... the second best is one that doesn't explode. Remember this when experimenting."
+          </div>
+          <p className="mt-3 text-xs text-gray-500 text-right">Don't tell anyone about this secret. It'll be our little mystery.</p>
+        </div>
+      )}
+    </div>
+  );
+
+  // Helper function to render active tab content
   const getActiveTabContent = () => {
     switch(selectedTab) {
       case 0: return formulasContent;
       case 1: return pinMappingsContent;
       case 2: return commonCircuitsContent;
       case 3: return referenceTablesContent;
+      case 4: return troubleshootingContent;
+      case 5: return gizboNotesContent;
       default: return formulasContent;
     }
   };
+  
+  // Search functionality
+  const filterContent = (searchTerm: string) => {
+    if (!searchTerm.trim()) return null;
+    const term = searchTerm.toLowerCase();
+    
+    let results = [];
+    
+    // Search through formulas
+    const matchingFormulas = formulas.filter(formula => 
+      formula.title.toLowerCase().includes(term) || 
+      formula.description.toLowerCase().includes(term) ||
+      formula.formula.toLowerCase().includes(term) ||
+      formula.applications?.toLowerCase().includes(term)
+    );
+    
+    if (matchingFormulas.length > 0) {
+      results.push({
+        section: 'Formulas',
+        id: 0,
+        matches: matchingFormulas.map(f => ({ title: f.title, snippet: f.formula }))
+      });
+    }
+    
+    // Search through pin mappings
+    const matchingPins = pinMappings.filter(mapping => 
+      mapping.title.toLowerCase().includes(term) ||
+      mapping.description.toLowerCase().includes(term) ||
+      mapping.mappings.some(pin => 
+        pin.pin.toLowerCase().includes(term) || 
+        pin.description.toLowerCase().includes(term)
+      )
+    );
+    
+    if (matchingPins.length > 0) {
+      results.push({
+        section: 'Pin Mappings',
+        id: 1,
+        matches: matchingPins.map(p => ({ title: p.title, snippet: p.description.slice(0, 50) + '...' }))
+      });
+    }
+    
+    // Search through circuits
+    const matchingCircuits = commonCircuits.filter(circuit => 
+      circuit.title.toLowerCase().includes(term) ||
+      circuit.description.toLowerCase().includes(term) ||
+      circuit.components.some(c => c.toLowerCase().includes(term))
+    );
+    
+    if (matchingCircuits.length > 0) {
+      results.push({
+        section: 'Common Circuits',
+        id: 2,
+        matches: matchingCircuits.map(c => ({ title: c.title, snippet: c.description.slice(0, 50) + '...' }))
+      });
+    }
+    
+    // Search through troubleshooting guides
+    const matchingTroubleshooting = troubleshootingGuides.filter(guide => 
+      guide.problem.toLowerCase().includes(term) ||
+      guide.possibleCauses.some(cause => cause.toLowerCase().includes(term)) ||
+      guide.solutions.some(solution => solution.toLowerCase().includes(term))
+    );
+    
+    if (matchingTroubleshooting.length > 0) {
+      results.push({
+        section: 'Troubleshooting',
+        id: 4,
+        matches: matchingTroubleshooting.map(t => ({ title: t.problem, snippet: t.possibleCauses[0] }))
+      });
+    }
+    
+    // Search through Gizbo's notes
+    const matchingNotes = gizboNotes.filter(note => 
+      note.title.toLowerCase().includes(term) ||
+      note.content.toLowerCase().includes(term) ||
+      note.tips.toLowerCase().includes(term)
+    );
+    
+    if (matchingNotes.length > 0) {
+      results.push({
+        section: 'Gizbo\'s Notes',
+        id: 5,
+        matches: matchingNotes.map(n => ({ title: n.title, snippet: n.content.slice(0, 50) + '...' }))
+      });
+    }
+    
+    return results;
+  };
+  
+  // Check for easter egg in search
+  const checkForEasterEgg = (term: string) => {
+    if (term.toLowerCase() === 'goblin secrets' || term.toLowerCase() === 'gizbo secret') {
+      setShowSecret(true);
+    }
+  };
+  
+  const searchResults = searchTerm ? filterContent(searchTerm) : null;
 
   return (
     <div className={`bg-gray-100 rounded-lg overflow-hidden shadow-lg flex flex-col h-full ${isActive ? 'ring-2 ring-blue-500' : ''}`}>
@@ -484,17 +898,52 @@ const ElectronicsCheatSheetWindow: React.FC<ElectronicsCheatSheetWindowProps> = 
 
       {/* Content */}
       <div className="flex-1 overflow-hidden flex flex-col">
+        {/* Search */}
+        <div className="bg-gray-100 border-b border-gray-300 p-2 flex items-center">
+          <div className="relative flex-grow max-w-md">
+            <input
+              type="text"
+              placeholder="Search for formulas, components, troubleshooting..."
+              className="w-full p-2 pl-8 rounded border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                checkForEasterEgg(e.target.value);
+              }}
+            />
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            {searchTerm && (
+              <button 
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                onClick={() => setSearchTerm('')}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          
+          {/* Clear search and show hint */}
+          {searchTerm && (
+            <div className="ml-2 text-xs text-blue-600 italic">
+              Searching across all categories
+            </div>
+          )}
+        </div>
+        
         {/* Tabs */}
         <div className="flex bg-gray-200 border-b border-gray-300 p-1">
           {categories.map((category) => (
             <button
               key={category.id}
               className={`flex items-center px-3 py-2 text-sm font-medium rounded-t transition-colors ${
-                selectedTab === category.id
+                selectedTab === category.id && !searchTerm
                   ? 'bg-white text-blue-600 border-t border-l border-r border-gray-300 border-b-white'
                   : 'text-gray-700 hover:text-blue-600 hover:bg-gray-100'
               }`}
-              onClick={() => setSelectedTab(category.id)}
+              onClick={() => {
+                setSelectedTab(category.id);
+                setSearchTerm('');
+              }}
             >
               <span className="mr-1">{category.icon}</span>
               {category.name}
@@ -504,7 +953,56 @@ const ElectronicsCheatSheetWindow: React.FC<ElectronicsCheatSheetWindowProps> = 
         
         {/* Tab content */}
         <div className="flex-1 overflow-auto">
-          {getActiveTabContent()}
+          {searchTerm ? (
+            <div className="p-4 overflow-auto h-full">
+              <h2 className="text-lg font-bold mb-3 text-blue-700">Search Results for "{searchTerm}"</h2>
+              
+              {searchResults && searchResults.length > 0 ? (
+                <div className="space-y-6">
+                  {searchResults.map((result, idx) => (
+                    <div key={idx} className="bg-white p-4 rounded shadow border border-gray-200">
+                      <h3 className="text-md font-bold text-blue-700 flex items-center justify-between">
+                        <div className="flex items-center">
+                          {result.id === 0 && <FileText className="mr-2 h-4 w-4" />}
+                          {result.id === 1 && <Cpu className="mr-2 h-4 w-4" />}
+                          {result.id === 2 && <Zap className="mr-2 h-4 w-4" />}
+                          {result.id === 3 && <FileSpreadsheet className="mr-2 h-4 w-4" />}
+                          {result.id === 4 && <AlertTriangle className="mr-2 h-4 w-4" />}
+                          {result.id === 5 && <Sparkles className="mr-2 h-4 w-4" />}
+                          {result.section}
+                        </div>
+                        <button 
+                          className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded"
+                          onClick={() => {
+                            setSelectedTab(result.id);
+                            setSearchTerm('');
+                          }}
+                        >
+                          View All
+                        </button>
+                      </h3>
+                      <div className="mt-3 space-y-2 divide-y divide-gray-100">
+                        {result.matches.map((match, matchIdx) => (
+                          <div key={matchIdx} className="p-2 hover:bg-gray-50">
+                            <div className="font-medium text-blue-600">{match.title}</div>
+                            <div className="text-sm text-gray-600 mt-1">{match.snippet}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-gray-400 mb-2"><Search className="h-10 w-10 mx-auto" /></div>
+                  <h3 className="text-lg font-medium">No results found</h3>
+                  <p className="text-gray-500 mt-1">Try a different search term or browse the categories</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            getActiveTabContent()
+          )}
         </div>
       </div>
     </div>
