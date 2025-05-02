@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Wrench, Terminal, Globe, Music, Monitor, GamepadIcon, Bug, Folder, Cpu } from "lucide-react";
+import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Wrench, Terminal, Globe, Music, Monitor, GamepadIcon, Bug, Folder, Cpu, HelpCircle } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import logoImage from "@assets/Asset 6@2x-8.png";
@@ -122,6 +122,16 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
           onClick: () => {
             // Send event to open Code Reference Guide
             const event = new CustomEvent('openCodeReference');
+            window.dispatchEvent(event);
+          }
+        },
+        {
+          id: "help-center",
+          label: "Help Center",
+          icon: <HelpCircle size={16} />,
+          onClick: () => {
+            // Send event to open Help Center
+            const event = new CustomEvent('openHelpCenter');
             window.dispatchEvent(event);
           }
         }

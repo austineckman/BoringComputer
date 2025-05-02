@@ -24,6 +24,7 @@ import CodeQuizWindow from "./CodeQuizWindow";
 import CodeGuessWindow from "./CodeGuessWindow";
 import ComponentGlossaryWindow from "./ComponentGlossaryWindow";
 import CodeReferenceWindow from "./CodeReferenceWindow";
+import HelpCenterWindow from "./HelpCenterWindow";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import wallpaperImage from "@assets/wallpaper.png";
 import goldCrateImage from "@assets/goldcrate.png";
@@ -273,6 +274,10 @@ const RetroDesktop: React.FC = () => {
       openCodeReferenceWindow();
     };
     
+    const handleOpenHelpCenter = () => {
+      openHelpCenterWindow();
+    };
+    
     window.addEventListener('openTerminal', handleOpenTerminal);
     window.addEventListener('openBrowser', handleOpenBrowser);
     window.addEventListener('openProfile', handleOpenProfile);
@@ -283,6 +288,7 @@ const RetroDesktop: React.FC = () => {
     window.addEventListener('openCodeGuess', handleOpenCodeGuess);
     window.addEventListener('openComponentGlossary', handleOpenComponentGlossary);
     window.addEventListener('openCodeReference', handleOpenCodeReference);
+    window.addEventListener('openHelpCenter', handleOpenHelpCenter);
     
     return () => {
       window.removeEventListener('openTerminal', handleOpenTerminal);
@@ -295,6 +301,7 @@ const RetroDesktop: React.FC = () => {
       window.removeEventListener('openCodeGuess', handleOpenCodeGuess);
       window.removeEventListener('openComponentGlossary', handleOpenComponentGlossary);
       window.removeEventListener('openCodeReference', handleOpenCodeReference);
+      window.removeEventListener('openHelpCenter', handleOpenHelpCenter);
     };
   }, []);
   
