@@ -346,3 +346,209 @@
   font-size: 1.2em;
   margin: 20px 0;
 }
+
+/* CodeGuess Game Styles */
+.codeGuessContent {
+  font-family: 'Courier New', monospace;
+  overflow-y: auto;
+}
+
+.game-container {
+  max-width: 500px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.game-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #33ff33;
+}
+
+.game-subtitle {
+  font-size: 16px;
+  margin-bottom: 20px;
+  color: #cccccc;
+}
+
+.guess-board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.guess-row {
+  display: flex;
+  margin-bottom: 5px;
+}
+
+.guess-tile {
+  width: 40px;
+  height: 40px;
+  margin: 0 2px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  font-weight: bold;
+  text-transform: uppercase;
+  border: 2px solid #444;
+  background-color: #333;
+}
+
+.guess-tile.empty {
+  background-color: transparent;
+}
+
+.guess-tile.green {
+  background-color: #538d4e;
+  border-color: #538d4e;
+}
+
+.guess-tile.yellow {
+  background-color: #b59f3b;
+  border-color: #b59f3b;
+}
+
+.guess-tile.gray {
+  background-color: #3a3a3c;
+  border-color: #3a3a3c;
+}
+
+.input-area {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.guess-input {
+  padding: 8px 12px;
+  font-size: 16px;
+  border: 2px solid #444;
+  background-color: #2a2a2a;
+  color: white;
+  border-radius: 4px;
+  margin-right: 8px;
+  font-family: 'Courier New', monospace;
+  text-transform: lowercase;
+}
+
+.submit-button, .reset-button {
+  padding: 8px 16px;
+  font-size: 16px;
+  background-color: #538d4e;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.submit-button:hover, .reset-button:hover {
+  background-color: #4a7f45;
+}
+
+.reset-button {
+  margin: 0 auto;
+  margin-top: 10px;
+}
+
+.reset-button svg {
+  margin-right: 6px;
+}
+
+.game-result {
+  margin-bottom: 20px;
+}
+
+.win-message h3, .lose-message h3 {
+  font-size: 20px;
+  margin-bottom: 10px;
+  color: #33ff33;
+}
+
+.win-message p, .lose-message p {
+  margin-bottom: 5px;
+}
+
+.error-message {
+  color: #ff6666;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.game-stats {
+  display: flex;
+  justify-content: space-around;
+  margin: 25px 0;
+  padding: 10px;
+  background-color: #2a2a2a;
+  border-radius: 4px;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: bold;
+  color: #33ff33;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #cccccc;
+}
+
+.game-instructions {
+  text-align: left;
+  font-size: 14px;
+  padding: 15px;
+  background-color: #2a2a2a;
+  border-radius: 4px;
+  margin-top: 20px;
+}
+
+.game-instructions p {
+  margin-bottom: 10px;
+}
+
+.game-instructions ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.game-instructions li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.example-tile {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  margin-right: 10px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.example-tile.green {
+  background-color: #538d4e;
+}
+
+.example-tile.yellow {
+  background-color: #b59f3b;
+}
+
+.example-tile.gray {
+  background-color: #3a3a3c;
+}

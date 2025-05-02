@@ -21,6 +21,7 @@ import RecycleBinWindow from "./RecycleBinWindow";
 import SettingsWindow from "./SettingsWindow";
 import QuestLoadingScreen from "./QuestLoadingScreen";
 import CodeQuizWindow from "./CodeQuizWindow";
+import CodeGuessWindow from "./CodeGuessWindow";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import wallpaperImage from "@assets/wallpaper.png";
 import goldCrateImage from "@assets/goldcrate.png";
@@ -256,6 +257,10 @@ const RetroDesktop: React.FC = () => {
 
     const handleOpenBugHunt = () => {
       openCodeQuizWindow();
+    };
+    
+    const handleOpenCodeGuess = () => {
+      openCodeGuessWindow();
     };
     
     window.addEventListener('openTerminal', handleOpenTerminal);
@@ -622,6 +627,20 @@ const RetroDesktop: React.FC = () => {
       <RecycleBinWindow onClose={() => closeWindow("recyclebin")} />, 
       "trashIcon",
       { width: 800, height: 600 }
+    );
+  };
+  
+  const openCodeGuessWindow = () => {
+    openWindow(
+      "codeguess", 
+      "CodeGuess", 
+      <CodeGuessWindow 
+        onClose={() => closeWindow("codeguess")} 
+        onMinimize={() => minimizeWindow("codeguess")}
+        isActive={windows.some(w => w.id === "codeguess" && w.isActive)}
+      />, 
+      "🎮",
+      { width: 600, height: 700 }
     );
   };
   
