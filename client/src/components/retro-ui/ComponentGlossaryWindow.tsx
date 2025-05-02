@@ -2,10 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { X, Minimize2, Search, Book, Cpu, Layers, HelpCircle } from 'lucide-react';
 import './retro-ui.css';
 
-// Import ComponentSimulatorView
-import ComponentSimulatorView from '../circuit-builder/components/ComponentSimulatorView';
-import PinTooltip from '../circuit-builder/components/PinTooltip';
-
 interface ComponentGlossaryWindowProps {
   onClose: () => void;
   onMinimize: () => void;
@@ -128,12 +124,12 @@ const GLOSSARY: GlossaryTerm[] = [
   },
   {
     term: 'Resistance',
-    definition: 'The opposition to the flow of electric current in a material, measured in ohms (Ω).',
+    definition: 'The opposition to the flow of electric current in a material, measured in ohms (\u03a9).',
     relatedComponents: ['resistor']
   },
   {
     term: 'Ohm\'s Law',
-    definition: 'A fundamental relationship in electrical circuits: V = I × R, where V is voltage, I is current, and R is resistance.',
+    definition: 'A fundamental relationship in electrical circuits: V = I \u00d7 R, where V is voltage, I is current, and R is resistance.',
     relatedComponents: ['resistor']
   }
 ];
@@ -150,9 +146,6 @@ const ComponentGlossaryWindow: React.FC<ComponentGlossaryWindowProps> = ({ onClo
   // View states
   const [currentView, setCurrentView] = useState<'components' | 'component-detail' | 'search'>('components');
   const [componentList, setComponentList] = useState<Component[]>(COMPONENTS);
-  
-  // Simulator view state
-  const [showSimulatorView, setShowSimulatorView] = useState<boolean>(true);
   
   // Effect to filter components based on search
   useEffect(() => {
@@ -268,7 +261,7 @@ const ComponentGlossaryWindow: React.FC<ComponentGlossaryWindowProps> = ({ onClo
     </div>
   );
   
-  // Component detail view
+  // Component detail view - SIMPLIFIED VERSION
   const renderComponentDetail = () => {
     if (!selectedComponent) return null;
     
@@ -283,54 +276,25 @@ const ComponentGlossaryWindow: React.FC<ComponentGlossaryWindowProps> = ({ onClo
             <span className="mr-1">←</span> Back to Component List
           </button>
           
-          {/* Add toggle for simulator view */}
-          <div className="mb-4 flex justify-between items-center">
-            <h3 className="font-bold text-gray-700">Component View:</h3>
-            <div className="flex items-center">
-              <button
-                className={`px-3 py-1 text-sm rounded-l ${!showSimulatorView ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`}
-                onClick={() => setShowSimulatorView(false)}
-              >
-                Standard
-              </button>
-              <button
-                className={`px-3 py-1 text-sm rounded-r ${showSimulatorView ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`}
-                onClick={() => setShowSimulatorView(true)}
-              >
-                Simulator
-              </button>
-            </div>
-          </div>
-          
-          {/* Show either simulator view or standard view */}
-          {showSimulatorView ? (
-            <div className="mb-4 flex-grow flex justify-center items-center">
-              <ComponentSimulatorView component={selectedComponent} />
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center flex-grow">
-              <img 
-                src={selectedComponent.iconSrc} 
-                alt={selectedComponent.name}
-                className="w-40 h-40 object-contain mb-4"
-              />
-            </div>
-          )}
-          
-          <div className="text-center">
+          <div className="flex flex-col items-center justify-center flex-grow">
+            <img 
+              src={selectedComponent.iconSrc} 
+              alt={selectedComponent.name}
+              className="w-40 h-40 object-contain mb-4"
+            />
             <h2 className="text-xl font-bold">{selectedComponent.name}</h2>
-            <p className="text-sm text-gray-600 mt-2">{selectedComponent.description}</p>
-          
+            <p className="text-sm text-gray-600 mt-2 text-center">{selectedComponent.description}</p>
+            
             {selectedComponent.generalInfo && (
-              <div className="mt-4 p-3 bg-blue-50 rounded text-sm text-gray-700 max-w-md mx-auto">
-                <h4 className="font-bold flex items-center justify-center">
+              <div className="mt-4 p-3 bg-blue-50 rounded text-sm text-gray-700 max-w-md">
+                <h4 className="font-bold flex items-center">
                   <HelpCircle size={16} className="mr-1 text-blue-600" />
                   General Information:
                 </h4>
                 <p className="mt-1">{selectedComponent.generalInfo}</p>
               </div>
             )}
-          
+            
             <div className="mt-6">
               <h3 className="font-bold text-gray-700 mb-2">Pins/Terminals:</h3>
               <div className="flex flex-wrap justify-center gap-2">
@@ -539,9 +503,6 @@ const ComponentGlossaryWindow: React.FC<ComponentGlossaryWindowProps> = ({ onClo
   
   return (
     <div className={`retroWindow ${isActive ? 'active' : ''}`}>
-      {/* Add PinTooltip for showing pin details */}
-      <PinTooltip />
-      
       <div className="windowTitleBar">
         <div className="windowTitle">Component Encyclopedia</div>
         <div className="windowControls">
