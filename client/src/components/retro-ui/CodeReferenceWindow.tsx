@@ -210,7 +210,7 @@ print(arr)  # Output: [1 2 3]`,
     }
   ],
   terms: [
-    // Data Types
+    // Python Data Types
     {
       term: 'int',
       category: 'data-type',
@@ -263,6 +263,58 @@ print(arr)  # Output: [1 2 3]`,
       ],
       notes: 'Lists are mutable (can be modified after creation) and can store elements of different data types.'
     },
+    {
+      term: 'dict',
+      category: 'data-type',
+      language: 'python',
+      description: 'Dictionary data type in Python. Stores key-value pairs and is mutable.',
+      syntax: 'x = {"key": "value"}',
+      examples: [
+        'person = {"name": "Alice", "age": 30}',
+        'scores = {"math": 90, "science": 95}',
+        'print(person["name"])  # Access value by key'
+      ],
+      notes: 'Keys must be immutable (strings, numbers, tuples) and unique within a dictionary.'
+    },
+    {
+      term: 'tuple',
+      category: 'data-type',
+      language: 'python',
+      description: 'An immutable, ordered collection of items in Python.',
+      syntax: 'x = (1, 2, 3)',
+      examples: [
+        'coordinates = (10, 20)',
+        'mixed = (1, "hello", 3.14)',
+        'single_item = (42,)  # Note the trailing comma'
+      ],
+      notes: 'Tuples are immutable (cannot be modified after creation) and are often used for fixed collections.'
+    },
+    {
+      term: 'set',
+      category: 'data-type',
+      language: 'python',
+      description: 'An unordered collection of unique items in Python.',
+      syntax: 'x = {1, 2, 3}',
+      examples: [
+        'unique_numbers = {1, 2, 3, 3, 4}  # Will store {1, 2, 3, 4}',
+        'a = {1, 2, 3}; b = {3, 4, 5}',
+        'print(a.intersection(b))  # {3}'
+      ],
+      notes: 'Sets are useful for membership testing, removing duplicates, and mathematical operations like unions and intersections.'
+    },
+    {
+      term: 'bool',
+      category: 'data-type',
+      language: 'python',
+      description: 'Boolean data type in Python. Represents True or False values.',
+      syntax: 'x = True',
+      examples: [
+        'is_valid = True',
+        'has_errors = False',
+        'print(bool(0))  # False'
+      ],
+      notes: 'In Python, many values are implicitly converted to booleans in boolean contexts. Empty values (0, "", [], {}) are False.'
+    },
     
     // Python Built-ins
     {
@@ -277,6 +329,18 @@ print(arr)  # Output: [1 2 3]`,
         'print("X:", x, "Y:", y, sep="-")'
       ],
       notes: 'The print function takes multiple arguments and has optional parameters to control output format.'
+    },
+    {
+      term: 'input()',
+      category: 'function',
+      language: 'python',
+      description: 'Reads a line from the input (usually keyboard) and returns it as a string.',
+      syntax: 'input(prompt)',
+      examples: [
+        'name = input("Enter your name: ")',
+        'age = int(input("Enter your age: "))  # Convert to integer'
+      ],
+      notes: 'Always returns a string. You need to convert to other types (like int or float) if needed.'
     },
     {
       term: 'range()',
@@ -304,8 +368,122 @@ print(arr)  # Output: [1 2 3]`,
       ],
       notes: 'Works with strings, lists, tuples, dictionaries, sets, and most collection objects.'
     },
+    {
+      term: 'type()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns the type of an object.',
+      syntax: 'type(object)',
+      examples: [
+        'type(42)  # <class \'int\'>',
+        'type("hello")  # <class \'str\'>',
+        'print(type([1, 2, 3]))  # <class \'list\'>'
+      ],
+      notes: 'Useful for debugging and conditional logic based on types.'
+    },
+    {
+      term: 'sum()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns the sum of all items in an iterable.',
+      syntax: 'sum(iterable, start=0)',
+      examples: [
+        'sum([1, 2, 3, 4])  # Returns 10',
+        'sum([0.1, 0.2])  # Returns 0.30000000000000004',
+        'sum([[1], [2]], [])  # Concatenates lists: [1, 2]'
+      ],
+      notes: 'The start parameter adds an additional value to the sum.'
+    },
+    {
+      term: 'max()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns the largest item in an iterable or the largest of two or more arguments.',
+      syntax: 'max(iterable) or max(arg1, arg2, *args, key=None)',
+      examples: [
+        'max(5, 10, 15)  # Returns 15',
+        'max([1, 2, 3, 4])  # Returns 4',
+        'max("apple", "banana", key=len)  # Returns "banana" (by length)'
+      ],
+      notes: 'The key parameter specifies a function to customize comparison.'
+    },
+    {
+      term: 'min()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns the smallest item in an iterable or the smallest of two or more arguments.',
+      syntax: 'min(iterable) or min(arg1, arg2, *args, key=None)',
+      examples: [
+        'min(5, 10, 15)  # Returns 5',
+        'min([1, 2, 3, 4])  # Returns 1',
+        'min("apple", "banana", key=len)  # Returns "apple" (by length)'
+      ],
+      notes: 'The key parameter specifies a function to customize comparison.'
+    },
     
-    // C++ Terms
+    // Python Keywords
+    {
+      term: 'if',
+      category: 'keyword',
+      language: 'python',
+      description: 'Executes a block of code if a specified condition is true.',
+      syntax: 'if condition:\\n    # code block',
+      examples: [
+        'if x > 10:\\n    print("x is greater than 10")',
+        'if name == "Alice":\\n    print("Hello Alice")'
+      ],
+      notes: 'Can be followed by elif and else blocks for more complex conditions.'
+    },
+    {
+      term: 'for',
+      category: 'keyword',
+      language: 'python',
+      description: 'Creates a loop that iterates over a sequence.',
+      syntax: 'for item in iterable:\n    # code block',
+      examples: [
+        'for i in range(5):\n    print(i)',
+        'for name in ["Alice", "Bob", "Charlie"]:\n    print(f"Hello {name}")'
+      ],
+      notes: 'Can use break to exit the loop early or continue to skip to the next iteration.'
+    },
+    {
+      term: 'while',
+      category: 'keyword',
+      language: 'python',
+      description: 'Creates a loop that executes as long as a specified condition is true.',
+      syntax: 'while condition:\n    # code block',
+      examples: [
+        'count = 0\nwhile count < 5:\n    print(count)\n    count += 1',
+        'while True:\n    user_input = input()\n    if user_input == "quit":\n        break'
+      ],
+      notes: 'Be careful to ensure the condition will eventually become false to avoid infinite loops.'
+    },
+    {
+      term: 'def',
+      category: 'keyword',
+      language: 'python',
+      description: 'Defines a function in Python.',
+      syntax: 'def function_name(parameters):\n    # function body\n    return value',
+      examples: [
+        'def greet(name):\n    return f"Hello, {name}!"',
+        'def add(a, b=0):\n    return a + b'
+      ],
+      notes: 'Functions can have default parameter values and return values. Use "return" to specify what value the function outputs.'
+    },
+    {
+      term: 'class',
+      category: 'keyword',
+      language: 'python',
+      description: 'Defines a class, which is a blueprint for creating objects.',
+      syntax: 'class ClassName:\n    # class body',
+      examples: [
+        'class Person:\n    def __init__(self, name):\n        self.name = name\n    def greet(self):\n        return f"Hello, my name is {self.name}"',
+        'person = Person("Alice")\nprint(person.greet())'
+      ],
+      notes: 'The __init__ method is the constructor that initializes new instances. The self parameter refers to the instance being created.'
+    },
+    
+    // C++ Data Types
     {
       term: 'int',
       category: 'data-type',
@@ -333,6 +511,45 @@ print(arr)  # Output: [1 2 3]`,
       notes: 'The suffix "f" indicates a float literal. Without it, decimal literals are treated as double by default.'
     },
     {
+      term: 'double',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Double-precision floating-point data type in C++. Has greater precision than float.',
+      syntax: 'double x = 3.14159265359;',
+      examples: [
+        'double pi = 3.14159265359;',
+        'double result = 10.0 / 3.0;  // 3.3333...',
+        'double scientific = 6.022e23;  // Scientific notation'
+      ],
+      notes: 'Usually 8 bytes in size, providing greater precision than float. It\'s the default type for floating-point literals in C++.'
+    },
+    {
+      term: 'char',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Character data type in C++. Represents a single character.',
+      syntax: 'char c = \'A\';',
+      examples: [
+        'char letter = \'A\';',
+        'char digit = \'5\';',
+        'char newline = \'\n\';'
+      ],
+      notes: 'Typically 1 byte in size. Characters are enclosed in single quotes. Stores the ASCII or Unicode value of the character.'
+    },
+    {
+      term: 'bool',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Boolean data type in C++. Represents true or false values.',
+      syntax: 'bool flag = true;',
+      examples: [
+        'bool isValid = true;',
+        'bool hasError = false;',
+        'bool result = (5 > 3);  // true'
+      ],
+      notes: 'A bool can only have the values true or false. In memory, it typically uses 1 byte, although only 1 bit would be needed.'
+    },
+    {
       term: 'std::string',
       category: 'data-type',
       language: 'cpp',
@@ -346,8 +563,86 @@ print(arr)  # Output: [1 2 3]`,
       ],
       notes: 'Requires the <string> header. Unlike C strings, std::string handles memory allocation automatically.'
     },
+    {
+      term: 'std::vector',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'A dynamic array container in C++ that can resize itself automatically.',
+      syntax: 'std::vector<type> name;',
+      examples: [
+        '#include <vector>',
+        'std::vector<int> numbers = {1, 2, 3, 4, 5};',
+        'numbers.push_back(6);  // Add element to the end',
+        'int third = numbers[2];  // Access third element (0-indexed)'
+      ],
+      notes: 'Requires the <vector> header. Provides dynamic size, efficient element access, and various useful methods.'
+    },
+    
+    // C++ Keywords and Operators
+    {
+      term: 'for',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Creates a loop that executes a specified number of times.',
+      syntax: 'for (initialization; condition; increment) { /* code */ }',
+      examples: [
+        'for (int i = 0; i < 5; i++) {\n    std::cout << i << std::endl;\n}',
+        'for (auto item : collection) {\n    // Use item\n}  // Range-based for loop (C++11)'
+      ],
+      notes: 'The initialization part runs once at the beginning, the condition is checked before each iteration, and the increment part runs after each iteration.'
+    },
+    {
+      term: 'if',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Executes a block of code if a specified condition is true.',
+      syntax: 'if (condition) { /* code */ } else { /* code */ }',
+      examples: [
+        'if (x > 10) {\n    std::cout << "x is greater than 10" << std::endl;\n}',
+        'if (age >= 18) {\n    std::cout << "Adult" << std::endl;\n} else {\n    std::cout << "Minor" << std::endl;\n}'
+      ],
+      notes: 'The else clause is optional. You can also use else if for multiple conditions.'
+    },
     
     // Arduino/Wiring Functions
+    {
+      term: 'pinMode()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Configures the specified pin to behave either as an input or an output.',
+      syntax: 'pinMode(pin, mode)',
+      examples: [
+        'pinMode(13, OUTPUT);  // Set pin 13 as output',
+        'pinMode(2, INPUT);    // Set pin 2 as input',
+        'pinMode(3, INPUT_PULLUP);  // Set pin 3 as input with pullup resistor'
+      ],
+      notes: 'Should be called in setup(). Modes are OUTPUT, INPUT, or INPUT_PULLUP.'
+    },
+    {
+      term: 'Serial.begin()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Initializes serial communication at the specified baud rate.',
+      syntax: 'Serial.begin(baudRate)',
+      examples: [
+        'void setup() {\n  Serial.begin(9600);  // Initialize at 9600 baud\n}',
+        'Serial.begin(115200);  // Higher baud rate for faster communication'
+      ],
+      notes: 'Common baud rates are 9600, 57600, and 115200. Must be called before using other Serial functions.'
+    },
+    {
+      term: 'Serial.print()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Prints data to the serial port without a newline character.',
+      syntax: 'Serial.print(val) or Serial.print(val, format)',
+      examples: [
+        'Serial.print("Sensor value: ");',
+        'Serial.print(analogValue);',
+        'Serial.print(value, HEX);  // Print in hexadecimal format'
+      ],
+      notes: 'Serial must be initialized with Serial.begin() before using Serial.print().'
+    },
     {
       term: 'Serial.println()',
       category: 'function',
@@ -426,6 +721,18 @@ print(arr)  # Output: [1 2 3]`,
       notes: 'During the delay, the microcontroller cannot read sensors, compute, or perform other tasks.'
     },
     {
+      term: 'delayMicroseconds()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Pauses the program for the specified amount of time (in microseconds).',
+      syntax: 'delayMicroseconds(us)',
+      examples: [
+        'delayMicroseconds(10);  // pause for 10 microseconds',
+        'delayMicroseconds(50);  // pause for 50 microseconds'
+      ],
+      notes: 'More precise than delay() for very short pauses. Accurate for delays up to about 16 milliseconds.'
+    },
+    {
       term: 'millis()',
       category: 'function',
       language: 'arduino',
@@ -438,6 +745,43 @@ print(arr)  # Output: [1 2 3]`,
         '}'
       ],
       notes: 'Overflows after approximately 50 days. Returns an unsigned long value.'
+    },
+    {
+      term: 'micros()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Returns the number of microseconds since the Arduino board began running the current program.',
+      syntax: 'micros()',
+      examples: [
+        'unsigned long startTime = micros();',
+        '// do something',
+        'unsigned long duration = micros() - startTime;'
+      ],
+      notes: 'Overflows after approximately 70 minutes. Returns an unsigned long value. Higher resolution than millis().'
+    },
+    {
+      term: 'map()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Re-maps a number from one range to another.',
+      syntax: 'map(value, fromLow, fromHigh, toLow, toHigh)',
+      examples: [
+        'int brightness = map(analogRead(A0), 0, 1023, 0, 255);',
+        'float angle = map(potValue, 0, 1023, 0.0, 180.0);'
+      ],
+      notes: 'Useful for converting sensor readings to usable values. The original value is not constrained, so the result may be outside the target range.'
+    },
+    {
+      term: 'constrain()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Constrains a number to be within a range.',
+      syntax: 'constrain(x, a, b)',
+      examples: [
+        'int brightness = constrain(sensorValue, 0, 255);',
+        'float angle = constrain(calculatedAngle, 0.0, 180.0);'
+      ],
+      notes: 'Returns x if it\'s between a and b, a if x is less than a, and b if x is greater than b.'
     },
     {
       term: 'bit()',
