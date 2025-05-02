@@ -22,6 +22,7 @@ import SettingsWindow from "./SettingsWindow";
 import QuestLoadingScreen from "./QuestLoadingScreen";
 import CodeQuizWindow from "./CodeQuizWindow";
 import CodeGuessWindow from "./CodeGuessWindow";
+import ComponentGlossaryWindow from "./ComponentGlossaryWindow";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import wallpaperImage from "@assets/wallpaper.png";
 import goldCrateImage from "@assets/goldcrate.png";
@@ -263,6 +264,10 @@ const RetroDesktop: React.FC = () => {
       openCodeGuessWindow();
     };
     
+    const handleOpenComponentGlossary = () => {
+      openComponentGlossaryWindow();
+    };
+    
     window.addEventListener('openTerminal', handleOpenTerminal);
     window.addEventListener('openBrowser', handleOpenBrowser);
     window.addEventListener('openProfile', handleOpenProfile);
@@ -271,6 +276,7 @@ const RetroDesktop: React.FC = () => {
     window.addEventListener('openSettings', handleOpenSettings);
     window.addEventListener('openBugHunt', handleOpenBugHunt);
     window.addEventListener('openCodeGuess', handleOpenCodeGuess);
+    window.addEventListener('openComponentGlossary', handleOpenComponentGlossary);
     
     return () => {
       window.removeEventListener('openTerminal', handleOpenTerminal);
@@ -281,6 +287,7 @@ const RetroDesktop: React.FC = () => {
       window.removeEventListener('openSettings', handleOpenSettings);
       window.removeEventListener('openBugHunt', handleOpenBugHunt);
       window.removeEventListener('openCodeGuess', handleOpenCodeGuess);
+      window.removeEventListener('openComponentGlossary', handleOpenComponentGlossary);
     };
   }, []);
   
@@ -643,6 +650,20 @@ const RetroDesktop: React.FC = () => {
       />, 
       "🎮",
       { width: 600, height: 700 }
+    );
+  };
+  
+  const openComponentGlossaryWindow = () => {
+    openWindow(
+      "componentglossary", 
+      "Component Encyclopedia", 
+      <ComponentGlossaryWindow 
+        onClose={() => closeWindow("componentglossary")} 
+        onMinimize={() => minimizeWindow("componentglossary")}
+        isActive={windows.some(w => w.id === "componentglossary" && w.isActive)}
+      />, 
+      "💻",
+      { width: 900, height: 650 }
     );
   };
   
