@@ -270,6 +270,7 @@ const RetroDesktop: React.FC = () => {
     window.addEventListener('openJukebox', handleOpenJukebox);
     window.addEventListener('openSettings', handleOpenSettings);
     window.addEventListener('openBugHunt', handleOpenBugHunt);
+    window.addEventListener('openCodeGuess', handleOpenCodeGuess);
     
     return () => {
       window.removeEventListener('openTerminal', handleOpenTerminal);
@@ -279,6 +280,7 @@ const RetroDesktop: React.FC = () => {
       window.removeEventListener('openJukebox', handleOpenJukebox);
       window.removeEventListener('openSettings', handleOpenSettings);
       window.removeEventListener('openBugHunt', handleOpenBugHunt);
+      window.removeEventListener('openCodeGuess', handleOpenCodeGuess);
     };
   }, []);
   
