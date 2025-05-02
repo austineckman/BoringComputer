@@ -1,169 +1,107 @@
 import React, { useState, useEffect } from 'react';
 
-/**
- * Enhanced tooltip component for pins that works across Shadow DOM
- * and Web Components to provide detailed information about pin connections
- * following Wokwi's implementation style
- */
 const PinTooltip = () => {
-  const [visible, setVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [tooltipData, setTooltipData] = useState(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [content, setContent] = useState('');
-  const [pinType, setPinType] = useState('');
-  const [pinInfo, setPinInfo] = useState(null);
-  
-  // Set up event listeners
+
+  // Default tooltip style
+  const tooltipStyle = {
+    position: 'fixed',
+    left: `${position.x + 15}px`,
+    top: `${position.y + 15}px`,
+    zIndex: 9999,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    color: 'white',
+    padding: '8px 12px',
+    borderRadius: '4px',
+    maxWidth: '300px',
+    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.2)',
+    display: isVisible ? 'block' : 'none',
+    pointerEvents: 'none',
+    fontSize: '14px',
+    transform: 'translate(0, 0)',
+    transition: 'opacity 0.2s',
+    opacity: isVisible ? 1 : 0
+  };
+
+  // Listen for pin hover/leave events
   useEffect(() => {
-    // Handler for custom event with pin information
-    const handlePinHover = (e) => {
-      // Extract data from the event
-      const { detail } = e;
-      if (detail) {
-        // Set tooltip content
-        const label = detail.name || detail.label || detail.pinId || 'Pin';
-        setContent(label);
-        
-        // Set pin type for styling
-        const type = detail.type || detail.pinType || 'unknown';
-        setPinType(type);
-        
-        // Store additional pin information
-        setPinInfo({
-          componentId: detail.componentId || detail.parentId,
-          pinId: detail.pinId || detail.id,
-          description: detail.description || getDefaultDescription(type, label)
-        });
-        
-        // Position the tooltip above the cursor
-        setPosition({
-          x: detail.clientX || detail.x,
-          y: detail.clientY || detail.y - 30
-        });
-        
-        // Show the tooltip
-        setVisible(true);
+    const handlePinHover = (event) => {
+      const { pin, component, position: eventPosition } = event.detail;
+      
+      // Set tooltip data
+      setTooltipData({ pin, component });
+      
+      // Set position based on mouse position
+      if (eventPosition) {
+        setPosition(eventPosition);
+      } else {
+        // If no position provided, use a default
+        setPosition({ x: window.innerWidth / 2 - 150, y: window.innerHeight / 2 - 100 });
       }
+      
+      setIsVisible(true);
+      
+      // Log a message
+      console.log('Pin tooltip enhancement initialized');
     };
-    
-    // Handler for mouseout
+
     const handlePinLeave = () => {
-      setVisible(false);
+      setIsVisible(false);
     };
-    
-    // Register the event listeners
-    document.addEventListener('pinHover', handlePinHover);
-    document.addEventListener('pinLeave', handlePinLeave);
-    
-    // Log for debugging
-    console.log('Pin tooltip enhancement initialized');
-    
-    // Cleanup
+
+    // Add global event listeners
+    window.addEventListener('pin-hover', handlePinHover);
+    window.addEventListener('pin-leave', handlePinLeave);
+
     return () => {
-      document.removeEventListener('pinHover', handlePinHover);
-      document.removeEventListener('pinLeave', handlePinLeave);
+      // Clean up
+      window.removeEventListener('pin-hover', handlePinHover);
+      window.removeEventListener('pin-leave', handlePinLeave);
     };
   }, []);
-  
-  // Generate default pin description based on type and label
-  const getDefaultDescription = (type, label) => {
-    if (label.includes('GND')) return 'Ground connection (0V)';
-    if (label.includes('VCC') || label.includes('5V') || label.includes('3.3V')) 
-      return `Power ${label.includes('3.3') ? '3.3V' : '5V'} connection`;
-    
-    if (label.includes('A') && !isNaN(label.replace('A', ''))) 
-      return `Analog input pin ${label}`;
-    
-    if (label.includes('SCL')) return 'I²C clock line';
-    if (label.includes('SDA')) return 'I²C data line';
-    if (label.includes('TX')) return 'Serial transmit pin';
-    if (label.includes('RX')) return 'Serial receive pin';
-    
-    if (label.includes('PWM') || label.match(/~D\d+/)) 
-      return 'PWM capable digital pin';
-    
-    if (type === 'input') return 'Digital input pin';
-    if (type === 'output') return 'Digital output pin';
-    if (type === 'bidirectional') return 'Bidirectional I/O pin';
-    
-    return 'Component connection pin';
-  };
-  
-  // Get pin type-specific styling
-  const getPinTypeColor = () => {
-    switch (pinType) {
-      case 'input': return '#4CAF50';
-      case 'output': return '#F44336';
-      case 'bidirectional': return '#2196F3';
-      case 'power': return '#FF9800';
-      case 'ground': return '#607D8B';
-      default: return '#9C27B0';
-    }
-  };
-  
-  // Don't render if not visible
-  if (!visible) return null;
-  
+
+  // Handle mouse movement when tooltip is visible
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (isVisible) {
+        setPosition({ x: e.clientX, y: e.clientY });
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [isVisible]);
+
+  // Don't render if no data
+  if (!tooltipData) return null;
+
+  const { pin } = tooltipData;
+
   return (
-    <div 
-      className="pin-tooltip animate-fadeIn"
-      style={{
-        position: 'fixed',
-        top: `${position.y}px`,
-        left: `${position.x}px`,
-        transform: 'translate(-50%, -100%)',
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
-        color: 'white',
-        padding: '6px 10px',
-        borderRadius: '6px',
-        fontSize: '12px',
-        fontWeight: 'medium',
-        boxShadow: '0 3px 8px rgba(0, 0, 0, 0.5)',
-        pointerEvents: 'none',
-        zIndex: 9999,
-        border: `2px solid ${getPinTypeColor()}`,
-        whiteSpace: 'nowrap',
-        maxWidth: '250px',
-        backdropFilter: 'blur(4px)'
-      }}
-    >
-      <div className="flex flex-col gap-1">
-        <div className="font-bold text-sm" style={{ color: getPinTypeColor() }}>
-          {content}
-        </div>
-        
-        {pinInfo && pinInfo.description && (
-          <div className="text-xs text-gray-300">
-            {pinInfo.description}
-          </div>
-        )}
-        
-        {pinType && (
-          <div className="text-xs mt-1 px-1.5 py-0.5 rounded-sm" 
-            style={{ 
-              backgroundColor: `${getPinTypeColor()}30`,
-              border: `1px solid ${getPinTypeColor()}80`,
-              display: 'inline-block',
-              alignSelf: 'flex-start'
-            }}>
-            {pinType.charAt(0).toUpperCase() + pinType.slice(1)}
-          </div>
-        )}
+    <div style={tooltipStyle}>
+      <div style={{ fontWeight: 'bold', marginBottom: '4px', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: '4px' }}>
+        {pin.name}
       </div>
       
-      {/* Tooltip arrow */}
-      <div style={{
-        position: 'absolute',
-        bottom: '-6px',
-        left: '50%',
-        width: '12px',
-        height: '12px',
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
-        border: `0 solid ${getPinTypeColor()}`,
-        borderRightWidth: '2px',
-        borderBottomWidth: '2px',
-        boxShadow: '2px 2px 2px rgba(0, 0, 0, 0.3)',
-        transform: 'translateX(-50%) rotate(45deg)'
-      }} />
+      <div style={{ fontSize: '12px', marginBottom: '6px' }}>
+        {pin.description}
+      </div>
+      
+      {pin.voltageRange && (
+        <div style={{ fontSize: '11px', marginTop: '4px', color: '#8cc8ff' }}>
+          <span style={{ fontWeight: 'bold' }}>Voltage:</span> {pin.voltageRange}
+        </div>
+      )}
+      
+      {pin.warnings && (
+        <div style={{ fontSize: '11px', marginTop: '4px', color: '#ff9e80' }}>
+          <span style={{ fontWeight: 'bold' }}>⚠️ Warning:</span> {pin.warnings}
+        </div>
+      )}
     </div>
   );
 };

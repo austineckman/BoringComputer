@@ -2,18 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { X, Minimize2, Search, Book, Cpu, Layers, HelpCircle } from 'lucide-react';
 import './retro-ui.css';
 
-// Import component images
-import ledIconImage from "@assets/led.icon.png";
-import buzzerIconImage from "@assets/buzzer.icon.svg";
-import resistorIconImage from "@assets/resistor.icon.png";
-import photoresistorIconImage from "@assets/photoresistor.icon.png";
-import rgbLedIconImage from "@assets/rgb-led.icon.png";
-import customKeypadIconImage from "@assets/custom-keypad.icon.png";
-import dipSwitchIconImage from "@assets/dip-switch-3.icon.png";
-import oledDisplayIconImage from "@assets/oled-display.icon.png";
-import heroboardIconImage from "@assets/hero-board.icon.png";
-import rotaryEncoderIconImage from "@assets/rotary-encoder.icon.png";
-import segmentedDisplayIconImage from "@assets/segmented-display.icon.png";
+// Import ComponentSimulatorView
+import ComponentSimulatorView from '../circuit-builder/components/ComponentSimulatorView';
+import PinTooltip from '../circuit-builder/components/PinTooltip';
 
 interface ComponentGlossaryWindowProps {
   onClose: () => void;
@@ -21,7 +12,6 @@ interface ComponentGlossaryWindowProps {
   isActive: boolean;
 }
 
-// Component data structure
 interface ComponentPin {
   id: string;
   name: string;
@@ -41,452 +31,114 @@ interface Component {
   generalInfo?: string;
 }
 
-// Search term glossary
 interface GlossaryTerm {
   term: string;
   definition: string;
   relatedComponents?: string[];
 }
 
-// Component data
+// Mock data for testing
 const COMPONENTS: Component[] = [
   {
-    id: "led",
-    name: "LED",
-    iconSrc: ledIconImage,
-    description: "Light Emitting Diode - A semiconductor that emits light when current flows through it.",
-    generalInfo: "LEDs are polarized components, meaning they only work when connected in the correct direction. The longer leg is the anode (+) and should be connected to the positive voltage, while the shorter leg is the cathode (-) and connects to ground.",
+    id: 'led',
+    name: 'LED',
+    iconSrc: '/assets/led.icon.png',
+    description: 'Light Emitting Diode - A semiconductor device that emits light when current flows through it',
+    generalInfo: 'LEDs are widely used as indicator lamps in many devices and are increasingly used for lighting. They consume far less energy than incandescent lamps.',
     pins: [
       {
-        id: "anode",
-        name: "Anode (+)",
-        description: "The positive terminal of the LED, typically the longer leg.",
-        voltageRange: "Forward voltage varies by color: Red: 1.8-2.2V, Green: 2.0-3.2V, Blue: 2.7-3.4V",
-        usageNotes: "Must be connected to the positive voltage through a current-limiting resistor.",
-        warnings: "Never connect an LED directly to a voltage source without a resistor as it will burn out.",
-        relatedTerms: ["current limiting resistor", "forward voltage"]
+        id: 'led-anode',
+        name: 'Anode (+)',
+        description: 'The positive terminal of the LED, which connects to the positive voltage supply.',
+        voltageRange: 'Typically 1.8V to 3.3V depending on color',
+        usageNotes: 'Must be connected to the positive supply through a current-limiting resistor to prevent the LED from burning out.',
+        warnings: 'Never connect an LED directly to a power source without a current-limiting resistor',
+        relatedTerms: ['Forward Voltage', 'Current Limiting']
       },
       {
-        id: "cathode",
-        name: "Cathode (-)",
-        description: "The negative terminal of the LED, typically the shorter leg.",
-        voltageRange: "0V (connects to ground)",
-        usageNotes: "Should be connected to ground (GND) to complete the circuit.",
-        relatedTerms: ["GND", "ground"]
+        id: 'led-cathode',
+        name: 'Cathode (-)',
+        description: 'The negative terminal of the LED, which connects to ground or the negative supply voltage.',
+        usageNotes: 'Usually identified by a flat side on the LED package or a shorter lead.',
+        relatedTerms: ['Ground', 'Common Cathode']
       }
     ]
   },
   {
-    id: "resistor",
-    name: "Resistor",
-    iconSrc: resistorIconImage,
-    description: "A passive two-terminal electrical component that implements electrical resistance as a circuit element.",
-    generalInfo: "Resistors are used to reduce current flow, adjust signal levels, divide voltages, bias active elements, and terminate transmission lines. Resistance is measured in ohms (Ω).",
+    id: 'resistor',
+    name: 'Resistor',
+    iconSrc: '/assets/resistor.icon.png',
+    description: 'A passive component that implements electrical resistance in a circuit',
+    generalInfo: 'Resistors are used to reduce current flow, adjust signal levels, divide voltages, bias active elements, and terminate transmission lines.',
     pins: [
       {
-        id: "terminal1",
-        name: "Terminal 1",
-        description: "First terminal of the resistor.",
-        usageNotes: "Resistors are non-polarized, so either terminal can be connected to higher voltage or ground.",
-        relatedTerms: ["ohm's law", "resistance"]
+        id: 'resistor-terminal1',
+        name: 'Terminal 1',
+        description: 'One end of the resistor. Resistors are non-polarized so either terminal can be connected to higher or lower voltage.',
+        relatedTerms: ['Resistance', 'Ohm\'s Law']
       },
       {
-        id: "terminal2",
-        name: "Terminal 2",
-        description: "Second terminal of the resistor.",
-        usageNotes: "Resistors are non-polarized, so either terminal can be connected to higher voltage or ground.",
-        relatedTerms: ["ohm's law", "resistance"]
+        id: 'resistor-terminal2',
+        name: 'Terminal 2',
+        description: 'The other end of the resistor. Resistors are non-polarized so either terminal can be connected to higher or lower voltage.',
+        relatedTerms: ['Resistance', 'Ohm\'s Law']
       }
     ]
   },
   {
-    id: "buzzer",
-    name: "Buzzer",
-    iconSrc: buzzerIconImage,
-    description: "A audio signaling device that can be mechanical, electromechanical, or piezoelectric.",
-    generalInfo: "Buzzers convert electrical energy into sound. They are commonly used in alarms, timers, and confirmation of user input.",
+    id: 'button',
+    name: 'Push Button',
+    iconSrc: '/assets/buzzer.icon.svg',
+    description: 'A momentary switch that completes a circuit when pressed',
     pins: [
       {
-        id: "positive",
-        name: "Positive (+)",
-        description: "The positive terminal of the buzzer.",
-        voltageRange: "3-12V depending on the buzzer specifications",
-        usageNotes: "Connect to the positive voltage supply through a current-limiting resistor if needed.",
-        warnings: "Check your buzzer's specifications for voltage requirements."
+        id: 'button-terminal1',
+        name: 'Terminal 1',
+        description: 'One terminal of the button. When the button is pressed, this terminal connects to Terminal 2.',
       },
       {
-        id: "negative",
-        name: "Negative (-)",
-        description: "The negative terminal of the buzzer.",
-        voltageRange: "0V (connects to ground)",
-        usageNotes: "Connect to ground (GND) to complete the circuit."
-      }
-    ]
-  },
-  {
-    id: "photoresistor",
-    name: "Photoresistor",
-    iconSrc: photoresistorIconImage,
-    description: "A light-controlled variable resistor that decreases resistance with increasing incident light intensity.",
-    generalInfo: "Also known as LDRs (Light Dependent Resistors), photoresistors are used in light sensing applications, such as detecting darkness or brightness.",
-    pins: [
-      {
-        id: "terminal1",
-        name: "Terminal 1",
-        description: "First terminal of the photoresistor.",
-        usageNotes: "Typically used in a voltage divider circuit with another resistor. Connect to power or ground.",
-        relatedTerms: ["voltage divider", "analog sensing"]
-      },
-      {
-        id: "terminal2",
-        name: "Terminal 2",
-        description: "Second terminal of the photoresistor.",
-        usageNotes: "Typically connected to an analog input pin (through a voltage divider) or to VCC with the other terminal to ground through a fixed resistor.",
-        relatedTerms: ["voltage divider", "analog sensing"]
-      }
-    ]
-  },
-  {
-    id: "rgb-led",
-    name: "RGB LED",
-    iconSrc: rgbLedIconImage,
-    description: "A LED that can emit different colors by combining red, green, and blue light.",
-    generalInfo: "RGB LEDs contain three separate LEDs in one package. By varying the intensity of each color, you can create millions of different colors.",
-    pins: [
-      {
-        id: "common",
-        name: "Common Terminal",
-        description: "This can be either common anode (connects to VCC) or common cathode (connects to GND) depending on the LED type.",
-        usageNotes: "For common anode RGB LEDs, connect this to VCC. For common cathode, connect to GND.",
-        warnings: "Always check your LED datasheet to confirm whether it's common anode or common cathode.",
-        relatedTerms: ["common anode", "common cathode"]
-      },
-      {
-        id: "red",
-        name: "Red Terminal",
-        description: "Controls the red component of the RGB LED.",
-        voltageRange: "Forward voltage ~1.8-2.2V",
-        usageNotes: "Connect through a current-limiting resistor (usually 220-330Ω).",
-        relatedTerms: ["PWM", "current limiting resistor"]
-      },
-      {
-        id: "green",
-        name: "Green Terminal",
-        description: "Controls the green component of the RGB LED.",
-        voltageRange: "Forward voltage ~2.0-3.2V",
-        usageNotes: "Connect through a current-limiting resistor (usually 220-330Ω).",
-        relatedTerms: ["PWM", "current limiting resistor"]
-      },
-      {
-        id: "blue",
-        name: "Blue Terminal",
-        description: "Controls the blue component of the RGB LED.",
-        voltageRange: "Forward voltage ~2.7-3.4V",
-        usageNotes: "Connect through a current-limiting resistor (usually 220-330Ω).",
-        relatedTerms: ["PWM", "current limiting resistor"]
-      }
-    ]
-  },
-  {
-    id: "hero-board",
-    name: "Hero Board",
-    iconSrc: heroboardIconImage,
-    description: "A microcontroller development board for electronics prototyping and learning.",
-    generalInfo: "The Hero Board serves as a versatile microcontroller platform with Arduino compatibility, featuring expansion capabilities and built-in components for easier electronics experimentation.",
-    pins: [
-      {
-        id: "vcc",
-        name: "VCC",
-        description: "Voltage Common Collector - The main power supply positive voltage.",
-        voltageRange: "3.3V or 5V depending on the jumper setting",
-        usageNotes: "Used to power components and circuits connected to the board.",
-        warnings: "Make sure your components can handle the selected voltage.",
-        relatedTerms: ["power", "voltage"]
-      },
-      {
-        id: "gnd",
-        name: "GND",
-        description: "Ground - The reference point for all voltage measurements in the circuit.",
-        voltageRange: "0V",
-        usageNotes: "All components in your circuit should have a ground connection directly or indirectly.",
-        relatedTerms: ["ground", "common"]
-      },
-      {
-        id: "digital-pins",
-        name: "Digital I/O Pins",
-        description: "Pins that can be set to either HIGH (VCC) or LOW (GND) and can read digital signals.",
-        voltageRange: "0V (LOW) to 3.3V/5V (HIGH)",
-        usageNotes: "Used for digital input or output. Can be set as INPUT, OUTPUT, or INPUT_PULLUP in code.",
-        relatedTerms: ["GPIO", "digital signal", "INPUT_PULLUP"]
-      },
-      {
-        id: "analog-pins",
-        name: "Analog Input Pins",
-        description: "Pins that can read analog voltage levels through an analog-to-digital converter (ADC).",
-        voltageRange: "0V to VCC (3.3V or 5V)",
-        usageNotes: "Used to read sensors like potentiometers, photoresistors, etc. Values range from 0 to 1023 (10-bit) or 0 to 4095 (12-bit) depending on the board.",
-        relatedTerms: ["ADC", "analog-to-digital", "10-bit resolution"]
-      },
-      {
-        id: "pwm-pins",
-        name: "PWM Pins",
-        description: "Digital pins that can simulate analog output through Pulse Width Modulation.",
-        voltageRange: "Effective voltage varies based on duty cycle from 0V to VCC",
-        usageNotes: "Used for controlling LED brightness, motor speed, and other analog-like controls. Marked with ~ symbol on many boards.",
-        relatedTerms: ["pulse width modulation", "duty cycle", "analogWrite"]
-      },
-      {
-        id: "i2c-pins",
-        name: "I2C Pins (SDA/SCL)",
-        description: "Pins for I2C (Inter-Integrated Circuit) communication protocol.",
-        usageNotes: "Used for communicating with multiple slave devices like displays, sensors, and other ICs over just two wires.",
-        relatedTerms: ["serial communication", "SCL", "SDA", "Wire library"]
-      },
-      {
-        id: "spi-pins",
-        name: "SPI Pins (MOSI/MISO/SCK/SS)",
-        description: "Pins for SPI (Serial Peripheral Interface) communication protocol.",
-        usageNotes: "Faster than I2C but requires more pins. Used for communicating with SD cards, displays, and sensors.",
-        relatedTerms: ["serial communication", "MOSI", "MISO", "SCK", "SS", "SPI library"]
-      }
-    ]
-  },
-  {
-    id: "rotary-encoder",
-    name: "Rotary Encoder",
-    iconSrc: rotaryEncoderIconImage,
-    description: "A type of position sensor that converts angular motion into digital output signals.",
-    generalInfo: "Unlike potentiometers, rotary encoders provide unlimited rotation and can detect both the amount and direction of rotation. They're commonly used in volume knobs, scroll wheels, and motor control applications.",
-    pins: [
-      {
-        id: "clk",
-        name: "CLK (A)",
-        description: "Clock or Channel A pin.",
-        usageNotes: "Connect to a digital input pin on your microcontroller. Used with DT pin to determine rotation direction.",
-        relatedTerms: ["quadrature encoding", "interrupt"]
-      },
-      {
-        id: "dt",
-        name: "DT (B)",
-        description: "Data or Channel B pin.",
-        usageNotes: "Connect to a digital input pin on your microcontroller. Used with CLK pin to determine rotation direction.",
-        relatedTerms: ["quadrature encoding", "interrupt"]
-      },
-      {
-        id: "sw",
-        name: "SW (Button)",
-        description: "Switch or Button pin.",
-        usageNotes: "Many rotary encoders include a pushbutton switch. Connect to a digital input pin, typically with a pull-up resistor.",
-        relatedTerms: ["debouncing", "INPUT_PULLUP"]
-      },
-      {
-        id: "vcc",
-        name: "VCC",
-        description: "Power supply pin.",
-        voltageRange: "3.3V to 5V",
-        usageNotes: "Connect to the microcontroller's VCC."
-      },
-      {
-        id: "gnd",
-        name: "GND",
-        description: "Ground pin.",
-        usageNotes: "Connect to the microcontroller's GND."
-      }
-    ]
-  },
-  {
-    id: "oled-display",
-    name: "OLED Display",
-    iconSrc: oledDisplayIconImage,
-    description: "A self-illuminating display that uses organic light-emitting diodes to produce brilliant visuals.",
-    generalInfo: "OLED displays are energy-efficient, thin, lightweight, and provide excellent contrast. They communicate with microcontrollers typically through I2C or SPI protocols.",
-    pins: [
-      {
-        id: "vcc",
-        name: "VCC",
-        description: "Power supply pin.",
-        voltageRange: "3.3V to 5V (check your specific display)",
-        usageNotes: "Connect to the microcontroller's VCC.",
-        warnings: "Always verify voltage requirements - some displays are 3.3V only."
-      },
-      {
-        id: "gnd",
-        name: "GND",
-        description: "Ground pin.",
-        usageNotes: "Connect to the microcontroller's GND."
-      },
-      {
-        id: "scl",
-        name: "SCL/SCK",
-        description: "Serial Clock line for I2C or SPI communication.",
-        usageNotes: "Connect to the SCL pin on your microcontroller for I2C displays, or to the SCK pin for SPI displays.",
-        relatedTerms: ["I2C", "SPI", "serial communication"]
-      },
-      {
-        id: "sda",
-        name: "SDA/MOSI",
-        description: "Serial Data line for I2C, or Master Out Slave In for SPI communication.",
-        usageNotes: "Connect to the SDA pin on your microcontroller for I2C displays, or to the MOSI pin for SPI displays.",
-        relatedTerms: ["I2C", "SPI", "serial communication"]
-      },
-      {
-        id: "res",
-        name: "RES/RST",
-        description: "Reset pin.",
-        usageNotes: "Connect to a digital output pin on your microcontroller. Used to reset the display."
-      },
-      {
-        id: "dc",
-        name: "DC",
-        description: "Data/Command control pin (SPI displays only).",
-        usageNotes: "Connect to a digital output pin on your microcontroller. For SPI displays, indicates whether the data sent is a command or display data.",
-        relatedTerms: ["SPI", "command register"]
-      },
-      {
-        id: "cs",
-        name: "CS",
-        description: "Chip Select pin (SPI displays only).",
-        usageNotes: "Connect to a digital output pin on your microcontroller. Used to enable the display for SPI communication.",
-        relatedTerms: ["SPI", "slave select"]
-      }
-    ]
-  },
-  {
-    id: "dip-switch",
-    name: "DIP Switch",
-    iconSrc: dipSwitchIconImage,
-    description: "A small manual switch assembly used to customize the hardware operation of electronic devices.",
-    generalInfo: "DIP (Dual In-line Package) switches provide an easy way to change configuration settings without software. They're commonly used for setting device IDs, enabling features, or configuring operational modes.",
-    pins: [
-      {
-        id: "common",
-        name: "Common Terminal",
-        description: "The terminal that connects to all switches.",
-        usageNotes: "Typically connected to either VCC or GND depending on your circuit design."
-      },
-      {
-        id: "switch-terminals",
-        name: "Switch Terminals",
-        description: "Individual terminals for each switch.",
-        usageNotes: "Connect to microcontroller input pins, typically with pull-up or pull-down resistors to ensure defined states.",
-        relatedTerms: ["pull-up resistor", "pull-down resistor", "INPUT_PULLUP"]
-      }
-    ]
-  },
-  {
-    id: "segmented-display",
-    name: "7-Segment Display",
-    iconSrc: segmentedDisplayIconImage,
-    description: "A form of electronic display device for displaying decimal numerals and some alphabetic characters.",
-    generalInfo: "7-segment displays consist of seven LED segments arranged in a rectangular pattern to display digits and limited letters. They come in common anode or common cathode configurations.",
-    pins: [
-      {
-        id: "common",
-        name: "Common Terminal",
-        description: "This can be either common anode (connects to VCC) or common cathode (connects to GND) depending on the display type.",
-        usageNotes: "For common anode displays, connect to VCC. For common cathode, connect to GND.",
-        warnings: "Always check your display datasheet to confirm whether it's common anode or common cathode.",
-        relatedTerms: ["common anode", "common cathode"]
-      },
-      {
-        id: "segments",
-        name: "Segment Pins (a-g)",
-        description: "Individual pins controlling each of the seven segments plus the decimal point.",
-        voltageRange: "Typically requires 1.8V-3.3V per segment with appropriate current limiting resistors.",
-        usageNotes: "Each segment must be connected through a current-limiting resistor (typically 220-330Ω).",
-        warnings: "Never connect directly to a voltage source without current-limiting resistors.",
-        relatedTerms: ["current limiting resistor", "multiplexing"]
+        id: 'button-terminal2',
+        name: 'Terminal 2',
+        description: 'The other terminal of the button. When the button is pressed, this terminal connects to Terminal 1.',
       }
     ]
   }
 ];
 
-// Glossary data
 const GLOSSARY: GlossaryTerm[] = [
   {
-    term: "VCC",
-    definition: "Voltage Common Collector - The main power supply positive voltage in a circuit, typically 3.3V or 5V in microcontroller circuits.",
-    relatedComponents: ["hero-board", "led", "rgb-led"]
+    term: 'Forward Voltage',
+    definition: 'The voltage required to turn on a diode and allow current to flow. Different types of diodes (including LEDs) have different forward voltage requirements.',
+    relatedComponents: ['led']
   },
   {
-    term: "GND",
-    definition: "Ground - The reference point from which voltages are measured, typically 0V. All components in a circuit must share a common ground.",
-    relatedComponents: ["hero-board", "led", "rgb-led", "buzzer"]
+    term: 'Current Limiting',
+    definition: 'The practice of restricting the amount of current that can flow in a circuit, often done with a resistor. Essential for protecting components like LEDs.',
+    relatedComponents: ['led', 'resistor']
   },
   {
-    term: "pull-up resistor",
-    definition: "A resistor connected between a signal wire and the positive power supply (VCC). It ensures a defined high state when the input is not actively driven low.",
-    relatedComponents: ["hero-board", "dip-switch", "rotary-encoder"]
+    term: 'Ground',
+    definition: 'A reference point in an electrical circuit from which voltage is measured. It is the return path for current to flow back to the source.',
+    relatedComponents: ['led']
   },
   {
-    term: "pull-down resistor",
-    definition: "A resistor connected between a signal wire and ground (GND). It ensures a defined low state when the input is not actively driven high.",
-    relatedComponents: ["hero-board", "dip-switch"]
+    term: 'Common Cathode',
+    definition: 'A configuration where multiple components (often LEDs) share a common negative terminal.',
+    relatedComponents: ['led']
   },
   {
-    term: "current limiting resistor",
-    definition: "A resistor used to limit the amount of current flowing through a component, often used with LEDs to prevent damage.",
-    relatedComponents: ["led", "rgb-led", "segmented-display"]
+    term: 'Resistance',
+    definition: 'The opposition to the flow of electric current in a material, measured in ohms (Ω).',
+    relatedComponents: ['resistor']
   },
   {
-    term: "forward voltage",
-    definition: "The voltage drop across a semiconductor device (like an LED) when current is flowing in the forward direction.",
-    relatedComponents: ["led", "rgb-led"]
-  },
-  {
-    term: "PWM",
-    definition: "Pulse Width Modulation - A technique to simulate analog output using digital signals by varying the width of pulses. Used for controlling LED brightness, motor speed, etc.",
-    relatedComponents: ["hero-board", "led", "rgb-led"]
-  },
-  {
-    term: "common anode",
-    definition: "A configuration where multiple LEDs or segments share a common positive terminal (anode) that connects to VCC.",
-    relatedComponents: ["rgb-led", "segmented-display"]
-  },
-  {
-    term: "common cathode",
-    definition: "A configuration where multiple LEDs or segments share a common negative terminal (cathode) that connects to GND.",
-    relatedComponents: ["rgb-led", "segmented-display"]
-  },
-  {
-    term: "I2C",
-    definition: "Inter-Integrated Circuit - A serial communication protocol that uses two wires (SDA and SCL) to communicate with multiple devices.",
-    relatedComponents: ["hero-board", "oled-display"]
-  },
-  {
-    term: "SPI",
-    definition: "Serial Peripheral Interface - A synchronous serial communication protocol that uses separate clock and data lines, plus select lines for multiple devices.",
-    relatedComponents: ["hero-board", "oled-display"]
-  },
-  {
-    term: "voltage divider",
-    definition: "A circuit that produces an output voltage that is a fraction of its input voltage, commonly used with analog sensors like photoresistors.",
-    relatedComponents: ["photoresistor"]
-  },
-  {
-    term: "debouncing",
-    definition: "The process of eliminating the effects of signal bounce in mechanical switches or buttons, preventing multiple unintended triggers.",
-    relatedComponents: ["rotary-encoder", "dip-switch"]
-  },
-  {
-    term: "anode",
-    definition: "The positive electrode or terminal of a semiconductor device like an LED. Current flows into the anode when the device is forward-biased.",
-    relatedComponents: ["led", "rgb-led"]
-  },
-  {
-    term: "cathode",
-    definition: "The negative electrode or terminal of a semiconductor device like an LED. Current flows out of the cathode when the device is forward-biased.",
-    relatedComponents: ["led", "rgb-led"]
-  },
-  {
-    term: "analog sensing",
-    definition: "Reading variable voltage levels (rather than just high/low) to detect things like light intensity, temperature, pressure, etc.",
-    relatedComponents: ["photoresistor", "hero-board"]
+    term: 'Ohm\'s Law',
+    definition: 'A fundamental relationship in electrical circuits: V = I × R, where V is voltage, I is current, and R is resistance.',
+    relatedComponents: ['resistor']
   }
 ];
 
 const ComponentGlossaryWindow: React.FC<ComponentGlossaryWindowProps> = ({ onClose, onMinimize, isActive }) => {
-  // Component selection and PIN selection states
   const [selectedComponent, setSelectedComponent] = useState<Component | null>(null);
   const [selectedPin, setSelectedPin] = useState<ComponentPin | null>(null);
   
@@ -498,6 +150,9 @@ const ComponentGlossaryWindow: React.FC<ComponentGlossaryWindowProps> = ({ onClo
   // View states
   const [currentView, setCurrentView] = useState<'components' | 'component-detail' | 'search'>('components');
   const [componentList, setComponentList] = useState<Component[]>(COMPONENTS);
+  
+  // Simulator view state
+  const [showSimulatorView, setShowSimulatorView] = useState<boolean>(true);
   
   // Effect to filter components based on search
   useEffect(() => {
@@ -628,25 +283,54 @@ const ComponentGlossaryWindow: React.FC<ComponentGlossaryWindowProps> = ({ onClo
             <span className="mr-1">←</span> Back to Component List
           </button>
           
-          <div className="flex flex-col items-center justify-center flex-grow">
-            <img 
-              src={selectedComponent.iconSrc} 
-              alt={selectedComponent.name}
-              className="w-40 h-40 object-contain mb-4"
-            />
+          {/* Add toggle for simulator view */}
+          <div className="mb-4 flex justify-between items-center">
+            <h3 className="font-bold text-gray-700">Component View:</h3>
+            <div className="flex items-center">
+              <button
+                className={`px-3 py-1 text-sm rounded-l ${!showSimulatorView ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`}
+                onClick={() => setShowSimulatorView(false)}
+              >
+                Standard
+              </button>
+              <button
+                className={`px-3 py-1 text-sm rounded-r ${showSimulatorView ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`}
+                onClick={() => setShowSimulatorView(true)}
+              >
+                Simulator
+              </button>
+            </div>
+          </div>
+          
+          {/* Show either simulator view or standard view */}
+          {showSimulatorView ? (
+            <div className="mb-4 flex-grow flex justify-center items-center">
+              <ComponentSimulatorView component={selectedComponent} />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center flex-grow">
+              <img 
+                src={selectedComponent.iconSrc} 
+                alt={selectedComponent.name}
+                className="w-40 h-40 object-contain mb-4"
+              />
+            </div>
+          )}
+          
+          <div className="text-center">
             <h2 className="text-xl font-bold">{selectedComponent.name}</h2>
-            <p className="text-sm text-gray-600 mt-2 text-center">{selectedComponent.description}</p>
-            
+            <p className="text-sm text-gray-600 mt-2">{selectedComponent.description}</p>
+          
             {selectedComponent.generalInfo && (
-              <div className="mt-4 p-3 bg-blue-50 rounded text-sm text-gray-700 max-w-md">
-                <h4 className="font-bold flex items-center">
+              <div className="mt-4 p-3 bg-blue-50 rounded text-sm text-gray-700 max-w-md mx-auto">
+                <h4 className="font-bold flex items-center justify-center">
                   <HelpCircle size={16} className="mr-1 text-blue-600" />
                   General Information:
                 </h4>
                 <p className="mt-1">{selectedComponent.generalInfo}</p>
               </div>
             )}
-            
+          
             <div className="mt-6">
               <h3 className="font-bold text-gray-700 mb-2">Pins/Terminals:</h3>
               <div className="flex flex-wrap justify-center gap-2">
@@ -855,6 +539,9 @@ const ComponentGlossaryWindow: React.FC<ComponentGlossaryWindowProps> = ({ onClo
   
   return (
     <div className={`retroWindow ${isActive ? 'active' : ''}`}>
+      {/* Add PinTooltip for showing pin details */}
+      <PinTooltip />
+      
       <div className="windowTitleBar">
         <div className="windowTitle">Component Encyclopedia</div>
         <div className="windowControls">
