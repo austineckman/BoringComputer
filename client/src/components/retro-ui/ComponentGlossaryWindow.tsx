@@ -767,7 +767,7 @@ const ComponentGlossaryWindow: React.FC<ComponentGlossaryWindowProps> = ({ onClo
                             <div className="mt-2">
                               <p className="text-xs text-gray-600">Related Components:</p>
                               <div className="flex flex-wrap gap-1 mt-1">
-                                {result.item.relatedComponents.map(compId => {
+                                {result.item.relatedComponents.map((compId: string) => {
                                   const component = COMPONENTS.find(c => c.id === compId);
                                   return component ? (
                                     <span 
