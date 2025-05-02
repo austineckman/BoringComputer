@@ -46,56 +46,56 @@ const HelpCenterWindow: React.FC<HelpCenterWindowProps> = ({ onClose, onMinimize
     {
       id: 2,
       category: "General Questions",
-      question: "What's the difference between a microcontroller and a microprocessor?",
-      answer: "The main difference is that a microcontroller is a complete computing system on a single chip with integrated memory and peripherals, while a microprocessor only contains the central processing unit (CPU) and requires external components for memory and I/O operations. Microcontrollers are designed for dedicated tasks and embedded applications, while microprocessors are more general-purpose and found in computers, laptops, and more complex computing devices."
-    },
-    {
-      id: 3,
-      category: "General Questions",
       question: "What programming languages can I use with microcontrollers?",
       answer: "For microcontrollers like the Raspberry Pi Pico and HERO board, you can use several languages: 1) MicroPython - a streamlined version of Python for microcontrollers, ideal for beginners. 2) CircuitPython - Adafruit's Python variant with additional libraries. 3) C/C++ - provides more direct hardware control and optimization options. 4) Arduino C (for Arduino-compatible boards) - based on C++ with simplified functions."
     },
     {
-      id: 4,
+      id: 3,
       category: "Raspberry Pi Pico",
       question: "What is the Raspberry Pi Pico?",
       answer: "The Raspberry Pi Pico is a microcontroller board built around the RP2040 chip, designed by the Raspberry Pi Foundation. It features a dual-core ARM Cortex M0+ processor running at up to 133 MHz, 264KB of RAM, 2MB of flash storage, and 26 GPIO pins. It's designed for physical computing and embedded projects, and can be programmed using MicroPython, C/C++, or CircuitPython."
     },
     {
-      id: 5,
+      id: 4,
       category: "Raspberry Pi Pico",
       question: "How do I start programming the Raspberry Pi Pico?",
-      answer: "To start programming the Raspberry Pi Pico: 1) For MicroPython, download the MicroPython UF2 file from the Raspberry Pi website and drag it onto the Pico while it's in bootloader mode (hold BOOTSEL while plugging in). 2) For C/C++, install the Raspberry Pi Pico SDK and set up your development environment. 3) For CircuitPython, download the CircuitPython UF2 file from Adafruit and follow similar steps to MicroPython."
+      answer: "To start programming the Raspberry Pi Pico: 1) For MicroPython, download the MicroPython UF2 file from the Raspberry Pi website and drag it onto the Pico while it's in bootloader mode (hold BOOTSEL while plugging in). Then use an editor like Thonny to write and upload code. 2) For C/C++, install the Raspberry Pi Pico SDK and set up your development environment. 3) For CircuitPython, download the CircuitPython UF2 file from Adafruit and follow similar steps to MicroPython."
     },
     {
-      id: 6,
+      id: 5,
       category: "HERO Education",
       question: "What is the HERO board?",
       answer: "The HERO (Hardware Educational Revolution Outreach) board is an educational microcontroller board based on the RP2040 chip (same as Raspberry Pi Pico). It's specifically designed for STEM education with: 1) Built-in components like LEDs, buttons, potentiometers, a buzzer, and sensors. 2) Beginner-friendly layout with clear labeling. 3) Compatibility with both MicroPython and C/C++. 4) Additional onboard features to support learning activities."
     },
     {
-      id: 7,
+      id: 6,
       category: "HERO Education",
-      question: "How does the HERO board differ from Arduino boards?",
-      answer: "The HERO board differs from Arduino boards in several key ways: 1) Processor: HERO uses the dual-core RP2040 chip (ARM Cortex-M0+) which is generally more powerful than most Arduino processors. 2) Programming: HERO supports MicroPython out of the box (easier for beginners) as well as C/C++, while Arduino primarily uses C/C++ with the Arduino IDE. 3) Built-in components: HERO includes LEDs, buttons, sensors, and other components directly on the board."
+      question: "How do I get started with the HERO board?",
+      answer: "To get started with the HERO board: 1) Connect it to your computer using a micro USB cable. 2) It should appear as a USB drive - drag and drop the MicroPython UF2 file onto it (download from inventr.io if not preloaded). 3) Install Thonny Python IDE (or other supported editor like Mu). 4) In Thonny, select 'MicroPython (Raspberry Pi Pico)' from the interpreter options in the bottom-right. 5) Try a simple program to test, like turning on the built-in LED."
+    },
+    {
+      id: 7,
+      category: "Hardware & Components",
+      question: "What is an LED and how does it work?",
+      answer: "An LED (Light Emitting Diode) is a semiconductor component that emits light when electric current passes through it. It works by the movement of electrons in a semiconductor material, releasing energy in the form of photons (light). LEDs have a positive (anode) and negative (cathode) leg, and current must flow from anode to cathode to work. LEDs require a current-limiting resistor in series to prevent burnout, as they can be damaged by too much current."
     },
     {
       id: 8,
       category: "Hardware & Components",
-      question: "What is an LED and how does it work?",
-      answer: "An LED (Light Emitting Diode) is a semiconductor component that emits light when electric current passes through it. It works by the movement of electrons in a semiconductor material, releasing energy in the form of photons (light). LEDs have a positive (anode) and negative (cathode) leg, and current must flow from anode to cathode to work. They're efficient, durable, and available in various colors determined by the semiconductor materials used."
+      question: "What does a resistor do in a circuit?",
+      answer: "A resistor limits the flow of electric current in a circuit, providing controlled resistance measured in ohms (Ω). Common uses include: 1) Current limiting - protecting sensitive components like LEDs from excessive current. 2) Voltage division - creating a specific voltage at a point in a circuit. 3) Pull-up/pull-down - establishing a default voltage state for inputs. 4) Biasing - setting operating conditions for transistors and other components. 5) Timing - when combined with capacitors, controlling timing in circuits."
     },
     {
       id: 9,
-      category: "Hardware & Components",
-      question: "What does a resistor do in a circuit?",
-      answer: "A resistor limits the flow of electric current in a circuit, providing controlled resistance measured in ohms (Ω). Common uses include: 1) Current limiting - protecting sensitive components like LEDs from excessive current. 2) Voltage division - creating a specific voltage at a point in a circuit. 3) Pull-up/pull-down - establishing a default voltage state for inputs. 4) Biasing - setting operating conditions for transistors and other components."
+      category: "Coding & Software",
+      question: "What is MicroPython and how does it differ from regular Python?",
+      answer: "MicroPython is an implementation of Python 3 optimized to run on microcontrollers with limited resources. Key differences from regular Python include: 1) Smaller footprint - only includes a subset of the standard Python libraries. 2) Hardware-specific modules - adds special libraries for accessing GPIO pins, I2C, SPI, etc. 3) Optimized memory usage - designed to operate with very limited RAM. 4) Real-time capabilities - better support for timing-critical operations."
     },
     {
       id: 10,
       category: "Coding & Software",
-      question: "What is MicroPython and how does it differ from regular Python?",
-      answer: "MicroPython is an implementation of Python 3 optimized to run on microcontrollers with limited resources. Key differences from regular Python include: 1) Smaller footprint - only includes a subset of the standard Python libraries. 2) Hardware-specific modules - adds special libraries for accessing GPIO pins, I2C, SPI, etc. 3) Optimized memory usage - designed to operate with very limited RAM. 4) Real-time capabilities - better support for timing-critical operations."
+      question: "How do I debug my microcontroller code when it's not working?",
+      answer: "To debug microcontroller code: 1) Use print statements to output variable values and program state to a serial monitor. 2) Add LED indicators to visually track code execution paths. 3) Break your code into smaller sections and test each part independently. 4) Check timing with delay statements to verify different parts are executing. 5) For MicroPython/CircuitPython, use development environments like Thonny or Mu that provide REPL access for real-time interrogation."
     },
     {
       id: 11,
@@ -105,9 +105,9 @@ const HelpCenterWindow: React.FC<HelpCenterWindowProps> = ({ onClose, onMinimize
     },
     {
       id: 12,
-      category: "Projects & Activities",
-      question: "What's a good first project for learning electronics?",
-      answer: "An excellent first electronics project is an LED circuit with a pushbutton. This simple project teaches fundamental concepts: 1) Basic circuit design - creating a complete path for electricity. 2) Component identification - working with resistors, LEDs, buttons, and wires. 3) Polarity - understanding which way components must be oriented. 4) Circuit analysis - learning how voltage, current, and resistance interact. 5) Input/output relationships - connecting user input (button) to visible output (LED)."
+      category: "Circuit Design",
+      question: "What is the difference between series and parallel circuits?",
+      answer: "Series and parallel circuits have fundamental differences: In series circuits, components are connected end-to-end in a single path, current is the same through all components, voltage is divided across components, and if one component fails, the entire circuit fails. In parallel circuits, components are connected across multiple paths to the same voltage points, each component receives the full voltage, current is divided between parallel paths, and if one component fails, others can still function."
     },
     {
       id: 13,
@@ -123,9 +123,9 @@ const HelpCenterWindow: React.FC<HelpCenterWindowProps> = ({ onClose, onMinimize
     },
     {
       id: 15,
-      category: "Troubleshooting",
-      question: "Why is my sensor giving inconsistent readings?",
-      answer: "Inconsistent sensor readings are commonly caused by: 1) Noisy power supply - add decoupling capacitors near the sensor power pins to filter power fluctuations. 2) Interference - keep wires to sensitive analog sensors short and away from motors or high-current lines. 3) Poor grounding - ensure all components share a common ground. 4) Incorrect pull-up/pull-down resistors - check if required resistors are present and correct value."
+      category: "Projects & Activities",
+      question: "What's a good first project for learning electronics?",
+      answer: "An excellent first electronics project is an LED circuit with a pushbutton. This simple project teaches fundamental concepts: 1) Basic circuit design - creating a complete path for electricity. 2) Component identification - working with resistors, LEDs, buttons, and wires. 3) Polarity - understanding which way components must be oriented. 4) Circuit analysis - learning how voltage, current, and resistance interact. 5) Input/output relationships - connecting user input (button) to visible output (LED)."
     }
   ];
 
@@ -216,9 +216,7 @@ const HelpCenterWindow: React.FC<HelpCenterWindowProps> = ({ onClose, onMinimize
               </button>
               <h3 className="text-xl font-bold mb-2">{selectedQuestion.question}</h3>
               <div className="bg-white p-4 rounded-lg shadow">
-                {selectedQuestion.answer.split('\n\n').map((paragraph, index) => (
-                  <p key={index} className="mb-3">{paragraph}</p>
-                ))}
+                <p className="whitespace-pre-line">{selectedQuestion.answer}</p>
               </div>
             </div>
           ) : (
