@@ -23,6 +23,7 @@ import QuestLoadingScreen from "./QuestLoadingScreen";
 import CodeQuizWindow from "./CodeQuizWindow";
 import CodeGuessWindow from "./CodeGuessWindow";
 import ComponentGlossaryWindow from "./ComponentGlossaryWindow";
+import CodeReferenceWindow from "./CodeReferenceWindow";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import wallpaperImage from "@assets/wallpaper.png";
 import goldCrateImage from "@assets/goldcrate.png";
@@ -268,6 +269,10 @@ const RetroDesktop: React.FC = () => {
       openComponentGlossaryWindow();
     };
     
+    const handleOpenCodeReference = () => {
+      openCodeReferenceWindow();
+    };
+    
     window.addEventListener('openTerminal', handleOpenTerminal);
     window.addEventListener('openBrowser', handleOpenBrowser);
     window.addEventListener('openProfile', handleOpenProfile);
@@ -277,6 +282,7 @@ const RetroDesktop: React.FC = () => {
     window.addEventListener('openBugHunt', handleOpenBugHunt);
     window.addEventListener('openCodeGuess', handleOpenCodeGuess);
     window.addEventListener('openComponentGlossary', handleOpenComponentGlossary);
+    window.addEventListener('openCodeReference', handleOpenCodeReference);
     
     return () => {
       window.removeEventListener('openTerminal', handleOpenTerminal);
@@ -288,6 +294,7 @@ const RetroDesktop: React.FC = () => {
       window.removeEventListener('openBugHunt', handleOpenBugHunt);
       window.removeEventListener('openCodeGuess', handleOpenCodeGuess);
       window.removeEventListener('openComponentGlossary', handleOpenComponentGlossary);
+      window.removeEventListener('openCodeReference', handleOpenCodeReference);
     };
   }, []);
   
@@ -664,6 +671,20 @@ const RetroDesktop: React.FC = () => {
       />, 
       "💻",
       { width: 900, height: 650 }
+    );
+  };
+  
+  const openCodeReferenceWindow = () => {
+    openWindow(
+      "codereference", 
+      "Code Reference Guide", 
+      <CodeReferenceWindow 
+        onClose={() => closeWindow("codereference")} 
+        onMinimize={() => minimizeWindow("codereference")}
+        isActive={windows.some(w => w.id === "codereference" && w.isActive)}
+      />, 
+      "📘",
+      { width: 900, height: 700 }
     );
   };
   
