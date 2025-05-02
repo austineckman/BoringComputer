@@ -799,13 +799,89 @@ print(arr)  # Output: [1 2 3]`,
   ]
 };
 
+// C++ terms
+const cppTerms: CodeTerm[] = [
+  {
+    term: 'int',
+    category: 'data-type',
+    language: 'cpp',
+    description: 'Integer data type, used to store whole numbers.',
+    syntax: 'int variable_name = value;',
+    examples: [
+      'int count = 0;',
+      'int result = 5 + 10;',
+      'for(int i = 0; i < 10; i++) { /* code */ }'
+    ],
+    notes: 'Typically 4 bytes, range approximately -2 billion to +2 billion.'
+  },
+  {
+    term: 'class',
+    category: 'keyword',
+    language: 'cpp',
+    description: 'Creates a user-defined data type with properties and methods.',
+    syntax: 'class ClassName { public: /* members */ private: /* members */ };',
+    examples: [
+      `class Rectangle {
+public:
+  int width, height;
+  int area() { return width * height; }
+};`
+    ],
+    notes: 'By default, members are private unless specified as public or protected.'
+  },
+  {
+    term: 'vector',
+    category: 'class',
+    language: 'cpp',
+    description: 'A dynamic array container from the Standard Template Library (STL).',
+    syntax: 'vector<type> variable_name;',
+    examples: [
+      `#include <vector>
+vector<int> numbers;`,
+      'numbers.push_back(10);',
+      'for(int i = 0; i < numbers.size(); i++) { cout << numbers[i]; }'
+    ],
+    notes: 'Automatically manages memory allocation. Header <vector> must be included.'
+  },
+  {
+    term: 'cout',
+    category: 'function',
+    language: 'cpp',
+    description: 'Standard output stream object used for output operations.',
+    syntax: 'cout << value;',
+    examples: [
+      `#include <iostream>
+using namespace std;
+cout << "Hello World";`,
+      'cout << "Value: " << variable << endl;'
+    ],
+    notes: 'Part of the iostream library. Often used with insertion operator (<<).'
+  },
+  {
+    term: 'cin',
+    category: 'function',
+    language: 'cpp',
+    description: 'Standard input stream object used for input operations.',
+    syntax: 'cin >> variable;',
+    examples: [
+      `#include <iostream>
+using namespace std;
+int age;
+cin >> age;`,
+      `string name;
+cin >> name;`
+    ],
+    notes: 'Part of the iostream library. Often used with extraction operator (>>).'
+  }
+];
+
 // C++ reference data
 const cppReference: ReferenceLanguage = {
   id: 'cpp',
   name: 'C++',
   description: 'C++ is a powerful general-purpose programming language that extends C with object-oriented features. It\'s used for system/software development, game development, and more.',
   icon: <Code size={24} className="text-blue-800" />,
-  terms: [],
+  terms: cppTerms,
   sections: [
     {
       id: 'basics',
@@ -827,13 +903,130 @@ int main() {
   ]
 };
 
+// Arduino/Wiring terms
+const wiringTerms: CodeTerm[] = [
+  {
+    term: 'pinMode()',
+    category: 'function',
+    language: 'arduino',
+    description: 'Configures the specified pin to behave either as an input or an output.',
+    syntax: 'pinMode(pin, mode)',
+    examples: [
+      'pinMode(13, OUTPUT);',
+      'pinMode(7, INPUT);',
+      'pinMode(buttonPin, INPUT_PULLUP);'
+    ],
+    notes: 'Available modes are INPUT, OUTPUT, and INPUT_PULLUP. Configure pins in the setup() function.'
+  },
+  {
+    term: 'digitalWrite()',
+    category: 'function',
+    language: 'arduino',
+    description: 'Writes a HIGH or LOW value to a digital pin.',
+    syntax: 'digitalWrite(pin, value)',
+    examples: [
+      'digitalWrite(13, HIGH);  // Turn LED on',
+      'digitalWrite(13, LOW);   // Turn LED off',
+      'digitalWrite(ledPin, ledState);'
+    ],
+    notes: 'The pin must be configured as OUTPUT with pinMode() before using digitalWrite().'
+  },
+  {
+    term: 'digitalRead()',
+    category: 'function',
+    language: 'arduino',
+    description: 'Reads the value from a specified digital pin, either HIGH or LOW.',
+    syntax: 'digitalRead(pin)',
+    examples: [
+      'int buttonState = digitalRead(7);',
+      'if (digitalRead(buttonPin) == HIGH) { /* code */ }'
+    ],
+    notes: 'The pin should be configured as INPUT with pinMode() before using digitalRead().'
+  },
+  {
+    term: 'analogRead()',
+    category: 'function',
+    language: 'arduino',
+    description: 'Reads the value from the specified analog pin.',
+    syntax: 'analogRead(pin)',
+    examples: [
+      'int sensorValue = analogRead(A0);',
+      'float voltage = analogRead(A0) * (5.0 / 1023.0);'
+    ],
+    notes: 'Returns a value between 0 and 1023, where 0 represents 0V and 1023 represents the operating voltage.'
+  },
+  {
+    term: 'analogWrite()',
+    category: 'function',
+    language: 'arduino',
+    description: 'Writes an analog value (PWM) to a pin.',
+    syntax: 'analogWrite(pin, value)',
+    examples: [
+      'analogWrite(9, 128);  // 50% duty cycle',
+      'analogWrite(9, 255);  // 100% duty cycle',
+      'analogWrite(ledPin, brightness);'
+    ],
+    notes: 'Works only on pins with PWM capability. Value range is 0-255, where 0 is off and 255 is fully on.'
+  },
+  {
+    term: 'delay()',
+    category: 'function',
+    language: 'arduino',
+    description: 'Pauses the program for the specified amount of time (in milliseconds).',
+    syntax: 'delay(ms)',
+    examples: [
+      'delay(1000);  // pause for one second',
+      'delay(50);    // pause for 50 milliseconds'
+    ],
+    notes: 'During the delay, the microcontroller cannot read sensors, compute, or perform other tasks.'
+  },
+  {
+    term: 'Serial.begin()',
+    category: 'function',
+    language: 'arduino',
+    description: 'Sets the data rate in bits per second (baud) for serial data transmission.',
+    syntax: 'Serial.begin(baudRate)',
+    examples: [
+      'Serial.begin(9600);',
+      'Serial.begin(115200);'
+    ],
+    notes: 'Common baud rates: 9600, 19200, 38400, 57600, 115200. Use in setup() function.'
+  },
+  {
+    term: 'Serial.print()',
+    category: 'function',
+    language: 'arduino',
+    description: 'Prints data to the serial port as human-readable ASCII text.',
+    syntax: 'Serial.print(data)',
+    examples: [
+      'Serial.print("Sensor value: ");',
+      'Serial.print(sensorValue);',
+      'Serial.print(value, HEX);  // Print in hexadecimal format'
+    ],
+    notes: 'Does not add a newline character. Serial.begin() must be called first.'
+  },
+  {
+    term: 'Serial.println()',
+    category: 'function',
+    language: 'arduino',
+    description: 'Prints data to the serial port as human-readable ASCII text followed by a newline character.',
+    syntax: 'Serial.println(data)',
+    examples: [
+      'Serial.println("Hello World");',
+      'Serial.println(sensorValue);',
+      'Serial.println();  // Just print a new line'
+    ],
+    notes: 'Adds a newline character after the data. Serial.begin() must be called first.'
+  }
+];
+
 // Wiring reference data
 const wiringReference: ReferenceLanguage = {
   id: 'wiring',
   name: 'Arduino/Wiring',
   description: 'Wiring is a programming framework for microcontrollers. Arduino uses a variant of this language, which is essentially C++ with specific libraries for hardware interaction.',
   icon: <Terminal size={24} className="text-green-600" />,
-  terms: [],
+  terms: wiringTerms,
   sections: [
     {
       id: 'basics',
@@ -1253,7 +1446,7 @@ const CodeReferenceWindow: React.FC<CodeReferenceWindowProps> = ({ onClose, onMi
       };
       
       // Categorize sections
-      const categorizedSections = {
+      const categorizedSections: Record<string, ReferenceSection[]> = {
         basics: [],
         dataAndTypes: [],
         controlFlow: [],
@@ -1280,7 +1473,7 @@ const CodeReferenceWindow: React.FC<CodeReferenceWindowProps> = ({ onClose, onMi
       });
       
       // Category display names
-      const categoryNames = {
+      const categoryNames: Record<string, string> = {
         basics: 'Language Basics',
         dataAndTypes: 'Data Types & Variables',
         controlFlow: 'Control Flow',
