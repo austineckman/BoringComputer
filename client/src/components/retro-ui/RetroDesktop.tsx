@@ -106,8 +106,7 @@ const RetroDesktop: React.FC = () => {
     { id: "lootboxes", name: "HackLock.exe", icon: "picklock", path: "/lootboxes", position: { x: 140, y: 20 } },
     { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 140, y: 120 } },
     { id: "circuitbuilder", name: "Sandbox", icon: "circuitbuilder", position: { x: 140, y: 220 } },
-    { id: "codequiz", name: "BugHunt", icon: "bughunt", position: { x: 140, y: 320 } },
-    { id: "discord", name: "Discord", icon: "discord", position: { x: 140, y: 420 } },
+    { id: "discord", name: "Discord", icon: "discord", position: { x: 140, y: 320 } },
     
     // Oracle in top right
     { id: "oracle", name: "The Oracle", icon: "oracle", position: { x: 800, y: 20 } },
@@ -254,6 +253,10 @@ const RetroDesktop: React.FC = () => {
     const handleOpenSettings = () => {
       openSettingsWindow();
     };
+
+    const handleOpenBugHunt = () => {
+      openCodeQuizWindow();
+    };
     
     window.addEventListener('openTerminal', handleOpenTerminal);
     window.addEventListener('openBrowser', handleOpenBrowser);
@@ -261,6 +264,7 @@ const RetroDesktop: React.FC = () => {
     window.addEventListener('openPartyKitty', handleOpenPartyKitty);
     window.addEventListener('openJukebox', handleOpenJukebox);
     window.addEventListener('openSettings', handleOpenSettings);
+    window.addEventListener('openBugHunt', handleOpenBugHunt);
     
     return () => {
       window.removeEventListener('openTerminal', handleOpenTerminal);
@@ -269,6 +273,7 @@ const RetroDesktop: React.FC = () => {
       window.removeEventListener('openPartyKitty', handleOpenPartyKitty);
       window.removeEventListener('openJukebox', handleOpenJukebox);
       window.removeEventListener('openSettings', handleOpenSettings);
+      window.removeEventListener('openBugHunt', handleOpenBugHunt);
     };
   }, []);
   

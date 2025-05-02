@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Wrench, Terminal, Globe, Music, Monitor } from "lucide-react";
+import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Wrench, Terminal, Globe, Music, Monitor, GamepadIcon, Bug } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import logoImage from "@assets/Asset 6@2x-8.png";
 import jukeboxIcon from "@assets/jukebox_icon.png";
+import bugHuntIcon from "@assets/Untitled design - 2025-05-01T164432.025.png";
 
 type MenuItem = {
   id: string;
@@ -61,6 +62,24 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
           icon: <FileText size={16} />,
           path: "/my-quests"
         }
+      ]
+    },
+    {
+      id: "minigames",
+      label: "Mini-games",
+      icon: <GamepadIcon size={16} />,
+      submenu: [
+        {
+          id: "bughunt",
+          label: "BugHunt",
+          icon: <Bug size={16} />,
+          onClick: () => {
+            // Send event to open BugHunt
+            const event = new CustomEvent('openBugHunt');
+            window.dispatchEvent(event);
+          }
+        }
+        // More mini-games can be added here in the future
       ]
     },
     {
