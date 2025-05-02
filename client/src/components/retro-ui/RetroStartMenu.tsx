@@ -134,6 +134,16 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
             const event = new CustomEvent('openHelpCenter');
             window.dispatchEvent(event);
           }
+        },
+        {
+          id: "electronics-cheat-sheet",
+          label: "Electronics Cheat Sheets",
+          icon: <FileSpreadsheet size={16} />,
+          onClick: () => {
+            // Send event to open Electronics Cheat Sheet
+            const event = new CustomEvent('openElectronicsCheatSheet');
+            window.dispatchEvent(event);
+          }
         }
       ]
     },
