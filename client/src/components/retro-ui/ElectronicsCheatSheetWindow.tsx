@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Minimize2, Book, FileText, Cpu, Zap, FileSpreadsheet } from 'lucide-react';
+import { X, Minimize2, Book, FileText, Cpu, Zap, FileSpreadsheet, Calculator } from 'lucide-react';
 
 interface ElectronicsCheatSheetWindowProps {
   onClose: () => void;
@@ -277,180 +277,184 @@ const ElectronicsCheatSheetWindow: React.FC<ElectronicsCheatSheetWindowProps> = 
     },
   ];
 
-  // Render the tab content based on the selected tab
-  const renderTabContent = () => {
+  // Content components for each tab
+  const formulasContent = (
+    <div className="p-4 overflow-auto h-full">
+      <h2 className="text-lg font-bold mb-3 text-blue-700">Electronics Formulas</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {formulas.map((formula, idx) => (
+          <div key={idx} className="bg-white p-4 rounded shadow border border-gray-200">
+            <h3 className="text-md font-bold text-blue-600">{formula.title}</h3>
+            <div className="bg-gray-100 p-2 my-2 rounded text-center font-mono text-lg">
+              {formula.formula}
+            </div>
+            <p className="text-sm text-gray-700 mb-2">{formula.description}</p>
+            <p className="text-sm text-gray-600 italic mb-1"><span className="font-semibold">Units:</span> {formula.units}</p>
+            <p className="text-sm text-gray-600 mb-2"><span className="font-semibold">Applications:</span> {formula.applications}</p>
+            
+            {formula.variations && (
+              <div className="mt-2">
+                <p className="text-xs font-semibold text-gray-700">Variations:</p>
+                <div className="grid grid-cols-1 gap-1 mt-1">
+                  {formula.variations.map((variation, vidx) => (
+                    <div key={vidx} className="bg-gray-50 p-1 rounded border border-gray-200">
+                      <p className="text-xs">
+                        <span className="font-medium">{variation.name}:</span>{" "}
+                        <span className="font-mono">{variation.formula}</span>
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const pinMappingsContent = (
+    <div className="p-4 overflow-auto h-full">
+      <h2 className="text-lg font-bold mb-3 text-blue-700">Pin Mappings & Connections</h2>
+      <div className="space-y-6">
+        {pinMappings.map((mapping, idx) => (
+          <div key={idx} className="bg-white p-4 rounded shadow border border-gray-200">
+            <h3 className="text-md font-bold text-blue-600">{mapping.title}</h3>
+            <p className="text-sm text-gray-700 mb-3">{mapping.description}</p>
+            
+            <div className="overflow-x-auto">
+              <table className="min-w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">Pin</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">Description</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {mapping.mappings.map((pin, pinIdx) => (
+                    <tr key={pinIdx} className={pinIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="px-3 py-2 text-sm font-medium text-gray-900 border border-gray-200">{pin.pin}</td>
+                      <td className="px-3 py-2 text-sm text-gray-700 border border-gray-200">{pin.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            {mapping.notes && (
+              <p className="mt-3 text-xs text-gray-600 italic">{mapping.notes}</p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const commonCircuitsContent = (
+    <div className="p-4 overflow-auto h-full">
+      <h2 className="text-lg font-bold mb-3 text-blue-700">Common Circuit Designs</h2>
+      <div className="space-y-6">
+        {commonCircuits.map((circuit, idx) => (
+          <div key={idx} className="bg-white p-4 rounded shadow border border-gray-200">
+            <h3 className="text-md font-bold text-blue-600">{circuit.title}</h3>
+            <p className="text-sm text-gray-700 mb-3">{circuit.description}</p>
+            
+            <div className="mb-3">
+              <h4 className="text-sm font-semibold text-gray-700 mb-1">Components Needed:</h4>
+              <ul className="list-disc list-inside text-sm text-gray-600">
+                {circuit.components.map((component, cidx) => (
+                  <li key={cidx}>{component}</li>
+                ))}
+              </ul>
+            </div>
+            
+            <div className="mb-3">
+              <h4 className="text-sm font-semibold text-gray-700 mb-1">Circuit Assembly:</h4>
+              <ol className="list-decimal list-inside text-sm text-gray-600">
+                {circuit.instructions.map((instruction, iidx) => (
+                  <li key={iidx} className="mb-1">{instruction}</li>
+                ))}
+              </ol>
+            </div>
+            
+            {circuit.formula && (
+              <div className="mb-3">
+                <h4 className="text-sm font-semibold text-gray-700 mb-1">Formula:</h4>
+                <div className="bg-gray-100 p-2 rounded text-sm font-mono">
+                  {circuit.formula}
+                </div>
+              </div>
+            )}
+            
+            {circuit.example && (
+              <div className="mb-3">
+                <h4 className="text-sm font-semibold text-gray-700 mb-1">Example:</h4>
+                <p className="text-sm text-gray-600">{circuit.example}</p>
+              </div>
+            )}
+            
+            {circuit.notes && (
+              <div className="text-xs text-gray-600 italic mt-3">
+                <strong>Note:</strong> {circuit.notes}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const referenceTablesContent = (
+    <div className="p-4 overflow-auto h-full">
+      <h2 className="text-lg font-bold mb-3 text-blue-700">Reference Tables</h2>
+      <div className="space-y-6">
+        {referenceTables.map((table, idx) => (
+          <div key={idx} className="bg-white p-4 rounded shadow border border-gray-200">
+            <h3 className="text-md font-bold text-blue-600">{table.title}</h3>
+            <p className="text-sm text-gray-700 mb-3">{table.description}</p>
+            
+            <div className="overflow-x-auto">
+              <table className="min-w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-50">
+                    {table.headers.map((header, hidx) => (
+                      <th key={hidx} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {table.rows.map((row, ridx) => (
+                    <tr key={ridx} className={ridx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      {row.map((cell, cidx) => (
+                        <td key={cidx} className="px-3 py-2 text-sm text-gray-700 border border-gray-200">
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            {table.notes && (
+              <p className="mt-3 text-xs text-gray-600 italic">{table.notes}</p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Helper function to render active tab content
+  const getActiveTabContent = () => {
     switch(selectedTab) {
-      case 0:
-        return (
-          <div className="p-4 overflow-auto h-full">
-            <h2 className="text-lg font-bold mb-3 text-blue-700">Electronics Formulas</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {formulas.map((formula, idx) => (
-                <div key={idx} className="bg-white p-4 rounded shadow border border-gray-200">
-                  <h3 className="text-md font-bold text-blue-600">{formula.title}</h3>
-                  <div className="bg-gray-100 p-2 my-2 rounded text-center font-mono text-lg">
-                    {formula.formula}
-                  </div>
-                  <p className="text-sm text-gray-700 mb-2">{formula.description}</p>
-                  <p className="text-sm text-gray-600 italic mb-1"><span className="font-semibold">Units:</span> {formula.units}</p>
-                  <p className="text-sm text-gray-600 mb-2"><span className="font-semibold">Applications:</span> {formula.applications}</p>
-                  
-                  {formula.variations && (
-                    <div className="mt-2">
-                      <p className="text-xs font-semibold text-gray-700">Variations:</p>
-                      <div className="grid grid-cols-1 gap-1 mt-1">
-                        {formula.variations.map((variation, vidx) => (
-                          <div key={vidx} className="bg-gray-50 p-1 rounded border border-gray-200">
-                            <p className="text-xs">
-                              <span className="font-medium">{variation.name}:</span>{" "}
-                              <span className="font-mono">{variation.formula}</span>
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      case 1:
-        return (
-          <div className="p-4 overflow-auto h-full">
-            <h2 className="text-lg font-bold mb-3 text-blue-700">Pin Mappings & Connections</h2>
-            <div className="space-y-6">
-              {pinMappings.map((mapping, idx) => (
-                <div key={idx} className="bg-white p-4 rounded shadow border border-gray-200">
-                  <h3 className="text-md font-bold text-blue-600">{mapping.title}</h3>
-                  <p className="text-sm text-gray-700 mb-3">{mapping.description}</p>
-                  
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full border-collapse">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">Pin</th>
-                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">Description</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {mapping.mappings.map((pin, pinIdx) => (
-                          <tr key={pinIdx} className={pinIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                            <td className="px-3 py-2 text-sm font-medium text-gray-900 border border-gray-200">{pin.pin}</td>
-                            <td className="px-3 py-2 text-sm text-gray-700 border border-gray-200">{pin.description}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  
-                  {mapping.notes && (
-                    <p className="mt-3 text-xs text-gray-600 italic">{mapping.notes}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      case 2:
-        return (
-          <div className="p-4 overflow-auto h-full">
-            <h2 className="text-lg font-bold mb-3 text-blue-700">Common Circuit Designs</h2>
-            <div className="space-y-6">
-              {commonCircuits.map((circuit, idx) => (
-                <div key={idx} className="bg-white p-4 rounded shadow border border-gray-200">
-                  <h3 className="text-md font-bold text-blue-600">{circuit.title}</h3>
-                  <p className="text-sm text-gray-700 mb-3">{circuit.description}</p>
-                  
-                  <div className="mb-3">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-1">Components Needed:</h4>
-                    <ul className="list-disc list-inside text-sm text-gray-600">
-                      {circuit.components.map((component, cidx) => (
-                        <li key={cidx}>{component}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  
-                  <div className="mb-3">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-1">Circuit Assembly:</h4>
-                    <ol className="list-decimal list-inside text-sm text-gray-600">
-                      {circuit.instructions.map((instruction, iidx) => (
-                        <li key={iidx} className="mb-1">{instruction}</li>
-                      ))}
-                    </ol>
-                  </div>
-                  
-                  {circuit.formula && (
-                    <div className="mb-3">
-                      <h4 className="text-sm font-semibold text-gray-700 mb-1">Formula:</h4>
-                      <div className="bg-gray-100 p-2 rounded text-sm font-mono">
-                        {circuit.formula}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {circuit.example && (
-                    <div className="mb-3">
-                      <h4 className="text-sm font-semibold text-gray-700 mb-1">Example:</h4>
-                      <p className="text-sm text-gray-600">{circuit.example}</p>
-                    </div>
-                  )}
-                  
-                  {circuit.notes && (
-                    <div className="text-xs text-gray-600 italic mt-3">
-                      <strong>Note:</strong> {circuit.notes}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      case 3:
-        return (
-          <div className="p-4 overflow-auto h-full">
-            <h2 className="text-lg font-bold mb-3 text-blue-700">Reference Tables</h2>
-            <div className="space-y-6">
-              {referenceTables.map((table, idx) => (
-                <div key={idx} className="bg-white p-4 rounded shadow border border-gray-200">
-                  <h3 className="text-md font-bold text-blue-600">{table.title}</h3>
-                  <p className="text-sm text-gray-700 mb-3">{table.description}</p>
-                  
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full border-collapse">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          {table.headers.map((header, hidx) => (
-                            <th key={hidx} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">
-                              {header}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {table.rows.map((row, ridx) => (
-                          <tr key={ridx} className={ridx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                            {row.map((cell, cidx) => (
-                              <td key={cidx} className="px-3 py-2 text-sm text-gray-700 border border-gray-200">
-                                {cell}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  
-                  {table.notes && (
-                    <p className="mt-3 text-xs text-gray-600 italic">{table.notes}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      default:
-        return null;
+      case 0: return formulasContent;
+      case 1: return pinMappingsContent;
+      case 2: return commonCircuitsContent;
+      case 3: return referenceTablesContent;
+      default: return formulasContent;
     }
   };
 
@@ -500,7 +504,7 @@ const ElectronicsCheatSheetWindow: React.FC<ElectronicsCheatSheetWindowProps> = 
         
         {/* Tab content */}
         <div className="flex-1 overflow-auto">
-          {renderTabContent()}
+          {getActiveTabContent()}
         </div>
       </div>
     </div>
