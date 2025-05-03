@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Wrench, Terminal, Globe, Music, Monitor, GamepadIcon, Bug, Folder, Cpu, HelpCircle, FileSpreadsheet } from "lucide-react";
+import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Wrench, Terminal, Globe, Music, Monitor, GamepadIcon, Bug, Folder, Cpu, HelpCircle, FileSpreadsheet, Calculator } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import logoImage from "@assets/Asset 6@2x-8.png";
@@ -142,6 +142,16 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
           onClick: () => {
             // Send event to open Electronics Cheat Sheet
             const event = new CustomEvent('openElectronicsCheatSheet');
+            window.dispatchEvent(event);
+          }
+        },
+        {
+          id: "resistor-tool",
+          label: "Resistor Calculator",
+          icon: <Calculator size={16} />,
+          onClick: () => {
+            // Send event to open Resistor Tool
+            const event = new CustomEvent('openResistorTool');
             window.dispatchEvent(event);
           }
         }

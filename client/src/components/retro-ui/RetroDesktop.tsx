@@ -283,6 +283,10 @@ const RetroDesktop: React.FC = () => {
       openElectronicsCheatSheetWindow();
     };
     
+    const handleOpenResistorTool = () => {
+      openResistorToolWindow();
+    };
+    
     window.addEventListener('openTerminal', handleOpenTerminal);
     window.addEventListener('openBrowser', handleOpenBrowser);
     window.addEventListener('openProfile', handleOpenProfile);
@@ -295,6 +299,7 @@ const RetroDesktop: React.FC = () => {
     window.addEventListener('openCodeReference', handleOpenCodeReference);
     window.addEventListener('openHelpCenter', handleOpenHelpCenter);
     window.addEventListener('openElectronicsCheatSheet', handleOpenElectronicsCheatSheet);
+    window.addEventListener('openResistorTool', handleOpenResistorTool);
     
     return () => {
       window.removeEventListener('openTerminal', handleOpenTerminal);
@@ -309,6 +314,7 @@ const RetroDesktop: React.FC = () => {
       window.removeEventListener('openCodeReference', handleOpenCodeReference);
       window.removeEventListener('openHelpCenter', handleOpenHelpCenter);
       window.removeEventListener('openElectronicsCheatSheet', handleOpenElectronicsCheatSheet);
+      window.removeEventListener('openResistorTool', handleOpenResistorTool);
     };
   }, []);
   
