@@ -3,12 +3,13 @@ import { useLocation } from "wouter";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import MatrixTransitionScreen from "@/components/retro-ui/MatrixTransitionScreen";
+import LoadingScreen from "@/components/retro-ui/LoadingScreen";
 import wallpaper from "@assets/wallbg.png";
-import matrixWallBg from "@assets/bg.png";
 import hoodedFigureImg from "@assets/hooded-figure.png";
+import bagImage from "@assets/506_Gold_Bag_Leather_B.png";
 import "@/components/retro-ui/retro-ui.css";
 
 // Auth validation schemas
@@ -35,13 +36,12 @@ export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
-  // Matrix transition state
-  const [showMatrixTransition, setShowMatrixTransition] = useState(false);
+  // Loading screen state
+  const [showLoadingScreen, setShowLoadingScreen] = useState(true);
   
-  // Handle redirect after matrix transition completes
-  const handleTransitionComplete = () => {
-    // Redirect to home page
-    window.location.href = "/";
+  // Hide loading screen after it completes
+  const handleLoadingComplete = () => {
+    setShowLoadingScreen(false);
   };
 
   // Login form
@@ -79,8 +79,8 @@ export default function AuthPage() {
         description: "Welcome back!",
       });
       
-      // Show matrix transition before redirecting
-      setShowMatrixTransition(true);
+      // Redirect to home page using window.location for a full page reload
+      window.location.href = "/";
     } catch (error) {
       toast({
         title: "Login failed",
@@ -109,8 +109,8 @@ export default function AuthPage() {
         description: "Welcome to Quest Giver!",
       });
       
-      // Show matrix transition before redirecting
-      setShowMatrixTransition(true);
+      // Redirect to home page using window.location for a full page reload
+      window.location.href = "/";
     } catch (error) {
       toast({
         title: "Registration failed",
@@ -134,40 +134,54 @@ export default function AuthPage() {
   }, []);
   
   return (
-    <div className="w-full min-h-screen flex justify-center items-center" 
-      style={{
-        backgroundColor: '#121212', // Dark background color
-        backgroundImage: `url(${matrixWallBg})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'repeat',
-      }}>
-      {/* Show matrix transition screen after successful login/register */}
-      {showMatrixTransition && <MatrixTransitionScreen onTransitionComplete={handleTransitionComplete} />}
-      
-      {/* Windows 95-style Login Window */}
-      <div className="w-full max-w-md mx-auto">
+    <div>
+      {/* Loading screen */}
+      {showLoadingScreen && <LoadingScreen onLoadComplete={handleLoadingComplete} />}
+    
+      {/* Main login UI */}
+      <div 
+        className="min-h-screen w-full flex flex-col justify-center items-center relative overflow-hidden retro-desktop"
+        style={{
+          backgroundImage: `url(${wallpaper})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          imageRendering: 'pixelated'
+        }}
+      >
+      {/* Glitchy overlay effect */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-blue-900/20 mix-blend-overlay"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-blue-900/30"></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48ZyBzdHJva2U9IiMwMDAiIHN0cm9rZS1vcGFjaXR5PSIuMiIgc3Ryb2tlLXdpZHRoPSIuNSI+PHBhdGggZD0iTTEgMWgxNnYxNkgxeiIvPjwvZz48L2c+PC9zdmc+')] opacity-10"></div>
+        <div className="absolute top-0 left-0 right-0 h-px bg-white/20"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-black/40"></div>
+        <div className="absolute -inset-[100px] mix-blend-overlay opacity-30" 
+          style={{
+            background: 'repeating-linear-gradient(90deg, rgba(255,255,255,0) 0px, rgba(255,255,255,0.03) 1px, rgba(255,255,255,0) 2px)',
+            backgroundSize: '4px 4px',
+          }}>
+        </div>
+      </div>
+      {/* Windows 95-style Login Box */}
+      <div className="w-full max-w-md mx-auto z-10">
         {/* Main Window */}
         <div className="border-[3px] border-t-gray-300 border-l-gray-300 border-r-gray-800 border-b-gray-800 bg-gray-200 shadow-2xl overflow-hidden">
           {/* Title Bar */}
-          <div className="matrix-title-bar text-white py-1.5 px-3 flex justify-between items-center select-none">
+          <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white py-1.5 px-3 flex items-center select-none">
             <div className="flex items-center">
-              <span className="mr-2 text-lg">🔐</span>
-              <span className="font-bold tracking-tight">Login Page</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <button className="w-6 h-5 bg-gray-200 border-[1px] border-gray-500 flex items-center justify-center text-black font-bold">?</button>
-              <button className="w-6 h-5 bg-gray-200 border-[1px] border-gray-500 flex items-center justify-center text-black font-bold">✕</button>
+              <span className="mr-2 text-lg">💻</span>
+              <span className="font-bold tracking-tight">CraftingTableOS</span>
             </div>
           </div>
           
           {/* Windows 95 Login Box */}
           <div className="p-5">
             <div className="flex mb-5 justify-center">
-              <div className="relative w-16 h-16 mr-3 overflow-hidden border-2 border-gray-600 bg-white p-1 shadow-inner">
+              <div className="relative w-20 h-20 mr-3 overflow-hidden border-2 border-t-gray-400 border-l-gray-400 border-r-black border-b-black bg-white p-1">
                 <img 
                   src={hoodedFigureImg} 
-                  alt="User Icon" 
+                  alt="Hooded Figure" 
                   className="w-full h-full object-contain"
                   style={{ imageRendering: 'pixelated' }}
                 />
@@ -176,133 +190,171 @@ export default function AuthPage() {
                 <h1 className="text-xl font-bold text-black">
                   Welcome to CraftingTableOS
                 </h1>
-                <p className="text-sm text-black">
-                  Please enter your credentials
+                <p className="text-gray-700 text-sm">
+                  Type your username and password
                 </p>
               </div>
             </div>
             
-            {/* Windows 95-style Tabs */}
-            <div className="flex border-b border-gray-500 mb-6">
-              <button 
-                className={`px-4 py-1 text-sm font-bold ${activeTab === 'login' 
-                  ? 'bg-gray-200 border-t border-l border-r border-gray-500 text-black relative top-[1px]' 
-                  : 'bg-gray-300 text-black'}`}
-                onClick={() => setActiveTab('login')}
-              >
-                Login
-              </button>
-              <button 
-                className={`px-4 py-1 text-sm font-bold ${activeTab === 'register' 
-                  ? 'bg-gray-200 border-t border-l border-r border-gray-500 text-black relative top-[1px]' 
-                  : 'bg-gray-300 text-black'}`}
-                onClick={() => setActiveTab('register')}
-              >
-                Register
-              </button>
+            {/* Login Tabs */}
+            <div className="border-t border-l border-r border-gray-400 mb-4">
+              <div className="flex">
+                <button 
+                  className={`px-4 py-1 text-sm text-black ${activeTab === 'login' 
+                    ? 'bg-gray-200' 
+                    : 'bg-gray-300'}`}
+                  onClick={() => setActiveTab('login')}
+                >
+                  Login
+                </button>
+                <button 
+                  className={`px-4 py-1 text-sm text-black ${activeTab === 'register' 
+                    ? 'bg-gray-200' 
+                    : 'bg-gray-300'}`}
+                  onClick={() => setActiveTab('register')}
+                >
+                  Register
+                </button>
+              </div>
             </div>
-
-            {activeTab === "login" ? (
-              <form onSubmit={loginForm.handleSubmit(onLoginSubmit)}>
-                
-                <div className="mb-4">
-                  <label htmlFor="username" className="block mb-2 text-sm font-bold text-black">Username:</label>
-                  <input
-                    id="username"
-                    type="text"
-                    {...loginForm.register("username")}
-                    className="w-full px-2 py-1 border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white bg-white shadow-inner text-black"
-                    placeholder="Enter username"
-                  />
-                  {loginForm.formState.errors.username && (
-                    <p className="mt-1 text-sm text-red-600">{loginForm.formState.errors.username.message}</p>
-                  )}
-                </div>
-                
-                <div className="mb-6">
-                  <label htmlFor="password" className="block mb-2 text-sm font-bold text-black">Password:</label>
-                  <input
-                    id="password"
-                    type="password"
-                    {...loginForm.register("password")}
-                    className="w-full px-2 py-1 border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white bg-white shadow-inner text-black"
-                    placeholder="Enter password"
-                  />
-                  {loginForm.formState.errors.password && (
-                    <p className="mt-1 text-sm text-red-600">{loginForm.formState.errors.password.message}</p>
-                  )}
-                </div>
-                
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="min-w-[100px] px-6 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-normal text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white"
-                  >
-                    {isLoading ? "Logging in..." : "OK"}
-                  </button>
-                </div>
-              </form>
+            
+            {activeTab === 'login' ? (
+              <Form {...loginForm}>
+                <form onSubmit={loginForm.handleSubmit(onLoginSubmit)}>
+                  <div className="space-y-3">
+                    <FormField
+                      control={loginForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="flex items-center">
+                            <label className="w-24 text-sm text-black">Username:</label>
+                            <div className="flex-1">
+                              <FormControl>
+                                <input
+                                  {...field}
+                                  placeholder="Enter username"
+                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none retro-input"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs text-red-600 mt-1" />
+                            </div>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={loginForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="flex items-center">
+                            <label className="w-24 text-sm text-black">Password:</label>
+                            <div className="flex-1">
+                              <FormControl>
+                                <input
+                                  {...field}
+                                  type="password"
+                                  placeholder="Enter password"
+                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none retro-input"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs text-red-600 mt-1" />
+                            </div>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="flex justify-center mt-5 pt-3 border-t border-gray-400">
+                      <button 
+                        type="submit" 
+                        disabled={isLoading} 
+                        className="min-w-32 px-6 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-normal text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white"
+                      >
+                        {isLoading ? "Logging in..." : "Login"}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </Form>
             ) : (
-              <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)}>
-                <div className="mb-4 p-3 border border-amber-500 bg-amber-50 rounded text-black text-sm">
-                  <p className="font-bold mb-1">⚠️ DEMO APPLICATION DISCLAIMER:</p>
-                  <p>This project was created entirely by AI and is for demonstration purposes only. None of the art, code, music, or other assets were created by humans.</p>
-                  <p className="mt-1">⚠️ <span className="font-bold">SECURITY WARNING</span>: Do not use real usernames or passwords as this application's security has not been verified.</p>
-                </div>
-                
-                <div className="mb-4">
-                  <label htmlFor="register-username" className="block mb-2 text-sm font-bold text-black">Create username:</label>
-                  <input
-                    id="register-username"
-                    type="text"
-                    {...registerForm.register("username")}
-                    className="w-full px-2 py-1 border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white bg-white shadow-inner text-black"
-                    placeholder="Choose username"
-                  />
-                  {registerForm.formState.errors.username && (
-                    <p className="mt-1 text-sm text-red-600">{registerForm.formState.errors.username.message}</p>
-                  )}
-                </div>
-                
-                <div className="mb-6">
-                  <label htmlFor="register-password" className="block mb-2 text-sm font-bold text-black">Create password:</label>
-                  <input
-                    id="register-password"
-                    type="password"
-                    {...registerForm.register("password")}
-                    className="w-full px-2 py-1 border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white bg-white shadow-inner text-black"
-                    placeholder="Choose password"
-                  />
-                  {registerForm.formState.errors.password && (
-                    <p className="mt-1 text-sm text-red-600">{registerForm.formState.errors.password.message}</p>
-                  )}
-                </div>
-                
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="min-w-[100px] px-6 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-normal text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white"
-                  >
-                    {isLoading ? "Creating..." : "Create User"}
-                  </button>
-                </div>
-              </form>
+              <Form {...registerForm}>
+                <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)}>
+                  <div className="space-y-3">
+                    <FormField
+                      control={registerForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="flex items-center">
+                            <label className="w-24 text-sm text-black">Username:</label>
+                            <div className="flex-1">
+                              <FormControl>
+                                <input
+                                  {...field}
+                                  placeholder="Choose username"
+                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none retro-input"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs text-red-600 mt-1" />
+                            </div>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={registerForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="flex items-center">
+                            <label className="w-24 text-sm text-black">Password:</label>
+                            <div className="flex-1">
+                              <FormControl>
+                                <input
+                                  {...field}
+                                  type="password"
+                                  placeholder="Choose password"
+                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none retro-input"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs text-red-600 mt-1" />
+                            </div>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="flex justify-center mt-5 pt-3 border-t border-gray-400">
+                      <button 
+                        type="submit" 
+                        disabled={isLoading} 
+                        className="min-w-32 px-6 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-normal text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white"
+                      >
+                        {isLoading ? "Creating..." : "Create Account"}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </Form>
             )}
           </div>
           
           {/* Footer Status Bar */}
           <div className="px-2 py-1 bg-gray-200 border-t border-gray-400 flex justify-between items-center text-xs">
             <div>
-              <span className="font-mono text-black">{currentTime.toLocaleTimeString()}</span>
+              <span className="font-mono">{currentTime.toLocaleTimeString()}</span>
             </div>
             <div>
-              <span className="text-black">CraftingTableOS, © 1996</span>
+              <span>CraftingTableOS, © 2025 CraftingTable LLC.</span>
             </div>
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }
