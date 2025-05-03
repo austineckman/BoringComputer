@@ -26,6 +26,7 @@ import ComponentGlossaryWindow from "./ComponentGlossaryWindow";
 import CodeReferenceWindow from "./CodeReferenceWindow";
 import HelpCenterWindow from "./HelpCenterWindow";
 import ElectronicsCheatSheetWindow from "./ElectronicsCheatSheetWindow";
+import ResistorCalculatorWindow from "./ResistorCalculatorWindow";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import wallpaperImage from "@assets/wallpaper.png";
 import goldCrateImage from "@assets/goldcrate.png";
@@ -733,6 +734,20 @@ const RetroDesktop: React.FC = () => {
       />, 
       "📊",
       { width: 900, height: 700 }
+    );
+  };
+  
+  const openResistorToolWindow = () => {
+    openWindow(
+      "resistortool", 
+      "Resistor Calculator", 
+      <ResistorCalculatorWindow 
+        onClose={() => closeWindow("resistortool")} 
+        onMinimize={() => minimizeWindow("resistortool")}
+        isActive={windows.some(w => w.id === "resistortool" && w.isActive)}
+      />, 
+      "🔢",
+      { width: 760, height: 600 }
     );
   };
   
