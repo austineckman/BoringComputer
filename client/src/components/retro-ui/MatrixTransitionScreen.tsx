@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import "./matrix-transition.css";
 
 interface MatrixTransitionScreenProps {
   onTransitionComplete: () => void;
@@ -134,36 +135,39 @@ const MatrixTransitionScreen: React.FC<MatrixTransitionScreenProps> = ({
       </div>
 
       {/* Add CSS for glitch effect */}
-      <style>{`
-        .glitch-text {
-          position: relative;
-          animation: glitch 0.5s infinite;
-          text-shadow: 2px 0 #00ff00, -2px 0 #00ff00;
-        }
-        
-        @keyframes glitch {
-          0% {
-            transform: translate(2px, 0);
+      {/* Add glitch effect CSS directly */}
+      <style>
+        {`
+          .glitch-text {
+            position: relative;
+            animation: glitch 0.5s infinite;
             text-shadow: 2px 0 #00ff00, -2px 0 #00ff00;
           }
-          25% {
-            transform: translate(-2px, 0);
-            text-shadow: -2px 0 #00ff00, 2px 0 #00ff00;
+          
+          @keyframes glitch {
+            0% {
+              transform: translate(2px, 0);
+              text-shadow: 2px 0 #00ff00, -2px 0 #00ff00;
+            }
+            25% {
+              transform: translate(-2px, 0);
+              text-shadow: -2px 0 #00ff00, 2px 0 #00ff00;
+            }
+            50% {
+              transform: translate(0, 2px);
+              text-shadow: 0 2px #00ff00, 0 -2px #00ff00;
+            }
+            75% {
+              transform: translate(0, -2px);
+              text-shadow: 0 -2px #00ff00, 0 2px #00ff00;
+            }
+            100% {
+              transform: translate(2px, 0);
+              text-shadow: 2px 0 #00ff00, -2px 0 #00ff00;
+            }
           }
-          50% {
-            transform: translate(0, 2px);
-            text-shadow: 0 2px #00ff00, 0 -2px #00ff00;
-          }
-          75% {
-            transform: translate(0, -2px);
-            text-shadow: 0 -2px #00ff00, 0 2px #00ff00;
-          }
-          100% {
-            transform: translate(2px, 0);
-            text-shadow: 2px 0 #00ff00, -2px 0 #00ff00;
-          }
-        }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };
