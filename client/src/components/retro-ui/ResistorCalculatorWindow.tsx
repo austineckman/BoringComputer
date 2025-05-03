@@ -222,8 +222,26 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
             <div className="bg-blue-50 p-4 rounded-lg">
               <h2 className="text-xl font-bold text-blue-800">Resistors: The Traffic Controllers of Electronics</h2>
               <p className="text-blue-700 mt-2">
-                Welcome to our friendly guide to understanding resistors! Let's explore these essential components together.
+                Welcome to Gizbo's friendly guide to understanding resistors! Let's explore these essential components together.
               </p>
+              <div className="flex mt-2">
+                <div className="flex-shrink-0">
+                  <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center border-2 border-blue-300 p-1">
+                    <div className="text-3xl font-bold bg-gradient-to-br from-blue-400 to-purple-500 text-transparent bg-clip-text">G</div>
+                  </div>
+                </div>
+                <div className="ml-4 italic text-blue-700 border-l-4 border-blue-200 pl-4 flex items-center">
+                  <p>"Greetings, young maker! I am Gizbo the Wise, and today I shall illuminate the mysteries of resistors - the humble heroes of every circuit!"</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex space-x-4 overflow-x-auto p-2">
+              <button className="px-4 py-2 bg-blue-100 hover:bg-blue-200 rounded-lg font-medium flex-shrink-0 text-blue-800">Fundamentals</button>
+              <button className="px-4 py-2 bg-purple-100 hover:bg-purple-200 rounded-lg font-medium flex-shrink-0 text-purple-800">Historical Journey</button>
+              <button className="px-4 py-2 bg-green-100 hover:bg-green-200 rounded-lg font-medium flex-shrink-0 text-green-800">Real-World Examples</button>
+              <button className="px-4 py-2 bg-amber-100 hover:bg-amber-200 rounded-lg font-medium flex-shrink-0 text-amber-800">Common Problems</button>
+              <button className="px-4 py-2 bg-red-100 hover:bg-red-200 rounded-lg font-medium flex-shrink-0 text-red-800">Advanced Topics</button>
             </div>
             
             <div className="space-y-4">
@@ -413,6 +431,65 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
                 </div>
               </section>
               
+              <section className="border-b border-gray-200 pb-4">
+                <h3 className="text-lg font-semibold text-blue-600">The Fascinating History of Resistors</h3>
+                
+                <div className="mt-3 bg-purple-50 p-4 rounded-lg">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 bg-purple-100 rounded-full p-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="ml-4">
+                      <h4 className="font-medium text-purple-800">The Journey Through Time</h4>
+                      <p className="mt-1 text-purple-700">
+                        The story of resistors begins in the early 19th century with Georg Ohm. In 1827, Ohm published "The Galvanic Circuit Investigated Mathematically," establishing what we now know as Ohm's Law.                      
+                      </p>
+                      <p className="mt-2 text-purple-700">
+                        Early resistors were made from wire wrapped around ceramic tubes. By the 1940s, carbon composition resistors became popular. Today's resistors use film technology for greater precision.                     
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="bg-white p-3 rounded border border-purple-200">
+                      <h5 className="font-medium text-center border-b border-purple-100 pb-1">1827</h5>
+                      <p className="text-sm">Georg Ohm establishes Ohm's Law, the foundation of resistor theory</p>
+                    </div>
+                    <div className="bg-white p-3 rounded border border-purple-200">
+                      <h5 className="font-medium text-center border-b border-purple-100 pb-1">1920s-1940s</h5>
+                      <p className="text-sm">Carbon composition resistors become the industry standard</p>
+                    </div>
+                    <div className="bg-white p-3 rounded border border-purple-200">
+                      <h5 className="font-medium text-center border-b border-purple-100 pb-1">1960s-Present</h5>
+                      <p className="text-sm">Thin film and metal film resistors provide higher precision and stability</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-4 bg-indigo-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-indigo-800">The Legend of Professor Resistor</h4>
+                  <div className="mt-2 bg-white p-4 rounded border border-indigo-200">
+                    <p className="italic text-indigo-700 text-sm">
+                      "In the summer of 1826, young Georg Ohm was frustrated. His experiments with electricity weren't yielding consistent results. One stormy night, working by candlelight, he noticed something peculiar..."
+                    </p>
+                    
+                    <p className="mt-3">
+                      Ohm realized that the flow of electricity in a conductor is directly proportional to the potential difference (voltage) and inversely proportional to the resistance. This simple but profound relationship would change electronics forever.
+                    </p>
+                    
+                    <p className="mt-3">
+                      Ironically, when Ohm published his findings, they were met with criticism and rejection. It took nearly a decade for his work to gain recognition. Today, we cannot imagine electronics without Ohm's Law (V = IR).
+                    </p>
+                    
+                    <div className="mt-3 border-t border-indigo-100 pt-2">
+                      <p className="text-sm"><span className="font-medium">Fun fact:</span> The ohm symbol (Ω) is the last letter of the Greek alphabet, omega. It was chosen to honor Georg Ohm's groundbreaking work.</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              
               <section>
                 <h3 className="text-lg font-semibold text-blue-600">Common Resistor Values and Projects</h3>
                 
@@ -480,6 +557,119 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
               </section>
             </div>
             
+            <section className="border-b border-gray-200 pb-4">
+              <h3 className="text-lg font-semibold text-blue-600">Common Resistor Problems & Solutions</h3>
+              
+              <div className="mt-3 bg-red-50 p-4 rounded-lg">
+                <h4 className="font-medium text-red-800">Troubleshooting Guide</h4>
+                
+                <div className="space-y-4 mt-3">
+                  <div className="bg-white p-3 rounded border border-red-200">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0 p-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h5 className="text-md font-medium text-red-800">Problem: LED Not Lighting Up</h5>
+                        <ul className="list-disc pl-5 mt-1 text-sm space-y-1">
+                          <li>Check if resistor value is too high (LED too dim)</li>
+                          <li>Verify polarity of LED (LEDs only work in one direction)</li>
+                          <li>Test the resistor with a multimeter</li>
+                          <li>Consider if the power supply is sufficient</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white p-3 rounded border border-red-200">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0 p-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h5 className="text-md font-medium text-red-800">Problem: Resistor Getting Hot</h5>
+                        <ul className="list-disc pl-5 mt-1 text-sm space-y-1">
+                          <li>Resistor power rating too low for the current</li>
+                          <li>Calculate the power: P = I² × R or P = V² ÷ R</li>
+                          <li>Replace with a higher wattage resistor (e.g., ½W instead of ¼W)</li>
+                          <li>Consider using multiple resistors in parallel to distribute the heat</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white p-3 rounded border border-red-200">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0 p-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h5 className="text-md font-medium text-red-800">Problem: Inaccurate Readings in Circuit</h5>
+                        <ul className="list-disc pl-5 mt-1 text-sm space-y-1">
+                          <li>Resistor tolerance might be too wide (±10% vs ±1%)</li>
+                          <li>Temperature affecting resistance (use a temperature coefficient resistor)</li>
+                          <li>Poor connections or solder joints</li>
+                          <li>Interference from nearby components or signals</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            
+            <section className="border-b border-gray-200 pb-4">
+              <h3 className="text-lg font-semibold text-blue-600">Fun Resistor Exercises</h3>
+              
+              <div className="mt-3 bg-green-50 p-4 rounded-lg">
+                <h4 className="font-medium text-green-800">Challenge Yourself!</h4>
+                
+                <div className="space-y-4 mt-3">
+                  <div className="bg-white p-3 rounded border border-green-200">
+                    <h5 className="font-medium text-green-800">Exercise 1: The LED Night Light</h5>
+                    <p className="mt-1 text-sm">Design a simple night light using:</p>
+                    <ul className="list-disc pl-5 mt-1 text-sm">
+                      <li>A 9V battery</li>
+                      <li>Three LEDs (red, green, blue)</li>
+                      <li>Appropriate resistors</li>
+                    </ul>
+                    <p className="mt-2 text-sm">Calculate the resistor values needed if red LEDs have a forward voltage of 1.8V, green LEDs 2.2V, and blue LEDs 3.0V. All LEDs need 20mA current.</p>
+                    <div className="mt-2 bg-green-50 p-2 rounded text-sm">
+                      <p className="font-medium">Solution (try it yourself first!):</p>
+                      <ul className="list-disc pl-5 mt-1">
+                        <li>Red: R = (9V - 1.8V) ÷ 0.02A = 360Ω → use 390Ω</li>
+                        <li>Green: R = (9V - 2.2V) ÷ 0.02A = 340Ω → use 330Ω</li>
+                        <li>Blue: R = (9V - 3.0V) ÷ 0.02A = 300Ω → use 330Ω</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white p-3 rounded border border-green-200">
+                    <h5 className="font-medium text-green-800">Exercise 2: The Voltage Divider</h5>
+                    <p className="mt-1 text-sm">You need to measure a 24V power supply with an Arduino (max 5V input).</p>
+                    <p className="mt-1 text-sm">Design a voltage divider to convert 24V to 4V using standard resistor values.</p>
+                    <div className="mt-2 bg-green-50 p-2 rounded text-sm">
+                      <p className="font-medium">Hint:</p>
+                      <p>For a voltage divider: Vout = Vin × (R2 ÷ (R1 + R2))</p>
+                      <p>Therefore: R1/R2 = (Vin/Vout) - 1 = (24V/4V) - 1 = 5</p>
+                      <p>So R1 needs to be 5 times larger than R2.</p>
+                      <p className="font-medium mt-2">Solution (try it yourself first!):</p>
+                      <ul className="list-disc pl-5 mt-1">
+                        <li>R1 = 50kΩ, R2 = 10kΩ would work</li>
+                        <li>Or R1 = 15kΩ, R2 = 3kΩ would also work</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+              
             <div className="bg-blue-50 p-4 rounded-lg mt-8">
               <h3 className="text-lg font-semibold text-blue-800">Final Thoughts</h3>
               <p className="mt-2">
@@ -490,6 +680,16 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
                 Remember, practice makes perfect. Try using the calculator tab to decode resistor color bands, 
                 and soon you'll be identifying resistors at a glance.
               </p>
+              <div className="mt-4 flex">
+                <div className="flex-shrink-0">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center border-2 border-blue-300 p-1">
+                    <div className="text-2xl font-bold bg-gradient-to-br from-blue-400 to-purple-500 text-transparent bg-clip-text">G</div>
+                  </div>
+                </div>
+                <div className="ml-4 italic text-blue-700 border-l-4 border-blue-200 pl-4 flex items-center">
+                  <p>"May your circuits always flow with just the right amount of current, and your LEDs shine bright but never burn out! Until next time, makers!"</p>
+                </div>
+              </div>
             </div>
           </div>
         )}
