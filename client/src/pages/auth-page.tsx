@@ -140,7 +140,7 @@ export default function AuthPage() {
     
       {/* Main login UI */}
       <div 
-        className="min-h-screen w-full flex flex-col justify-center items-center relative overflow-hidden retro-desktop"
+        className="min-h-screen w-full flex flex-col justify-center items-center relative overflow-hidden"
         style={{
           backgroundImage: `url(${wallpaper})`,
           backgroundSize: 'cover',
@@ -149,20 +149,7 @@ export default function AuthPage() {
           imageRendering: 'pixelated'
         }}
       >
-      {/* Glitchy overlay effect - with pointer-events-none to ensure inputs work */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-blue-900/20 mix-blend-overlay pointer-events-none"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-blue-900/30 pointer-events-none"></div>
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48ZyBzdHJva2U9IiMwMDAiIHN0cm9rZS1vcGFjaXR5PSIuMiIgc3Ryb2tlLXdpZHRoPSIuNSI+PHBhdGggZD0iTTEgMWgxNnYxNkgxeiIvPjwvZz48L2c+PC9zdmc+')] opacity-10 pointer-events-none"></div>
-        <div className="absolute top-0 left-0 right-0 h-px bg-white/20 pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-black/40 pointer-events-none"></div>
-        <div className="absolute -inset-[100px] mix-blend-overlay opacity-30 pointer-events-none" 
-          style={{
-            background: 'repeating-linear-gradient(90deg, rgba(255,255,255,0) 0px, rgba(255,255,255,0.03) 1px, rgba(255,255,255,0) 2px)',
-            backgroundSize: '4px 4px',
-          }}>
-        </div>
-      </div>
+      {/* Removed overlay for better input accessibility */}
       {/* Windows 95-style Login Box */}
       <div className="w-full max-w-md mx-auto z-10">
         {/* Main Window */}
@@ -234,7 +221,8 @@ export default function AuthPage() {
                                 <input
                                   {...field}
                                   placeholder="Enter username"
-                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none retro-input"
+                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none"
+                                  style={{position: 'relative', zIndex: 50}}
                                 />
                               </FormControl>
                               <FormMessage className="text-xs text-red-600 mt-1" />
@@ -257,7 +245,8 @@ export default function AuthPage() {
                                   {...field}
                                   type="password"
                                   placeholder="Enter password"
-                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none retro-input"
+                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none"
+                                  style={{position: 'relative', zIndex: 50}}
                                 />
                               </FormControl>
                               <FormMessage className="text-xs text-red-600 mt-1" />
@@ -295,7 +284,8 @@ export default function AuthPage() {
                                 <input
                                   {...field}
                                   placeholder="Choose username"
-                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none retro-input"
+                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none"
+                                  style={{position: 'relative', zIndex: 50}}
                                 />
                               </FormControl>
                               <FormMessage className="text-xs text-red-600 mt-1" />
@@ -318,7 +308,8 @@ export default function AuthPage() {
                                   {...field}
                                   type="password"
                                   placeholder="Choose password"
-                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none retro-input"
+                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white focus:outline-none"
+                                  style={{position: 'relative', zIndex: 50}}
                                 />
                               </FormControl>
                               <FormMessage className="text-xs text-red-600 mt-1" />
