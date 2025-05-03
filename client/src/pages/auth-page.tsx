@@ -149,14 +149,14 @@ export default function AuthPage() {
           imageRendering: 'pixelated'
         }}
       >
-      {/* Glitchy overlay effect */}
+      {/* Glitchy overlay effect - with pointer-events-none to ensure inputs work */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-blue-900/20 mix-blend-overlay"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-blue-900/30"></div>
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48ZyBzdHJva2U9IiMwMDAiIHN0cm9rZS1vcGFjaXR5PSIuMiIgc3Ryb2tlLXdpZHRoPSIuNSI+PHBhdGggZD0iTTEgMWgxNnYxNkgxeiIvPjwvZz48L2c+PC9zdmc+')] opacity-10"></div>
-        <div className="absolute top-0 left-0 right-0 h-px bg-white/20"></div>
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-black/40"></div>
-        <div className="absolute -inset-[100px] mix-blend-overlay opacity-30" 
+        <div className="absolute inset-0 bg-blue-900/20 mix-blend-overlay pointer-events-none"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-blue-900/30 pointer-events-none"></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48ZyBzdHJva2U9IiMwMDAiIHN0cm9rZS1vcGFjaXR5PSIuMiIgc3Ryb2tlLXdpZHRoPSIuNSI+PHBhdGggZD0iTTEgMWgxNnYxNkgxeiIvPjwvZz48L2c+PC9zdmc+')] opacity-10 pointer-events-none"></div>
+        <div className="absolute top-0 left-0 right-0 h-px bg-white/20 pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-black/40 pointer-events-none"></div>
+        <div className="absolute -inset-[100px] mix-blend-overlay opacity-30 pointer-events-none" 
           style={{
             background: 'repeating-linear-gradient(90deg, rgba(255,255,255,0) 0px, rgba(255,255,255,0.03) 1px, rgba(255,255,255,0) 2px)',
             backgroundSize: '4px 4px',
