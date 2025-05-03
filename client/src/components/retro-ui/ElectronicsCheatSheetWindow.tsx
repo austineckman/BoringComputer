@@ -413,9 +413,119 @@ const ElectronicsCheatSheetWindow: React.FC<ElectronicsCheatSheetWindowProps> = 
       tips: "Keep your workspace clean. Organize components. Label wires and connections."
     },
     {
+      title: "The Goblin's Guide to LEDs",
+      content: "LEDs are like tiny stars you can hold in your hand! But unlike stars, they need the right amount of current or they'll burn out instantly. Always pair them with a resistor, unless you enjoy collecting tiny burned-out pieces of disappointment.",
+      tips: "Different color LEDs need different resistors. Red: ~150Ω, Green/Yellow: ~100Ω, Blue/White: ~68Ω at 5V. When in doubt, go higher resistance."
+    },
+    {
+      title: "The Tale of the Missing Ground",
+      content: "Once I spent three days trying to figure out why my project wouldn't work. I'd checked everything thrice! Turns out I forgot to connect the ground. THREE DAYS! Remember, electricity is like water—it needs a complete path to flow. No ground, no flow!",
+      tips: "Always double-check your ground connections. Many mysterious problems can be traced back to a missing or poor ground connection."
+    },
+    {
+      title: "Gizbo's Capacitor Chronicles",
+      content: "Capacitors are like tiny batteries that charge and discharge very quickly. They're perfect for smoothing out power fluctuations or creating timing circuits. But beware! They can hold a charge long after power is removed. Many a goblin apprentice has been zapped by a forgotten capacitor!",
+      tips: "Discharge large capacitors before handling them. Use a resistor across the terminals (never your fingers!). Wait 5 time constants for complete discharge."
+    },
+    {
+      title: "Transistor Trickery",
+      content: "Transistors are magical little devices—tiny electronic switches and amplifiers! With just a small current at the base/gate, you can control a much larger current. It's like using a tiny stream to redirect a mighty river. That's real power!",
+      tips: "NPN transistors: collector high, emitter low. N-channel MOSFETs: drain high, source low. Always use a current-limiting resistor on the base/gate."
+    },
+    {
+      title: "The Microcontroller Manifesto",
+      content: "Microcontrollers are like tiny brains for your circuits. They can make decisions, process data, and control outputs according to your programming. Remember though, they're very literal—they'll do exactly what you tell them, not what you meant to tell them!",
+      tips: "Start with simple programs and add complexity gradually. Use delay() sparingly—it blocks everything else. Consider using state machines for complex behavior."
+    },
+    {
+      title: "The Great Solder Spill of '87",
+      content: "Back in the Forge Realm in '87, I accidentally knocked over a cauldron of molten solder. Created an impromptu silver river right through my workshop! Learned two important lessons that day: proper workspace organization and how to solder an entire project in one go. The second method is not recommended.",
+      tips: "Hold your soldering iron like a pencil. Touch both the pad and component lead simultaneously. Apply solder to the junction, not the iron tip."
+    },
+    {
+      title: "Battery Babble",
+      content: "Batteries are finicky creatures. They start out full of energy and slowly get tired, unlike capacitors which discharge rapidly. Different battery chemistries have different personalities too! Alkaline cells are like reliable workers, lithium cells are sprinters, and lead-acid batteries are the sturdy packhorses of the battery world.",
+      tips: "Match battery capacity to your project's needs. For long-term projects, consider rechargeable options or external power supplies."
+    },
+    {
+      title: "The Wizard's Oscilloscope",
+      content: "If a multimeter is a compass, then an oscilloscope is a detailed map! It lets you SEE electricity over time. First time I used one, I stayed up three days straight just watching signals bounce around. It's like peeking into electricity's secret diary!",
+      tips: "Start with AUTO mode to find your signal. Use single-shot triggering for one-time events. Save interesting waveforms for future reference."
+    },
+    {
+      title: "Logic Analyzer Legends",
+      content: "Logic analyzers are perfect for debugging digital protocols. I once tracked down a bug in my crystal-powered communication device that only happened every 4,096 cycles. Without my logic analyzer, I'd still be scratching my head and blaming it on moon phase interference!",
+      tips: "Set triggers to capture the exact event you're interested in. Use protocol decoders for I2C, SPI, etc., rather than trying to interpret raw signals."
+    },
+    {
+      title: "Sensory Perception",
+      content: "Sensors are your circuit's eyes, ears, and skin—they let your electronics perceive the world! Temperature, light, sound, movement, pressure... there's a sensor for almost everything. Just remember, the physical world is messy, so always filter and validate sensor data before making decisions based on it.",
+      tips: "Add capacitors close to analog sensors to reduce noise. Take multiple readings and average them for more stable results. Consider using digital filtering techniques for highly variable inputs."
+    },
+    {
+      title: "Forbidden Wire Tricks",
+      content: "No copper wire available? In a pinch, I've used everything from gold thread (works excellently but expensive) to steel wool strands (burns spectacularly—not recommended). Most surprising substitute? Hair from a unicorn's mane—conducts electricity AND magic, but tends to teleport small components to random dimensions.",
+      tips: "Always use proper gauge wire for your current requirements. Color-code your wiring harnesses. Make secure, permanent connections for production, but use breadboards or wire-wrap for prototyping."
+    },
+    {
+      title: "Ohm's Law in Practice",
+      content: "Ohm's Law (V=IR) might seem simple, but it's a powerful tool. I once built a heating element by precisely calculating the resistance needed to generate exactly 150°C from a 12V supply. The principle works for everything from LEDs to motors. Master Ohm's Law, and electricity bends to your will!",
+      tips: "Memorize the Ohm's Law triangle: V at top, I and R at bottom. Cover the value you want to find and multiply or divide the remaining values as shown by their positions."
+    },
+    {
+      title: "The Motor Madness",
+      content: "Motors are hungry beasts! They draw a huge surge of current when starting up, and they generate nasty voltage spikes when stopping. My first robot project nearly fried itself when the back-EMF from its motors blew out my control circuits. Now I always add protection diodes and separate power supplies!",
+      tips: "Use a motor driver IC or transistor circuit with flyback diodes. Keep motor power separate from logic power when possible. Add capacitors across motor terminals to reduce RF interference."
+    },
+    {
+      title: "Power Supply Principles",
+      content: "The foundation of any good electronic project is a stable power supply. Voltage regulators are your friends! They maintain steady output even as batteries drain or loads change. Linear regulators are simple but inefficient; switching regulators are efficient but noisier. Choose wisely based on your project's needs.",
+      tips: "Add capacitors on both input and output of regulators. Use a heat sink for high-current applications. Consider using pre-built modules for complex requirements."
+    },
+    {
+      title: "Thermal Theories",
+      content: "Heat is both friend and foe in electronics. Too much will destroy components, but sometimes you need a bit! I once designed a crystal oscillator circuit that wouldn't start in cold weather. The solution? A tiny heating element that kept it at optimal temperature. Understanding thermal management will take your projects to the next level!",
+      tips: "Components with heat sinks should have good airflow. Use thermal paste for better heat transfer. Consider temperature coefficients when designing precision circuits."
+    },
+    {
+      title: "Interference Incantations",
+      content: "Electromagnetic interference (EMI) is like an invisible gremlin that disrupts your circuits! I once had a project that worked perfectly until someone used a microwave nearby. The solution was proper shielding and filtering. Remember, in our interconnected world, your circuit is never truly alone!",
+      tips: "Use metal enclosures for sensitive circuits. Add ferrite beads on cables that enter/exit the enclosure. Keep digital and analog grounds separated but connected at a single point."
+    },
+    {
+      title: "Protocol Puzzles",
+      content: "Communication protocols are like different languages for your devices. I2C, SPI, UART, CAN... each has strengths and weaknesses. I2C is like a busy city bus route with many stops; SPI is like dedicated lanes for each passenger. Choose the right protocol for your project's needs!",
+      tips: "I2C: good for many devices sharing two wires. SPI: faster but uses more pins. UART: simple but limited to point-to-point unless you add addressing."
+    },
+    {
+      title: "The Legendary Lost Breadboard",
+      content: "Legend tells of a perfect breadboard without flaky connections that mysteriously disappear. Some say it was forged in the depths of Mount Circuit by ancient technomancers. I've searched for decades but found only regular breadboards that work great until you breathe on them wrong. Then it's debugging time!",
+      tips: "Press jumper wires firmly into breadboard holes. Trim component leads to appropriate length. Use solid core wire, not stranded, for breadboard connections."
+    },
+    {
+      title: "PCB Perfection",
+      content: "Moving from breadboard to PCB is like upgrading from a tent to a castle! Suddenly your circuit is reliable, compact, and professional. My first PCB had traces so thin they dissolved during etching, and pads that lifted off with the first touch of the soldering iron. Learn from my mistakes—design with manufacturing tolerances in mind!",
+      tips: "Use at least 10mil traces for signal lines, 20mil for power. Add test points for debugging. Consider how you'll program or update firmware after assembly."
+    },
+    {
       title: "Hidden Knowledge: The Resistor Dance",
       content: "*This note appears to be written in a different handwriting and glows slightly when you read it*\n\nWhen resistors are placed just so, in the sacred formation known as the Wheatstone Bridge, they can detect the smallest changes in the magical flow. The ancient ones used this to seek balance between realms.",
       tips: "A balanced bridge produces zero voltage across the middle when all ratios are equal. Any imbalance produces a voltage proportional to the difference."
+    },
+    {
+      title: "Hidden Knowledge: Crystal Whispers",
+      content: "*The ink on this page seems to shift and change as you look at it*\n\nQuartz crystals don't just oscillate at precise frequencies—they resonate with the underlying fabric of reality. At exactly 32.768 kHz, a properly cut crystal can briefly peer through the veil between dimensions. Why do you think so many clocks use this frequency?",
+      tips: "Crystal oscillators need appropriate load capacitors to start and maintain stable oscillation. These capacitors should match the crystal's specifications."
+    },
+    {
+      title: "Hidden Knowledge: The Lone Electron",
+      content: "*This note is written on what appears to be scorched parchment*\n\nElectrons don't actually 'flow' through a conductor—they 'dance' from atom to atom, passing energy rather than themselves moving long distances. The ancient mages knew this and created metals with spiral atomic structures, allowing instantaneous power transfer across any distance. Sadly, the secret was lost during the Great Capacitor Discharge of the Third Age.",
+      tips: "Electron drift velocity in copper is only about 0.1mm per second, yet electrical signals can propagate near the speed of light due to electromagnetic wave effects."
+    },
+    {
+      title: "Hidden Knowledge: The Void Gate",
+      content: "*This page has a faint smell of ozone*\n\nA vacuum tube is more than an obsolete electronic component—it's a doorway. In the space between cathode and anode, where electrons leap across nothingness, there exists a moment of quantum uncertainty. The fifth Archmage of Circuit Mountain used this principle to create devices that could process thoughts directly. His final invention showed him his own end... he never built another.",
+      tips: "Modern vacuum tubes are still used in high-end audio equipment and RF amplifiers due to their unique harmonic characteristics and resilience to electromagnetic pulses."
     }
   ];
 
