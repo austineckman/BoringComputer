@@ -33,12 +33,12 @@ interface GlossaryTerm {
   relatedComponents?: string[];
 }
 
-// Mock data for testing
+// Electronic components database
 const COMPONENTS: Component[] = [
   {
     id: 'led',
     name: 'LED',
-    iconSrc: '/assets/led.icon.png',
+    iconSrc: '/attached_assets/led.icon.png',
     description: 'Light Emitting Diode - A semiconductor device that emits light when current flows through it',
     generalInfo: 'LEDs are widely used as indicator lamps in many devices and are increasingly used for lighting. They consume far less energy than incandescent lamps.',
     pins: [
@@ -61,9 +61,46 @@ const COMPONENTS: Component[] = [
     ]
   },
   {
+    id: 'rgb-led',
+    name: 'RGB LED',
+    iconSrc: '/attached_assets/rgb-led.icon.png',
+    description: 'A LED that can emit different colors by combining red, green, and blue light',
+    generalInfo: 'RGB LEDs contain three separate LEDs (red, green, and blue) in one package. By controlling the intensity of each color, you can create any color in the rainbow.',
+    pins: [
+      {
+        id: 'rgb-common',
+        name: 'Common Terminal',
+        description: 'The common terminal of the RGB LED, either common anode (connected to positive) or common cathode (connected to ground).',
+        usageNotes: 'Most RGB LEDs are common anode, meaning this pin connects to positive voltage.',
+        relatedTerms: ['Common Anode', 'Common Cathode']
+      },
+      {
+        id: 'rgb-red',
+        name: 'Red Terminal',
+        description: 'Controls the red component of the RGB LED.',
+        voltageRange: 'Forward voltage typically 1.8-2.2V',
+        relatedTerms: ['PWM', 'Color Mixing']
+      },
+      {
+        id: 'rgb-green',
+        name: 'Green Terminal',
+        description: 'Controls the green component of the RGB LED.',
+        voltageRange: 'Forward voltage typically 2.0-3.2V',
+        relatedTerms: ['PWM', 'Color Mixing']
+      },
+      {
+        id: 'rgb-blue',
+        name: 'Blue Terminal',
+        description: 'Controls the blue component of the RGB LED.',
+        voltageRange: 'Forward voltage typically 2.7-3.4V',
+        relatedTerms: ['PWM', 'Color Mixing']
+      }
+    ]
+  },
+  {
     id: 'resistor',
     name: 'Resistor',
-    iconSrc: '/assets/resistor.icon.png',
+    iconSrc: '/attached_assets/resistor.icon.png',
     description: 'A passive component that implements electrical resistance in a circuit',
     generalInfo: 'Resistors are used to reduce current flow, adjust signal levels, divide voltages, bias active elements, and terminate transmission lines.',
     pins: [
@@ -82,20 +119,226 @@ const COMPONENTS: Component[] = [
     ]
   },
   {
+    id: 'photoresistor',
+    name: 'Photoresistor',
+    iconSrc: '/attached_assets/photoresistor.icon.png',
+    description: 'A light-sensitive resistor that changes resistance based on light intensity',
+    generalInfo: 'Also known as Light Dependent Resistors (LDRs), photoresistors decrease in resistance when exposed to light. They are used in light sensing applications like night lights and automatic outdoor lighting.',
+    pins: [
+      {
+        id: 'photoresistor-terminal1',
+        name: 'Terminal 1',
+        description: 'One end of the photoresistor. Photoresistors are non-polarized so either terminal can be connected.',
+        relatedTerms: ['Light Sensing', 'Voltage Divider']
+      },
+      {
+        id: 'photoresistor-terminal2',
+        name: 'Terminal 2',
+        description: 'The other end of the photoresistor. Photoresistors are non-polarized so either terminal can be connected.',
+        relatedTerms: ['Light Sensing', 'Voltage Divider']
+      }
+    ]
+  },
+  {
     id: 'button',
     name: 'Push Button',
-    iconSrc: '/assets/buzzer.icon.svg',
+    iconSrc: '/attached_assets/buzzer.icon.svg',
     description: 'A momentary switch that completes a circuit when pressed',
+    generalInfo: 'Push buttons are temporary switches that create a connection when pressed and break the connection when released. They are commonly used for user input in electronic projects.',
     pins: [
       {
         id: 'button-terminal1',
         name: 'Terminal 1',
         description: 'One terminal of the button. When the button is pressed, this terminal connects to Terminal 2.',
+        relatedTerms: ['Pull-up Resistor', 'Debouncing']
       },
       {
         id: 'button-terminal2',
         name: 'Terminal 2',
         description: 'The other terminal of the button. When the button is pressed, this terminal connects to Terminal 1.',
+        relatedTerms: ['Pull-up Resistor', 'Debouncing']
+      }
+    ]
+  },
+  {
+    id: 'rotary-encoder',
+    name: 'Rotary Encoder',
+    iconSrc: '/attached_assets/rotary-encoder.icon.png',
+    description: 'A device that converts rotational motion into digital signals',
+    generalInfo: 'Rotary encoders provide both direction and position feedback when rotated. They are commonly used for volume controls, menu navigation, and precise positioning systems.',
+    pins: [
+      {
+        id: 'rotary-common',
+        name: 'Common (C)',
+        description: 'The common pin for the rotary encoder, typically connected to ground.',
+        relatedTerms: ['Ground', 'Common Terminal']
+      },
+      {
+        id: 'rotary-a',
+        name: 'Output A',
+        description: 'One of the two output pins that produce quadrature signals when the encoder is rotated.',
+        usageNotes: 'Connect to a digital input pin with a pull-up resistor.',
+        relatedTerms: ['Quadrature Encoding', 'Pull-up Resistor']
+      },
+      {
+        id: 'rotary-b',
+        name: 'Output B',
+        description: 'The second output pin that works with Output A to determine direction of rotation.',
+        usageNotes: 'Connect to a digital input pin with a pull-up resistor.',
+        relatedTerms: ['Quadrature Encoding', 'Direction Detection']
+      },
+      {
+        id: 'rotary-switch',
+        name: 'Switch (SW)',
+        description: 'Many rotary encoders include a push button switch that activates when the knob is pressed.',
+        usageNotes: 'Connect to a digital input pin with a pull-up resistor.',
+        relatedTerms: ['Push Button', 'Pull-up Resistor']
+      }
+    ]
+  },
+  {
+    id: 'oled-display',
+    name: 'OLED Display',
+    iconSrc: '/attached_assets/oled-display.icon.png',
+    description: 'Organic Light Emitting Diode display for showing text and graphics',
+    generalInfo: 'OLED displays offer high contrast, wide viewing angles, and do not require backlighting. They are energy efficient and commonly used in small electronic devices where visual feedback is needed.',
+    pins: [
+      {
+        id: 'oled-gnd',
+        name: 'GND',
+        description: 'Ground connection for the display.',
+        relatedTerms: ['Ground', 'Power Supply']
+      },
+      {
+        id: 'oled-vcc',
+        name: 'VCC',
+        description: 'Power supply for the display logic, typically 3.3V or 5V.',
+        voltageRange: '3.3-5V DC',
+        warnings: 'Check your specific display model for voltage requirements.',
+        relatedTerms: ['Power Supply', 'Voltage Level']
+      },
+      {
+        id: 'oled-scl',
+        name: 'SCL/SCK',
+        description: 'Serial Clock line for I2C or SPI communication.',
+        usageNotes: 'Connect to a microcontroller SCL/SCK pin.',
+        relatedTerms: ['I2C', 'SPI', 'Serial Communication']
+      },
+      {
+        id: 'oled-sda',
+        name: 'SDA/MOSI',
+        description: 'Serial Data line for I2C or Master Out Slave In for SPI.',
+        usageNotes: 'Connect to a microcontroller SDA/MOSI pin.',
+        relatedTerms: ['I2C', 'SPI', 'Serial Communication']
+      }
+    ]
+  },
+  {
+    id: 'segmented-display',
+    name: '7-Segment Display',
+    iconSrc: '/attached_assets/segmented-display.icon.png',
+    description: 'A display device for showing numbers and some letters using 7 LED segments',
+    generalInfo: 'Seven-segment displays consist of seven LEDs arranged in a figure-8 pattern, plus an optional decimal point. They are commonly used to display numbers in clocks, counters, and measurement devices.',
+    pins: [
+      {
+        id: 'segment-common',
+        name: 'Common Pin',
+        description: 'The common connection for all segments, either common anode (positive) or common cathode (negative).',
+        usageNotes: 'Common anode connects to positive voltage, common cathode connects to ground.',
+        relatedTerms: ['Common Anode', 'Common Cathode']
+      },
+      {
+        id: 'segment-a',
+        name: 'Segment A',
+        description: 'Controls the top horizontal segment.',
+        relatedTerms: ['LED', 'Current Limiting']
+      },
+      {
+        id: 'segment-b',
+        name: 'Segment B',
+        description: 'Controls the upper right vertical segment.',
+        relatedTerms: ['LED', 'Current Limiting']
+      },
+      {
+        id: 'segment-c',
+        name: 'Segment C',
+        description: 'Controls the lower right vertical segment.',
+        relatedTerms: ['LED', 'Current Limiting']
+      },
+      {
+        id: 'segment-d',
+        name: 'Segment D',
+        description: 'Controls the bottom horizontal segment.',
+        relatedTerms: ['LED', 'Current Limiting']
+      },
+      {
+        id: 'segment-e',
+        name: 'Segment E',
+        description: 'Controls the lower left vertical segment.',
+        relatedTerms: ['LED', 'Current Limiting']
+      },
+      {
+        id: 'segment-f',
+        name: 'Segment F',
+        description: 'Controls the upper left vertical segment.',
+        relatedTerms: ['LED', 'Current Limiting']
+      },
+      {
+        id: 'segment-g',
+        name: 'Segment G',
+        description: 'Controls the middle horizontal segment.',
+        relatedTerms: ['LED', 'Current Limiting']
+      },
+      {
+        id: 'segment-dp',
+        name: 'Decimal Point',
+        description: 'Controls the decimal point dot (if present).',
+        relatedTerms: ['LED', 'Current Limiting']
+      }
+    ]
+  },
+  {
+    id: 'heroboard',
+    name: 'Hero Board',
+    iconSrc: '/attached_assets/hero-board.icon.png',
+    description: 'A microcontroller development board for learning electronics and programming',
+    generalInfo: 'The Hero Board is an educational microcontroller platform based on the ATmega328P chip. It features digital and analog I/O pins, PWM outputs, and is programmed using the Arduino IDE and C/C++.',
+    pins: [
+      {
+        id: 'hero-5v',
+        name: '5V',
+        description: '5V power output when the board is powered via USB or external power supply.',
+        voltageRange: '5V DC',
+        warnings: 'Do not apply external voltage to this pin.',
+        relatedTerms: ['Power Supply', 'Voltage Regulator']
+      },
+      {
+        id: 'hero-3v3',
+        name: '3.3V',
+        description: '3.3V power output from the on-board voltage regulator.',
+        voltageRange: '3.3V DC',
+        warnings: 'Do not apply external voltage to this pin. Maximum current draw is 50mA.',
+        relatedTerms: ['Power Supply', 'Voltage Regulator']
+      },
+      {
+        id: 'hero-gnd',
+        name: 'GND',
+        description: 'Ground pins for completing electrical circuits.',
+        relatedTerms: ['Ground', 'Common Reference']
+      },
+      {
+        id: 'hero-digital',
+        name: 'Digital Pins (0-13)',
+        description: 'General-purpose digital input/output pins that can read or output HIGH (5V) or LOW (0V).',
+        usageNotes: 'Pins 3, 5, 6, 9, 10, and 11 support PWM output. Pins 0 and 1 are used for serial communication.',
+        relatedTerms: ['GPIO', 'PWM', 'Digital Signal']
+      },
+      {
+        id: 'hero-analog',
+        name: 'Analog Pins (A0-A5)',
+        description: 'Analog input pins that can read varying voltage levels from 0-5V.',
+        usageNotes: 'Can also be used as digital I/O pins if needed.',
+        relatedTerms: ['ADC', 'Analog Signal', 'Sensor Input']
       }
     ]
   }
@@ -105,32 +348,127 @@ const GLOSSARY: GlossaryTerm[] = [
   {
     term: 'Forward Voltage',
     definition: 'The voltage required to turn on a diode and allow current to flow. Different types of diodes (including LEDs) have different forward voltage requirements.',
-    relatedComponents: ['led']
+    relatedComponents: ['led', 'rgb-led']
   },
   {
     term: 'Current Limiting',
     definition: 'The practice of restricting the amount of current that can flow in a circuit, often done with a resistor. Essential for protecting components like LEDs.',
-    relatedComponents: ['led', 'resistor']
+    relatedComponents: ['led', 'resistor', 'rgb-led', 'segmented-display']
   },
   {
     term: 'Ground',
     definition: 'A reference point in an electrical circuit from which voltage is measured. It is the return path for current to flow back to the source.',
-    relatedComponents: ['led']
+    relatedComponents: ['led', 'oled-display', 'heroboard']
   },
   {
     term: 'Common Cathode',
     definition: 'A configuration where multiple components (often LEDs) share a common negative terminal.',
-    relatedComponents: ['led']
+    relatedComponents: ['led', 'rgb-led', 'segmented-display']
+  },
+  {
+    term: 'Common Anode',
+    definition: 'A configuration where multiple components (often LEDs) share a common positive terminal.',
+    relatedComponents: ['rgb-led', 'segmented-display']
   },
   {
     term: 'Resistance',
     definition: 'The opposition to the flow of electric current in a material, measured in ohms (\u03a9).',
-    relatedComponents: ['resistor']
+    relatedComponents: ['resistor', 'photoresistor']
   },
   {
     term: 'Ohm\'s Law',
     definition: 'A fundamental relationship in electrical circuits: V = I \u00d7 R, where V is voltage, I is current, and R is resistance.',
-    relatedComponents: ['resistor']
+    relatedComponents: ['resistor', 'photoresistor']
+  },
+  {
+    term: 'Light Sensing',
+    definition: 'The ability to detect and measure the intensity of light, often used in automatic lighting controls, sunrise/sunset detection, and other light-dependent applications.',
+    relatedComponents: ['photoresistor']
+  },
+  {
+    term: 'Voltage Divider',
+    definition: 'A circuit that produces an output voltage that is a fraction of its input voltage. Common implementation uses two resistors in series.',
+    relatedComponents: ['resistor', 'photoresistor']
+  },
+  {
+    term: 'Pull-up Resistor',
+    definition: 'A resistor connected between a signal conductor and the positive power supply to ensure the signal defaults to a high state when not actively driven low.',
+    relatedComponents: ['button', 'rotary-encoder']
+  },
+  {
+    term: 'Debouncing',
+    definition: 'A technique to prevent multiple signal transitions from being registered when a mechanical switch is opened or closed due to mechanical bounce.',
+    relatedComponents: ['button', 'rotary-encoder']
+  },
+  {
+    term: 'PWM',
+    definition: 'Pulse Width Modulation - A technique for getting analog results with digital means by controlling the amount of time a signal is on versus off.',
+    relatedComponents: ['rgb-led', 'heroboard']
+  },
+  {
+    term: 'Color Mixing',
+    definition: 'The process of combining different colors of light (typically red, green, and blue) to create a wide range of colors.',
+    relatedComponents: ['rgb-led']
+  },
+  {
+    term: 'Quadrature Encoding',
+    definition: 'A method of encoding rotational position by using two output signals that are 90 degrees out of phase, allowing both position and direction to be determined.',
+    relatedComponents: ['rotary-encoder']
+  },
+  {
+    term: 'Direction Detection',
+    definition: 'The ability to determine the direction of movement or rotation in an encoder by analyzing the phase relationship between multiple signals.',
+    relatedComponents: ['rotary-encoder']
+  },
+  {
+    term: 'I2C',
+    definition: 'Inter-Integrated Circuit - A serial communication protocol that uses two bidirectional lines (SDA and SCL) for data transfer between devices.',
+    relatedComponents: ['oled-display']
+  },
+  {
+    term: 'SPI',
+    definition: 'Serial Peripheral Interface - A synchronous serial communication protocol used for short-distance communication, primarily in embedded systems.',
+    relatedComponents: ['oled-display']
+  },
+  {
+    term: 'Serial Communication',
+    definition: 'A method of transmitting data one bit at a time over a communication channel or computer bus.',
+    relatedComponents: ['oled-display', 'heroboard']
+  },
+  {
+    term: 'Power Supply',
+    definition: 'A device or system that supplies electrical energy to an output load or group of loads, providing the correct voltage and current.',
+    relatedComponents: ['heroboard', 'oled-display']
+  },
+  {
+    term: 'Voltage Regulator',
+    definition: 'A circuit that maintains a constant voltage level automatically, used to provide stable power to electronic devices.',
+    relatedComponents: ['heroboard']
+  },
+  {
+    term: 'GPIO',
+    definition: 'General Purpose Input/Output - A generic pin on a microcontroller that can be programmed to be either an input or output pin.',
+    relatedComponents: ['heroboard']
+  },
+  {
+    term: 'Digital Signal',
+    definition: 'A signal that represents data as a sequence of discrete values, typically just two values representing on/off, high/low, or 1/0.',
+    relatedComponents: ['heroboard', 'button']
+  },
+  {
+    term: 'Analog Signal',
+    definition: 'A continuous signal that can take on any value within a range, as opposed to digital signals that have discrete values.',
+    relatedComponents: ['heroboard', 'photoresistor']
+  },
+  {
+    term: 'ADC',
+    definition: 'Analog-to-Digital Converter - A system that converts an analog signal into a digital signal that represents the amplitude of the analog signal.',
+    relatedComponents: ['heroboard']
+  },
+  {
+    term: 'Sensor Input',
+    definition: 'An electronic component that detects and responds to changes in the environment, converting physical parameters into electrical signals.',
+    relatedComponents: ['heroboard', 'photoresistor']
   }
 ];
 
