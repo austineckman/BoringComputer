@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useRef, useEffect } from 'react';
 import { X, Minimize2, Calculator, Zap, Info } from 'lucide-react';
 
 interface ResistorCalculatorWindowProps {
@@ -21,6 +22,14 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
 }) => {
   // Tab management
   const [activeTab, setActiveTab] = useState<'calculator' | 'identifier' | 'explainer' | 'learning'>('calculator');
+  const [activeCategory, setActiveCategory] = useState<string>('fundamentals');
+  
+  // References for scrolling to sections
+  const fundamentalsRef = useRef<HTMLDivElement>(null);
+  const historyRef = useRef<HTMLDivElement>(null);
+  const applicationsRef = useRef<HTMLDivElement>(null);
+  const troubleshootingRef = useRef<HTMLDivElement>(null);
+  const exercisesRef = useRef<HTMLDivElement>(null);
   
   // Resistor band colors for the calculator
   const [band1, setBand1] = useState('brown');
@@ -107,6 +116,36 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
     return tolerance !== null ? `±${tolerance}%` : 'n/a';
   };
 
+  // Scroll handling function
+  const scrollToSection = (category: string) => {
+    setActiveCategory(category);
+    
+    let ref;
+    switch(category) {
+      case 'fundamentals':
+        ref = fundamentalsRef;
+        break;
+      case 'history':
+        ref = historyRef;
+        break;
+      case 'applications':
+        ref = applicationsRef;
+        break;
+      case 'troubleshooting':
+        ref = troubleshootingRef;
+        break;
+      case 'exercises':
+        ref = exercisesRef;
+        break;
+      default:
+        ref = fundamentalsRef;
+    }
+    
+    if (ref.current) {
+      ref.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+  
   // Identify resistor colors from a given resistance value
   const identifyResistorColors = () => {
     const value = parseFloat(resistanceInput);
@@ -237,15 +276,40 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
             </div>
             
             <div className="flex space-x-4 overflow-x-auto p-2">
-              <button className="px-4 py-2 bg-blue-100 hover:bg-blue-200 rounded-lg font-medium flex-shrink-0 text-blue-800">Fundamentals</button>
-              <button className="px-4 py-2 bg-purple-100 hover:bg-purple-200 rounded-lg font-medium flex-shrink-0 text-purple-800">Historical Journey</button>
-              <button className="px-4 py-2 bg-green-100 hover:bg-green-200 rounded-lg font-medium flex-shrink-0 text-green-800">Real-World Examples</button>
-              <button className="px-4 py-2 bg-amber-100 hover:bg-amber-200 rounded-lg font-medium flex-shrink-0 text-amber-800">Common Problems</button>
-              <button className="px-4 py-2 bg-red-100 hover:bg-red-200 rounded-lg font-medium flex-shrink-0 text-red-800">Advanced Topics</button>
+              <button 
+                onClick={() => scrollToSection('fundamentals')} 
+                className={`px-4 py-2 ${activeCategory === 'fundamentals' ? 'bg-blue-200' : 'bg-blue-100 hover:bg-blue-200'} rounded-lg font-medium flex-shrink-0 text-blue-800`}
+              >
+                Fundamentals
+              </button>
+              <button 
+                onClick={() => scrollToSection('history')} 
+                className={`px-4 py-2 ${activeCategory === 'history' ? 'bg-purple-200' : 'bg-purple-100 hover:bg-purple-200'} rounded-lg font-medium flex-shrink-0 text-purple-800`}
+              >
+                Historical Journey
+              </button>
+              <button 
+                onClick={() => scrollToSection('applications')} 
+                className={`px-4 py-2 ${activeCategory === 'applications' ? 'bg-green-200' : 'bg-green-100 hover:bg-green-200'} rounded-lg font-medium flex-shrink-0 text-green-800`}
+              >
+                Real-World Examples
+              </button>
+              <button 
+                onClick={() => scrollToSection('troubleshooting')} 
+                className={`px-4 py-2 ${activeCategory === 'troubleshooting' ? 'bg-amber-200' : 'bg-amber-100 hover:bg-amber-200'} rounded-lg font-medium flex-shrink-0 text-amber-800`}
+              >
+                Common Problems
+              </button>
+              <button 
+                onClick={() => scrollToSection('exercises')} 
+                className={`px-4 py-2 ${activeCategory === 'exercises' ? 'bg-red-200' : 'bg-red-100 hover:bg-red-200'} rounded-lg font-medium flex-shrink-0 text-red-800`}
+              >
+                Advanced Topics
+              </button>
             </div>
             
             <div className="space-y-4">
-              <section className="border-b border-gray-200 pb-4">
+              <section ref={fundamentalsRef} className="border-b border-gray-200 pb-4">
                 <h3 className="text-lg font-semibold text-blue-600">What is a Resistor?</h3>
                 <p className="mt-2">
                   Imagine a water pipe with a narrowing in the middle. The narrower section restricts water flow, right? 
@@ -310,7 +374,7 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
                 </div>
               </section>
               
-              <section className="border-b border-gray-200 pb-4">
+              <section ref={applicationsRef} className="border-b border-gray-200 pb-4">
                 <h3 className="text-lg font-semibold text-blue-600">Real-World Applications</h3>
                 
                 <div className="mt-3 space-y-4">
@@ -431,7 +495,7 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
                 </div>
               </section>
               
-              <section className="border-b border-gray-200 pb-4">
+              <section ref={historyRef} className="border-b border-gray-200 pb-4">
                 <h3 className="text-lg font-semibold text-blue-600">The Fascinating History of Resistors</h3>
                 
                 <div className="mt-3 bg-purple-50 p-4 rounded-lg">
@@ -557,7 +621,7 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
               </section>
             </div>
             
-            <section className="border-b border-gray-200 pb-4">
+            <section ref={troubleshootingRef} className="border-b border-gray-200 pb-4">
               <h3 className="text-lg font-semibold text-blue-600">Common Resistor Problems & Solutions</h3>
               
               <div className="mt-3 bg-red-50 p-4 rounded-lg">
@@ -624,7 +688,7 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
               </div>
             </section>
             
-            <section className="border-b border-gray-200 pb-4">
+            <section ref={exercisesRef} className="border-b border-gray-200 pb-4">
               <h3 className="text-lg font-semibold text-blue-600">Fun Resistor Exercises</h3>
               
               <div className="mt-3 bg-green-50 p-4 rounded-lg">
