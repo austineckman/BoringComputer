@@ -199,11 +199,6 @@ export default function AuthPage() {
 
             {activeTab === "login" ? (
               <form onSubmit={loginForm.handleSubmit(onLoginSubmit)}>
-                <div className="mb-4 p-3 border border-amber-500 bg-amber-50 rounded text-black text-sm">
-                  <p className="font-bold mb-1">⚠️ DEMO APPLICATION DISCLAIMER:</p>
-                  <p>This project was created entirely by AI and is for demonstration purposes only. None of the art, code, music, or other assets were created by humans.</p>
-                  <p className="mt-1">⚠️ <span className="font-bold">SECURITY WARNING</span>: Do not use real usernames or passwords as this application's security has not been verified.</p>
-                </div>
                 
                 <div className="mb-4">
                   <label htmlFor="username" className="block mb-2 text-sm font-bold text-black">Username:</label>
