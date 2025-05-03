@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import "./matrix-transition.css";
 
 interface MatrixTransitionScreenProps {
@@ -11,83 +11,24 @@ const MatrixTransitionScreen: React.FC<MatrixTransitionScreenProps> = ({
   transitionTime = 4000
 }) => {
   const [progress, setProgress] = useState(0);
-  const animationFrameRef = useRef<number>();
   
-  // Initialize and manage the animation
+  // Handle the transition timing
   useEffect(() => {
-    const startTime = Date.now();
-    const endTime = startTime + transitionTime;
+    const timer = setTimeout(() => {
+      onTransitionComplete();
+    }, transitionTime);
     
-    // Initialize the matrix rain animation
-    const canvas = document.getElementById('matrix-transition-canvas') as HTMLCanvasElement;
-    if (!canvas) return;
+    // Update progress for the progress bar
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        const newProgress = prev + (100 / (transitionTime / 100));
+        return newProgress >= 100 ? 100 : newProgress;
+      });
+    }, 100);
     
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    
-    // Matrix characters - use more code-like symbols
-    const chars = '01アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン[]{}+-*/=0123456789ABCDEF';
-    const columns = Math.floor(canvas.width / 14); // Character width
-    const drops: number[] = [];
-    
-    // Initialize drops at random positions
-    for (let i = 0; i < columns; i++) {
-      drops[i] = Math.random() * -100;
-    }
-    
-    const drawMatrix = () => {
-      // Semi-transparent black to create trails
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      ctx.fillStyle = '#0F0'; // Green text
-      ctx.font = '14px monospace';
-      
-      // Draw characters
-      for (let i = 0; i < drops.length; i++) {
-        // Random character
-        const text = chars[Math.floor(Math.random() * chars.length)];
-        // x coordinate dependent on column, y on drop position
-        ctx.fillText(text, i * 14, drops[i] * 14);
-        
-        // Move drops down faster as time progresses
-        const dropSpeed = 1 + (progress / 100) * 2; // Speed increases with progress
-        drops[i] += dropSpeed;
-        
-        // Reset drop when it reaches the bottom with some randomness
-        if (drops[i] * 14 > canvas.height && Math.random() > 0.975) {
-          drops[i] = Math.random() * -20;
-        }
-      }
-      
-      // Update progress
-      const currentTime = Date.now();
-      const elapsed = currentTime - startTime;
-      const newProgress = Math.min(100, (elapsed / transitionTime) * 100);
-      setProgress(newProgress);
-      
-      // Continue animation if not complete
-      if (currentTime < endTime) {
-        animationFrameRef.current = requestAnimationFrame(drawMatrix);
-      } else {
-        // Transition complete
-        setTimeout(() => {
-          onTransitionComplete();
-        }, 500); // Small delay for visual effect
-      }
-    };
-    
-    // Start the animation
-    drawMatrix();
-    
-    // Clean up on unmount
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
+      clearTimeout(timer);
+      clearInterval(progressInterval);
     };
   }, [transitionTime, onTransitionComplete]);
   
@@ -104,10 +45,11 @@ const MatrixTransitionScreen: React.FC<MatrixTransitionScreenProps> = ({
     }
   };
   
+  // Create a simplified version of the matrix transition screen
   return (
     <div className="fixed inset-0 bg-black flex flex-col items-center justify-center z-50 overflow-hidden">
-      {/* Matrix-like background - fill entire screen */}
-      <canvas id="matrix-transition-canvas" className="absolute inset-0"></canvas>
+      {/* Matrix background */}
+      <div className="absolute inset-0 matrix-background"></div>
       
       {/* Center text */}
       <div className="relative z-10 text-center">
@@ -133,8 +75,6 @@ const MatrixTransitionScreen: React.FC<MatrixTransitionScreenProps> = ({
           SYSTEM INITIALIZATION: {Math.floor(progress)}% COMPLETE
         </p>
       </div>
-
-      {/* No inline style - using external CSS file */}
     </div>
   );
 };
