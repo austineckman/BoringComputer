@@ -319,6 +319,24 @@ const RetroDesktop: React.FC = () => {
     };
   }, []);
   
+  // Handle dynamic Oracle icon based on user permissions
+  useEffect(() => {
+    // Add Oracle icon for admin users only
+    if (user?.roles?.includes('admin')) {
+      const oracleIconExists = desktopIcons.some(icon => icon.id === "oracle");
+      if (!oracleIconExists) {
+        setDesktopIcons(prev => [
+          ...prev,
+          // Oracle in top right
+          { id: "oracle", name: "The Oracle", icon: "oracle", position: { x: 800, y: 20 } }
+        ]);
+      }
+    } else {
+      // Remove Oracle icon for non-admin users
+      setDesktopIcons(prev => prev.filter(icon => icon.id !== "oracle"));
+    }
+  }, [user, desktopIcons]);
+  
   // No separate audio setup needed as we're using the AudioPlayerContext
 
   // Window management functions
@@ -833,8 +851,8 @@ const RetroDesktop: React.FC = () => {
         }} />
       )}
       
-      {/* Fullscreen Oracle Application */}
-      {oracleAppState === 'open' && (
+      {/* Fullscreen Oracle Application - only visible to admins */}
+      {oracleAppState === 'open' && user?.roles?.includes('admin') && (
         <FullscreenOracleApp onClose={() => {
           // Reset app state to closed
           setOracleAppState('closed');
