@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import LoadingScreen from "@/components/retro-ui/LoadingScreen";
 import wallpaper from "@assets/wallbg.png";
+import matrixWallBg from "@assets/bg.png";
 import hoodedFigureImg from "@assets/hooded-figure.png";
 import "@/components/retro-ui/retro-ui.css";
 
@@ -134,10 +135,11 @@ export default function AuthPage() {
   return (
     <div className="w-full min-h-screen flex justify-center items-center" 
       style={{
-        backgroundColor: '#008080', // Classic Windows teal background
-        backgroundImage: `url(${wallpaper})`,
+        backgroundColor: '#121212', // Dark background color
+        backgroundImage: `url(${matrixWallBg})`,
         backgroundSize: 'cover',
-        backgroundPosition: 'center'
+        backgroundPosition: 'center',
+        backgroundRepeat: 'repeat',
       }}>
       {showLoadingScreen && <LoadingScreen onLoadComplete={handleLoadingComplete} />}
       
