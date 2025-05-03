@@ -20,7 +20,7 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
   isActive,
 }) => {
   // Tab management
-  const [activeTab, setActiveTab] = useState<'calculator' | 'identifier' | 'explainer'>('calculator');
+  const [activeTab, setActiveTab] = useState<'calculator' | 'identifier' | 'explainer' | 'learning'>('calculator');
   
   // Resistor band colors for the calculator
   const [band1, setBand1] = useState('brown');
@@ -205,11 +205,294 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
           >
             How It Works
           </button>
+          <button
+            className={`px-4 py-2 font-medium text-sm ${activeTab === 'learning' ? 'text-blue-600 border-b-2 border-blue-500 bg-white' : 'text-gray-600 hover:text-gray-800'}`}
+            onClick={() => setActiveTab('learning')}
+          >
+            Learning Center
+          </button>
         </div>
       </div>
 
       {/* Content area */}
       <div className="flex-1 overflow-auto p-4 bg-white">
+        {/* Learning Center Tab */}
+        {activeTab === 'learning' && (
+          <div className="space-y-6">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h2 className="text-xl font-bold text-blue-800">Resistors: The Traffic Controllers of Electronics</h2>
+              <p className="text-blue-700 mt-2">
+                Welcome to our friendly guide to understanding resistors! Let's explore these essential components together.
+              </p>
+            </div>
+            
+            <div className="space-y-4">
+              <section className="border-b border-gray-200 pb-4">
+                <h3 className="text-lg font-semibold text-blue-600">What is a Resistor?</h3>
+                <p className="mt-2">
+                  Imagine a water pipe with a narrowing in the middle. The narrower section restricts water flow, right? 
+                  That's exactly what a resistor does with electricity! It controls or limits the flow of electric current in a circuit.
+                </p>
+                <div className="bg-yellow-50 p-3 mt-3 rounded-lg">
+                  <p className="font-medium">Think of it this way:</p>
+                  <ul className="list-disc pl-5 mt-2 space-y-1">
+                    <li>Water in a pipe = Electrons in a wire</li>
+                    <li>Narrow section = Resistor</li>
+                    <li>Water pressure = Voltage</li>
+                    <li>Water flow rate = Current</li>
+                  </ul>
+                </div>
+              </section>
+              
+              <section className="border-b border-gray-200 pb-4">
+                <h3 className="text-lg font-semibold text-blue-600">Resistance: Measured in Ohms (Ω)</h3>
+                <p className="mt-2">
+                  Resistance is measured in units called ohms, symbolized by the Greek letter omega (Ω). 
+                  The higher the ohm value, the more the resistor restricts current flow.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <p className="font-medium text-green-800">Low Resistance (e.g., 10Ω)</p>
+                    <p className="text-sm mt-1">Allows more current flow, like a wide pipe</p>
+                  </div>
+                  <div className="bg-yellow-50 p-3 rounded-lg">
+                    <p className="font-medium text-yellow-800">Medium Resistance (e.g., 1kΩ)</p>
+                    <p className="text-sm mt-1">Moderate current restriction</p>
+                  </div>
+                  <div className="bg-red-50 p-3 rounded-lg">
+                    <p className="font-medium text-red-800">High Resistance (e.g., 1MΩ)</p>
+                    <p className="text-sm mt-1">Greatly limits current, like a very narrow pipe</p>
+                  </div>
+                </div>
+              </section>
+              
+              <section className="border-b border-gray-200 pb-4">
+                <h3 className="text-lg font-semibold text-blue-600">Ohm's Law: The Golden Rule of Electronics</h3>
+                <p className="mt-2">
+                  Ohm's Law is the relationship between voltage (V), current (I), and resistance (R):
+                </p>
+                <div className="bg-blue-100 p-4 my-3 rounded-lg text-center">
+                  <p className="text-xl font-bold">V = I × R</p>
+                  <p className="mt-1">Voltage = Current × Resistance</p>
+                </div>
+                <p className="mt-2">This means we can also find:</p>
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li>Current: I = V ÷ R (Current equals voltage divided by resistance)</li>
+                  <li>Resistance: R = V ÷ I (Resistance equals voltage divided by current)</li>
+                </ul>
+                
+                <div className="bg-indigo-50 p-4 mt-4 rounded-lg">
+                  <h4 className="font-medium text-indigo-800">Example: A Simple Circuit</h4>
+                  <p className="mt-2">If you have a 9V battery powering a circuit with a 1kΩ (1000Ω) resistor:</p>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>Current = Voltage ÷ Resistance</li>
+                    <li>Current = 9V ÷ 1000Ω = 0.009A = 9mA</li>
+                  </ul>
+                  <p className="mt-2">So the current flowing through that resistor will be 9 milliamps (mA).</p>
+                </div>
+              </section>
+              
+              <section className="border-b border-gray-200 pb-4">
+                <h3 className="text-lg font-semibold text-blue-600">Real-World Applications</h3>
+                
+                <div className="mt-3 space-y-4">
+                  <div className="bg-purple-50 p-3 rounded-lg">
+                    <h4 className="font-medium text-purple-800">LED Current Limiting</h4>
+                    <p className="mt-1">
+                      LEDs need a resistor in series to prevent them from drawing too much current and burning out.
+                    </p>
+                    <div className="mt-2 bg-white p-3 rounded border border-purple-200">
+                      <p className="font-medium">Example: LED with 3.3V Arduino</p>
+                      <ul className="list-disc pl-5 mt-1 text-sm">
+                        <li>Arduino output: 3.3V</li>
+                        <li>Red LED forward voltage: ~2V</li>
+                        <li>Desired current: 20mA (0.02A)</li>
+                        <li>Voltage across resistor: 3.3V - 2V = 1.3V</li>
+                        <li>Resistor value: R = V ÷ I = 1.3V ÷ 0.02A = 65Ω</li>
+                        <li>Closest standard value: 68Ω</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <h4 className="font-medium text-green-800">Voltage Dividers</h4>
+                    <p className="mt-1">
+                      Two resistors in series can divide voltage proportionally, useful for measuring high voltages with a microcontroller.
+                    </p>
+                    <div className="mt-2 bg-white p-3 rounded border border-green-200">
+                      <p className="font-medium">Example: Reading a 12V battery with Arduino (max 5V input)</p>
+                      <ul className="list-disc pl-5 mt-1 text-sm">
+                        <li>Need to divide 12V down to under 5V</li>
+                        <li>Use two resistors: R1 = 10kΩ, R2 = 5kΩ</li>
+                        <li>Output voltage: Vout = Vin × (R2 ÷ (R1 + R2))</li>
+                        <li>Vout = 12V × (5kΩ ÷ (10kΩ + 5kΩ)) = 12V × 0.33 = 4V</li>
+                        <li>Now we can safely read the 12V battery's voltage!</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-amber-50 p-3 rounded-lg">
+                    <h4 className="font-medium text-amber-800">Pull-Up/Pull-Down Resistors</h4>
+                    <p className="mt-1">
+                      These resistors ensure a pin is in a defined state (HIGH or LOW) when not actively driven.
+                    </p>
+                    <div className="mt-2 bg-white p-3 rounded border border-amber-200">
+                      <p className="font-medium">Example: Button with Arduino</p>
+                      <ul className="list-disc pl-5 mt-1 text-sm">
+                        <li>Button connected to digital pin and ground</li>
+                        <li>10kΩ pull-up resistor connects pin to 5V</li>
+                        <li>When button not pressed: Pin reads HIGH (5V)</li>
+                        <li>When button pressed: Pin connects to ground, reads LOW (0V)</li>
+                        <li>Without the pull-up resistor, the pin would "float" when button is not pressed</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              
+              <section className="border-b border-gray-200 pb-4">
+                <h3 className="text-lg font-semibold text-blue-600">Resistors in Series and Parallel</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-3">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="font-medium">Resistors in Series</h4>
+                    <p className="mt-1 mb-3">When resistors are connected end-to-end, their values add up:</p>
+                    <div className="bg-white p-3 rounded border border-blue-200 text-center">
+                      <p className="font-bold">Rtotal = R1 + R2 + R3 + ...</p>
+                    </div>
+                    <div className="mt-4 bg-white p-3 rounded border border-blue-200">
+                      <p className="font-medium">Example:</p>
+                      <p className="mt-1">Three resistors in series: 100Ω, 220Ω, and 330Ω</p>
+                      <p className="mt-1">Total resistance = 100Ω + 220Ω + 330Ω = 650Ω</p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-teal-50 p-4 rounded-lg">
+                    <h4 className="font-medium">Resistors in Parallel</h4>
+                    <p className="mt-1 mb-3">When resistors are connected side-by-side, the calculation is:</p>
+                    <div className="bg-white p-3 rounded border border-teal-200 text-center">
+                      <p className="font-bold">1/Rtotal = 1/R1 + 1/R2 + 1/R3 + ...</p>
+                    </div>
+                    <div className="mt-4 bg-white p-3 rounded border border-teal-200">
+                      <p className="font-medium">Example:</p>
+                      <p className="mt-1">Two resistors in parallel: 100Ω and 100Ω</p>
+                      <p className="mt-1">1/Rtotal = 1/100Ω + 1/100Ω = 2/100Ω</p>
+                      <p className="mt-1">Rtotal = 50Ω</p>
+                      <p className="text-sm mt-2 italic">Note: Parallel resistors always result in a lower total resistance than any individual resistor.</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              
+              <section className="border-b border-gray-200 pb-4">
+                <h3 className="text-lg font-semibold text-blue-600">Power in Resistors: The Heat Factor</h3>
+                <p className="mt-2">
+                  Resistors convert electrical energy to heat. The power (in watts) they dissipate is important:
+                </p>
+                
+                <div className="bg-red-50 p-4 mt-3 rounded-lg">
+                  <div className="text-center">
+                    <p className="font-bold text-lg">P = I² × R</p>
+                    <p className="mt-1">Power = Current² × Resistance</p>
+                    <p className="font-bold text-lg mt-3">P = V² ÷ R</p>
+                    <p className="mt-1">Power = Voltage² ÷ Resistance</p>
+                  </div>
+                  
+                  <div className="mt-4 bg-white p-3 rounded border border-red-200">
+                    <p className="font-medium">Example: Power Calculation</p>
+                    <p className="mt-1">A 1kΩ resistor with 12V across it:</p>
+                    <ul className="list-disc pl-5 mt-1">
+                      <li>P = V² ÷ R = (12V)² ÷ 1,000Ω = 144 ÷ 1,000 = 0.144 watts (144 milliwatts)</li>
+                    </ul>
+                    <p className="mt-2 font-medium">Therefore:</p>
+                    <ul className="list-disc pl-5 mt-1">
+                      <li>You need at least a ¼W (0.25W) resistor for this application</li>
+                      <li>A smaller power rating would cause the resistor to overheat</li>
+                    </ul>
+                  </div>
+                </div>
+              </section>
+              
+              <section>
+                <h3 className="text-lg font-semibold text-blue-600">Common Resistor Values and Projects</h3>
+                
+                <div className="mt-3 space-y-4">
+                  <div className="bg-slate-50 p-4 rounded-lg">
+                    <h4 className="font-medium">Common Values You'll See Everywhere</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                      <div className="bg-white p-2 rounded border border-slate-200 text-center">
+                        <p className="font-medium">220Ω</p>
+                        <p className="text-xs">LED current limiting</p>
+                      </div>
+                      <div className="bg-white p-2 rounded border border-slate-200 text-center">
+                        <p className="font-medium">330Ω</p>
+                        <p className="text-xs">LED current limiting</p>
+                      </div>
+                      <div className="bg-white p-2 rounded border border-slate-200 text-center">
+                        <p className="font-medium">1kΩ</p>
+                        <p className="text-xs">General purpose</p>
+                      </div>
+                      <div className="bg-white p-2 rounded border border-slate-200 text-center">
+                        <p className="font-medium">10kΩ</p>
+                        <p className="text-xs">Pull-up/down resistors</p>
+                      </div>
+                      <div className="bg-white p-2 rounded border border-slate-200 text-center">
+                        <p className="font-medium">4.7kΩ</p>
+                        <p className="text-xs">I²C pull-ups</p>
+                      </div>
+                      <div className="bg-white p-2 rounded border border-slate-200 text-center">
+                        <p className="font-medium">100kΩ</p>
+                        <p className="text-xs">High impedance inputs</p>
+                      </div>
+                      <div className="bg-white p-2 rounded border border-slate-200 text-center">
+                        <p className="font-medium">470Ω</p>
+                        <p className="text-xs">LED series resistor</p>
+                      </div>
+                      <div className="bg-white p-2 rounded border border-slate-200 text-center">
+                        <p className="font-medium">2.2kΩ</p>
+                        <p className="text-xs">Audio applications</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-indigo-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-indigo-800">Beginner Project: LED Brightness Control</h4>
+                    <p className="mt-1">Try different resistor values with an LED to see brightness changes:</p>
+                    <ul className="list-disc pl-5 mt-2">
+                      <li>220Ω - Bright</li>
+                      <li>470Ω - Medium</li>
+                      <li>1kΩ - Dim</li>
+                      <li>10kΩ - Very dim</li>
+                    </ul>
+                    <p className="text-sm mt-2">This simple experiment shows how resistors limit current and directly affect LED brightness.</p>
+                  </div>
+                  
+                  <div className="bg-emerald-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-emerald-800">Advanced Application: Logic Level Conversion</h4>
+                    <p className="mt-1">Converting between 5V and 3.3V logic levels:</p>
+                    <div className="mt-2 bg-white p-3 rounded border border-emerald-200">
+                      <p className="text-sm">Using a voltage divider with 1kΩ and 2kΩ resistors:</p>
+                      <p className="text-sm mt-1">5V × (2kΩ ÷ (1kΩ + 2kΩ)) = 5V × 0.66 = 3.3V</p>
+                      <p className="text-sm mt-2 italic">This simple circuit lets a 5V Arduino communicate with a 3.3V Raspberry Pi.</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+            
+            <div className="bg-blue-50 p-4 rounded-lg mt-8">
+              <h3 className="text-lg font-semibold text-blue-800">Final Thoughts</h3>
+              <p className="mt-2">
+                Resistors might seem simple, but they're at the heart of almost every electronic circuit. 
+                Understanding how they work opens up a world of possibilities in your maker journey!
+              </p>
+              <p className="mt-2">
+                Remember, practice makes perfect. Try using the calculator tab to decode resistor color bands, 
+                and soon you'll be identifying resistors at a glance.
+              </p>
+            </div>
+          </div>
+        )}
         {/* Calculator Tab */}
         {activeTab === 'calculator' && (
           <div className="space-y-6">
@@ -344,6 +627,200 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
                   </p>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Explainer Tab */}
+        {activeTab === 'explainer' && (
+          <div className="space-y-6">
+            <div className="bg-emerald-50 p-4 rounded-lg">
+              <h3 className="text-lg font-semibold text-emerald-800">How Resistor Color Bands Work</h3>
+              <p className="mt-2 text-emerald-700">
+                Resistors use color bands to indicate their resistance value, tolerance, and sometimes temperature coefficient.
+                Let's learn how to decode these bands!
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="text-md font-semibold mb-3">4-Band Resistors (Most Common)</h4>
+                <div className="bg-amber-100 p-6 rounded-lg relative w-full h-24 mb-4">
+                  <div className="absolute bg-amber-800 w-full h-8 left-0 top-8"></div>
+                  <div className="absolute w-4 h-20 left-16 top-2 bg-amber-800 text-white flex items-center justify-center">1</div>
+                  <div className="absolute w-4 h-20 left-24 top-2 bg-black text-white flex items-center justify-center">2</div>
+                  <div className="absolute w-4 h-20 left-32 top-2 bg-red-600 text-white flex items-center justify-center">3</div>
+                  <div className="absolute w-4 h-20 left-40 top-2 bg-yellow-600 text-white flex items-center justify-center">4</div>
+                  <div className="absolute w-10 h-2 bg-gray-600 left-2 top-11"></div>
+                  <div className="absolute w-10 h-2 bg-gray-600 right-2 top-11"></div>
+                </div>
+                
+                <ul className="list-decimal pl-5 space-y-2">
+                  <li><span className="font-medium">1st Band:</span> First digit of resistance value</li>
+                  <li><span className="font-medium">2nd Band:</span> Second digit of resistance value</li>
+                  <li><span className="font-medium">3rd Band:</span> Multiplier (number of zeros to add)</li>
+                  <li><span className="font-medium">4th Band:</span> Tolerance (accuracy of the resistor)</li>
+                </ul>
+                
+                <div className="bg-blue-50 p-3 rounded-lg mt-4">
+                  <p className="font-medium">Example: Brown-Black-Red-Gold</p>
+                  <ul className="list-disc pl-5 mt-2">
+                    <li>1st Band (Brown) = 1</li>
+                    <li>2nd Band (Black) = 0</li>
+                    <li>3rd Band (Red) = 100 (add 2 zeros)</li>
+                    <li>4th Band (Gold) = ±5% tolerance</li>
+                    <li>Result: 10 × 100 = 1,000Ω = 1kΩ ±5%</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-md font-semibold mb-3">5-Band Resistors (Higher Precision)</h4>
+                <div className="bg-amber-100 p-6 rounded-lg relative w-full h-24 mb-4">
+                  <div className="absolute bg-amber-800 w-full h-8 left-0 top-8"></div>
+                  <div className="absolute w-4 h-20 left-16 top-2 bg-amber-800 text-white flex items-center justify-center">1</div>
+                  <div className="absolute w-4 h-20 left-24 top-2 bg-black text-white flex items-center justify-center">2</div>
+                  <div className="absolute w-4 h-20 left-32 top-2 bg-orange-500 text-white flex items-center justify-center">3</div>
+                  <div className="absolute w-4 h-20 left-40 top-2 bg-blue-600 text-white flex items-center justify-center">4</div>
+                  <div className="absolute w-4 h-20 left-48 top-2 bg-green-600 text-white flex items-center justify-center">5</div>
+                  <div className="absolute w-10 h-2 bg-gray-600 left-2 top-11"></div>
+                  <div className="absolute w-10 h-2 bg-gray-600 right-2 top-11"></div>
+                </div>
+                
+                <ul className="list-decimal pl-5 space-y-2">
+                  <li><span className="font-medium">1st Band:</span> First digit of resistance value</li>
+                  <li><span className="font-medium">2nd Band:</span> Second digit of resistance value</li>
+                  <li><span className="font-medium">3rd Band:</span> Third digit of resistance value</li>
+                  <li><span className="font-medium">4th Band:</span> Multiplier (number of zeros to add)</li>
+                  <li><span className="font-medium">5th Band:</span> Tolerance (accuracy of the resistor)</li>
+                </ul>
+                
+                <div className="bg-blue-50 p-3 rounded-lg mt-4">
+                  <p className="font-medium">Example: Brown-Black-Orange-Blue-Green</p>
+                  <ul className="list-disc pl-5 mt-2">
+                    <li>1st Band (Brown) = 1</li>
+                    <li>2nd Band (Black) = 0</li>
+                    <li>3rd Band (Orange) = 3</li>
+                    <li>4th Band (Blue) = 1,000,000 (add 6 zeros)</li>
+                    <li>5th Band (Green) = ±0.5% tolerance</li>
+                    <li>Result: 103 × 1,000,000 = 103,000,000Ω = 103MΩ ±0.5%</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-6">
+              <h4 className="text-md font-semibold mb-3">Color Code Chart</h4>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr>
+                      <th className="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Color</th>
+                      <th className="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value (1st-3rd Bands)</th>
+                      <th className="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Multiplier (4-band)</th>
+                      <th className="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tolerance</th>
+                      <th className="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Temp. Coefficient</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    <tr>
+                      <td className="px-4 py-2"><div className="h-6 w-6 rounded-full bg-black"></div></td>
+                      <td className="px-4 py-2">0</td>
+                      <td className="px-4 py-2">×1</td>
+                      <td className="px-4 py-2">-</td>
+                      <td className="px-4 py-2">250ppm</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2"><div className="h-6 w-6 rounded-full bg-amber-800"></div></td>
+                      <td className="px-4 py-2">1</td>
+                      <td className="px-4 py-2">×10</td>
+                      <td className="px-4 py-2">±1%</td>
+                      <td className="px-4 py-2">100ppm</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2"><div className="h-6 w-6 rounded-full bg-red-600"></div></td>
+                      <td className="px-4 py-2">2</td>
+                      <td className="px-4 py-2">×100</td>
+                      <td className="px-4 py-2">±2%</td>
+                      <td className="px-4 py-2">50ppm</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2"><div className="h-6 w-6 rounded-full bg-orange-500"></div></td>
+                      <td className="px-4 py-2">3</td>
+                      <td className="px-4 py-2">×1,000 (1K)</td>
+                      <td className="px-4 py-2">±3%</td>
+                      <td className="px-4 py-2">15ppm</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2"><div className="h-6 w-6 rounded-full bg-yellow-400"></div></td>
+                      <td className="px-4 py-2">4</td>
+                      <td className="px-4 py-2">×10,000 (10K)</td>
+                      <td className="px-4 py-2">±4%</td>
+                      <td className="px-4 py-2">25ppm</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2"><div className="h-6 w-6 rounded-full bg-green-600"></div></td>
+                      <td className="px-4 py-2">5</td>
+                      <td className="px-4 py-2">×100,000 (100K)</td>
+                      <td className="px-4 py-2">±0.5%</td>
+                      <td className="px-4 py-2">20ppm</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2"><div className="h-6 w-6 rounded-full bg-blue-600"></div></td>
+                      <td className="px-4 py-2">6</td>
+                      <td className="px-4 py-2">×1,000,000 (1M)</td>
+                      <td className="px-4 py-2">±0.25%</td>
+                      <td className="px-4 py-2">10ppm</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2"><div className="h-6 w-6 rounded-full bg-purple-600"></div></td>
+                      <td className="px-4 py-2">7</td>
+                      <td className="px-4 py-2">×10,000,000 (10M)</td>
+                      <td className="px-4 py-2">±0.1%</td>
+                      <td className="px-4 py-2">5ppm</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2"><div className="h-6 w-6 rounded-full bg-gray-500"></div></td>
+                      <td className="px-4 py-2">8</td>
+                      <td className="px-4 py-2">×100,000,000 (100M)</td>
+                      <td className="px-4 py-2">±0.05%</td>
+                      <td className="px-4 py-2">1ppm</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2"><div className="h-6 w-6 rounded-full bg-white border border-gray-300"></div></td>
+                      <td className="px-4 py-2">9</td>
+                      <td className="px-4 py-2">×1,000,000,000 (1G)</td>
+                      <td className="px-4 py-2">-</td>
+                      <td className="px-4 py-2">-</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2"><div className="h-6 w-6 rounded-full bg-yellow-600"></div></td>
+                      <td className="px-4 py-2">-</td>
+                      <td className="px-4 py-2">×0.1</td>
+                      <td className="px-4 py-2">±5%</td>
+                      <td className="px-4 py-2">-</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2"><div className="h-6 w-6 rounded-full bg-gray-300"></div></td>
+                      <td className="px-4 py-2">-</td>
+                      <td className="px-4 py-2">×0.01</td>
+                      <td className="px-4 py-2">±10%</td>
+                      <td className="px-4 py-2">-</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div className="bg-purple-50 p-4 rounded-lg mt-6">
+              <h3 className="text-md font-semibold text-purple-800">Tips for Reading Resistors</h3>
+              <ul className="list-disc pl-5 mt-2 space-y-2">
+                <li>The gold or silver band (tolerance) is usually on the right side of the resistor.</li>
+                <li>Read the resistor from left to right, with the tolerance band on the right.</li>
+                <li>If there's a gap between bands, start from the side opposite the gap.</li>
+                <li>When in doubt, use a multimeter to measure the actual resistance.</li>
+                <li>Common tolerances are ±5% (gold) and ±10% (silver) for standard resistors.</li>
+              </ul>
             </div>
           </div>
         )}
