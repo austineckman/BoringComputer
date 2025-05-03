@@ -2,6 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { X, Minimize2, Search, Book, Cpu, Layers, HelpCircle } from 'lucide-react';
 import './retro-ui.css';
 
+// Import component images directly
+import ledImg from '@assets/led.icon.png';
+import rgbLedImg from '@assets/rgb-led.icon.png';
+import resistorImg from '@assets/resistor.icon.png';
+import photoresistorImg from '@assets/photoresistor.icon.png';
+import buzzerImg from '@assets/buzzer.icon.svg';
+import rotaryEncoderImg from '@assets/rotary-encoder.icon.png';
+import oledDisplayImg from '@assets/oled-display.icon.png';
+import segmentedDisplayImg from '@assets/segmented-display.icon.png';
+import heroboardImg from '@assets/hero-board.icon.png';
+
 interface ComponentGlossaryWindowProps {
   onClose: () => void;
   onMinimize: () => void;
@@ -38,7 +49,7 @@ const COMPONENTS: Component[] = [
   {
     id: 'led',
     name: 'LED',
-    iconSrc: '@assets/led.icon.png',
+    iconSrc: ledImg,
     description: 'Light Emitting Diode - A semiconductor device that emits light when current flows through it',
     generalInfo: 'LEDs are widely used as indicator lamps in many devices and are increasingly used for lighting. They consume far less energy than incandescent lamps.',
     pins: [
@@ -63,7 +74,7 @@ const COMPONENTS: Component[] = [
   {
     id: 'rgb-led',
     name: 'RGB LED',
-    iconSrc: '@assets/rgb-led.icon.png',
+    iconSrc: rgbLedImg,
     description: 'A LED that can emit different colors by combining red, green, and blue light',
     generalInfo: 'RGB LEDs contain three separate LEDs (red, green, and blue) in one package. By controlling the intensity of each color, you can create any color in the rainbow.',
     pins: [
@@ -100,7 +111,7 @@ const COMPONENTS: Component[] = [
   {
     id: 'resistor',
     name: 'Resistor',
-    iconSrc: '@assets/resistor.icon.png',
+    iconSrc: resistorImg,
     description: 'A passive component that implements electrical resistance in a circuit',
     generalInfo: 'Resistors are used to reduce current flow, adjust signal levels, divide voltages, bias active elements, and terminate transmission lines.',
     pins: [
@@ -121,7 +132,7 @@ const COMPONENTS: Component[] = [
   {
     id: 'photoresistor',
     name: 'Photoresistor',
-    iconSrc: '@assets/photoresistor.icon.png',
+    iconSrc: photoresistorImg,
     description: 'A light-sensitive resistor that changes resistance based on light intensity',
     generalInfo: 'Also known as Light Dependent Resistors (LDRs), photoresistors decrease in resistance when exposed to light. They are used in light sensing applications like night lights and automatic outdoor lighting.',
     pins: [
@@ -142,7 +153,7 @@ const COMPONENTS: Component[] = [
   {
     id: 'button',
     name: 'Push Button',
-    iconSrc: '@assets/buzzer.icon.svg',
+    iconSrc: buzzerImg,
     description: 'A momentary switch that completes a circuit when pressed',
     generalInfo: 'Push buttons are temporary switches that create a connection when pressed and break the connection when released. They are commonly used for user input in electronic projects.',
     pins: [
@@ -163,7 +174,7 @@ const COMPONENTS: Component[] = [
   {
     id: 'rotary-encoder',
     name: 'Rotary Encoder',
-    iconSrc: '@assets/rotary-encoder.icon.png',
+    iconSrc: rotaryEncoderImg,
     description: 'A device that converts rotational motion into digital signals',
     generalInfo: 'Rotary encoders provide both direction and position feedback when rotated. They are commonly used for volume controls, menu navigation, and precise positioning systems.',
     pins: [
@@ -199,7 +210,7 @@ const COMPONENTS: Component[] = [
   {
     id: 'oled-display',
     name: 'OLED Display',
-    iconSrc: '@assets/oled-display.icon.png',
+    iconSrc: oledDisplayImg,
     description: 'Organic Light Emitting Diode display for showing text and graphics',
     generalInfo: 'OLED displays offer high contrast, wide viewing angles, and do not require backlighting. They are energy efficient and commonly used in small electronic devices where visual feedback is needed.',
     pins: [
@@ -236,7 +247,7 @@ const COMPONENTS: Component[] = [
   {
     id: 'segmented-display',
     name: '7-Segment Display',
-    iconSrc: '@assets/segmented-display.icon.png',
+    iconSrc: segmentedDisplayImg,
     description: 'A display device for showing numbers and some letters using 7 LED segments',
     generalInfo: 'Seven-segment displays consist of seven LEDs arranged in a figure-8 pattern, plus an optional decimal point. They are commonly used to display numbers in clocks, counters, and measurement devices.',
     pins: [
@@ -300,7 +311,7 @@ const COMPONENTS: Component[] = [
   {
     id: 'heroboard',
     name: 'Hero Board',
-    iconSrc: '@assets/hero-board.icon.png',
+    iconSrc: heroboardImg,
     description: 'A microcontroller development board for learning electronics and programming',
     generalInfo: 'The Hero Board is an educational microcontroller platform based on the ATmega328P chip. It features digital and analog I/O pins, PWM outputs, and is programmed using the Arduino IDE and C/C++.',
     pins: [
