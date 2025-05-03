@@ -148,10 +148,10 @@ export default function AuthPage() {
         {/* Main Window */}
         <div className="border-[3px] border-t-gray-300 border-l-gray-300 border-r-gray-800 border-b-gray-800 bg-gray-200 shadow-2xl overflow-hidden">
           {/* Title Bar */}
-          <div className="bg-gradient-to-r from-orange-600 via-orange-700 to-orange-600 text-white py-1.5 px-3 flex justify-between items-center select-none">
+          <div className="matrix-title-bar text-white py-1.5 px-3 flex justify-between items-center select-none">
             <div className="flex items-center">
-              <span className="mr-2 text-lg">👤</span>
-              <span className="font-bold tracking-tight">User Account Control</span>
+              <span className="mr-2 text-lg">🔐</span>
+              <span className="font-bold tracking-tight font-mono">System Authentication Matrix</span>
             </div>
             <div className="flex items-center space-x-1">
               <button className="w-6 h-5 bg-gray-200 border-[1px] border-gray-500 flex items-center justify-center text-black font-bold">?</button>
