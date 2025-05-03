@@ -135,6 +135,7 @@ export default function AuthPage() {
     <div className="w-full min-h-screen flex justify-center items-center" 
       style={{
         backgroundColor: '#008080', // Classic Windows teal background
+        backgroundImage: `url(${wallpaper})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}>
@@ -145,7 +146,7 @@ export default function AuthPage() {
         {/* Main Window */}
         <div className="border-[3px] border-t-gray-300 border-l-gray-300 border-r-gray-800 border-b-gray-800 bg-gray-200 shadow-2xl overflow-hidden">
           {/* Title Bar */}
-          <div className="bg-gradient-to-r from-blue-700 via-blue-800 to-blue-700 text-white py-1.5 px-3 flex justify-between items-center select-none">
+          <div className="bg-gradient-to-r from-orange-600 via-orange-700 to-orange-600 text-white py-1.5 px-3 flex justify-between items-center select-none">
             <div className="flex items-center">
               <span className="mr-2 text-lg">👤</span>
               <span className="font-bold tracking-tight">User Account Control</span>
