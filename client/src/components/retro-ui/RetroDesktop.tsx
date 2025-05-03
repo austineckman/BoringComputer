@@ -99,8 +99,9 @@ const RetroDesktop: React.FC = () => {
   const [timezone, setTimezone] = useState<string>("America/New_York");
   const [iconSize, setIconSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [colorScheme, setColorScheme] = useState<'blue' | 'black' | 'orange' | 'green' | 'red'>('blue');
+  const [systemNotification, setSystemNotification] = useState<{message: string; type: 'success' | 'error' | 'info'} | null>(null);
   
-  // Desktop icons (regular icons visible to all users)
+  // Desktop icons - we'll add the Oracle icon separately for admin users
   const [desktopIcons, setDesktopIcons] = useState<DesktopIcon[]>([
     // First column (recyclebin at top left)
     { id: "recyclebin", name: "Recycle Bin", icon: "trashIcon", position: { x: 20, y: 20 } },
@@ -114,8 +115,7 @@ const RetroDesktop: React.FC = () => {
     { id: "circuitbuilder", name: "Sandbox", icon: "circuitbuilder", position: { x: 140, y: 220 } },
     { id: "discord", name: "Discord", icon: "discord", position: { x: 140, y: 320 } },
     
-    // Oracle in top right
-    { id: "oracle", name: "The Oracle", icon: "oracle", position: { x: 800, y: 20 } },
+    // Oracle icon is added below for admin users only
   ]);
   
   // Admin icons (for reference only - no longer displayed in a folder)
@@ -464,9 +464,21 @@ const RetroDesktop: React.FC = () => {
         setQuestsAppState('loading');
       }
     } else if (iconId === "oracle") {
-      // Open the Oracle app if it's currently closed
-      if (oracleAppState === 'closed') {
-        setOracleAppState('open');
+      // Check if user has admin role before opening Oracle
+      if (user?.roles?.includes('admin')) {
+        // Open the Oracle app if it's currently closed
+        if (oracleAppState === 'closed') {
+          setOracleAppState('open');
+        }
+      } else {
+        // Play error sound and show notification for non-admin users
+        if (window.sounds) {
+          window.sounds.error();
+        }
+        setSystemNotification({
+          message: "Access denied: Admin privileges required",
+          type: "error"
+        });
       }
     } else if (iconId === "circuitbuilder") {
       // Open the Circuit Builder app if it's currently closed
@@ -845,6 +857,30 @@ const RetroDesktop: React.FC = () => {
         }} />
       )}
       {/* Desktop Icons */}
+      {/* System notification popup */}
+      {systemNotification && (
+        <div 
+          className={`fixed top-5 right-5 z-50 p-4 rounded-md shadow-lg ${
+            systemNotification.type === 'error' ? 'bg-red-600 text-white' : 
+            systemNotification.type === 'success' ? 'bg-green-600 text-white' : 
+            'bg-blue-600 text-white'
+          }`}
+          style={{ maxWidth: '300px' }}
+        >
+          <div className="flex items-start">
+            <div className="flex-grow">
+              <p>{systemNotification.message}</p>
+            </div>
+            <button
+              onClick={() => setSystemNotification(null)}
+              className="ml-4 text-white hover:text-gray-200"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+      
       <div className="absolute top-0 left-0 right-0 bottom-0">
         {/* Regular icons */}
         {desktopIcons.map((icon) => (
