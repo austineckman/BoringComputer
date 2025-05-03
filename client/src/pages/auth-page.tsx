@@ -134,115 +134,161 @@ export default function AuthPage() {
   return (
     <div className="w-full min-h-screen flex justify-center items-center" 
       style={{
-        backgroundImage: `url(${wallpaper})`,
+        backgroundColor: '#008080', // Classic Windows teal background
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}>
       {showLoadingScreen && <LoadingScreen onLoadComplete={handleLoadingComplete} />}
       
-      <div className="bg-gray-100 p-8 rounded-lg shadow-xl w-full max-w-md">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center">
-            <img src={hoodedFigureImg} alt="Logo" className="h-10 w-10 mr-2" />
-            <h1 className="text-2xl font-bold text-slate-800">CraftingTableOS</h1>
+      {/* Windows 95-style Login Window */}
+      <div className="w-full max-w-md mx-auto">
+        {/* Main Window */}
+        <div className="border-[3px] border-t-gray-300 border-l-gray-300 border-r-gray-800 border-b-gray-800 bg-gray-200 shadow-2xl overflow-hidden">
+          {/* Title Bar */}
+          <div className="bg-gradient-to-r from-blue-700 via-blue-800 to-blue-700 text-white py-1.5 px-3 flex justify-between items-center select-none">
+            <div className="flex items-center">
+              <span className="mr-2 text-lg">👤</span>
+              <span className="font-bold tracking-tight">User Account Control</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <button className="w-6 h-5 bg-gray-200 border-[1px] border-gray-500 flex items-center justify-center text-black font-bold">?</button>
+              <button className="w-6 h-5 bg-gray-200 border-[1px] border-gray-500 flex items-center justify-center text-black font-bold">✕</button>
+            </div>
           </div>
-        </div>
+          
+          {/* Windows 95 Login Box */}
+          <div className="p-5">
+            <div className="flex mb-5 justify-center">
+              <div className="relative w-16 h-16 mr-3 overflow-hidden border-2 border-gray-600 bg-white p-1 shadow-inner">
+                <img 
+                  src={hoodedFigureImg} 
+                  alt="User Icon" 
+                  className="w-full h-full object-contain"
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              </div>
+              <div className="flex flex-col justify-center">
+                <h1 className="text-xl font-bold text-black">
+                  Welcome to CraftingTableOS
+                </h1>
+                <p className="text-sm text-black">
+                  Please enter your credentials
+                </p>
+              </div>
+            </div>
+            
+            {/* Windows 95-style Tabs */}
+            <div className="flex border-b border-gray-500 mb-6">
+              <button 
+                className={`px-4 py-1 text-sm font-bold ${activeTab === 'login' 
+                  ? 'bg-gray-200 border-t border-l border-r border-gray-500 text-black relative top-[1px]' 
+                  : 'bg-gray-300 text-black'}`}
+                onClick={() => setActiveTab('login')}
+              >
+                Login
+              </button>
+              <button 
+                className={`px-4 py-1 text-sm font-bold ${activeTab === 'register' 
+                  ? 'bg-gray-200 border-t border-l border-r border-gray-500 text-black relative top-[1px]' 
+                  : 'bg-gray-300 text-black'}`}
+                onClick={() => setActiveTab('register')}
+              >
+                Register
+              </button>
+            </div>
 
-        <div className="flex mb-6">
-          <button
-            onClick={() => setActiveTab("login")}
-            className={`flex-1 py-2 font-medium ${activeTab === "login" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-500"}`}
-          >
-            Login
-          </button>
-          <button
-            onClick={() => setActiveTab("register")}
-            className={`flex-1 py-2 font-medium ${activeTab === "register" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-500"}`}
-          >
-            Register
-          </button>
-        </div>
-
-        {activeTab === "login" ? (
-          <form onSubmit={loginForm.handleSubmit(onLoginSubmit)}>
-            <div className="mb-4">
-              <label htmlFor="username" className="block mb-2 text-sm font-medium text-gray-700">Username</label>
-              <input
-                id="username"
-                type="text"
-                {...loginForm.register("username")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your username"
-              />
-              {loginForm.formState.errors.username && (
-                <p className="mt-1 text-sm text-red-600">{loginForm.formState.errors.username.message}</p>
-              )}
+            {activeTab === "login" ? (
+              <form onSubmit={loginForm.handleSubmit(onLoginSubmit)}>
+                <div className="mb-4">
+                  <label htmlFor="username" className="block mb-2 text-sm font-bold text-black">Username:</label>
+                  <input
+                    id="username"
+                    type="text"
+                    {...loginForm.register("username")}
+                    className="w-full px-2 py-1 border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white bg-white shadow-inner text-black"
+                    placeholder="Enter username"
+                  />
+                  {loginForm.formState.errors.username && (
+                    <p className="mt-1 text-sm text-red-600">{loginForm.formState.errors.username.message}</p>
+                  )}
+                </div>
+                
+                <div className="mb-6">
+                  <label htmlFor="password" className="block mb-2 text-sm font-bold text-black">Password:</label>
+                  <input
+                    id="password"
+                    type="password"
+                    {...loginForm.register("password")}
+                    className="w-full px-2 py-1 border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white bg-white shadow-inner text-black"
+                    placeholder="Enter password"
+                  />
+                  {loginForm.formState.errors.password && (
+                    <p className="mt-1 text-sm text-red-600">{loginForm.formState.errors.password.message}</p>
+                  )}
+                </div>
+                
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="min-w-[100px] px-6 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-normal text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white"
+                  >
+                    {isLoading ? "Logging in..." : "OK"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)}>
+                <div className="mb-4">
+                  <label htmlFor="register-username" className="block mb-2 text-sm font-bold text-black">Create username:</label>
+                  <input
+                    id="register-username"
+                    type="text"
+                    {...registerForm.register("username")}
+                    className="w-full px-2 py-1 border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white bg-white shadow-inner text-black"
+                    placeholder="Choose username"
+                  />
+                  {registerForm.formState.errors.username && (
+                    <p className="mt-1 text-sm text-red-600">{registerForm.formState.errors.username.message}</p>
+                  )}
+                </div>
+                
+                <div className="mb-6">
+                  <label htmlFor="register-password" className="block mb-2 text-sm font-bold text-black">Create password:</label>
+                  <input
+                    id="register-password"
+                    type="password"
+                    {...registerForm.register("password")}
+                    className="w-full px-2 py-1 border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white bg-white shadow-inner text-black"
+                    placeholder="Choose password"
+                  />
+                  {registerForm.formState.errors.password && (
+                    <p className="mt-1 text-sm text-red-600">{registerForm.formState.errors.password.message}</p>
+                  )}
+                </div>
+                
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="min-w-[100px] px-6 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-normal text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white"
+                  >
+                    {isLoading ? "Creating..." : "Create User"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+          
+          {/* Footer Status Bar */}
+          <div className="px-2 py-1 bg-gray-200 border-t border-gray-400 flex justify-between items-center text-xs">
+            <div>
+              <span className="font-mono text-black">{currentTime.toLocaleTimeString()}</span>
             </div>
-            
-            <div className="mb-6">
-              <label htmlFor="password" className="block mb-2 text-sm font-medium text-gray-700">Password</label>
-              <input
-                id="password"
-                type="password"
-                {...loginForm.register("password")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your password"
-              />
-              {loginForm.formState.errors.password && (
-                <p className="mt-1 text-sm text-red-600">{loginForm.formState.errors.password.message}</p>
-              )}
+            <div>
+              <span className="text-black">CraftingTableOS, © 1996</span>
             </div>
-            
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              {isLoading ? "Logging in..." : "Login"}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)}>
-            <div className="mb-4">
-              <label htmlFor="register-username" className="block mb-2 text-sm font-medium text-gray-700">Username</label>
-              <input
-                id="register-username"
-                type="text"
-                {...registerForm.register("username")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Choose a username"
-              />
-              {registerForm.formState.errors.username && (
-                <p className="mt-1 text-sm text-red-600">{registerForm.formState.errors.username.message}</p>
-              )}
-            </div>
-            
-            <div className="mb-6">
-              <label htmlFor="register-password" className="block mb-2 text-sm font-medium text-gray-700">Password</label>
-              <input
-                id="register-password"
-                type="password"
-                {...registerForm.register("password")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Choose a password"
-              />
-              {registerForm.formState.errors.password && (
-                <p className="mt-1 text-sm text-red-600">{registerForm.formState.errors.password.message}</p>
-              )}
-            </div>
-            
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              {isLoading ? "Creating account..." : "Create Account"}
-            </button>
-          </form>
-        )}
-        
-        <div className="mt-4 text-center text-sm text-gray-600">
-          <p>CraftingTableOS, © 2025</p>
+          </div>
         </div>
       </div>
     </div>
