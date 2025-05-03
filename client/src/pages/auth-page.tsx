@@ -151,7 +151,7 @@ export default function AuthPage() {
           <div className="matrix-title-bar text-white py-1.5 px-3 flex justify-between items-center select-none">
             <div className="flex items-center">
               <span className="mr-2 text-lg">🔐</span>
-              <span className="font-bold tracking-tight font-mono">System Authentication Matrix</span>
+              <span className="font-bold tracking-tight">Login Page</span>
             </div>
             <div className="flex items-center space-x-1">
               <button className="w-6 h-5 bg-gray-200 border-[1px] border-gray-500 flex items-center justify-center text-black font-bold">?</button>
