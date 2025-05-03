@@ -12,6 +12,9 @@ import rotaryEncoderImg from '@assets/rotary-encoder.icon.png';
 import oledDisplayImg from '@assets/oled-display.icon.png';
 import segmentedDisplayImg from '@assets/segmented-display.icon.png';
 import heroboardImg from '@assets/hero-board.icon.png';
+import customKeypadImg from '@assets/custom-keypad.icon.png';
+import dipSwitchImg from '@assets/dip-switch-3.icon.png';
+import jukeboxIconImg from '@assets/jukebox_icon.png';
 
 interface ComponentGlossaryWindowProps {
   onClose: () => void;
@@ -352,6 +355,82 @@ const COMPONENTS: Component[] = [
         relatedTerms: ['ADC', 'Analog Signal', 'Sensor Input']
       }
     ]
+  },
+  {
+    id: 'custom-keypad',
+    name: 'Custom Keypad',
+    iconSrc: customKeypadImg,
+    description: 'A programmable keypad for user input in electronic projects',
+    generalInfo: 'Custom keypads provide a way for users to input numerical data or select options in electronic projects. They can be arranged in various configurations and are commonly used in security systems, calculators, and control panels.',
+    pins: [
+      {
+        id: 'keypad-row',
+        name: 'Row Pins',
+        description: 'Pins that connect to the rows of the keypad matrix.',
+        usageNotes: 'Typically set as OUTPUT pins when scanning the keypad.',
+        relatedTerms: ['Matrix Scanning', 'Multiplexing']
+      },
+      {
+        id: 'keypad-col',
+        name: 'Column Pins',
+        description: 'Pins that connect to the columns of the keypad matrix.',
+        usageNotes: 'Typically set as INPUT pins with pull-up resistors when scanning the keypad.',
+        relatedTerms: ['Matrix Scanning', 'Multiplexing', 'Pull-up Resistor']
+      }
+    ]
+  },
+  {
+    id: 'dip-switch',
+    name: 'DIP Switch',
+    iconSrc: dipSwitchImg,
+    description: 'A set of manual switches in a Dual In-line Package',
+    generalInfo: 'DIP switches allow users to manually configure hardware settings. Each switch can be set to one of two positions (on/off), providing binary configuration options for electronic circuits. They are commonly used for hardware configuration that rarely needs to be changed.',
+    pins: [
+      {
+        id: 'dip-common',
+        name: 'Common Terminal',
+        description: 'The common connection for all switches, typically connected to ground or power.',
+        relatedTerms: ['Pull-up Resistor', 'Hardware Configuration']
+      },
+      {
+        id: 'dip-switch-terminal',
+        name: 'Switch Terminals',
+        description: 'Individual terminals for each switch that connect to the common terminal when the switch is closed.',
+        usageNotes: 'Typically connected to microcontroller input pins with pull-up/pull-down resistors.',
+        relatedTerms: ['Pull-up Resistor', 'Digital Signal']
+      }
+    ]
+  },
+  {
+    id: 'jukebox',
+    name: 'Jukebox Controller',
+    iconSrc: jukeboxIconImg,
+    description: 'A specialized controller for music selection and playback',
+    generalInfo: 'The jukebox controller integrates several electronic components to provide music selection and playback functionality. It typically includes buttons, displays, and audio processing circuits.',
+    pins: [
+      {
+        id: 'jukebox-power',
+        name: 'Power Pins',
+        description: 'Connections for powering the jukebox controller.',
+        voltageRange: '5V DC',
+        warnings: 'Ensure proper voltage is supplied to avoid damage.',
+        relatedTerms: ['Power Supply', 'Voltage Regulation']
+      },
+      {
+        id: 'jukebox-audio',
+        name: 'Audio Output',
+        description: 'Connections for audio signals to speakers or amplifiers.',
+        usageNotes: 'May include stereo left/right channels and ground.',
+        relatedTerms: ['Audio Processing', 'Amplification']
+      },
+      {
+        id: 'jukebox-control',
+        name: 'Control Interface',
+        description: 'Digital or analog connections for controlling the jukebox functionality.',
+        usageNotes: 'May include serial communication pins or direct control lines.',
+        relatedTerms: ['Serial Communication', 'Digital Control']
+      }
+    ]
   }
 ];
 
@@ -480,6 +559,36 @@ const GLOSSARY: GlossaryTerm[] = [
     term: 'Sensor Input',
     definition: 'An electronic component that detects and responds to changes in the environment, converting physical parameters into electrical signals.',
     relatedComponents: ['heroboard', 'photoresistor']
+  },
+  {
+    term: 'Matrix Scanning',
+    definition: 'A technique used to efficiently read multiple buttons or keys using a grid of rows and columns, reducing the number of input pins required.',
+    relatedComponents: ['custom-keypad']
+  },
+  {
+    term: 'Multiplexing',
+    definition: 'A method of sharing pins by sequentially activating different rows or columns in a matrix, allowing control of many outputs with fewer pins.',
+    relatedComponents: ['custom-keypad', 'segmented-display']
+  },
+  {
+    term: 'Hardware Configuration',
+    definition: 'Physical settings on electronic devices that determine how the hardware behaves, often set using switches, jumpers, or other mechanical selectors.',
+    relatedComponents: ['dip-switch']
+  },
+  {
+    term: 'Audio Processing',
+    definition: 'The manipulation and control of audio signals in electronic circuits, including amplification, filtering, and digital conversion.',
+    relatedComponents: ['jukebox']
+  },
+  {
+    term: 'Amplification',
+    definition: 'The process of increasing the power, voltage, or current of a signal using an electronic amplifier circuit.',
+    relatedComponents: ['jukebox']
+  },
+  {
+    term: 'Digital Control',
+    definition: 'The use of digital signals to control electronic devices and systems, often through microcontrollers or digital interfaces.',
+    relatedComponents: ['jukebox', 'heroboard', 'dip-switch']
   }
 ];
 
