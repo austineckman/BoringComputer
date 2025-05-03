@@ -35,12 +35,13 @@ export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
-  // Loading screen state
-  const [showLoadingScreen, setShowLoadingScreen] = useState(true);
+  // Matrix transition state
+  const [showMatrixTransition, setShowMatrixTransition] = useState(false);
   
-  // Hide loading screen after it completes
-  const handleLoadingComplete = () => {
-    setShowLoadingScreen(false);
+  // Handle redirect after matrix transition completes
+  const handleTransitionComplete = () => {
+    // Redirect to home page
+    window.location.href = "/";
   };
 
   // Login form
@@ -78,8 +79,8 @@ export default function AuthPage() {
         description: "Welcome back!",
       });
       
-      // Redirect to home page using window.location for a full page reload
-      window.location.href = "/";
+      // Show matrix transition before redirecting
+      setShowMatrixTransition(true);
     } catch (error) {
       toast({
         title: "Login failed",
@@ -108,8 +109,8 @@ export default function AuthPage() {
         description: "Welcome to Quest Giver!",
       });
       
-      // Redirect to home page using window.location for a full page reload
-      window.location.href = "/";
+      // Show matrix transition before redirecting
+      setShowMatrixTransition(true);
     } catch (error) {
       toast({
         title: "Registration failed",
@@ -141,7 +142,8 @@ export default function AuthPage() {
         backgroundPosition: 'center',
         backgroundRepeat: 'repeat',
       }}>
-      {showLoadingScreen && <LoadingScreen onLoadComplete={handleLoadingComplete} />}
+      {/* Show matrix transition screen after successful login/register */}
+      {showMatrixTransition && <MatrixTransitionScreen onTransitionComplete={handleTransitionComplete} />}
       
       {/* Windows 95-style Login Window */}
       <div className="w-full max-w-md mx-auto">
