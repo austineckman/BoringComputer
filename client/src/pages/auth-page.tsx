@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import LoadingScreen from "@/components/retro-ui/LoadingScreen";
+import MatrixTransitionScreen from "@/components/retro-ui/MatrixTransitionScreen";
 import wallpaper from "@assets/wallbg.png";
 import matrixWallBg from "@assets/bg.png";
 import hoodedFigureImg from "@assets/hooded-figure.png";
