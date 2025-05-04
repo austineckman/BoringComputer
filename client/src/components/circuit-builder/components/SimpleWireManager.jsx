@@ -658,6 +658,7 @@ const SimpleWireManager = ({ canvasRef }) => {
       return wire;
     }));
     
+    setSelectedWireColor(color);
     console.log(`Changed wire ${wireId} color to ${color}`);
   };
   
@@ -1504,17 +1505,17 @@ const SimpleWireManager = ({ canvasRef }) => {
             
             <div className="wire-property mb-4">
               <label className="font-semibold block text-sm mb-1">Color:</label>
-              <div className="color-picker-container flex items-center">
-                <input 
-                  type="color" 
-                  value={selectedWireColor}
-                  onChange={(e) => {
-                    setSelectedWireColor(e.target.value);
-                    applyWireColor(wireProperties.id, e.target.value);
-                  }}
-                  className="wire-color-picker w-8 h-8 mr-2 rounded-full"
-                />
-                <span className="color-value text-sm">{selectedWireColor}</span>
+              <div className="color-picker-container">
+                <div 
+                  className="current-color-display flex items-center mb-2 cursor-pointer" 
+                  onClick={() => setShowColorPicker(true)}
+                >
+                  <div 
+                    className="color-swatch w-8 h-8 mr-2 rounded-full border border-gray-300 shadow-sm" 
+                    style={{ backgroundColor: selectedWireColor }}
+                  ></div>
+                  <span className="text-sm">Click to change color</span>
+                </div>
               </div>
             </div>
             
@@ -1540,6 +1541,66 @@ const SimpleWireManager = ({ canvasRef }) => {
                   'Click anywhere on the canvas to add anchor points' :
                   'Add points to create custom wire paths'}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Color Picker Modal */}
+      {showColorPicker && wireProperties && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-96 max-w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold">Select Wire Color</h3>
+              <button 
+                className="text-gray-600 hover:text-gray-900 text-xl" 
+                onClick={() => setShowColorPicker(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="color-picker-grid grid grid-cols-5 gap-3 mb-4">
+              {/* Predefined color swatches */}
+              {[
+                '#ff0000', '#ff6666', '#ff9900', '#ffcc66', '#ffff00',
+                '#66ff66', '#00ff00', '#66ffcc', '#00ffff', '#66ffff',
+                '#0099ff', '#3b82f6', '#9966ff', '#cc66ff', '#ff66ff',
+                '#aaaaaa', '#666666', '#333333', '#000000', '#ffffff'
+              ].map((color, index) => (
+                <div 
+                  key={index}
+                  className={`color-swatch h-10 rounded-md cursor-pointer border-2 ${selectedWireColor === color ? 'border-blue-500 shadow-md' : 'border-gray-300'}`}
+                  style={{ backgroundColor: color }}
+                  onClick={() => {
+                    applyWireColor(wireProperties.id, color);
+                    setShowColorPicker(false);
+                  }}
+                  title={color}
+                ></div>
+              ))}
+            </div>
+            
+            <div className="custom-color-picker mb-4">
+              <label className="block text-sm font-medium mb-1">Custom Color:</label>
+              <div className="flex items-center">
+                <input 
+                  type="color" 
+                  value={selectedWireColor}
+                  onChange={(e) => {
+                    applyWireColor(wireProperties.id, e.target.value);
+                  }}
+                  className="h-10 w-full rounded-md"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end">
+              <button 
+                className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm hover:bg-blue-600"
+                onClick={() => setShowColorPicker(false)}
+              >
+                Done
+              </button>
             </div>
           </div>
         </div>
