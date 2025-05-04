@@ -116,6 +116,38 @@ const CircuitBuilder = () => {
     const componentType = componentId.toLowerCase().split('-')[0];
     const formattedPinId = `pt-${componentType}-${componentId}-${pinId}`;
     
+    // Check if we already have a cached position for this pin
+    // This prevents position drift by reusing the same position for pins
+    if (window.pinPositionCache && window.pinPositionCache.has(formattedPinId)) {
+      const cachedPinData = window.pinPositionCache.get(formattedPinId);
+      
+      // Only adjust for component movement if needed
+      if (cachedPinData.origComponentX !== undefined && 
+          cachedPinData.origComponentY !== undefined) {
+        // Calculate movement delta
+        const deltaX = component.x - cachedPinData.origComponentX;
+        const deltaY = component.y - cachedPinData.origComponentY;
+        
+        // Update pin position based on component movement
+        cachedPinData.x += deltaX;
+        cachedPinData.y += deltaY;
+        
+        // Update original position to current position
+        cachedPinData.origComponentX = component.x;
+        cachedPinData.origComponentY = component.y;
+        
+        console.log(`Updated cached pin position with delta: (${deltaX}, ${deltaY})`);
+      }
+      
+      // Use the cached position
+      pinPosition = {
+        x: cachedPinData.x,
+        y: cachedPinData.y
+      };
+      
+      console.log(`Using cached pin position: (${pinPosition.x}, ${pinPosition.y})`);
+    }
+    
     // Get the absolute position of the pin in the canvas
     // CRITICAL IMPROVEMENT: Pin positions are now determined once and stored consistently
     let pinPosData;
