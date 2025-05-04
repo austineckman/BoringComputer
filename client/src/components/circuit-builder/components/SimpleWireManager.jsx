@@ -867,7 +867,10 @@ const SimpleWireManager = ({ canvasRef }) => {
                 y: targetScreenPoint.y - canvasRect.top
               };
               
-              console.log('Using SVG transformations for wire positions');
+              // Only log in debug mode
+              if (process.env.NODE_ENV === 'development' && sessionStorage.getItem('debug') === 'true') {
+                console.log('Using SVG transformations for wire positions');
+              }
             }
           } else {
             // Fallback to getBoundingClientRect for HTML elements
@@ -884,7 +887,10 @@ const SimpleWireManager = ({ canvasRef }) => {
               y: targetRect.top + (targetRect.height / 2) - canvasRect.top
             };
             
-            console.log('Using getBoundingClientRect for wire positions');
+            // Only log in debug mode
+            if (process.env.NODE_ENV === 'development' && sessionStorage.getItem('debug') === 'true') {
+              console.log('Using getBoundingClientRect for wire positions');
+            }
           }
         } catch (error) {
           console.error('Error calculating SVG coordinates:', error);
@@ -965,7 +971,10 @@ const SimpleWireManager = ({ canvasRef }) => {
             targetPoint
           ];
           
-          console.log('Rendering wire:', wire.id);
+          // Only log in debug mode
+          if (process.env.NODE_ENV === 'development' && sessionStorage.getItem('debug') === 'true') {
+            console.log('Rendering wire:', wire.id);
+          }
           
           return (
             <g 
