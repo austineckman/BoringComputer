@@ -89,6 +89,16 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
             const event = new CustomEvent('openCodeGuess');
             window.dispatchEvent(event);
           }
+        },
+        {
+          id: "codecaravan",
+          label: "Code Caravan",
+          icon: <GamepadIcon size={16} />,
+          onClick: () => {
+            // Send event to open Code Caravan
+            const event = new CustomEvent('openCodeCaravan');
+            window.dispatchEvent(event);
+          }
         }
         // More mini-games can be added here in the future
       ]
