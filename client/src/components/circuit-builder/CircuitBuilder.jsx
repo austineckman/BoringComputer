@@ -100,7 +100,7 @@ const CircuitBuilder = () => {
     setSelectedComponentId(id);
   };
   
-  // Handle pin connections
+  // Handle pin connections with stable pin positioning
   const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
     console.log(`Pin ${pinId} (${pinType}) of component ${componentId} clicked`, pinPosition);
     
@@ -111,44 +111,57 @@ const CircuitBuilder = () => {
       return;
     }
     
-    // Get the absolute position of the pin in the canvas
-    // If pinPosition is provided, use that directly (it's already in canvas coordinates)
-    // Otherwise calculate based on component position
-    let absoluteX = 0;
-    let absoluteY = 0;
-    
-    if (pinPosition && typeof pinPosition.x === 'number' && typeof pinPosition.y === 'number') {
-      // pinPosition is already in canvas coordinates
-      absoluteX = pinPosition.x;
-      absoluteY = pinPosition.y;
-    } else {
-      // Calculate position based on component position and estimated pin offset
-      absoluteX = component.x + (component.width ? component.width/2 : 50); 
-      absoluteY = component.y + (component.height ? component.height/2 : 50);
-    }
-    
     // Create proper format for pin ID that matches wire manager expectations
     // Avoid duplicate component types in the ID
     const componentType = componentId.toLowerCase().split('-')[0];
     const formattedPinId = `pt-${componentType}-${componentId}-${pinId}`;
     
-    console.log(`Using pin position: (${absoluteX}, ${absoluteY})`);
+    // Get the absolute position of the pin in the canvas
+    // CRITICAL IMPROVEMENT: Pin positions are now determined once and stored consistently
+    let pinPosData;
     
-    // Create a custom pin click event with precise positioning
+    if (pinPosition && typeof pinPosition.x === 'number' && typeof pinPosition.y === 'number') {
+      // Use the provided position which should be accurate
+      pinPosData = {
+        x: pinPosition.x,
+        y: pinPosition.y,
+        // Store the original component position for reference in case we need to
+        // recalculate relative positions later
+        origComponentX: component.x,
+        origComponentY: component.y,
+        component: componentId,
+        pin: pinId
+      };
+    } else {
+      // Use component center as fallback - this is less accurate but prevents errors
+      pinPosData = {
+        x: component.x + (component.width ? component.width/2 : 50),
+        y: component.y + (component.height ? component.height/2 : 50),
+        isEstimated: true, // Mark as estimated for the wire manager
+        component: componentId,
+        pin: pinId
+      };
+    }
+    
+    // Store pin connection in a stable cache that persists across component rerenders
+    // This helps ensure stable wire positions
+    if (!window.pinPositionCache) {
+      window.pinPositionCache = new Map();
+    }
+    window.pinPositionCache.set(formattedPinId, pinPosData);
+    
+    console.log(`Using pin position: (${pinPosData.x}, ${pinPosData.y})`);
+    
+    // Create a custom pin click event with stable positioning
     const pinClickEvent = new CustomEvent('pinClicked', {
       detail: {
         id: formattedPinId,
         pinType: pinType || 'bidirectional',
         parentId: componentId,
-        clientX: absoluteX,
-        clientY: absoluteY,
-        // Include additional data about the pin for the wire manager
-        pinData: JSON.stringify({
-          x: absoluteX,
-          y: absoluteY,
-          component: componentId,
-          pin: pinId
-        })
+        clientX: pinPosData.x,
+        clientY: pinPosData.y,
+        // Include comprehensive data about the pin for the wire manager
+        pinData: JSON.stringify(pinPosData)
       }
     });
     

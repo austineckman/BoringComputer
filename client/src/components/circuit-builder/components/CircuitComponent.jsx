@@ -103,16 +103,61 @@ const CircuitComponent = ({
     e.stopPropagation();
   };
   
-  // Calculate the position of pins (no rotation, as per user request)
+  // Calculate the position of pins with stable positioning
   const getPinPosition = (pinConfig) => {
-    // For components with no explicit position, generate one based on the pin ID
+    // Check if this pin already has a position in our stable cache
+    const componentType = type.toLowerCase().replace(/ /g, '');
+    const pinId = pinConfig.id;
+    const formattedPinId = `pt-${componentType}-${id.replace(/ /g, '')}-${pinId}`;
+    
+    // Check for an existing stable position in the cache
+    if (window.pinPositionCache && window.pinPositionCache.has(formattedPinId)) {
+      const cachedPos = window.pinPositionCache.get(formattedPinId);
+      
+      // If component hasn't moved, use the cached position exactly
+      if (cachedPos.origComponentX === position.x && cachedPos.origComponentY === position.y) {
+        return {
+          x: cachedPos.x,
+          y: cachedPos.y
+        };
+      }
+      
+      // If component has moved, adjust the pin position by the same delta
+      if (cachedPos.origComponentX !== undefined && cachedPos.origComponentY !== undefined) {
+        const deltaX = position.x - cachedPos.origComponentX;
+        const deltaY = position.y - cachedPos.origComponentY;
+        
+        return {
+          x: cachedPos.x + deltaX,
+          y: cachedPos.y + deltaY
+        };
+      }
+    }
+    
+    // Otherwise calculate a new position based on the pin ID and component type
     const pinPosition = pinConfig.position || generatePinPosition(pinConfig.id, type.toLowerCase());
     
-    // Return pin positions without any rotation adjustment
-    return {
+    // Calculate position without any rotation adjustment
+    const newPosition = {
       x: position.x + pinPosition.x * width,
       y: position.y + pinPosition.y * height
     };
+    
+    // Store this position in our cache for future reference
+    if (!window.pinPositionCache) {
+      window.pinPositionCache = new Map();
+    }
+    
+    window.pinPositionCache.set(formattedPinId, {
+      x: newPosition.x,
+      y: newPosition.y,
+      origComponentX: position.x,
+      origComponentY: position.y,
+      component: id,
+      pin: pinConfig.id
+    });
+    
+    return newPosition;
   };
   
   // Generate a pin position based on its ID and component type

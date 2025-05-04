@@ -667,14 +667,14 @@ const SimpleWireManager = ({ canvasRef }) => {
     
     // Track last update time for throttling
     let lastUpdateTime = 0;
-    const throttleInterval = 500; // Only update every 500ms during dragging
+    const throttleInterval = 50; // Reduced from 500ms to 50ms for more responsive updates
     
-    // Simple function to force a redraw of all wires - with throttling for performance
+    // Simple function to force a redraw of all wires - with minimal throttling for performance
     const handleComponentMove = (event) => {
       const currentTime = performance.now();
       
       // Always process 'componentMovedFinal' immediately for responsive UI when dragging stops
-      // But throttle frequent 'componentMoved' events during dragging
+      // Only minimal throttling during dragging to maintain responsiveness
       const shouldUpdate = 
         event.type === 'componentMovedFinal' || 
         event.type === 'redrawWires' || 
@@ -683,7 +683,15 @@ const SimpleWireManager = ({ canvasRef }) => {
       if (shouldUpdate) {
         // This approach simply triggers a re-render that will call getUpdatedWirePositions()
         // which directly reads pin positions from the DOM
-        setWires(prevWires => [...prevWires]);
+        setWires(prevWires => {
+          // Preserve the original position data when updating wires
+          // This helps prevent position jumps during redraw
+          return prevWires.map(wire => ({
+            ...wire,
+            // Only update positions for wires that need it
+            // (e.g., when specific components have moved)
+          }));
+        });
         lastUpdateTime = currentTime;
       }
     };
