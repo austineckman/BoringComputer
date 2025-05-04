@@ -626,20 +626,40 @@ const SimpleWireManager = ({ canvasRef }) => {
       const updatedAnchors = [...prev[wireId]];
       updatedAnchors.splice(anchorIndex, 1);
       
+      // Update wire properties if needed
+      if (wireProperties && wireProperties.id === wireId) {
+        setWireProperties(prevProps => ({
+          ...prevProps,
+          anchorCount: updatedAnchors.length
+        }));
+      }
+      
       return {
         ...prev,
         [wireId]: updatedAnchors
       };
     });
+    
+    console.log(`Removed anchor point ${anchorIndex} from wire ${wireId}`);
   };
   
   // Clear all anchor points for a wire
   const clearAnchorPoints = (wireId) => {
     setWireAnchorPoints(prev => {
       const newAnchors = {...prev};
-      delete newAnchors[wireId];
+      newAnchors[wireId] = []; // Clear but keep the entry for this wire
       return newAnchors;
     });
+    
+    // Update wire properties if needed
+    if (wireProperties && wireProperties.id === wireId) {
+      setWireProperties(prevProps => ({
+        ...prevProps,
+        anchorCount: 0
+      }));
+    }
+    
+    console.log(`Cleared all anchor points for wire ${wireId}`);
   };
   
   // Handle clicks on canvas to cancel pending wire, deselect wires, or add anchor points
@@ -660,9 +680,19 @@ const SimpleWireManager = ({ canvasRef }) => {
       // Add anchor point for the active wire
       setWireAnchorPoints(prev => {
         const currentAnchors = prev[activeWireForAnchors] || [];
+        const updatedAnchors = [...currentAnchors, point];
+        
+        // Update wire properties if this is the selected wire
+        if (wireProperties && wireProperties.id === activeWireForAnchors) {
+          setWireProperties(prevProps => ({
+            ...prevProps,
+            anchorCount: updatedAnchors.length
+          }));
+        }
+        
         return {
           ...prev,
-          [activeWireForAnchors]: [...currentAnchors, point]
+          [activeWireForAnchors]: updatedAnchors
         };
       });
       
@@ -1213,7 +1243,7 @@ const SimpleWireManager = ({ canvasRef }) => {
               />
               
               {/* Render anchor points when wire is selected */}
-              {selectedWireId === wire.id && anchors.map((anchor, index) => (
+              {selectedWireId === wire.id && wireAnchorPoints[wire.id] && wireAnchorPoints[wire.id].map((anchor, index) => (
                 <g key={`${wire.id}-anchor-${index}`} className="anchor-point">
                   {/* Anchor point handle */}
                   <circle
