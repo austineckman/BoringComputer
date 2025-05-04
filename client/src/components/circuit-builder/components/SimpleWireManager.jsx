@@ -6,6 +6,8 @@ import { PathLine } from 'react-svg-pathline';
  * 1. Managing wire connections between components
  * 2. Drawing wires between pins
  * 3. Tracking connected pins
+ * 4. Adding anchor points for custom wire routing
+ * 5. Simplified wire deletion
  */
 const SimpleWireManager = ({ canvasRef }) => {
   // State for wire connections
@@ -13,6 +15,10 @@ const SimpleWireManager = ({ canvasRef }) => {
   const [pendingWire, setPendingWire] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [selectedWireId, setSelectedWireId] = useState(null);
+  // New states for anchor point functionality
+  const [wireAnchorPoints, setWireAnchorPoints] = useState({});
+  const [activeWireForAnchors, setActiveWireForAnchors] = useState(null);
+  const [showAnchorMode, setShowAnchorMode] = useState(false);
   const svgRef = useRef(null);
 
   // Function to get pin position from event
