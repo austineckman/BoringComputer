@@ -27,6 +27,7 @@ import CodeReferenceWindow from "./CodeReferenceWindow";
 import HelpCenterWindow from "./HelpCenterWindow";
 import ElectronicsCheatSheetWindow from "./ElectronicsCheatSheetWindow";
 import ResistorCalculatorWindow from "./ResistorCalculatorWindow";
+import CodeCaravanWindow from "./CodeCaravanWindow";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import wallpaperImage from "@assets/wallpaper.png";
 import goldCrateImage from "@assets/goldcrate.png";
@@ -288,6 +289,10 @@ const RetroDesktop: React.FC = () => {
       openResistorToolWindow();
     };
     
+    const handleOpenCodeCaravan = () => {
+      openCodeCaravanWindow();
+    };
+    
     window.addEventListener('openTerminal', handleOpenTerminal);
     window.addEventListener('openBrowser', handleOpenBrowser);
     window.addEventListener('openProfile', handleOpenProfile);
@@ -301,6 +306,7 @@ const RetroDesktop: React.FC = () => {
     window.addEventListener('openHelpCenter', handleOpenHelpCenter);
     window.addEventListener('openElectronicsCheatSheet', handleOpenElectronicsCheatSheet);
     window.addEventListener('openResistorTool', handleOpenResistorTool);
+    window.addEventListener('openCodeCaravan', handleOpenCodeCaravan);
     
     return () => {
       window.removeEventListener('openTerminal', handleOpenTerminal);
@@ -316,6 +322,7 @@ const RetroDesktop: React.FC = () => {
       window.removeEventListener('openHelpCenter', handleOpenHelpCenter);
       window.removeEventListener('openElectronicsCheatSheet', handleOpenElectronicsCheatSheet);
       window.removeEventListener('openResistorTool', handleOpenResistorTool);
+      window.removeEventListener('openCodeCaravan', handleOpenCodeCaravan);
     };
   }, []);
   
@@ -748,6 +755,20 @@ const RetroDesktop: React.FC = () => {
       />, 
       "🔢",
       { width: 760, height: 600 }
+    );
+  };
+  
+  const openCodeCaravanWindow = () => {
+    openWindow(
+      "codecaravan", 
+      "Code Caravan: The Silicon Road", 
+      <CodeCaravanWindow 
+        onClose={() => closeWindow("codecaravan")} 
+        onMinimize={() => minimizeWindow("codecaravan")}
+        isActive={windows.some(w => w.id === "codecaravan" && w.isActive)}
+      />, 
+      "🎮",
+      { width: 800, height: 650 }
     );
   };
   
