@@ -431,7 +431,7 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
     });
     
     setTextToAnimate(`Team ${teamName} begins their epic journey along the Silicon Road. Your first stop is ${locations[0]}...`);
-  };
+  }
 
   // Continue journey after event
   const continueJourney = () => {
@@ -470,7 +470,7 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
         }));
       }
     }
-  };
+  }
 
   // Toggle character selection
   const toggleCharacterSelection = (character: Character) => {
