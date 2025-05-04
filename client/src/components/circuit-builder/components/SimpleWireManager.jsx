@@ -273,8 +273,27 @@ const SimpleWireManager = ({ canvasRef }) => {
       }
       
       // Add the new wire
+      // Use a combination of source and target IDs in the wire ID to make it unique 
+      // and avoid duplicate wire creation between the same two pins
+      const wireId = `wire-${sourceId}-${pinId}`;
+      
+      // Check if this wire already exists (same connection)
+      const wireExists = wires.some(w => w.id === wireId ||
+        (w.sourceId === sourceId && w.targetId === pinId) ||
+        (w.sourceId === pinId && w.targetId === sourceId));
+      
+      if (wireExists) {
+        console.log('Wire already exists between these pins');
+        setPendingWire(null);
+        document.querySelectorAll('.wire-source-active').forEach(el => {
+          el.classList.remove('wire-source-active');
+          el.style.animation = '';
+        });
+        return;
+      }
+      
       const newWire = {
-        id: `wire-${Date.now()}`,
+        id: wireId,
         sourceId,
         targetId: pinId,
         sourceType,
