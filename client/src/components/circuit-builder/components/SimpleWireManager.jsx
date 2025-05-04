@@ -177,7 +177,16 @@ const SimpleWireManager = ({ canvasRef }) => {
     const pinType = event.detail.pinType || 'bidirectional';
     
     // Get detailed pin information if available
-    const pinData = event.detail.pinData ? JSON.parse(event.detail.pinData) : null;
+    let pinData = null;
+    try {
+      if (event.detail.pinData) {
+        pinData = typeof event.detail.pinData === 'string' 
+          ? JSON.parse(event.detail.pinData) 
+          : event.detail.pinData;
+      }
+    } catch (e) {
+      console.error('Error parsing pinData:', e);
+    }
     
     // Calculate pin position
     let position = null;
@@ -271,12 +280,15 @@ const SimpleWireManager = ({ canvasRef }) => {
     }
     // Priority 3: Use pin data coordinates if available (from component definitions)
     else if (pinData && pinData.x !== undefined && pinData.y !== undefined) {
-      // Use coordinates directly from pinData - these are already in canvas coordinates
-      position = {
-        x: pinData.x,
-        y: pinData.y
-      };
-      console.log(`Using pin data coordinates for ${pinName}:`, position);
+      // Use coordinates directly from pinData - these should be already in canvas coordinates
+      // but let's make sure we handle both absolute and relative coordinates
+      if (typeof pinData.x === 'number' && typeof pinData.y === 'number') {
+        position = {
+          x: pinData.x,
+          y: pinData.y
+        };
+        console.log(`Using pin data coordinates for ${pinName}:`, position);
+      }
     }
     
     // Priority 3: Try to find the actual DOM element and use its position
