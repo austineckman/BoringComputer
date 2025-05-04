@@ -42,7 +42,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/sounds', express.static(path.join(publicPath, 'sounds')));
   app.use('/uploads', express.static(path.join(publicPath, 'uploads')));
   
-  // Set up sessions for users with improved cookie parsing
+  // Set up sessions for users with optimized cookie parsing
   app.use((req, res, next) => {
     try {
       // Parse cookies for session management
@@ -59,7 +59,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      console.log('Parsed cookies:', JSON.stringify(cookies));
+      // Only log cookie parsing in development and only for non-asset requests
+      if (process.env.NODE_ENV === 'development' && 
+          !req.path.includes('.') && 
+          !req.path.includes('/assets/') && 
+          !req.path.includes('/@') && 
+          !req.path.includes('/_')) {
+        // Only log on API requests to reduce noise
+        if (req.path.startsWith('/api')) {
+          console.debug('Request cookies present:', Object.keys(cookies).length > 0);
+        }
+      }
+      
       (req as any).cookies = cookies;
       next();
     } catch (error) {

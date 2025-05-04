@@ -596,7 +596,7 @@ const SimpleWireManager = ({ canvasRef }) => {
     
     // Create a cleanup function that runs periodically
     const cleanupInterval = setInterval(() => {
-      // Only run if there are wires
+      // Only run if there are wires and not too frequently (performance optimization)
       if (wires.length > 0) {
         // Create a map to track unique wire connections
         const wiresMap = new Map();
@@ -642,16 +642,32 @@ const SimpleWireManager = ({ canvasRef }) => {
     return () => clearInterval(cleanupInterval);
   }, []); // Empty dependency array means this runs only once at initialization
 
-  // Wokwi-style component movement handler - simple and effective
+  // Wokwi-style component movement handler - with throttling for better performance
   useEffect(() => {
     // Events that should trigger wire position updates
     const events = ['componentMoved', 'componentMovedFinal', 'redrawWires'];
     
-    // Simple function to force a redraw of all wires - Wokwi-style
-    const handleComponentMove = () => {
-      // This approach simply triggers a re-render that will call getUpdatedWirePositions()
-      // which directly reads pin positions from the DOM
-      setWires(prevWires => [...prevWires]);
+    // Track last update time for throttling
+    let lastUpdateTime = 0;
+    const throttleInterval = 500; // Only update every 500ms during dragging
+    
+    // Simple function to force a redraw of all wires - with throttling for performance
+    const handleComponentMove = (event) => {
+      const currentTime = performance.now();
+      
+      // Always process 'componentMovedFinal' immediately for responsive UI when dragging stops
+      // But throttle frequent 'componentMoved' events during dragging
+      const shouldUpdate = 
+        event.type === 'componentMovedFinal' || 
+        event.type === 'redrawWires' || 
+        currentTime - lastUpdateTime > throttleInterval;
+      
+      if (shouldUpdate) {
+        // This approach simply triggers a re-render that will call getUpdatedWirePositions()
+        // which directly reads pin positions from the DOM
+        setWires(prevWires => [...prevWires]);
+        lastUpdateTime = currentTime;
+      }
     };
     
     // Register for all events that should update wire positions
@@ -673,8 +689,19 @@ const SimpleWireManager = ({ canvasRef }) => {
     
     const canvasRect = canvasRef.current.getBoundingClientRect();
     
-    // Process all dynamic wires and update positions
-    return wires
+    // First, deduplicate wires by ID to prevent duplicate keys in React
+    const wireMap = new Map();
+    wires.forEach(wire => {
+      // Use normalized IDs to prevent duplicates
+      const endpoints = [(wire.sourceId || '').split('-').pop(), (wire.targetId || '').split('-').pop()].sort().join('-');
+      const wireKey = `wire-${endpoints}`;
+      
+      // Only keep the most recent wire for each unique connection
+      wireMap.set(wireKey, wire);
+    });
+    
+    // Process all dynamic wires and update positions with the deduplicated list
+    return Array.from(wireMap.values())
       .map(wire => {
         // Fix for duplicated component type in source ID
         let sourceId = wire.sourceId;
