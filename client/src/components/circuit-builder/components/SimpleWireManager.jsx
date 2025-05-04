@@ -25,27 +25,37 @@ const SimpleWireManager = ({ canvasRef }) => {
     };
   };
 
+  // Use a ref to store wire position cache to avoid unnecessary recalculations
+  const wirePosCache = useRef({});
+  
   // Get path for wire with enhanced TinkerCad-style routing
   const getWirePath = (start, end) => {
+    // Validate input coordinates
+    if (!start || !end || start.x === undefined || end.x === undefined) {
+      console.warn('Invalid wire coordinates:', start, end);
+      return ''; // Return empty path if coordinates are invalid
+    }
+    
     const dx = end.x - start.x;
     const dy = end.y - start.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     
     // For short wires, use a simple arc
-    if (distance < 50) {
+    if (distance < 30) {
       // Arc path with small curvature
       return `M ${start.x} ${start.y} 
-              Q ${(start.x + end.x) / 2} ${(start.y + end.y) / 2 - 10}, 
+              Q ${(start.x + end.x) / 2} ${(start.y + end.y) / 2 - 5}, 
                 ${end.x} ${end.y}`;
     }
     
-    // For diagonal wires, determine if we should route horizontally first or vertically first
-    const isHorizontalFirst = Math.abs(dx) > Math.abs(dy);
+    // For diagonal wires, determine routing approach based on angle and distance
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    const isHorizontalFirst = Math.abs(angle) < 45 || Math.abs(angle) > 135;
     
     if (isHorizontalFirst) {
-      // Route horizontally first, then vertically (Manhattan routing)
-      const midX = start.x + dx * 0.7; // Go 70% of the way horizontally
-      const bendRadius = Math.min(Math.abs(dy) * 0.3, 20); // Size of the curve at the bend
+      // Route horizontally first with smoother bend
+      const midX = start.x + dx * 0.6; // Go 60% of the way horizontally for better balance
+      const bendRadius = Math.min(Math.abs(dy) * 0.25, 15); // Smoother bend radius
       
       return `M ${start.x} ${start.y}
               L ${midX - bendRadius * Math.sign(dx)} ${start.y}
@@ -58,9 +68,9 @@ const SimpleWireManager = ({ canvasRef }) => {
                 ${midX + bendRadius * Math.sign(dx)} ${end.y}
               L ${end.x} ${end.y}`;
     } else {
-      // Route vertically first, then horizontally
-      const midY = start.y + dy * 0.7; // Go 70% of the way vertically
-      const bendRadius = Math.min(Math.abs(dx) * 0.3, 20); // Size of the curve at the bend
+      // Route vertically first with smoother bend
+      const midY = start.y + dy * 0.6; // Go 60% of the way vertically for better balance
+      const bendRadius = Math.min(Math.abs(dx) * 0.25, 15); // Smoother bend radius
       
       return `M ${start.x} ${start.y}
               L ${start.x} ${midY - bendRadius * Math.sign(dy)}
@@ -527,11 +537,29 @@ const SimpleWireManager = ({ canvasRef }) => {
         let targetId = wire.targetId;
         
         // Handle duplicated component types in IDs
-        if (sourceId.includes('-heroboard-heroboard-') || sourceId.includes('-led-led-')) {
+        if (sourceId && (sourceId.includes('-heroboard-heroboard-') || 
+            sourceId.includes('-led-led-') || 
+            sourceId.includes('-rgb-rgb-') || 
+            sourceId.includes('-rotary-rotary-'))) {
           sourceId = sourceId.replace(/-(\w+)-\1-/, '-$1-');
         }
-        if (targetId.includes('-heroboard-heroboard-') || targetId.includes('-led-led-')) {
+        
+        if (targetId && (targetId.includes('-heroboard-heroboard-') || 
+            targetId.includes('-led-led-') || 
+            targetId.includes('-rgb-rgb-') || 
+            targetId.includes('-rotary-rotary-'))) {
           targetId = targetId.replace(/-(\w+)-\1-/, '-$1-');
+        }
+        
+        // Create a unique and consistent wire ID
+        // Sort source and target IDs to ensure consistency regardless of connection order
+        const wireEndpoints = [sourceId, targetId].sort();
+        const consistentWireId = `wire-${wireEndpoints[0]}-${wireEndpoints[1]}`;
+        
+        // Update wire ID if needed
+        if (consistentWireId !== wire.id) {
+          console.log(`Normalized wire ID from ${wire.id} to ${consistentWireId}`);
+          wire.id = consistentWireId; // Update the ID to avoid duplicates
         }
         
         // Check if this wire already has valid positions (used for fallback)
@@ -584,10 +612,36 @@ const SimpleWireManager = ({ canvasRef }) => {
           if (similarElements.length > 0) targetElement = similarElements[0];
         }
         
+        // Check if we have cached positions for this wire
+        const cachedPositions = wirePosCache.current[wire.id];
+        
+        // If we have cached positions and can't find elements, use the cached positions
+        if ((!sourceElement || !targetElement) && cachedPositions) {
+          console.warn(`Using cached positions for wire ${wire.id}`);
+          return {
+            ...wire,
+            sourcePos: cachedPositions.sourcePos,
+            targetPos: cachedPositions.targetPos,
+            sourceId,
+            targetId,
+            id: consistentWireId // Ensure consistent ID
+          };
+        }
+        
         // If we still can't find the elements and have valid positions, use the old ones
         if ((!sourceElement || !targetElement) && hasValidPositions) {
           console.warn(`Using previous positions for wire ${wire.id}`);
-          return wire;
+          
+          // Cache these positions for future use
+          wirePosCache.current[consistentWireId] = {
+            sourcePos: { ...wire.sourcePos },
+            targetPos: { ...wire.targetPos }
+          };
+          
+          return {
+            ...wire,
+            id: consistentWireId // Ensure consistent ID
+          };
         }
         
         // If we can't find the elements and don't have valid positions, mark as invalid
