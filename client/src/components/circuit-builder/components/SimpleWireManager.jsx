@@ -477,19 +477,62 @@ const SimpleWireManager = ({ canvasRef }) => {
 
   // Handle mouse movement for the pending wire with throttling for better performance
   const handleMouseMove = (e) => {
-    if (pendingWire && canvasRef?.current) {
-      // Don't process every mouse move event - this improves performance
-      // especially during component dragging
+    if (!canvasRef?.current) return;
+    
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    const currentPos = {
+      x: e.clientX - canvasRect.left,
+      y: e.clientY - canvasRect.top
+    };
+    
+    // Update mouse position for wire drawing
+    if (pendingWire) {
+      // Don't process every mouse move event - this improves performance during component dragging
       if (throttlingActive) return;
       
       throttlingActive = true;
       setTimeout(() => { throttlingActive = false; }, 20); // 50fps is plenty smooth
       
-      const canvasRect = canvasRef.current.getBoundingClientRect();
-      setMousePosition({
-        x: e.clientX - canvasRect.left,
-        y: e.clientY - canvasRect.top
+      setMousePosition(currentPos);
+    } else {
+      // Always update mouse position for anchor mode
+      setMousePosition(currentPos);
+    }
+    
+    // If in anchor mode, check for nearby pins to provide visual feedback
+    if (showAnchorMode && activeWireForAnchors) {
+      // Clear previous pin highlight
+      document.querySelectorAll('.pin-hover-highlight').forEach(el => {
+        el.classList.remove('pin-hover-highlight');
       });
+      
+      // Check for nearby pin and highlight it
+      const nearbyPin = findNearbyPin(currentPos);
+      if (nearbyPin) {
+        // Find all pins at this position and highlight them
+        const pinElements = document.querySelectorAll('[class*="pin-connection-point"], [id^="pt-"]');
+        for (const pinEl of pinElements) {
+          try {
+            const pinRect = pinEl.getBoundingClientRect();
+            const pinCenter = {
+              x: pinRect.left + (pinRect.width / 2) - canvasRect.left,
+              y: pinRect.top + (pinRect.height / 2) - canvasRect.top
+            };
+            
+            // If this is our nearby pin, highlight it
+            const distance = Math.sqrt(
+              Math.pow(pinCenter.x - nearbyPin.x, 2) + 
+              Math.pow(pinCenter.y - nearbyPin.y, 2)
+            );
+            
+            if (distance < 2) { // Very close match to the pin we found
+              pinEl.classList.add('pin-hover-highlight');
+            }
+          } catch (error) {
+            console.error('Error highlighting pin:', error);
+          }
+        }
+      }
     }
   };
   
@@ -662,6 +705,43 @@ const SimpleWireManager = ({ canvasRef }) => {
     console.log(`Cleared all anchor points for wire ${wireId}`);
   };
   
+  // Function to find a pin near the clicked point
+  const findNearbyPin = (clickedPoint, threshold = 15) => {
+    if (!canvasRef?.current) return null;
+    
+    // Get all pin elements on the canvas
+    const pinElements = document.querySelectorAll('[class*="pin-connection-point"], [id^="pt-"]');
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    
+    // Search through all pins to find one within threshold distance
+    for (const pinEl of pinElements) {
+      try {
+        // Get pin position relative to canvas
+        const pinRect = pinEl.getBoundingClientRect();
+        const pinCenter = {
+          x: pinRect.left + (pinRect.width / 2) - canvasRect.left,
+          y: pinRect.top + (pinRect.height / 2) - canvasRect.top
+        };
+        
+        // Calculate distance between pin and clicked point
+        const distance = Math.sqrt(
+          Math.pow(pinCenter.x - clickedPoint.x, 2) + 
+          Math.pow(pinCenter.y - clickedPoint.y, 2)
+        );
+        
+        // If within threshold, return this pin's position
+        if (distance <= threshold) {
+          console.log(`Found nearby pin ${pinEl.id} at distance ${distance.toFixed(2)}px`);
+          return pinCenter;
+        }
+      } catch (error) {
+        console.error('Error calculating pin position for nearby check:', error);
+      }
+    }
+    
+    return null; // No nearby pin found
+  };
+  
   // Handle clicks on canvas to cancel pending wire, deselect wires, or add anchor points
   const handleCanvasClick = (e) => {
     // Ignore if click was on a pin
@@ -672,10 +752,17 @@ const SimpleWireManager = ({ canvasRef }) => {
     // If in anchor mode, add anchor point where clicked
     if (showAnchorMode && activeWireForAnchors) {
       const canvasRect = canvasRef.current.getBoundingClientRect();
-      const point = {
+      let point = {
         x: e.clientX - canvasRect.left,
         y: e.clientY - canvasRect.top
       };
+      
+      // Check if the click is near a pin - if so, snap to the pin
+      const nearbyPin = findNearbyPin(point);
+      if (nearbyPin) {
+        console.log(`Found nearby pin at (${nearbyPin.x}, ${nearbyPin.y}). Snapping anchor point.`);
+        point = nearbyPin;
+      }
       
       // Add anchor point for the active wire
       setWireAnchorPoints(prev => {
