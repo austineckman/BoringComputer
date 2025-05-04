@@ -709,7 +709,7 @@ const SimpleWireManager = ({ canvasRef }) => {
     };
   }, []);
 
-  // Get current wire positions - enhanced for accurate pin tracking with duplicate ID handling
+  // Get current wire positions - COMPLETELY REWRITTEN to prevent position drift
   const getUpdatedWirePositions = () => {
     if (!canvasRef?.current) return [];
     
@@ -729,6 +729,18 @@ const SimpleWireManager = ({ canvasRef }) => {
     // Process all dynamic wires and update positions with the deduplicated list
     return Array.from(wireMap.values())
       .map(wire => {
+        // CRITICAL FIX: Check if the wire already has valid positions
+        // If so, just return it as-is to prevent position drift
+        const hasValidPositions = 
+          wire.sourcePos && wire.targetPos && 
+          typeof wire.sourcePos.x === 'number' && 
+          typeof wire.targetPos.x === 'number';
+        
+        if (hasValidPositions) {
+          return wire; // Preserve existing wire positions
+        }
+        
+        // Only continue with position calculation for new wires
         // Fix for duplicated component type in source ID
         let sourceId = wire.sourceId;
         let targetId = wire.targetId;
@@ -759,8 +771,9 @@ const SimpleWireManager = ({ canvasRef }) => {
           wire.id = consistentWireId; // Update the ID to avoid duplicates
         }
         
-        // Check if this wire already has valid positions (used for fallback)
-        const hasValidPositions = 
+        // Check if we have valid positions as fallback
+        // Note: We already checked this at the beginning, but keeping it for code clarity
+        const hasExistingPositions = 
           wire.sourcePos && wire.targetPos && 
           typeof wire.sourcePos.x === 'number' && 
           typeof wire.targetPos.x === 'number';
@@ -826,7 +839,7 @@ const SimpleWireManager = ({ canvasRef }) => {
         }
         
         // If we still can't find the elements and have valid positions, use the old ones
-        if ((!sourceElement || !targetElement) && hasValidPositions) {
+        if ((!sourceElement || !targetElement) && hasExistingPositions) {
           console.warn(`Using previous positions for wire ${wire.id}`);
           
           // Cache these positions for future use
