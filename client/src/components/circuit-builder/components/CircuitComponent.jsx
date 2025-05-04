@@ -66,7 +66,7 @@ const CircuitComponent = ({
     }
   };
   
-  // Handle pin click
+  // Handle pin click - FIXED for improved position stability
   const handlePinClick = (pinId, pinType, e) => {
     e.stopPropagation();
     
@@ -74,17 +74,41 @@ const CircuitComponent = ({
       // Calculate exact pin position
       const pinPosition = getPinPosition({ id: pinId });
       
-      // Create a more detailed event with accurate pin position data
+      // Create pin ID with consistent format
+      const formattedPinId = `pt-${type.toLowerCase().replace(/ /g, '')}-${id.replace(/ /g, '')}-${pinId}`;
+      
+      // Initialize the global pin position cache if it doesn't exist
+      if (!window.pinPositionCache) {
+        window.pinPositionCache = new Map();
+      }
+      
+      // Store the exact pin position in the global cache with additional metadata
+      const pinPositionData = {
+        x: pinPosition.x,
+        y: pinPosition.y,
+        origComponentX: position.x,
+        origComponentY: position.y,
+        pinId: pinId,
+        componentId: id,
+        formattedId: formattedPinId,
+        type: pinType
+      };
+      
+      // Save to global cache for future reference
+      window.pinPositionCache.set(formattedPinId, pinPositionData);
+      
+      // Create a detailed event with stable position data from our cache
       const clickEvent = new CustomEvent('pinClicked', {
         detail: {
-          id: `pt-${type.toLowerCase().replace(/ /g, '')}-${id.replace(/ /g, '')}-${pinId}`,
+          id: formattedPinId,
           pinId,
           componentId: id,
           pinType,
           clientX: pinPosition.x,
           clientY: pinPosition.y,
           componentType: type.toLowerCase(),
-          pinData: JSON.stringify({ x: pinPosition.x, y: pinPosition.y })
+          // Include full position data to ensure consistency
+          pinData: JSON.stringify(pinPositionData)
         },
         bubbles: true
       });
@@ -92,7 +116,7 @@ const CircuitComponent = ({
       // Dispatch the detailed event
       document.dispatchEvent(clickEvent);
       
-      // Call the original callback
+      // Call the original callback with our stable position
       onPinConnect(pinId, pinType, id, pinPosition);
     }
   };
