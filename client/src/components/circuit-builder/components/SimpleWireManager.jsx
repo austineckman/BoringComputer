@@ -40,6 +40,25 @@ const SimpleWireManager = ({ canvasRef }) => {
   // Use a ref to store wire position cache to avoid unnecessary recalculations
   const wirePosCache = useRef({});
   
+  // Initialize the wire position cache with current wire positions
+  useEffect(() => {
+    // Populate the initial cache with existing wire positions
+    const initialCache = {};
+    wires.forEach(wire => {
+      if (wire.id && wire.sourcePos && wire.targetPos &&
+          typeof wire.sourcePos.x === 'number' && 
+          typeof wire.targetPos.x === 'number') {
+        initialCache[wire.id] = {
+          sourcePos: { ...wire.sourcePos },
+          targetPos: { ...wire.targetPos },
+          timestamp: Date.now()
+        };
+      }
+    });
+    
+    wirePosCache.current = initialCache;
+  }, []);
+  
   // Get path for wire with enhanced TinkerCad-style routing
   const getWirePath = (start, end) => {
     // Validate input coordinates
@@ -707,6 +726,24 @@ const SimpleWireManager = ({ canvasRef }) => {
     
     const canvasRect = canvasRef.current.getBoundingClientRect();
     
+    // Check for duplicate wires first and log them
+    // This helps diagnose issues with wire management
+    const wireIds = new Set();
+    const duplicateWires = [];
+    
+    wires.forEach(wire => {
+      if (wireIds.has(wire.id)) {
+        console.log(`Found duplicate wire: ${wire.id}`);
+        duplicateWires.push(wire.id);
+      } else {
+        wireIds.add(wire.id);
+      }
+    });
+    
+    if (duplicateWires.length > 0) {
+      console.log(`Removed ${duplicateWires.length} duplicate wires`);
+    }
+    
     // First, deduplicate wires by ID to prevent duplicate keys in React
     const wireMap = new Map();
     wires.forEach(wire => {
@@ -715,7 +752,14 @@ const SimpleWireManager = ({ canvasRef }) => {
       const wireKey = wire.id;
       
       // Only keep the most recent wire for each unique connection
-      wireMap.set(wireKey, wire);
+      // If the wire has valid positions, prefer that one
+      const existingWire = wireMap.get(wireKey);
+      if (!existingWire || 
+          (wire.sourcePos && wire.targetPos && 
+           typeof wire.sourcePos.x === 'number' && 
+           typeof wire.targetPos.x === 'number')) {
+        wireMap.set(wireKey, wire);
+      }
     });
     
     // Process all dynamic wires and update positions with the deduplicated list
