@@ -440,58 +440,250 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
                 
                 {/* Resistor Color Codes */}
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">Resistor Color Codes</h4>
+                  <h4 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">Resistor Color Codes: The Universal Language</h4>
                   <div className="mt-4 flex flex-col lg:flex-row gap-6">
                     <div className="flex-1">
-                      <p className="text-gray-700">
-                        Most resistors have colored bands that indicate their resistance value and tolerance. Learning to read these bands is an essential skill.
+                      <p className="text-gray-700 leading-relaxed">
+                        Most resistors are too small to print numbers on, so manufacturers use a universal color code system to mark their values. These colored bands are like a secret language that electronics engineers and hobbyists use worldwide.
                       </p>
-                      <div className="mt-3 bg-amber-50 p-4 rounded-lg">
-                        <h5 className="font-medium text-amber-800">How to Read Color Bands:</h5>
-                        <ol className="mt-2 space-y-2 text-amber-700 pl-5 list-decimal">
-                          <li>The first 2-3 bands represent significant digits</li>
-                          <li>The next band is the multiplier (number of zeros)</li>
-                          <li>The last band indicates tolerance (accuracy)</li>
-                        </ol>
-                        <p className="mt-3 text-sm text-amber-600">
-                          <span className="font-medium">Tip:</span> Use the "Calculator" tab in this tool to practice identifying resistor values from color codes and vice versa.
+                      
+                      <div className="mt-4 bg-amber-50 p-4 rounded-lg border border-amber-100">
+                        <h5 className="font-medium text-amber-800 border-b border-amber-200 pb-2">The Standard 4-Band Resistor</h5>
+                        <p className="mt-2 text-amber-700">
+                          Most common resistors have four colored bands that are read from left to right:
                         </p>
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="bg-white p-4 rounded-lg border border-gray-200">
-                        <h5 className="font-medium text-gray-800 text-center">Color Code Quick Reference</h5>
-                        <div className="mt-3 grid grid-cols-2 gap-2">
-                          <div>
-                            <p className="text-xs font-medium text-gray-600 mb-1">Digit Values:</p>
-                            <div className="space-y-1 text-xs">
-                              <p><span className="inline-block w-3 h-3 bg-black mr-2"></span>Black = 0</p>
-                              <p><span className="inline-block w-3 h-3 bg-amber-800 mr-2"></span>Brown = 1</p>
-                              <p><span className="inline-block w-3 h-3 bg-red-600 mr-2"></span>Red = 2</p>
-                              <p><span className="inline-block w-3 h-3 bg-orange-500 mr-2"></span>Orange = 3</p>
-                              <p><span className="inline-block w-3 h-3 bg-yellow-400 mr-2"></span>Yellow = 4</p>
-                              <p><span className="inline-block w-3 h-3 bg-green-600 mr-2"></span>Green = 5</p>
-                              <p><span className="inline-block w-3 h-3 bg-blue-600 mr-2"></span>Blue = 6</p>
-                              <p><span className="inline-block w-3 h-3 bg-purple-600 mr-2"></span>Violet = 7</p>
-                              <p><span className="inline-block w-3 h-3 bg-gray-500 mr-2"></span>Gray = 8</p>
-                              <p><span className="inline-block w-3 h-3 bg-white border border-gray-300 mr-2"></span>White = 9</p>
+                        <div className="mt-3 bg-white p-3 rounded border border-amber-200">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 w-20 h-8 bg-amber-100 rounded relative flex items-center justify-center overflow-hidden">
+                              <div className="absolute w-full h-4 top-2 bg-amber-800">
+                                <div className="absolute w-2 h-8 bg-red-600 left-4 top-0"></div>
+                                <div className="absolute w-2 h-8 bg-violet-600 left-8 top-0"></div>
+                                <div className="absolute w-2 h-8 bg-orange-500 left-12 top-0"></div>
+                                <div className="absolute w-2 h-8 bg-yellow-600 left-16 top-0"></div>
+                              </div>
                             </div>
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-gray-600 mb-1">Tolerance Values:</p>
-                            <div className="space-y-1 text-xs">
-                              <p><span className="inline-block w-3 h-3 bg-amber-800 mr-2"></span>Brown = ±1%</p>
-                              <p><span className="inline-block w-3 h-3 bg-red-600 mr-2"></span>Red = ±2%</p>
-                              <p><span className="inline-block w-3 h-3 bg-green-600 mr-2"></span>Green = ±0.5%</p>
-                              <p><span className="inline-block w-3 h-3 bg-blue-600 mr-2"></span>Blue = ±0.25%</p>
-                              <p><span className="inline-block w-3 h-3 bg-purple-600 mr-2"></span>Violet = ±0.1%</p>
-                              <p><span className="inline-block w-3 h-3 bg-gray-500 mr-2"></span>Gray = ±0.05%</p>
-                              <p><span className="inline-block w-3 h-3 bg-yellow-600 mr-2"></span>Gold = ±5%</p>
-                              <p><span className="inline-block w-3 h-3 bg-gray-300 mr-2"></span>Silver = ±10%</p>
-                              <p><span className="inline-block w-3 h-3 border border-dashed border-gray-400 mr-2"></span>None = ±20%</p>
+                            <div className="ml-4 flex-1">
+                              <ul className="text-sm space-y-1">
+                                <li className="flex items-center"><span className="inline-block w-3 h-3 bg-red-600 mr-2"></span><span className="font-medium">1st Band:</span> First digit (2)</li>
+                                <li className="flex items-center"><span className="inline-block w-3 h-3 bg-violet-600 mr-2"></span><span className="font-medium">2nd Band:</span> Second digit (7)</li>
+                                <li className="flex items-center"><span className="inline-block w-3 h-3 bg-orange-500 mr-2"></span><span className="font-medium">3rd Band:</span> Multiplier (×1,000)</li>
+                                <li className="flex items-center"><span className="inline-block w-3 h-3 bg-yellow-600 mr-2"></span><span className="font-medium">4th Band:</span> Tolerance (±5%)</li>
+                              </ul>
+                              <p className="mt-2 text-sm font-medium">Value: 27,000Ω = 27kΩ ±5%</p>
                             </div>
                           </div>
                         </div>
+                      </div>
+                      
+                      <div className="mt-4 bg-purple-50 p-4 rounded-lg border border-purple-100">
+                        <h5 className="font-medium text-purple-800 border-b border-purple-200 pb-2">The Precision 5-Band Resistor</h5>
+                        <p className="mt-2 text-purple-700">
+                          Higher precision resistors often have five bands for more accurate values:
+                        </p>
+                        <div className="mt-3 bg-white p-3 rounded border border-purple-200">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 w-24 h-8 bg-amber-100 rounded relative flex items-center justify-center overflow-hidden">
+                              <div className="absolute w-full h-4 top-2 bg-amber-800">
+                                <div className="absolute w-2 h-8 bg-blue-600 left-4 top-0"></div>
+                                <div className="absolute w-2 h-8 bg-red-600 left-8 top-0"></div>
+                                <div className="absolute w-2 h-8 bg-black left-12 top-0"></div>
+                                <div className="absolute w-2 h-8 bg-orange-500 left-16 top-0"></div>
+                                <div className="absolute w-2 h-8 bg-amber-800 left-20 top-0"></div>
+                              </div>
+                            </div>
+                            <div className="ml-4 flex-1">
+                              <ul className="text-sm space-y-1">
+                                <li className="flex items-center"><span className="inline-block w-3 h-3 bg-blue-600 mr-2"></span><span className="font-medium">1st Band:</span> First digit (6)</li>
+                                <li className="flex items-center"><span className="inline-block w-3 h-3 bg-red-600 mr-2"></span><span className="font-medium">2nd Band:</span> Second digit (2)</li>
+                                <li className="flex items-center"><span className="inline-block w-3 h-3 bg-black mr-2"></span><span className="font-medium">3rd Band:</span> Third digit (0)</li>
+                                <li className="flex items-center"><span className="inline-block w-3 h-3 bg-orange-500 mr-2"></span><span className="font-medium">4th Band:</span> Multiplier (×1,000)</li>
+                                <li className="flex items-center"><span className="inline-block w-3 h-3 bg-amber-800 mr-2"></span><span className="font-medium">5th Band:</span> Tolerance (±1%)</li>
+                              </ul>
+                              <p className="mt-2 text-sm font-medium">Value: 620,000Ω = 620kΩ ±1%</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                        <h5 className="font-medium text-blue-800">Special 6-Band Resistors</h5>
+                        <p className="mt-2 text-blue-700 text-sm">
+                          Some high-precision resistors include a 6th band that indicates the temperature coefficient (how much the resistance changes with temperature).
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1">
+                      <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+                        <h5 className="font-medium text-gray-800 text-center border-b border-gray-200 pb-2">Complete Color Code Reference</h5>
+                        
+                        <div className="mt-4">
+                          <h6 className="text-sm font-medium text-gray-700 mb-2">Digit Values (1st, 2nd, and 3rd bands):</h6>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-2">
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-black mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Black</span> = 0</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-amber-800 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Brown</span> = 1</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-red-600 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Red</span> = 2</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-orange-500 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Orange</span> = 3</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-yellow-400 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Yellow</span> = 4</span>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-green-600 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Green</span> = 5</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-blue-600 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Blue</span> = 6</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-purple-600 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Violet</span> = 7</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-gray-500 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Gray</span> = 8</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-white border border-gray-300 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">White</span> = 9</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-4">
+                          <h6 className="text-sm font-medium text-gray-700 mb-2">Multiplier Values (3rd or 4th band):</h6>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-2">
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-black mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Black</span> = ×1</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-amber-800 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Brown</span> = ×10</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-red-600 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Red</span> = ×100</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-orange-500 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Orange</span> = ×1,000</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-yellow-400 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Yellow</span> = ×10,000</span>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-yellow-600 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Gold</span> = ×0.1</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-gray-300 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Silver</span> = ×0.01</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-green-600 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Green</span> = ×100,000</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-blue-600 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Blue</span> = ×1,000,000</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-purple-600 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Violet</span> = ×10,000,000</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-4">
+                          <h6 className="text-sm font-medium text-gray-700 mb-2">Tolerance Values (4th or 5th band):</h6>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-2">
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-amber-800 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Brown</span> = ±1%</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-red-600 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Red</span> = ±2%</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-green-600 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Green</span> = ±0.5%</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-blue-600 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Blue</span> = ±0.25%</span>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-purple-600 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Violet</span> = ±0.1%</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-gray-500 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Gray</span> = ±0.05%</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-yellow-600 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Gold</span> = ±5%</span>
+                              </div>
+                              <div className="flex items-center bg-gray-50 p-1.5 rounded">
+                                <span className="inline-block w-4 h-4 bg-gray-300 mr-2 rounded-sm"></span>
+                                <span className="text-sm"><span className="font-medium">Silver</span> = ±10%</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-4 bg-indigo-50 p-3 rounded-lg">
+                          <h6 className="text-sm font-medium text-indigo-800">Example Calculation:</h6>
+                          <div className="flex items-center mt-2">
+                            <div className="flex-shrink-0 w-20 h-8 bg-amber-100 rounded relative flex items-center justify-center overflow-hidden">
+                              <div className="absolute w-full h-4 top-2 bg-amber-800">
+                                <div className="absolute w-2 h-8 bg-green-600 left-4 top-0"></div>
+                                <div className="absolute w-2 h-8 bg-blue-600 left-8 top-0"></div>
+                                <div className="absolute w-2 h-8 bg-red-600 left-12 top-0"></div>
+                                <div className="absolute w-2 h-8 bg-yellow-600 left-16 top-0"></div>
+                              </div>
+                            </div>
+                            <div className="ml-4 flex-1 text-sm">
+                              <p><span className="font-medium">Green (5), Blue (6), Red (2), Gold (±5%)</span></p>
+                              <p className="mt-1">Value = 56 × 100 = 5,600Ω = 5.6kΩ ±5%</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 bg-green-50 p-4 rounded-lg border border-green-100">
+                        <h5 className="font-medium text-green-800">Memory Aid: "BB ROY Great Britain Very Good Wife"</h5>
+                        <p className="mt-2 text-sm text-green-700">
+                          Use this mnemonic to remember the color code order from 0-9:<br />
+                          <span className="font-medium">B</span>lack, <span className="font-medium">B</span>rown, <span className="font-medium">R</span>ed, <span className="font-medium">O</span>range, <span className="font-medium">Y</span>ellow, <span className="font-medium">G</span>reen, <span className="font-medium">B</span>lue, <span className="font-medium">V</span>iolet, <span className="font-medium">G</span>ray, <span className="font-medium">W</span>hite
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -512,51 +704,110 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
                   <div className="mt-4 flex flex-col md:flex-row gap-6">
                     <div className="flex-1">
                       <p className="text-gray-700 leading-relaxed">
-                        Ohm's Law describes the relationship between <span className="font-medium">voltage (V)</span>, <span className="font-medium">current (I)</span>, and <span className="font-medium">resistance (R)</span> in an electrical circuit.
+                        Ohm's Law, discovered by German physicist Georg Ohm in 1827, describes the most important relationship in electronics between <span className="font-medium">voltage (V)</span>, <span className="font-medium">current (I)</span>, and <span className="font-medium">resistance (R)</span> in an electrical circuit.
                       </p>
-                      <div className="mt-4 bg-purple-100 p-6 rounded-lg flex flex-col items-center">
+                      
+                      <p className="mt-3 text-gray-700 leading-relaxed">
+                        In simple terms, Ohm's Law states that the current flowing through a conductor is directly proportional to the voltage and inversely proportional to the resistance. This means:
+                      </p>
+                      
+                      <div className="mt-4 bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-lg flex flex-col items-center border border-purple-200 shadow-sm">
                         <div className="text-2xl font-bold text-purple-800">V = I × R</div>
                         <p className="mt-1 text-purple-700">Voltage = Current × Resistance</p>
-                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
-                          <div className="bg-white p-3 rounded border border-purple-200 text-center">
-                            <div className="font-bold text-purple-800">V</div>
-                            <p className="text-sm">Voltage</p>
-                            <p className="text-xs text-gray-500">Measured in Volts (V)</p>
+                        <div className="my-4 w-20 border-t-2 border-purple-300"></div>
+                        
+                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+                          <div className="bg-white p-3 rounded-lg border border-purple-200 text-center shadow-sm">
+                            <div className="font-bold text-2xl text-purple-800">V</div>
+                            <p className="font-medium">Voltage</p>
+                            <p className="text-sm text-gray-600">Measured in Volts (V)</p>
+                            <p className="mt-1 text-xs text-purple-600">The "pressure" that pushes electrons through a circuit</p>
                           </div>
-                          <div className="bg-white p-3 rounded border border-purple-200 text-center">
-                            <div className="font-bold text-purple-800">I</div>
-                            <p className="text-sm">Current</p>
-                            <p className="text-xs text-gray-500">Measured in Amperes (A)</p>
+                          <div className="bg-white p-3 rounded-lg border border-purple-200 text-center shadow-sm">
+                            <div className="font-bold text-2xl text-purple-800">I</div>
+                            <p className="font-medium">Current</p>
+                            <p className="text-sm text-gray-600">Measured in Amperes (A)</p>
+                            <p className="mt-1 text-xs text-purple-600">The flow rate of electrons through a circuit</p>
                           </div>
-                          <div className="bg-white p-3 rounded border border-purple-200 text-center">
-                            <div className="font-bold text-purple-800">R</div>
-                            <p className="text-sm">Resistance</p>
-                            <p className="text-xs text-gray-500">Measured in Ohms (Ω)</p>
+                          <div className="bg-white p-3 rounded-lg border border-purple-200 text-center shadow-sm">
+                            <div className="font-bold text-2xl text-purple-800">R</div>
+                            <p className="font-medium">Resistance</p>
+                            <p className="text-sm text-gray-600">Measured in Ohms (Ω)</p>
+                            <p className="mt-1 text-xs text-purple-600">The opposition to electron flow in a circuit</p>
                           </div>
+                        </div>
+                        
+                        <div className="mt-4 bg-white p-3 rounded-lg border border-purple-200 w-full">
+                          <p className="text-center text-sm text-purple-800">
+                            <span className="font-medium">The water analogy:</span> If electricity is like water flowing through pipes, then voltage is like water pressure, current is like the flow rate, and resistance is like the narrowness of the pipe.
+                          </p>
                         </div>
                       </div>
                     </div>
                     <div className="flex-1">
-                      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-4 rounded-lg">
-                        <h5 className="font-medium text-purple-800">Ohm's Law Triangle</h5>
-                        <p className="mt-2 text-gray-700">
-                          You can rearrange Ohm's Law to find any value if you know the other two:
+                      <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+                        <h5 className="font-medium text-purple-800 border-b border-gray-200 pb-2">The Ohm's Law Triangle</h5>
+                        
+                        <div className="flex justify-center mt-4">
+                          <div className="relative w-40 h-40">
+                            <div className="absolute w-0 h-0 border-l-[80px] border-r-[80px] border-b-[140px] border-l-transparent border-r-transparent border-b-purple-100 top-0 left-0"></div>
+                            <div className="absolute top-12 left-16 text-3xl font-bold text-purple-800">V</div>
+                            <div className="absolute bottom-6 left-4 text-3xl font-bold text-purple-800">I</div>
+                            <div className="absolute bottom-6 right-4 text-3xl font-bold text-purple-800">R</div>
+                            <div className="absolute top-[70px] left-0 right-0 text-center text-purple-800 font-medium">×</div>
+                            <div className="absolute bottom-10 left-0 right-0 text-center text-purple-800 font-medium">÷</div>
+                          </div>
+                        </div>
+                        
+                        <p className="mt-4 text-gray-700 text-center">
+                          Use this memory aid to solve for any variable. Cover the value you want to find with your finger, and the triangle shows you the operation to perform with the remaining values.
                         </p>
-                        <div className="mt-3 grid grid-cols-1 gap-3">
-                          <div className="bg-white p-3 rounded border border-purple-200">
-                            <div className="text-center font-medium text-purple-800">To find Voltage:</div>
-                            <div className="text-center mt-1">V = I × R</div>
-                            <div className="text-xs text-center mt-1 text-gray-500">Voltage = Current × Resistance</div>
+                        
+                        <div className="mt-4 grid grid-cols-1 gap-3">
+                          <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                            <div className="text-center font-medium text-purple-800">To find Voltage (V):</div>
+                            <div className="text-center mt-1 font-bold">V = I × R</div>
+                            <div className="text-sm text-center mt-1 text-gray-600">Multiply current by resistance</div>
                           </div>
-                          <div className="bg-white p-3 rounded border border-purple-200">
-                            <div className="text-center font-medium text-purple-800">To find Current:</div>
-                            <div className="text-center mt-1">I = V ÷ R</div>
-                            <div className="text-xs text-center mt-1 text-gray-500">Current = Voltage ÷ Resistance</div>
+                          <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                            <div className="text-center font-medium text-purple-800">To find Current (I):</div>
+                            <div className="text-center mt-1 font-bold">I = V ÷ R</div>
+                            <div className="text-sm text-center mt-1 text-gray-600">Divide voltage by resistance</div>
                           </div>
-                          <div className="bg-white p-3 rounded border border-purple-200">
-                            <div className="text-center font-medium text-purple-800">To find Resistance:</div>
-                            <div className="text-center mt-1">R = V ÷ I</div>
-                            <div className="text-xs text-center mt-1 text-gray-500">Resistance = Voltage ÷ Current</div>
+                          <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                            <div className="text-center font-medium text-purple-800">To find Resistance (R):</div>
+                            <div className="text-center mt-1 font-bold">R = V ÷ I</div>
+                            <div className="text-sm text-center mt-1 text-gray-600">Divide voltage by current</div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-6 bg-indigo-50 p-4 rounded-lg border border-indigo-100 shadow-sm">
+                        <h5 className="font-medium text-indigo-800 border-b border-indigo-200 pb-2">Units & Prefixes</h5>
+                        <div className="mt-3 space-y-3">
+                          <div className="bg-white p-3 rounded-lg border border-indigo-200">
+                            <p className="font-medium text-indigo-800">Voltage:</p>
+                            <ul className="mt-1 text-sm pl-5 list-disc">
+                              <li>Basic unit: Volt (V)</li>
+                              <li>Millivolt (mV) = 0.001V</li>
+                              <li>Kilovolt (kV) = 1,000V</li>
+                            </ul>
+                          </div>
+                          <div className="bg-white p-3 rounded-lg border border-indigo-200">
+                            <p className="font-medium text-indigo-800">Current:</p>
+                            <ul className="mt-1 text-sm pl-5 list-disc">
+                              <li>Basic unit: Ampere (A)</li>
+                              <li>Milliamp (mA) = 0.001A</li>
+                              <li>Microamp (μA) = 0.000001A</li>
+                            </ul>
+                          </div>
+                          <div className="bg-white p-3 rounded-lg border border-indigo-200">
+                            <p className="font-medium text-indigo-800">Resistance:</p>
+                            <ul className="mt-1 text-sm pl-5 list-disc">
+                              <li>Basic unit: Ohm (Ω)</li>
+                              <li>Kilohm (kΩ) = 1,000Ω</li>
+                              <li>Megohm (MΩ) = 1,000,000Ω</li>
+                            </ul>
                           </div>
                         </div>
                       </div>
@@ -619,56 +870,166 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
                 
                 {/* Power Calculation */}
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">Power in Resistors</h4>
+                  <h4 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">Power in Resistors: Understanding the Heat Factor</h4>
                   <div className="mt-4 flex flex-col md:flex-row gap-6">
                     <div className="flex-1">
                       <p className="text-gray-700 leading-relaxed">
-                        When current flows through a resistor, electrical energy is converted to heat. The <span className="font-medium">power</span> dissipated by a resistor is measured in watts (W).
+                        When current flows through a resistor, the resistor converts electrical energy into heat. This is actually how electric heaters, toasters, and incandescent light bulbs work! The <span className="font-medium">power</span> dissipated by a resistor is measured in watts (W).
                       </p>
-                      <div className="mt-4 bg-red-50 p-4 rounded-lg">
-                        <h5 className="font-medium text-red-800">Important for Safety:</h5>
-                        <p className="mt-1 text-red-700">
-                          You must choose resistors with an appropriate power rating. A resistor that dissipates more power than it's rated for will overheat and can be damaged or cause a fire.
-                        </p>
+                      
+                      <p className="mt-3 text-gray-700 leading-relaxed">
+                        Understanding power dissipation is crucial because every resistor has a power rating - the maximum amount of heat it can safely handle before it might fail or even catch fire. Common power ratings for small resistors used in electronics projects include 1/8W, 1/4W, 1/2W, and 1W.
+                      </p>
+                      
+                      <div className="mt-4 bg-red-50 p-4 rounded-lg border border-red-200 shadow-sm">
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <h5 className="font-medium text-red-800">Important Safety Warning:</h5>
+                            <p className="mt-1 text-red-700">
+                              Always choose resistors with a power rating at least 2x higher than your calculated power to provide a safety margin. A resistor that dissipates more power than it's rated for will:
+                            </p>
+                            <ul className="mt-2 text-red-700 pl-5 space-y-1 list-disc text-sm">
+                              <li>Get extremely hot</li>
+                              <li>Change its resistance value (affecting circuit performance)</li>
+                              <li>Eventually burn out or smoke</li>
+                              <li>Potentially cause a fire hazard</li>
+                            </ul>
+                          </div>
+                        </div>
                       </div>
                     </div>
+                    
                     <div className="flex-1">
-                      <div className="bg-white p-4 rounded-lg border border-gray-200">
-                        <h5 className="font-medium text-gray-800 text-center">Power Formulas</h5>
-                        <div className="mt-3 space-y-3">
-                          <div className="p-3 bg-red-50 rounded border border-red-100 text-center">
-                            <p className="font-medium text-red-800">P = I² × R</p>
-                            <p className="text-sm text-red-700">Power = Current² × Resistance</p>
+                      <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+                        <h5 className="font-medium text-gray-800 text-center border-b border-gray-200 pb-2">Power Calculation Formulas</h5>
+                        <p className="text-sm text-gray-600 mt-2 text-center">
+                          There are three ways to calculate power, depending on which values you already know:
+                        </p>
+                        
+                        <div className="mt-4 space-y-4">
+                          <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 rounded-lg border border-red-200 shadow-sm">
+                            <div className="text-center">
+                              <p className="text-xl font-bold text-red-800">P = I² × R</p>
+                              <p className="text-sm text-red-700 mt-1">Power = Current² × Resistance</p>
+                            </div>
+                            <div className="mt-2 bg-white/70 p-2 rounded border border-red-100 text-sm">
+                              <p><span className="font-medium">Use when you know:</span> Current and Resistance</p>
+                              <p><span className="font-medium">Example:</span> If 0.1A flows through a 100Ω resistor:</p>
+                              <p>P = (0.1A)² × 100Ω = 0.01 × 100 = 1W</p>
+                            </div>
                           </div>
-                          <div className="p-3 bg-red-50 rounded border border-red-100 text-center">
-                            <p className="font-medium text-red-800">P = V² ÷ R</p>
-                            <p className="text-sm text-red-700">Power = Voltage² ÷ Resistance</p>
+                          
+                          <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 rounded-lg border border-red-200 shadow-sm">
+                            <div className="text-center">
+                              <p className="text-xl font-bold text-red-800">P = V² ÷ R</p>
+                              <p className="text-sm text-red-700 mt-1">Power = Voltage² ÷ Resistance</p>
+                            </div>
+                            <div className="mt-2 bg-white/70 p-2 rounded border border-red-100 text-sm">
+                              <p><span className="font-medium">Use when you know:</span> Voltage and Resistance</p>
+                              <p><span className="font-medium">Example:</span> If 12V is across a 1kΩ resistor:</p>
+                              <p>P = (12V)² ÷ 1,000Ω = 144 ÷ 1,000 = 0.144W</p>
+                            </div>
                           </div>
-                          <div className="p-3 bg-red-50 rounded border border-red-100 text-center">
-                            <p className="font-medium text-red-800">P = V × I</p>
-                            <p className="text-sm text-red-700">Power = Voltage × Current</p>
+                          
+                          <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 rounded-lg border border-red-200 shadow-sm">
+                            <div className="text-center">
+                              <p className="text-xl font-bold text-red-800">P = V × I</p>
+                              <p className="text-sm text-red-700 mt-1">Power = Voltage × Current</p>
+                            </div>
+                            <div className="mt-2 bg-white/70 p-2 rounded border border-red-100 text-sm">
+                              <p><span className="font-medium">Use when you know:</span> Voltage and Current</p>
+                              <p><span className="font-medium">Example:</span> If 5V is across a resistor with 20mA flowing:</p>
+                              <p>P = 5V × 0.02A = 0.1W = 100mW</p>
+                            </div>
                           </div>
+                        </div>
+                        
+                        <div className="mt-4 bg-gray-50 p-3 rounded-lg border border-gray-200 text-center text-sm text-gray-700">
+                          <p className="font-medium">Did you notice?</p>
+                          <p>All three formulas are just different versions of the same relationship, combined with Ohm's Law!</p>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="mt-4 bg-amber-50 p-4 rounded-lg">
-                    <h5 className="font-medium text-amber-800">Example: Power Calculation</h5>
-                    <div className="mt-2 space-y-2">
-                      <p className="text-amber-700">A 220Ω resistor has 5V across it. What power does it dissipate?</p>
-                      <div className="bg-white p-3 rounded border border-amber-200">
-                        <p><span className="font-medium">Using P = V² ÷ R:</span></p>
-                        <div className="text-sm">
-                          <p>P = (5V)² ÷ 220Ω</p>
-                          <p>P = 25 ÷ 220</p>
-                          <p>P = 0.114W = 114mW</p>
+                  
+                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-amber-50 p-4 rounded-lg border border-amber-200 shadow-sm">
+                      <h5 className="font-medium text-amber-800 border-b border-amber-200 pb-2">Practical Example: LED Circuit</h5>
+                      <div className="mt-3 space-y-3">
+                        <div className="bg-white p-3 rounded border border-amber-200">
+                          <p><span className="font-medium">Scenario:</span> You're building an LED circuit with a 5V power supply. The LED has a forward voltage of 2V and needs 20mA of current.</p>
+                        </div>
+                        
+                        <div className="bg-white p-3 rounded border border-amber-200">
+                          <p><span className="font-medium">Step 1:</span> Calculate the resistor value needed</p>
+                          <div className="text-sm mt-1">
+                            <p>Voltage across resistor = 5V - 2V = 3V</p>
+                            <p>Using Ohm's Law: R = V ÷ I = 3V ÷ 0.02A = 150Ω</p>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white p-3 rounded border border-amber-200">
+                          <p><span className="font-medium">Step 2:</span> Calculate the power dissipation</p>
+                          <div className="text-sm mt-1">
+                            <p>P = V × I = 3V × 0.02A = 0.06W = 60mW</p>
+                            <p>Or: P = I² × R = (0.02A)² × 150Ω = 0.0004 × 150 = 0.06W</p>
+                            <p>Or: P = V² ÷ R = (3V)² ÷ 150Ω = 9 ÷ 150 = 0.06W</p>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white p-3 rounded border border-amber-200">
+                          <p><span className="font-medium">Step 3:</span> Choose appropriate resistor</p>
+                          <div className="text-sm mt-1">
+                            <p>The resistor will dissipate 60mW of power</p>
+                            <p>A standard 1/8W (125mW) resistor would be sufficient</p>
+                            <p>For safety margin: 1/4W (250mW) would be better</p>
+                          </div>
                         </div>
                       </div>
-                      <div className="bg-white p-3 rounded border border-amber-200">
-                        <p><span className="font-medium">Therefore:</span></p>
-                        <div className="text-sm">
-                          <p>You would need a resistor rated for at least 1/4W (250mW) for this application.</p>
-                          <p>Common resistor power ratings: 1/8W, 1/4W, 1/2W, 1W, 2W, 5W</p>
+                    </div>
+                    
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-200 shadow-sm">
+                      <h5 className="font-medium text-green-800 border-b border-green-200 pb-2">Common Resistor Power Ratings</h5>
+                      
+                      <div className="mt-3 space-y-3">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="bg-white p-3 rounded border border-green-200 text-center">
+                            <div className="text-lg font-medium text-green-800">1/8W (0.125W)</div>
+                            <p className="text-xs text-green-700 mt-1">Tiny, common in signal circuits</p>
+                          </div>
+                          <div className="bg-white p-3 rounded border border-green-200 text-center">
+                            <div className="text-lg font-medium text-green-800">1/4W (0.25W)</div>
+                            <p className="text-xs text-green-700 mt-1">Most common size for hobbyists</p>
+                          </div>
+                          <div className="bg-white p-3 rounded border border-green-200 text-center">
+                            <div className="text-lg font-medium text-green-800">1/2W (0.5W)</div>
+                            <p className="text-xs text-green-700 mt-1">Medium power applications</p>
+                          </div>
+                          <div className="bg-white p-3 rounded border border-green-200 text-center">
+                            <div className="text-lg font-medium text-green-800">1W</div>
+                            <p className="text-xs text-green-700 mt-1">Higher power circuits</p>
+                          </div>
+                          <div className="bg-white p-3 rounded border border-green-200 text-center">
+                            <div className="text-lg font-medium text-green-800">2W - 5W</div>
+                            <p className="text-xs text-green-700 mt-1">Power electronics</p>
+                          </div>
+                          <div className="bg-white p-3 rounded border border-green-200 text-center">
+                            <div className="text-lg font-medium text-green-800">10W+</div>
+                            <p className="text-xs text-green-700 mt-1">High-power, often wirewound</p>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white p-3 rounded border border-green-200">
+                          <p className="text-sm"><span className="font-medium">Physical Size:</span> Generally, the higher the power rating, the larger the physical size of the resistor. This allows for better heat dissipation.</p>
+                        </div>
+                        
+                        <div className="bg-white p-3 rounded border border-green-200">
+                          <p className="text-sm"><span className="font-medium">Safety Tip:</span> Always choose a resistor with a power rating at least twice the calculated power for a safety margin.</p>
                         </div>
                       </div>
                     </div>
