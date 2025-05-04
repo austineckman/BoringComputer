@@ -334,7 +334,7 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
   }, [textToAnimate, isAnimating]);
 
   // Handle user choice selection
-  const handleChoice = (choice: EventChoice) => {
+  function handleChoice(choice: EventChoice) {
     // Check if choice requires resources
     if (choice.requiredResource) {
       const { type, amount } = choice.requiredResource;
@@ -399,7 +399,7 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
   }
 
   // Generate a random event
-  const generateRandomEvent = () => {
+  function generateRandomEvent() {
     const randomIndex = Math.floor(Math.random() * events.length);
     const event = events[randomIndex];
     
@@ -413,7 +413,7 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
   }
 
   // Start journey with selected team
-  const startJourney = () => {
+  function startJourney() {
     if (selectedCharacters.length < 2) {
       setTextToAnimate('You need to select at least 2 team members to start the journey!');
       return;
@@ -434,7 +434,7 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
   }
 
   // Continue journey after event
-  const continueJourney = () => {
+  function continueJourney() {
     // 70% chance of random event, 30% chance of peaceful travel
     if (Math.random() < 0.7) {
       generateRandomEvent();
@@ -473,7 +473,7 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
   }
 
   // Toggle character selection
-  const toggleCharacterSelection = (character: Character) => {
+  function toggleCharacterSelection(character: Character) {
     if (selectedCharacters.some(c => c.name === character.name)) {
       setSelectedCharacters(selectedCharacters.filter(c => c.name !== character.name));
     } else if (selectedCharacters.length < 4) { // Maximum 4 team members
@@ -481,16 +481,16 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
     } else {
       setTextToAnimate('You can only select up to 4 team members!');
     }
-  };
+  }
 
   // Reset the game
-  const resetGame = () => {
+  function resetGame() {
     setGameState(initialState);
     setTeamName('');
     setSelectedCharacters([]);
     setTextToAnimate('');
     setAnimatedText('');
-  };
+  }
 
   // Render functions based on game phase
   const renderIntro = () => (
