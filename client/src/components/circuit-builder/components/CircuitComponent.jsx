@@ -69,8 +69,31 @@ const CircuitComponent = ({
   // Handle pin click
   const handlePinClick = (pinId, pinType, e) => {
     e.stopPropagation();
+    
     if (onPinConnect) {
-      onPinConnect(pinId, pinType, id);
+      // Calculate exact pin position
+      const pinPosition = getPinPosition({ id: pinId });
+      
+      // Create a more detailed event with accurate pin position data
+      const clickEvent = new CustomEvent('pinClicked', {
+        detail: {
+          id: `pt-${type.toLowerCase().replace(/ /g, '')}-${id.replace(/ /g, '')}-${pinId}`,
+          pinId,
+          componentId: id,
+          pinType,
+          clientX: pinPosition.x,
+          clientY: pinPosition.y,
+          componentType: type.toLowerCase(),
+          pinData: JSON.stringify({ x: pinPosition.x, y: pinPosition.y })
+        },
+        bubbles: true
+      });
+      
+      // Dispatch the detailed event
+      document.dispatchEvent(clickEvent);
+      
+      // Call the original callback
+      onPinConnect(pinId, pinType, id, pinPosition);
     }
   };
   
