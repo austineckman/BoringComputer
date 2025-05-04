@@ -45,32 +45,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up sessions for users with optimized cookie parsing
   app.use((req, res, next) => {
     try {
-      // Parse cookies for session management
+      // Parse cookies for session management only if needed
+      // Skip this processing for static assets and development files
+      if (req.path.includes('.') || 
+          req.path.includes('/assets/') || 
+          req.path.includes('/@') || 
+          req.path.includes('/_')) {
+        // Skip cookie processing for static assets completely
+        next();
+        return;
+      }
+      
+      // Default to empty cookies object
       const cookies: Record<string, string> = {};
-      if (req.headers.cookie) {
+      
+      // Only parse cookies for API routes and only when a cookie header exists
+      if (req.path.startsWith('/api') && req.headers.cookie) {
         req.headers.cookie.split(';').forEach(cookie => {
           const parts = cookie.split('=');
           if (parts.length >= 2) {
-            // Handle any malformed cookies
             const key = parts[0].trim();
             const value = parts.slice(1).join('=').trim();
             cookies[key] = value;
           }
         });
+        
+        // Remove ALL logging to reduce noise
+        // We will only log authentication issues in the auth routes themselves
       }
       
-      // Only log cookie parsing in development and only for non-asset requests
-      if (process.env.NODE_ENV === 'development' && 
-          !req.path.includes('.') && 
-          !req.path.includes('/assets/') && 
-          !req.path.includes('/@') && 
-          !req.path.includes('/_')) {
-        // Only log on API requests to reduce noise
-        if (req.path.startsWith('/api')) {
-          console.debug('Request cookies present:', Object.keys(cookies).length > 0);
-        }
-      }
-      
+      // Always attach the cookies object, even if empty
       (req as any).cookies = cookies;
       next();
     } catch (error) {
