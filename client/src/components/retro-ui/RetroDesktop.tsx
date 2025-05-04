@@ -94,7 +94,7 @@ const RetroDesktop: React.FC = () => {
   
   // State for computer settings
   const [currentWallpaper, setCurrentWallpaper] = useState<string>(wallpaperImage);
-  const [crtEnabled, setCrtEnabled] = useState<boolean>(true);
+  const [crtEnabled, setCrtEnabled] = useState<boolean>(false);
   const [use24HourClock, setUse24HourClock] = useState<boolean>(false);
   const [dateFormat, setDateFormat] = useState<string>("MM/DD/YYYY");
   const [timezone, setTimezone] = useState<string>("America/New_York");
@@ -158,6 +158,9 @@ const RetroDesktop: React.FC = () => {
         desktopElement.classList.remove('crt-effect-disabled');
       }
     }
+    
+    // Save preference in local storage
+    localStorage.setItem('crtEnabled', enabled.toString());
   }, []);
   
   // Handler for changing wallpaper
@@ -230,6 +233,19 @@ const RetroDesktop: React.FC = () => {
     const savedColorScheme = localStorage.getItem('colorScheme') as 'blue' | 'black' | 'orange' | 'green' | 'red' | null;
     if (savedColorScheme && ['blue', 'black', 'orange', 'green', 'red'].includes(savedColorScheme)) {
       setColorScheme(savedColorScheme as 'blue' | 'black' | 'orange' | 'green' | 'red');
+    }
+    
+    // Load CRT effect preference
+    const savedCrtEnabled = localStorage.getItem('crtEnabled');
+    if (savedCrtEnabled !== null) {
+      setCrtEnabled(savedCrtEnabled === 'true');
+    } else {
+      // Ensure the CRT effect is disabled by default on first load
+      // by adding the disabled class to the desktop element
+      const desktopElement = document.querySelector('.retro-desktop');
+      if (desktopElement) {
+        desktopElement.classList.add('crt-effect-disabled');
+      }
     }
   }, []);
   
