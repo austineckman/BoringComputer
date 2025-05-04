@@ -310,6 +310,44 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
                 <h3 className="font-semibold text-white text-lg">Understanding Resistors: The Basics</h3>
                 <span className="bg-white text-blue-500 rounded-full w-8 h-8 inline-flex items-center justify-center font-bold">1</span>
               </div>
+              
+              {/* Introduction Page for Basics Section */}
+              <div className="p-0 border-b border-gray-200">
+                <div className="bg-gradient-to-r from-blue-50 via-blue-100 to-blue-50 p-6">
+                  <div className="flex flex-col md:flex-row items-center gap-6">
+                    <div className="w-full md:w-1/3 flex justify-center">
+                      <div className="relative w-48 h-48 bg-white rounded-full shadow-lg flex items-center justify-center p-2 border-4 border-blue-200">
+                        <div className="absolute inset-0 rounded-full overflow-hidden">
+                          <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-blue-200"></div>
+                        </div>
+                        
+                        {/* Visual representation of a resistor */}
+                        <div className="relative w-32 h-12 bg-blue-100 rounded-lg flex items-center">
+                          <div className="absolute inset-x-0 h-8 top-2 bg-amber-800">
+                            <div className="absolute w-3 h-12 bg-red-600 left-4 -top-2"></div>
+                            <div className="absolute w-3 h-12 bg-black left-10 -top-2"></div>
+                            <div className="absolute w-3 h-12 bg-red-600 left-16 -top-2"></div>
+                            <div className="absolute w-3 h-12 bg-gold left-22 -top-2"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="w-full md:w-2/3">
+                      <h2 className="text-2xl font-bold text-blue-800 mb-3">The Building Blocks of Electronics</h2>
+                      <p className="text-blue-700 leading-relaxed">
+                        Welcome to the first step in your resistor journey! In this section, you'll discover what resistors actually are, why they're crucial in almost every electronic circuit, and the fundamental concepts that make them work.
+                      </p>
+                      <p className="text-blue-700 leading-relaxed mt-2">
+                        We'll start with the very basics - explaining resistance itself, how resistors are made, and the different types you might encounter. You'll learn to recognize resistors by their appearance and understand the universal color code system that electronics engineers use worldwide.
+                      </p>
+                      <p className="text-blue-700 leading-relaxed mt-2">
+                        By the end of this section, you'll have a solid foundation in resistor fundamentals that will prepare you for more advanced concepts in later sections.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div className="p-6 space-y-6">
                 {/* What is a Resistor */}
                 <div>
@@ -696,6 +734,44 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
               <div className="bg-purple-500 px-6 py-3 flex items-center justify-between">
                 <h3 className="font-semibold text-white text-lg">Ohm's Law: The Foundation of Electronics</h3>
                 <span className="bg-white text-purple-500 rounded-full w-8 h-8 inline-flex items-center justify-center font-bold">2</span>
+              </div>
+              
+              {/* Introduction Page for Ohm's Law Section */}
+              <div className="p-0 border-b border-gray-200">
+                <div className="bg-gradient-to-r from-purple-50 via-purple-100 to-purple-50 p-6">
+                  <div className="flex flex-col md:flex-row items-center gap-6">
+                    <div className="w-full md:w-1/3 flex justify-center">
+                      <div className="relative w-48 h-48 bg-white rounded-full shadow-lg flex items-center justify-center p-2 border-4 border-purple-200">
+                        <div className="absolute inset-0 rounded-full overflow-hidden">
+                          <div className="absolute inset-0 bg-gradient-to-br from-purple-100 to-purple-200"></div>
+                        </div>
+                        
+                        {/* Visual representation of Ohm's Law Triangle */}
+                        <div className="relative">
+                          <div className="w-32 h-32 relative">
+                            <div className="absolute w-0 h-0 border-l-[60px] border-r-[60px] border-b-[104px] border-l-transparent border-r-transparent border-b-purple-200"></div>
+                            <div className="absolute top-6 left-12 text-purple-800 text-2xl font-bold">V</div>
+                            <div className="absolute bottom-2 left-4 text-purple-800 text-2xl font-bold">I</div>
+                            <div className="absolute bottom-2 right-4 text-purple-800 text-2xl font-bold">R</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="w-full md:w-2/3">
+                      <h2 className="text-2xl font-bold text-purple-800 mb-3">The Mathematical Relationship That Powers Everything</h2>
+                      <p className="text-purple-700 leading-relaxed">
+                        Welcome to one of the most powerful concepts in all of electronics! Ohm's Law is the fundamental relationship that describes how voltage, current, and resistance interact in any electrical circuit.
+                      </p>
+                      <p className="text-purple-700 leading-relaxed mt-2">
+                        Named after German physicist Georg Ohm, who discovered it in 1827, this seemingly simple equation (V = I × R) allows us to predict and calculate precisely how electricity will behave in our circuits. It's the foundation upon which virtually all electronics design is built.
+                      </p>
+                      <p className="text-purple-700 leading-relaxed mt-2">
+                        In this section, you'll gain a deep understanding of Ohm's Law through clear explanations, helpful visualizations, and practical examples that demonstrate how to apply it in real-world scenarios.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div className="p-6 space-y-6">
                 {/* Ohm's Law Explanation */}
