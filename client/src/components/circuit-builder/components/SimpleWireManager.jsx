@@ -271,15 +271,12 @@ const SimpleWireManager = ({ canvasRef }) => {
     }
     // Priority 3: Use pin data coordinates if available (from component definitions)
     else if (pinData && pinData.x !== undefined && pinData.y !== undefined) {
-      // Use the pin's position within the component, adjusted for component position
-      const component = components.find(c => c.id === parentId);
-      if (component) {
-        position = {
-          x: component.x + pinData.x,
-          y: component.y + pinData.y
-        };
-        console.log(`Using pin data coordinates for ${pinName}:`, position);
-      }
+      // Use coordinates directly from pinData - these are already in canvas coordinates
+      position = {
+        x: pinData.x,
+        y: pinData.y
+      };
+      console.log(`Using pin data coordinates for ${pinName}:`, position);
     }
     
     // Priority 3: Try to find the actual DOM element and use its position
