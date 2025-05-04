@@ -43,6 +43,16 @@
   --moveable-color: transparent !important;
 }
 
+/* Highlight for pins when hovering near them when in anchor mode */
+.pin-hover-highlight {
+  filter: drop-shadow(0 0 6px #ffcc00) brightness(1.5) !important;
+  transition: all 0.1s ease-in-out;
+  stroke: #ffcc00 !important;
+  stroke-width: 2px !important;
+  z-index: 100;
+  position: relative;
+}
+
 /* CSS animations for loot box system */
 
 @keyframes fadeIn {
