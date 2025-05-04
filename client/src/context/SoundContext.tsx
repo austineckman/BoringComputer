@@ -68,21 +68,34 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [volume]);
   
-  // Effect to initialize background music after a short delay
+  // Effect to initialize background music after a short delay with improved error handling
   useEffect(() => {
     // Delay background music initialization to improve initial load time
     // Only initialize background music once
     if (!bgMusicInitialized.current) {
       // Use setTimeout to delay music initialization until after the app is rendered
       const timer = setTimeout(() => {
-        // Start playing background music if it should be playing and not muted
-        if (isBgMusicPlaying && !isMuted) {
-          bgMusicId.current = soundLibrary.backgroundMusic.play();
-          soundLibrary.backgroundMusic.volume(volume * 0.5); // Half the main volume
+        try {
+          // Start playing background music if it should be playing and not muted
+          if (isBgMusicPlaying && !isMuted) {
+            const musicId = soundLibrary.backgroundMusic.play();
+            
+            // Only update the ref and volume if we got a valid sound ID back
+            if (musicId !== -1) {
+              bgMusicId.current = musicId;
+              soundLibrary.backgroundMusic.volume(volume * 0.5); // Half the main volume
+              console.log('Background music initialized successfully');
+            } else {
+              console.warn('Background music initialized but returned invalid ID');
+            }
+          }
+        } catch (err) {
+          console.warn('Error initializing background music:', err);
+        } finally {
+          // Mark as initialized even if there was an error
+          bgMusicInitialized.current = true;
         }
-        
-        bgMusicInitialized.current = true;
-      }, 3000); // 3 second delay to prioritize UI rendering
+      }, 5000); // 5 second delay to prioritize UI rendering and ensure app is fully loaded
       
       return () => clearTimeout(timer);
     }
@@ -108,18 +121,26 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsBgMusicPlaying(prev => {
       const newState = !prev;
       
-      if (newState && !isMuted) {
-        // Only start if we don't already have an ID
-        if (bgMusicId.current === null) {
-          bgMusicId.current = soundLibrary.backgroundMusic.play();
-          soundLibrary.backgroundMusic.volume(volume * 0.5);
-        } else {
-          // Otherwise just resume
-          soundLibrary.backgroundMusic.play(bgMusicId.current);
+      try {
+        if (newState && !isMuted) {
+          // Only start if we don't already have an ID
+          if (bgMusicId.current === null) {
+            const musicId = soundLibrary.backgroundMusic.play();
+            // Only update if we got a valid sound ID back
+            if (musicId !== -1) {
+              bgMusicId.current = musicId;
+              soundLibrary.backgroundMusic.volume(volume * 0.5);
+            }
+          } else {
+            // Otherwise just resume
+            soundLibrary.backgroundMusic.play(bgMusicId.current);
+          }
+        } else if (!newState && bgMusicId.current !== null) {
+          // Pause instead of stop to maintain position
+          soundLibrary.backgroundMusic.pause(bgMusicId.current);
         }
-      } else if (!newState && bgMusicId.current !== null) {
-        // Pause instead of stop to maintain position
-        soundLibrary.backgroundMusic.pause(bgMusicId.current);
+      } catch (err) {
+        console.warn('Error toggling background music:', err);
       }
       
       return newState;

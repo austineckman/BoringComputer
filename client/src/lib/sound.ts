@@ -1,42 +1,85 @@
 import { Howl } from 'howler';
 
-// Create base sound configuration with lazy loading
+// Create base sound configuration with improved lazy loading and error handling
 const createSound = (path: string, volume: number = 0.6, loop: boolean = false) => {
   // Instead of loading immediately, return a proxy that loads on first use
   let actualSound: Howl | null = null;
+  let loadAttempted = false;
+  let loadError = false;
   
   // Create a wrapper object with the same interface as Howl
   const soundProxy = {
     play: function() {
-      if (!actualSound) {
-        // Lazy-initialize the sound only when first played
-        actualSound = new Howl({
-          src: [path],
-          volume: volume,
-          html5: true, // This helps with mobile devices
-          loop: loop, // Enable looping for background music
-          onloaderror: function() {
-            // Only log errors when actually trying to use the sound
-            console.warn(`Could not load sound: ${path}`);
-          },
-          preload: true
-        });
+      // If we've already tried to load and got an error, don't try again
+      if (loadError) {
+        return -1; // Return invalid sound ID
       }
-      return actualSound.play();
+      
+      if (!actualSound && !loadAttempted) {
+        loadAttempted = true;
+        // Lazy-initialize the sound only when first played
+        try {
+          actualSound = new Howl({
+            src: [path],
+            volume: volume,
+            html5: true, // This helps with mobile devices
+            loop: loop, // Enable looping for background music
+            onloaderror: function() {
+              // Only log errors when actually trying to use the sound
+              console.warn(`Could not load sound: ${path}`);
+              loadError = true;
+            },
+            preload: true
+          });
+        } catch (err) {
+          console.warn(`Error initializing sound: ${path}`, err);
+          loadError = true;
+          return -1; // Return invalid sound ID
+        }
+      }
+      
+      // Skip playing if we don't have a sound object
+      if (!actualSound) return -1;
+      
+      try {
+        return actualSound.play();
+      } catch (err) {
+        console.warn(`Error playing sound: ${path}`, err);
+        return -1;
+      }
     },
     pause: function(id?: number) {
-      if (actualSound) actualSound.pause(id);
+      if (actualSound && !loadError) {
+        try {
+          actualSound.pause(id);
+        } catch (err) {
+          console.warn(`Error pausing sound: ${path}`, err);
+        }
+      }
     },
     stop: function(id?: number) {
-      if (actualSound) actualSound.stop(id);
+      if (actualSound && !loadError) {
+        try {
+          actualSound.stop(id);
+        } catch (err) {
+          console.warn(`Error stopping sound: ${path}`, err);
+        }
+      }
     },
     volume: function(vol?: number) {
-      if (actualSound && typeof vol === 'number') {
-        return actualSound.volume(vol);
-      } else if (actualSound) {
-        return actualSound.volume();
+      if (loadError) return volume;
+      
+      try {
+        if (actualSound && typeof vol === 'number') {
+          return actualSound.volume(vol);
+        } else if (actualSound) {
+          return actualSound.volume();
+        }
+      } catch (err) {
+        console.warn(`Error setting volume for sound: ${path}`, err);
       }
-      return volume; // Return the initial volume if not loaded yet
+      
+      return volume; // Return the initial volume if not loaded yet or on error
     }
   };
   
@@ -90,19 +133,29 @@ export const sounds = {
 // Export the type with all possible sound names for type checking
 export type SoundName = keyof typeof sounds;
 
-// Function to play a sound by name
-export function playSound(name: SoundName): void {
+// Function to play a sound by name with improved error handling
+export function playSound(name: SoundName): number {
+  // Default to invalid sound ID
+  let soundId = -1;
+  
   try {
     const sound = sounds[name];
     if (sound && typeof sound.play === 'function') {
       // Play the actual sound file without any synthetic fallbacks
-      sound.play();
+      soundId = sound.play();
+      
+      // Check if we got a valid ID back
+      if (soundId === -1) {
+        console.warn(`Sound "${name}" returned invalid ID`);
+      }
     } else {
       console.warn(`Sound "${name}" not found or play is not a function`);
     }
   } catch (error) {
     console.warn(`Error playing sound "${name}":`, error);
   }
+  
+  return soundId;
 }
 
 // Create a mock implementation for tests or environments without audio
