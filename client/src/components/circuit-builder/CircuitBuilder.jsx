@@ -101,16 +101,18 @@ const CircuitBuilder = () => {
   };
   
   // Handle pin connections
-  const handlePinConnect = (pinId, pinType, componentId) => {
-    console.log(`Pin ${pinId} (${pinType}) of component ${componentId} clicked`);
+  const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
+    console.log(`Pin ${pinId} (${pinType}) of component ${componentId} clicked`, pinPosition);
     
     // Create proper format for pin ID that matches our wire manager expectations
     const formattedPinId = `pt-${componentId.toLowerCase().split('-')[0]}-${componentId}-${pinId}`;
     
-    // Get mouse position or component position
+    // Use provided pin position if available, otherwise fallback to component position
     const component = components.find(c => c.id === componentId);
-    const clientX = mousePosition?.x || component?.x || 0;
-    const clientY = mousePosition?.y || component?.y || 0;
+    const clientX = pinPosition ? pinPosition.x : (mousePosition?.x || component?.x || 0);
+    const clientY = pinPosition ? pinPosition.y : (mousePosition?.y || component?.y || 0);
+    
+    console.log(`Using pin position: (${clientX}, ${clientY})`);
     
     // Create a custom pin click event to trigger the wire manager
     const pinClickEvent = new CustomEvent('pinClicked', {
@@ -119,7 +121,14 @@ const CircuitBuilder = () => {
         pinType: pinType || 'bidirectional',
         parentId: componentId,
         clientX,
-        clientY
+        clientY,
+        // Include additional data about the pin for the wire manager
+        pinData: JSON.stringify({
+          x: clientX,
+          y: clientY,
+          component: componentId,
+          pin: pinId
+        })
       }
     });
     
