@@ -155,9 +155,8 @@ const SimpleWireManager = ({ canvasRef }) => {
     // Fix for duplicated component type in IDs
     // If the pin ID format has a duplicate component type (pt-componentType-componentType-componentId-pinName)
     // this fixes it to the standard format (pt-componentType-componentId-pinName)
-    if (pinId.includes('-heroboard-heroboard-') || pinId.includes('-led-led-') || 
-        pinId.includes('-rgb-rgb-') || pinId.includes('-rotary-rotary-') ||
-        pinId.includes('-button-button-') || pinId.includes('-switch-switch-')) {
+    // Use regex pattern matching to detect duplicate segments in the ID
+    if (pinId.match(/-(\w+)-\1-/)) {
       pinId = pinId.replace(/-(\w+)-\1-/, '-$1-');
       console.log('Fixed duplicated component type in ID:', pinId);
     }
@@ -465,9 +464,16 @@ const SimpleWireManager = ({ canvasRef }) => {
     }
   };
 
-  // Handle mouse movement for the pending wire
+  // Handle mouse movement for the pending wire with throttling for better performance
   const handleMouseMove = (e) => {
     if (pendingWire && canvasRef?.current) {
+      // Don't process every mouse move event - this improves performance
+      // especially during component dragging
+      if (throttlingActive) return;
+      
+      throttlingActive = true;
+      setTimeout(() => { throttlingActive = false; }, 20); // 50fps is plenty smooth
+      
       const canvasRect = canvasRef.current.getBoundingClientRect();
       setMousePosition({
         x: e.clientX - canvasRect.left,
@@ -475,6 +481,9 @@ const SimpleWireManager = ({ canvasRef }) => {
       });
     }
   };
+  
+  // Control variable for throttling
+  let throttlingActive = false;
 
   // Handle clicks on wires for selection
   const handleWireClick = (wireId, e) => {
