@@ -25,6 +25,17 @@ const SimpleWireManager = ({ canvasRef }) => {
       y: event.clientY - canvasRect.top
     };
   };
+  
+  // Function to get mouse position relative to canvas
+  const getMousePosition = () => {
+    if (!canvasRef?.current) return { x: 0, y: 0 };
+    
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    return {
+      x: mousePosition.x - canvasRect.left,
+      y: mousePosition.y - canvasRect.top
+    };
+  };
 
   // Use a ref to store wire position cache to avoid unnecessary recalculations
   const wirePosCache = useRef({});
