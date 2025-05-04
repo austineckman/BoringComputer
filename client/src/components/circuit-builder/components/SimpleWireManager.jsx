@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { PathLine } from 'react-svg-pathline';
 
 /**
  * SimpleWireManager component for:
@@ -796,8 +797,25 @@ const SimpleWireManager = ({ canvasRef }) => {
         {getUpdatedWirePositions().map(wire => {
           if (!wire.sourcePos || !wire.targetPos) return null;
           
-          const path = getWirePath(wire.sourcePos, wire.targetPos);
+          // Get the color and style for this wire
           const style = getWireStyle(wire.sourceType, wire.targetType, wire.color);
+          
+          // Generate points for PathLine component
+          // PathLine expects an array of points [{ x, y }, { x, y }]
+          // For curved wires, we'll use the midpoint between source and target with an offset
+          const sourcePoint = wire.sourcePos;
+          const targetPoint = wire.targetPos;
+          
+          // Calculate midpoint with curve offset
+          const dx = targetPoint.x - sourcePoint.x;
+          const dy = targetPoint.y - sourcePoint.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          // Use the simple curved path
+          const points = [
+            sourcePoint,
+            targetPoint
+          ];
           
           console.log('Rendering wire:', wire.id);
           
@@ -807,24 +825,38 @@ const SimpleWireManager = ({ canvasRef }) => {
               className={`wire-group ${selectedWireId === wire.id ? 'selected' : ''}`}
               onClick={(e) => handleWireClick(wire.id, e)}
               style={{ pointerEvents: 'all' }}
+              id={wire.id}
             >
-              {/* Background shadow path for TinkerCad-like wire appearance */}
-              <path
-                d={path}
-                style={{
-                  ...style,
-                  stroke: 'rgba(0,0,0,0.2)',
-                  strokeWidth: style.strokeWidth + 2.5,
-                  filter: 'blur(1.5px)',
-                }}
+              {/* Background shadow path for wire */}
+              <PathLine
+                points={points}
+                stroke="rgba(0,0,0,0.2)"
+                strokeWidth={style.strokeWidth + 2.5}
+                fill="none"
+                r={10}  // Curve radius
                 className="wire-path-shadow"
+                style={{ filter: 'blur(1.5px)' }}
               />
+              
               {/* Main wire path */}
-              <path
-                d={path}
-                style={style}
+              <PathLine
+                points={points}
+                stroke={style.stroke}
+                strokeWidth={style.strokeWidth}
+                fill="none"
+                r={10}  // Curve radius
                 className="wire-path"
                 data-wire-id={wire.id}
+              />
+              
+              {/* Transparent wider path for easier selection */}
+              <PathLine
+                points={points}
+                stroke="transparent"
+                strokeWidth={12}
+                fill="none"
+                r={10}  // Curve radius
+                style={{ pointerEvents: "stroke" }}
               />
               
               {/* Delete button that appears when wire is selected */}
@@ -867,27 +899,23 @@ const SimpleWireManager = ({ canvasRef }) => {
         {pendingWire && pendingWire.sourcePos && (
           <g className="pending-wire-group">
             {/* Shadow for pending wire */}
-            <path
-              d={getWirePath(pendingWire.sourcePos, mousePosition)}
-              style={{
-                stroke: 'rgba(0,0,0,0.15)',
-                strokeWidth: 4.5,
-                fill: 'none',
-                strokeLinecap: 'round',
-                filter: 'blur(1.5px)'
-              }}
+            <PathLine
+              points={[pendingWire.sourcePos, mousePosition]}
+              stroke="rgba(0,0,0,0.15)"
+              strokeWidth={4.5}
+              fill="none"
+              r={10}  // Curve radius
               className="pending-wire-shadow"
+              style={{ filter: 'blur(1.5px)' }}
             />
             {/* Animated dashed line */}
-            <path
-              d={getWirePath(pendingWire.sourcePos, mousePosition)}
-              style={{
-                stroke: '#3b82f6',
-                strokeWidth: 2.5,
-                fill: 'none',
-                strokeDasharray: '6,4',
-                strokeLinecap: 'round'
-              }}
+            <PathLine
+              points={[pendingWire.sourcePos, mousePosition]}
+              stroke="#3b82f6"
+              strokeWidth={2.5}
+              fill="none"
+              r={10}  // Curve radius
+              style={{ strokeDasharray: '6,4' }}
               className="pending-wire"
             />
           </g>
