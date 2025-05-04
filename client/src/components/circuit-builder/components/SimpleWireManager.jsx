@@ -133,7 +133,8 @@ const SimpleWireManager = ({ canvasRef }) => {
     // Fix for duplicated component type in IDs
     // If the pin ID format has a duplicate component type (pt-componentType-componentType-componentId-pinName)
     // this fixes it to the standard format (pt-componentType-componentId-pinName)
-    if (pinId.includes('-heroboard-heroboard-') || pinId.includes('-led-led-')) {
+    if (pinId.includes('-heroboard-heroboard-') || pinId.includes('-led-led-') || 
+        pinId.includes('-rgb-rgb-') || pinId.includes('-rotary-rotary-')) {
       pinId = pinId.replace(/-(\w+)-\1-/, '-$1-');
       console.log('Fixed duplicated component type in ID:', pinId);
     }
@@ -155,53 +156,75 @@ const SimpleWireManager = ({ canvasRef }) => {
     // Get detailed pin information if available
     const pinData = event.detail.pinData ? JSON.parse(event.detail.pinData) : null;
     
-    // Find the pin element - trying multiple selectors
-    let pinElement = document.getElementById(pinId);
+    // Calculate pin position
+    let position = null;
     
-    // If not found by ID, try alternate selectors
-    if (!pinElement) {
-      // Try by data attribute
-      pinElement = document.querySelector(`[data-formatted-id="${pinId}"]`);
-      
-      // If still not found, try by pin-id and parent-id combination
-      if (!pinElement) {
-        pinElement = document.querySelector(`[data-pin-id="${pinName}"][data-parent-id="${parentId}"]`);
-        
-        // Final attempt - try looking for similar IDs
-        if (!pinElement) {
-          const similarElements = document.querySelectorAll(`[id*="${componentId}"][id*="${pinName}"]`);
-          if (similarElements.length > 0) {
-            console.log('Found similar pin element by partial match');
-            pinElement = similarElements[0];
-          }
-        }
-      }
-    }
-    
-    // If we still couldn't find the pin, try to get position from the event details
-    let position;
-    if (!pinElement && event.detail.clientX && event.detail.clientY) {
-      console.warn('Pin element not found in DOM, using event coordinates');
+    // Priority 1: Use explicit coordinates from the event if they exist
+    if (event.detail.clientX !== undefined && event.detail.clientY !== undefined) {
       const canvasRect = canvasRef.current.getBoundingClientRect();
       position = {
         x: event.detail.clientX - canvasRect.left,
         y: event.detail.clientY - canvasRect.top
       };
-      console.log(`Using event coordinates for pin ${pinName}:`, position);
-    } else if (pinElement) {
-      // Get accurate pin position relative to canvas
-      const pinRect = pinElement.getBoundingClientRect();
-      const canvasRect = canvasRef.current.getBoundingClientRect();
+      console.log(`Using provided coordinates for pin ${pinName}:`, position);
+    } 
+    // Priority 2: Use pin data coordinates if available (from component definitions)
+    else if (pinData && pinData.x !== undefined && pinData.y !== undefined) {
+      // Use the pin's position within the component, adjusted for component position
+      const component = components.find(c => c.id === parentId);
+      if (component) {
+        position = {
+          x: component.x + pinData.x,
+          y: component.y + pinData.y
+        };
+        console.log(`Using pin data coordinates for ${pinName}:`, position);
+      }
+    }
+    
+    // Priority 3: Try to find the actual DOM element and use its position
+    if (!position) {
+      // Find the pin element - trying multiple selectors
+      let pinElement = document.getElementById(pinId);
       
-      position = {
-        x: pinRect.left + (pinRect.width / 2) - canvasRect.left,
-        y: pinRect.top + (pinRect.height / 2) - canvasRect.top
-      };
+      // If not found by ID, try alternate selectors
+      if (!pinElement) {
+        // Try by data attribute
+        pinElement = document.querySelector(`[data-formatted-id="${pinId}"]`);
+        
+        // If still not found, try by pin-id and parent-id combination
+        if (!pinElement) {
+          pinElement = document.querySelector(`[data-pin-id="${pinName}"][data-parent-id="${parentId}"]`);
+          
+          // Final attempt - try looking for similar IDs
+          if (!pinElement) {
+            const similarElements = document.querySelectorAll(`[id*="${componentId}"][id*="${pinName}"]`);
+            if (similarElements.length > 0) {
+              console.log('Found similar pin element by partial match');
+              pinElement = similarElements[0];
+            }
+          }
+        }
+      }
       
-      console.log(`Pin position calculated from element:`, position);
-    } else {
+      if (pinElement) {
+        // Get accurate pin position relative to canvas
+        const pinRect = pinElement.getBoundingClientRect();
+        const canvasRect = canvasRef.current.getBoundingClientRect();
+        
+        position = {
+          x: pinRect.left + (pinRect.width / 2) - canvasRect.left,
+          y: pinRect.top + (pinRect.height / 2) - canvasRect.top
+        };
+        
+        console.log(`Pin position calculated from element for ${pinName}:`, position);
+      }
+    }
+    
+    // If all methods failed, use a fallback position
+    if (!position) {
       console.error('Could not determine pin position accurately');
-      return;
+      position = getMousePosition(); // Use current mouse position as fallback
+      console.warn(`Using mouse position as fallback for pin ${pinName}:`, position);
     }
     
     if (!pendingWire) {
