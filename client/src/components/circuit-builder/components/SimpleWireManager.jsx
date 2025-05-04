@@ -218,15 +218,56 @@ const SimpleWireManager = ({ canvasRef }) => {
       };
       console.log(`Using provided coordinates for pin ${pinName}:`, position);
     } 
-    // Priority 2: If element was found, use its position
+    // Priority 2: If element was found, use its position with SVG transformations if applicable
     else if (pinElement) {
-      const pinRect = pinElement.getBoundingClientRect();
-      const canvasRect = canvasRef.current.getBoundingClientRect();
-      position = {
-        x: pinRect.left + (pinRect.width / 2) - canvasRect.left,
-        y: pinRect.top + (pinRect.height / 2) - canvasRect.top
-      };
-      console.log(`Using DOM element position for pin ${pinName}:`, position);
+      try {
+        // Check if this is an SVG element where we can use more accurate transformations
+        if (pinElement.tagName && (
+            pinElement.tagName.toLowerCase() === 'circle' || 
+            pinElement.tagName.toLowerCase() === 'rect' || 
+            pinElement.tagName.toLowerCase() === 'path')) {
+          
+          // Find the closest SVG element - either our wire manager SVG or another in the DOM
+          const svgElement = svgRef?.current || document.querySelector('svg');
+          if (svgElement) {
+            // Get center point of pin in SVG coordinates
+            const svgPoint = svgElement.createSVGPoint();
+            const bbox = pinElement.getBBox();
+            svgPoint.x = bbox.x + bbox.width / 2;
+            svgPoint.y = bbox.y + bbox.height / 2;
+            
+            // Transform to screen coordinates
+            const matrix = pinElement.getScreenCTM();
+            const screenPoint = svgPoint.matrixTransform(matrix);
+            
+            // Calculate position relative to canvas
+            const canvasRect = canvasRef.current.getBoundingClientRect();
+            position = {
+              x: screenPoint.x - canvasRect.left,
+              y: screenPoint.y - canvasRect.top
+            };
+            console.log(`Using SVG transformations for pin ${pinName}:`, position);
+          }
+        } else {
+          // Fallback to getBoundingClientRect for HTML elements
+          const pinRect = pinElement.getBoundingClientRect();
+          const canvasRect = canvasRef.current.getBoundingClientRect();
+          position = {
+            x: pinRect.left + (pinRect.width / 2) - canvasRect.left,
+            y: pinRect.top + (pinRect.height / 2) - canvasRect.top
+          };
+          console.log(`Using DOM element position for pin ${pinName}:`, position);
+        }
+      } catch (error) {
+        console.error('Error calculating SVG coordinates:', error);
+        // Fallback to getBoundingClientRect
+        const pinRect = pinElement.getBoundingClientRect();
+        const canvasRect = canvasRef.current.getBoundingClientRect();
+        position = {
+          x: pinRect.left + (pinRect.width / 2) - canvasRect.left,
+          y: pinRect.top + (pinRect.height / 2) - canvasRect.top
+        };
+      }
     }
     // Priority 3: Use pin data coordinates if available (from component definitions)
     else if (pinData && pinData.x !== undefined && pinData.y !== undefined) {
@@ -753,19 +794,88 @@ const SimpleWireManager = ({ canvasRef }) => {
           return { ...wire, invalid: true };
         }
         
-        // Get precise center positions relative to canvas
-        const sourceRect = sourceElement.getBoundingClientRect();
-        const targetRect = targetElement.getBoundingClientRect();
+        // Get precise center positions relative to canvas using SVG coordinate transformations
+        // This is more accurate than getBoundingClientRect() especially when transforms are involved
+        let sourcePos = { x: 0, y: 0 };
+        let targetPos = { x: 0, y: 0 };
         
-        const sourcePos = {
-          x: sourceRect.left + (sourceRect.width / 2) - canvasRect.left,
-          y: sourceRect.top + (sourceRect.height / 2) - canvasRect.top
-        };
-        
-        const targetPos = {
-          x: targetRect.left + (targetRect.width / 2) - canvasRect.left,
-          y: targetRect.top + (targetRect.height / 2) - canvasRect.top
-        };
+        try {
+          // For SVG elements, use getScreenCTM for accuracy with transformations
+          if (sourceElement.tagName && (
+              sourceElement.tagName.toLowerCase() === 'circle' || 
+              sourceElement.tagName.toLowerCase() === 'rect' || 
+              sourceElement.tagName.toLowerCase() === 'path')) {
+            // Get SVG coordinates - either our wire manager SVG or another in the DOM
+            const svgElement = svgRef?.current || document.querySelector('svg');
+            if (svgElement) {
+              // Get center point of source pin
+              const sourceSVGPoint = svgElement.createSVGPoint();
+              const sourceBBox = sourceElement.getBBox();
+              sourceSVGPoint.x = sourceBBox.x + sourceBBox.width / 2;
+              sourceSVGPoint.y = sourceBBox.y + sourceBBox.height / 2;
+              
+              // Transform to screen coordinates
+              const sourceMatrix = sourceElement.getScreenCTM();
+              const sourceScreenPoint = sourceSVGPoint.matrixTransform(sourceMatrix);
+              
+              // Calculate position relative to canvas
+              sourcePos = {
+                x: sourceScreenPoint.x - canvasRect.left,
+                y: sourceScreenPoint.y - canvasRect.top
+              };
+              
+              // Get center point of target pin
+              const targetSVGPoint = svgElement.createSVGPoint();
+              const targetBBox = targetElement.getBBox();
+              targetSVGPoint.x = targetBBox.x + targetBBox.width / 2;
+              targetSVGPoint.y = targetBBox.y + targetBBox.height / 2;
+              
+              // Transform to screen coordinates
+              const targetMatrix = targetElement.getScreenCTM();
+              const targetScreenPoint = targetSVGPoint.matrixTransform(targetMatrix);
+              
+              // Calculate position relative to canvas
+              targetPos = {
+                x: targetScreenPoint.x - canvasRect.left,
+                y: targetScreenPoint.y - canvasRect.top
+              };
+              
+              console.log('Using SVG transformations for wire positions');
+            }
+          } else {
+            // Fallback to getBoundingClientRect for HTML elements
+            const sourceRect = sourceElement.getBoundingClientRect();
+            const targetRect = targetElement.getBoundingClientRect();
+            
+            sourcePos = {
+              x: sourceRect.left + (sourceRect.width / 2) - canvasRect.left,
+              y: sourceRect.top + (sourceRect.height / 2) - canvasRect.top
+            };
+            
+            targetPos = {
+              x: targetRect.left + (targetRect.width / 2) - canvasRect.left,
+              y: targetRect.top + (targetRect.height / 2) - canvasRect.top
+            };
+            
+            console.log('Using getBoundingClientRect for wire positions');
+          }
+        } catch (error) {
+          console.error('Error calculating SVG coordinates:', error);
+          
+          // Fallback to getBoundingClientRect
+          const sourceRect = sourceElement.getBoundingClientRect();
+          const targetRect = targetElement.getBoundingClientRect();
+          
+          sourcePos = {
+            x: sourceRect.left + (sourceRect.width / 2) - canvasRect.left,
+            y: sourceRect.top + (sourceRect.height / 2) - canvasRect.top
+          };
+          
+          targetPos = {
+            x: targetRect.left + (targetRect.width / 2) - canvasRect.left,
+            y: targetRect.top + (targetRect.height / 2) - canvasRect.top
+          };
+        }
         
         // Cache these positions for future reference
         wirePosCache.current[consistentWireId] = {
