@@ -104,28 +104,48 @@ const CircuitBuilder = () => {
   const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
     console.log(`Pin ${pinId} (${pinType}) of component ${componentId} clicked`, pinPosition);
     
-    // Create proper format for pin ID that matches our wire manager expectations
-    const formattedPinId = `pt-${componentId.toLowerCase().split('-')[0]}-${componentId}-${pinId}`;
-    
-    // Use provided pin position if available, otherwise fallback to component position
+    // Get the component from our state
     const component = components.find(c => c.id === componentId);
-    const clientX = pinPosition ? pinPosition.x : (mousePosition?.x || component?.x || 0);
-    const clientY = pinPosition ? pinPosition.y : (mousePosition?.y || component?.y || 0);
+    if (!component) {
+      console.error(`Component ${componentId} not found in circuit`);
+      return;
+    }
     
-    console.log(`Using pin position: (${clientX}, ${clientY})`);
+    // Get the absolute position of the pin in the canvas
+    // If pinPosition is provided, use that directly (it's already in canvas coordinates)
+    // Otherwise calculate based on component position
+    let absoluteX = 0;
+    let absoluteY = 0;
     
-    // Create a custom pin click event to trigger the wire manager
+    if (pinPosition && typeof pinPosition.x === 'number' && typeof pinPosition.y === 'number') {
+      // pinPosition is already in canvas coordinates
+      absoluteX = pinPosition.x;
+      absoluteY = pinPosition.y;
+    } else {
+      // Calculate position based on component position and estimated pin offset
+      absoluteX = component.x + (component.width ? component.width/2 : 50); 
+      absoluteY = component.y + (component.height ? component.height/2 : 50);
+    }
+    
+    // Create proper format for pin ID that matches wire manager expectations
+    // Avoid duplicate component types in the ID
+    const componentType = componentId.toLowerCase().split('-')[0];
+    const formattedPinId = `pt-${componentType}-${componentId}-${pinId}`;
+    
+    console.log(`Using pin position: (${absoluteX}, ${absoluteY})`);
+    
+    // Create a custom pin click event with precise positioning
     const pinClickEvent = new CustomEvent('pinClicked', {
       detail: {
         id: formattedPinId,
         pinType: pinType || 'bidirectional',
         parentId: componentId,
-        clientX,
-        clientY,
+        clientX: absoluteX,
+        clientY: absoluteY,
         // Include additional data about the pin for the wire manager
         pinData: JSON.stringify({
-          x: clientX,
-          y: clientY,
+          x: absoluteX,
+          y: absoluteY,
           component: componentId,
           pin: pinId
         })
