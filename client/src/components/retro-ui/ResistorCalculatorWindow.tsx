@@ -219,6 +219,37 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
         {/* Learning Center Tab */}
         {activeTab === 'learning' && (
           <div className="space-y-6 pb-4">
+            {/* Educational Introduction */}
+            <div className="bg-gradient-to-b from-gray-50 to-white p-6 rounded-lg border border-gray-200 shadow-sm">
+              <h2 className="text-2xl font-bold text-gray-800 border-b border-gray-200 pb-2 mb-4">The Journey into Electronic Fundamentals</h2>
+              
+              <div className="prose max-w-none text-gray-700">
+                <p>
+                  In the vast universe of electronics, certain components serve as the fundamental building blocks upon which all circuits are constructed. Among these, the <span className="font-semibold">resistor</span> stands as perhaps the most essential and ubiquitous element. Though humble in appearance—often just a small cylindrical component with colored bands—resistors are the quiet heroes that make modern electronics possible.
+                </p>
+                
+                <p className="mt-4">
+                  Every electronic device you use daily—from your smartphone to your microwave, from simple LED flashlights to complex computer systems—relies on resistors to function properly. They are the traffic controllers of electricity, ensuring that the right amount of current flows to each component, preventing damage, and enabling precise operations.
+                </p>
+                
+                <p className="mt-4">
+                  Understanding resistors is like learning the alphabet before writing sentences. Without grasping how these fundamental components work, more advanced concepts in electronics remain out of reach. Yet despite their importance, resistors are remarkably simple in concept—they resist the flow of electric current, following physical principles discovered by Georg Ohm nearly 200 years ago.
+                </p>
+                
+                <p className="mt-4">
+                  In this learning center, we'll demystify resistors through clear explanations, practical examples, and interactive demonstrations. We'll explore not just what resistors do, but why they're needed and how to use them effectively in your projects. Whether you're a complete beginner taking your first steps into electronics, or someone looking to refresh your understanding, this guide will build your knowledge from the ground up.
+                </p>
+                
+                <p className="mt-4">
+                  We'll begin with the most basic concepts—what resistance is and how it's measured—before gradually moving to more complex topics like Ohm's Law, resistor networks, and practical applications. Each concept builds upon the last, creating a solid foundation of knowledge that will serve you throughout your electronics journey.
+                </p>
+                
+                <p className="mt-4">
+                  By the end of this guide, you'll be able to select the right resistor for any basic circuit, understand how to calculate resistance values, troubleshoot common issues, and apply your knowledge to real-world projects. So let's embark on this journey together, as we unlock the secrets of these tiny but mighty components that make our electronic world possible.
+                </p>
+              </div>
+            </div>
+            
             {/* Hero Section with Gizbo */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border-l-4 border-blue-500 shadow-sm">
               <div className="flex items-start gap-4">
