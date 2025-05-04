@@ -1,20 +1,46 @@
 import { Howl } from 'howler';
 
-// Create base sound configuration
+// Create base sound configuration with lazy loading
 const createSound = (path: string, volume: number = 0.6, loop: boolean = false) => {
-  // Create a standard Howl object
-  const soundObj = new Howl({
-    src: [path],
-    volume: volume,
-    html5: true, // This helps with mobile devices
-    loop: loop, // Enable looping for background music
-    onloaderror: function() {
-      console.warn(`Could not load sound: ${path}`);
-    },
-    preload: path.includes('pixel-dreams') ? false : true // Only preload smaller sounds, not bg music
-  });
+  // Instead of loading immediately, return a proxy that loads on first use
+  let actualSound: Howl | null = null;
   
-  return soundObj;
+  // Create a wrapper object with the same interface as Howl
+  const soundProxy = {
+    play: function() {
+      if (!actualSound) {
+        // Lazy-initialize the sound only when first played
+        actualSound = new Howl({
+          src: [path],
+          volume: volume,
+          html5: true, // This helps with mobile devices
+          loop: loop, // Enable looping for background music
+          onloaderror: function() {
+            // Only log errors when actually trying to use the sound
+            console.warn(`Could not load sound: ${path}`);
+          },
+          preload: true
+        });
+      }
+      return actualSound.play();
+    },
+    pause: function(id?: number) {
+      if (actualSound) actualSound.pause(id);
+    },
+    stop: function(id?: number) {
+      if (actualSound) actualSound.stop(id);
+    },
+    volume: function(vol?: number) {
+      if (actualSound && typeof vol === 'number') {
+        return actualSound.volume(vol);
+      } else if (actualSound) {
+        return actualSound.volume();
+      }
+      return volume; // Return the initial volume if not loaded yet
+    }
+  };
+  
+  return soundProxy as unknown as Howl; // Cast to Howl type for compatibility
 };
 
 // Define all the sound effects we need for the arcade game

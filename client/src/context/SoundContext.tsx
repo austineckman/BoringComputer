@@ -68,17 +68,23 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [volume]);
   
-  // Effect to initialize background music once on mount
+  // Effect to initialize background music after a short delay
   useEffect(() => {
+    // Delay background music initialization to improve initial load time
     // Only initialize background music once
     if (!bgMusicInitialized.current) {
-      // Start playing background music if it should be playing and not muted
-      if (isBgMusicPlaying && !isMuted) {
-        bgMusicId.current = soundLibrary.backgroundMusic.play();
-        soundLibrary.backgroundMusic.volume(volume * 0.5); // Half the main volume
-      }
+      // Use setTimeout to delay music initialization until after the app is rendered
+      const timer = setTimeout(() => {
+        // Start playing background music if it should be playing and not muted
+        if (isBgMusicPlaying && !isMuted) {
+          bgMusicId.current = soundLibrary.backgroundMusic.play();
+          soundLibrary.backgroundMusic.volume(volume * 0.5); // Half the main volume
+        }
+        
+        bgMusicInitialized.current = true;
+      }, 3000); // 3 second delay to prioritize UI rendering
       
-      bgMusicInitialized.current = true;
+      return () => clearTimeout(timer);
     }
     
     // Cleanup function when app unmounts (rarely happens in SPA)
