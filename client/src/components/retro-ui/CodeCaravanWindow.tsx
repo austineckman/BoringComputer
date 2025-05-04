@@ -751,7 +751,7 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
       {/* Command input area */}
       <div className="bg-gray-800 px-4 py-3 border-t border-gray-700">
         <div className="flex">
-          <span className="text-green-400 mr-2">></span>
+          <span className="text-green-400 mr-2">{'>'}</span>
           <input
             type="text"
             value={userInput}
