@@ -1659,94 +1659,116 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
         )}
         {/* Calculator Tab */}
         {activeTab === 'calculator' && (
-          <div className="space-y-6">
-            <div className="flex justify-center">
-              <div className="bg-amber-100 p-6 rounded-lg relative w-64 h-20">
-                <div className="absolute bg-amber-800 w-full h-6 left-0 top-7"></div>
+          <div className="space-y-8">
+            {/* Interactive Resistor Visualization */}
+            <div className="bg-gradient-to-b from-blue-50 to-white rounded-xl border border-blue-100 shadow-sm p-6 flex flex-col items-center">
+              <h2 className="text-xl font-bold text-blue-800 mb-4">Interactive Resistor</h2>
+              <div className="relative bg-amber-100 p-6 rounded-xl border-2 border-amber-200 shadow-inner w-80 h-28">
+                <div className="absolute bg-amber-800 w-full h-8 left-0 top-10 rounded-sm shadow-inner"></div>
                 
-                {/* Resistor bands */}
-                <div className={`absolute w-4 h-16 left-12 top-2 ${colorToClass[band1]}`}></div>
-                <div className={`absolute w-4 h-16 left-20 top-2 ${colorToClass[band2]}`}></div>
-                <div className={`absolute w-4 h-16 left-28 top-2 ${colorToClass[band3]}`}></div>
-                <div className={`absolute w-4 h-16 left-36 top-2 ${colorToClass[band4]}`}></div>
+                {/* Resistor bands with highlight effect */}
+                <div className={`absolute w-5 h-20 left-16 -top-1 ${colorToClass[band1]} rounded-sm shadow-md transform transition-all duration-200 hover:scale-105`}></div>
+                <div className={`absolute w-5 h-20 left-28 -top-1 ${colorToClass[band2]} rounded-sm shadow-md transform transition-all duration-200 hover:scale-105`}></div>
+                <div className={`absolute w-5 h-20 left-40 -top-1 ${colorToClass[band3]} rounded-sm shadow-md transform transition-all duration-200 hover:scale-105`}></div>
+                <div className={`absolute w-5 h-20 left-52 -top-1 ${colorToClass[band4]} rounded-sm shadow-md transform transition-all duration-200 hover:scale-105`}></div>
                 {band5 !== 'none' && (
-                  <div className={`absolute w-4 h-16 left-44 top-2 ${colorToClass[band5]}`}></div>
+                  <div className={`absolute w-5 h-20 left-64 -top-1 ${colorToClass[band5]} rounded-sm shadow-md transform transition-all duration-200 hover:scale-105`}></div>
                 )}
                 
-                {/* Connection wires */}
-                <div className="absolute w-8 h-2 bg-gray-600 left-2 top-9"></div>
-                <div className="absolute w-8 h-2 bg-gray-600 right-2 top-9"></div>
+                {/* Connection wires with metallic effect */}
+                <div className="absolute w-10 h-2 bg-gradient-to-r from-gray-400 to-gray-600 left-2 top-11 rounded-md"></div>
+                <div className="absolute w-10 h-2 bg-gradient-to-r from-gray-600 to-gray-400 right-2 top-11 rounded-md"></div>
+              </div>
+              
+              {/* Result Display */}
+              <div className="mt-6 w-full max-w-md">
+                <div className="bg-white border border-blue-200 rounded-lg shadow-sm overflow-hidden">
+                  <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2 text-white font-medium">Result</div>
+                  <div className="p-4 flex flex-col items-center gap-2">
+                    <div className="text-3xl font-mono font-bold text-blue-900 tracking-tight">
+                      {calculateResistance()}
+                    </div>
+                    <div className="text-lg font-mono text-blue-700">
+                      Tolerance: {getTolerance()}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Band Selection</h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">1st Band</label>
-                    <select
-                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                      value={band1}
-                      onChange={(e) => setBand1(e.target.value)}
-                    >
-                      {Object.entries(colorCodes).filter(([color, code]) => code.value >= 0 && code.value <= 9).map(([color]) => (
-                        <option key={color} value={color} className={colorToClass[color]}>
-                          {color.charAt(0).toUpperCase() + color.slice(1)}
-                        </option>
-                      ))}
-                    </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Band Selection Controls */}
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                  <h3 className="font-medium text-gray-800">Band Selection</h3>
+                </div>
+                <div className="p-4 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">1st Band</label>
+                      <select
+                        className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                        value={band1}
+                        onChange={(e) => setBand1(e.target.value)}
+                      >
+                        {Object.entries(colorCodes).filter(([color, code]) => code.value >= 0 && code.value <= 9).map(([color]) => (
+                          <option key={color} value={color}>
+                            {color.charAt(0).toUpperCase() + color.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">2nd Band</label>
+                      <select
+                        className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                        value={band2}
+                        onChange={(e) => setBand2(e.target.value)}
+                      >
+                        {Object.entries(colorCodes).filter(([color, code]) => code.value >= 0 && code.value <= 9).map(([color]) => (
+                          <option key={color} value={color}>
+                            {color.charAt(0).toUpperCase() + color.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">3rd Band (Multiplier)</label>
+                      <select
+                        className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                        value={band3}
+                        onChange={(e) => setBand3(e.target.value)}
+                      >
+                        {Object.entries(colorCodes).filter(([color]) => color !== 'none').map(([color]) => (
+                          <option key={color} value={color}>
+                            {color.charAt(0).toUpperCase() + color.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">4th Band (Tolerance)</label>
+                      <select
+                        className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                        value={band4}
+                        onChange={(e) => setBand4(e.target.value)}
+                      >
+                        {Object.entries(colorCodes).filter(([_, code]) => code.tolerance !== null).map(([color]) => (
+                          <option key={color} value={color}>
+                            {color.charAt(0).toUpperCase() + color.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">2nd Band</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">5th Band (Optional)</label>
                     <select
-                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                      value={band2}
-                      onChange={(e) => setBand2(e.target.value)}
-                    >
-                      {Object.entries(colorCodes).filter(([color, code]) => code.value >= 0 && code.value <= 9).map(([color]) => (
-                        <option key={color} value={color}>
-                          {color.charAt(0).toUpperCase() + color.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">3rd Band (Multiplier)</label>
-                    <select
-                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                      value={band3}
-                      onChange={(e) => setBand3(e.target.value)}
-                    >
-                      {Object.entries(colorCodes).filter(([color]) => color !== 'none').map(([color]) => (
-                        <option key={color} value={color}>
-                          {color.charAt(0).toUpperCase() + color.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">4th Band (Tolerance)</label>
-                    <select
-                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                      value={band4}
-                      onChange={(e) => setBand4(e.target.value)}
-                    >
-                      {Object.entries(colorCodes).filter(([_, code]) => code.tolerance !== null).map(([color]) => (
-                        <option key={color} value={color}>
-                          {color.charAt(0).toUpperCase() + color.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">5th Band (Optional)</label>
-                    <select
-                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                      className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                       value={band5}
                       onChange={(e) => setBand5(e.target.value)}
                     >
@@ -1761,34 +1783,43 @@ const ResistorCalculatorWindow: React.FC<ResistorCalculatorWindowProps> = ({
                 </div>
               </div>
               
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Result</h3>
-                <div className="bg-gray-100 p-4 rounded-lg space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Resistance Value</label>
-                    <div className="mt-1 bg-white p-3 rounded border border-gray-300 text-2xl font-mono text-center">
-                      {calculateResistance()}
+              {/* Quick Reference */}
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                  <h3 className="font-medium text-gray-800">Quick Reference</h3>
+                </div>
+                <div className="p-4">
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="space-y-1.5">
+                      <p className="font-medium text-gray-800">Digit Values:</p>
+                      <div className="flex items-center"><span className="inline-block w-3 h-3 bg-black mr-2 rounded-sm"></span>Black = 0</div>
+                      <div className="flex items-center"><span className="inline-block w-3 h-3 bg-amber-800 mr-2 rounded-sm"></span>Brown = 1</div>
+                      <div className="flex items-center"><span className="inline-block w-3 h-3 bg-red-600 mr-2 rounded-sm"></span>Red = 2</div>
+                      <div className="flex items-center"><span className="inline-block w-3 h-3 bg-orange-500 mr-2 rounded-sm"></span>Orange = 3</div>
+                      <div className="flex items-center"><span className="inline-block w-3 h-3 bg-yellow-400 mr-2 rounded-sm"></span>Yellow = 4</div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <p className="font-medium text-gray-800">More Digits:</p>
+                      <div className="flex items-center"><span className="inline-block w-3 h-3 bg-green-600 mr-2 rounded-sm"></span>Green = 5</div>
+                      <div className="flex items-center"><span className="inline-block w-3 h-3 bg-blue-600 mr-2 rounded-sm"></span>Blue = 6</div>
+                      <div className="flex items-center"><span className="inline-block w-3 h-3 bg-purple-600 mr-2 rounded-sm"></span>Violet = 7</div>
+                      <div className="flex items-center"><span className="inline-block w-3 h-3 bg-gray-500 mr-2 rounded-sm"></span>Gray = 8</div>
+                      <div className="flex items-center"><span className="inline-block w-3 h-3 bg-white border border-gray-300 mr-2 rounded-sm"></span>White = 9</div>
                     </div>
                   </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Tolerance</label>
-                    <div className="mt-1 bg-white p-3 rounded border border-gray-300 text-lg font-mono text-center">
-                      {getTolerance()}
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <p className="font-medium text-gray-800 mb-1.5">Tolerance Values:</p>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+                      <div className="flex items-center"><span className="inline-block w-3 h-3 bg-amber-800 mr-2 rounded-sm"></span>Brown = ±1%</div>
+                      <div className="flex items-center"><span className="inline-block w-3 h-3 bg-red-600 mr-2 rounded-sm"></span>Red = ±2%</div>
+                      <div className="flex items-center"><span className="inline-block w-3 h-3 bg-green-600 mr-2 rounded-sm"></span>Green = ±0.5%</div>
+                      <div className="flex items-center"><span className="inline-block w-3 h-3 bg-blue-600 mr-2 rounded-sm"></span>Blue = ±0.25%</div>
+                      <div className="flex items-center"><span className="inline-block w-3 h-3 bg-violet-600 mr-2 rounded-sm"></span>Violet = ±0.1%</div>
+                      <div className="flex items-center"><span className="inline-block w-3 h-3 bg-yellow-600 mr-2 rounded-sm"></span>Gold = ±5%</div>
+                      <div className="flex items-center"><span className="inline-block w-3 h-3 bg-gray-300 mr-2 rounded-sm"></span>Silver = ±10%</div>
                     </div>
                   </div>
-                </div>
-
-                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 mt-4">
-                  <h3 className="text-sm font-semibold text-yellow-800 flex items-center mb-2">
-                    <Info className="w-4 h-4 mr-1" /> Power Rating
-                  </h3>
-                  <p className="text-sm text-yellow-800">
-                    Always check the power rating of resistors. Power (P) = I² × R = V² / R
-                  </p>
-                  <p className="text-xs text-yellow-700 mt-1">
-                    Common power ratings: ¼W, ½W, 1W, 2W, 5W. Always choose a resistor with a power rating higher than your calculated power.
-                  </p>
                 </div>
               </div>
             </div>
