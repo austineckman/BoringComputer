@@ -364,20 +364,6 @@ const AVR8Simulator = ({
         return null;
       }
       
-      // For now, we'll use a simple blink example as our compiled program
-      // In a real implementation, you'd need to compile the Arduino code to AVR binary
-      // or use an embedded Arduino compiler like avr-gcc via a WebAssembly bridge
-      
-      // This is a simplified memory setup for our virtual Arduino
-      // In the real implementation, we would compile the actual sourceCode
-      const memorySize = 0x8000; // 32KB program memory
-      const programBytes = new Uint16Array(memorySize);
-      
-      // Clear memory
-      for (let i = 0; i < programBytes.length; i++) {
-        programBytes[i] = 0;
-      }
-      
       // Check if the code contains a valid setup and loop function
       const hasSetup = sourceCode.includes("void setup()");
       const hasLoop = sourceCode.includes("void loop()");
@@ -394,54 +380,111 @@ const AVR8Simulator = ({
       const setupCode = extractFunctionBody(sourceCode, "setup");
       const loopCode = extractFunctionBody(sourceCode, "loop");
       
-      // Check for digitalWrite commands to control pins
-      const digitalWrites = extractDigitalWrites(loopCode);
+      // Analyze setup function for pinMode declarations
+      const pinModes = extractPinModes(setupCode);
       
-      // Simplified program that toggles pin 13 (PB5) on and off
+      // Check for digital and analog writes in the loop function
+      const digitalWrites = extractDigitalWrites(loopCode);
+      const analogWrites = extractAnalogWrites(loopCode);
+      
+      // Look for delay calls to understand timing
+      const delays = extractDelays(loopCode);
+      
+      // Log the analysis results
+      if (onLog) {
+        onLog("Analyzing Arduino code...");
+        if (pinModes.length > 0) {
+          onLog(`Found ${pinModes.length} pinMode declarations:`);
+          pinModes.forEach(pm => {
+            onLog(`  Pin ${pm.pin} set as ${pm.mode}`);
+          });
+        }
+        
+        if (digitalWrites.length > 0) {
+          onLog(`Found ${digitalWrites.length} digitalWrite commands:`);
+          digitalWrites.forEach(dw => {
+            onLog(`  Pin ${dw.pin} set to ${dw.state ? 'HIGH' : 'LOW'}`);
+          });
+        }
+        
+        if (analogWrites.length > 0) {
+          onLog(`Found ${analogWrites.length} analogWrite commands:`);
+          analogWrites.forEach(aw => {
+            onLog(`  Pin ${aw.pin} set to value ${aw.value}`);
+          });
+        }
+        
+        if (delays.length > 0) {
+          onLog(`Found ${delays.length} delay calls:`);
+          delays.forEach(d => {
+            onLog(`  Delay of ${d.ms}ms`);
+          });
+        }
+      }
+      
+      // Create a memory buffer for the virtual AVR program
+      // In a real-world scenario, this would come from a proper C compiler
+      // For our sandbox app, we'll create machine code from our analysis
+      const memorySize = 0x8000; // 32KB program memory
+      const programBytes = new Uint16Array(memorySize);
+      
+      // Clear memory
+      for (let i = 0; i < programBytes.length; i++) {
+        programBytes[i] = 0;
+      }
+      
+      // Create a simplified program based on our analysis
       let addr = 0;
       
-      // 1. Set pin 13 (PB5) as output
-      // SBI DDRB, 5 (Set Bit in I/O Register - Data Direction Register B, bit 5)
-      programBytes[addr++] = 0x9A95; // SBI 0x04, 5 (DDRB is at 0x04)
+      // Add any output pin initializations from pinMode calls
+      pinModes.forEach(pm => {
+        if (pm.mode === "OUTPUT") {
+          const pinInfo = getPinPortAndBit(pm.pin);
+          if (pinInfo) {
+            // Set the corresponding DDR bit for this pin
+            // SBI DDRx, bit (Set Bit in I/O Register - Data Direction Register)
+            const ddrAddr = getDDRAddress(pinInfo.port);
+            programBytes[addr++] = 0x9A00 | (ddrAddr << 3) | pinInfo.bit; // SBI instruction
+          }
+        }
+      });
       
-      // Loop:
+      // Loop start address
       const loopAddr = addr;
       
-      // 2. Set pin 13 HIGH
-      // SBI PORTB, 5 (Set Bit in I/O Register - Port B, bit 5)
-      programBytes[addr++] = 0x9A9D; // SBI 0x05, 5 (PORTB is at 0x05)
+      // Add digitalWrite operations from the loop function
+      digitalWrites.forEach(dw => {
+        const pinInfo = getPinPortAndBit(dw.pin);
+        if (pinInfo) {
+          const portAddr = getPORTAddress(pinInfo.port);
+          if (dw.state) {
+            // SBI PORTx, bit (Set Bit in I/O Register - PORT)
+            programBytes[addr++] = 0x9A00 | (portAddr << 3) | pinInfo.bit;
+          } else {
+            // CBI PORTx, bit (Clear Bit in I/O Register - PORT)
+            programBytes[addr++] = 0x9800 | (portAddr << 3) | pinInfo.bit;
+          }
+        }
+      });
       
-      // 3. Delay (simplified - in real code this would be many instructions)
-      for (let i = 0; i < 10; i++) {
-        programBytes[addr++] = 0x0000; // NOP
+      // Add a simple delay (using NOPs for simplicity)
+      // In a real implementation, we would generate proper delay loops
+      const delayLength = delays.length > 0 ? 
+        Math.min(Math.max(delays[0].ms / 10, 5), 50) : 10; // Between 5-50 NOPs
+      
+      for (let i = 0; i < delayLength; i++) {
+        programBytes[addr++] = 0x0000; // NOP instruction
       }
       
-      // 4. Set pin 13 LOW
-      // CBI PORTB, 5 (Clear Bit in I/O Register - Port B, bit 5)
-      programBytes[addr++] = 0x989D; // CBI 0x05, 5 (PORTB is at 0x05)
-      
-      // 5. Delay again
-      for (let i = 0; i < 10; i++) {
-        programBytes[addr++] = 0x0000; // NOP
-      }
-      
-      // 6. Jump back to loop
-      // RJMP to loop address
-      const relJump = (loopAddr - addr - 1) & 0x0FFF; // Relative jump value
+      // Jump back to loop start
+      const relJump = (loopAddr - addr - 1) & 0x0FFF; // Relative jump value (12 bits)
       programBytes[addr++] = 0xC000 | relJump; // RJMP to loopAddr
       
       setCompiledProgram(programBytes);
       
       if (onLog) {
         onLog("Program compiled successfully");
-        
-        // Log extracted information about the program
-        if (digitalWrites.length > 0) {
-          onLog(`Found ${digitalWrites.length} digitalWrite commands`);
-          digitalWrites.forEach(dw => {
-            onLog(`  Pin ${dw.pin} set to ${dw.state ? 'HIGH' : 'LOW'}`);
-          });
-        }
+        onLog(`Created ${addr} instructions in program memory`);
       }
       
       return programBytes;
@@ -452,6 +495,116 @@ const AVR8Simulator = ({
       console.error("Error compiling Arduino code:", error);
       return null;
     }
+  };
+  
+  // Helper function to get DDR address for a port
+  const getDDRAddress = (port) => {
+    // DDR addresses in AVR ATmega328P
+    switch(port) {
+      case 'B': return 0x04; // DDRB
+      case 'C': return 0x07; // DDRC
+      case 'D': return 0x0A; // DDRD
+      default: return 0x04;  // Default to DDRB
+    }
+  };
+  
+  // Helper function to get PORT address for a port
+  const getPORTAddress = (port) => {
+    // PORT addresses in AVR ATmega328P
+    switch(port) {
+      case 'B': return 0x05; // PORTB
+      case 'C': return 0x08; // PORTC
+      case 'D': return 0x0B; // PORTD
+      default: return 0x05;  // Default to PORTB
+    }
+  };
+  
+  // Helper function to get port and bit for a pin number
+  const getPinPortAndBit = (pin) => {
+    // Arduino pin mapping to ATmega328P ports and bits
+    if (pin >= 0 && pin <= 7) {
+      return { port: 'D', bit: pin };
+    } else if (pin >= 8 && pin <= 13) {
+      return { port: 'B', bit: pin - 8 };
+    } else if (pin >= 14 && pin <= 19) {
+      return { port: 'C', bit: pin - 14 };
+    }
+    return null;
+  };
+  
+  // Extract pinMode calls from code
+  const extractPinModes = (code) => {
+    const result = [];
+    const regex = /pinMode\s*\(\s*(\d+|A\d+)\s*,\s*(OUTPUT|INPUT|INPUT_PULLUP)\s*\)/g;
+    let match;
+    
+    while ((match = regex.exec(code)) !== null) {
+      const pin = match[1].startsWith('A') ? 
+        parseInt(match[1].substring(1)) + 14 : // A0 = 14, A1 = 15, etc.
+        parseInt(match[1]);
+      
+      result.push({
+        pin,
+        mode: match[2]
+      });
+    }
+    
+    return result;
+  };
+  
+  // Extract analogWrite calls from code
+  const extractAnalogWrites = (code) => {
+    const result = [];
+    const regex = /analogWrite\s*\(\s*(\d+|A\d+)\s*,\s*([^\)]+)\s*\)/g;
+    let match;
+    
+    while ((match = regex.exec(code)) !== null) {
+      const pin = match[1].startsWith('A') ? 
+        parseInt(match[1].substring(1)) + 14 : 
+        parseInt(match[1]);
+      
+      // Try to evaluate the value expression if it's simple
+      let value = 0;
+      try {
+        if (/^\d+$/.test(match[2])) {
+          value = parseInt(match[2]);
+        } else {
+          value = 128; // Default to middle value if we can't determine
+        }
+      } catch (e) {
+        value = 128; // Default middle value
+      }
+      
+      result.push({
+        pin,
+        value: Math.min(Math.max(value, 0), 255) // Ensure value is 0-255
+      });
+    }
+    
+    return result;
+  };
+  
+  // Extract delay calls from code
+  const extractDelays = (code) => {
+    const result = [];
+    const regex = /delay\s*\(\s*(\d+|[^\)]+)\s*\)/g;
+    let match;
+    
+    while ((match = regex.exec(code)) !== null) {
+      let ms = 1000; // Default to 1 second
+      
+      try {
+        if (/^\d+$/.test(match[1])) {
+          ms = parseInt(match[1]);
+        }
+      } catch (e) {
+        // Keep default if we can't parse
+      }
+      
+      result.push({ ms });
+    }
+    
+    return result;
   };
   
   // Basic Arduino syntax validator
@@ -557,6 +710,7 @@ const AVR8Simulator = ({
   const startSimulation = () => {
     if (!cpu) {
       console.error("CPU not initialized");
+      if (onLog) onLog("Error: CPU not initialized. Try compiling the sketch first.");
       return;
     }
     
@@ -566,6 +720,22 @@ const AVR8Simulator = ({
     if (!timerRef.current) {
       lastCycleTimeRef.current = Date.now();
       
+      // Log active port states at simulation start
+      if (onLog) {
+        onLog("Initializing ports for simulation");
+        const ports = portsRef.current;
+        if (ports.portB) onLog("Port B initialized");
+        if (ports.portC) onLog("Port C initialized");
+        if (ports.portD) onLog("Port D initialized");
+
+        // Log any active wire connections
+        if (Object.keys(pinConnections).length > 0) {
+          onLog(`Active circuit connections: ${Object.keys(pinConnections).length} pins connected`);
+        } else {
+          onLog("Warning: No circuit connections detected. Connect components to see results.");
+        }
+      }
+      
       timerRef.current = setInterval(() => {
         if (!cpu) return;
         
@@ -574,14 +744,20 @@ const AVR8Simulator = ({
         lastCycleTimeRef.current = now;
         
         // Calculate how many cycles to execute based on the ATmega328P frequency (16MHz)
-        // We aim to execute 16,000 cycles per millisecond
-        const cyclesToExecute = 16000 * elapsedMs;
+        // We aim to execute cycles based on time elapsed to maintain real-time simulation
+        const cyclesToExecute = Math.ceil(16000 * elapsedMs);
         
         try {
           // Execute the calculated number of CPU cycles
           cpu.execute(cyclesToExecute);
+          
+          // Log simulation performance metrics occasionally (every ~1 second)
+          if (Math.random() < 0.01) {  // About 1% chance each 10ms interval
+            console.log(`AVR8js execution: ${cyclesToExecute} cycles (${elapsedMs}ms elapsed)`);
+          }
         } catch (e) {
           console.error("Simulation error:", e);
+          if (onLog) onLog(`Simulation error: ${e.message}`);
           stopSimulation();
         }
       }, 10); // Update every 10ms for a balance of performance and accuracy
@@ -589,6 +765,7 @@ const AVR8Simulator = ({
     
     if (onLog) {
       onLog("Simulation started");
+      onLog("Executing Arduino code on virtual AVR microcontroller");
     }
   };
   
