@@ -98,6 +98,9 @@ const RetroDesktop: React.FC = () => {
   const [use24HourClock, setUse24HourClock] = useState<boolean>(false);
   const [dateFormat, setDateFormat] = useState<string>("MM/DD/YYYY");
   const [timezone, setTimezone] = useState<string>("America/New_York");
+  
+  // State for Code Caravan window
+  const [isCodeCaravanOpen, setIsCodeCaravanOpen] = useState<boolean>(false);
   const [iconSize, setIconSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [colorScheme, setColorScheme] = useState<'blue' | 'black' | 'orange' | 'green' | 'red'>('blue');
   
