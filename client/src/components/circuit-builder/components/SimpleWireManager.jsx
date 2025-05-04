@@ -540,7 +540,12 @@ const SimpleWireManager = ({ canvasRef }) => {
       // Calculate and store wire properties for display
       const selectedWire = wires.find(w => w.id === wireId);
       if (selectedWire) {
-        const wireLength = calculateWireLength(selectedWire);
+        // Use the calculated length if available, otherwise calculate directly
+        const wireLength = selectedWire.calculatedLength || calculateWireLength(selectedWire);
+        
+        // Get anchor points count
+        const anchorCount = (wireAnchorPoints[wireId] || []).length;
+        
         const wireInfo = {
           id: wireId,
           source: selectedWire.sourceName || 'Unknown',
@@ -548,13 +553,17 @@ const SimpleWireManager = ({ canvasRef }) => {
           sourceType: selectedWire.sourceType || 'Unknown',
           targetType: selectedWire.targetType || 'Unknown',
           length: wireLength.toFixed(2),
-          color: selectedWire.color || getWireStyle(selectedWire.sourceType, selectedWire.targetType).stroke
+          color: selectedWire.color || getWireStyle(selectedWire.sourceType, selectedWire.targetType).stroke,
+          anchorCount
         };
+        
         setWireProperties(wireInfo);
         setSelectedWireColor(wireInfo.color);
         
         // Show wire properties panel
         setShowWireProperties(true);
+        
+        console.log(`Wire properties: ${wireLength.toFixed(2)}px length, ${anchorCount} anchor points`);
       }
       
       // Add visual highlight to help user see the selected wire
@@ -1203,6 +1212,40 @@ const SimpleWireManager = ({ canvasRef }) => {
                 data-wire-id={wire.id}
               />
               
+              {/* Render anchor points when wire is selected */}
+              {selectedWireId === wire.id && anchors.map((anchor, index) => (
+                <g key={`${wire.id}-anchor-${index}`} className="anchor-point">
+                  {/* Anchor point handle */}
+                  <circle
+                    cx={anchor.x}
+                    cy={anchor.y}
+                    r={5}
+                    fill="#ffcc00"
+                    stroke="#333"
+                    strokeWidth={1}
+                    className="anchor-handle"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Remove this anchor point when clicked with Alt key
+                      if (e.altKey) {
+                        removeAnchorPoint(wire.id, index);
+                      }
+                    }}
+                  />
+                  {/* Display index to help understand routing order */}
+                  <text
+                    x={anchor.x}
+                    y={anchor.y - 10}
+                    textAnchor="middle"
+                    fontSize="10"
+                    fill="#333"
+                    pointerEvents="none"
+                  >
+                    {index + 1}
+                  </text>
+                </g>
+              ))}
+              
               {/* Transparent wider path for easier selection */}
               <PathLine
                 points={points}
@@ -1335,6 +1378,11 @@ const SimpleWireManager = ({ canvasRef }) => {
             <div className="wire-property mb-2">
               <label className="font-semibold block text-sm">Length:</label>
               <span className="text-sm">{wireProperties.length}px</span>
+            </div>
+            
+            <div className="wire-property mb-2">
+              <label className="font-semibold block text-sm">Path Points:</label>
+              <span className="text-sm">{wireProperties.anchorCount || 0} anchor point{wireProperties.anchorCount !== 1 ? 's' : ''}</span>
             </div>
             
             <div className="wire-property mb-4">

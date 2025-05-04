@@ -751,3 +751,56 @@ body {
 .moveable-area {
   z-index: 5 !important;
 }
+
+/* Enhanced Wire Management Styles */
+.wire-path {
+  cursor: pointer;
+  transition: stroke-width 0.2s ease;
+}
+
+.wire-path:hover,
+.selected-wire {
+  stroke-width: 3.5px;
+}
+
+.selected-wire-highlight {
+  filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.7));
+}
+
+.wire-color-picker {
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.wire-color-picker::-webkit-color-swatch {
+  border-radius: 50%;
+  border: 1px solid #ddd;
+}
+
+.anchor-handle {
+  cursor: pointer;
+  transition: transform 0.1s ease, fill 0.2s ease;
+}
+
+.anchor-handle:hover {
+  transform: scale(1.2);
+  fill: #ffa500;
+}
+
+.wire-properties-panel {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease-in-out;
+}
+
+.wire-controls-container button {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.wire-controls-container button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
