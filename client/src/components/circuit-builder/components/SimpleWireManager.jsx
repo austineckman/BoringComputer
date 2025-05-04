@@ -144,7 +144,8 @@ const SimpleWireManager = ({ canvasRef }) => {
     // If the pin ID format has a duplicate component type (pt-componentType-componentType-componentId-pinName)
     // this fixes it to the standard format (pt-componentType-componentId-pinName)
     if (pinId.includes('-heroboard-heroboard-') || pinId.includes('-led-led-') || 
-        pinId.includes('-rgb-rgb-') || pinId.includes('-rotary-rotary-')) {
+        pinId.includes('-rgb-rgb-') || pinId.includes('-rotary-rotary-') ||
+        pinId.includes('-button-button-') || pinId.includes('-switch-switch-')) {
       pinId = pinId.replace(/-(\w+)-\1-/, '-$1-');
       console.log('Fixed duplicated component type in ID:', pinId);
     }
@@ -168,8 +169,35 @@ const SimpleWireManager = ({ canvasRef }) => {
     
     // Calculate pin position
     let position = null;
+    let pinElement = null; // Store pin element for future reference
     
-    // Priority 1: Use explicit coordinates from the event if they exist
+    // STEP 1: Find the pin element in the DOM
+    // Try multiple methods to find the pin element reliably
+    
+    // Method 1: Direct ID lookup
+    pinElement = document.getElementById(pinId);
+    
+    // Method 2: Data attribute lookup
+    if (!pinElement) {
+      pinElement = document.querySelector(`[data-formatted-id="${pinId}"]`);
+    }
+    
+    // Method 3: Pin name and parent component combination
+    if (!pinElement) {
+      pinElement = document.querySelector(`[data-pin-id="${pinName}"][data-parent-id="${parentId}"]`);
+    }
+    
+    // Method 4: Look for elements containing both component ID and pin name
+    if (!pinElement) {
+      const similarElements = document.querySelectorAll(`[id*="${componentId}"][id*="${pinName}"]`);
+      if (similarElements.length > 0) {
+        pinElement = similarElements[0];
+        console.log('Found pin element by partial match:', pinElement);
+      }
+    }
+    
+    // STEP 2: Determine the pin position
+    // Priority 1: Use explicit coordinates from the event if they exist (most accurate)
     if (event.detail.clientX !== undefined && event.detail.clientY !== undefined) {
       const canvasRect = canvasRef.current.getBoundingClientRect();
       position = {
@@ -178,7 +206,17 @@ const SimpleWireManager = ({ canvasRef }) => {
       };
       console.log(`Using provided coordinates for pin ${pinName}:`, position);
     } 
-    // Priority 2: Use pin data coordinates if available (from component definitions)
+    // Priority 2: If element was found, use its position
+    else if (pinElement) {
+      const pinRect = pinElement.getBoundingClientRect();
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      position = {
+        x: pinRect.left + (pinRect.width / 2) - canvasRect.left,
+        y: pinRect.top + (pinRect.height / 2) - canvasRect.top
+      };
+      console.log(`Using DOM element position for pin ${pinName}:`, position);
+    }
+    // Priority 3: Use pin data coordinates if available (from component definitions)
     else if (pinData && pinData.x !== undefined && pinData.y !== undefined) {
       // Use the pin's position within the component, adjusted for component position
       const component = components.find(c => c.id === parentId);
@@ -306,9 +344,10 @@ const SimpleWireManager = ({ canvasRef }) => {
       }
       
       // Add the new wire
-      // Use a combination of source and target IDs in the wire ID to make it unique 
-      // and avoid duplicate wire creation between the same two pins
-      const wireId = `wire-${sourceId}-${pinId}`;
+      // Use a consistent wire ID format that's the same regardless of connection direction
+      // Sort the IDs alphabetically to ensure the same connection always gets the same ID
+      const wireEndpoints = [sourceId, pinId].sort();
+      const wireId = `wire-${wireEndpoints[0]}-${wireEndpoints[1]}`;
       
       // Check if this wire already exists (same connection)
       const wireExists = wires.some(w => w.id === wireId ||
@@ -498,6 +537,58 @@ const SimpleWireManager = ({ canvasRef }) => {
     console.log('Wires updated:', wires);
   }, [wires]);
 
+  // Run only once at initialization to set up a wire cleanup timer
+  useEffect(() => {
+    console.log('Setting up wire cleanup timer');
+    
+    // Create a cleanup function that runs periodically
+    const cleanupInterval = setInterval(() => {
+      // Only run if there are wires
+      if (wires.length > 0) {
+        // Create a map to track unique wire connections
+        const wiresMap = new Map();
+        let hasDuplicates = false;
+        
+        // Process all wires to deduplicate
+        wires.forEach(wire => {
+          // Skip invalid wires
+          if (!wire.sourceId || !wire.targetId) return;
+          
+          // Normalize IDs to handle duplicate component types
+          const sourceId = wire.sourceId.replace(/-(\w+)-\1-/, '-$1-') || wire.sourceId;
+          const targetId = wire.targetId.replace(/-(\w+)-\1-/, '-$1-') || wire.targetId;
+          
+          // Create a consistent key that's the same regardless of wire direction
+          const endpoints = [sourceId, targetId].sort();
+          const consistentId = `wire-${endpoints[0]}-${endpoints[1]}`;
+          
+          // Check if this wire is already in our map (a duplicate)
+          if (wiresMap.has(consistentId)) {
+            console.log(`Found duplicate wire: ${wire.id}`);
+            hasDuplicates = true;
+          } else {
+            // Add this wire to the map with normalized IDs
+            wiresMap.set(consistentId, {
+              ...wire,
+              id: consistentId,
+              sourceId, 
+              targetId
+            });
+          }
+        });
+        
+        // If we found duplicates, update the wires array
+        if (hasDuplicates) {
+          console.log(`Removed ${wires.length - wiresMap.size} duplicate wires`);
+          setWires(Array.from(wiresMap.values()));
+        }
+      }
+    }, 1000); // Run cleanup every second
+    
+    // Clean up the interval when component unmounts
+    return () => clearInterval(cleanupInterval);
+  }, []); // Empty dependency array means this runs only once at initialization
+
   // Wokwi-style component movement handler - simple and effective
   useEffect(() => {
     // Events that should trigger wire position updates
@@ -664,6 +755,12 @@ const SimpleWireManager = ({ canvasRef }) => {
           y: targetRect.top + (targetRect.height / 2) - canvasRect.top
         };
         
+        // Cache these positions for future reference
+        wirePosCache.current[consistentWireId] = {
+          sourcePos: { ...sourcePos },
+          targetPos: { ...targetPos }
+        };
+        
         // Return updated wire with new positions
         return { 
           ...wire, 
@@ -671,7 +768,8 @@ const SimpleWireManager = ({ canvasRef }) => {
           targetPos,
           // Store the fixed IDs
           sourceId,
-          targetId
+          targetId,
+          id: consistentWireId // Ensure consistent ID
         };
       })
       .filter(wire => !wire.invalid);
