@@ -1133,20 +1133,40 @@ const SimpleWireManager = ({ canvasRef }) => {
           
           // Generate points for PathLine component
           // PathLine expects an array of points [{ x, y }, { x, y }]
-          // For curved wires, we'll use the midpoint between source and target with an offset
           const sourcePoint = wire.sourcePos;
           const targetPoint = wire.targetPos;
           
-          // Calculate midpoint with curve offset
-          const dx = targetPoint.x - sourcePoint.x;
-          const dy = targetPoint.y - sourcePoint.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
+          // Get any anchor points for this wire
+          const anchors = wireAnchorPoints[wire.id] || [];
           
-          // Use the simple curved path
-          const points = [
-            sourcePoint,
-            targetPoint
-          ];
+          // Calculate total wire length including anchor points
+          let totalLength = 0;
+          let lastPoint = sourcePoint;
+          
+          // Add all anchor points in sequence between source and target
+          const points = [sourcePoint];
+          
+          // Add anchor points in order
+          anchors.forEach(anchor => {
+            points.push(anchor);
+            
+            // Add to total length
+            const segDx = anchor.x - lastPoint.x;
+            const segDy = anchor.y - lastPoint.y;
+            totalLength += Math.sqrt(segDx * segDx + segDy * segDy);
+            lastPoint = anchor;
+          });
+          
+          // Add target point
+          points.push(targetPoint);
+          
+          // Add final segment length
+          const finalDx = targetPoint.x - lastPoint.x;
+          const finalDy = targetPoint.y - lastPoint.y;
+          totalLength += Math.sqrt(finalDx * finalDx + finalDy * finalDy);
+          
+          // Store the calculated length for wire properties
+          wire.calculatedLength = totalLength;
           
           // Only log in debug mode
           if (process.env.NODE_ENV === 'development' && sessionStorage.getItem('debug') === 'true') {
@@ -1255,6 +1275,110 @@ const SimpleWireManager = ({ canvasRef }) => {
           </g>
         )}
       </svg>
+      
+      {/* Wire Controls */}
+      {selectedWireId && (
+        <div className="wire-controls-container" style={{ pointerEvents: 'all', position: 'absolute', top: '10px', right: '10px', zIndex: 40 }}>
+          <button 
+            className="delete-wire-button bg-red-500 text-white p-2 rounded-full mr-2" 
+            onClick={handleDeleteWire}
+            title="Delete selected wire"
+          >
+            <span role="img" aria-label="delete">×</span>
+          </button>
+          
+          <button 
+            className={`anchor-mode-button p-2 rounded-full ${showAnchorMode ? 'bg-green-500 text-white' : 'bg-gray-300'}`}
+            onClick={() => toggleAnchorMode(selectedWireId)}
+            title="Toggle anchor point mode"
+          >
+            <span role="img" aria-label="anchor">📍</span>
+          </button>
+        </div>
+      )}
+      
+      {/* Wire Properties Panel */}
+      {showWireProperties && wireProperties && (
+        <div 
+          className="wire-properties-panel bg-white shadow-lg rounded-md p-4" 
+          style={{ 
+            pointerEvents: 'all', 
+            position: 'absolute', 
+            bottom: '20px', 
+            right: '20px', 
+            width: '280px',
+            zIndex: 40,
+            border: '1px solid #ddd'
+          }}
+        >
+          <div className="wire-properties-header flex justify-between items-center mb-3 border-b pb-2">
+            <h3 className="font-bold text-lg">Wire Properties</h3>
+            <button 
+              className="close-properties-button text-gray-600 hover:text-gray-900 text-xl"
+              onClick={() => setShowWireProperties(false)}
+            >
+              ×
+            </button>
+          </div>
+          
+          <div className="wire-properties-content">
+            <div className="wire-property mb-2">
+              <label className="font-semibold block text-sm">Source:</label>
+              <span className="text-sm">{wireProperties.source}</span>
+            </div>
+            
+            <div className="wire-property mb-2">
+              <label className="font-semibold block text-sm">Target:</label>
+              <span className="text-sm">{wireProperties.target}</span>
+            </div>
+            
+            <div className="wire-property mb-2">
+              <label className="font-semibold block text-sm">Length:</label>
+              <span className="text-sm">{wireProperties.length}px</span>
+            </div>
+            
+            <div className="wire-property mb-4">
+              <label className="font-semibold block text-sm mb-1">Color:</label>
+              <div className="color-picker-container flex items-center">
+                <input 
+                  type="color" 
+                  value={selectedWireColor}
+                  onChange={(e) => {
+                    setSelectedWireColor(e.target.value);
+                    applyWireColor(wireProperties.id, e.target.value);
+                  }}
+                  className="wire-color-picker w-8 h-8 mr-2 rounded-full"
+                />
+                <span className="color-value text-sm">{selectedWireColor}</span>
+              </div>
+            </div>
+            
+            <div className="wire-property">
+              <label className="font-semibold block text-sm mb-1">Anchor Points:</label>
+              <div className="anchor-controls flex space-x-2 mb-2">
+                <button 
+                  onClick={() => toggleAnchorMode(wireProperties.id)}
+                  className={`text-sm px-3 py-1 rounded ${showAnchorMode ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
+                >
+                  {showAnchorMode ? 'Finish Adding' : 'Add Points'}
+                </button>
+                <button 
+                  onClick={() => clearAnchorPoints(wireProperties.id)}
+                  disabled={!wireAnchorPoints[wireProperties.id] || wireAnchorPoints[wireProperties.id].length === 0}
+                  className={`text-sm px-3 py-1 rounded ${(!wireAnchorPoints[wireProperties.id] || wireAnchorPoints[wireProperties.id].length === 0) ? 'bg-gray-200 text-gray-400' : 'bg-red-100 text-red-600'}`}
+                >
+                  Clear All
+                </button>
+              </div>
+              <div className="anchor-help-text text-xs text-gray-500 italic">
+                {showAnchorMode ? 
+                  'Click anywhere on the canvas to add anchor points' :
+                  'Add points to create custom wire paths'}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
