@@ -710,9 +710,9 @@ const SimpleWireManager = ({ canvasRef }) => {
     // First, deduplicate wires by ID to prevent duplicate keys in React
     const wireMap = new Map();
     wires.forEach(wire => {
-      // Use normalized IDs to prevent duplicates
-      const endpoints = [(wire.sourceId || '').split('-').pop(), (wire.targetId || '').split('-').pop()].sort().join('-');
-      const wireKey = `wire-${endpoints}`;
+      // Use the wire's ID as the key instead of regenerating it
+      // This preserves the original connection data
+      const wireKey = wire.id;
       
       // Only keep the most recent wire for each unique connection
       wireMap.set(wireKey, wire);
