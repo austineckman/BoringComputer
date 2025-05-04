@@ -19,6 +19,11 @@ const SimpleWireManager = ({ canvasRef }) => {
   const [wireAnchorPoints, setWireAnchorPoints] = useState({});
   const [activeWireForAnchors, setActiveWireForAnchors] = useState(null);
   const [showAnchorMode, setShowAnchorMode] = useState(false);
+  // States for wire properties and customization
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [selectedWireColor, setSelectedWireColor] = useState('#3b82f6');
+  const [showWireProperties, setShowWireProperties] = useState(false);
+  const [wireProperties, setWireProperties] = useState(null);
   const svgRef = useRef(null);
 
   // Function to get pin position from event
@@ -496,9 +501,31 @@ const SimpleWireManager = ({ canvasRef }) => {
     e.stopPropagation(); // Prevent canvas click handler from firing
     console.log('Wire clicked:', wireId);
     
+    // If anchor mode is active and this is the active wire, add anchor point
+    if (showAnchorMode && activeWireForAnchors === wireId) {
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      const point = {
+        x: e.clientX - canvasRect.left,
+        y: e.clientY - canvasRect.top
+      };
+      
+      // Add anchor point for the active wire
+      setWireAnchorPoints(prev => {
+        const currentAnchors = prev[wireId] || [];
+        return {
+          ...prev,
+          [wireId]: [...currentAnchors, point]
+        };
+      });
+      
+      console.log(`Added anchor point at (${point.x}, ${point.y}) to wire ${wireId}`);
+      return; // Don't change selection when adding anchor points
+    }
+    
     // Toggle wire selection
     if (selectedWireId === wireId) {
       setSelectedWireId(null);
+      setShowWireProperties(false);
     } else {
       // Deselect any previously selected wire
       if (selectedWireId) {
@@ -510,11 +537,35 @@ const SimpleWireManager = ({ canvasRef }) => {
       // Select the new wire
       setSelectedWireId(wireId);
       
+      // Calculate and store wire properties for display
+      const selectedWire = wires.find(w => w.id === wireId);
+      if (selectedWire) {
+        const wireLength = calculateWireLength(selectedWire);
+        const wireInfo = {
+          id: wireId,
+          source: selectedWire.sourceName || 'Unknown',
+          target: selectedWire.targetName || 'Unknown',
+          sourceType: selectedWire.sourceType || 'Unknown',
+          targetType: selectedWire.targetType || 'Unknown',
+          length: wireLength.toFixed(2),
+          color: selectedWire.color || getWireStyle(selectedWire.sourceType, selectedWire.targetType).stroke
+        };
+        setWireProperties(wireInfo);
+        setSelectedWireColor(wireInfo.color);
+        
+        // Show wire properties panel
+        setShowWireProperties(true);
+      }
+      
       // Add visual highlight to help user see the selected wire
       const wirePath = document.querySelector(`path[data-wire-id="${wireId}"]`);
       if (wirePath) {
         wirePath.classList.add('selected-wire-highlight');
       }
+      
+      // Reset anchor mode when selecting a new wire
+      setShowAnchorMode(false);
+      setActiveWireForAnchors(null);
     }
     
     // Add a user message about how to delete the wire
@@ -523,16 +574,97 @@ const SimpleWireManager = ({ canvasRef }) => {
     }
   };
   
-  // Handle clicks on canvas to cancel pending wire and deselect wires
+  // Calculate the length of a wire
+  const calculateWireLength = (wire) => {
+    if (!wire.sourcePos || !wire.targetPos) return 0;
+    
+    const dx = wire.targetPos.x - wire.sourcePos.x;
+    const dy = wire.targetPos.y - wire.sourcePos.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+  
+  // Toggle anchor mode for a wire
+  const toggleAnchorMode = (wireId) => {
+    const newModeState = !showAnchorMode || activeWireForAnchors !== wireId;
+    setShowAnchorMode(newModeState);
+    setActiveWireForAnchors(newModeState ? wireId : null);
+    
+    if (newModeState) {
+      // When entering anchor mode, update UI to indicate it
+      console.log('Anchor mode enabled. Click anywhere to add anchor points to the wire.');
+    } else {
+      console.log('Anchor mode disabled.');
+    }
+  };
+  
+  // Apply a new color to the selected wire
+  const applyWireColor = (wireId, color) => {
+    setWires(prev => prev.map(wire => {
+      if (wire.id === wireId) {
+        return { ...wire, color };
+      }
+      return wire;
+    }));
+    
+    console.log(`Changed wire ${wireId} color to ${color}`);
+  };
+  
+  // Remove an anchor point from a wire
+  const removeAnchorPoint = (wireId, anchorIndex) => {
+    setWireAnchorPoints(prev => {
+      if (!prev[wireId]) return prev;
+      
+      const updatedAnchors = [...prev[wireId]];
+      updatedAnchors.splice(anchorIndex, 1);
+      
+      return {
+        ...prev,
+        [wireId]: updatedAnchors
+      };
+    });
+  };
+  
+  // Clear all anchor points for a wire
+  const clearAnchorPoints = (wireId) => {
+    setWireAnchorPoints(prev => {
+      const newAnchors = {...prev};
+      delete newAnchors[wireId];
+      return newAnchors;
+    });
+  };
+  
+  // Handle clicks on canvas to cancel pending wire, deselect wires, or add anchor points
   const handleCanvasClick = (e) => {
     // Ignore if click was on a pin
     if (e.target.classList.contains('pin-connection-point')) {
       return;
     }
     
+    // If in anchor mode, add anchor point where clicked
+    if (showAnchorMode && activeWireForAnchors) {
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      const point = {
+        x: e.clientX - canvasRect.left,
+        y: e.clientY - canvasRect.top
+      };
+      
+      // Add anchor point for the active wire
+      setWireAnchorPoints(prev => {
+        const currentAnchors = prev[activeWireForAnchors] || [];
+        return {
+          ...prev,
+          [activeWireForAnchors]: [...currentAnchors, point]
+        };
+      });
+      
+      console.log(`Added anchor point at (${point.x}, ${point.y}) to wire ${activeWireForAnchors}`);
+      return;
+    }
+    
     // Deselect any selected wire
     if (selectedWireId) {
       setSelectedWireId(null);
+      setShowWireProperties(false);
     }
     
     // Cancel pending wire
