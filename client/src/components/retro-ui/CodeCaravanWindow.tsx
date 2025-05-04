@@ -396,7 +396,7 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
     }
 
     setGameState(updatedState);
-  };
+  }
 
   // Generate a random event
   const generateRandomEvent = () => {
@@ -410,7 +410,7 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
     });
     
     setTextToAnimate(event.description);
-  };
+  }
 
   // Start journey with selected team
   const startJourney = () => {
@@ -688,7 +688,7 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
         </div>
       </div>
     );
-  };
+  }
 
   const renderEnding = () => (
     <div className="p-4 text-center">
