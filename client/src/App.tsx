@@ -12,6 +12,7 @@ import Character from "@/pages/character";
 import Forge from "@/pages/forge";
 import Achievements from "@/pages/achievements";
 import Settings from "@/pages/settings";
+import CircuitBuilder from "@/pages/circuit-builder";
 import Logout from "@/pages/logout";
 import Admin from "@/pages/admin";
 import AdminItems from "@/pages/admin-items";
@@ -260,6 +261,15 @@ function App() {
           component={() => (
             <MainLayout>
               <Settings />
+            </MainLayout>
+          )} 
+        />
+        
+        <ProtectedRoute 
+          path="/circuit-builder" 
+          component={() => (
+            <MainLayout>
+              <CircuitBuilder />
             </MainLayout>
           )} 
         />
