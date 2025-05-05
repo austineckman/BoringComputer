@@ -567,8 +567,9 @@ const SimpleWireManager = ({ canvasRef }) => {
     
     // Toggle wire selection
     if (selectedWireId === wireId) {
-      setSelectedWireId(null);
-      setShowWireProperties(false);
+      // Don't deselect when clicking the same wire again
+      // This makes the toolbar more usable since it prevents accidental deselection
+      return;
     } else {
       // Deselect any previously selected wire
       if (selectedWireId) {
@@ -603,8 +604,8 @@ const SimpleWireManager = ({ canvasRef }) => {
         setWireProperties(wireInfo);
         setSelectedWireColor(wireInfo.color);
         
-        // Show wire properties panel
-        setShowWireProperties(true);
+        // Wire properties only show when info button is clicked now
+        setShowWireProperties(false);
         
         console.log(`Wire properties: ${wireLength.toFixed(2)}px length, ${anchorCount} anchor points`);
       }
@@ -618,11 +619,8 @@ const SimpleWireManager = ({ canvasRef }) => {
       // Reset anchor mode when selecting a new wire
       setShowAnchorMode(false);
       setActiveWireForAnchors(null);
-    }
-    
-    // Add a user message about how to delete the wire
-    if (selectedWireId !== wireId) {
-      console.log('Wire selected. Press DELETE key or click the red X button to remove it.');
+      
+      console.log('Wire selected. Use the toolbar to modify or delete it.');
     }
   };
   
