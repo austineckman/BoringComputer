@@ -871,6 +871,21 @@ const SimpleWireManager = ({ canvasRef }) => {
   useEffect(() => {
     console.log('Wires updated:', wires);
   }, [wires]);
+  
+  // Listen for delete wire event from the Circuit Builder delete button
+  useEffect(() => {
+    const deleteWireListener = () => {
+      if (selectedWireId) {
+        handleDeleteWire();
+      }
+    };
+    
+    document.addEventListener('deleteSelectedWire', deleteWireListener);
+    
+    return () => {
+      document.removeEventListener('deleteSelectedWire', deleteWireListener);
+    };
+  }, [selectedWireId]);
 
   // Run only once at initialization to set up a wire cleanup timer
   useEffect(() => {
