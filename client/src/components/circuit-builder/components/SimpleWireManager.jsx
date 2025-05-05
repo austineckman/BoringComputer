@@ -544,13 +544,6 @@ const SimpleWireManager = ({ canvasRef }) => {
     e.stopPropagation(); // Prevent canvas click handler from firing
     console.log('Wire clicked:', wireId);
     
-    // Handle right-click for immediate wire deletion
-    if (e.button === 2) { // Right mouse button
-      e.preventDefault(); // Prevent context menu
-      deleteWire(wireId);
-      return;
-    }
-    
     // If anchor mode is active and this is the active wire, add anchor point
     if (showAnchorMode && activeWireForAnchors === wireId) {
       const canvasRect = canvasRef.current.getBoundingClientRect();
@@ -629,26 +622,8 @@ const SimpleWireManager = ({ canvasRef }) => {
     
     // Add a user message about how to delete the wire
     if (selectedWireId !== wireId) {
-      console.log('Wire selected. Press DELETE key or click the red X button to remove it. Right-click to delete immediately.');
+      console.log('Wire selected. Press DELETE key or click the red X button to remove it.');
     }
-  };
-  
-  // Function to delete a wire
-  const deleteWire = (wireId) => {
-    setWires(prev => prev.filter(wire => wire.id !== wireId));
-    
-    // If this was the selected wire, clear selection
-    if (selectedWireId === wireId) {
-      setSelectedWireId(null);
-      setShowWireProperties(false);
-    }
-    
-    // Dispatch event to notify simulation of deleted connection
-    document.dispatchEvent(new CustomEvent('pinConnectionRemoved', {
-      detail: { wireId }
-    }));
-    
-    console.log(`Deleted wire: ${wireId}`);
   };
   
   // Calculate the length of a wire
@@ -853,12 +828,6 @@ const SimpleWireManager = ({ canvasRef }) => {
     if (canvasElement) {
       canvasElement.addEventListener('mousemove', handleMouseMove);
       canvasElement.addEventListener('click', handleCanvasClick);
-      
-      // Prevent context menu on right-click to allow our custom wire deletion
-      canvasElement.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        return false;
-      });
     }
     
     // Add keyboard event listener for delete key
@@ -894,10 +863,6 @@ const SimpleWireManager = ({ canvasRef }) => {
       if (canvasElement) {
         canvasElement.removeEventListener('mousemove', handleMouseMove);
         canvasElement.removeEventListener('click', handleCanvasClick);
-        canvasElement.removeEventListener('contextmenu', (e) => {
-          e.preventDefault();
-          return false;
-        });
       }
     };
   }, [canvasRef, pendingWire, selectedWireId]);
