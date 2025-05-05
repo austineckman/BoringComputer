@@ -1476,7 +1476,7 @@ const SimpleWireManager = ({ canvasRef }) => {
       {/* Wire Controls Toolbar */}
       {selectedWireId && (
         <div 
-          className="wire-controls-toolbar bg-white/90 shadow-lg rounded-full py-1 px-2" 
+          className="wire-controls-toolbar bg-white/95 shadow-lg rounded-full py-2 px-3" 
           style={{ 
             pointerEvents: 'all', 
             position: 'absolute', 
@@ -1484,13 +1484,14 @@ const SimpleWireManager = ({ canvasRef }) => {
             right: '20px', 
             zIndex: 40,
             border: '1px solid #ddd',
-            backdropFilter: 'blur(8px)'
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
           }}
         >
           <div className="flex items-center space-x-3">
             {/* Info button */}
             <button
-              className="tooltip-trigger p-2 rounded-full bg-blue-100 hover:bg-blue-200 text-xl transition-colors"
+              className={`wire-control-btn tooltip-trigger p-2 rounded-full ${showWireProperties ? 'bg-blue-500 text-white' : 'bg-blue-100 hover:bg-blue-200'} text-xl transition-all transform hover:scale-110`}
               onClick={() => setShowWireProperties(!showWireProperties)}
               title="Wire Info"
             >
@@ -1508,14 +1509,14 @@ const SimpleWireManager = ({ canvasRef }) => {
                     applyWireColor(wireProperties.id, e.target.value);
                   }
                 }}
-                className="wire-color-picker w-8 h-8 rounded-full cursor-pointer"
+                className="wire-color-picker w-8 h-8 rounded-full cursor-pointer border-2 border-gray-200 hover:border-blue-300 transition-all transform hover:scale-110"
                 title="Change wire color"
               />
             </div>
 
             {/* Add anchor points */}
             <button 
-              className={`p-2 rounded-full ${showAnchorMode ? 'bg-green-500 text-white' : 'bg-gray-100 hover:bg-gray-200'} text-xl transition-colors`}
+              className={`wire-control-btn p-2 rounded-full ${showAnchorMode ? 'bg-green-500 text-white' : 'bg-gray-100 hover:bg-gray-200'} text-xl transition-all transform hover:scale-110`}
               onClick={() => toggleAnchorMode(wireProperties?.id)}
               title={showAnchorMode ? "Finish adding points" : "Add anchor points"}
               disabled={!wireProperties?.id}
@@ -1525,7 +1526,7 @@ const SimpleWireManager = ({ canvasRef }) => {
             
             {/* Clear anchor points */}
             <button 
-              className="p-2 rounded-full bg-yellow-100 hover:bg-yellow-200 text-xl transition-colors"
+              className={`wire-control-btn p-2 rounded-full ${(!wireProperties?.id || !wireAnchorPoints[wireProperties?.id] || wireAnchorPoints[wireProperties?.id]?.length === 0) ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'bg-yellow-100 hover:bg-yellow-200'} text-xl transition-all transform hover:scale-110`}
               onClick={() => wireProperties?.id && clearAnchorPoints(wireProperties.id)}
               disabled={!wireProperties?.id || !wireAnchorPoints[wireProperties?.id] || wireAnchorPoints[wireProperties?.id]?.length === 0}
               title="Clear all anchor points"
@@ -1535,7 +1536,7 @@ const SimpleWireManager = ({ canvasRef }) => {
             
             {/* Delete wire */}
             <button 
-              className="p-2 rounded-full bg-red-100 hover:bg-red-200 text-xl transition-colors"
+              className="wire-control-btn p-2 rounded-full bg-red-100 hover:bg-red-200 text-xl transition-all transform hover:scale-110"
               onClick={handleDeleteWire}
               title="Delete selected wire"
             >
@@ -1548,25 +1549,58 @@ const SimpleWireManager = ({ canvasRef }) => {
       {/* Wire Properties Tooltip */}
       {showWireProperties && wireProperties && (
         <div 
-          className="wire-info-tooltip bg-white/95 shadow-lg rounded-md p-2" 
+          className="wire-info-tooltip bg-white/95 shadow-lg rounded-md p-3" 
           style={{ 
             pointerEvents: 'all', 
             position: 'absolute', 
-            bottom: '70px', 
+            bottom: '80px', 
             right: '20px', 
-            maxWidth: '180px',
+            maxWidth: '210px',
             zIndex: 40,
-            border: '1px solid #ddd',
+            border: '1px solid #c8d3e5',
             fontSize: '10px',
-            backdropFilter: 'blur(8px)'
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 6px 16px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06)',
+            animation: 'fadeIn 0.2s ease-out'
           }}
         >
-          <div className="text-xs space-y-1">
-            <div><span className="font-semibold">Source:</span> {wireProperties.source}</div>
-            <div><span className="font-semibold">Target:</span> {wireProperties.target}</div>
-            <div><span className="font-semibold">Length:</span> {wireProperties.length}px</div>
-            <div><span className="font-semibold">Points:</span> {wireProperties.anchorCount || 0}</div>
-            <div><span className="font-semibold">Color:</span> {selectedWireColor}</div>
+          <div className="text-xs space-y-2">
+            <div className="flex items-center justify-between border-b border-blue-100 pb-1 mb-1">
+              <div className="text-sm font-semibold text-blue-600">Wire Properties</div>
+              <button 
+                className="text-gray-400 hover:text-gray-600 text-sm" 
+                onClick={() => setShowWireProperties(false)}
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-gray-600">Source:</span> 
+              <span className="bg-gray-100 px-2 py-1 rounded text-xs">{wireProperties.source}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-gray-600">Target:</span> 
+              <span className="bg-gray-100 px-2 py-1 rounded text-xs">{wireProperties.target}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-gray-600">Length:</span> 
+              <span className="bg-gray-100 px-2 py-1 rounded text-xs">{wireProperties.length}px</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-gray-600">Points:</span> 
+              <span className="bg-gray-100 px-2 py-1 rounded text-xs">{wireProperties.anchorCount || 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-gray-600">Color:</span> 
+              <div className="flex items-center">
+                <div 
+                  className="w-4 h-4 rounded-full mr-1" 
+                  style={{ backgroundColor: selectedWireColor }}
+                ></div>
+                <span className="bg-gray-100 px-2 py-1 rounded text-xs">{selectedWireColor}</span>
+              </div>
+            </div>
           </div>
         </div>
       )}
