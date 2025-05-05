@@ -768,13 +768,39 @@ body {
   transition: stroke-width 0.2s ease;
 }
 
-.wire-path:hover,
-.selected-wire {
+.wire-path:hover {
   stroke-width: 3.5px;
+  cursor: pointer;
+}
+
+.selected-wire {
+  stroke-width: 4px;
 }
 
 .selected-wire-highlight {
-  filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.7));
+  filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.9));
+  stroke-width: 4px;
+  animation: wire-pulse 1.5s infinite alternate;
+}
+
+@keyframes wire-pulse {
+  0% {
+    filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.9));
+  }
+  100% {
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.9));
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .wire-color-picker {
