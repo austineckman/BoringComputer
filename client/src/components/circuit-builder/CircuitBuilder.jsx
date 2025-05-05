@@ -459,22 +459,8 @@ const CircuitBuilder = () => {
         {/* Custom pin tooltip component */}
         <PinTooltip />
         
-        {/* Wire Delete Button - Always visible in the top-right corner */}
-        <div className="absolute top-4 right-4 z-50">
-          <button 
-            className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md shadow-md flex items-center space-x-1 transition-colors"
-            onClick={() => {
-              // Dispatch a custom event to trigger wire deletion if a wire is selected
-              document.dispatchEvent(new CustomEvent('deleteSelectedWire'));
-            }}
-            title="Delete Selected Wire"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1h3a1 1 0 110 2H4a1 1 0 110-2h3V3a1 1 0 011-1h2zm-4 5a1 1 0 00-1 1v7a3 3 0 003 3h4a3 3 0 003-3V8a1 1 0 00-1-1H6z" clipRule="evenodd" />
-            </svg>
-            <span>Delete Wire</span>
-          </button>
-        </div>
+        {/* Wire Event Listener - Hidden element to capture wire selection events */}
+        <div className="hidden" id="wire-event-listener"></div>
         
         {/* Empty state */}
         {components.length === 0 && (
