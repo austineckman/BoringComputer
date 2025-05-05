@@ -803,18 +803,40 @@ const SimpleWireManager = ({ canvasRef }) => {
     }
   };
 
-  // Handle delete key for wire removal
+  // Handle wire deletion
   const handleDeleteWire = () => {
     if (selectedWireId) {
+      // Remove the wire from the array
       setWires(prev => prev.filter(wire => wire.id !== selectedWireId));
+      
+      // Remove any wire highlights
+      document.querySelectorAll('.selected-wire-highlight').forEach(el => {
+        el.classList.remove('selected-wire-highlight');
+      });
+      
+      // Clear anchor points for this wire
+      if (wireAnchorPoints[selectedWireId]) {
+        setWireAnchorPoints(prev => {
+          const newPoints = {...prev};
+          delete newPoints[selectedWireId];
+          return newPoints;
+        });
+      }
+      
+      // Reset state
       setSelectedWireId(null);
+      setShowWireProperties(false);
+      setShowAnchorMode(false);
+      setActiveWireForAnchors(null);
       
       // Dispatch event to notify simulation of deleted connection
       document.dispatchEvent(new CustomEvent('pinConnectionRemoved', {
         detail: { wireId: selectedWireId }
       }));
       
-      console.log(`Deleted wire: ${selectedWireId}`);
+      console.log(`Successfully deleted wire: ${selectedWireId}`);
+    } else {
+      console.log('No wire selected for deletion');
     }
   };
 
