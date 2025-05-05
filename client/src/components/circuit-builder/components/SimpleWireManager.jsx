@@ -1451,127 +1451,102 @@ const SimpleWireManager = ({ canvasRef }) => {
         )}
       </svg>
       
-      {/* Wire Controls */}
-      {selectedWireId && (
-        <div className="wire-controls-container" style={{ pointerEvents: 'all', position: 'absolute', top: '10px', right: '10px', zIndex: 40 }}>
-          <button 
-            className="delete-wire-button bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md shadow-md flex items-center space-x-1 mr-2" 
-            onClick={handleDeleteWire}
-            title="Delete selected wire"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            <span>Delete Wire</span>
-          </button>
-          
-          <button 
-            className={`anchor-mode-button p-2 rounded-md ${showAnchorMode ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
-            onClick={() => toggleAnchorMode(selectedWireId)}
-            title="Toggle anchor point mode"
-          >
-            <span role="img" aria-label="anchor">📍</span>
-          </button>
-        </div>
-      )}
+      {/* Wire controls moved to bottom toolbar */}
       
-      {/* Wire Properties Panel */}
-      {showWireProperties && wireProperties && (
+      {/* Wire Controls Toolbar */}
+      {selectedWireId && (
         <div 
-          className="wire-properties-panel bg-white shadow-lg rounded-md p-4" 
+          className="wire-controls-toolbar bg-white/90 shadow-lg rounded-full py-1 px-2" 
           style={{ 
             pointerEvents: 'all', 
             position: 'absolute', 
             bottom: '20px', 
             right: '20px', 
-            width: '280px',
             zIndex: 40,
-            border: '1px solid #ddd'
+            border: '1px solid #ddd',
+            backdropFilter: 'blur(8px)'
           }}
         >
-          <div className="wire-properties-header flex justify-between items-center mb-3 border-b pb-2">
-            <h3 className="font-bold text-lg">Wire Properties</h3>
-            <button 
-              className="close-properties-button text-gray-600 hover:text-gray-900 text-xl"
-              onClick={() => setShowWireProperties(false)}
+          <div className="flex items-center space-x-3">
+            {/* Info button */}
+            <button
+              className="tooltip-trigger p-2 rounded-full bg-blue-100 hover:bg-blue-200 text-xl transition-colors"
+              onClick={() => setShowWireProperties(!showWireProperties)}
+              title="Wire Info"
             >
-              ×
+              ℹ️
             </button>
-          </div>
-          
-          <div className="wire-properties-content">
-            <div className="wire-property mb-2">
-              <label className="font-semibold block text-sm">Source:</label>
-              <span className="text-sm">{wireProperties.source}</span>
-            </div>
             
-            <div className="wire-property mb-2">
-              <label className="font-semibold block text-sm">Target:</label>
-              <span className="text-sm">{wireProperties.target}</span>
-            </div>
-            
-            <div className="wire-property mb-2">
-              <label className="font-semibold block text-sm">Length:</label>
-              <span className="text-sm">{wireProperties.length}px</span>
-            </div>
-            
-            <div className="wire-property mb-2">
-              <label className="font-semibold block text-sm">Path Points:</label>
-              <span className="text-sm">{wireProperties.anchorCount || 0} anchor point{wireProperties.anchorCount !== 1 ? 's' : ''}</span>
-            </div>
-            
-            <div className="wire-property mb-4">
-              <label className="font-semibold block text-sm mb-1">Color:</label>
-              <div className="color-picker-container flex items-center">
-                <input 
-                  type="color" 
-                  value={selectedWireColor}
-                  onChange={(e) => {
+            {/* Color picker */}
+            <div className="flex items-center">
+              <input 
+                type="color" 
+                value={wireProperties?.id ? (selectedWireColor || '#0000ff') : '#0000ff'}
+                onChange={(e) => {
+                  if (wireProperties?.id) {
                     setSelectedWireColor(e.target.value);
                     applyWireColor(wireProperties.id, e.target.value);
-                  }}
-                  className="wire-color-picker w-8 h-8 mr-2 rounded-full"
-                />
-                <span className="color-value text-sm">{selectedWireColor}</span>
-              </div>
+                  }
+                }}
+                className="wire-color-picker w-8 h-8 rounded-full cursor-pointer"
+                title="Change wire color"
+              />
             </div>
+
+            {/* Add anchor points */}
+            <button 
+              className={`p-2 rounded-full ${showAnchorMode ? 'bg-green-500 text-white' : 'bg-gray-100 hover:bg-gray-200'} text-xl transition-colors`}
+              onClick={() => toggleAnchorMode(wireProperties?.id)}
+              title={showAnchorMode ? "Finish adding points" : "Add anchor points"}
+              disabled={!wireProperties?.id}
+            >
+              📍
+            </button>
             
-            <div className="wire-property">
-              <label className="font-semibold block text-sm mb-1">Anchor Points:</label>
-              <div className="anchor-controls flex space-x-2 mb-2">
-                <button 
-                  onClick={() => toggleAnchorMode(wireProperties.id)}
-                  className={`text-sm px-3 py-1 rounded ${showAnchorMode ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
-                >
-                  {showAnchorMode ? 'Finish Adding' : 'Add Points'}
-                </button>
-                <button 
-                  onClick={() => clearAnchorPoints(wireProperties.id)}
-                  disabled={!wireAnchorPoints[wireProperties.id] || wireAnchorPoints[wireProperties.id].length === 0}
-                  className={`text-sm px-3 py-1 rounded ${(!wireAnchorPoints[wireProperties.id] || wireAnchorPoints[wireProperties.id].length === 0) ? 'bg-gray-200 text-gray-400' : 'bg-red-100 text-red-600'}`}
-                >
-                  Clear All
-                </button>
-              </div>
-              <div className="anchor-help-text text-xs text-gray-500 italic">
-                {showAnchorMode ? 
-                  'Click anywhere on the canvas to add anchor points' :
-                  'Add points to create custom wire paths'}
-              </div>
-            </div>
+            {/* Clear anchor points */}
+            <button 
+              className="p-2 rounded-full bg-yellow-100 hover:bg-yellow-200 text-xl transition-colors"
+              onClick={() => wireProperties?.id && clearAnchorPoints(wireProperties.id)}
+              disabled={!wireProperties?.id || !wireAnchorPoints[wireProperties?.id] || wireAnchorPoints[wireProperties?.id]?.length === 0}
+              title="Clear all anchor points"
+            >
+              🧹
+            </button>
             
-            {/* Delete wire button */}
-            <div className="mt-4 border-t pt-4">
-              <button 
-                onClick={handleDeleteWire}
-                className="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-md shadow-sm flex items-center justify-center space-x-2"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                <span>Delete Selected Wire</span>
-              </button>
-            </div>
+            {/* Delete wire */}
+            <button 
+              className="p-2 rounded-full bg-red-100 hover:bg-red-200 text-xl transition-colors"
+              onClick={handleDeleteWire}
+              title="Delete selected wire"
+            >
+              🗑️
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Wire Properties Tooltip */}
+      {showWireProperties && wireProperties && (
+        <div 
+          className="wire-info-tooltip bg-white/95 shadow-lg rounded-md p-2" 
+          style={{ 
+            pointerEvents: 'all', 
+            position: 'absolute', 
+            bottom: '70px', 
+            right: '20px', 
+            maxWidth: '180px',
+            zIndex: 40,
+            border: '1px solid #ddd',
+            fontSize: '10px',
+            backdropFilter: 'blur(8px)'
+          }}
+        >
+          <div className="text-xs space-y-1">
+            <div><span className="font-semibold">Source:</span> {wireProperties.source}</div>
+            <div><span className="font-semibold">Target:</span> {wireProperties.target}</div>
+            <div><span className="font-semibold">Length:</span> {wireProperties.length}px</div>
+            <div><span className="font-semibold">Points:</span> {wireProperties.anchorCount || 0}</div>
+            <div><span className="font-semibold">Color:</span> {selectedWireColor}</div>
           </div>
         </div>
       )}
