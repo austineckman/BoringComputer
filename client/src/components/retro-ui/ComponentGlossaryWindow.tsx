@@ -8,7 +8,8 @@ import {
   Layers, 
   HelpCircle,
   Zap,
-  Tool,
+  Settings as Tool,
+  CircuitBoard as Circuit,
   Wrench,
   AlertTriangle,
   BookOpen 
@@ -880,7 +881,7 @@ const ComponentGlossaryWindow: React.FC<ComponentGlossaryWindowProps> = ({ onClo
                 {selectedPin.voltageRange && (
                   <div className="p-3 bg-white rounded-lg shadow-sm border border-gray-200">
                     <h4 className="font-bold text-gray-800 flex items-center cursor-pointer mb-3">
-                      <ZapIcon size={18} className="mr-2 text-yellow-500" />
+                      <Zap size={18} className="mr-2 text-yellow-500" />
                       Voltage & Electrical Characteristics
                     </h4>
                     <div>
@@ -923,7 +924,7 @@ const ComponentGlossaryWindow: React.FC<ComponentGlossaryWindowProps> = ({ onClo
                 {selectedPin.usageNotes && (
                   <div className="p-3 bg-white rounded-lg shadow-sm border border-gray-200">
                     <h4 className="font-bold text-gray-800 flex items-center cursor-pointer mb-3">
-                      <ToolIcon size={18} className="mr-2 text-gray-700" />
+                      <Tool size={18} className="mr-2 text-gray-700" />
                       Implementation Guide
                     </h4>
                     <div>
@@ -1109,7 +1110,7 @@ const ComponentGlossaryWindow: React.FC<ComponentGlossaryWindowProps> = ({ onClo
                 {selectedPin.commonIssues && (
                   <div className="p-3 bg-white rounded-lg shadow-sm border border-gray-200">
                     <h4 className="font-bold text-gray-800 flex items-center cursor-pointer mb-3">
-                      <WrenchIcon size={18} className="mr-2 text-orange-500" />
+                      <Wrench size={18} className="mr-2 text-orange-500" />
                       Troubleshooting Guide
                     </h4>
                     <div>
