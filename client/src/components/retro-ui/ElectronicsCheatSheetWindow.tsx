@@ -98,10 +98,28 @@ const ElectronicsCheatSheetWindow: React.FC<ElectronicsCheatSheetWindowProps> = 
       notes: "Similar to series resistors formula"
     },
     {
+      title: "Inductance in Series",
+      formula: "Ltotal = L₁ + L₂ + ... + Lₙ",
+      description: "The total inductance of inductors connected in series",
+      notes: "Similar to series resistors formula"
+    },
+    {
+      title: "Inductance in Parallel",
+      formula: "1/Ltotal = 1/L₁ + 1/L₂ + ... + 1/Lₙ",
+      description: "The total inductance of inductors connected in parallel",
+      notes: "Similar to parallel resistors formula" 
+    },
+    {
       title: "Voltage Divider",
       formula: "Vout = Vin × (R₂ ÷ (R₁ + R₂))",
       description: "Output voltage from a voltage divider circuit",
       notes: "R₁ is connected to Vin, R₂ is connected to ground, Vout is measured across R₂"
+    },
+    {
+      title: "Current Divider",
+      formula: "I₁ = Itotal × (R₂ ÷ (R₁ + R₂))",
+      description: "Current through one branch of parallel resistors",
+      notes: "I₁ is the current through R₁, Itotal is the total current entering the parallel circuit"
     },
     {
       title: "LED Current Limiting Resistor",
@@ -116,6 +134,60 @@ const ElectronicsCheatSheetWindow: React.FC<ElectronicsCheatSheetWindowProps> = 
       notes: "Time (in seconds) to charge to ~63% or discharge to ~37%"
     },
     {
+      title: "RL Time Constant",
+      formula: "τ = L ÷ R",
+      description: "Time constant for a resistor-inductor circuit",
+      notes: "Time (in seconds) for current to reach ~63% of final value"
+    },
+    {
+      title: "RC Low-Pass Filter",
+      formula: "fc = 1 ÷ (2π × R × C)",
+      description: "Cutoff frequency for RC low-pass filter",
+      notes: "Frequency (in Hz) at which signal power drops to 50% (-3dB)"
+    },
+    {
+      title: "RC High-Pass Filter",
+      formula: "fc = 1 ÷ (2π × R × C)",
+      description: "Cutoff frequency for RC high-pass filter",
+      notes: "Uses same formula as low-pass, but applies to frequencies above fc"
+    },
+    {
+      title: "LC Resonant Frequency",
+      formula: "fr = 1 ÷ (2π × √(L × C))",
+      description: "Resonant frequency of LC circuit",
+      notes: "At this frequency, inductive and capacitive reactances are equal"
+    },
+    {
+      title: "Capacitive Reactance",
+      formula: "Xc = 1 ÷ (2π × f × C)",
+      description: "Opposition to current flow in a capacitor",
+      notes: "Measured in ohms (Ω). Decreases as frequency increases"
+    },
+    {
+      title: "Inductive Reactance",
+      formula: "XL = 2π × f × L",
+      description: "Opposition to current flow in an inductor",
+      notes: "Measured in ohms (Ω). Increases as frequency increases"
+    },
+    {
+      title: "Impedance (Series RL)",
+      formula: "Z = √(R² + XL²)",
+      description: "Total opposition to current in series RL circuit",
+      notes: "Combines resistance and inductive reactance"
+    },
+    {
+      title: "Impedance (Series RC)",
+      formula: "Z = √(R² + Xc²)",
+      description: "Total opposition to current in series RC circuit",
+      notes: "Combines resistance and capacitive reactance"
+    },
+    {
+      title: "Impedance (Series RLC)",
+      formula: "Z = √(R² + (XL - Xc)²)",
+      description: "Total opposition to current in series RLC circuit",
+      notes: "XL and Xc partially cancel each other out"
+    },
+    {
       title: "Frequency and Period",
       formula: "f = 1 ÷ T",
       description: "Relationship between frequency (f) and period (T)",
@@ -123,6 +195,61 @@ const ElectronicsCheatSheetWindow: React.FC<ElectronicsCheatSheetWindowProps> = 
         { formula: "T = 1 ÷ f", description: "Finding period from frequency" }
       ],
       notes: "f is in Hz, T is in seconds"
+    },
+    {
+      title: "RMS Voltage (Sine Wave)",
+      formula: "Vrms = Vpeak ÷ √2",
+      description: "Root Mean Square (RMS) voltage of sine wave",
+      variations: [
+        { formula: "Vrms ≈ 0.707 × Vpeak", description: "Simplified approximation" },
+        { formula: "Vpeak = Vrms × √2", description: "Finding peak from RMS" }
+      ],
+      notes: "Standard AC voltage measurements are in RMS"
+    },
+    {
+      title: "Battery Life",
+      formula: "Hours = Battery Capacity (mAh) ÷ Current Draw (mA)",
+      description: "Estimated battery life under constant load",
+      notes: "Real-world battery life is typically less due to various factors"
+    },
+    {
+      title: "Voltage Regulation",
+      formula: "Regulation (%) = ((Vno-load - Vfull-load) ÷ Vfull-load) × 100",
+      description: "Percentage voltage regulation of a power supply",
+      notes: "Lower percentage indicates better regulation"
+    },
+    {
+      title: "Wheatstone Bridge Balance",
+      formula: "R₁/R₂ = R₃/R₄",
+      description: "Condition for a balanced Wheatstone bridge circuit",
+      notes: "When balanced, the voltage between the middle points is zero"
+    },
+    {
+      title: "Transformer Voltage Ratio",
+      formula: "Vs/Vp = Ns/Np",
+      description: "Relationship between voltages and turns in a transformer",
+      variations: [
+        { formula: "Vs = Vp × (Ns/Np)", description: "Finding secondary voltage" }
+      ],
+      notes: "Vs = secondary voltage, Vp = primary voltage, Ns = secondary turns, Np = primary turns"
+    },
+    {
+      title: "Transformer Current Ratio",
+      formula: "Ip/Is = Ns/Np",
+      description: "Relationship between currents and turns in a transformer",
+      variations: [
+        { formula: "Is = Ip × (Np/Ns)", description: "Finding secondary current" }
+      ],
+      notes: "Is = secondary current, Ip = primary current, Ns = secondary turns, Np = primary turns"
+    },
+    {
+      title: "PWM Duty Cycle",
+      formula: "Duty Cycle (%) = (Ton ÷ (Ton + Toff)) × 100",
+      description: "Percentage of time a PWM signal is in the ON state",
+      variations: [
+        { formula: "Vavg = Vmax × Duty Cycle/100", description: "Average voltage with PWM" }
+      ],
+      notes: "Ton = time in high state, Toff = time in low state"
     }
   ];
 
@@ -379,6 +506,94 @@ Capacitor Codes:
       `
     },
     {
+      title: "Logic Gates",
+      content: `
+Basic Gates:
+AND: Output HIGH only when all inputs HIGH
+OR: Output HIGH when any input HIGH
+NOT: Inverts input (HIGH→LOW, LOW→HIGH)
+NAND: AND followed by NOT (Universal gate)
+NOR: OR followed by NOT (Universal gate)
+XOR: Output HIGH when odd number of inputs HIGH
+XNOR: Output HIGH when even number of inputs HIGH
+
+Truth Tables (A,B → Output):
+AND: (0,0→0) (0,1→0) (1,0→0) (1,1→1)
+OR:  (0,0→0) (0,1→1) (1,0→1) (1,1→1)
+XOR: (0,0→0) (0,1→1) (1,0→1) (1,1→0)
+NAND:(0,0→1) (0,1→1) (1,0→1) (1,1→0)
+NOR: (0,0→1) (0,1→0) (1,0→0) (1,1→0)
+      `
+    },
+    {
+      title: "Microcontroller Comparison",
+      content: `
+Arduino Uno:
+• Processor: ATmega328P (8-bit)
+• Clock: 16 MHz
+• Flash: 32KB
+• RAM: 2KB
+• Digital I/O: 14 pins (6 PWM)
+• Analog In: 6 pins
+• Operating voltage: 5V
+
+ESP32:
+• Processor: Tensilica Xtensa LX6 (32-bit dual-core)
+• Clock: Up to 240 MHz
+• Flash: 4MB+
+• RAM: 520KB
+• GPIO: 36 pins
+• Built-in Wi-Fi and Bluetooth
+• Operating voltage: 3.3V
+
+Raspberry Pi Pico:
+• Processor: RP2040 (32-bit dual-core ARM Cortex M0+)
+• Clock: 133 MHz
+• Flash: 2MB
+• RAM: 264KB
+• GPIO: 26 pins
+• Operating voltage: 3.3V
+
+BBC micro:bit:
+• Processor: nRF51822 (32-bit ARM Cortex M0)
+• Clock: 16 MHz
+• Flash: 256KB
+• RAM: 16KB
+• GPIO: 19 pins (accessible via edge connector)
+• Built-in LEDs, buttons, accelerometer
+      `
+    },
+    {
+      title: "Communication Protocols",
+      content: `
+I²C (Inter-Integrated Circuit):
+• 2-wire: SDA (data) and SCL (clock)
+• Address-based with master/slave architecture
+• Speeds: 100kHz (standard), 400kHz (fast), 1MHz+ (fast plus)
+• Multiple slaves on same bus (each with unique address)
+• Pull-up resistors required
+
+SPI (Serial Peripheral Interface):
+• 4-wire: MOSI, MISO, SCK, SS/CS
+• Faster than I²C, typically 10-20MHz
+• One master, multiple slaves (separate chip select for each)
+• Full-duplex (simultaneous send/receive)
+
+UART (Universal Asynchronous Receiver/Transmitter):
+• 2-wire: TX and RX (cross-connected)
+• Common baud rates: 9600, 115200
+• No clock signal, requires preset baud rate
+• Simple but only connects two devices directly
+
+CAN (Controller Area Network):
+• 2-wire differential: CANH and CANL
+• Very robust, used in automotive applications
+• Multi-master, message-based protocol
+• Typical speeds: 125kbps to 1Mbps
+• Requires termination resistors
+      `
+    },
+    {
       title: "Wire Gauges (AWG)",
       content: `
 Common wire gauges and max current:
@@ -395,6 +610,53 @@ Common wire gauges and max current:
 • 30 AWG: 0.25A
 
 Lower gauge = thicker wire
+      `
+    },
+    {
+      title: "Advanced Electrical Formulas",
+      content: `
+Reactance:
+• Inductive Reactance: XL = 2πfL
+• Capacitive Reactance: XC = 1/(2πfC)
+• Impedance (series RL): Z = √(R² + XL²)
+• Impedance (series RC): Z = √(R² + XC²)
+• Impedance (series RLC): Z = √(R² + (XL - XC)²)
+
+Resonance:
+• Resonant Frequency: f = 1/(2π√(LC))
+• Q factor (series): Q = (1/R)√(L/C)
+• Q factor (parallel): Q = R√(C/L)
+
+Filter Cutoff:
+• Low-pass: fc = 1/(2πRC)
+• High-pass: fc = 1/(2πRC)
+• Band-pass: BW = fh - fl, Q = f₀/BW
+      `
+    },
+    {
+      title: "PCB Design Guidelines",
+      content: `
+Trace Width Rules of Thumb:
+• Signal traces: 8-10mil (0.2-0.25mm)
+• Power traces (<1A): 15-20mil (0.4-0.5mm)
+• Power traces (1-2A): 30-40mil (0.75-1mm)
+• Power traces (>2A): Calculate for 1oz copper: width in mils = (current/0.015)^0.5
+
+Clearances:
+• Trace to trace: 6-8mil (0.15-0.2mm)
+• Trace to pad: 8-10mil (0.2-0.25mm)
+• Trace to board edge: 20mil (0.5mm)
+• Trace to mounting hole: 20mil (0.5mm)
+
+Vias:
+• Signal via: 0.6mm hole, 1.0mm pad
+• Power via: 0.8mm hole, 1.2mm pad
+• Via in pad: Filled and plated
+
+General:
+• Route tracks at 45° angles, not 90°
+• Use ground pour on all layers
+• Include fiducials for assembly
       `
     },
     {
@@ -441,6 +703,37 @@ Serial:
 • Serial.println(data)
 • Serial.available()
 • Serial.read()
+      `
+    },
+    {
+      title: "Component Symbols",
+      content: `
+Passive Components:
+• Resistor: −/\/\/−   (US) or −[]− (EU)
+• Potentiometer: −/\/\/−⊥
+• Capacitor: −||−  (non-polarized) or  −|(+−  (polarized)
+• Inductor: −ΩΩΩΩ−
+• Transformer: −ΩΩΩΩ−|−ΩΩΩΩ−
+• Crystal/Resonator: −⊡−
+
+Semiconductors:
+• Diode: −|>|−
+• LED: −|>|⤧
+• Zener Diode: −|>|−⤧
+• BJT (NPN): −⟋|⟋
+                ⟍
+• BJT (PNP): −⟋|⟍
+                ⟋
+• MOSFET (N-channel): −□⟋
+                         ⟍
+• MOSFET (P-channel): −□⟍
+                         ⟋
+
+Sources and others:
+• Battery: −|−||−
+• Ground: −⊥
+• Fuse: −◠◡−
+• SPST Switch: −○−
       `
     }
   ];
