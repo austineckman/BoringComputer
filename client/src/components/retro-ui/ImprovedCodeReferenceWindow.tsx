@@ -2713,7 +2713,7 @@ const ImprovedCodeReferenceWindow = ({ onClose, onMinimize, isActive }: CodeRefe
                   onClick={() => handleTermSelect(term)}
                 >
                   <div className="flex justify-between items-start">
-                    <h3 className="font-bold">{term.term}</h3>
+                    <h3 className="font-bold">{term.term.replace(/-cpp$/, '').replace(/-arduino$/, '').replace(/-python$/, '')}</h3>
                     <span className="px-2 py-0.5 text-xs rounded-full bg-gray-200 text-gray-800">
                       {term.category}
                     </span>
@@ -2811,7 +2811,7 @@ const ImprovedCodeReferenceWindow = ({ onClose, onMinimize, isActive }: CodeRefe
                   <div className="space-y-1 mb-2">
                     {groupedTerms[categoryKey].slice(0, 3).map(term => (
                       <div key={term.term} className="text-sm text-gray-600 font-mono truncate">
-                        {term.term}
+                        {term.term.replace(/-cpp$/, '').replace(/-arduino$/, '').replace(/-python$/, '')}
                       </div>
                     ))}
                     {groupedTerms[categoryKey].length > 3 && (
@@ -2959,7 +2959,7 @@ const ImprovedCodeReferenceWindow = ({ onClose, onMinimize, isActive }: CodeRefe
                         onClick={() => handleTermSelect(term)}
                       >
                         <div className="flex justify-between">
-                          <span className="font-mono font-medium">{term.term}</span>
+                          <span className="font-mono font-medium">{term.term.replace(/-cpp$/, '').replace(/-arduino$/, '').replace(/-python$/, '')}</span>
                           <span className="text-xs text-gray-500">{term.category}</span>
                         </div>
                         <p className="text-xs text-gray-600 truncate">{term.description}</p>
@@ -3136,7 +3136,7 @@ const ImprovedCodeReferenceWindow = ({ onClose, onMinimize, isActive }: CodeRefe
                           onClick={() => handleTermSelect(term)}
                           className="py-1 px-2 rounded hover:bg-white cursor-pointer flex justify-between items-center text-sm"
                         >
-                          <span className="font-mono">{term.term}</span>
+                          <span className="font-mono">{term.term.replace(/-cpp$/, '').replace(/-arduino$/, '').replace(/-python$/, '')}</span>
                           <span className="text-xs text-gray-500">{term.category}</span>
                         </div>
                       ))}
