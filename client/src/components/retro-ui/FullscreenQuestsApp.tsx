@@ -436,6 +436,11 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                 // Get lootbox config if available
                 const lootboxConfig = isLootbox ? getLootBoxConfigById(lootBoxConfigsMap, reward.id) : null;
                 
+                // Debug logging to help identify image issues
+                console.log(`Reward [${idx}] - ID: ${reward.id}, Type: ${reward.type}`);
+                console.log(`Item found: ${!!item}, Image path: ${item?.imagePath}`);
+                console.log(`Is lootbox: ${isLootbox}, Lootbox config found: ${!!lootboxConfig}, Image: ${lootboxConfig?.image}`);
+                
                 return (
                   <div 
                     key={`${reward.id}-${idx}`}
