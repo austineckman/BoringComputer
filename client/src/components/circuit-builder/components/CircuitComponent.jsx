@@ -505,7 +505,12 @@ const CircuitComponent = ({
           onError={(e) => {
             console.error(`Failed to load image: ${image}`, e);
             // Try alternative paths
-            if (image && image.startsWith('/@fs/')) {
+            if (type.toLowerCase() === '7-segment display' || 
+                type.toLowerCase() === 'segmented display' || 
+                image.includes('segmented-display')) {
+              console.log("Fixing 7-segment display image");
+              e.target.src = '/attached_assets/segmented-display.icon.png';
+            } else if (image && image.startsWith('/@fs/')) {
               // For direct file paths - strip the /@fs prefix
               const alternativePath = image.replace('/@fs/home/runner/workspace/', '/');
               console.log(`Trying alternative path: ${alternativePath}`);
