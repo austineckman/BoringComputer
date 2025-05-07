@@ -11,6 +11,7 @@ import { useItems } from '../../hooks/useItems';
 import { useLootBoxConfigs, getLootBoxConfigById, getRarityColorClass } from '../../hooks/useLootBoxConfigs';
 import questImage from '@assets/01_Fire_Grimoire.png';
 import wallbg from '@assets/wallbg.png';
+import defaultLootboxImage from '@assets/goldcrate.png';
 
 // For sounds
 declare global {
@@ -38,6 +39,14 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
   
   const [selectedKit, setSelectedKit] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Debug logs for lootbox configs
+  useEffect(() => {
+    if (!loadingLootBoxConfigs) {
+      console.log('Lootbox configs loaded:', lootBoxConfigs);
+      console.log('Lootbox configs map:', lootBoxConfigsMap);
+    }
+  }, [loadingLootBoxConfigs, lootBoxConfigs, lootBoxConfigsMap]);
   const [selectedAdventureLine, setSelectedAdventureLine] = useState<string | null>(null);
   const [filteredQuests, setFilteredQuests] = useState<Quest[]>([]);
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
@@ -446,7 +455,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                     key={`${reward.id}-${idx}`}
                     className="bg-black/50 rounded-lg border border-gray-700 p-4 flex flex-col items-center"
                   >
-                    <div className="w-16 h-16 mb-3 flex items-center justify-center">
+                    <div className="w-32 h-32 mb-3 flex items-center justify-center">
                       {item?.imagePath ? (
                         // Show item image from database
                         <img 
@@ -465,8 +474,8 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                         />
                       ) : (
                         // Show generic package icon with appropriate styling based on rarity
-                        <div className={`w-16 h-16 flex items-center justify-center rounded ${isLootbox ? getRarityColorClass(lootboxConfig?.rarity) : 'bg-gray-700'}`}>
-                          <Package className="w-10 h-10" />
+                        <div className={`w-32 h-32 flex items-center justify-center rounded ${isLootbox ? getRarityColorClass(lootboxConfig?.rarity) : 'bg-gray-700'}`}>
+                          <Package className="w-20 h-20" />
                         </div>
                       )}
                     </div>
