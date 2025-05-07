@@ -577,17 +577,17 @@ const GLOSSARY: GlossaryTerm[] = [
   {
     term: 'Audio Processing',
     definition: 'The manipulation and control of audio signals in electronic circuits, including amplification, filtering, and digital conversion.',
-    relatedComponents: ['jukebox']
+    relatedComponents: ['breadboard']
   },
   {
     term: 'Amplification',
     definition: 'The process of increasing the power, voltage, or current of a signal using an electronic amplifier circuit.',
-    relatedComponents: ['jukebox']
+    relatedComponents: ['breadboard']
   },
   {
     term: 'Digital Control',
     definition: 'The use of digital signals to control electronic devices and systems, often through microcontrollers or digital interfaces.',
-    relatedComponents: ['jukebox', 'heroboard', 'dip-switch']
+    relatedComponents: ['breadboard', 'heroboard', 'dip-switch']
   }
 ];
 
