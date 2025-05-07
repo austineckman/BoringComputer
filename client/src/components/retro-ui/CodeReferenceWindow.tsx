@@ -628,7 +628,19 @@ const wiringReference: ReferenceLanguage = {
     // More sections would be defined here
   ],
   terms: [
-    // Arduino/Wiring terms
+    // Digital I/O
+    {
+      term: 'digitalRead()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Reads the value from a specified digital pin, either HIGH or LOW.',
+      syntax: 'digitalRead(pin)',
+      examples: [
+        'int buttonState = digitalRead(7); // Read the state of pin 7',
+        'if (digitalRead(sensorPin) == HIGH) { // Check if sensor is active }'
+      ],
+      notes: 'The pin should be configured as INPUT or INPUT_PULLUP before using digitalRead().'
+    },
     {
       term: 'digitalWrite()',
       category: 'function',
@@ -641,7 +653,712 @@ const wiringReference: ReferenceLanguage = {
       ],
       notes: 'The pin must be configured as OUTPUT using pinMode() first.'
     },
-    // More terms would be defined here
+    {
+      term: 'pinMode()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Configures the specified pin to behave either as an INPUT, INPUT_PULLUP, or OUTPUT.',
+      syntax: 'pinMode(pin, mode)',
+      examples: [
+        'pinMode(13, OUTPUT); // Set pin 13 as an output',
+        'pinMode(7, INPUT); // Set pin 7 as an input',
+        'pinMode(2, INPUT_PULLUP); // Set pin 2 as an input with pull-up resistor activated'
+      ],
+      notes: 'INPUT_PULLUP enables the internal pull-up resistor, eliminating the need for an external pull-up resistor.'
+    },
+    
+    // Analog I/O
+    {
+      term: 'analogRead()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Reads the value from the specified analog pin with a 10-bit resolution.',
+      syntax: 'analogRead(pin)',
+      examples: [
+        'int sensorValue = analogRead(A0); // Read analog pin A0',
+        'float voltage = analogRead(A5) * (5.0 / 1023.0); // Convert reading to voltage'
+      ],
+      notes: 'Returns a value between 0 (0V) and 1023 (5V) by default. The analog pins do not need to be declared as inputs with pinMode().'
+    },
+    {
+      term: 'analogReadResolution()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Sets the resolution of analogRead() return values.',
+      syntax: 'analogReadResolution(bits)',
+      examples: [
+        'analogReadResolution(12); // Set analog reading resolution to 12 bits'
+      ],
+      notes: 'Only available on select boards like Arduino Due, Zero, and MKR. The default is 10 bits.'
+    },
+    {
+      term: 'analogReference()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Configures the reference voltage used for analog input.',
+      syntax: 'analogReference(type)',
+      examples: [
+        'analogReference(EXTERNAL); // Use voltage on AREF pin as reference'
+      ],
+      notes: 'Reference types vary between boards. Common types are DEFAULT, INTERNAL, EXTERNAL.'
+    },
+    {
+      term: 'analogWrite()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Writes a PWM (analog) value to a pin.',
+      syntax: 'analogWrite(pin, value)',
+      examples: [
+        'analogWrite(9, 128); // Set LED to half brightness',
+        'analogWrite(3, 255); // Set LED to maximum brightness'
+      ],
+      notes: 'PWM can only be used on pins marked with ~ on most Arduino boards. The value range is 0-255.'
+    },
+    {
+      term: 'analogWriteResolution()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Sets the resolution of analogWrite() values.',
+      syntax: 'analogWriteResolution(bits)',
+      examples: [
+        'analogWriteResolution(12); // Set DAC resolution to 12 bits'
+      ],
+      notes: 'Only available on select boards like Arduino Due, Zero, and MKR. The default is 8 bits.'
+    },
+    
+    // Math Functions
+    {
+      term: 'abs()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Computes the absolute value of a number.',
+      syntax: 'abs(x)',
+      examples: [
+        'int absoluteValue = abs(-5); // Returns 5'
+      ],
+      notes: 'Works with integers, longs, floats, and doubles.'
+    },
+    {
+      term: 'constrain()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Constrains a number to be within a specified range.',
+      syntax: 'constrain(x, a, b)',
+      examples: [
+        'int constrainedValue = constrain(sensorValue, 0, 255); // Ensures value is between 0 and 255'
+      ],
+      notes: 'Useful for ensuring a variable stays within a valid range.'
+    },
+    {
+      term: 'map()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Re-maps a number from one range to another.',
+      syntax: 'map(value, fromLow, fromHigh, toLow, toHigh)',
+      examples: [
+        'int mappedValue = map(analogRead(A0), 0, 1023, 0, 255); // Map sensor reading to LED brightness'
+      ],
+      notes: 'Useful for converting sensor readings to output ranges. Works only with integer math.'
+    },
+    {
+      term: 'max()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Returns the larger of two numbers.',
+      syntax: 'max(x, y)',
+      examples: [
+        'int maximum = max(sensorValue, threshold); // Get the larger of the two values'
+      ],
+      notes: 'Works with any data type that supports the > operator.'
+    },
+    {
+      term: 'min()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Returns the smaller of two numbers.',
+      syntax: 'min(x, y)',
+      examples: [
+        'int minimum = min(sensorValue, maxLimit); // Get the smaller of the two values'
+      ],
+      notes: 'Works with any data type that supports the < operator.'
+    },
+    {
+      term: 'pow()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Calculates the value of a number raised to a power.',
+      syntax: 'pow(base, exponent)',
+      examples: [
+        'double squared = pow(2.0, 2.0); // Returns 4.0',
+        'double cubed = pow(3.0, 3.0); // Returns 27.0'
+      ],
+      notes: 'Returns a double. Requires the math.h library which is included by default.'
+    },
+    {
+      term: 'sq()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Calculates the square of a number.',
+      syntax: 'sq(x)',
+      examples: [
+        'int squared = sq(5); // Returns 25'
+      ],
+      notes: 'More efficient than using pow() for simple squaring operations.'
+    },
+    {
+      term: 'sqrt()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Calculates the square root of a number.',
+      syntax: 'sqrt(x)',
+      examples: [
+        'double root = sqrt(25.0); // Returns 5.0'
+      ],
+      notes: 'Returns a double. Requires the math.h library which is included by default.'
+    },
+    
+    // Trigonometry Functions
+    {
+      term: 'cos()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Calculates the cosine of an angle (in radians).',
+      syntax: 'cos(rad)',
+      examples: [
+        'double cosValue = cos(PI); // Returns -1.0'
+      ],
+      notes: 'Returns the cosine of an angle, value ranges from -1 to 1.'
+    },
+    {
+      term: 'sin()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Calculates the sine of an angle (in radians).',
+      syntax: 'sin(rad)',
+      examples: [
+        'double sinValue = sin(PI/2); // Returns 1.0'
+      ],
+      notes: 'Returns the sine of an angle, value ranges from -1 to 1.'
+    },
+    {
+      term: 'tan()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Calculates the tangent of an angle (in radians).',
+      syntax: 'tan(rad)',
+      examples: [
+        'double tanValue = tan(PI/4); // Returns approximately 1.0'
+      ],
+      notes: 'Returns the tangent of an angle.'
+    },
+    
+    // Bits and Bytes Functions
+    {
+      term: 'bit()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Returns the value of the specified bit (bit position).',
+      syntax: 'bit(n)',
+      examples: [
+        'byte b = bit(3); // Sets b to 8 (binary 00001000)'
+      ],
+      notes: 'Computes 2^n. Useful for creating bit masks.'
+    },
+    {
+      term: 'bitClear()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Clears (sets to 0) a bit of a numeric variable.',
+      syntax: 'bitClear(x, n)',
+      examples: [
+        'byte b = 0x0F; // binary: 00001111\nbitClear(b, 2); // b becomes 0x0B (binary: 00001011)'
+      ],
+      notes: 'Modifies the original value directly.'
+    },
+    {
+      term: 'bitRead()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Reads a bit of a numeric variable.',
+      syntax: 'bitRead(x, n)',
+      examples: [
+        'byte b = 0x0F; // binary: 00001111\nint i = bitRead(b, 2); // i equals 1'
+      ],
+      notes: 'Returns the value of the bit (0 or 1).'
+    },
+    {
+      term: 'bitSet()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Sets (sets to 1) a bit of a numeric variable.',
+      syntax: 'bitSet(x, n)',
+      examples: [
+        'byte b = 0x0A; // binary: 00001010\nbitSet(b, 0); // b becomes 0x0B (binary: 00001011)'
+      ],
+      notes: 'Modifies the original value directly.'
+    },
+    {
+      term: 'bitWrite()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Writes a bit of a numeric variable.',
+      syntax: 'bitWrite(x, n, b)',
+      examples: [
+        'byte b = 0x0A; // binary: 00001010\nbitWrite(b, 0, 1); // b becomes 0x0B (binary: 00001011)'
+      ],
+      notes: 'Modifies the original value directly. The bit value b should be 0 or 1.'
+    },
+    {
+      term: 'highByte()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Extracts the high-order (leftmost) byte of a word or larger data type.',
+      syntax: 'highByte(x)',
+      examples: [
+        'int x = 0x1234; // decimal: 4660\nbyte h = highByte(x); // h equals 0x12'
+      ],
+      notes: 'Useful for serial communication and data protocols.'
+    },
+    {
+      term: 'lowByte()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Extracts the low-order (rightmost) byte of a word or larger data type.',
+      syntax: 'lowByte(x)',
+      examples: [
+        'int x = 0x1234; // decimal: 4660\nbyte l = lowByte(x); // l equals 0x34'
+      ],
+      notes: 'Useful for serial communication and data protocols.'
+    },
+    
+    // External Interrupts
+    {
+      term: 'attachInterrupt()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Attaches an interrupt service routine (ISR) to a specified pin.',
+      syntax: 'attachInterrupt(digitalPinToInterrupt(pin), ISR, mode)',
+      examples: [
+        'attachInterrupt(digitalPinToInterrupt(2), handleInterrupt, RISING); // Call handleInterrupt when pin 2 goes from LOW to HIGH'
+      ],
+      notes: 'Valid modes are LOW, CHANGE, RISING, FALLING. Only certain pins support interrupts; these vary by board.'
+    },
+    {
+      term: 'detachInterrupt()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Disables the interrupt for the specified pin.',
+      syntax: 'detachInterrupt(digitalPinToInterrupt(pin))',
+      examples: [
+        'detachInterrupt(digitalPinToInterrupt(2)); // Disable interrupt on pin 2'
+      ],
+      notes: 'Useful when you temporarily want to disable an interrupt while performing sensitive operations.'
+    },
+    {
+      term: 'digitalPinToInterrupt()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Maps a digital pin to its corresponding interrupt number.',
+      syntax: 'digitalPinToInterrupt(pin)',
+      examples: [
+        'attachInterrupt(digitalPinToInterrupt(2), myISR, FALLING);'
+      ],
+      notes: 'Ensures cross-platform compatibility when using interrupts.'
+    },
+    
+    // Advanced I/O
+    {
+      term: 'noTone()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Stops the generation of a square wave triggered by tone().',
+      syntax: 'noTone(pin)',
+      examples: [
+        'noTone(8); // Stop tone on pin 8'
+      ],
+      notes: 'Use this to stop playing a tone or to allow the pin to be used for regular output.'
+    },
+    {
+      term: 'pulseIn()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Reads a pulse (either HIGH or LOW) on a pin.',
+      syntax: 'pulseIn(pin, value, timeout)',
+      examples: [
+        'long duration = pulseIn(7, HIGH); // Measure the duration of a HIGH pulse on pin 7'
+      ],
+      notes: 'Returns the pulse length in microseconds, or 0 if no pulse started before the timeout.'
+    },
+    {
+      term: 'pulseInLong()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Similar to pulseIn() but with better handling of long pulses.',
+      syntax: 'pulseInLong(pin, value, timeout)',
+      examples: [
+        'long duration = pulseInLong(7, HIGH, 1000000); // Measure a pulse with a 1 second timeout'
+      ],
+      notes: 'More reliable than pulseIn() for measuring longer pulses, but has more overhead.'
+    },
+    {
+      term: 'shiftIn()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Shifts in a byte of data one bit at a time from a data pin.',
+      syntax: 'shiftIn(dataPin, clockPin, bitOrder)',
+      examples: [
+        'byte myByte = shiftIn(dataPin, clockPin, MSBFIRST); // Read a byte MSB first'
+      ],
+      notes: 'Used for synchronous serial communication with shift registers and other devices.'
+    },
+    {
+      term: 'shiftOut()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Shifts out a byte of data one bit at a time to a data pin.',
+      syntax: 'shiftOut(dataPin, clockPin, bitOrder, value)',
+      examples: [
+        'shiftOut(dataPin, clockPin, MSBFIRST, 0x55); // Send the byte 0x55 MSB first'
+      ],
+      notes: 'Used for synchronous serial communication with shift registers and other devices.'
+    },
+    {
+      term: 'tone()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Generates a square wave of the specified frequency on a pin.',
+      syntax: 'tone(pin, frequency, duration)',
+      examples: [
+        'tone(8, 440, 1000); // Play a 440Hz tone on pin 8 for 1 second'
+      ],
+      notes: 'Duration is optional. If not specified, the wave continues until noTone() is called.'
+    },
+    
+    // Time Functions
+    {
+      term: 'delay()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Pauses the program for the specified amount of milliseconds.',
+      syntax: 'delay(ms)',
+      examples: [
+        'delay(1000); // Pauses for 1 second'
+      ],
+      notes: 'Blocks all program execution during the delay. For non-blocking operations, consider using millis().'
+    },
+    {
+      term: 'delayMicroseconds()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Pauses the program for the specified amount of microseconds.',
+      syntax: 'delayMicroseconds(us)',
+      examples: [
+        'delayMicroseconds(50); // Pauses for 50 microseconds'
+      ],
+      notes: 'More precise for very short delays than delay().'
+    },
+    {
+      term: 'micros()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Returns the number of microseconds since the Arduino board began running the current program.',
+      syntax: 'micros()',
+      examples: [
+        'unsigned long startTime = micros();\n// Code to time\nunsigned long elapsedTime = micros() - startTime;'
+      ],
+      notes: 'Overflows and resets to zero after approximately 70 minutes on 16MHz Arduino boards.'
+    },
+    {
+      term: 'millis()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Returns the number of milliseconds since the Arduino board began running the current program.',
+      syntax: 'millis()',
+      examples: [
+        'unsigned long startTime = millis();\n// ... some time later\nunsigned long elapsedTime = millis() - startTime;'
+      ],
+      notes: 'Overflows and resets to zero after approximately 50 days.'
+    },
+    
+    // Random Numbers
+    {
+      term: 'random()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Generates pseudo-random numbers.',
+      syntax: 'random(max) or random(min, max)',
+      examples: [
+        'int randomNumber = random(100); // Random number from 0 to 99',
+        'int randomInRange = random(10, 20); // Random number from 10 to 19'
+      ],
+      notes: 'The upper bound is exclusive. For more truly random numbers, use randomSeed() with an unconnected analog pin first.'
+    },
+    {
+      term: 'randomSeed()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Initializes the pseudo-random number generator.',
+      syntax: 'randomSeed(seed)',
+      examples: [
+        'randomSeed(analogRead(0)); // Use noise from an unconnected analog pin as seed'
+      ],
+      notes: 'Using the same seed will produce the same sequence of random numbers.'
+    },
+    
+    // Character Functions
+    {
+      term: 'isAlpha()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Checks if a character is a letter.',
+      syntax: 'isAlpha(c)',
+      examples: [
+        'if (isAlpha(myChar)) { /* do something */ }'
+      ],
+      notes: 'Returns non-zero if the character is a letter, otherwise zero.'
+    },
+    {
+      term: 'isAlphaNumeric()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Checks if a character is a letter or a number.',
+      syntax: 'isAlphaNumeric(c)',
+      examples: [
+        'if (isAlphaNumeric(myChar)) { /* do something */ }'
+      ],
+      notes: 'Returns non-zero if the character is a letter or a number, otherwise zero.'
+    },
+    {
+      term: 'isDigit()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Checks if a character is a number.',
+      syntax: 'isDigit(c)',
+      examples: [
+        'if (isDigit(myChar)) { /* do something */ }'
+      ],
+      notes: 'Returns non-zero if the character is a number (0-9), otherwise zero.'
+    },
+    {
+      term: 'isLowerCase()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Checks if a character is a lowercase letter.',
+      syntax: 'isLowerCase(c)',
+      examples: [
+        'if (isLowerCase(myChar)) { /* do something */ }'
+      ],
+      notes: 'Returns non-zero if the character is a lowercase letter, otherwise zero.'
+    },
+    {
+      term: 'isUpperCase()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Checks if a character is an uppercase letter.',
+      syntax: 'isUpperCase(c)',
+      examples: [
+        'if (isUpperCase(myChar)) { /* do something */ }'
+      ],
+      notes: 'Returns non-zero if the character is an uppercase letter, otherwise zero.'
+    },
+    
+    // Interrupts
+    {
+      term: 'interrupts()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Re-enables interrupts after they have been disabled by noInterrupts().',
+      syntax: 'interrupts()',
+      examples: [
+        'noInterrupts(); // Critical section begins\n// code with interrupts disabled\ninterrupts(); // Critical section ends'
+      ],
+      notes: 'Use in pairs with noInterrupts() to protect critical sections of code.'
+    },
+    {
+      term: 'noInterrupts()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Disables interrupts.',
+      syntax: 'noInterrupts()',
+      examples: [
+        'noInterrupts(); // Critical section begins\n// code with interrupts disabled\ninterrupts(); // Critical section ends'
+      ],
+      notes: 'Useful to ensure that a section of code runs uninterrupted. Always keep the critical section as short as possible.'
+    },
+    
+    // Constants
+    {
+      term: 'HIGH | LOW',
+      category: 'keyword',
+      language: 'arduino',
+      description: 'Constants representing digital pin states.',
+      syntax: 'HIGH or LOW',
+      examples: [
+        'digitalWrite(13, HIGH); // Set pin 13 to HIGH voltage level',
+        'if (digitalRead(7) == LOW) { /* do something */ }'
+      ],
+      notes: 'HIGH represents voltage level of 3.3 or 5V, LOW represents 0V or ground.'
+    },
+    {
+      term: 'INPUT | INPUT_PULLUP | OUTPUT',
+      category: 'keyword',
+      language: 'arduino',
+      description: 'Constants defining pin modes.',
+      syntax: 'INPUT, INPUT_PULLUP, or OUTPUT',
+      examples: [
+        'pinMode(13, OUTPUT); // Configure pin 13 as an output',
+        'pinMode(7, INPUT); // Configure pin 7 as an input',
+        'pinMode(2, INPUT_PULLUP); // Configure pin 2 as an input with internal pull-up resistor'
+      ],
+      notes: 'INPUT_PULLUP enables the internal pull-up resistor, eliminating the need for an external pull-up resistor.'
+    },
+    {
+      term: 'true | false',
+      category: 'keyword',
+      language: 'arduino',
+      description: 'Boolean constants representing truth values.',
+      syntax: 'true or false',
+      examples: [
+        'boolean isRunning = true;',
+        'if (flag == false) { /* do something */ }'
+      ],
+      notes: 'In C++, non-zero values are considered true, and zero is considered false.'
+    },
+    
+    // Data Types
+    {
+      term: 'int',
+      category: 'data-type',
+      language: 'arduino',
+      description: 'Integer data type for whole numbers.',
+      syntax: 'int variable_name = value;',
+      examples: [
+        'int counter = 0;',
+        'int temperature = -10;'
+      ],
+      notes: 'On most Arduino boards, int is a 16-bit value with a range of -32,768 to 32,767.'
+    },
+    {
+      term: 'long',
+      category: 'data-type',
+      language: 'arduino',
+      description: 'Extended size integer for large whole numbers.',
+      syntax: 'long variable_name = value;',
+      examples: [
+        'long distance = 1000000L;'
+      ],
+      notes: '32-bit value with a range of -2,147,483,648 to 2,147,483,647.'
+    },
+    {
+      term: 'float',
+      category: 'data-type',
+      language: 'arduino',
+      description: 'Data type for floating-point numbers with decimal points.',
+      syntax: 'float variable_name = value;',
+      examples: [
+        'float pi = 3.14159;',
+        'float temperature = 22.5;'
+      ],
+      notes: '32-bit value with about 6-7 digits of precision.'
+    },
+    {
+      term: 'boolean',
+      category: 'data-type',
+      language: 'arduino',
+      description: 'Boolean data type for true/false values.',
+      syntax: 'boolean variable_name = value;',
+      examples: [
+        'boolean isOn = true;',
+        'boolean hasError = false;'
+      ],
+      notes: 'Uses 1 byte of memory, even though it only needs 1 bit.'
+    },
+    {
+      term: 'byte',
+      category: 'data-type',
+      language: 'arduino',
+      description: 'Byte data type for storing 8-bit unsigned values.',
+      syntax: 'byte variable_name = value;',
+      examples: [
+        'byte counter = 0;',
+        'byte data = 255;'
+      ],
+      notes: 'Range is 0 to 255.'
+    },
+    {
+      term: 'String',
+      category: 'data-type',
+      language: 'arduino',
+      description: 'Object for storing and manipulating text.',
+      syntax: 'String variable_name = "text";',
+      examples: [
+        'String message = "Hello";',
+        'String fullMessage = message + " World";'
+      ],
+      notes: 'More memory-intensive than character arrays but easier to manipulate.'
+    },
+    
+    // Control Structure
+    {
+      term: 'loop()',
+      category: 'function',
+      language: 'arduino',
+      description: 'The main loop function that runs repeatedly after setup.',
+      syntax: 'void loop() {\n  // code to run repeatedly\n}',
+      examples: [
+        'void loop() {\n  digitalWrite(ledPin, HIGH);\n  delay(1000);\n  digitalWrite(ledPin, LOW);\n  delay(1000);\n}'
+      ],
+      notes: 'Required in every Arduino sketch. Executes repeatedly until the board is powered off or reset.'
+    },
+    {
+      term: 'setup()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Function that runs once when the sketch starts.',
+      syntax: 'void setup() {\n  // initialization code\n}',
+      examples: [
+        'void setup() {\n  pinMode(13, OUTPUT);\n  Serial.begin(9600);\n}'
+      ],
+      notes: 'Required in every Arduino sketch. Used for initializing variables, pin modes, libraries, etc.'
+    },
+    
+    // Communication Interfaces
+    {
+      term: 'Serial',
+      category: 'class',
+      language: 'arduino',
+      description: 'Serial communication interface for communicating with external devices or the computer.',
+      syntax: 'Serial.function()',
+      examples: [
+        'Serial.begin(9600); // Initialize serial communication',
+        'Serial.println("Hello World"); // Send data'
+      ],
+      notes: 'Common functions: begin(), print(), println(), available(), read(), write().'
+    },
+    {
+      term: 'SPI',
+      category: 'class',
+      language: 'arduino',
+      description: 'Serial Peripheral Interface communication for high-speed, synchronous data transfer.',
+      syntax: 'SPI.function()',
+      examples: [
+        '#include <SPI.h>\nSPI.begin();',
+        'SPI.transfer(0x55); // Send a byte over SPI'
+      ],
+      notes: 'Used for communicating with sensors, SD cards, displays, and other SPI devices.'
+    },
+    {
+      term: 'Wire',
+      category: 'class',
+      language: 'arduino',
+      description: 'I²C (Two-Wire Interface) communication library.',
+      syntax: 'Wire.function()',
+      examples: [
+        '#include <Wire.h>\nWire.begin(); // Initialize as master',
+        'Wire.beginTransmission(8); // Address 8\nWire.write(data); // Send data\nWire.endTransmission();'
+      ],
+      notes: 'Used for communicating with various I²C devices like displays, sensors, and other microcontrollers.'
+    }
   ]
 };
 
