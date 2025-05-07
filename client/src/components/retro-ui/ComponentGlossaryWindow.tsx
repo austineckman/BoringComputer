@@ -14,7 +14,7 @@ import segmentedDisplayImg from '@assets/segmented-display.icon.png';
 import heroboardImg from '@assets/hero-board.icon.png';
 import customKeypadImg from '@assets/custom-keypad.icon.png';
 import dipSwitchImg from '@assets/dip-switch-3.icon.png';
-import jukeboxIconImg from '@assets/jukebox_icon.png';
+import breadboardImg from '@assets/circuit board.png';
 
 interface ComponentGlossaryWindowProps {
   onClose: () => void;
@@ -402,33 +402,32 @@ const COMPONENTS: Component[] = [
     ]
   },
   {
-    id: 'jukebox',
-    name: 'Jukebox Controller',
-    iconSrc: jukeboxIconImg,
-    description: 'A specialized controller for music selection and playback',
-    generalInfo: 'The jukebox controller integrates several electronic components to provide music selection and playback functionality. It typically includes buttons, displays, and audio processing circuits.',
+    id: 'breadboard',
+    name: 'Breadboard',
+    iconSrc: breadboardImg,
+    description: 'A reusable solderless device for prototyping electronic circuits',
+    generalInfo: 'Breadboards allow you to create temporary circuits without soldering. They have connection points arranged in a grid with conductive metal strips underneath that connect certain sets of holes. They are perfect for testing circuit designs before creating a permanent PCB.',
     pins: [
       {
-        id: 'jukebox-power',
-        name: 'Power Pins',
-        description: 'Connections for powering the jukebox controller.',
-        voltageRange: '5V DC',
-        warnings: 'Ensure proper voltage is supplied to avoid damage.',
-        relatedTerms: ['Power Supply', 'Voltage Regulation']
+        id: 'breadboard-power-rail',
+        name: 'Power Rails',
+        description: 'Long strips along the edges of the breadboard for distributing power.',
+        usageNotes: 'Usually marked with red (+) and blue (-) lines to indicate positive and negative voltage connections.',
+        relatedTerms: ['Power Supply', 'Ground', 'Voltage Distribution']
       },
       {
-        id: 'jukebox-audio',
-        name: 'Audio Output',
-        description: 'Connections for audio signals to speakers or amplifiers.',
-        usageNotes: 'May include stereo left/right channels and ground.',
-        relatedTerms: ['Audio Processing', 'Amplification']
+        id: 'breadboard-terminal-strip',
+        name: 'Terminal Strips',
+        description: 'The main grid area in the middle of the breadboard where components are placed.',
+        usageNotes: 'Each row of 5 holes is connected horizontally. There is a gap in the middle separating two sets of 5-hole rows.',
+        relatedTerms: ['Prototyping', 'Circuit Layout']
       },
       {
-        id: 'jukebox-control',
-        name: 'Control Interface',
-        description: 'Digital or analog connections for controlling the jukebox functionality.',
-        usageNotes: 'May include serial communication pins or direct control lines.',
-        relatedTerms: ['Serial Communication', 'Digital Control']
+        id: 'breadboard-bus-strips',
+        name: 'Bus Strips',
+        description: 'Sets of holes that are connected vertically down the breadboard.',
+        usageNotes: 'Used for distributing power, ground, or other signals to multiple points in your circuit.',
+        relatedTerms: ['Signal Distribution', 'Circuit Design', 'Prototyping']
       }
     ]
   }
