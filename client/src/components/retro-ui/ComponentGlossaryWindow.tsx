@@ -30,6 +30,9 @@ interface ComponentPin {
   usageNotes?: string;
   warnings?: string;
   relatedTerms?: string[];
+  technicalDetails?: string;
+  circuitRole?: string;
+  commonIssues?: string;
 }
 
 interface Component {
@@ -54,23 +57,28 @@ const COMPONENTS: Component[] = [
     name: 'LED',
     iconSrc: ledImg,
     description: 'Light Emitting Diode - A semiconductor device that emits light when current flows through it',
-    generalInfo: 'LEDs are widely used as indicator lamps in many devices and are increasingly used for lighting. They consume far less energy than incandescent lamps.',
+    generalInfo: 'LEDs are widely used as indicator lamps in many devices and are increasingly used for lighting. They consume far less energy than incandescent lamps, have longer lifespans (up to 50,000+ hours), and are more durable than traditional bulbs. LEDs work by emitting light when current flows through a semiconductor material, typically gallium arsenide or gallium phosphide.',
     pins: [
       {
         id: 'led-anode',
         name: 'Anode (+)',
-        description: 'The positive terminal of the LED, which connects to the positive voltage supply.',
-        voltageRange: 'Typically 1.8V to 3.3V depending on color',
-        usageNotes: 'Must be connected to the positive supply through a current-limiting resistor to prevent the LED from burning out.',
-        warnings: 'Never connect an LED directly to a power source without a current-limiting resistor',
-        relatedTerms: ['Forward Voltage', 'Current Limiting']
+        description: 'The positive terminal of the LED, which connects to the positive voltage supply. This is where current enters the LED component.',
+        voltageRange: 'Typically 1.8V to 3.3V depending on color:\n- Red: 1.8-2.2V\n- Yellow/Green: 2.0-2.5V\n- Blue/White: 2.5-3.3V\n- Infrared: 1.2-1.6V',
+        usageNotes: 'Must be connected to the positive supply through a current-limiting resistor to prevent the LED from burning out. Typically identified by the longer lead on through-hole LEDs. For surface-mount LEDs, check the datasheet for polarity markings.',
+        technicalDetails: 'The anode is connected to the P-type semiconductor material in the LED\'s PN junction. When forward-biased (anode more positive than cathode), electrons from the N-type material recombine with holes in the P-type material, releasing energy in the form of photons (light).',
+        circuitRole: 'In a standard LED circuit, the anode connects to the positive voltage source via a current-limiting resistor. For a typical LED with a 20mA current rating, the resistor value can be calculated using: R = (Vsupply - Vled) / 0.02A.',
+        warnings: 'Never connect an LED directly to a power source without a current-limiting resistor. Doing so will allow excessive current to flow, destroying the LED instantly.',
+        relatedTerms: ['Forward Voltage', 'Current Limiting', 'PN Junction', 'Diode']
       },
       {
         id: 'led-cathode',
         name: 'Cathode (-)',
-        description: 'The negative terminal of the LED, which connects to ground or the negative supply voltage.',
-        usageNotes: 'Usually identified by a flat side on the LED package or a shorter lead.',
-        relatedTerms: ['Ground', 'Common Cathode']
+        description: 'The negative terminal of the LED, which connects to ground or the negative supply voltage. This is where current exits the LED component.',
+        usageNotes: 'Usually identified by a flat spot or notch on the LED package or by a shorter lead on through-hole LEDs. In circuit diagrams, it\'s marked by the flat line of the diode symbol.',
+        technicalDetails: 'The cathode is connected to the N-type semiconductor material in the LED\'s PN junction. The N-type material has excess electrons, which flow toward the P-type material when the LED is forward-biased.',
+        circuitRole: 'In standard circuits, the cathode is typically connected directly to ground or the negative terminal of the power supply. In common-cathode configurations (like in 7-segment displays), multiple LED cathodes are connected together to share a common ground connection.',
+        commonIssues: 'Incorrect orientation is one of the most common problems with LEDs. When an LED doesn\'t light up, checking the cathode-anode orientation should be your first troubleshooting step.',
+        relatedTerms: ['Ground', 'Common Cathode', 'Polarity', 'PN Junction']
       }
     ]
   },
@@ -79,35 +87,47 @@ const COMPONENTS: Component[] = [
     name: 'RGB LED',
     iconSrc: rgbLedImg,
     description: 'A LED that can emit different colors by combining red, green, and blue light',
-    generalInfo: 'RGB LEDs contain three separate LEDs (red, green, and blue) in one package. By controlling the intensity of each color, you can create any color in the rainbow.',
+    generalInfo: 'RGB LEDs contain three separate LEDs (red, green, and blue) in one package. By controlling the intensity of each color, you can create any color in the rainbow. These versatile components are widely used in displays, ambient lighting, indicators, and multimedia applications. RGB LEDs are available in both common-anode (shared positive terminal) and common-cathode (shared negative terminal) configurations.',
     pins: [
       {
         id: 'rgb-common',
         name: 'Common Terminal',
-        description: 'The common terminal of the RGB LED, either common anode (connected to positive) or common cathode (connected to ground).',
-        usageNotes: 'Most RGB LEDs are common anode, meaning this pin connects to positive voltage.',
-        relatedTerms: ['Common Anode', 'Common Cathode']
+        description: 'The common terminal of the RGB LED, either common anode (connected to positive) or common cathode (connected to ground). This serves as the shared connection for all three LED channels.',
+        usageNotes: 'Most RGB LEDs are common anode, meaning this pin connects to positive voltage. In this configuration, you turn on a color by setting its corresponding pin LOW. For common cathode RGB LEDs, this pin connects to ground, and colors are activated by setting their pins HIGH.',
+        technicalDetails: 'In a common anode configuration, the P-type semiconductor material of all three LEDs is connected to this single terminal. In a common cathode, the N-type semiconductor from all three LEDs joins at this point.',
+        circuitRole: 'This pin should be connected directly to the power source (for common anode) or ground (for common cathode) to provide the common reference point for all three LED elements.',
+        commonIssues: 'Using the wrong type of RGB LED (common anode vs. common cathode) for your circuit will result in no illumination or unexpected behavior. Always verify which type you have before connecting.',
+        relatedTerms: ['Common Anode', 'Common Cathode', 'RGB Color Model']
       },
       {
         id: 'rgb-red',
         name: 'Red Terminal',
-        description: 'Controls the red component of the RGB LED.',
-        voltageRange: 'Forward voltage typically 1.8-2.2V',
-        relatedTerms: ['PWM', 'Color Mixing']
+        description: 'Controls the red component of the RGB LED. By varying the voltage/current to this pin, you can adjust the intensity of the red light output.',
+        voltageRange: 'Forward voltage typically 1.8-2.2V. Requires a current-limiting resistor calculated for this voltage drop.',
+        usageNotes: 'Connect this pin to a PWM-capable output on your microcontroller through a current-limiting resistor (typically 220Ω to 330Ω) to control brightness levels.',
+        technicalDetails: 'The red LED element uses semiconductor materials with a wider bandgap than the blue element, resulting in its lower forward voltage. It typically employs aluminum gallium arsenide (AlGaAs) or gallium arsenide phosphide (GaAsP).',
+        circuitRole: 'In color mixing applications, this pin is controlled independently of the other color pins to create the red component of any mixed color. Maximum red intensity (255 in RGB color notation) is achieved by fully activating only this pin.',
+        relatedTerms: ['PWM', 'Color Mixing', 'Forward Voltage', 'Current Limiting']
       },
       {
         id: 'rgb-green',
         name: 'Green Terminal',
-        description: 'Controls the green component of the RGB LED.',
-        voltageRange: 'Forward voltage typically 2.0-3.2V',
-        relatedTerms: ['PWM', 'Color Mixing']
+        description: 'Controls the green component of the RGB LED. By varying the voltage/current to this pin, you can adjust the intensity of the green light output.',
+        voltageRange: 'Forward voltage typically 2.0-3.2V. Requires a current-limiting resistor calculated for this specific voltage drop.',
+        usageNotes: 'Connect this pin to a PWM-capable output on your microcontroller through a current-limiting resistor (typically 100Ω to 220Ω) to control brightness levels. Green LEDs often appear brighter to the human eye, so you may need to adjust the PWM value to balance the perceived brightness.',
+        technicalDetails: 'The green LED element typically uses indium gallium nitride (InGaN) or gallium phosphide (GaP) semiconductor materials.',
+        circuitRole: 'In color mixing applications, this pin is controlled independently of the other color pins to create the green component of any mixed color. Pure green (0,255,0 in RGB notation) is achieved by fully activating only this pin.',
+        relatedTerms: ['PWM', 'Color Mixing', 'Forward Voltage', 'Current Limiting']
       },
       {
         id: 'rgb-blue',
         name: 'Blue Terminal',
-        description: 'Controls the blue component of the RGB LED.',
-        voltageRange: 'Forward voltage typically 2.7-3.4V',
-        relatedTerms: ['PWM', 'Color Mixing']
+        description: 'Controls the blue component of the RGB LED. By varying the voltage/current to this pin, you can adjust the intensity of the blue light output.',
+        voltageRange: 'Forward voltage typically 2.7-3.4V, which is higher than the red and green components. Requires a properly sized current-limiting resistor for this specific voltage drop.',
+        usageNotes: 'Connect this pin to a PWM-capable output on your microcontroller through a current-limiting resistor (typically 100Ω or less) to control brightness levels. Due to its higher forward voltage, the blue component may need a different resistor value than red and green to achieve balanced color mixing.',
+        technicalDetails: 'The blue LED element typically uses indium gallium nitride (InGaN) semiconductor material, which has a narrower bandgap resulting in higher energy (blue) photon emission.',
+        circuitRole: 'In color mixing applications, this pin is controlled independently of the other color pins to create the blue component of any mixed color. Pure blue (0,0,255 in RGB notation) is achieved by fully activating only this pin.',
+        relatedTerms: ['PWM', 'Color Mixing', 'Forward Voltage', 'Current Limiting']
       }
     ]
   },
@@ -384,35 +404,47 @@ const COMPONENTS: Component[] = [
     name: 'Breadboard',
     iconSrc: breadboardImg,
     description: 'A solderless prototyping platform for quickly building electronic circuits',
-    generalInfo: 'Breadboards are reusable devices with connection points (tie points) arranged in a grid. They allow electronic components to be temporarily connected without soldering, making them ideal for prototyping and experimentation.',
+    generalInfo: 'Breadboards are reusable devices with connection points (tie points) arranged in a grid. They allow electronic components to be temporarily connected without soldering, making them ideal for prototyping and experimentation. Standard breadboards typically have 30 rows and 5-10 columns on each side of the central channel. Full-size breadboards often have 60+ rows while mini breadboards may have only 17 rows. They are the foundation of electronics prototyping and education.',
     pins: [
       {
         id: 'breadboard-power-rail-positive',
         name: 'Power Rails (+)',
-        description: 'Horizontal rows running along the top and bottom edges, typically marked with red lines, used for connecting to positive voltage.',
-        usageNotes: 'Usually connected to a power supply\'s positive terminal. All points along the same rail are internally connected.',
-        relatedTerms: ['Power Supply', 'Voltage']
+        description: 'Horizontal rows running along the top and bottom edges, typically marked with red lines, used for connecting to positive voltage. These continuous strips extend the full length of the breadboard.',
+        usageNotes: 'Usually connected to a power supply\'s positive terminal. All points along the same rail are internally connected. It\'s common practice to use red wires for connections to these rails to maintain consistent color coding in your circuits.',
+        technicalDetails: 'Power rails are connected by metal strips running horizontally under the plastic casing. They can handle currents up to about 1-2A in most breadboards, though this varies by manufacturer and quality.',
+        circuitRole: 'Provides a common positive voltage distribution point for the entire circuit. In more complex circuits, these rails can be split in the middle (by removing jumpers) to provide different voltage levels on the same breadboard.',
+        commonIssues: 'Poor connections in power rails are a common source of intermittent circuit behavior. Always verify solid connections, and consider using multiple entry points for circuits that draw significant current.',
+        relatedTerms: ['Power Supply', 'Voltage', 'Current Distribution']
       },
       {
         id: 'breadboard-power-rail-negative',
         name: 'Power Rails (-)',
-        description: 'Horizontal rows running along the top and bottom edges, typically marked with blue or black lines, used for connecting to ground.',
-        usageNotes: 'Usually connected to a power supply\'s ground terminal. All points along the same rail are internally connected.',
-        relatedTerms: ['Ground', 'Common Reference']
+        description: 'Horizontal rows running along the top and bottom edges, typically marked with blue or black lines, used for connecting to ground. These provide a common ground reference for your circuit.',
+        usageNotes: 'Usually connected to a power supply\'s ground terminal. All points along the same rail are internally connected. It\'s standard practice to use black or blue wires for connections to the ground rails.',
+        technicalDetails: 'Like the positive rails, the negative rails consist of metal strips running horizontally under the plastic casing. The separation between power rails helps prevent accidental short circuits.',
+        circuitRole: 'Serves as the common ground reference point for the entire circuit. A proper ground connection is essential for most electronic circuits to function correctly.',
+        commonIssues: 'Ground loops can occur when multiple paths to ground exist, potentially causing noise in sensitive circuits. For precision analog circuits, consider using a star-shaped ground topology with a single connection point.',
+        relatedTerms: ['Ground', 'Common Reference', 'Ground Loop']
       },
       {
         id: 'breadboard-terminal-strips',
         name: 'Terminal Strips',
-        description: 'The main central area with 5-hole rows. Each row is internally connected horizontally, but separated by a central gap.',
-        usageNotes: 'Each group of 5 connected holes allows multiple connections to a single component pin. The central divider separates the rows into two independent sections.',
-        relatedTerms: ['Prototyping', 'Circuit Assembly']
+        description: 'The main central area with 5-hole rows. Each row is internally connected horizontally, but separated by a central gap. This is where most of your components are placed and interconnected.',
+        usageNotes: 'Each group of 5 connected holes allows multiple connections to a single component pin. The central divider separates the rows into two independent sections. Points with the same letter-number designation (like E5) on opposite sides of the central gap are NOT connected.',
+        technicalDetails: 'The connections in terminal strips are made with metal clips that create a tight fit around component leads and wires. Typical spacing between holes is 0.1\" (2.54mm), matching the standard pin spacing of most through-hole components and DIP ICs.',
+        circuitRole: 'Terminal strips form the primary workspace of the breadboard where components are placed and interconnected. Their arrangement makes it easy to create circuits without soldering while maintaining relatively compact layouts.',
+        commonIssues: 'Over time, the metal clips inside can lose tension, resulting in poor connections. If a circuit stops working, try relocating components to unused sections of the breadboard. Repeatedly inserting thick wires can permanently damage the connection points.',
+        relatedTerms: ['Prototyping', 'Circuit Assembly', 'DIP IC Mounting']
       },
       {
         id: 'breadboard-central-gap',
         name: 'Central Gap/Channel',
-        description: 'The dividing channel down the middle of the breadboard that electrically separates the two sides.',
-        usageNotes: 'Ideal for mounting DIP ICs and other multi-pin components that need independent connections on each side.',
-        relatedTerms: ['DIP IC', 'Integrated Circuit Mounting']
+        description: 'The dividing channel down the middle of the breadboard that electrically separates the two sides. This gap is specifically sized to accommodate standard DIP (Dual In-line Package) integrated circuits.',
+        usageNotes: 'Ideal for mounting DIP ICs and other multi-pin components that need independent connections on each side. The standard width allows ICs to straddle the gap with their pins inserted into the terminal strips on either side.',
+        technicalDetails: 'The gap is typically about 0.3\" (7.5mm) wide, designed specifically to fit the standard width of DIP ICs. This standardized spacing is one of the key design elements that makes breadboards so universally useful for prototyping.',
+        circuitRole: 'The central gap provides electrical isolation between the two sides of the breadboard, allowing integrated circuits to be mounted with each pin independently connected to different parts of the circuit.',
+        commonIssues: 'When working with wider components or modules that don\'t fit the standard DIP format, you may need to use jumper wires to bridge connections across the gap, which can make circuits more complex and error-prone.',
+        relatedTerms: ['DIP IC', 'Integrated Circuit Mounting', 'Pin Spacing']
       }
     ]
   },
@@ -596,6 +628,46 @@ const GLOSSARY: GlossaryTerm[] = [
     term: 'Digital Control',
     definition: 'The use of digital signals to control electronic devices and systems, often through microcontrollers or digital interfaces.',
     relatedComponents: ['breadboard', 'heroboard', 'dip-switch']
+  },
+  {
+    term: 'DIP IC',
+    definition: 'Dual In-line Package Integrated Circuit - A common package type for integrated circuits with two parallel rows of pins designed to fit across the central channel of a breadboard.',
+    relatedComponents: ['breadboard', 'heroboard']
+  },
+  {
+    term: 'Current Distribution',
+    definition: 'The way electrical current is routed throughout a circuit. In breadboards, this is facilitated by the internal metal strips that connect groups of holes together.',
+    relatedComponents: ['breadboard', 'heroboard']
+  },
+  {
+    term: 'Pin Spacing',
+    definition: 'The standardized distance between pins or connection points in electronic components. Standard breadboards use 0.1" (2.54mm) spacing to match most through-hole components.',
+    relatedComponents: ['breadboard', 'heroboard']
+  },
+  {
+    term: 'Ground Loop',
+    definition: 'An unwanted current path created when multiple ground connections form a loop, often causing noise or interference in sensitive circuits.',
+    relatedComponents: ['breadboard', 'heroboard']
+  },
+  {
+    term: 'RGB Color Model',
+    definition: 'A color model that combines red, green, and blue light to create a wide spectrum of colors. Each component can be varied in intensity to produce different hues.',
+    relatedComponents: ['rgb-led']
+  },
+  {
+    term: 'PN Junction',
+    definition: 'The boundary between P-type and N-type semiconductor materials that forms the basic building block of diodes, LEDs, and many other semiconductor devices.',
+    relatedComponents: ['led', 'rgb-led']
+  },
+  {
+    term: 'Diode',
+    definition: 'A semiconductor device that allows current to flow in one direction only (from anode to cathode). LEDs are specialized diodes that emit light when current flows through them.',
+    relatedComponents: ['led', 'rgb-led']
+  },
+  {
+    term: 'Polarity',
+    definition: 'The characteristic of electronic components having distinct positive and negative terminals that must be connected correctly for proper operation.',
+    relatedComponents: ['led', 'rgb-led', 'oled-display']
   }
 ];
 
@@ -791,21 +863,42 @@ const ComponentGlossaryWindow: React.FC<ComponentGlossaryWindowProps> = ({ onClo
               {selectedPin.voltageRange && (
                 <div className="mb-4">
                   <h4 className="font-bold text-gray-700">Voltage Range:</h4>
-                  <p>{selectedPin.voltageRange}</p>
+                  <p className="whitespace-pre-line">{selectedPin.voltageRange}</p>
                 </div>
               )}
               
               {selectedPin.usageNotes && (
                 <div className="mb-4">
                   <h4 className="font-bold text-gray-700">Usage Notes:</h4>
-                  <p>{selectedPin.usageNotes}</p>
+                  <p className="whitespace-pre-line">{selectedPin.usageNotes}</p>
+                </div>
+              )}
+              
+              {selectedPin.technicalDetails && (
+                <div className="mb-4">
+                  <h4 className="font-bold text-gray-700">Technical Details:</h4>
+                  <p className="whitespace-pre-line">{selectedPin.technicalDetails}</p>
+                </div>
+              )}
+              
+              {selectedPin.circuitRole && (
+                <div className="mb-4">
+                  <h4 className="font-bold text-gray-700">Circuit Role:</h4>
+                  <p className="whitespace-pre-line">{selectedPin.circuitRole}</p>
+                </div>
+              )}
+              
+              {selectedPin.commonIssues && (
+                <div className="mb-4">
+                  <h4 className="font-bold text-gray-700">Common Issues:</h4>
+                  <p className="whitespace-pre-line">{selectedPin.commonIssues}</p>
                 </div>
               )}
               
               {selectedPin.warnings && (
                 <div className="mb-4 p-2 bg-red-50 border-l-2 border-red-500 text-red-700">
                   <h4 className="font-bold">⚠️ Warning:</h4>
-                  <p>{selectedPin.warnings}</p>
+                  <p className="whitespace-pre-line">{selectedPin.warnings}</p>
                 </div>
               )}
               
