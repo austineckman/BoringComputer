@@ -44,17 +44,10 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
   const [questView, setQuestView] = useState<'list' | 'detail'>('list');
   
   // Initialize filtered quests when allQuests changes
+  // Combined effect that only runs when filters or data changes
   useEffect(() => {
-    if (!allQuests) {
+    if (!allQuests || allQuests.length === 0) {
       setFilteredQuests([]);
-      return;
-    }
-    setFilteredQuests(allQuests);
-  }, [allQuests]);
-  
-  // Apply filters separately to avoid dependency loop
-  useEffect(() => {
-    if (!allQuests || !allQuests.length) {
       return;
     }
     
