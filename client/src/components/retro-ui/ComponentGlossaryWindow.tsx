@@ -14,7 +14,7 @@ import segmentedDisplayImg from '@assets/segmented-display.icon.png';
 import heroboardImg from '@assets/hero-board.icon.png';
 import customKeypadImg from '@assets/custom-keypad.icon.png';
 import dipSwitchImg from '@assets/dip-switch-3.icon.png';
-import breadboardImg from '@assets/circuit board.png';
+import breadboardImg from '@assets/breadboard.png';
 
 interface ComponentGlossaryWindowProps {
   onClose: () => void;
@@ -380,6 +380,43 @@ const COMPONENTS: Component[] = [
     ]
   },
   {
+    id: 'breadboard',
+    name: 'Breadboard',
+    iconSrc: breadboardImg,
+    description: 'A solderless prototyping platform for quickly building electronic circuits',
+    generalInfo: 'Breadboards are reusable devices with connection points (tie points) arranged in a grid. They allow electronic components to be temporarily connected without soldering, making them ideal for prototyping and experimentation.',
+    pins: [
+      {
+        id: 'breadboard-power-rail-positive',
+        name: 'Power Rails (+)',
+        description: 'Horizontal rows running along the top and bottom edges, typically marked with red lines, used for connecting to positive voltage.',
+        usageNotes: 'Usually connected to a power supply\'s positive terminal. All points along the same rail are internally connected.',
+        relatedTerms: ['Power Supply', 'Voltage']
+      },
+      {
+        id: 'breadboard-power-rail-negative',
+        name: 'Power Rails (-)',
+        description: 'Horizontal rows running along the top and bottom edges, typically marked with blue or black lines, used for connecting to ground.',
+        usageNotes: 'Usually connected to a power supply\'s ground terminal. All points along the same rail are internally connected.',
+        relatedTerms: ['Ground', 'Common Reference']
+      },
+      {
+        id: 'breadboard-terminal-strips',
+        name: 'Terminal Strips',
+        description: 'The main central area with 5-hole rows. Each row is internally connected horizontally, but separated by a central gap.',
+        usageNotes: 'Each group of 5 connected holes allows multiple connections to a single component pin. The central divider separates the rows into two independent sections.',
+        relatedTerms: ['Prototyping', 'Circuit Assembly']
+      },
+      {
+        id: 'breadboard-central-gap',
+        name: 'Central Gap/Channel',
+        description: 'The dividing channel down the middle of the breadboard that electrically separates the two sides.',
+        usageNotes: 'Ideal for mounting DIP ICs and other multi-pin components that need independent connections on each side.',
+        relatedTerms: ['DIP IC', 'Integrated Circuit Mounting']
+      }
+    ]
+  },
+  {
     id: 'dip-switch',
     name: 'DIP Switch',
     iconSrc: dipSwitchImg,
@@ -401,36 +438,7 @@ const COMPONENTS: Component[] = [
       }
     ]
   },
-  {
-    id: 'breadboard',
-    name: 'Breadboard',
-    iconSrc: breadboardImg,
-    description: 'A reusable solderless device for prototyping electronic circuits',
-    generalInfo: 'Breadboards allow you to create temporary circuits without soldering. They have connection points arranged in a grid with conductive metal strips underneath that connect certain sets of holes. They are perfect for testing circuit designs before creating a permanent PCB.',
-    pins: [
-      {
-        id: 'breadboard-power-rail',
-        name: 'Power Rails',
-        description: 'Long strips along the edges of the breadboard for distributing power.',
-        usageNotes: 'Usually marked with red (+) and blue (-) lines to indicate positive and negative voltage connections.',
-        relatedTerms: ['Power Supply', 'Ground', 'Voltage Distribution']
-      },
-      {
-        id: 'breadboard-terminal-strip',
-        name: 'Terminal Strips',
-        description: 'The main grid area in the middle of the breadboard where components are placed.',
-        usageNotes: 'Each row of 5 holes is connected horizontally. There is a gap in the middle separating two sets of 5-hole rows.',
-        relatedTerms: ['Prototyping', 'Circuit Layout']
-      },
-      {
-        id: 'breadboard-bus-strips',
-        name: 'Bus Strips',
-        description: 'Sets of holes that are connected vertically down the breadboard.',
-        usageNotes: 'Used for distributing power, ground, or other signals to multiple points in your circuit.',
-        relatedTerms: ['Signal Distribution', 'Circuit Design', 'Prototyping']
-      }
-    ]
-  }
+
 ];
 
 const GLOSSARY: GlossaryTerm[] = [
@@ -447,7 +455,7 @@ const GLOSSARY: GlossaryTerm[] = [
   {
     term: 'Ground',
     definition: 'A reference point in an electrical circuit from which voltage is measured. It is the return path for current to flow back to the source.',
-    relatedComponents: ['led', 'oled-display', 'heroboard']
+    relatedComponents: ['led', 'oled-display', 'heroboard', 'breadboard']
   },
   {
     term: 'Common Cathode',
@@ -527,7 +535,7 @@ const GLOSSARY: GlossaryTerm[] = [
   {
     term: 'Power Supply',
     definition: 'A device or system that supplies electrical energy to an output load or group of loads, providing the correct voltage and current.',
-    relatedComponents: ['heroboard', 'oled-display']
+    relatedComponents: ['heroboard', 'oled-display', 'breadboard']
   },
   {
     term: 'Voltage Regulator',
