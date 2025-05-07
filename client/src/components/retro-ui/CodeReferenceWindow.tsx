@@ -2592,6 +2592,247 @@ const CodeReferenceWindow = ({ onClose, onMinimize, isActive }: CodeReferenceWin
   };
   
   // Main content render function
+  // Function to group terms by category for easier browsing
+  const getCategorizedTerms = (language) => {
+    if (!language) return {};
+    
+    // Define categories and their display names
+    const categories = {
+      'built-in-functions': 'Built-in Functions',
+      'data-types': 'Data Types',
+      'operators': 'Operators',
+      'control-flow': 'Control Flow',
+      'functions': 'Functions',
+      'classes-objects': 'Classes & Objects',
+      'modules-packages': 'Modules & Packages',
+      'string-methods': 'String Methods',
+      'list-methods': 'List Methods',
+      'dict-methods': 'Dictionary Methods',
+      'file-operations': 'File Operations',
+      'collections': 'Collections & Comprehensions',
+      'advanced': 'Advanced Concepts',
+      'memory': 'Memory Management',
+      'error-handling': 'Error Handling',
+      'io': 'Input/Output',
+      'digital-io': 'Digital I/O',
+      'analog-io': 'Analog I/O',
+      'math': 'Math Functions',
+      'time': 'Time Functions',
+      'communication': 'Communication',
+      'interrupts': 'Interrupts',
+      'bits': 'Bits & Bytes',
+      'other': 'Other'
+    };
+    
+    // Map term categories to our grouped categories
+    const categoryMapping = {
+      // Python mappings
+      'print()': 'built-in-functions',
+      'input()': 'built-in-functions',
+      'len()': 'built-in-functions',
+      'range()': 'built-in-functions',
+      'type()': 'built-in-functions',
+      'int()': 'built-in-functions',
+      'float()': 'built-in-functions',
+      'str()': 'built-in-functions',
+      'list()': 'built-in-functions',
+      'dict()': 'built-in-functions',
+      'list': 'data-types',
+      'dict': 'data-types',
+      'tuple': 'data-types',
+      'set': 'data-types',
+      'bool': 'data-types',
+      'None': 'data-types',
+      '+': 'operators',
+      'in': 'operators',
+      'if-elif-else': 'control-flow',
+      'for': 'control-flow',
+      'while': 'control-flow',
+      'break': 'control-flow',
+      'continue': 'control-flow',
+      'try-except': 'error-handling',
+      'with': 'control-flow',
+      'def': 'functions',
+      'lambda': 'functions',
+      'class': 'classes-objects',
+      '__init__': 'classes-objects',
+      'self': 'classes-objects',
+      'inheritance': 'classes-objects',
+      'super()': 'classes-objects',
+      'import': 'modules-packages',
+      'from': 'modules-packages',
+      'as': 'modules-packages',
+      'str.format()': 'string-methods',
+      'f-string': 'string-methods',
+      'str.split()': 'string-methods',
+      'str.join()': 'string-methods',
+      'str.strip()': 'string-methods',
+      'list.append()': 'list-methods',
+      'list.extend()': 'list-methods',
+      'list.insert()': 'list-methods',
+      'list.remove()': 'list-methods',
+      'list.pop()': 'list-methods',
+      'list.sort()': 'list-methods',
+      'dict.get()': 'dict-methods',
+      'dict.items()': 'dict-methods',
+      'dict.keys()': 'dict-methods',
+      'dict.values()': 'dict-methods',
+      'dict.update()': 'dict-methods',
+      'open()': 'file-operations',
+      'file.read()': 'file-operations',
+      'file.write()': 'file-operations',
+      'file.close()': 'file-operations',
+      'list comprehension': 'collections',
+      'dict comprehension': 'collections',
+      'set comprehension': 'collections',
+      'decorator': 'advanced',
+      'generator': 'advanced',
+      'yield': 'advanced',
+      
+      // C++ mappings
+      'cout': 'io',
+      'cin': 'io',
+      'cerr': 'io',
+      'endl': 'io',
+      'int': 'data-types',
+      'double': 'data-types',
+      'char': 'data-types',
+      'bool': 'data-types',
+      'string': 'data-types',
+      'vector': 'data-types',
+      'array': 'data-types',
+      'if': 'control-flow',
+      'else': 'control-flow',
+      'switch': 'control-flow',
+      'for': 'control-flow',
+      'while': 'control-flow',
+      'do-while': 'control-flow',
+      'break': 'control-flow',
+      'continue': 'control-flow',
+      'function': 'functions',
+      'return': 'functions',
+      'void': 'functions',
+      'operators': 'operators',
+      'new': 'memory',
+      'delete': 'memory',
+      'class': 'classes-objects',
+      'struct': 'classes-objects',
+      'constructor': 'classes-objects',
+      'destructor': 'classes-objects',
+      'inheritance': 'classes-objects',
+      'virtual': 'classes-objects',
+      'pointer': 'memory',
+      'reference': 'memory',
+      'nullptr': 'memory',
+      'smart_pointers': 'memory',
+      'iostream': 'io',
+      'string': 'io',
+      'vector': 'collections',
+      'algorithm': 'collections',
+      'try-catch': 'error-handling',
+      'throw': 'error-handling',
+      'exception': 'error-handling',
+      
+      // Arduino mappings
+      'digitalRead()': 'digital-io',
+      'digitalWrite()': 'digital-io',
+      'pinMode()': 'digital-io',
+      'analogRead()': 'analog-io',
+      'analogReadResolution()': 'analog-io',
+      'analogReference()': 'analog-io',
+      'analogWrite()': 'analog-io',
+      'analogWriteResolution()': 'analog-io',
+      'abs()': 'math',
+      'constrain()': 'math',
+      'map()': 'math',
+      'max()': 'math',
+      'min()': 'math',
+      'pow()': 'math',
+      'sq()': 'math',
+      'sqrt()': 'math',
+      'cos()': 'math',
+      'sin()': 'math',
+      'tan()': 'math',
+      'bit()': 'bits',
+      'bitClear()': 'bits',
+      'bitRead()': 'bits',
+      'bitSet()': 'bits',
+      'bitWrite()': 'bits',
+      'highByte()': 'bits',
+      'lowByte()': 'bits',
+      'attachInterrupt()': 'interrupts',
+      'detachInterrupt()': 'interrupts',
+      'digitalPinToInterrupt()': 'interrupts',
+      'noTone()': 'digital-io',
+      'pulseIn()': 'digital-io',
+      'pulseInLong()': 'digital-io',
+      'shiftIn()': 'digital-io',
+      'shiftOut()': 'digital-io',
+      'tone()': 'digital-io',
+      'delay()': 'time',
+      'delayMicroseconds()': 'time',
+      'micros()': 'time',
+      'millis()': 'time',
+      'random()': 'math',
+      'randomSeed()': 'math',
+      'interrupts()': 'interrupts',
+      'noInterrupts()': 'interrupts',
+      'HIGH | LOW': 'digital-io',
+      'INPUT | INPUT_PULLUP | OUTPUT': 'digital-io',
+      'true | false': 'data-types',
+      'int': 'data-types',
+      'long': 'data-types',
+      'float': 'data-types',
+      'boolean': 'data-types',
+      'byte': 'data-types',
+      'String': 'data-types',
+      'loop()': 'control-flow',
+      'setup()': 'control-flow',
+      'Serial': 'communication',
+      'SPI': 'communication',
+      'Wire': 'communication'
+    };
+    
+    // Find all terms for this language
+    const terms = language.terms;
+    
+    // Group terms by category
+    const groupedTerms = {};
+    
+    terms.forEach(term => {
+      // Default category is 'other'
+      let category = 'other';
+      
+      // Try to find a specific category
+      if (categoryMapping[term.term]) {
+        category = categoryMapping[term.term];
+      } else if (term.category === 'function') {
+        category = 'built-in-functions';
+      } else if (term.category === 'data-type') {
+        category = 'data-types';
+      } else if (term.category === 'keyword' && 
+                (term.term.includes('if') || term.term.includes('for') || 
+                 term.term.includes('while') || term.term === 'break' || 
+                 term.term === 'continue')) {
+        category = 'control-flow';
+      } else if (term.category === 'operator') {
+        category = 'operators';
+      } else if (term.category === 'class') {
+        category = 'classes-objects';
+      }
+      
+      // Initialize category array if it doesn't exist
+      if (!groupedTerms[category]) {
+        groupedTerms[category] = [];
+      }
+      
+      // Add term to the category
+      groupedTerms[category].push(term);
+    });
+    
+    return { groupedTerms, categories };
+  };
+
   const renderContent = () => {
     // If searching, show search results
     if (isSearching) {
