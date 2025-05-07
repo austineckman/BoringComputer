@@ -65,7 +65,7 @@ const pythonReference: ReferenceLanguage = {
     // More sections would be defined here
   ],
   terms: [
-    // Python terms
+    // Python Built-in Functions
     {
       term: 'print()',
       category: 'function',
@@ -78,7 +78,727 @@ const pythonReference: ReferenceLanguage = {
       ],
       notes: 'The print function in Python 3 is different from the print statement in Python 2.'
     },
-    // More terms would be defined here
+    {
+      term: 'input()',
+      category: 'function',
+      language: 'python',
+      description: 'Reads a line from the console, converts it to a string, and returns it.',
+      syntax: 'input([prompt])',
+      examples: [
+        'name = input("Enter your name: ")',
+        'age = int(input("How old are you? "))'
+      ],
+      notes: 'Always returns a string. To get numeric input, wrap with int() or float().'
+    },
+    {
+      term: 'len()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns the number of items in an object.',
+      syntax: 'len(object)',
+      examples: [
+        'len("Hello") # Returns 5',
+        'len([1, 2, 3]) # Returns 3'
+      ],
+      notes: 'Works with strings, lists, tuples, dictionaries, sets, and more.'
+    },
+    {
+      term: 'range()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns a sequence of numbers, starting from 0 by default, and increments by 1, up to a specified end.',
+      syntax: 'range(stop) or range(start, stop[, step])',
+      examples: [
+        'for i in range(5): print(i) # Prints 0, 1, 2, 3, 4',
+        'list(range(1, 10, 2)) # Returns [1, 3, 5, 7, 9]'
+      ],
+      notes: 'Commonly used in for loops. In Python 3, range() returns a range object, not a list.'
+    },
+    {
+      term: 'type()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns the type of an object.',
+      syntax: 'type(object)',
+      examples: [
+        'type(42) # Returns <class \'int\'>',
+        'type("Hello") # Returns <class \'str\'>'
+      ],
+      notes: 'Useful for debugging and type checking.'
+    },
+    {
+      term: 'int()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns an integer object constructed from a number or string.',
+      syntax: 'int(x=0) or int(x, base=10)',
+      examples: [
+        'int("42") # Returns 42',
+        'int(3.14) # Returns 3',
+        'int("1010", 2) # Returns 10 (binary to decimal)'
+      ],
+      notes: 'If no arguments are given, returns 0. The base parameter specifies the number system (e.g., 2 for binary, 16 for hex).'
+    },
+    {
+      term: 'float()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns a floating point number constructed from a number or string.',
+      syntax: 'float(x)',
+      examples: [
+        'float(42) # Returns 42.0',
+        'float("3.14") # Returns 3.14'
+      ],
+      notes: 'If no arguments are given, returns 0.0.'
+    },
+    {
+      term: 'str()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns a string version of an object.',
+      syntax: 'str(object="")',
+      examples: [
+        'str(42) # Returns "42"',
+        'str([1, 2, 3]) # Returns "[1, 2, 3]"'
+      ],
+      notes: 'If no arguments are given, returns empty string. Different from repr().'
+    },
+    {
+      term: 'list()',
+      category: 'function',
+      language: 'python',
+      description: 'Creates a list from an iterable.',
+      syntax: 'list([iterable])',
+      examples: [
+        'list("abc") # Returns [\'a\', \'b\', \'c\']',
+        'list(range(3)) # Returns [0, 1, 2]'
+      ],
+      notes: 'If no arguments are given, returns an empty list.'
+    },
+    {
+      term: 'dict()',
+      category: 'function',
+      language: 'python',
+      description: 'Creates a dictionary from keyword arguments or an iterable of key-value pairs.',
+      syntax: 'dict([mapping or iterable][, **kwargs])',
+      examples: [
+        'dict(a=1, b=2) # Returns {\'a\': 1, \'b\': 2}',
+        'dict([(\'a\', 1), (\'b\', 2)]) # Returns {\'a\': 1, \'b\': 2}'
+      ],
+      notes: 'If no arguments are given, returns an empty dictionary.'
+    },
+    
+    // Python Data Types and Operators
+    {
+      term: 'list',
+      category: 'data-type',
+      language: 'python',
+      description: 'A mutable sequence of elements.',
+      syntax: '[element1, element2, ...]',
+      examples: [
+        'numbers = [1, 2, 3, 4]',
+        'mixed = [1, "hello", True, 3.14]'
+      ],
+      notes: 'Lists are ordered, mutable, and allow duplicate elements. Accessed by index (0-based).'
+    },
+    {
+      term: 'dict',
+      category: 'data-type',
+      language: 'python',
+      description: 'A collection of key-value pairs.',
+      syntax: '{key1: value1, key2: value2, ...}',
+      examples: [
+        'person = {"name": "Alice", "age": 30, "city": "New York"}',
+        'empty_dict = {}'
+      ],
+      notes: 'Dictionaries are unordered, mutable, and indexed by keys which must be immutable.'
+    },
+    {
+      term: 'tuple',
+      category: 'data-type',
+      language: 'python',
+      description: 'An immutable sequence of elements.',
+      syntax: '(element1, element2, ...) or element1, element2, ...',
+      examples: [
+        'coordinates = (10, 20)',
+        'single_element = (42,)'
+      ],
+      notes: 'Tuples are ordered, immutable, and allow duplicate elements. Often used for fixed collections of data.'
+    },
+    {
+      term: 'set',
+      category: 'data-type',
+      language: 'python',
+      description: 'An unordered collection of unique elements.',
+      syntax: '{element1, element2, ...} or set([iterable])',
+      examples: [
+        'unique_numbers = {1, 2, 3, 3, 2, 1} # Results in {1, 2, 3}',
+        'empty_set = set() # Can\'t use {} which creates an empty dict'
+      ],
+      notes: 'Sets are unordered, mutable, and don\'t allow duplicate elements. Useful for membership testing and eliminating duplicates.'
+    },
+    {
+      term: 'bool',
+      category: 'data-type',
+      language: 'python',
+      description: 'A boolean value representing True or False.',
+      syntax: 'True or False',
+      examples: [
+        'is_active = True',
+        'has_permission = False'
+      ],
+      notes: 'Any object can be tested for truth value. Empty containers, zero values, and None are all considered False.'
+    },
+    {
+      term: 'None',
+      category: 'keyword',
+      language: 'python',
+      description: 'A special constant representing the absence of a value or a null value.',
+      syntax: 'None',
+      examples: [
+        'result = None',
+        'if value is None: print("No value")' 
+      ],
+      notes: 'Use \"is None\" or \"is not None\" for comparison rather than equality operators.'
+    },
+    {
+      term: '+',
+      category: 'operator',
+      language: 'python',
+      description: 'Addition operator or string/sequence concatenation.',
+      syntax: 'a + b',
+      examples: [
+        '3 + 5 # Returns 8',
+        '"Hello" + " " + "World" # Returns "Hello World"',
+        '[1, 2] + [3, 4] # Returns [1, 2, 3, 4]'
+      ],
+      notes: 'Behavior depends on the types of the operands.'
+    },
+    {
+      term: 'in',
+      category: 'operator',
+      language: 'python',
+      description: 'Membership operator that tests if a value is in a sequence.',
+      syntax: 'x in sequence',
+      examples: [
+        '"a" in "apple" # Returns True',
+        '5 in [1, 2, 3, 4] # Returns False',
+        '"name" in {"name": "Alice", "age": 30} # Returns True (checks keys)'
+      ],
+      notes: 'For dictionaries, checks if the specified key is in the dictionary.'
+    },
+    
+    // Python Control Flow
+    {
+      term: 'if-elif-else',
+      category: 'keyword',
+      language: 'python',
+      description: 'Conditional execution of code based on boolean expressions.',
+      syntax: 'if condition1:\n    # code block\nelif condition2:\n    # code block\nelse:\n    # code block',
+      examples: [
+        'if x > 0:\n    print("Positive")\nelif x < 0:\n    print("Negative")\nelse:\n    print("Zero")'
+      ],
+      notes: 'elif and else clauses are optional. Python uses indentation to define blocks of code.'
+    },
+    {
+      term: 'for',
+      category: 'keyword',
+      language: 'python',
+      description: 'Loop for iterating over a sequence.',
+      syntax: 'for item in sequence:\n    # code block',
+      examples: [
+        'for i in range(5):\n    print(i)',
+        'for char in "Hello":\n    print(char)',
+        'for key, value in dictionary.items():\n    print(key, value)'
+      ],
+      notes: 'Can be used with break, continue, and else clauses.'
+    },
+    {
+      term: 'while',
+      category: 'keyword',
+      language: 'python',
+      description: 'Loop that executes as long as a condition is true.',
+      syntax: 'while condition:\n    # code block',
+      examples: [
+        'count = 0\nwhile count < 5:\n    print(count)\n    count += 1'
+      ],
+      notes: 'Can be used with break, continue, and else clauses. Be careful of infinite loops.'
+    },
+    {
+      term: 'break',
+      category: 'keyword',
+      language: 'python',
+      description: 'Terminates the loop containing it.',
+      syntax: 'break',
+      examples: [
+        'for i in range(10):\n    if i == 5:\n        break\n    print(i) # Prints 0, 1, 2, 3, 4'
+      ],
+      notes: 'Can be used in both for and while loops.'
+    },
+    {
+      term: 'continue',
+      category: 'keyword',
+      language: 'python',
+      description: 'Skips the rest of the code in the current loop iteration and continues with the next iteration.',
+      syntax: 'continue',
+      examples: [
+        'for i in range(10):\n    if i % 2 == 0:\n        continue\n    print(i) # Prints only odd numbers'
+      ],
+      notes: 'Can be used in both for and while loops.'
+    },
+    {
+      term: 'try-except',
+      category: 'keyword',
+      language: 'python',
+      description: 'Handles exceptions that may occur in a block of code.',
+      syntax: 'try:\n    # code that might raise an exception\nexcept ExceptionType:\n    # code that handles the exception',
+      examples: [
+        'try:\n    result = 10 / 0\nexcept ZeroDivisionError:\n    print("Cannot divide by zero")'
+      ],
+      notes: 'Can catch specific exception types or use a generic except clause. Can include else (executes if no exception) and finally (always executes) clauses.'
+    },
+    {
+      term: 'with',
+      category: 'keyword',
+      language: 'python',
+      description: 'Context manager that automatically handles resource acquisition and release.',
+      syntax: 'with expression as variable:\n    # code block',
+      examples: [
+        'with open("file.txt", "r") as file:\n    content = file.read()'
+      ],
+      notes: 'Ensures resources are properly managed (e.g., files are closed) even if exceptions occur.'
+    },
+    
+    // Python Functions and Classes
+    {
+      term: 'def',
+      category: 'keyword',
+      language: 'python',
+      description: 'Defines a function.',
+      syntax: 'def function_name(parameters):\n    # function body\n    return value',
+      examples: [
+        'def greet(name):\n    return f"Hello, {name}!"',
+        'def add(a, b=0):\n    return a + b'
+      ],
+      notes: 'Functions can have default parameter values and can return multiple values as a tuple.'
+    },
+    {
+      term: 'lambda',
+      category: 'keyword',
+      language: 'python',
+      description: 'Creates a small anonymous function.',
+      syntax: 'lambda parameters: expression',
+      examples: [
+        'add = lambda x, y: x + y',
+        'sorted([5, 2, 3, 1, 4], key=lambda x: x % 2) # Sort by remainder when divided by 2'
+      ],
+      notes: 'Lambda functions can only contain expressions, not statements. Often used for short-lived or one-time functions.'
+    },
+    {
+      term: 'class',
+      category: 'keyword',
+      language: 'python',
+      description: 'Defines a class, which is a blueprint for creating objects.',
+      syntax: 'class ClassName:\n    # class body',
+      examples: [
+        'class Person:\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n\n    def greet(self):\n        return f"Hello, my name is {self.name}"'
+      ],
+      notes: 'Classes can inherit from other classes, override methods, and define special methods like __init__, __str__, etc.'
+    },
+    {
+      term: '__init__',
+      category: 'function',
+      language: 'python',
+      description: 'Special method that initializes a new instance of a class.',
+      syntax: 'def __init__(self, parameters):\n    # initialization code',
+      examples: [
+        'class Rectangle:\n    def __init__(self, width, height):\n        self.width = width\n        self.height = height'
+      ],
+      notes: 'Called automatically when creating a new instance of a class. The first parameter is always self, which refers to the instance being created.'
+    },
+    {
+      term: 'self',
+      category: 'keyword',
+      language: 'python',
+      description: 'A reference to the instance of a class.',
+      syntax: 'self.attribute or self.method()',
+      examples: [
+        'class Counter:\n    def __init__(self):\n        self.count = 0\n\n    def increment(self):\n        self.count += 1'
+      ],
+      notes: 'By convention, the first parameter of instance methods is self. It\'s automatically passed when a method is called on an instance.'
+    },
+    {
+      term: 'inheritance',
+      category: 'concept',
+      language: 'python',
+      description: 'The mechanism of basing a class on another class, retaining similar implementation.',
+      syntax: 'class DerivedClass(BaseClass):\n    # derived class body',
+      examples: [
+        'class Animal:\n    def speak(self):\n        pass\n\nclass Dog(Animal):\n    def speak(self):\n        return "Woof!"'
+      ],
+      notes: 'Python supports multiple inheritance. Use super() to call methods from the parent class.'
+    },
+    {
+      term: 'super()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns a proxy object that delegates method calls to a parent or sibling class.',
+      syntax: 'super().method()',
+      examples: [
+        'class Parent:\n    def greet(self):\n        return "Hello"\n\nclass Child(Parent):\n    def greet(self):\n        return super().greet() + " World"'
+      ],
+      notes: 'Commonly used in __init__ methods to call the parent class\'s initialization. Helps with maintaining proper method resolution order in multiple inheritance.'
+    },
+    
+    // Python Modules and Packages
+    {
+      term: 'import',
+      category: 'keyword',
+      language: 'python',
+      description: 'Used to import modules, attributes, or functions from modules.',
+      syntax: 'import module or from module import attribute',
+      examples: [
+        'import math',
+        'from datetime import datetime',
+        'from os.path import join, exists'
+      ],
+      notes: 'Can use \"as\" to create aliases. Importing * from a module is generally discouraged.'
+    },
+    {
+      term: 'from',
+      category: 'keyword',
+      language: 'python',
+      description: 'Used with import to import specific attributes or functions from a module.',
+      syntax: 'from module import attribute1, attribute2, ...',
+      examples: [
+        'from math import pi, sqrt',
+        'from os import path'
+      ],
+      notes: 'Can be combined with \"as\" to create aliases.'
+    },
+    {
+      term: 'as',
+      category: 'keyword',
+      language: 'python',
+      description: 'Creates an alias when importing a module.',
+      syntax: 'import module as alias or from module import attribute as alias',
+      examples: [
+        'import numpy as np',
+        'from datetime import datetime as dt'
+      ],
+      notes: 'Useful for shortening long module or attribute names.'
+    },
+    
+    // Python String Methods
+    {
+      term: 'str.format()',
+      category: 'function',
+      language: 'python',
+      description: 'Formats a string using placeholders.',
+      syntax: 'string.format(value1, value2, ...)',
+      examples: [
+        '"{} {}".format("Hello", "World") # Returns "Hello World"',
+        '"{name} is {age} years old".format(name="Alice", age=30)'
+      ],
+      notes: 'A versatile way to format strings, though f-strings (since Python 3.6) are often preferred.'
+    },
+    {
+      term: 'f-string',
+      category: 'syntax',
+      language: 'python',
+      description: 'String literal that allows embedding expressions inside curly braces.',
+      syntax: 'f"string {expression}"',
+      examples: [
+        'name = "Alice"\nf"Hello, {name}" # Returns "Hello, Alice"',
+        'f"The answer is {2 * 21}"'
+      ],
+      notes: 'Introduced in Python 3.6. More concise and readable than str.format().'
+    },
+    {
+      term: 'str.split()',
+      category: 'function',
+      language: 'python',
+      description: 'Splits a string into a list of substrings based on a separator.',
+      syntax: 'str.split([separator[, maxsplit]])',
+      examples: [
+        '"Hello World".split() # Returns ["Hello", "World"]',
+        '"a,b,c,d".split(",") # Returns ["a", "b", "c", "d"]'
+      ],
+      notes: 'If separator is not specified, splits on whitespace. maxsplit limits the number of splits.'
+    },
+    {
+      term: 'str.join()',
+      category: 'function',
+      language: 'python',
+      description: 'Joins elements of an iterable with a string.',
+      syntax: 'str.join(iterable)',
+      examples: [
+        '", ".join(["apple", "banana", "cherry"]) # Returns "apple, banana, cherry"',
+        '"".join(["a", "b", "c"]) # Returns "abc"'
+      ],
+      notes: 'The elements of the iterable must be strings. The string on which join() is called is used as the separator.'
+    },
+    {
+      term: 'str.strip()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns a copy of the string with leading and trailing characters removed.',
+      syntax: 'str.strip([chars])',
+      examples: [
+        '" Hello ".strip() # Returns "Hello"',
+        '"...abc...".strip(".") # Returns "abc"'
+      ],
+      notes: 'If chars is not specified, removes whitespace. Also has lstrip() and rstrip() variants for removing only leading or trailing characters.'
+    },
+    
+    // Python List Methods
+    {
+      term: 'list.append()',
+      category: 'function',
+      language: 'python',
+      description: 'Adds an element to the end of a list.',
+      syntax: 'list.append(element)',
+      examples: [
+        'numbers = [1, 2, 3]\nnumbers.append(4) # numbers becomes [1, 2, 3, 4]'
+      ],
+      notes: 'Modifies the list in place and returns None.'
+    },
+    {
+      term: 'list.extend()',
+      category: 'function',
+      language: 'python',
+      description: 'Adds all elements of an iterable to the end of a list.',
+      syntax: 'list.extend(iterable)',
+      examples: [
+        'numbers = [1, 2, 3]\nnumbers.extend([4, 5]) # numbers becomes [1, 2, 3, 4, 5]'
+      ],
+      notes: 'Modifies the list in place and returns None. Different from append(), which would add the iterable as a single element.'
+    },
+    {
+      term: 'list.insert()',
+      category: 'function',
+      language: 'python',
+      description: 'Inserts an element at a specified position in a list.',
+      syntax: 'list.insert(index, element)',
+      examples: [
+        'numbers = [1, 2, 4]\nnumbers.insert(2, 3) # numbers becomes [1, 2, 3, 4]'
+      ],
+      notes: 'Modifies the list in place and returns None. If index is greater than length, inserts at the end.'
+    },
+    {
+      term: 'list.remove()',
+      category: 'function',
+      language: 'python',
+      description: 'Removes the first occurrence of a value from a list.',
+      syntax: 'list.remove(value)',
+      examples: [
+        'numbers = [1, 2, 3, 2]\nnumbers.remove(2) # numbers becomes [1, 3, 2]'
+      ],
+      notes: 'Modifies the list in place and returns None. Raises ValueError if the value is not present.'
+    },
+    {
+      term: 'list.pop()',
+      category: 'function',
+      language: 'python',
+      description: 'Removes and returns an element at a specified position in a list.',
+      syntax: 'list.pop([index])',
+      examples: [
+        'numbers = [1, 2, 3, 4]\npopped = numbers.pop(1) # popped = 2, numbers = [1, 3, 4]',
+        'last = numbers.pop() # Removes and returns the last element'
+      ],
+      notes: 'Modifies the list in place. If index is not specified, removes and returns the last item.'
+    },
+    {
+      term: 'list.sort()',
+      category: 'function',
+      language: 'python',
+      description: 'Sorts the elements of a list in place.',
+      syntax: 'list.sort(key=None, reverse=False)',
+      examples: [
+        'numbers = [3, 1, 4, 2]\nnumbers.sort() # numbers becomes [1, 2, 3, 4]',
+        'words = ["apple", "banana", "cherry"]\nwords.sort(key=len) # Sort by length'
+      ],
+      notes: 'Modifies the list in place and returns None. For a new sorted list without modifying the original, use sorted().'
+    },
+    
+    // Python Dictionary Methods
+    {
+      term: 'dict.get()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns the value for a key, or a default value if the key is not found.',
+      syntax: 'dict.get(key[, default])',
+      examples: [
+        'person = {"name": "Alice", "age": 30}\nperson.get("name") # Returns "Alice"',
+        'person.get("city", "Unknown") # Returns "Unknown" since "city" key doesn\'t exist'
+      ],
+      notes: 'If default is not provided and the key is not found, returns None.'
+    },
+    {
+      term: 'dict.items()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns a view object containing key-value pairs of the dictionary.',
+      syntax: 'dict.items()',
+      examples: [
+        'person = {"name": "Alice", "age": 30}\nfor key, value in person.items():\n    print(key, value)'
+      ],
+      notes: 'The returned view object reflects changes to the dictionary.'
+    },
+    {
+      term: 'dict.keys()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns a view object containing the keys of the dictionary.',
+      syntax: 'dict.keys()',
+      examples: [
+        'person = {"name": "Alice", "age": 30}\nfor key in person.keys():\n    print(key)'
+      ],
+      notes: 'The returned view object reflects changes to the dictionary.'
+    },
+    {
+      term: 'dict.values()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns a view object containing the values of the dictionary.',
+      syntax: 'dict.values()',
+      examples: [
+        'person = {"name": "Alice", "age": 30}\nfor value in person.values():\n    print(value)'
+      ],
+      notes: 'The returned view object reflects changes to the dictionary.'
+    },
+    {
+      term: 'dict.update()',
+      category: 'function',
+      language: 'python',
+      description: 'Updates the dictionary with key-value pairs from another dictionary or iterable.',
+      syntax: 'dict.update([other])',
+      examples: [
+        'person = {"name": "Alice"}\nperson.update({"age": 30, "city": "New York"}) # person now includes the new keys'
+      ],
+      notes: 'Modifies the dictionary in place and returns None. If a key exists in both dictionaries, the value from the other dictionary overwrites the original.'
+    },
+    
+    // Python File Operations
+    {
+      term: 'open()',
+      category: 'function',
+      language: 'python',
+      description: 'Opens a file and returns a file object.',
+      syntax: 'open(file, mode="r", encoding=None)',
+      examples: [
+        'file = open("example.txt", "r")',
+        'with open("data.csv", "r", encoding="utf-8") as file:\n    content = file.read()'
+      ],
+      notes: 'Common modes: "r" (read), "w" (write), "a" (append), "b" (binary). Best used with a context manager (with).'
+    },
+    {
+      term: 'file.read()',
+      category: 'function',
+      language: 'python',
+      description: 'Reads content from a file.',
+      syntax: 'file.read([size])',
+      examples: [
+        'with open("example.txt", "r") as file:\n    content = file.read() # Reads entire file',
+        'with open("example.txt", "r") as file:\n    chunk = file.read(100) # Reads up to 100 characters'
+      ],
+      notes: 'If size is omitted, reads the entire file. To read line by line, use file.readline() or iterate over the file object.'
+    },
+    {
+      term: 'file.write()',
+      category: 'function',
+      language: 'python',
+      description: 'Writes a string to a file.',
+      syntax: 'file.write(string)',
+      examples: [
+        'with open("example.txt", "w") as file:\n    file.write("Hello, World!")'
+      ],
+      notes: 'Returns the number of characters written. File must be opened in write or append mode.'
+    },
+    {
+      term: 'file.close()',
+      category: 'function',
+      language: 'python',
+      description: 'Closes a file.',
+      syntax: 'file.close()',
+      examples: [
+        'file = open("example.txt", "r")\n# Do something with the file\nfile.close()'
+      ],
+      notes: 'Best practice is to use a context manager (with) which automatically closes the file.'
+    },
+    
+    // Python Comprehensions
+    {
+      term: 'list comprehension',
+      category: 'syntax',
+      language: 'python',
+      description: 'A concise way to create lists based on existing iterables.',
+      syntax: '[expression for item in iterable if condition]',
+      examples: [
+        'squares = [x**2 for x in range(10)] # List of squares from 0 to 9',
+        'even_squares = [x**2 for x in range(10) if x % 2 == 0] # Squares of even numbers'
+      ],
+      notes: 'More concise and often faster than using a for loop to create a list. The condition is optional.'
+    },
+    {
+      term: 'dict comprehension',
+      category: 'syntax',
+      language: 'python',
+      description: 'A concise way to create dictionaries based on existing iterables.',
+      syntax: '{key_expr: value_expr for item in iterable if condition}',
+      examples: [
+        'squares = {x: x**2 for x in range(5)} # {0: 0, 1: 1, 2: 4, 3: 9, 4: 16}',
+        'name_lengths = {name: len(name) for name in ["Alice", "Bob", "Charlie"]}'
+      ],
+      notes: 'Similar to list comprehensions but creates a dictionary. The condition is optional.'
+    },
+    {
+      term: 'set comprehension',
+      category: 'syntax',
+      language: 'python',
+      description: 'A concise way to create sets based on existing iterables.',
+      syntax: '{expression for item in iterable if condition}',
+      examples: [
+        'unique_squares = {x**2 for x in range(-5, 6)} # Set of unique squares',
+        'vowels = {char.lower() for char in "Hello World" if char.lower() in "aeiou"}'
+      ],
+      notes: 'Similar to list comprehensions but creates a set. The condition is optional.'
+    },
+    
+    // Python Decorators and Generators
+    {
+      term: 'decorator',
+      category: 'concept',
+      language: 'python',
+      description: 'A function that takes another function and extends its behavior without explicitly modifying it.',
+      syntax: '@decorator\ndef function():\n    # function body',
+      examples: [
+        '@timer\ndef slow_function():\n    # function body\n\n# Equivalent to:\n# slow_function = timer(slow_function)'
+      ],
+      notes: 'Decorators are applied at definition time. Multiple decorators can be stacked.'
+    },
+    {
+      term: 'generator',
+      category: 'concept',
+      language: 'python',
+      description: 'A function that returns an iterator using the yield statement.',
+      syntax: 'def generator_function():\n    yield value',
+      examples: [
+        'def count_up_to(n):\n    i = 0\n    while i < n:\n        yield i\n        i += 1\n\nfor number in count_up_to(5):\n    print(number) # Prints 0, 1, 2, 3, 4'
+      ],
+      notes: 'Generators produce values on-demand, saving memory for large sequences. Use next() to get the next value.'
+    },
+    {
+      term: 'yield',
+      category: 'keyword',
+      language: 'python',
+      description: 'Returns a value from a generator function and pauses its execution.',
+      syntax: 'yield expression',
+      examples: [
+        'def fibonacci():\n    a, b = 0, 1\n    while True:\n        yield a\n        a, b = b, a + b'
+      ],
+      notes: 'When a generator function is called, it returns a generator object but doesn\'t execute the function body. Execution happens when next() is called.'
+    }
   ]
 };
 
