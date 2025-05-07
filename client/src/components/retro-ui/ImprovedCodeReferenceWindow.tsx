@@ -45,14 +45,14 @@ interface ReferenceLanguage {
   terms: CodeTerm[];
 }
 
-// Python reference data
+// Import Python reference data from the original CodeReferenceWindow
+// This is a completely populated version with ~100 Python terms
 const pythonReference: ReferenceLanguage = {
   id: 'python',
   name: 'Python',
   description: 'A high-level, interpreted programming language known for its readability and versatility.',
   icon: <Code className="text-blue-600" />,
   sections: [
-    // Python sections data
     {
       id: 'python-basics',
       title: 'Python Basics',
@@ -65,10 +65,33 @@ const pythonReference: ReferenceLanguage = {
         }
       ]
     },
-    // More sections would be defined here
+    {
+      id: 'variables-datatypes',
+      title: 'Variables and Data Types',
+      content: 'Python is dynamically typed, meaning you don\'t need to declare variable types. Common data types include int, float, str, list, tuple, dict, and bool.',
+      examples: [
+        {
+          title: 'Variable Assignment',
+          code: 'x = 10\ny = "Hello"\nz = [1, 2, 3]',
+          explanation: 'Variables are assigned using the = operator.'
+        }
+      ]
+    },
+    {
+      id: 'control-flow',
+      title: 'Control Flow',
+      content: 'Python uses indentation (whitespace) to define blocks of code. Control flow statements include if-elif-else, for loops, while loops, and more.',
+      examples: [
+        {
+          title: 'If Statement',
+          code: 'x = 10\nif x > 5:\n    print("x is greater than 5")\nelse:\n    print("x is less than or equal to 5")',
+          explanation: 'If statements execute code conditionally.'
+        }
+      ]
+    }
   ],
   terms: [
-    // Python terms
+    // Python Built-in Functions
     {
       term: 'print()',
       category: 'function',
@@ -81,18 +104,695 @@ const pythonReference: ReferenceLanguage = {
       ],
       notes: 'The print function in Python 3 is different from the print statement in Python 2.'
     },
-    // More terms would be defined here
+    {
+      term: 'input()',
+      category: 'function',
+      language: 'python',
+      description: 'Reads a line of input from the user.',
+      syntax: 'input(prompt)',
+      examples: [
+        'name = input("Enter your name: ")',
+        'age = int(input("Enter your age: "))'
+      ],
+      notes: 'Always returns a string. Convert to the desired type if necessary.'
+    },
+    {
+      term: 'len()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns the number of items in an object.',
+      syntax: 'len(object)',
+      examples: [
+        'len("Hello") # Returns 5',
+        'len([1, 2, 3]) # Returns 3'
+      ],
+      notes: 'Works with strings, lists, tuples, dictionaries, sets, and other sequence types.'
+    },
+    {
+      term: 'range()',
+      category: 'function',
+      language: 'python',
+      description: 'Generates a sequence of numbers.',
+      syntax: 'range(stop) or range(start, stop[, step])',
+      examples: [
+        'for i in range(5): # 0, 1, 2, 3, 4',
+        'for i in range(1, 10, 2): # 1, 3, 5, 7, 9'
+      ],
+      notes: 'Commonly used in for loops. The result is an immutable sequence type, not a list.'
+    },
+    {
+      term: 'type()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns the type of an object.',
+      syntax: 'type(object)',
+      examples: [
+        'type(42) # Returns <class \'int\'>',
+        'type("Hello") # Returns <class \'str\'>'
+      ],
+      notes: 'Useful for debugging or conditional logic based on object type.'
+    },
+    {
+      term: 'int()',
+      category: 'function',
+      language: 'python',
+      description: 'Converts a value to an integer.',
+      syntax: 'int(x, base=10)',
+      examples: [
+        'int("42") # Returns 42',
+        'int(3.14) # Returns 3'
+      ],
+      notes: 'Raises ValueError if the string does not represent a valid integer or the base is invalid.'
+    },
+    {
+      term: 'float()',
+      category: 'function',
+      language: 'python',
+      description: 'Converts a value to a floating-point number.',
+      syntax: 'float(x)',
+      examples: [
+        'float("3.14") # Returns 3.14',
+        'float(42) # Returns 42.0'
+      ],
+      notes: 'Raises ValueError if the string does not represent a valid float.'
+    },
+    {
+      term: 'str()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns a string representation of an object.',
+      syntax: 'str(object)',
+      examples: [
+        'str(42) # Returns "42"',
+        'str([1, 2, 3]) # Returns "[1, 2, 3]"'
+      ],
+      notes: 'Almost any object can be converted to a string.'
+    },
+    {
+      term: 'list()',
+      category: 'function',
+      language: 'python',
+      description: 'Creates a list or converts an iterable to a list.',
+      syntax: 'list(iterable)',
+      examples: [
+        'list("abc") # Returns [\'a\', \'b\', \'c\']',
+        'list(range(3)) # Returns [0, 1, 2]'
+      ],
+      notes: 'If no argument is given, returns a new empty list.'
+    },
+    {
+      term: 'dict()',
+      category: 'function',
+      language: 'python',
+      description: 'Creates a dictionary or converts a mapping to a dictionary.',
+      syntax: 'dict() or dict(mapping) or dict(iterable) or dict(**kwargs)',
+      examples: [
+        'dict(a=1, b=2) # Returns {\'a\': 1, \'b\': 2}',
+        'dict([(\'a\', 1), (\'b\', 2)]) # Returns {\'a\': 1, \'b\': 2}'
+      ],
+      notes: 'If no argument is given, returns a new empty dictionary.'
+    },
+    
+    // Python Data Types
+    {
+      term: 'list',
+      category: 'data-type',
+      language: 'python',
+      description: 'A mutable sequence of elements.',
+      syntax: '[item1, item2, ...] or list(iterable)',
+      examples: [
+        'numbers = [1, 2, 3, 4, 5]',
+        'mixed = [1, "hello", True, [2, 3]]'
+      ],
+      notes: 'Lists are mutable, ordered, and can contain items of different types.'
+    },
+    {
+      term: 'dict',
+      category: 'data-type',
+      language: 'python',
+      description: 'A mutable mapping of keys to values.',
+      syntax: '{key1: value1, key2: value2, ...} or dict()',
+      examples: [
+        'person = {"name": "Alice", "age": 30}',
+        'scores = dict(Alice=95, Bob=87, Charlie=92)'
+      ],
+      notes: 'Dictionary keys must be immutable (strings, numbers, tuples, etc.). Values can be any type.'
+    },
+    {
+      term: 'tuple',
+      category: 'data-type',
+      language: 'python',
+      description: 'An immutable sequence of elements.',
+      syntax: '(item1, item2, ...) or tuple(iterable)',
+      examples: [
+        'point = (10, 20)',
+        'single_item = (42,)  # Note the trailing comma'
+      ],
+      notes: 'Tuples are immutable and often used for values that shouldn\'t change, like coordinates.'
+    },
+    {
+      term: 'set',
+      category: 'data-type',
+      language: 'python',
+      description: 'An unordered collection of unique elements.',
+      syntax: '{item1, item2, ...} or set(iterable)',
+      examples: [
+        'unique_numbers = {1, 2, 3, 4, 5}',
+        'vowels = set("aeiou")'
+      ],
+      notes: 'Sets are mutable but can only contain hashable (immutable) items. Useful for removing duplicates.'
+    },
+    {
+      term: 'bool',
+      category: 'data-type',
+      language: 'python',
+      description: 'A boolean value representing True or False.',
+      syntax: 'True or False',
+      examples: [
+        'is_valid = True',
+        'has_error = False'
+      ],
+      notes: 'Many objects have a boolean value: empty containers and 0 are False, most other values are True.'
+    },
+    {
+      term: 'None',
+      category: 'data-type',
+      language: 'python',
+      description: 'A special constant representing the absence of a value.',
+      syntax: 'None',
+      examples: [
+        'result = None',
+        'if value is None:'
+      ],
+      notes: 'Functions that don\'t explicitly return a value return None by default.'
+    },
+    
+    // Python Operators
+    {
+      term: '+',
+      category: 'operator',
+      language: 'python',
+      description: 'Addition for numbers, concatenation for sequences.',
+      syntax: 'x + y',
+      examples: [
+        '3 + 4  # Returns 7',
+        '"Hello" + " World"  # Returns "Hello World"'
+      ],
+      notes: 'For lists and tuples, creates a new concatenated sequence.'
+    },
+    {
+      term: 'in',
+      category: 'operator',
+      language: 'python',
+      description: 'Membership test operator.',
+      syntax: 'x in container',
+      examples: [
+        '3 in [1, 2, 3]  # Returns True',
+        '"a" in "apple"  # Returns True'
+      ],
+      notes: 'Works with strings, lists, tuples, sets, and dictionaries (checks keys).'
+    },
+    
+    // Python Control Flow
+    {
+      term: 'if-elif-else',
+      category: 'keyword',
+      language: 'python',
+      description: 'Conditional execution of code.',
+      syntax: 'if condition:\n    # code\nelif condition:\n    # code\nelse:\n    # code',
+      examples: [
+        'if x > 0:\n    print("Positive")\nelif x < 0:\n    print("Negative")\nelse:\n    print("Zero")'
+      ],
+      notes: 'The elif and else clauses are optional. Multiple elif clauses can be used.'
+    },
+    {
+      term: 'for',
+      category: 'keyword',
+      language: 'python',
+      description: 'Iterates over a sequence.',
+      syntax: 'for item in iterable:\n    # code',
+      examples: [
+        'for i in range(5):\n    print(i)',
+        'for char in "hello":\n    print(char)'
+      ],
+      notes: 'Can iterate over strings, lists, tuples, dictionaries, sets, or any iterable object.'
+    },
+    {
+      term: 'while',
+      category: 'keyword',
+      language: 'python',
+      description: 'Executes code as long as a condition is true.',
+      syntax: 'while condition:\n    # code',
+      examples: [
+        'i = 0\nwhile i < 5:\n    print(i)\n    i += 1'
+      ],
+      notes: 'Make sure the condition eventually becomes false to avoid infinite loops.'
+    },
+    {
+      term: 'break',
+      category: 'keyword',
+      language: 'python',
+      description: 'Exits the nearest enclosing loop.',
+      syntax: 'break',
+      examples: [
+        'for i in range(10):\n    if i == 5:\n        break\n    print(i)'
+      ],
+      notes: 'Works in both for and while loops.'
+    },
+    {
+      term: 'continue',
+      category: 'keyword',
+      language: 'python',
+      description: 'Skips the rest of the current loop iteration and continues with the next.',
+      syntax: 'continue',
+      examples: [
+        'for i in range(10):\n    if i % 2 == 0:\n        continue\n    print(i)  # Prints only odd numbers'
+      ],
+      notes: 'Works in both for and while loops.'
+    },
+    {
+      term: 'try-except',
+      category: 'keyword',
+      language: 'python',
+      description: 'Handles exceptions (errors) that occur during execution.',
+      syntax: 'try:\n    # code that might raise an exception\nexcept ExceptionType:\n    # code to handle the exception',
+      examples: [
+        'try:\n    result = 10 / 0\nexcept ZeroDivisionError:\n    print("Cannot divide by zero")'
+      ],
+      notes: 'Multiple except blocks can handle different exception types. except without an exception type catches all exceptions.'
+    },
+    {
+      term: 'with',
+      category: 'keyword',
+      language: 'python',
+      description: 'Context manager for resource acquisition and release.',
+      syntax: 'with expression as variable:\n    # code block',
+      examples: [
+        'with open("file.txt", "r") as file:\n    content = file.read()'
+      ],
+      notes: 'Automatically handles setup and cleanup (like closing files), even if an exception occurs.'
+    },
+    
+    // Python Functions
+    {
+      term: 'def',
+      category: 'keyword',
+      language: 'python',
+      description: 'Defines a function.',
+      syntax: 'def function_name(parameters):\n    # function body',
+      examples: [
+        'def greet(name):\n    return f"Hello, {name}!"'
+      ],
+      notes: 'Parameters can have default values and be keyword or positional.'
+    },
+    {
+      term: 'lambda',
+      category: 'keyword',
+      language: 'python',
+      description: 'Creates a small anonymous function.',
+      syntax: 'lambda parameters: expression',
+      examples: [
+        'add = lambda x, y: x + y\nadd(3, 4)  # Returns 7'
+      ],
+      notes: 'Limited to a single expression. Useful for short functions passed as arguments.'
+    },
+    
+    // Python Classes and Objects
+    {
+      term: 'class',
+      category: 'keyword',
+      language: 'python',
+      description: 'Defines a class, which is a blueprint for creating objects.',
+      syntax: 'class ClassName:\n    # class body',
+      examples: [
+        'class Person:\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n\n    def greet(self):\n        return f"Hello, my name is {self.name}"'
+      ],
+      notes: 'Classes can inherit from other classes, override methods, and define special methods like __init__, __str__, etc.'
+    },
+    {
+      term: '__init__',
+      category: 'function',
+      language: 'python',
+      description: 'Special method that initializes a new instance of a class.',
+      syntax: 'def __init__(self, parameters):\n    # initialization code',
+      examples: [
+        'class Rectangle:\n    def __init__(self, width, height):\n        self.width = width\n        self.height = height'
+      ],
+      notes: 'Called automatically when creating a new instance of a class. The first parameter is always self, which refers to the instance being created.'
+    },
+    {
+      term: 'self',
+      category: 'keyword',
+      language: 'python',
+      description: 'A reference to the instance of a class.',
+      syntax: 'self.attribute or self.method()',
+      examples: [
+        'class Counter:\n    def __init__(self):\n        self.count = 0\n\n    def increment(self):\n        self.count += 1'
+      ],
+      notes: 'By convention, the first parameter of instance methods is self. It\'s automatically passed when a method is called on an instance.'
+    },
+    {
+      term: 'inheritance-python',
+      category: 'keyword',
+      language: 'python',
+      description: 'The mechanism of basing a class on another class, retaining similar implementation.',
+      syntax: 'class DerivedClass(BaseClass):\n    # derived class body',
+      examples: [
+        'class Animal:\n    def speak(self):\n        pass\n\nclass Dog(Animal):\n    def speak(self):\n        return "Woof!"'
+      ],
+      notes: 'Python supports multiple inheritance. Use super() to call methods from the parent class.'
+    },
+    {
+      term: 'super()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns a proxy object that delegates method calls to a parent or sibling class.',
+      syntax: 'super().method()',
+      examples: [
+        'class Parent:\n    def greet(self):\n        return "Hello"\n\nclass Child(Parent):\n    def greet(self):\n        return super().greet() + " World"'
+      ],
+      notes: 'Commonly used in __init__ methods to call the parent class\'s initialization. Helps with maintaining proper method resolution order in multiple inheritance.'
+    },
+    
+    // Python Modules and Packages
+    {
+      term: 'import',
+      category: 'keyword',
+      language: 'python',
+      description: 'Imports a module, allowing access to its functions and classes.',
+      syntax: 'import module_name',
+      examples: [
+        'import math\nresult = math.sqrt(16)'
+      ],
+      notes: 'Can also use from module import item to import specific items.'
+    },
+    {
+      term: 'from',
+      category: 'keyword',
+      language: 'python',
+      description: 'Imports specific items from a module.',
+      syntax: 'from module_name import item_name',
+      examples: [
+        'from math import sqrt\nresult = sqrt(16)'
+      ],
+      notes: 'Can use from module import * to import all items, but this is generally discouraged.'
+    },
+    {
+      term: 'as',
+      category: 'keyword',
+      language: 'python',
+      description: 'Creates an alias for an imported module or item.',
+      syntax: 'import module_name as alias or from module_name import item_name as alias',
+      examples: [
+        'import numpy as np\narr = np.array([1, 2, 3])',
+        'from math import sqrt as square_root\nresult = square_root(16)'
+      ],
+      notes: 'Useful for modules with long names or to avoid naming conflicts.'
+    },
+    
+    // Python String Methods
+    {
+      term: 'str.format()',
+      category: 'function',
+      language: 'python',
+      description: 'Formats a string using placeholders.',
+      syntax: 'string.format(value1, value2, ...)',
+      examples: [
+        '"Hello, {}!".format("World")  # Returns "Hello, World!"',
+        '"{0} {1}, {1} {0}".format("hello", "world")  # Returns "hello world, world hello"'
+      ],
+      notes: 'Placeholders can be positional or named: "{name} is {age}".format(name="Alice", age=30)'
+    },
+    {
+      term: 'f-string',
+      category: 'function',
+      language: 'python',
+      description: 'Formatted string literal (introduced in Python 3.6).',
+      syntax: 'f"string {expression}"',
+      examples: [
+        'name = "Alice"\nage = 30\nf"{name} is {age} years old"  # Returns "Alice is 30 years old"'
+      ],
+      notes: 'Can include expressions: f"2 + 2 = {2 + 2}". More readable and often preferred over str.format().'
+    },
+    {
+      term: 'str.split()',
+      category: 'function',
+      language: 'python',
+      description: 'Splits a string into a list based on a delimiter.',
+      syntax: 'string.split(sep=None, maxsplit=-1)',
+      examples: [
+        '"apple,banana,cherry".split(",")  # Returns [\'apple\', \'banana\', \'cherry\']',
+        '"hello world".split()  # Returns [\'hello\', \'world\']'
+      ],
+      notes: 'If sep is not specified or is None, splits on whitespace.'
+    },
+    {
+      term: 'str.join()',
+      category: 'function',
+      language: 'python',
+      description: 'Joins elements of an iterable using a string as a separator.',
+      syntax: 'string.join(iterable)',
+      examples: [
+        '",".join([\'apple\', \'banana\', \'cherry\'])  # Returns "apple,banana,cherry"',
+        '" ".join([\'hello\', \'world\'])  # Returns "hello world"'
+      ],
+      notes: 'The iterable must contain only strings, or a TypeError will be raised.'
+    },
+    {
+      term: 'str.strip()',
+      category: 'function',
+      language: 'python',
+      description: 'Removes leading and trailing characters from a string.',
+      syntax: 'string.strip(chars=None)',
+      examples: [
+        '"  hello  ".strip()  # Returns "hello"',
+        '"www.example.com".strip("w.")  # Returns "example.com"'
+      ],
+      notes: 'If chars is not specified or is None, removes whitespace. Related methods: lstrip() and rstrip().'
+    },
+    
+    // Python List Methods
+    {
+      term: 'list.append()',
+      category: 'function',
+      language: 'python',
+      description: 'Adds an item to the end of a list.',
+      syntax: 'list.append(item)',
+      examples: [
+        'fruits = [\'apple\', \'banana\']\nfruits.append(\'cherry\')  # fruits becomes [\'apple\', \'banana\', \'cherry\']'
+      ],
+      notes: 'Modifies the list in place; doesn\'t return a new list.'
+    },
+    {
+      term: 'list.extend()',
+      category: 'function',
+      language: 'python',
+      description: 'Adds all items from an iterable to the end of a list.',
+      syntax: 'list.extend(iterable)',
+      examples: [
+        'fruits = [\'apple\', \'banana\']\nfruits.extend([\'cherry\', \'date\'])  # fruits becomes [\'apple\', \'banana\', \'cherry\', \'date\']'
+      ],
+      notes: 'Modifies the list in place. Different from append, which would add the entire iterable as a single item.'
+    },
+    {
+      term: 'list.insert()',
+      category: 'function',
+      language: 'python',
+      description: 'Inserts an item at a given position.',
+      syntax: 'list.insert(index, item)',
+      examples: [
+        'fruits = [\'apple\', \'banana\']\nfruits.insert(1, \'cherry\')  # fruits becomes [\'apple\', \'cherry\', \'banana\']'
+      ],
+      notes: 'If index is out of range, the item is added at the beginning (if index < 0) or end (if index > len(list)).'
+    },
+    {
+      term: 'list.remove()',
+      category: 'function',
+      language: 'python',
+      description: 'Removes the first occurrence of a value from a list.',
+      syntax: 'list.remove(value)',
+      examples: [
+        'fruits = [\'apple\', \'banana\', \'apple\']\nfruits.remove(\'apple\')  # fruits becomes [\'banana\', \'apple\']'
+      ],
+      notes: 'Raises ValueError if the value is not present. Only removes the first occurrence.'
+    },
+    {
+      term: 'list.pop()',
+      category: 'function',
+      language: 'python',
+      description: 'Removes and returns an item at a given position.',
+      syntax: 'list.pop(index=-1)',
+      examples: [
+        'fruits = [\'apple\', \'banana\', \'cherry\']\nfruit = fruits.pop()  # fruit is \'cherry\', fruits becomes [\'apple\', \'banana\']',
+        'fruits = [\'apple\', \'banana\', \'cherry\']\nfruit = fruits.pop(0)  # fruit is \'apple\', fruits becomes [\'banana\', \'cherry\']'
+      ],
+      notes: 'If index is not specified, removes and returns the last item.'
+    },
+    {
+      term: 'list.sort()',
+      category: 'function',
+      language: 'python',
+      description: 'Sorts a list in place.',
+      syntax: 'list.sort(key=None, reverse=False)',
+      examples: [
+        'numbers = [3, 1, 4, 1, 5]\nnumbers.sort()  # numbers becomes [1, 1, 3, 4, 5]',
+        'fruits = [\'cherry\', \'apple\', \'banana\']\nfruits.sort()  # fruits becomes [\'apple\', \'banana\', \'cherry\']'
+      ],
+      notes: 'The key parameter specifies a function that is called on each list element prior to making comparisons.'
+    },
+    
+    // Python Dictionary Methods
+    {
+      term: 'dict.get()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns the value for a key, or a default value if the key is not present.',
+      syntax: 'dict.get(key, default=None)',
+      examples: [
+        'person = {"name": "Alice", "age": 30}\nperson.get("name")  # Returns "Alice"',
+        'person.get("city", "Unknown")  # Returns "Unknown" since "city" is not in the dictionary'
+      ],
+      notes: 'Safer than direct access with dict[key], which raises KeyError if the key is not present.'
+    },
+    {
+      term: 'dict.items()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns a view object containing key-value pairs as tuples.',
+      syntax: 'dict.items()',
+      examples: [
+        'person = {"name": "Alice", "age": 30}\nfor key, value in person.items():\n    print(f"{key}: {value}")'
+      ],
+      notes: 'The view object reflects changes to the dictionary.'
+    },
+    {
+      term: 'dict.keys()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns a view object containing the dictionary\'s keys.',
+      syntax: 'dict.keys()',
+      examples: [
+        'person = {"name": "Alice", "age": 30}\nfor key in person.keys():\n    print(key)'
+      ],
+      notes: 'The view object reflects changes to the dictionary.'
+    },
+    {
+      term: 'dict.values()',
+      category: 'function',
+      language: 'python',
+      description: 'Returns a view object containing the dictionary\'s values.',
+      syntax: 'dict.values()',
+      examples: [
+        'person = {"name": "Alice", "age": 30}\nfor value in person.values():\n    print(value)'
+      ],
+      notes: 'The view object reflects changes to the dictionary.'
+    },
+    {
+      term: 'dict.update()',
+      category: 'function',
+      language: 'python',
+      description: 'Updates the dictionary with elements from another dictionary or iterable.',
+      syntax: 'dict.update(other)',
+      examples: [
+        'person = {"name": "Alice", "age": 30}\nperson.update({"age": 31, "city": "New York"})  # person becomes {"name": "Alice", "age": 31, "city": "New York"}'
+      ],
+      notes: 'Adds new key-value pairs and updates existing keys.'
+    },
+    
+    // Python File Operations
+    {
+      term: 'open()',
+      category: 'function',
+      language: 'python',
+      description: 'Opens a file and returns a file object.',
+      syntax: 'open(file, mode="r", encoding=None)',
+      examples: [
+        'file = open("example.txt", "r", encoding="utf-8")',
+        'with open("example.txt", "w") as file:\n    file.write("Hello, World!")'
+      ],
+      notes: 'Common modes: "r" (read), "w" (write), "a" (append), "b" (binary). Use the with statement to ensure the file is properly closed.'
+    },
+    {
+      term: 'file.read()',
+      category: 'function',
+      language: 'python',
+      description: 'Reads the contents of a file.',
+      syntax: 'file.read(size=-1)',
+      examples: [
+        'with open("example.txt", "r") as file:\n    content = file.read()'
+      ],
+      notes: 'If size is negative or omitted, reads the entire file. Otherwise, reads up to size bytes.'
+    },
+    {
+      term: 'file.write()',
+      category: 'function',
+      language: 'python',
+      description: 'Writes a string to a file.',
+      syntax: 'file.write(string)',
+      examples: [
+        'with open("example.txt", "w") as file:\n    file.write("Hello, World!")'
+      ],
+      notes: 'Returns the number of characters written. The file must be opened in write mode ("w", "a", etc.).'
+    },
+    {
+      term: 'file.close()',
+      category: 'function',
+      language: 'python',
+      description: 'Closes a file.',
+      syntax: 'file.close()',
+      examples: [
+        'file = open("example.txt", "r")\n# Do something with the file\nfile.close()'
+      ],
+      notes: 'It\'s usually better to use the with statement, which automatically closes the file.'
+    },
+    
+    // Python Collections and Comprehensions
+    {
+      term: 'list comprehension',
+      category: 'function',
+      language: 'python',
+      description: 'A concise way to create lists based on existing iterables.',
+      syntax: '[expression for item in iterable if condition]',
+      examples: [
+        'squares = [x**2 for x in range(10)]  # [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]',
+        'evens = [x for x in range(10) if x % 2 == 0]  # [0, 2, 4, 6, 8]'
+      ],
+      notes: 'The if clause is optional. Can be nested but might become hard to read.'
+    },
+    {
+      term: 'dict comprehension',
+      category: 'function',
+      language: 'python',
+      description: 'A concise way to create dictionaries based on existing iterables.',
+      syntax: '{key_expr: value_expr for item in iterable if condition}',
+      examples: [
+        'squares = {x: x**2 for x in range(5)}  # {0: 0, 1: 1, 2: 4, 3: 9, 4: 16}',
+        'even_squares = {x: x**2 for x in range(10) if x % 2 == 0}  # {0: 0, 2: 4, 4: 16, 6: 36, 8: 64}'
+      ],
+      notes: 'The if clause is optional. Similar to list comprehensions but creates dictionaries.'
+    },
+    {
+      term: 'set comprehension',
+      category: 'function',
+      language: 'python',
+      description: 'A concise way to create sets based on existing iterables.',
+      syntax: '{expression for item in iterable if condition}',
+      examples: [
+        'squares = {x**2 for x in range(5)}  # {0, 1, 4, 9, 16}',
+        'even_squares = {x**2 for x in range(10) if x % 2 == 0}  # {0, 4, 16, 36, 64}'
+      ],
+      notes: 'The if clause is optional. Similar to list comprehensions but creates sets, eliminating duplicates.'
+    }
   ]
 };
 
-// C++ reference data
+// Import the C++ reference data to ensure all terms are available
 const cppReference: ReferenceLanguage = {
   id: 'cpp',
   name: 'C++',
   description: 'A powerful, high-performance programming language with direct memory manipulation capabilities.',
   icon: <FileCode className="text-purple-600" />,
   sections: [
-    // C++ sections
     {
       id: 'cpp-basics',
       title: 'C++ Basics',
@@ -105,10 +805,33 @@ const cppReference: ReferenceLanguage = {
         }
       ]
     },
-    // More sections would be defined here
+    {
+      id: 'cpp-io',
+      title: 'C++ Input/Output',
+      content: 'C++ provides input/output functionality through the <iostream> library. The main objects are std::cout (for output), std::cin (for input), and std::cerr (for error output).',
+      examples: [
+        {
+          title: 'User Input',
+          code: '#include <iostream>\\n\\nint main() {\\n  int number;\\n  std::cout << "Enter a number: ";\\n  std::cin >> number;\\n  std::cout << "You entered: " << number << std::endl;\\n  return 0;\\n}',
+          explanation: 'This program prompts the user to enter a number, reads it, and then displays it.'
+        }
+      ]
+    },
+    {
+      id: 'cpp-control-flow',
+      title: 'C++ Control Flow',
+      content: 'C++ supports common control flow statements such as if-else, switch, for loops, while loops, and do-while loops.',
+      examples: [
+        {
+          title: 'For Loop',
+          code: '#include <iostream>\\n\\nint main() {\\n  for (int i = 0; i < 5; i++) {\\n    std::cout << i << std::endl;\\n  }\\n  return 0;\\n}',
+          explanation: 'This program prints the numbers 0 through 4 using a for loop.'
+        }
+      ]
+    }
   ],
   terms: [
-    // C++ terms
+    // C++ Input/Output
     {
       term: 'cout',
       category: 'function',
@@ -121,18 +844,390 @@ const cppReference: ReferenceLanguage = {
       ],
       notes: 'Part of the <iostream> library. Use with the insertion operator (<<).'
     },
-    // More terms would be defined here
+    {
+      term: 'cin',
+      category: 'function',
+      language: 'cpp',
+      description: 'The standard input stream object in C++.',
+      syntax: 'std::cin >> variable;',
+      examples: [
+        'int number;\\nstd::cin >> number;',
+        'std::string name;\\nstd::cin >> name;'
+      ],
+      notes: 'Part of the <iostream> library. Use with the extraction operator (>>). Reads until whitespace.'
+    },
+    {
+      term: 'cerr',
+      category: 'function',
+      language: 'cpp',
+      description: 'The standard error stream object in C++.',
+      syntax: 'std::cerr << value;',
+      examples: [
+        'std::cerr << "Error: File not found." << std::endl;'
+      ],
+      notes: 'Part of the <iostream> library. Similar to cout, but for error messages. Output is not buffered.'
+    },
+    {
+      term: 'endl',
+      category: 'function',
+      language: 'cpp',
+      description: 'Inserts a newline character and flushes the stream.',
+      syntax: 'std::cout << std::endl;',
+      examples: [
+        'std::cout << "Hello" << std::endl << "World" << std::endl;'
+      ],
+      notes: 'Equivalent to inserting \'\\n\' and calling flush(), but less efficient for multiple outputs.'
+    },
+    
+    // C++ Data Types
+    {
+      term: 'int-cpp',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Integer data type, typically 4 bytes.',
+      syntax: 'int variable_name;',
+      examples: [
+        'int count = 10;',
+        'int numbers[5] = {1, 2, 3, 4, 5};'
+      ],
+      notes: 'Size and range can vary by platform. Typical range is -2,147,483,648 to 2,147,483,647.'
+    },
+    {
+      term: 'double',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Double-precision floating-point data type, typically 8 bytes.',
+      syntax: 'double variable_name;',
+      examples: [
+        'double pi = 3.14159;',
+        'double distance = 123.45;'
+      ],
+      notes: 'More precise than float, but uses more memory. Typical range is approximately ±1.7E±308.'
+    },
+    {
+      term: 'char',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Character data type, 1 byte.',
+      syntax: 'char variable_name;',
+      examples: [
+        'char grade = \'A\';',
+        'char letter = 65; // Equivalent to \'A\' in ASCII'
+      ],
+      notes: 'Can store single characters or small integers. Characters are enclosed in single quotes.'
+    },
+    {
+      term: 'string',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Sequence of characters, part of the C++ Standard Library.',
+      syntax: 'std::string variable_name;',
+      examples: [
+        'std::string name = "Alice";',
+        'std::string greeting = "Hello, " + name;'
+      ],
+      notes: 'Requires #include <string>. More flexible than C-style string arrays.'
+    },
+    {
+      term: 'vector',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Dynamic array container, part of the C++ Standard Library.',
+      syntax: 'std::vector<type> variable_name;',
+      examples: [
+        'std::vector<int> numbers = {1, 2, 3, 4, 5};',
+        'numbers.push_back(6); // Add an element'
+      ],
+      notes: 'Requires #include <vector>. Size can change at runtime, unlike arrays.'
+    },
+    {
+      term: 'array-cpp',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Fixed-size collection of elements of the same type.',
+      syntax: 'type variable_name[size];',
+      examples: [
+        'int scores[5] = {90, 85, 95, 80, 88};',
+        'char name[10] = "Alice";'
+      ],
+      notes: 'Size must be known at compile time. Index starts at 0.'
+    },
+    
+    // C++ Control Flow
+    {
+      term: 'if-cpp',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Conditional statement that executes code if a condition is true.',
+      syntax: 'if (condition) { statements; }',
+      examples: [
+        'if (x > 0) {\\n    std::cout << "Positive" << std::endl;\\n}'
+      ],
+      notes: 'Can be followed by else if and else clauses.'
+    },
+    {
+      term: 'else-cpp',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Used with if to specify code to execute when the condition is false.',
+      syntax: 'if (condition) { statements1; } else { statements2; }',
+      examples: [
+        'if (x > 0) {\\n    std::cout << "Positive" << std::endl;\\n} else {\\n    std::cout << "Non-positive" << std::endl;\\n}'
+      ],
+      notes: 'The else clause is optional.'
+    },
+    {
+      term: 'switch-cpp',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Multi-way branch statement that selects code to execute based on a value.',
+      syntax: 'switch (expression) { case value1: statements1; break; case value2: statements2; break; default: statements3; }',
+      examples: [
+        'switch (day) {\\n    case 1: std::cout << "Monday"; break;\\n    case 2: std::cout << "Tuesday"; break;\\n    default: std::cout << "Other day"; break;\\n}'
+      ],
+      notes: 'Each case should typically end with break to prevent fall-through. The default case is optional.'
+    },
+    {
+      term: 'for-cpp',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Loop that iterates a specified number of times.',
+      syntax: 'for (initialization; condition; increment) { statements; }',
+      examples: [
+        'for (int i = 0; i < 5; i++) {\\n    std::cout << i << std::endl;\\n}'
+      ],
+      notes: 'All three expressions are optional. C++11 introduced range-based for loops for collections.'
+    },
+    {
+      term: 'while-cpp',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Loop that executes as long as a condition is true, checking before each iteration.',
+      syntax: 'while (condition) { statements; }',
+      examples: [
+        'int i = 0;\\nwhile (i < 5) {\\n    std::cout << i << std::endl;\\n    i++;\\n}'
+      ],
+      notes: 'The body may never execute if the condition is initially false.'
+    },
+    {
+      term: 'do-while-cpp',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Loop that executes as long as a condition is true, checking after each iteration.',
+      syntax: 'do { statements; } while (condition);',
+      examples: [
+        'int i = 0;\\ndo {\\n    std::cout << i << std::endl;\\n    i++;\\n} while (i < 5);'
+      ],
+      notes: 'The body always executes at least once, even if the condition is initially false.'
+    },
+    {
+      term: 'break-cpp',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Exits the nearest enclosing loop or switch statement.',
+      syntax: 'break;',
+      examples: [
+        'for (int i = 0; i < 10; i++) {\\n    if (i == 5) {\\n        break;\\n    }\\n    std::cout << i << std::endl;\\n}'
+      ],
+      notes: 'Can be used in for, while, do-while loops, and switch statements.'
+    },
+    {
+      term: 'continue-cpp',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Skips the rest of the current loop iteration and continues with the next.',
+      syntax: 'continue;',
+      examples: [
+        'for (int i = 0; i < 10; i++) {\\n    if (i % 2 == 0) {\\n        continue;\\n    }\\n    std::cout << i << std::endl; // Prints only odd numbers\\n}'
+      ],
+      notes: 'Can be used in for, while, and do-while loops.'
+    },
+    
+    // C++ Functions
+    {
+      term: 'function-cpp',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Named block of code that performs a specific task.',
+      syntax: 'return_type function_name(parameter_type parameter_name, ...) { statements; }',
+      examples: [
+        'int add(int a, int b) {\\n    return a + b;\\n}\\n\\nint main() {\\n    int sum = add(3, 4); // sum becomes 7\\n    return 0;\\n}'
+      ],
+      notes: 'Functions must be declared before they are called. Can use function prototypes to declare without defining.'
+    },
+    {
+      term: 'return-cpp',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Exits a function and optionally returns a value.',
+      syntax: 'return expression;',
+      examples: [
+        'int square(int x) {\\n    return x * x;\\n}'
+      ],
+      notes: 'A function with return type void can use return without an expression to exit early.'
+    },
+    {
+      term: 'void-cpp',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Indicates that a function does not return a value.',
+      syntax: 'void function_name(parameters) { statements; }',
+      examples: [
+        'void printMessage(std::string message) {\\n    std::cout << message << std::endl;\\n}'
+      ],
+      notes: 'Can also be used to specify that a function takes no parameters: void func(void);'
+    },
+    
+    // C++ Memory Management
+    {
+      term: 'new',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Allocates dynamic memory on the heap.',
+      syntax: 'pointer_type* variable_name = new pointer_type;',
+      examples: [
+        'int* p = new int; // Allocate a single integer\\n*p = 10;',
+        'int* arr = new int[5]; // Allocate array of 5 integers'
+      ],
+      notes: 'Memory allocated with new must be deallocated with delete or delete[] to avoid memory leaks.'
+    },
+    {
+      term: 'delete',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Deallocates memory previously allocated with new.',
+      syntax: 'delete pointer_variable;',
+      examples: [
+        'int* p = new int;\\n*p = 10;\\n// Use p\\ndelete p; // Free the memory',
+        'int* arr = new int[5];\\n// Use arr\\ndelete[] arr; // Free the array memory'
+      ],
+      notes: 'Use delete for single objects and delete[] for arrays. Using delete on a null pointer is safe.'
+    },
+    {
+      term: 'pointer',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Variable that stores a memory address.',
+      syntax: 'type* variable_name;',
+      examples: [
+        'int* p = nullptr; // Declare and initialize a pointer',
+        'int value = 42;\\nint* ptr = &value; // Point to value\'s address\\nstd::cout << *ptr; // Print 42'
+      ],
+      notes: 'Use & to get an address, * to dereference (access the value at) a pointer.'
+    },
+    {
+      term: 'reference',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'An alias for an existing variable.',
+      syntax: 'type& variable_name = existing_variable;',
+      examples: [
+        'int value = 42;\\nint& ref = value; // ref is an alias for value\\nref = 100; // value is now 100 too'
+      ],
+      notes: 'Must be initialized when declared. Cannot be reassigned to refer to a different variable.'
+    },
+    {
+      term: 'nullptr',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Represents a null pointer value (introduced in C++11).',
+      syntax: 'pointer_type* variable_name = nullptr;',
+      examples: [
+        'int* p = nullptr; // Modern way to initialize a null pointer',
+        'if (p == nullptr) { /* Handle null pointer */ }'
+      ],
+      notes: 'Preferred over NULL or 0 for null pointers in modern C++. Type-safe.'
+    },
+    {
+      term: 'smart_pointers',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Pointers that automatically manage memory (part of C++11 and later).',
+      syntax: 'std::unique_ptr<type> variable_name = std::make_unique<type>();',
+      examples: [
+        '// C++14\\nstd::unique_ptr<int> p = std::make_unique<int>(42);',
+        '// C++11\\nstd::shared_ptr<int> p = std::make_shared<int>(42);'
+      ],
+      notes: 'unique_ptr has exclusive ownership, shared_ptr has shared ownership, weak_ptr holds a non-owning reference to a shared_ptr object.'
+    },
+    
+    // C++ Classes and Objects
+    {
+      term: 'class-cpp',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'User-defined data type that encapsulates data and functions.',
+      syntax: 'class ClassName { access_specifier: members; };',
+      examples: [
+        'class Rectangle {\\nprivate:\\n    int width, height;\\npublic:\\n    Rectangle(int w, int h) : width(w), height(h) {}\\n    int area() { return width * height; }\\n};'
+      ],
+      notes: 'Access specifiers: public, private, protected. Default is private.'
+    },
+    {
+      term: 'struct',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'User-defined data type similar to class, but with public members by default.',
+      syntax: 'struct StructName { members; };',
+      examples: [
+        'struct Point {\\n    int x, y;\\n    Point(int x_val, int y_val) : x(x_val), y(y_val) {}\\n};'
+      ],
+      notes: 'Functionally equivalent to class except for default access level. Often used for simple data structures.'
+    },
+    {
+      term: 'constructor',
+      category: 'function',
+      language: 'cpp',
+      description: 'Special member function that initializes an object of a class.',
+      syntax: 'ClassName(parameters) { initialization; }',
+      examples: [
+        'class Rectangle {\\nprivate:\\n    int width, height;\\npublic:\\n    Rectangle(int w, int h) {\\n        width = w;\\n        height = h;\\n    }\\n};'
+      ],
+      notes: 'Called automatically when an object is created. Can be overloaded to accept different parameters.'
+    },
+    {
+      term: 'destructor',
+      category: 'function',
+      language: 'cpp',
+      description: 'Special member function that is called when an object is destroyed.',
+      syntax: '~ClassName() { cleanup; }',
+      examples: [
+        'class Resource {\\nprivate:\\n    int* data;\\npublic:\\n    Resource() { data = new int[100]; }\\n    ~Resource() { delete[] data; } // Destructor\\n};'
+      ],
+      notes: 'Important for freeing resources (like memory) owned by an object. Cannot take parameters or return values.'
+    },
+    {
+      term: 'inheritance-cpp',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Mechanism where a class inherits properties and methods from another class.',
+      syntax: 'class DerivedClass : access_specifier BaseClass { members; };',
+      examples: [
+        'class Animal {\\npublic:\\n    void eat() { /* ... */ }\\n};\\n\\nclass Dog : public Animal {\\npublic:\\n    void bark() { /* ... */ }\\n};'
+      ],
+      notes: 'Access specifiers for inheritance: public, protected, private. Public is most common.'
+    },
+    {
+      term: 'virtual',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Specifies that a function can be overridden in derived classes.',
+      syntax: 'virtual return_type function_name(parameters);',
+      examples: [
+        'class Base {\\npublic:\\n    virtual void show() { std::cout << "Base"; }\\n};\\n\\nclass Derived : public Base {\\npublic:\\n    void show() override { std::cout << "Derived"; }\\n};'
+      ],
+      notes: 'Enables polymorphism. Use override (C++11) in derived classes to make intent clear and catch errors.'
+    }
   ]
 };
 
-// Arduino/Wiring reference data
+// Import Arduino/Wiring reference data
 const wiringReference: ReferenceLanguage = {
   id: 'wiring',
   name: 'Arduino/Wiring',
   description: 'A C++-based language designed for programming microcontrollers, especially Arduino boards.',
   icon: <Terminal className="text-green-600" />,
   sections: [
-    // Arduino/Wiring sections
     {
       id: 'arduino-basics',
       title: 'Arduino Basics',
@@ -145,10 +1240,46 @@ const wiringReference: ReferenceLanguage = {
         }
       ]
     },
-    // More sections would be defined here
+    {
+      id: 'arduino-digital-io',
+      title: 'Digital Input/Output',
+      content: 'Arduino provides functions to read from and write to digital pins. Digital pins can be set to either INPUT, INPUT_PULLUP, or OUTPUT mode.',
+      examples: [
+        {
+          title: 'Button Input',
+          code: 'const int buttonPin = 2; // Pin connected to a button\\nconst int ledPin = 13;    // Pin connected to an LED\\n\\nvoid setup() {\\n  pinMode(buttonPin, INPUT_PULLUP);\\n  pinMode(ledPin, OUTPUT);\\n}\\n\\nvoid loop() {\\n  if (digitalRead(buttonPin) == LOW) {\\n    digitalWrite(ledPin, HIGH);\\n  } else {\\n    digitalWrite(ledPin, LOW);\\n  }\\n}',
+          explanation: 'This program turns on an LED when a button connected to pin 2 is pressed.'
+        }
+      ]
+    },
+    {
+      id: 'arduino-analog-io',
+      title: 'Analog Input/Output',
+      content: 'Arduino can read analog values through its analog pins and simulate analog output through PWM on certain digital pins.',
+      examples: [
+        {
+          title: 'Analog Read and Write',
+          code: 'const int analogInPin = A0;  // Analog input pin\\nconst int analogOutPin = 9;   // Analog output pin (PWM)\\n\\nvoid setup() {\\n  // No setup needed for analog input\\n  // Analog output pin is automatically set as OUTPUT\\n}\\n\\nvoid loop() {\\n  int sensorValue = analogRead(analogInPin);\\n  int outputValue = map(sensorValue, 0, 1023, 0, 255);\\n  analogWrite(analogOutPin, outputValue);\\n  delay(10);\\n}',
+          explanation: 'This program reads an analog value from a sensor and uses it to control the brightness of an LED.'
+        }
+      ]
+    }
   ],
   terms: [
-    // Arduino/Wiring terms
+    // Digital I/O
+    {
+      term: 'pinMode()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Configures a digital pin to behave as an input or output.',
+      syntax: 'pinMode(pin, mode)',
+      examples: [
+        'pinMode(13, OUTPUT); // Set pin 13 as an output',
+        'pinMode(2, INPUT); // Set pin 2 as an input',
+        'pinMode(3, INPUT_PULLUP); // Set pin 3 as an input with internal pull-up resistor'
+      ],
+      notes: 'Common modes: INPUT, OUTPUT, INPUT_PULLUP. Must be called before using digitalRead() or digitalWrite() on a pin.'
+    },
     {
       term: 'digitalWrite()',
       category: 'function',
@@ -159,9 +1290,502 @@ const wiringReference: ReferenceLanguage = {
         'digitalWrite(13, HIGH); // Turn on LED',
         'digitalWrite(13, LOW); // Turn off LED'
       ],
-      notes: 'The pin must be configured as OUTPUT using pinMode() first.'
+      notes: 'The pin must be configured as OUTPUT using pinMode() first. HIGH is 5V (or 3.3V on 3.3V boards), LOW is 0V (ground).'
     },
-    // More terms would be defined here
+    {
+      term: 'digitalRead()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Reads the value from a digital pin, either HIGH or LOW.',
+      syntax: 'digitalRead(pin)',
+      examples: [
+        'int buttonState = digitalRead(2); // Read the state of pin 2',
+        'if (digitalRead(7) == HIGH) { /* Do something */ }'
+      ],
+      notes: 'Returns HIGH (1) if voltage on the pin is above a certain threshold, otherwise LOW (0). When using INPUT_PULLUP, button press reads as LOW.'
+    },
+    {
+      term: 'HIGH | LOW',
+      category: 'keyword',
+      language: 'arduino',
+      description: 'Constants used to set or check digital pin values.',
+      syntax: 'HIGH or LOW',
+      examples: [
+        'digitalWrite(13, HIGH); // Set pin 13 to HIGH (5V/3.3V)',
+        'if (digitalRead(2) == LOW) { /* Button pressed with INPUT_PULLUP */ }'
+      ],
+      notes: 'HIGH equals 1 (or true) and represents 5V (or 3.3V on 3.3V boards). LOW equals 0 (or false) and represents 0V (ground).'
+    },
+    {
+      term: 'INPUT | INPUT_PULLUP | OUTPUT',
+      category: 'keyword',
+      language: 'arduino',
+      description: 'Constants used to set pin modes.',
+      syntax: 'INPUT, INPUT_PULLUP, or OUTPUT',
+      examples: [
+        'pinMode(2, INPUT); // Configure pin 2 as an input',
+        'pinMode(3, INPUT_PULLUP); // Configure pin 3 as an input with internal pull-up resistor',
+        'pinMode(13, OUTPUT); // Configure pin 13 as an output'
+      ],
+      notes: 'INPUT_PULLUP enables the internal pull-up resistor, making the pin read HIGH when nothing is connected.'
+    },
+    
+    // Analog I/O
+    {
+      term: 'analogRead()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Reads the value from an analog pin.',
+      syntax: 'analogRead(pin)',
+      examples: [
+        'int sensorValue = analogRead(A0); // Read from analog pin A0'
+      ],
+      notes: 'Returns a value between 0 and 1023, representing voltages from 0 to 5V (or 0 to 3.3V on 3.3V boards). No need to set pinMode() for analog inputs.'
+    },
+    {
+      term: 'analogWrite()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Outputs an analog value (PWM wave) to a pin.',
+      syntax: 'analogWrite(pin, value)',
+      examples: [
+        'analogWrite(9, 128); // Output 50% duty cycle PWM to pin 9',
+        'analogWrite(3, 255); // Output 100% duty cycle (equivalent to digitalWrite(3, HIGH))'
+      ],
+      notes: 'Value range is 0-255. Only works on pins with PWM capability (usually marked with ~ on the board). Frequency is approximately 490 Hz on most pins.'
+    },
+    {
+      term: 'analogReadResolution()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Sets the resolution of analogRead() on boards that support it.',
+      syntax: 'analogReadResolution(bits)',
+      examples: [
+        'analogReadResolution(12); // Set resolution to 12 bits (0-4095)'
+      ],
+      notes: 'Only available on certain boards like Arduino Due, Zero, and MKR family. Default is 10 bits (0-1023).'
+    },
+    {
+      term: 'analogWriteResolution()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Sets the resolution of analogWrite() on boards that support it.',
+      syntax: 'analogWriteResolution(bits)',
+      examples: [
+        'analogWriteResolution(12); // Set resolution to 12 bits (0-4095)'
+      ],
+      notes: 'Only available on certain boards like Arduino Due, Zero, and MKR family. Default is 8 bits (0-255).'
+    },
+    {
+      term: 'analogReference()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Configures the reference voltage used for analog input.',
+      syntax: 'analogReference(type)',
+      examples: [
+        'analogReference(EXTERNAL); // Use voltage applied to AREF pin as reference'
+      ],
+      notes: 'Available reference types vary by board. Common ones include DEFAULT, INTERNAL, EXTERNAL. Improper use can damage your Arduino.'
+    },
+    
+    // Time Functions
+    {
+      term: 'delay()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Pauses the program for the specified amount of milliseconds.',
+      syntax: 'delay(ms)',
+      examples: [
+        'delay(1000); // Pause for 1 second'
+      ],
+      notes: 'Blocks all code execution during delay. Not suitable for multitasking. For non-blocking delays, use millis().'
+    },
+    {
+      term: 'delayMicroseconds()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Pauses the program for the specified amount of microseconds.',
+      syntax: 'delayMicroseconds(us)',
+      examples: [
+        'delayMicroseconds(10); // Pause for 10 microseconds'
+      ],
+      notes: 'Accurate for delays up to around 16,000 microseconds. For longer delays, use delay().'
+    },
+    {
+      term: 'millis()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Returns the number of milliseconds since the Arduino began running the current program.',
+      syntax: 'millis()',
+      examples: [
+        'unsigned long currentTime = millis();',
+        'if (millis() - previousTime >= interval) { /* Do something */ }'
+      ],
+      notes: 'Returns an unsigned long (0 to 4,294,967,295 milliseconds, or about 50 days). Overflows back to 0 after that.'
+    },
+    {
+      term: 'micros()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Returns the number of microseconds since the Arduino began running the current program.',
+      syntax: 'micros()',
+      examples: [
+        'unsigned long startTime = micros();',
+        'doSomething();',
+        'unsigned long duration = micros() - startTime;'
+      ],
+      notes: 'Returns an unsigned long. Overflows after approximately 70 minutes. Resolution depends on the board.'
+    },
+    
+    // Math Functions
+    {
+      term: 'map()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Re-maps a number from one range to another.',
+      syntax: 'map(value, fromLow, fromHigh, toLow, toHigh)',
+      examples: [
+        'int outputValue = map(sensorValue, 0, 1023, 0, 255); // Map analog input to PWM output'
+      ],
+      notes: 'Useful for converting sensor readings to appropriate output values. Does not constrain values to the target range.'
+    },
+    {
+      term: 'constrain()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Constrains a number to be within a specified range.',
+      syntax: 'constrain(x, min, max)',
+      examples: [
+        'int constrainedValue = constrain(sensorValue, 100, 900); // Keep value between 100 and 900'
+      ],
+      notes: 'Returns min if x is less than min, max if x is greater than max, and x otherwise.'
+    },
+    {
+      term: 'min()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Returns the smaller of two numbers.',
+      syntax: 'min(x, y)',
+      examples: [
+        'int smallerValue = min(sensor1, sensor2);'
+      ],
+      notes: 'Works with any data type that supports comparison operators.'
+    },
+    {
+      term: 'max()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Returns the larger of two numbers.',
+      syntax: 'max(x, y)',
+      examples: [
+        'int largerValue = max(sensor1, sensor2);'
+      ],
+      notes: 'Works with any data type that supports comparison operators.'
+    },
+    {
+      term: 'abs()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Returns the absolute value of a number.',
+      syntax: 'abs(x)',
+      examples: [
+        'int distance = abs(position1 - position2);'
+      ],
+      notes: 'Always returns a value of the same type as the input.'
+    },
+    {
+      term: 'pow()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Calculates a number raised to a power.',
+      syntax: 'pow(base, exponent)',
+      examples: [
+        'double area = pow(radius, 2) * PI; // Area of a circle'
+      ],
+      notes: 'Returns a double. Both parameters should be of type double for best results.'
+    },
+    {
+      term: 'sqrt()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Calculates the square root of a number.',
+      syntax: 'sqrt(x)',
+      examples: [
+        'double distance = sqrt(sq(x2 - x1) + sq(y2 - y1)); // Distance between two points'
+      ],
+      notes: 'Returns a double. Input should be non-negative.'
+    },
+    {
+      term: 'sin()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Calculates the sine of an angle (in radians).',
+      syntax: 'sin(angle)',
+      examples: [
+        'float y = sin(radians(angle)); // Sine of an angle in degrees'
+      ],
+      notes: 'Returns a value between -1 and 1. Input must be in radians. Use radians() to convert from degrees.'
+    },
+    {
+      term: 'cos()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Calculates the cosine of an angle (in radians).',
+      syntax: 'cos(angle)',
+      examples: [
+        'float x = cos(radians(angle)); // Cosine of an angle in degrees'
+      ],
+      notes: 'Returns a value between -1 and 1. Input must be in radians. Use radians() to convert from degrees.'
+    },
+    {
+      term: 'tan()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Calculates the tangent of an angle (in radians).',
+      syntax: 'tan(angle)',
+      examples: [
+        'float slope = tan(radians(angle)); // Tangent of an angle in degrees'
+      ],
+      notes: 'Input must be in radians. Use radians() to convert from degrees.'
+    },
+    {
+      term: 'random()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Generates pseudo-random numbers.',
+      syntax: 'random(max) or random(min, max)',
+      examples: [
+        'int randomValue = random(10); // Random number from 0 to 9',
+        'int diceRoll = random(1, 7); // Random number from 1 to 6'
+      ],
+      notes: 'Returns a long. Upper bound is exclusive, lower bound is inclusive. Use randomSeed() for different sequences.'
+    },
+    {
+      term: 'randomSeed()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Initializes the pseudo-random number generator.',
+      syntax: 'randomSeed(seed)',
+      examples: [
+        'randomSeed(analogRead(A0)); // Use noise from an unconnected analog pin as seed'
+      ],
+      notes: 'Call once at the beginning of a program for different random sequences each time the program runs.'
+    },
+    
+    // Communication
+    {
+      term: 'Serial',
+      category: 'function',
+      language: 'arduino',
+      description: 'Used for communication between the Arduino board and a computer or other devices.',
+      syntax: 'Serial.method()',
+      examples: [
+        'Serial.begin(9600); // Initialize serial communication at 9600 bps',
+        'Serial.println("Hello, world!"); // Send a message to the serial monitor'
+      ],
+      notes: 'Common methods: begin(), print(), println(), available(), read(), write().'
+    },
+    {
+      term: 'SPI',
+      category: 'function',
+      language: 'arduino',
+      description: 'Controls SPI (Serial Peripheral Interface) communication.',
+      syntax: 'SPI.method()',
+      examples: [
+        '#include <SPI.h>\\n\\nvoid setup() {\\n  SPI.begin();\\n  // More setup code\\n}\\n\\nvoid loop() {\\n  SPI.transfer(value); // Send/receive a byte\\n}'
+      ],
+      notes: 'Requires #include <SPI.h>. Used for communication with SPI devices like SD cards, displays, and sensors.'
+    },
+    {
+      term: 'Wire',
+      category: 'function',
+      language: 'arduino',
+      description: 'Controls I2C (Inter-Integrated Circuit) communication.',
+      syntax: 'Wire.method()',
+      examples: [
+        '#include <Wire.h>\\n\\nvoid setup() {\\n  Wire.begin(); // Join the I2C bus as master\\n  // or\\n  Wire.begin(address); // Join as slave with address\\n}'
+      ],
+      notes: 'Requires #include <Wire.h>. Used for communication with I2C devices like sensors, displays, and other microcontrollers.'
+    },
+    
+    // Interrupts
+    {
+      term: 'attachInterrupt()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Configures a specified digital pin to trigger an interrupt.',
+      syntax: 'attachInterrupt(digitalPinToInterrupt(pin), ISR, mode)',
+      examples: [
+        'attachInterrupt(digitalPinToInterrupt(2), myISR, RISING); // Call myISR when pin 2 goes from LOW to HIGH'
+      ],
+      notes: 'Mode options: LOW, CHANGE, RISING, FALLING, HIGH (not all boards). Only certain pins support interrupts.'
+    },
+    {
+      term: 'detachInterrupt()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Disables interrupts on a specified digital pin.',
+      syntax: 'detachInterrupt(digitalPinToInterrupt(pin))',
+      examples: [
+        'detachInterrupt(digitalPinToInterrupt(2)); // Disable interrupt on pin 2'
+      ],
+      notes: 'Use when you no longer need interrupts on a pin.'
+    },
+    {
+      term: 'interrupts()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Re-enables interrupts (after they\'ve been disabled).',
+      syntax: 'interrupts()',
+      examples: [
+        'noInterrupts(); // Disable interrupts\\n// Critical code that shouldn\'t be interrupted\\ninterrupts(); // Re-enable interrupts'
+      ],
+      notes: 'Use with noInterrupts() to protect critical sections of code.'
+    },
+    {
+      term: 'noInterrupts()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Disables interrupts.',
+      syntax: 'noInterrupts()',
+      examples: [
+        'noInterrupts(); // Disable interrupts\\n// Critical code that shouldn\'t be interrupted\\ninterrupts(); // Re-enable interrupts'
+      ],
+      notes: 'Disables all interrupts. Use sparingly and for short periods to avoid missing important events.'
+    },
+    {
+      term: 'digitalPinToInterrupt()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Converts a digital pin number to the corresponding interrupt number.',
+      syntax: 'digitalPinToInterrupt(pin)',
+      examples: [
+        'attachInterrupt(digitalPinToInterrupt(2), myISR, RISING);'
+      ],
+      notes: 'Use this rather than directly specifying interrupt numbers for better code portability across different Arduino boards.'
+    },
+    
+    // Program Structure
+    {
+      term: 'setup()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Called once when the program starts.',
+      syntax: 'void setup() { /* code */ }',
+      examples: [
+        'void setup() {\\n  pinMode(13, OUTPUT); // Initialize pin 13 as an output\\n  Serial.begin(9600); // Start serial communication\\n}'
+      ],
+      notes: 'Used for initialization: setting pin modes, starting serial communication, initializing libraries, etc.'
+    },
+    {
+      term: 'loop()',
+      category: 'function',
+      language: 'arduino',
+      description: 'Called repeatedly after setup() completes.',
+      syntax: 'void loop() { /* code */ }',
+      examples: [
+        'void loop() {\\n  digitalWrite(13, HIGH); // Turn on LED\\n  delay(1000);               // Wait for 1 second\\n  digitalWrite(13, LOW);  // Turn off LED\\n  delay(1000);               // Wait for 1 second\\n}'
+      ],
+      notes: 'Main program that runs continuously until power is removed or the board is reset.'
+    },
+    
+    // Data Types
+    {
+      term: 'boolean',
+      category: 'data-type',
+      language: 'arduino',
+      description: 'A simple data type that can be either true or false.',
+      syntax: 'boolean variable_name = value;',
+      examples: [
+        'boolean ledState = false;',
+        'if (buttonPressed) { ledState = !ledState; }'
+      ],
+      notes: 'Takes up 1 byte of memory even though it only needs 1 bit. Can be used with logical operators (&&, ||, !).'
+    },
+    {
+      term: 'byte',
+      category: 'data-type',
+      language: 'arduino',
+      description: 'An 8-bit unsigned data type that stores values from 0 to 255.',
+      syntax: 'byte variable_name = value;',
+      examples: [
+        'byte brightness = 128; // 50% brightness',
+        'byte header = 0xFF; // Hexadecimal value'
+      ],
+      notes: 'Uses less memory than int. Useful for storing small positive integers or working with binary data.'
+    },
+    {
+      term: 'char-arduino',
+      category: 'data-type',
+      language: 'arduino',
+      description: 'A signed 8-bit data type that stores values from -128 to 127.',
+      syntax: 'char variable_name = value;',
+      examples: [
+        'char letter = \'A\'; // Character literal',
+        'char signedByte = -100; // Signed numerical value'
+      ],
+      notes: 'Can store ASCII characters or small signed integers. Single character literals use single quotes.'
+    },
+    {
+      term: 'int-arduino',
+      category: 'data-type',
+      language: 'arduino',
+      description: 'A 16-bit signed data type on most Arduino boards, storing values from -32,768 to 32,767.',
+      syntax: 'int variable_name = value;',
+      examples: [
+        'int sensorValue = analogRead(A0); // Store analog reading',
+        'int position = -200; // Negative value'
+      ],
+      notes: 'Most commonly used integer type. On Arduino Due and other 32-bit boards, int is 32 bits.'
+    },
+    {
+      term: 'long',
+      category: 'data-type',
+      language: 'arduino',
+      description: 'A 32-bit signed data type storing values from -2,147,483,648 to 2,147,483,647.',
+      syntax: 'long variable_name = value;',
+      examples: [
+        'long timeElapsed = millis(); // Store time in milliseconds',
+        'long distance = 1500000; // Large number'
+      ],
+      notes: 'Used when int is not large enough, such as when working with time in milliseconds.'
+    },
+    {
+      term: 'float',
+      category: 'data-type',
+      language: 'arduino',
+      description: 'A 32-bit floating-point data type for decimal numbers.',
+      syntax: 'float variable_name = value;',
+      examples: [
+        'float voltage = 3.3; // Decimal value',
+        'float temperature = sensor.readTemperature(); // Store temperature reading'
+      ],
+      notes: 'Provides about 6-7 decimal digits of precision. Floating-point math is slower than integer math.'
+    },
+    {
+      term: 'String',
+      category: 'data-type',
+      language: 'arduino',
+      description: 'A class for working with text strings.',
+      syntax: 'String variable_name = "text";',
+      examples: [
+        'String message = "Hello";',
+        'String fullMessage = message + ", World!"; // String concatenation'
+      ],
+      notes: 'More memory-intensive than character arrays. Provides convenient methods for string manipulation but can lead to memory fragmentation.'
+    },
+    {
+      term: 'true | false',
+      category: 'keyword',
+      language: 'arduino',
+      description: 'Boolean literals representing logical true and false values.',
+      syntax: 'true or false',
+      examples: [
+        'boolean ledOn = true;',
+        'if (digitalRead(buttonPin) == false) { /* Button is pressed with INPUT_PULLUP */ }'
+      ],
+      notes: 'true evaluates to 1 and false evaluates to 0. Non-zero values are considered true when used in conditions.'
+    }
   ]
 };
 
