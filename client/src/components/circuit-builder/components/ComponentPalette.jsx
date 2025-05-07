@@ -85,19 +85,6 @@ const ComponentPalette = ({ onAddComponent }) => {
                 src={component.imagePath} 
                 alt={component.displayName} 
                 className="max-w-full max-h-full p-1"
-                onError={(e) => {
-                  console.error(`Failed to load palette image: ${component.imagePath}`, e);
-                  // Try alternative paths
-                  if (component.name === 'segmented-display') {
-                    console.log("Fixing segmented display image path");
-                    e.target.src = '/attached_assets/segmented-display.icon.png';
-                  } else if (component.imagePath && component.imagePath.startsWith('/@fs/')) {
-                    // For direct file paths - strip the /@fs prefix
-                    const alternativePath = component.imagePath.replace('/@fs/home/runner/workspace/', '/');
-                    console.log(`Trying alternative path in palette: ${alternativePath}`);
-                    e.target.src = alternativePath;
-                  }
-                }}
               />
             </div>
             <div className="text-xs font-medium text-center truncate">
