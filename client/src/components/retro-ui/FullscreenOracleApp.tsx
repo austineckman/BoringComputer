@@ -4382,28 +4382,55 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   
                   <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-gray-300 text-sm mb-1">Adventure Line</label>
-                      <input
-                        type="text"
+                      <label className="block text-gray-300 text-sm mb-1">Storyline</label>
+                      <select
                         className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
                         value={(editingItem as Quest).adventureLine}
                         onChange={(e) => {
                           const updatedQuest = {...editingItem as Quest, adventureLine: e.target.value};
                           setEditingItem(updatedQuest);
                         }}
-                      />
+                      >
+                        <option value="30 Days Lost in Space">30 Days Lost in Space</option>
+                        <option value="Adventures in Wonderland">Adventures in Wonderland</option>
+                        <option value="Cosmic Voyager">Cosmic Voyager</option>
+                        <option value="Digital Frontiers">Digital Frontiers</option>
+                        <option value="Maker's Journey">Maker's Journey</option>
+                      </select>
                     </div>
                     <div>
-                      <label className="block text-gray-300 text-sm mb-1">Date</label>
-                      <input
-                        type="date"
+                      <label className="block text-gray-300 text-sm mb-1">Component Kit</label>
+                      <select
                         className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                        value={(editingItem as any).date ? new Date((editingItem as any).date).toISOString().split('T')[0] : ''}
+                        value={(editingItem as any).kitId || ''}
                         onChange={(e) => {
-                          const updatedQuest = {...editingItem as any, date: e.target.value};
+                          const updatedQuest = {...editingItem as any, kitId: e.target.value};
+                          // When changing kit, we also need to reset component requirements
+                          if (e.target.value && e.target.value !== (editingItem as any).kitId) {
+                            setLoadingComponents(true);
+                            // If selecting a kit, we'll load its components in a separate API call
+                            fetch(`/api/admin/kits/${e.target.value}/components`)
+                              .then(response => response.json())
+                              .then(components => {
+                                setKitComponents({
+                                  ...kitComponents,
+                                  [e.target.value]: components
+                                });
+                                setLoadingComponents(false);
+                              })
+                              .catch(error => {
+                                console.error('Error loading kit components:', error);
+                                setLoadingComponents(false);
+                              });
+                          }
                           setEditingItem(updatedQuest);
                         }}
-                      />
+                      >
+                        <option value="">-- Select Kit --</option>
+                        {componentKits.map(kit => (
+                          <option key={kit.id} value={kit.id}>{kit.name}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                   
@@ -4436,16 +4463,14 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                         }}
                       />
                     </div>
-                    {/* Order in line field */}
                     <div>
-                      <label className="block text-gray-300 text-sm mb-1">Order in Line</label>
+                      <label className="block text-gray-300 text-sm mb-1">Date</label>
                       <input
-                        type="number"
-                        min="0"
+                        type="date"
                         className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                        value={(editingItem as any).orderInLine !== undefined ? (editingItem as any).orderInLine : 0}
+                        value={(editingItem as any).date ? new Date((editingItem as any).date).toISOString().split('T')[0] : ''}
                         onChange={(e) => {
-                          const updatedQuest = {...editingItem as any, orderInLine: parseInt(e.target.value)};
+                          const updatedQuest = {...editingItem as any, date: e.target.value};
                           setEditingItem(updatedQuest);
                         }}
                       />
@@ -4497,6 +4522,107 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                       }}
                       placeholder="Provide clear instructions for the mission objectives"
                     />
+                  </div>
+                  
+                  {/* Component Requirements */}
+                  <div className="mt-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-gray-300 text-sm">Component Requirements</label>
+                      <button
+                        className="px-2 py-1 bg-gray-800 text-gray-300 text-xs rounded hover:bg-gray-700 flex items-center"
+                        onClick={() => {
+                          const updatedQuest = {...editingItem as any};
+                          if (!updatedQuest.componentRequirements) {
+                            updatedQuest.componentRequirements = [];
+                          }
+                          
+                          // Only show this button if a kit is selected
+                          if (updatedQuest.kitId && kitComponents[updatedQuest.kitId]) {
+                            // Add first available component from kit that's not already added
+                            const availableComponents = kitComponents[updatedQuest.kitId].filter(
+                              comp => !(updatedQuest.componentRequirements || []).some(
+                                (req: any) => req.id === comp.id
+                              )
+                            );
+                            
+                            if (availableComponents.length > 0) {
+                              const component = availableComponents[0];
+                              updatedQuest.componentRequirements.push({
+                                id: component.id,
+                                name: component.name,
+                                description: component.description,
+                                kitId: updatedQuest.kitId
+                              });
+                              setEditingItem(updatedQuest);
+                            }
+                          }
+                        }}
+                        disabled={!(editingItem as any).kitId || !kitComponents[(editingItem as any).kitId]}
+                        onMouseEnter={() => window.sounds?.hover()}
+                      >
+                        <PlusCircle className="h-3 w-3 mr-1" />
+                        Add Component
+                      </button>
+                    </div>
+                    
+                    {/* Selected Components */}
+                    <div className="space-y-2">
+                      {((editingItem as any).componentRequirements || []).map((component: any, index: number) => (
+                        <div key={index} className="flex items-center gap-2 bg-black/40 p-2 rounded border border-gray-700">
+                          <div className="flex-1">
+                            <div className="flex items-center">
+                              {component.imagePath && (
+                                <img 
+                                  src={component.imagePath} 
+                                  alt={component.name}
+                                  className="w-8 h-8 object-contain mr-2" 
+                                />
+                              )}
+                              <div>
+                                <div className="font-semibold text-sm">{component.name}</div>
+                                <div className="text-gray-400 text-xs">{component.description}</div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <button
+                            className="p-1 text-red-500 hover:text-red-700 rounded"
+                            onClick={() => {
+                              const updatedQuest = {...editingItem as any};
+                              updatedQuest.componentRequirements.splice(index, 1);
+                              setEditingItem(updatedQuest);
+                            }}
+                            onMouseEnter={() => window.sounds?.hover()}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                      
+                      {/* Empty state */}
+                      {(!((editingItem as any).componentRequirements?.length > 0)) && (
+                        <div className="text-center p-3 bg-black/40 rounded-md border border-gray-700/50">
+                          {loadingComponents ? (
+                            <div className="text-gray-400 flex items-center justify-center">
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                              Loading components...
+                            </div>
+                          ) : (
+                            <div>
+                              {(editingItem as any).kitId ? (
+                                <div className="text-gray-500 text-sm">
+                                  No components selected yet. Click "Add Component" to specify components required for this quest.
+                                </div>
+                              ) : (
+                                <div className="text-gray-500 text-sm">
+                                  Please select a Component Kit first to add required components to this quest.
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
                 
