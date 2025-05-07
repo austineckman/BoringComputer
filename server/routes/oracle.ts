@@ -281,4 +281,60 @@ router.get('/users-with-quests/:userId', authenticate, async (req, res) => {
   }
 });
 
+// Dedicated endpoint for updating quest rewards
+router.put('/quests/:questId/rewards', authenticate, async (req, res) => {
+  try {
+    const questId = parseInt(req.params.questId);
+    const { rewards } = req.body;
+    
+    // Validate the quest exists
+    const [quest] = await db
+      .select()
+      .from(schema.quests)
+      .where(eq(schema.quests.id, questId));
+      
+    if (!quest) {
+      return res.status(404).json({ message: "Quest not found" });
+    }
+    
+    // Validate the rewards structure
+    const rewardsSchema = z.array(z.object({
+      type: z.string(),
+      id: z.string(),
+      quantity: z.number().positive()
+    }));
+    
+    try {
+      rewardsSchema.parse(rewards);
+    } catch (validationError) {
+      return res.status(400).json({ 
+        message: "Invalid rewards format", 
+        error: validationError 
+      });
+    }
+    
+    // Update only the rewards
+    const [updatedQuest] = await db
+      .update(schema.quests)
+      .set({ 
+        ...quest,
+        rewards: rewards
+      })
+      .where(eq(schema.quests.id, questId))
+      .returning();
+    
+    console.log(`Updated rewards for quest ${questId}`);
+    return res.json({
+      success: true,
+      quest: updatedQuest
+    });
+  } catch (error) {
+    console.error("Error updating quest rewards:", error);
+    return res.status(500).json({ 
+      message: "Failed to update quest rewards", 
+      error: error.message 
+    });
+  }
+});
+
 export default router;
