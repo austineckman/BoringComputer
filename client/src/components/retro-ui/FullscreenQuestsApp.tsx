@@ -40,13 +40,14 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
   const [selectedKit, setSelectedKit] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Debug logs for lootbox configs
+  // Debug logs for lootbox configs only once on initial load
   useEffect(() => {
     if (!loadingLootBoxConfigs) {
-      console.log('Lootbox configs loaded:', lootBoxConfigs);
-      console.log('Lootbox configs map:', lootBoxConfigsMap);
+      // Convert to string representations to avoid referential equality changes
+      console.log('Lootbox configs loaded:', JSON.stringify(lootBoxConfigs).substring(0, 100) + (lootBoxConfigs.length > 0 ? '...' : ''));
+      console.log('Lootbox configs map size:', Object.keys(lootBoxConfigsMap).length);
     }
-  }, [loadingLootBoxConfigs, lootBoxConfigs, lootBoxConfigsMap]);
+  }, [loadingLootBoxConfigs]);
   const [selectedAdventureLine, setSelectedAdventureLine] = useState<string | null>(null);
   const [filteredQuests, setFilteredQuests] = useState<Quest[]>([]);
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
@@ -310,7 +311,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                         <img 
                           src={item.imagePath} 
                           alt={reward.id} 
-                          className="w-5 h-5 mr-1"
+                          className="w-8 h-8 mr-1"
                           style={{ objectFit: 'contain', imageRendering: 'pixelated' }}
                         />
                       ) : isLootbox && lootboxConfig?.image ? (
@@ -318,13 +319,21 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                         <img 
                           src={lootboxConfig.image} 
                           alt={lootboxConfig.name} 
-                          className="w-5 h-5 mr-1 object-contain"
+                          className="w-8 h-8 mr-1"
+                          style={{ imageRendering: 'pixelated' }}
+                        />
+                      ) : isLootbox ? (
+                        // Use default lootbox image for lootbox rewards without config
+                        <img 
+                          src={defaultLootboxImage} 
+                          alt="Loot Crate" 
+                          className="w-8 h-8 mr-1"
                           style={{ imageRendering: 'pixelated' }}
                         />
                       ) : (
                         // Show a generic box icon if no image found
-                        <div className={`w-5 h-5 mr-1 flex items-center justify-center rounded ${isLootbox ? getRarityColorClass(lootboxConfig?.rarity) : 'bg-gray-700'}`}>
-                          <Package className="w-4 h-4" />
+                        <div className="flex items-center justify-center mr-1 bg-gray-700 rounded p-1">
+                          <Package className="w-6 h-6" />
                         </div>
                       )}
                       <span className="text-xs text-gray-300">{reward.quantity}x {reward.id}</span>
@@ -455,13 +464,13 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                     key={`${reward.id}-${idx}`}
                     className="bg-black/50 rounded-lg border border-gray-700 p-4 flex flex-col items-center"
                   >
-                    <div className="w-32 h-32 mb-3 flex items-center justify-center">
+                    <div className="flex items-center justify-center mb-3">
                       {item?.imagePath ? (
                         // Show item image from database
                         <img 
                           src={item.imagePath} 
                           alt={reward.id}
-                          className="max-w-full max-h-full object-contain"
+                          className="w-24 h-24"
                           style={{ imageRendering: 'pixelated' }}
                         />
                       ) : isLootbox && lootboxConfig?.image ? (
@@ -469,13 +478,21 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                         <img 
                           src={lootboxConfig.image} 
                           alt={lootboxConfig.name}
-                          className="max-w-full max-h-full object-contain"
+                          className="w-24 h-24"
+                          style={{ imageRendering: 'pixelated' }}
+                        />
+                      ) : isLootbox ? (
+                        // Show lootcrate image from assets
+                        <img 
+                          src={defaultLootboxImage} 
+                          alt="Loot Crate"
+                          className="w-24 h-24"
                           style={{ imageRendering: 'pixelated' }}
                         />
                       ) : (
-                        // Show generic package icon with appropriate styling based on rarity
-                        <div className={`w-32 h-32 flex items-center justify-center rounded ${isLootbox ? getRarityColorClass(lootboxConfig?.rarity) : 'bg-gray-700'}`}>
-                          <Package className="w-20 h-20" />
+                        // Show generic package icon with appropriate styling for non-lootbox items
+                        <div className="rounded bg-gray-700 p-2">
+                          <Package className="w-24 h-24" />
                         </div>
                       )}
                     </div>
@@ -505,15 +522,16 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                   key={component.id}
                   className="bg-black/50 rounded-lg border border-gray-700 p-4 flex"
                 >
-                  <div className="w-16 h-16 mr-4 flex-shrink-0 flex items-center justify-center">
+                  <div className="mr-4 flex-shrink-0 flex items-center justify-center">
                     {component.imagePath ? (
                       <img 
                         src={component.imagePath} 
                         alt={component.name}
-                        className="max-w-full max-h-full object-contain"
+                        className="w-20 h-20 object-contain"
+                        style={{ imageRendering: 'pixelated' }}
                       />
                     ) : (
-                      <Cpu className="w-10 h-10 text-gray-500" />
+                      <Cpu className="w-16 h-16 text-gray-500" />
                     )}
                   </div>
                   <div>
@@ -605,16 +623,17 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
               <div>
                 {kits.find(k => k.id === selectedQuest.kitId) ? (
                   <div className="flex items-start">
-                    <div className="w-20 h-20 mr-4">
+                    <div className="mr-4 flex-shrink-0">
                       {kits.find(k => k.id === selectedQuest.kitId)?.imagePath ? (
                         <img 
                           src={kits.find(k => k.id === selectedQuest.kitId)?.imagePath} 
                           alt={kits.find(k => k.id === selectedQuest.kitId)?.name}
-                          className="w-full h-full object-contain rounded-md"
+                          className="w-24 h-24 object-contain rounded-md"
+                          style={{ imageRendering: 'pixelated' }}
                         />
                       ) : (
-                        <div className="w-full h-full bg-black/50 rounded-md flex items-center justify-center">
-                          <Cpu className="w-10 h-10 text-gray-500" />
+                        <div className="bg-black/50 rounded-md flex items-center justify-center p-2">
+                          <Cpu className="w-20 h-20 text-gray-500" />
                         </div>
                       )}
                     </div>
