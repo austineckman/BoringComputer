@@ -256,7 +256,21 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
   const handleSubMenuItemClick = (subItem: MenuItem, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent parent menu from closing
     
-    if (subItem.submenu && subItem.submenu.length > 0) {
+    // For single item submenus, directly execute that item's action
+    if (subItem.submenu && subItem.submenu.length === 1) {
+      const singleItem = subItem.submenu[0];
+      if (singleItem.onClick) {
+        singleItem.onClick();
+        onClose();
+      } else if (singleItem.path) {
+        navigate(singleItem.path);
+        onClose();
+      }
+      return;
+    }
+    
+    // For multiple item submenus, toggle expansion
+    if (subItem.submenu && subItem.submenu.length > 1) {
       setActiveNestedSubmenu(activeNestedSubmenu === subItem.id ? null : subItem.id);
     } else if (subItem.onClick) {
       subItem.onClick();
@@ -322,7 +336,8 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
                         <span className="text-gray-600 mr-2">{subItem.icon}</span>
                         <span className="text-sm">{subItem.label}</span>
                       </div>
-                      {subItem.submenu && subItem.submenu.length > 0 && (
+                      {/* Only show the dropdown arrow if there's more than one item in the submenu */}
+                      {subItem.submenu && subItem.submenu.length > 1 && (
                         <ChevronRight 
                           size={14} 
                           className={`transform transition-transform ${activeNestedSubmenu === subItem.id ? 'rotate-90' : ''}`} 
@@ -330,8 +345,8 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
                       )}
                     </div>
                     
-                    {/* Nested submenu */}
-                    {activeNestedSubmenu === subItem.id && subItem.submenu && (
+                    {/* Nested submenu - Only show dropdown for multiple items */}
+                    {activeNestedSubmenu === subItem.id && subItem.submenu && subItem.submenu.length > 1 && (
                       <div className="bg-gray-50 pl-4">
                         {subItem.submenu.map((nestedItem) => (
                           <div 
@@ -353,6 +368,9 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
                         ))}
                       </div>
                     )}
+                    
+                    {/* We don't need to show additional items for single-item submenus 
+                        since handleSubMenuItemClick already handles direct execution */}
                   </div>
                 ))}
               </div>
