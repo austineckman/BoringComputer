@@ -23,7 +23,7 @@ import QuestLoadingScreen from "./QuestLoadingScreen";
 import CodeQuizWindow from "./CodeQuizWindow";
 import CodeGuessWindow from "./CodeGuessWindow";
 import ComponentGlossaryWindow from "./ComponentGlossaryWindow";
-import CodeReferenceWindow from "./CodeReferenceWindow";
+import ImprovedCodeReferenceWindow from "./ImprovedCodeReferenceWindow";
 import HelpCenterWindow from "./HelpCenterWindow";
 import ElectronicsCheatSheetWindow from "./ElectronicsCheatSheetWindow";
 import ResistorCalculatorWindow from "./ResistorCalculatorWindow";
@@ -739,7 +739,7 @@ const RetroDesktop: React.FC = () => {
     openWindow(
       "codereference", 
       "Code Reference Guide", 
-      <CodeReferenceWindow 
+      <ImprovedCodeReferenceWindow 
         onClose={() => closeWindow("codereference")} 
         onMinimize={() => minimizeWindow("codereference")}
         isActive={windows.some(w => w.id === "codereference" && w.isActive)}
