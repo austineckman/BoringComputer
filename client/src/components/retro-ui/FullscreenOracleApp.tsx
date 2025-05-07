@@ -4484,6 +4484,140 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   </div>
                 </div>
                 
+                {/* Quest Rewards Section */}
+                <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
+                  <h3 className="text-md font-semibold text-brand-orange mb-4">Quest Rewards</h3>
+                  
+                  <div className="mb-4">
+                    <label className="block text-gray-300 text-sm mb-1">XP Reward</label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                      value={(editingItem as Quest).xpReward}
+                      onChange={(e) => {
+                        const updatedQuest = {...editingItem as Quest, xpReward: parseInt(e.target.value)};
+                        setEditingItem(updatedQuest);
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-gray-300 text-sm">Item Rewards</label>
+                      <button
+                        className="px-2 py-1 bg-gray-800 text-gray-300 text-xs rounded hover:bg-gray-700 flex items-center"
+                        onClick={() => {
+                          const updatedQuest = {...editingItem as Quest};
+                          if (!updatedQuest.rewards) {
+                            updatedQuest.rewards = [];
+                          }
+                          updatedQuest.rewards.push({
+                            type: 'item',
+                            id: '',
+                            quantity: 1
+                          });
+                          setEditingItem(updatedQuest);
+                        }}
+                        onMouseEnter={() => window.sounds?.hover()}
+                      >
+                        <PlusCircle className="h-3 w-3 mr-1" />
+                        Add Reward
+                      </button>
+                    </div>
+                    
+                    {/* Rewards List */}
+                    <div className="space-y-2">
+                      {((editingItem as Quest).rewards || []).map((reward, index) => (
+                        <div key={index} className="flex items-center gap-2 bg-black/40 p-2 rounded border border-gray-700">
+                          <div className="w-1/4">
+                            <label className="block text-gray-300 text-xs mb-1">Type</label>
+                            <select
+                              className="w-full px-2 py-1 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none text-sm"
+                              value={reward.type}
+                              onChange={(e) => {
+                                const updatedQuest = {...editingItem as Quest};
+                                updatedQuest.rewards[index].type = e.target.value;
+                                setEditingItem(updatedQuest);
+                              }}
+                            >
+                              <option value="item">Item</option>
+                              <option value="equipment">Equipment</option>
+                              <option value="lootbox">Lootbox</option>
+                              <option value="currency">Currency</option>
+                            </select>
+                          </div>
+                          
+                          <div className="flex-1">
+                            <label className="block text-gray-300 text-xs mb-1">Item ID</label>
+                            <select
+                              className="w-full px-2 py-1 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none text-sm"
+                              value={reward.id}
+                              onChange={(e) => {
+                                const updatedQuest = {...editingItem as Quest};
+                                updatedQuest.rewards[index].id = e.target.value;
+                                setEditingItem(updatedQuest);
+                              }}
+                            >
+                              <option value="">-- Select Item --</option>
+                              {reward.type === 'lootbox' ? (
+                                // Options for lootboxes
+                                lootboxes.map(box => (
+                                  <option key={box.id} value={box.id}>{box.name}</option>
+                                ))
+                              ) : (
+                                // Options for items and equipment
+                                items.map(item => (
+                                  <option key={item.id} value={item.id}>{item.name}</option>
+                                ))
+                              )}
+                            </select>
+                          </div>
+                          
+                          <div className="w-1/6">
+                            <label className="block text-gray-300 text-xs mb-1">Quantity</label>
+                            <input
+                              type="number"
+                              min="1"
+                              className="w-full px-2 py-1 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none text-sm"
+                              value={reward.quantity}
+                              onChange={(e) => {
+                                const updatedQuest = {...editingItem as Quest};
+                                updatedQuest.rewards[index].quantity = parseInt(e.target.value);
+                                setEditingItem(updatedQuest);
+                              }}
+                            />
+                          </div>
+                          
+                          <div className="flex items-end pb-1">
+                            <button
+                              className="p-1 text-red-500 hover:text-red-700 rounded"
+                              onClick={() => {
+                                const updatedQuest = {...editingItem as Quest};
+                                updatedQuest.rewards.splice(index, 1);
+                                setEditingItem(updatedQuest);
+                              }}
+                              onMouseEnter={() => window.sounds?.hover()}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {(!(editingItem as Quest).rewards || (editingItem as Quest).rewards.length === 0) && (
+                        <div className="text-center p-4 bg-black/40 rounded-md">
+                          <div className="text-gray-500 text-sm">No rewards added yet</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="text-xs text-gray-400 mt-2">
+                    <p>Need to create new items? Use the Items tab to add them first, then come back here to assign them as rewards.</p>
+                  </div>
+                </div>
+                
                 {/* Media Content Section */}
                 <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
                   <h3 className="text-md font-semibold text-brand-orange mb-4">Media Content</h3>
