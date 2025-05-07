@@ -497,9 +497,23 @@ const CircuitComponent = ({
           alt={type} 
           className="max-w-full max-h-full object-contain"
           draggable="false"
+          style={{ 
+            width: '80%', 
+            height: '80%',
+            objectFit: 'contain' 
+          }}
           onError={(e) => {
             console.error(`Failed to load image: ${image}`, e);
-            e.target.src = '/placeholder-component.png';
+            // Try alternative paths
+            if (image && image.startsWith('/@fs/')) {
+              // For direct file paths - strip the /@fs prefix
+              const alternativePath = image.replace('/@fs/home/runner/workspace/', '/');
+              console.log(`Trying alternative path: ${alternativePath}`);
+              e.target.src = alternativePath;
+            } else {
+              // Fallback placeholder
+              e.target.src = '/placeholder-component.png';
+            }
           }}
         />
       </div>
