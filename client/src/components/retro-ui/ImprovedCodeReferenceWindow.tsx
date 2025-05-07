@@ -2597,7 +2597,7 @@ const ImprovedCodeReferenceWindow = ({ onClose, onMinimize, isActive }: CodeRefe
           
           <div className={`rounded-lg border-l-4 p-4 ${languageClasses[selectedTerm.language]}`}>
             <div className="flex justify-between items-start">
-              <h2 className="text-xl font-bold">{selectedTerm.term}</h2>
+              <h2 className="text-xl font-bold">{selectedTerm.term.replace(/-cpp$/, '').replace(/-arduino$/, '').replace(/-python$/, '')}</h2>
               <span className="px-2 py-1 rounded-full text-xs bg-gray-200 text-gray-800">
                 {selectedTerm.category}
               </span>
@@ -2661,7 +2661,7 @@ const ImprovedCodeReferenceWindow = ({ onClose, onMinimize, isActive }: CodeRefe
                     onClick={() => handleTermSelect(term)}
                   >
                     <div className="flex justify-between">
-                      <span className="font-medium">{term.term}</span>
+                      <span className="font-medium">{term.term.replace(/-cpp$/, '').replace(/-arduino$/, '').replace(/-python$/, '')}</span>
                       <span className="text-xs text-gray-500 bg-gray-100 px-1 rounded">
                         {term.category}
                       </span>
@@ -3305,7 +3305,7 @@ const ImprovedCodeReferenceWindow = ({ onClose, onMinimize, isActive }: CodeRefe
                       'bg-green-100 text-green-800'
                     } hover:opacity-80`}
                   >
-                    {term.term}
+                    {term.term.replace(/-cpp$/, '').replace(/-arduino$/, '').replace(/-python$/, '')}
                   </button>
                 ))}
               </div>
