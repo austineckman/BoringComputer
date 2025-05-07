@@ -827,7 +827,7 @@ const ComponentGlossaryWindow: React.FC<ComponentGlossaryWindowProps> = ({ onClo
             <span className="mr-1">←</span> Back to Component List
           </button>
           
-          <div className="flex flex-col items-center justify-center flex-grow">
+          <div className="flex flex-col items-center flex-grow pt-4">
             <img 
               src={selectedComponent.iconSrc} 
               alt={selectedComponent.name}
