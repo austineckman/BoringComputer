@@ -5203,43 +5203,6 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   </div>
                 </div>
                 
-                {/* Component Requirements Section */}
-                <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
-                  <h3 className="text-md font-semibold text-brand-orange mb-4">Component Requirements</h3>
-                  <div className="text-sm text-gray-400 mb-4">
-                    Note: Component requirements are managed through the component kit system. 
-                    The Oracle currently displays but doesn't edit component requirements directly.
-                  </div>
-                  
-                  {(editingItem as Quest).componentRequirements && (editingItem as Quest).componentRequirements.length > 0 && (
-                    <div className="bg-black/50 p-3 rounded border border-gray-700">
-                      <div className="text-sm font-medium text-gray-300 mb-2">Current Requirements:</div>
-                      <div className="space-y-2">
-                        {(editingItem as Quest).componentRequirements?.map((comp, index) => (
-                          <div 
-                            key={index}
-                            className="flex items-center justify-between bg-gray-800/50 p-2 rounded"
-                          >
-                            <div>
-                              <span className="text-sm font-medium text-white">{comp.name}</span>
-                              <p className="text-xs text-gray-400 mt-1">{comp.description}</p>
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              Kit: {comp.kitId || "Unknown"}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {(!((editingItem as Quest).componentRequirements && (editingItem as Quest).componentRequirements.length > 0)) && (
-                    <div className="text-center p-4 bg-black/40 rounded-md">
-                      <div className="text-gray-500 text-sm">No component requirements</div>
-                    </div>
-                  )}
-                </div>
-                
                 {/* Action Buttons */}
                 <div className="flex justify-end space-x-3 pt-4 border-t border-gray-700">
                   <button
