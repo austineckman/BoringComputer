@@ -4760,6 +4760,137 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   </div>
                 </div>
                 
+                {/* Quest Preview Section */}
+                <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
+                  <h3 className="text-md font-semibold text-brand-orange mb-4">Quest Preview</h3>
+                  
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div className="md:w-2/3 space-y-4">
+                      {/* Title and Basics */}
+                      <div className="mb-2">
+                        <h2 className="text-lg font-bold text-white mb-1">{(editingItem as Quest).title || "Untitled Quest"}</h2>
+                        <div className="flex items-center gap-2 text-sm text-gray-300">
+                          <span className="bg-brand-orange/20 text-brand-orange px-2 py-0.5 rounded-md text-xs">
+                            {(editingItem as Quest).adventureLine || "No Adventure Line"}
+                          </span>
+                          <span className="bg-gray-700/50 px-2 py-0.5 rounded-md text-xs">
+                            Difficulty: {(editingItem as Quest).difficulty}/5 {Array((editingItem as Quest).difficulty || 0).fill('★').join('')}
+                          </span>
+                          <span className="bg-gray-700/50 px-2 py-0.5 rounded-md text-xs">
+                            {(editingItem as Quest).xpReward || 0} XP
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Description Preview */}
+                      {(editingItem as Quest).description && (
+                        <div className="bg-black/20 border border-gray-700/50 rounded-lg p-3">
+                          <p className="text-sm italic text-gray-300">"{(editingItem as Quest).description}"</p>
+                        </div>
+                      )}
+                      
+                      {/* Mission Brief Preview */}
+                      {(editingItem as any).missionBrief && (
+                        <div className="bg-black/20 border border-gray-700/50 rounded-lg p-3">
+                          <div className="text-xs text-gray-500 mb-1">Mission Brief:</div>
+                          <p className="text-sm text-white">{(editingItem as any).missionBrief}</p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="md:w-1/3 space-y-4">
+                      {/* Kit and Components Preview */}
+                      {(editingItem as any).kitId && (
+                        <div className="bg-black/20 border border-gray-700/50 rounded-lg p-3">
+                          <div className="text-xs text-gray-500 mb-2">Required Kit:</div>
+                          <div className="flex items-center gap-2">
+                            {componentKits.find(kit => kit.id === (editingItem as any).kitId)?.imagePath && (
+                              <img 
+                                src={componentKits.find(kit => kit.id === (editingItem as any).kitId)?.imagePath || ''} 
+                                alt="Kit"
+                                className="w-8 h-8 object-contain"
+                              />
+                            )}
+                            <span className="text-sm text-white font-medium">
+                              {componentKits.find(kit => kit.id === (editingItem as any).kitId)?.name || "Unknown Kit"}
+                            </span>
+                          </div>
+                          
+                          {/* Component Requirements Preview */}
+                          {((editingItem as any).componentRequirements?.length > 0) && (
+                            <div className="mt-3">
+                              <div className="text-xs text-gray-500 mb-2">Components:</div>
+                              <div className="space-y-1">
+                                {((editingItem as any).componentRequirements || []).map((comp: any, idx: number) => (
+                                  <div key={idx} className="flex items-center gap-2 text-xs text-gray-300 bg-black/30 rounded p-1">
+                                    <div className="w-2 h-2 bg-brand-orange rounded-full"></div>
+                                    <span>{comp.name}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Rewards Preview */}
+                      {((editingItem as Quest).rewards?.length > 0) && (
+                        <div className="bg-black/20 border border-gray-700/50 rounded-lg p-3">
+                          <div className="text-xs text-gray-500 mb-2">Rewards:</div>
+                          <div className="space-y-2">
+                            {((editingItem as Quest).rewards || []).map((reward, idx) => {
+                              const item = reward.type === 'lootbox' 
+                                ? lootboxes.find(box => box.id === reward.id)
+                                : items.find(item => item.id === reward.id);
+                              
+                              return (
+                                <div key={idx} className="flex items-center gap-2">
+                                  {item && (
+                                    <div className="flex items-center gap-2">
+                                      {reward.type === 'lootbox' ? (
+                                        <img 
+                                          src={(item as LootBox).image || ''} 
+                                          alt={item.name}
+                                          className="w-6 h-6 object-contain"
+                                        />
+                                      ) : (
+                                        <img 
+                                          src={(item as GameItem).imagePath || ''} 
+                                          alt={item.name}
+                                          className="w-6 h-6 object-contain"
+                                        />
+                                      )}
+                                      <span className="text-xs text-white">
+                                        {reward.quantity}x {item.name}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {!item && reward.id && (
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-6 h-6 bg-gray-800 flex items-center justify-center text-gray-400 text-xs rounded">?</div>
+                                      <span className="text-xs text-gray-400">
+                                        {reward.quantity}x Unknown Item ({reward.id})
+                                      </span>
+                                    </div>
+                                  )}
+                                  {!reward.id && (
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-6 h-6 bg-gray-800 flex items-center justify-center text-gray-400 text-xs rounded">!</div>
+                                      <span className="text-xs text-gray-400">
+                                        {reward.quantity}x No Item Selected
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
                 {/* Media Content Section */}
                 <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
                   <h3 className="text-md font-semibold text-brand-orange mb-4">Media Content</h3>
