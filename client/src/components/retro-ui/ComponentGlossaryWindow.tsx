@@ -1,5 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { X, Minimize2, Search, Book, Cpu, Layers, HelpCircle } from 'lucide-react';
+import { 
+  X, 
+  Minimize2, 
+  Search, 
+  Book, 
+  Cpu, 
+  Layers, 
+  HelpCircle,
+  Zap,
+  Tool,
+  Wrench,
+  AlertTriangle,
+  BookOpen 
+} from 'lucide-react';
 import './retro-ui.css';
 
 // Import component images directly
@@ -849,69 +862,430 @@ const ComponentGlossaryWindow: React.FC<ComponentGlossaryWindowProps> = ({ onClo
           </div>
         </div>
         
-        {/* Right panel - Pin information */}
+        {/* Right panel - Pin information with expanded educational content */}
         <div className="w-1/2 p-4 bg-gray-50 overflow-y-auto">
           {selectedPin ? (
             <div>
               <h3 className="text-lg font-bold border-b border-gray-300 pb-2 mb-4">{selectedPin.name}</h3>
               
-              <div className="mb-4">
-                <h4 className="font-bold text-gray-700">Description:</h4>
-                <p>{selectedPin.description}</p>
+              {/* Core Information Section */}
+              <div className="mb-5">
+                <h4 className="font-bold text-gray-700 text-base">Description:</h4>
+                <p className="text-sm">{selectedPin.description}</p>
               </div>
               
-              {selectedPin.voltageRange && (
-                <div className="mb-4">
-                  <h4 className="font-bold text-gray-700">Voltage Range:</h4>
-                  <p className="whitespace-pre-line">{selectedPin.voltageRange}</p>
+              {/* Expandable Sections with Educational Content */}
+              <div className="space-y-6">
+                {/* Voltage & Electrical Characteristics */}
+                {selectedPin.voltageRange && (
+                  <div className="p-3 bg-white rounded-lg shadow-sm border border-gray-200">
+                    <h4 className="font-bold text-gray-800 flex items-center cursor-pointer mb-3">
+                      <ZapIcon size={18} className="mr-2 text-yellow-500" />
+                      Voltage & Electrical Characteristics
+                    </h4>
+                    <div>
+                      <div className="mb-3">
+                        <h5 className="font-semibold text-gray-700 text-sm">Specified Range:</h5>
+                        <p className="whitespace-pre-line text-sm">{selectedPin.voltageRange}</p>
+                      </div>
+                      
+                      {/* Educational Content: Voltage Measurement */}
+                      <div className="mt-4 border-t pt-3 border-dashed border-gray-200">
+                        <h5 className="font-semibold text-gray-700 text-sm">How to Measure:</h5>
+                        <p className="text-sm mt-1">
+                          To measure the voltage at this pin, use a multimeter set to DC voltage mode. Connect the black probe 
+                          to ground and the red probe to the pin. For accurate results, ensure your circuit is powered and the 
+                          component is functioning properly during measurement.
+                        </p>
+                        
+                        <div className="mt-3 p-2 bg-blue-50 rounded text-xs">
+                          <span className="font-semibold">Pro Tip:</span> When troubleshooting voltage issues, always compare 
+                          your readings with the expected voltage range. A significant deviation might indicate a problem with 
+                          the component, power supply, or connections.
+                        </div>
+                      </div>
+                      
+                      {/* Educational Content: Voltage Considerations */}
+                      <div className="mt-4">
+                        <h5 className="font-semibold text-gray-700 text-sm">Safe Operating Conditions:</h5>
+                        <ul className="list-disc list-inside text-sm mt-1 space-y-1">
+                          <li>Never exceed the maximum rated voltage</li>
+                          <li>Voltage spikes can damage the component, consider using protection circuits</li>
+                          <li>Temperature affects voltage tolerances - components may need derating in extreme conditions</li>
+                          <li>Power supply stability directly impacts component performance and longevity</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Implementation Guide */}
+                {selectedPin.usageNotes && (
+                  <div className="p-3 bg-white rounded-lg shadow-sm border border-gray-200">
+                    <h4 className="font-bold text-gray-800 flex items-center cursor-pointer mb-3">
+                      <ToolIcon size={18} className="mr-2 text-gray-700" />
+                      Implementation Guide
+                    </h4>
+                    <div>
+                      <div className="mb-3">
+                        <h5 className="font-semibold text-gray-700 text-sm">Basic Usage:</h5>
+                        <p className="whitespace-pre-line text-sm">{selectedPin.usageNotes}</p>
+                      </div>
+                      
+                      {/* Educational Content: Best Practices */}
+                      <div className="mt-4 border-t pt-3 border-dashed border-gray-200">
+                        <h5 className="font-semibold text-gray-700 text-sm">Best Practices:</h5>
+                        <ul className="list-disc list-inside text-sm mt-1 space-y-1">
+                          <li>Use appropriate wire gauge for current requirements</li>
+                          <li>Keep connections short and direct to minimize noise and resistance</li>
+                          <li>Apply heat-shrink tubing to exposed connections for insulation</li>
+                          <li>Use wire markers or colored wires for easy identification</li>
+                          <li>Consider using terminal blocks or connectors for frequent disconnections</li>
+                        </ul>
+                      </div>
+                      
+                      {/* Educational Content: Implementation Tools */}
+                      <div className="mt-4">
+                        <h5 className="font-semibold text-gray-700 text-sm">Recommended Tools:</h5>
+                        <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
+                          <div className="p-2 bg-gray-50 rounded">
+                            <span className="font-semibold block">Precision Tweezers</span>
+                            For handling small components
+                          </div>
+                          <div className="p-2 bg-gray-50 rounded">
+                            <span className="font-semibold block">Wire Strippers</span>
+                            For clean, precise wire preparation
+                          </div>
+                          <div className="p-2 bg-gray-50 rounded">
+                            <span className="font-semibold block">Digital Multimeter</span>
+                            For testing connections and voltages
+                          </div>
+                          <div className="p-2 bg-gray-50 rounded">
+                            <span className="font-semibold block">Soldering Iron</span>
+                            For permanent, reliable connections
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Educational Content: Connection Quality */}
+                      <div className="mt-4 p-2 bg-blue-50 rounded text-xs">
+                        <span className="font-semibold">Pro Tip:</span> The quality of connections significantly affects reliability. 
+                        Always check for:
+                        <ul className="list-disc list-inside mt-1">
+                          <li>Firm, secure contact without strain</li>
+                          <li>No exposed conductors that could short</li>
+                          <li>No cold solder joints (appearing dull or grainy)</li>
+                          <li>Sufficient strain relief on cables and wires</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Technical Deep Dive */}
+                {selectedPin.technicalDetails && (
+                  <div className="p-3 bg-white rounded-lg shadow-sm border border-gray-200">
+                    <h4 className="font-bold text-gray-800 flex items-center cursor-pointer mb-3">
+                      <Cpu size={18} className="mr-2 text-indigo-600" />
+                      Technical Deep Dive
+                    </h4>
+                    <div>
+                      <div className="mb-3">
+                        <h5 className="font-semibold text-gray-700 text-sm">Technical Details:</h5>
+                        <p className="whitespace-pre-line text-sm">{selectedPin.technicalDetails}</p>
+                      </div>
+                      
+                      {/* Educational Content: Scientific Principles */}
+                      <div className="mt-4 border-t pt-3 border-dashed border-gray-200">
+                        <h5 className="font-semibold text-gray-700 text-sm">Scientific Principles:</h5>
+                        <p className="text-sm mt-1">
+                          This component operates based on fundamental electrical principles. Understanding these principles helps 
+                          with troubleshooting and optimal design:
+                        </p>
+                        <ul className="list-disc list-inside text-sm mt-2 space-y-1">
+                          <li><span className="font-semibold">Ohm's Law</span>: Current (I) = Voltage (V) / Resistance (R)</li>
+                          <li><span className="font-semibold">Kirchhoff's Current Law</span>: The sum of currents entering a node equals the sum leaving</li>
+                          <li><span className="font-semibold">Kirchhoff's Voltage Law</span>: The sum of voltages around any closed loop is zero</li>
+                          <li><span className="font-semibold">Power Calculation</span>: Power (P) = Voltage (V) × Current (I)</li>
+                        </ul>
+                      </div>
+                      
+                      {/* Educational Content: Material Science */}
+                      <div className="mt-4">
+                        <h5 className="font-semibold text-gray-700 text-sm">Material Science Insights:</h5>
+                        <p className="text-sm mt-1">
+                          The electrical properties of this component are determined by the materials used in its construction. 
+                          Different materials provide specific characteristics:
+                        </p>
+                        <ul className="list-disc list-inside text-sm mt-2 space-y-1">
+                          <li>Conductors (copper, gold, aluminum) facilitate current flow with minimal resistance</li>
+                          <li>Insulators (rubber, plastic, ceramic) prevent unwanted current paths</li>
+                          <li>Semiconductors (silicon, germanium) have controllable conductivity</li>
+                          <li>Substrate materials affect heat dissipation and mechanical stability</li>
+                        </ul>
+                      </div>
+                      
+                      {/* Educational Content: Historical Context */}
+                      <div className="mt-4 p-2 bg-gray-50 rounded text-xs">
+                        <span className="font-semibold">Historical Context:</span> The development of this technology has evolved 
+                        significantly over decades. Early versions were larger, less efficient, and had shorter lifespans. Modern 
+                        manufacturing techniques and materials science advancements have led to the miniaturized, reliable components 
+                        we use today.
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Circuit Integration */}
+                {selectedPin.circuitRole && (
+                  <div className="p-3 bg-white rounded-lg shadow-sm border border-gray-200">
+                    <h4 className="font-bold text-gray-800 flex items-center cursor-pointer mb-3">
+                      <Circuit size={18} className="mr-2 text-green-600" />
+                      Circuit Integration
+                    </h4>
+                    <div>
+                      <div className="mb-3">
+                        <h5 className="font-semibold text-gray-700 text-sm">Role in Circuits:</h5>
+                        <p className="whitespace-pre-line text-sm">{selectedPin.circuitRole}</p>
+                      </div>
+                      
+                      {/* Educational Content: Common Circuit Configurations */}
+                      <div className="mt-4 border-t pt-3 border-dashed border-gray-200">
+                        <h5 className="font-semibold text-gray-700 text-sm">Common Circuit Configurations:</h5>
+                        <div className="mt-2 space-y-3">
+                          <div className="p-2 bg-gray-50 rounded text-sm">
+                            <span className="font-semibold block">Basic Configuration</span>
+                            <p>The simplest implementation, suitable for most applications. Provides standard functionality with minimal additional components.</p>
+                          </div>
+                          <div className="p-2 bg-gray-50 rounded text-sm">
+                            <span className="font-semibold block">Protected Configuration</span>
+                            <p>Includes additional components like resistors, capacitors, or diodes to protect the pin from voltage spikes, noise, or reverse polarity.</p>
+                          </div>
+                          <div className="p-2 bg-gray-50 rounded text-sm">
+                            <span className="font-semibold block">Enhanced Performance Configuration</span>
+                            <p>Optimized for specific performance characteristics like speed, power efficiency, or noise reduction at the cost of additional complexity.</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Educational Content: Practical Applications */}
+                      <div className="mt-4">
+                        <h5 className="font-semibold text-gray-700 text-sm">Practical Application Examples:</h5>
+                        <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
+                          <div className="p-2 bg-gray-50 rounded">
+                            <span className="font-semibold block">Temperature Monitoring</span>
+                            Used in weather stations, industrial equipment, and home automation
+                          </div>
+                          <div className="p-2 bg-gray-50 rounded">
+                            <span className="font-semibold block">Visual Indicators</span>
+                            Status lights, alert systems, and decorative lighting
+                          </div>
+                          <div className="p-2 bg-gray-50 rounded">
+                            <span className="font-semibold block">Data Communication</span>
+                            Signal transmission in various protocols (I2C, SPI, UART)
+                          </div>
+                          <div className="p-2 bg-gray-50 rounded">
+                            <span className="font-semibold block">Power Management</span>
+                            Energy distribution, voltage regulation, and current control
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Educational Content: Integration Tips */}
+                      <div className="mt-4 p-2 bg-blue-50 rounded text-xs">
+                        <span className="font-semibold">Design Tips:</span> When integrating this component:
+                        <ul className="list-disc list-inside mt-1">
+                          <li>Consider signal integrity for high-speed or sensitive connections</li>
+                          <li>Plan your PCB layout to minimize interference and crosstalk</li>
+                          <li>Use bypass capacitors near power pins to filter noise</li>
+                          <li>Include test points for easier debugging and verification</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Troubleshooting Guide */}
+                {selectedPin.commonIssues && (
+                  <div className="p-3 bg-white rounded-lg shadow-sm border border-gray-200">
+                    <h4 className="font-bold text-gray-800 flex items-center cursor-pointer mb-3">
+                      <WrenchIcon size={18} className="mr-2 text-orange-500" />
+                      Troubleshooting Guide
+                    </h4>
+                    <div>
+                      <div className="mb-3">
+                        <h5 className="font-semibold text-gray-700 text-sm">Common Issues:</h5>
+                        <p className="whitespace-pre-line text-sm">{selectedPin.commonIssues}</p>
+                      </div>
+                      
+                      {/* Educational Content: Diagnostic Procedures */}
+                      <div className="mt-4 border-t pt-3 border-dashed border-gray-200">
+                        <h5 className="font-semibold text-gray-700 text-sm">Diagnostic Procedures:</h5>
+                        <div className="mt-2 space-y-3">
+                          <div className="p-2 bg-gray-50 rounded text-xs">
+                            <span className="font-semibold block">Visual Inspection</span>
+                            <ol className="list-decimal list-inside mt-1">
+                              <li>Check for physical damage or discoloration</li>
+                              <li>Verify correct orientation and placement</li>
+                              <li>Inspect soldering quality and connection integrity</li>
+                              <li>Look for environmental contaminants (dust, moisture)</li>
+                            </ol>
+                          </div>
+                          <div className="p-2 bg-gray-50 rounded text-xs">
+                            <span className="font-semibold block">Electrical Testing</span>
+                            <ol className="list-decimal list-inside mt-1">
+                              <li>Measure voltage with reference to ground</li>
+                              <li>Check continuity of connections</li>
+                              <li>Test for shorts or unexpected resistance</li>
+                              <li>Monitor signal quality with oscilloscope if applicable</li>
+                            </ol>
+                          </div>
+                          <div className="p-2 bg-gray-50 rounded text-xs">
+                            <span className="font-semibold block">Functional Testing</span>
+                            <ol className="list-decimal list-inside mt-1">
+                              <li>Verify component responds to control signals</li>
+                              <li>Test individual functions independently</li>
+                              <li>Substitute with known good component when possible</li>
+                              <li>Check peripheral components that may affect operation</li>
+                            </ol>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Educational Content: Problem-Solution Table */}
+                      <div className="mt-4">
+                        <h5 className="font-semibold text-gray-700 text-sm">Quick Reference: Symptoms & Solutions</h5>
+                        <table className="min-w-full mt-2 text-xs bg-white">
+                          <thead className="bg-gray-100">
+                            <tr>
+                              <th className="py-1 px-2 text-left">Symptom</th>
+                              <th className="py-1 px-2 text-left">Potential Cause</th>
+                              <th className="py-1 px-2 text-left">Solution</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            <tr>
+                              <td className="py-1 px-2">No response</td>
+                              <td className="py-1 px-2">No power, incorrect wiring</td>
+                              <td className="py-1 px-2">Check power supply, verify connections</td>
+                            </tr>
+                            <tr>
+                              <td className="py-1 px-2">Intermittent operation</td>
+                              <td className="py-1 px-2">Loose connection, cold solder joint</td>
+                              <td className="py-1 px-2">Reseat connections, reflow solder joints</td>
+                            </tr>
+                            <tr>
+                              <td className="py-1 px-2">Overheating</td>
+                              <td className="py-1 px-2">Excessive current, poor ventilation</td>
+                              <td className="py-1 px-2">Check for shorts, improve cooling, add heat sink</td>
+                            </tr>
+                            <tr>
+                              <td className="py-1 px-2">Incorrect output</td>
+                              <td className="py-1 px-2">Configuration error, interference</td>
+                              <td className="py-1 px-2">Verify settings, add filtering, improve shielding</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Safety Warnings */}
+                {selectedPin.warnings && (
+                  <div className="mb-4 p-3 bg-red-50 rounded-lg shadow-sm border border-red-200">
+                    <h4 className="font-bold text-red-800 flex items-center mb-3">
+                      <AlertTriangle size={18} className="mr-2" />
+                      Safety Warnings
+                    </h4>
+                    <p className="whitespace-pre-line text-sm">{selectedPin.warnings}</p>
+                    
+                    {/* Educational Content: Safety Procedures */}
+                    <div className="mt-4 pt-3 border-t border-dashed border-red-200">
+                      <h5 className="font-semibold text-red-700 text-sm">Safety Best Practices:</h5>
+                      <ul className="list-disc list-inside text-sm mt-2 space-y-1">
+                        <li>Always power down circuits before making connections</li>
+                        <li>Use appropriate personal protective equipment when necessary</li>
+                        <li>Have proper fire safety equipment nearby when working with electronics</li>
+                        <li>Follow manufacturer guidelines and datasheets for all components</li>
+                        <li>Be extra cautious when working with high voltages or currents</li>
+                      </ul>
+                      
+                      <div className="mt-3 p-2 bg-white rounded text-xs">
+                        <span className="font-semibold text-red-600">Remember:</span> Safety should always be the primary concern. 
+                        No project is worth risking personal injury or property damage. When in doubt, seek advice from more experienced makers 
+                        or consult professional resources.
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Advanced Learning Resources */}
+                <div className="p-3 bg-white rounded-lg shadow-sm border border-gray-200">
+                  <h4 className="font-bold text-gray-800 flex items-center cursor-pointer mb-3">
+                    <BookOpen size={18} className="mr-2 text-purple-600" />
+                    Advanced Learning Resources
+                  </h4>
+                  <div>
+                    <div className="space-y-2 text-sm">
+                      <p><span className="font-semibold">Deepen your knowledge</span> with these resources:</p>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3 text-xs">
+                        <div className="p-2 bg-purple-50 rounded">
+                          <span className="font-semibold block text-purple-700">📚 Books & Publications</span>
+                          <ul className="list-disc list-inside mt-1">
+                            <li>The Art of Electronics (Horowitz & Hill)</li>
+                            <li>Practical Electronics for Inventors (Scherz)</li>
+                            <li>Make: Electronics (Platt)</li>
+                          </ul>
+                        </div>
+                        <div className="p-2 bg-blue-50 rounded">
+                          <span className="font-semibold block text-blue-700">🌐 Online Courses</span>
+                          <ul className="list-disc list-inside mt-1">
+                            <li>MIT OpenCourseWare: Circuits & Electronics</li>
+                            <li>Khan Academy: Electrical Engineering</li>
+                            <li>Coursera: Fundamentals of Digital Systems</li>
+                          </ul>
+                        </div>
+                        <div className="p-2 bg-green-50 rounded">
+                          <span className="font-semibold block text-green-700">🔍 Technical Resources</span>
+                          <ul className="list-disc list-inside mt-1">
+                            <li>Manufacturer datasheets & application notes</li>
+                            <li>IEEE publications on component design</li>
+                            <li>NIST technical standards & guidelines</li>
+                          </ul>
+                        </div>
+                        <div className="p-2 bg-yellow-50 rounded">
+                          <span className="font-semibold block text-yellow-700">👥 Community Forums</span>
+                          <ul className="list-disc list-inside mt-1">
+                            <li>Electronics Stack Exchange</li>
+                            <li>Reddit r/AskElectronics & r/ECE</li>
+                            <li>Maker-focused Discord communities</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              )}
+              </div>
               
-              {selectedPin.usageNotes && (
-                <div className="mb-4">
-                  <h4 className="font-bold text-gray-700">Usage Notes:</h4>
-                  <p className="whitespace-pre-line">{selectedPin.usageNotes}</p>
-                </div>
-              )}
-              
-              {selectedPin.technicalDetails && (
-                <div className="mb-4">
-                  <h4 className="font-bold text-gray-700">Technical Details:</h4>
-                  <p className="whitespace-pre-line">{selectedPin.technicalDetails}</p>
-                </div>
-              )}
-              
-              {selectedPin.circuitRole && (
-                <div className="mb-4">
-                  <h4 className="font-bold text-gray-700">Circuit Role:</h4>
-                  <p className="whitespace-pre-line">{selectedPin.circuitRole}</p>
-                </div>
-              )}
-              
-              {selectedPin.commonIssues && (
-                <div className="mb-4">
-                  <h4 className="font-bold text-gray-700">Common Issues:</h4>
-                  <p className="whitespace-pre-line">{selectedPin.commonIssues}</p>
-                </div>
-              )}
-              
-              {selectedPin.warnings && (
-                <div className="mb-4 p-2 bg-red-50 border-l-2 border-red-500 text-red-700">
-                  <h4 className="font-bold">⚠️ Warning:</h4>
-                  <p className="whitespace-pre-line">{selectedPin.warnings}</p>
-                </div>
-              )}
-              
+              {/* Related Terms and Glossary */}
               {selectedPin.relatedTerms && selectedPin.relatedTerms.length > 0 && (
-                <div className="mt-6">
-                  <h4 className="font-bold text-gray-700">Related Terms:</h4>
+                <div className="mt-6 p-3 bg-white rounded-lg shadow-sm border border-gray-200">
+                  <h4 className="font-bold text-gray-800 flex items-center mb-3">
+                    <BookOpen size={18} className="mr-2 text-blue-600" />
+                    Related Terminology
+                  </h4>
+                  <p className="text-sm mb-3">
+                    Understanding these related concepts will give you a more comprehensive grasp of how this component works:
+                  </p>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {selectedPin.relatedTerms.map(term => {
                       const glossaryTerm = GLOSSARY.find(g => g.term.toLowerCase() === term.toLowerCase());
                       return (
                         <div
                           key={term}
-                          className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm cursor-pointer hover:bg-blue-200"
+                          className="px-3 py-1.5 bg-blue-50 text-blue-800 rounded-full text-sm cursor-pointer hover:bg-blue-100 transition-colors"
                           onClick={() => setSearchTerm(term)}
                           title={glossaryTerm?.definition || term}
                         >
@@ -925,9 +1299,16 @@ const ComponentGlossaryWindow: React.FC<ComponentGlossaryWindowProps> = ({ onClo
             </div>
           ) : (
             <div className="h-full flex items-center justify-center text-gray-500">
-              <div className="text-center">
-                <div className="mb-2">👈</div>
-                <p>Select a pin to view details</p>
+              <div className="text-center max-w-md">
+                <div className="mb-4">
+                  <Circuit size={48} className="mx-auto text-gray-400" />
+                </div>
+                <h3 className="text-lg font-bold mb-2">Component Encyclopedia</h3>
+                <p className="mb-4">Select a component pin from the left panel to view detailed information, technical specifications, and educational content.</p>
+                <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
+                  <p className="font-semibold">Maker Tip:</p>
+                  <p>Understanding component pins and their functions is essential for successful circuit design and troubleshooting.</p>
+                </div>
               </div>
             </div>
           )}
