@@ -20,14 +20,8 @@ export interface LootBoxConfig {
 
 export function useLootBoxConfigs() {
   const { data, isLoading, error } = useQuery<LootBoxConfig[]>({
-    queryKey: ['/api/lootboxes/configs'],
-    // Use a fallback if the API call fails
-    enabled: true,
-    retry: 1,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    queryKey: ['/api/admin/lootboxes'],
   });
-
-  console.log("Lootbox configs loaded:", data);
 
   // Convert the array to a record for easier lookup
   const lootBoxConfigsMap = data?.reduce<Record<string, LootBoxConfig>>((acc, config) => {

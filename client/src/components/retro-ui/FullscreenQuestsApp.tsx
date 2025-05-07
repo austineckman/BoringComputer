@@ -436,17 +436,10 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                 // Get lootbox config if available
                 const lootboxConfig = isLootbox ? getLootBoxConfigById(lootBoxConfigsMap, reward.id) : null;
                 
-                // For special items without images in the database, use hardcoded image paths
-                let specialItemPath = null;
-                if (reward.id === 'cloth') {
-                  specialItemPath = '/uploads/items/cloth-item.png';
-                }
-                
-                // For special lootboxes without configs, use hardcoded image paths
-                let specialLootboxPath = null;
-                if (isLootbox && reward.id === 'Oozing-Crate') {
-                  specialLootboxPath = '/uploads/lootboxes/oozing-crate.png';
-                }
+                // Debug logging to help identify image issues
+                console.log(`Reward [${idx}] - ID: ${reward.id}, Type: ${reward.type}`);
+                console.log(`Item found: ${!!item}, Image path: ${item?.imagePath}`);
+                console.log(`Is lootbox: ${isLootbox}, Lootbox config found: ${!!lootboxConfig}, Image: ${lootboxConfig?.image}`);
                 
                 return (
                   <div 
@@ -462,27 +455,11 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                           className="max-w-full max-h-full object-contain"
                           style={{ imageRendering: 'pixelated' }}
                         />
-                      ) : specialItemPath ? (
-                        // Show special item image for specific items
-                        <img 
-                          src={specialItemPath} 
-                          alt={reward.id}
-                          className="max-w-full max-h-full object-contain"
-                          style={{ imageRendering: 'pixelated' }}
-                        />
                       ) : isLootbox && lootboxConfig?.image ? (
                         // Show lootbox image from lootbox config
                         <img 
                           src={lootboxConfig.image} 
                           alt={lootboxConfig.name}
-                          className="max-w-full max-h-full object-contain"
-                          style={{ imageRendering: 'pixelated' }}
-                        />
-                      ) : specialLootboxPath ? (
-                        // Show special lootbox image for specific lootboxes
-                        <img 
-                          src={specialLootboxPath} 
-                          alt={reward.id}
                           className="max-w-full max-h-full object-contain"
                           style={{ imageRendering: 'pixelated' }}
                         />
