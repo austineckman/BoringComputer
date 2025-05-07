@@ -3306,6 +3306,22 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   setEditingItem(newItem);
                   setEditingType('item');
                   setIsCreatingNewItem(true);
+                } else if (activeTab === 'quests') {
+                  // Create a new quest with default values
+                  const newQuest: Quest = {
+                    id: `new-quest-${Date.now()}`, // Temporary ID, will be replaced by server
+                    title: 'New Quest',
+                    description: 'A new epic quest awaits brave adventurers!',
+                    adventureLine: '30 Days Lost in Space', // Default adventure line
+                    xpReward: 100,
+                    difficulty: 3,
+                    rewards: [],
+                    status: 'available',
+                    componentRequirements: []
+                  };
+                  setEditingItem(newQuest);
+                  setEditingType('quest');
+                  setIsCreatingNewItem(true);
                 } else if (activeTab === 'recipes') {
                   // Create a new recipe with default values
                   const newRecipe: Recipe = {
