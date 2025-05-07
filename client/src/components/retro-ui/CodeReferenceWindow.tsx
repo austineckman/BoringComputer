@@ -105,7 +105,7 @@ const cppReference: ReferenceLanguage = {
     // More sections would be defined here
   ],
   terms: [
-    // C++ terms
+    // C++ Standard I/O
     {
       term: 'cout',
       category: 'function',
@@ -118,7 +118,490 @@ const cppReference: ReferenceLanguage = {
       ],
       notes: 'Part of the <iostream> library. Use with the insertion operator (<<).'
     },
-    // More terms would be defined here
+    {
+      term: 'cin',
+      category: 'function',
+      language: 'cpp',
+      description: 'The standard input stream object in C++.',
+      syntax: 'std::cin >> variable;',
+      examples: [
+        'int num; std::cin >> num;',
+        'std::string name; std::cin >> name;'
+      ],
+      notes: 'Part of the <iostream> library. Use with the extraction operator (>>).'
+    },
+    {
+      term: 'cerr',
+      category: 'function',
+      language: 'cpp',
+      description: 'The standard error stream object in C++.',
+      syntax: 'std::cerr << error_message;',
+      examples: [
+        'std::cerr << "Error: File not found!" << std::endl;'
+      ],
+      notes: 'Used for error output. Not buffered, unlike cout.'
+    },
+    {
+      term: 'endl',
+      category: 'function',
+      language: 'cpp',
+      description: 'Inserts a newline character and flushes the stream.',
+      syntax: 'std::cout << std::endl;',
+      examples: [
+        'std::cout << "Line 1" << std::endl << "Line 2" << std::endl;'
+      ],
+      notes: 'Equivalent to outputting \'\\n\' and calling flush().'
+    },
+    
+    // C++ Data Types
+    {
+      term: 'int',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Integer data type for whole numbers.',
+      syntax: 'int variable_name = value;',
+      examples: [
+        'int count = 42;',
+        'int negativeNumber = -10;'
+      ],
+      notes: 'Typically 4 bytes (32 bits), range approx -2 billion to +2 billion.'
+    },
+    {
+      term: 'double',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Double-precision floating point number.',
+      syntax: 'double variable_name = value;',
+      examples: [
+        'double pi = 3.14159;',
+        'double avogadro = 6.022e23;'
+      ],
+      notes: 'Typically 8 bytes, more precision than float.'
+    },
+    {
+      term: 'char',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Character data type for storing a single character.',
+      syntax: 'char variable_name = \'value\';',
+      examples: [
+        'char grade = \'A\';',
+        'char newline = \'\\n\';'
+      ],
+      notes: 'Uses single quotes for character literals. One byte in size.'
+    },
+    {
+      term: 'bool',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Boolean data type for true/false values.',
+      syntax: 'bool variable_name = value;',
+      examples: [
+        'bool isReady = true;',
+        'bool hasError = false;'
+      ],
+      notes: 'Any non-zero value converts to true, zero converts to false.'
+    },
+    {
+      term: 'string',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'String class for text handling in C++.',
+      syntax: 'std::string variable_name = "value";',
+      examples: [
+        'std::string greeting = "Hello, World!";',
+        'std::string name; std::getline(std::cin, name);'
+      ],
+      notes: 'Requires #include <string>. More convenient than C-style char arrays.'
+    },
+    {
+      term: 'vector',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Dynamic array container that can resize itself automatically.',
+      syntax: 'std::vector<type> variable_name;',
+      examples: [
+        'std::vector<int> numbers = {1, 2, 3, 4, 5};',
+        'numbers.push_back(6); // Add element to end'
+      ],
+      notes: 'Requires #include <vector>. Part of the Standard Template Library (STL).'
+    },
+    {
+      term: 'array',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Fixed-size container for sequential elements of same type.',
+      syntax: 'std::array<type, size> variable_name;',
+      examples: [
+        'std::array<int, 5> numbers = {1, 2, 3, 4, 5};',
+        'int value = numbers[2]; // Access third element'
+      ],
+      notes: 'Requires #include <array>. Modern alternative to C-style arrays.'
+    },
+    
+    // C++ Control Structures
+    {
+      term: 'if',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Conditional statement that executes code if a condition is true.',
+      syntax: 'if (condition) {\n  // code to execute\n}',
+      examples: [
+        'if (x > 10) {\n  std::cout << "x is greater than 10" << std::endl;\n}'
+      ],
+      notes: 'Can be followed by else if and else clauses for multiple conditions.'
+    },
+    {
+      term: 'else',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Executes code when the if condition is false.',
+      syntax: 'if (condition) {\n  // code when true\n} else {\n  // code when false\n}',
+      examples: [
+        'if (age >= 18) {\n  std::cout << "Adult" << std::endl;\n} else {\n  std::cout << "Minor" << std::endl;\n}'
+      ],
+      notes: 'Always follows an if statement or else if statement.'
+    },
+    {
+      term: 'switch',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Multi-way branch statement based on a value.',
+      syntax: 'switch (expression) {\n  case value1:\n    // code\n    break;\n  case value2:\n    // code\n    break;\n  default:\n    // code\n}',
+      examples: [
+        'switch (day) {\n  case 1:\n    std::cout << "Monday" << std::endl;\n    break;\n  case 2:\n    std::cout << "Tuesday" << std::endl;\n    break;\n  default:\n    std::cout << "Other day" << std::endl;\n}'
+      ],
+      notes: 'Break statements prevent fall-through to next case. Default case is optional.'
+    },
+    {
+      term: 'for',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Loop that repeats code a specified number of times.',
+      syntax: 'for (initialization; condition; increment) {\n  // code to repeat\n}',
+      examples: [
+        'for (int i = 0; i < 10; i++) {\n  std::cout << i << std::endl;\n}'
+      ],
+      notes: 'The initialization happens once, condition is checked before each iteration, increment after each iteration.'
+    },
+    {
+      term: 'while',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Loop that repeats code while a condition is true.',
+      syntax: 'while (condition) {\n  // code to repeat\n}',
+      examples: [
+        'int count = 0;\nwhile (count < 5) {\n  std::cout << count << std::endl;\n  count++;\n}'
+      ],
+      notes: 'The condition is checked before each iteration. If initially false, the loop never executes.'
+    },
+    {
+      term: 'do-while',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Loop that repeats code while a condition is true, but always executes at least once.',
+      syntax: 'do {\n  // code to repeat\n} while (condition);',
+      examples: [
+        'int count = 0;\ndo {\n  std::cout << count << std::endl;\n  count++;\n} while (count < 5);'
+      ],
+      notes: 'The condition is checked after each iteration. The loop always executes at least once.'
+    },
+    {
+      term: 'break',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Exits the current loop or switch statement.',
+      syntax: 'break;',
+      examples: [
+        'for (int i = 0; i < 10; i++) {\n  if (i == 5) {\n    break;\n  }\n  std::cout << i << std::endl;\n}'
+      ],
+      notes: 'When used in nested loops, break only exits the innermost loop.'
+    },
+    {
+      term: 'continue',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Skips the rest of the current loop iteration and continues with the next iteration.',
+      syntax: 'continue;',
+      examples: [
+        'for (int i = 0; i < 10; i++) {\n  if (i % 2 == 0) {\n    continue;\n  }\n  std::cout << i << std::endl; // Only prints odd numbers\n}'
+      ],
+      notes: 'Useful for skipping specific cases without using nested if statements.'
+    },
+    
+    // C++ Functions
+    {
+      term: 'function',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'A named block of code that performs a specific task.',
+      syntax: 'return_type function_name(parameter_type parameter_name) {\n  // function body\n  return value;\n}',
+      examples: [
+        'int add(int a, int b) {\n  return a + b;\n}',
+        'void printMessage() {\n  std::cout << "Hello!" << std::endl;\n}'
+      ],
+      notes: 'Functions can return values or be void. They can take parameters or none.'
+    },
+    {
+      term: 'return',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Returns a value from a function and exits the function.',
+      syntax: 'return expression;',
+      examples: [
+        'int square(int x) {\n  return x * x;\n}'
+      ],
+      notes: 'The return type in the function declaration must match the type of the returned value.'
+    },
+    {
+      term: 'void',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Indicates that a function does not return a value.',
+      syntax: 'void function_name(parameters) {\n  // function body\n}',
+      examples: [
+        'void printLine() {\n  std::cout << "------------" << std::endl;\n}'
+      ],
+      notes: 'Void functions can use a return statement without a value to exit early.'
+    },
+    
+    // C++ Operators
+    {
+      term: 'operators',
+      category: 'operator',
+      language: 'cpp',
+      description: 'Symbols that perform operations on operands.',
+      syntax: 'operand1 operator operand2',
+      examples: [
+        'int sum = a + b; // Addition',
+        'bool isEqual = (x == y); // Comparison'
+      ],
+      notes: 'C++ has arithmetic, relational, logical, bitwise, assignment, and other operators.'
+    },
+    {
+      term: 'new',
+      category: 'operator',
+      language: 'cpp',
+      description: 'Allocates memory dynamically for an object.',
+      syntax: 'pointer_type pointer_name = new type;',
+      examples: [
+        'int* ptr = new int; // Allocate memory for a single integer',
+        'int* arr = new int[10]; // Allocate memory for an array of 10 integers'
+      ],
+      notes: 'Memory allocated with new must be released with delete to prevent memory leaks.'
+    },
+    {
+      term: 'delete',
+      category: 'operator',
+      language: 'cpp',
+      description: 'Deallocates memory that was dynamically allocated with new.',
+      syntax: 'delete pointer_name;',
+      examples: [
+        'delete ptr; // Free memory for a single object',
+        'delete[] arr; // Free memory for an array'
+      ],
+      notes: 'Using delete on a nullptr is safe. Using it on an already deleted pointer causes undefined behavior.'
+    },
+    
+    // C++ Classes and Objects
+    {
+      term: 'class',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'A blueprint for creating objects, providing initial values for state and implementations of behavior.',
+      syntax: 'class ClassName {\nprivate:\n  // private members\npublic:\n  // public members\n};',
+      examples: [
+        'class Rectangle {\nprivate:\n  int width, height;\npublic:\n  Rectangle(int w, int h) : width(w), height(h) {}\n  int area() { return width * height; }\n};'
+      ],
+      notes: 'Class members are private by default. Use public: or private: access specifiers to change accessibility.'
+    },
+    {
+      term: 'struct',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Similar to a class, but members are public by default.',
+      syntax: 'struct StructName {\n  // members (public by default)\n};',
+      examples: [
+        'struct Point {\n  int x, y;\n  Point(int _x, int _y) : x(_x), y(_y) {}\n};'
+      ],
+      notes: 'In C++, structs can have methods and inheritance just like classes.'
+    },
+    {
+      term: 'constructor',
+      category: 'function',
+      language: 'cpp',
+      description: 'Special method that initializes an object when it is created.',
+      syntax: 'ClassName(parameters) {\n  // initialization code\n}',
+      examples: [
+        'class Circle {\nprivate:\n  double radius;\npublic:\n  Circle(double r) {\n    radius = r;\n  }\n};'
+      ],
+      notes: 'Constructors have the same name as the class and no return type, not even void.'
+    },
+    {
+      term: 'destructor',
+      category: 'function',
+      language: 'cpp',
+      description: 'Special method that is called when an object is destroyed.',
+      syntax: '~ClassName() {\n  // cleanup code\n}',
+      examples: [
+        'class FileHandler {\nprivate:\n  FILE* file;\npublic:\n  FileHandler(const char* filename) { file = fopen(filename, "r"); }\n  ~FileHandler() { if(file) fclose(file); }\n};'
+      ],
+      notes: 'Destructors have the class name prefixed with a tilde (~) and take no parameters.'
+    },
+    {
+      term: 'inheritance',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Mechanism where a new class inherits properties and behaviors from an existing class.',
+      syntax: 'class DerivedClass : [access_specifier] BaseClass {\n  // class members\n};',
+      examples: [
+        'class Animal {\npublic:\n  void eat() { std::cout << "Eating..."; }\n};\n\nclass Dog : public Animal {\npublic:\n  void bark() { std::cout << "Barking..."; }\n};'
+      ],
+      notes: 'Access specifiers for inheritance: public, protected, or private. Public is most common.'
+    },
+    {
+      term: 'virtual',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Specifies that a function can be overridden in derived classes.',
+      syntax: 'virtual return_type function_name(parameters);',
+      examples: [
+        'class Shape {\npublic:\n  virtual double area() { return 0; }\n};\n\nclass Circle : public Shape {\npublic:\n  double radius;\n  Circle(double r) : radius(r) {}\n  double area() override { return 3.14159 * radius * radius; }\n};'
+      ],
+      notes: 'Virtual functions enable polymorphism in C++. Use \'override\' keyword in derived classes for clarity.'
+    },
+    
+    // C++ Memory Management
+    {
+      term: 'pointer',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Variable that stores a memory address.',
+      syntax: 'type* pointer_name = &variable; or type* pointer_name = new type;',
+      examples: [
+        'int num = 10;\nint* ptr = &num; // ptr holds the address of num',
+        'int* dynamicInt = new int(42); // Dynamically allocated integer'
+      ],
+      notes: 'Access the value at the address using dereference operator (*). Always initialize pointers or set to nullptr.'
+    },
+    {
+      term: 'reference',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'An alias for an existing variable.',
+      syntax: 'type& reference_name = existing_variable;',
+      examples: [
+        'int num = 10;\nint& ref = num; // ref is an alias for num\nref = 20; // changes value of num to 20'
+      ],
+      notes: 'References must be initialized when declared and cannot be reassigned to refer to another variable.'
+    },
+    {
+      term: 'nullptr',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'A literal representing a null pointer (introduced in C++11).',
+      syntax: 'pointer_name = nullptr;',
+      examples: [
+        'int* ptr = nullptr; // Initialize pointer with null value',
+        'if (ptr == nullptr) { // Check if pointer is null\n  // Handle null case\n}'
+      ],
+      notes: 'Safer than using 0 or NULL for null pointers. Should be used to initialize pointers that don\'t yet point to valid memory.'
+    },
+    {
+      term: 'smart_pointers',
+      category: 'data-type',
+      language: 'cpp',
+      description: 'Objects that act like pointers but provide automatic memory management.',
+      syntax: 'std::unique_ptr<type> ptr = std::make_unique<type>(args);\nstd::shared_ptr<type> ptr = std::make_shared<type>(args);',
+      examples: [
+        'std::unique_ptr<int> ptr = std::make_unique<int>(42); // C++14',
+        'std::shared_ptr<MyClass> ptr = std::make_shared<MyClass>("Hello");'
+      ],
+      notes: 'Requires #include <memory>. unique_ptr for exclusive ownership, shared_ptr for shared ownership.'
+    },
+    
+    // C++ Standard Library
+    {
+      term: 'iostream',
+      category: 'directive',
+      language: 'cpp',
+      description: 'Header that provides input/output stream functionality.',
+      syntax: '#include <iostream>',
+      examples: [
+        '#include <iostream>\nint main() {\n  std::cout << "Hello, World!" << std::endl;\n  return 0;\n}'
+      ],
+      notes: 'Defines cin, cout, cerr, and clog stream objects for standard input/output operations.'
+    },
+    {
+      term: 'string',
+      category: 'directive',
+      language: 'cpp',
+      description: 'Header that provides the string class for text manipulation.',
+      syntax: '#include <string>',
+      examples: [
+        '#include <string>\nstd::string greeting = "Hello, World!";\nsize_t length = greeting.length();'
+      ],
+      notes: 'Provides string class with methods for concatenation, comparison, finding, and substring operations.'
+    },
+    {
+      term: 'vector',
+      category: 'directive',
+      language: 'cpp',
+      description: 'Header that provides the vector container (dynamic array).',
+      syntax: '#include <vector>',
+      examples: [
+        '#include <vector>\nstd::vector<int> numbers = {1, 2, 3};\nnumbers.push_back(4);\nint size = numbers.size();'
+      ],
+      notes: 'Vector provides dynamic array functionality with automatic memory management.'
+    },
+    {
+      term: 'algorithm',
+      category: 'directive',
+      language: 'cpp',
+      description: 'Header that provides algorithms for working with containers and sequences.',
+      syntax: '#include <algorithm>',
+      examples: [
+        '#include <algorithm>\nstd::sort(vec.begin(), vec.end()); // Sort a vector',
+        'auto it = std::find(vec.begin(), vec.end(), 42); // Find an element'
+      ],
+      notes: 'Provides functions for searching, sorting, counting, manipulating, and more on ranges of elements.'
+    },
+    
+    // C++ Error Handling
+    {
+      term: 'try-catch',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Block structure for handling exceptions.',
+      syntax: 'try {\n  // code that might throw exceptions\n} catch (exception_type& e) {\n  // code to handle the exception\n}',
+      examples: [
+        'try {\n  int* arr = new int[1000000000]; // Might throw std::bad_alloc\n} catch (const std::bad_alloc& e) {\n  std::cerr << "Memory allocation failed: " << e.what() << std::endl;\n}'
+      ],
+      notes: 'Multiple catch blocks can handle different exception types. Use catch(...) to catch all exceptions.'
+    },
+    {
+      term: 'throw',
+      category: 'keyword',
+      language: 'cpp',
+      description: 'Throws an exception when a problem occurs.',
+      syntax: 'throw exception_object;',
+      examples: [
+        'if (denominator == 0) {\n  throw std::runtime_error("Division by zero");\n}',
+        'throw MyCustomException("Something went wrong");'
+      ],
+      notes: 'Can throw objects of any type, but standard practice is to throw objects derived from std::exception.'
+    },
+    {
+      term: 'exception',
+      category: 'class',
+      language: 'cpp',
+      description: 'Base class for all standard exceptions in C++.',
+      syntax: '#include <exception>',
+      examples: [
+        'class MyException : public std::exception {\npublic:\n  const char* what() const noexcept override {\n    return "My custom exception";\n  }\n};'
+      ],
+      notes: 'Custom exceptions should inherit from std::exception and override the what() method.'
+    }
   ]
 };
 
