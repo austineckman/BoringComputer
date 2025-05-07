@@ -323,12 +323,21 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                           style={{ imageRendering: 'pixelated' }}
                         />
                       ) : isLootbox ? (
-                        // Use default lootbox image for lootbox rewards without config
+                        // Try to load the image directly using ID patterns from the database
                         <img 
-                          src={defaultLootboxImage} 
-                          alt="Loot Crate" 
+                          src={`/uploads/items/${reward.id}.png`} 
+                          alt={reward.id || "Loot Crate"}
                           className="w-8 h-8 mr-1"
                           style={{ imageRendering: 'pixelated' }}
+                          onError={(e) => {
+                            // If image fails to load, try looking for image in lootboxes folder
+                            const img = e.currentTarget;
+                            img.src = `/uploads/lootboxes/${reward.id}.png`;
+                            img.onerror = () => {
+                              // Use a real crate image as last resort
+                              img.src = '/assets/goldcrate.png';
+                            };
+                          }}
                         />
                       ) : (
                         // Show a generic box icon if no image found
@@ -482,12 +491,22 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                           style={{ imageRendering: 'pixelated' }}
                         />
                       ) : isLootbox ? (
-                        // Show lootcrate image from assets
+                        // For lootboxes without config, look for item with matching ID in items list
                         <img 
-                          src={defaultLootboxImage} 
-                          alt="Loot Crate"
+                          src={`/uploads/items/${reward.id}.png`} 
+                          alt={reward.id || "Loot Crate"}
                           className="w-24 h-24"
                           style={{ imageRendering: 'pixelated' }}
+                          onError={(e) => {
+                            // If image fails to load, try looking for item with this ID
+                            const img = e.currentTarget;
+                            // Try looking for a default image with this generic type
+                            img.src = `/uploads/lootboxes/${reward.id}.png`;
+                            img.onerror = () => {
+                              // As last resort, use our real crate asset
+                              img.src = '/assets/goldcrate.png';
+                            };
+                          }}
                         />
                       ) : (
                         // Show generic package icon with appropriate styling for non-lootbox items
