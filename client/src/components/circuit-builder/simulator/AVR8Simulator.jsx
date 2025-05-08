@@ -22,9 +22,10 @@ const AVR8Simulator = ({
     wires       // Get wires from context
   } = useSimulator();
   
-  // Parse Arduino code to extract active pins
-  const extractActivePins = (code) => {
+  // Parse Arduino code to extract active pins and delays
+  const extractArduinoInfo = (code) => {
     const pins = [];
+    let delayTime = 1000; // Default delay time is 1 second
     
     // Extract all digitalWrite calls
     const digitalWriteRegex = /digitalWrite\s*\(\s*(\w+|\d+)\s*,\s*\w+\s*\)/g;
@@ -43,8 +44,33 @@ const AVR8Simulator = ({
       }
     }
     
+    // Extract delay values
+    const delayRegex = /delay\s*\(\s*(\d+)\s*\)/g;
+    const delays = [];
+    
+    while ((match = delayRegex.exec(code)) !== null) {
+      const delayValue = parseInt(match[1], 10);
+      if (!isNaN(delayValue)) {
+        delays.push(delayValue);
+      }
+    }
+    
+    // If we found delay values, use the average of them
+    if (delays.length > 0) {
+      // Calculate the average delay time
+      const totalDelay = delays.reduce((sum, val) => sum + val, 0);
+      delayTime = Math.max(500, Math.floor(totalDelay / delays.length));
+      console.log(`Found delay values in code: ${delays.join(', ')}`);
+      console.log(`Using average delay time: ${delayTime}ms`);
+    } else {
+      console.log(`No delay values found in code, using default: ${delayTime}ms`);
+    }
+    
     // If no pins found, default to pin 13
-    return pins.length > 0 ? [...new Set(pins)] : ['13'];
+    return {
+      pins: pins.length > 0 ? [...new Set(pins)] : ['13'],
+      delayTime
+    };
   };
 
   // Start/stop simulation based on props
@@ -53,9 +79,10 @@ const AVR8Simulator = ({
       // Initialize the AVR8js simulation with the provided code
       console.log('AVR8 simulator initialized');
       
-      // Extract active pins from the Arduino code
-      const activePins = extractActivePins(code);
+      // Extract active pins and delay times from the Arduino code
+      const { pins: activePins, delayTime } = extractArduinoInfo(code);
       console.log('Active pins detected in code:', activePins);
+      console.log(`Using delay time: ${delayTime}ms`);
       
       // For our basic simulation, we'll toggle the active pins
       let isHigh = false;
@@ -97,7 +124,7 @@ const AVR8Simulator = ({
             addLog(`Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
           }
         });
-      }, 1000); // 1 second interval for blinking
+      }, delayTime); // Use the extracted delay time
       
       // Store the interval ID for cleanup
       return () => {
