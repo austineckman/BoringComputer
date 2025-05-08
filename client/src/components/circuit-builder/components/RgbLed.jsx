@@ -36,36 +36,81 @@ const RgbLed = ({
   
   // Combined RGB color for the LED
   const combinedColor = `rgb(${redValue}, ${greenValue}, ${blueValue})`;
+
+  // Handle pin clicks with appropriate data
+  const handlePinClick = (pinId, pinType, parentId, position) => {
+    // Extract the pin name from the ID
+    const pinName = pinId.split('-').pop();
+    
+    let dataObj = {};
+    
+    // Create the appropriate pin data object based on the pin name
+    if (pinName === 'red') {
+      dataObj = { name: 'R', x: -12, y: 31, signals: [] };
+    } else if (pinName === 'green') {
+      dataObj = { name: 'G', x: 7.2, y: 31, signals: [] };
+    } else if (pinName === 'blue') {
+      dataObj = { name: 'B', x: 17, y: 31, signals: [] };
+    } else if (pinName === 'common') {
+      dataObj = { name: 'COM', x: -1.5, y: 38, signals: [] };
+    }
+    
+    // Create enhanced event detail with pin-specific data
+    const enhancedDetail = {
+      id: pinId,
+      pinId: pinId,
+      pinName: pinName,
+      pinType: pinType,
+      parentId: parentId,
+      parentComponentId: parentId,
+      data: JSON.stringify(dataObj), // Include pin data for proper identification
+      clientX: position.x,
+      clientY: position.y,
+      pinPosition: position
+    };
+    
+    // Log the details for debugging
+    console.log(`RgbLed pin clicked: ${pinName}`, enhancedDetail);
+    
+    // Call the original onPinConnect with enhanced data
+    if (onPinConnect) {
+      onPinConnect(pinId, pinType, parentId, position, enhancedDetail);
+    }
+  };
   
   // Pin positions with specific coordinates
   const pins = [
-    // Common pin at bottom
+    // Common pin (COM) at bottom
     { 
       id: `${id}-common`, 
+      name: 'COM',
       label: commonType === 'anode' ? 'Common Anode (+)' : 'Common Cathode (-)', 
-      pinType: commonType === 'anode' ? 'input' : 'output',
+      pinType: commonType === 'anode' ? 'power' : 'ground',
       x: width / 2,
       y: height - 5
     },
-    // Red pin at left
+    // Red pin (R) at left
     { 
       id: `${id}-red`, 
+      name: 'R',
       label: 'Red', 
       pinType: commonType === 'anode' ? 'output' : 'input',
       x: 5,
       y: height / 2
     },
-    // Green pin at top
+    // Green pin (G) at top
     { 
       id: `${id}-green`, 
+      name: 'G',
       label: 'Green', 
       pinType: commonType === 'anode' ? 'output' : 'input',
       x: width / 2,
       y: 5
     },
-    // Blue pin at right
+    // Blue pin (B) at right
     { 
       id: `${id}-blue`, 
+      name: 'B',
       label: 'Blue', 
       pinType: commonType === 'anode' ? 'output' : 'input',
       x: width - 5,
@@ -126,10 +171,13 @@ const RgbLed = ({
             id={pin.id}
             parentId={id}
             pinType={pin.pinType}
+            pinName={pin.name}
             label={pin.label}
             position={pin}
             parentRef={componentRef}
-            onPinClick={onPinConnect}
+            onPinClick={(pinId, pinType, parentId, position) => 
+              handlePinClick(pinId, pinType, parentId, position)
+            }
             color={
               pin.id.includes('red') ? '#ff5252' : 
               pin.id.includes('green') ? '#4caf50' : 
@@ -137,6 +185,11 @@ const RgbLed = ({
               '#aaa'
             }
             size={6}
+            // Add data attributes for better DOM querying
+            dataAttributes={{
+              'data-pin-name': pin.name,
+              'data-pin-type': pin.pinType
+            }}
           />
         ))}
       </div>
