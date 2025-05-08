@@ -1254,6 +1254,10 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         endpoint = '/api/admin/recipes/' + confirmDelete.id;
         method = 'DELETE';
         body = null;
+      } else if (confirmDelete.type === 'user') {
+        endpoint = '/api/admin/users/' + confirmDelete.id;
+        method = 'DELETE';
+        body = null;
       }
       
       const response = await fetch(endpoint, {
@@ -1320,6 +1324,9 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           }
         } else if (confirmDelete.type === 'recipe') {
           setRecipes(prevRecipes => prevRecipes.filter(recipe => recipe.id.toString() !== confirmDelete.id));
+        } else if (confirmDelete.type === 'user') {
+          // Filter the user from the state
+          setUsers(prevUsers => prevUsers.filter(user => user.id.toString() !== confirmDelete.id));
         }
         
         setTimeout(() => {
