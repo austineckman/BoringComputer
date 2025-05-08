@@ -123,12 +123,51 @@ const RGBLED = ({
     }
   };
 
-  // Handle pin click
+  // Handle pin click with improved pin details for the new wire manager
   const handlePinClicked = (e) => {
     if (onPinConnect) {
+      // Get details from the event
       const pinId = e.detail.pinId;
-      const pinType = e.detail.pinType;
-      onPinConnect(pinId, pinType, id);
+      const pinName = e.detail.pinName || (pinId ? pinId.split('-').pop() : '');
+      const pinType = e.detail.pinType || 'bidirectional';
+      
+      console.log(`Pin clicked on RGB LED:`, e.detail);
+      
+      // Get the position of the pin within the canvas if available
+      const targetRect = targetRef.current?.getBoundingClientRect();
+      const canvasRect = canvasRef?.current?.getBoundingClientRect();
+      
+      let pinPosition = null;
+      if (e.detail.clientX && e.detail.clientY && canvasRect) {
+        pinPosition = {
+          x: e.detail.clientX - canvasRect.left,
+          y: e.detail.clientY - canvasRect.top
+        };
+      }
+      
+      // Create a custom event with enhanced details for the wire manager
+      const pinClickEvent = new CustomEvent('pinClicked', {
+        bubbles: true,
+        detail: {
+          id: pinId,
+          pinId,
+          pinName,
+          pinType,
+          parentId: id,
+          parentComponentId: id,
+          clientX: e.detail.clientX,
+          clientY: e.detail.clientY,
+          pinPosition
+        }
+      });
+      
+      // Dispatch the event to be caught by the wire manager
+      document.dispatchEvent(pinClickEvent);
+      
+      // Also call the provided callback for backward compatibility
+      onPinConnect(pinId, pinType, id, pinPosition);
+      
+      console.log(`Pin ${pinName} (${pinType}) of component ${id} clicked`, pinPosition);
     }
   };
 
