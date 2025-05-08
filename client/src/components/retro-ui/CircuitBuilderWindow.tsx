@@ -656,8 +656,6 @@ void loop() {
                 }
               }
             }}
-            components={components}
-            wires={wires}
             onLog={addSimulationLog}
           />
         </div>

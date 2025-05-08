@@ -9,8 +9,6 @@ const AVR8Simulator = ({
   code,
   isRunning,
   onPinChange,
-  components,
-  wires,
   onLog
 }) => {
   const { 
@@ -19,7 +17,9 @@ const AVR8Simulator = ({
     pinStates,
     updatePinState,
     updateComponentPins,
-    addLog
+    addLog,
+    components, // Get components from context
+    wires       // Get wires from context
   } = useSimulator();
   
   // Parse Arduino code to extract active pins
