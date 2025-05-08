@@ -116,7 +116,10 @@ const CircuitPin = ({
     console.log('Pin clicked on component:', clickEvent.detail);
     
     // Ensure the WireManager always focuses on pin clicks more than other events
-    e.stopImmediatePropagation();
+    // Only call stopImmediatePropagation if it exists (native events have it, custom events don't)
+    if (e && typeof e.stopImmediatePropagation === 'function') {
+      e.stopImmediatePropagation();
+    }
     
     console.log(`Pin clicked: ${pinName || id} (${pinType})`);
   };
