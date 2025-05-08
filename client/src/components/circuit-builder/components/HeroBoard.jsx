@@ -4,6 +4,7 @@ import {
 } from "../lib/inventr-component-lib.es.js";
 import Moveable from "react-moveable";
 import heroboardImg from '@assets/hero-board.icon.png';
+import { useSimulator } from "../simulator/SimulatorContext";
 
 // Define MOVE_SETTINGS - remove rotation
 const MOVE_SETTINGS = {
@@ -37,6 +38,9 @@ const HeroBoard = ({
   const [initPosLeft, setInitPosLeft] = useState(initialX);
   const [pinInfo, setPinInfo] = useState();
 
+  // Access simulator context for simulation state
+  const { isRunning: isSimulationRunning } = useSimulator();
+  
   // Create a component data structure that matches what the original code expects
   const componentData = {
     id,
@@ -45,7 +49,7 @@ const HeroBoard = ({
       top: posTop,
       left: posLeft,
       zIndex: 10,
-      ledPower: true
+      ledPower: isSimulationRunning // Power LED only lit when simulation is running
     }
   };
 
@@ -240,7 +244,7 @@ const HeroBoard = ({
           zIndex: isDragged ? 99999 : 10,
           outline: isSelected ? '1px solid #3b82f6' : 'none' // Apply a single outline when selected
         }}
-        ledPower={true}
+        ledPower={isSimulationRunning} // Power LED only on when simulation is running
       ></ReactHeroBoardElement>
     </>
   );
