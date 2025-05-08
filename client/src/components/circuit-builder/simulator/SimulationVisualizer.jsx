@@ -1,108 +1,58 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useSimulator } from './SimulatorContext';
 
 /**
- * SimulationVisualizer - Provides visual feedback for circuit simulation
- * 
- * This component handles updating the visual state of components 
- * (like LEDs lighting up) based on the simulation state.
+ * SimulationVisualizer - Component that provides visual feedback for simulation state
+ * Shows pin states and component activations
  */
-const SimulationVisualizer = ({ components, wires }) => {
-  const { pinStates, componentStates } = useSimulator();
+const SimulationVisualizer = () => {
+  const { pinStates, componentStates, isSimulationRunning } = useSimulator();
   
-  useEffect(() => {
-    // When pin states change, update visual elements to reflect them
-    if (!pinStates) return;
-    
-    // Create a mapping of component types and IDs
-    const componentMap = components.reduce((map, component) => {
-      map[component.id] = component;
-      return map;
-    }, {});
-    
-    // Update LED components
-    Object.entries(componentStates).forEach(([componentId, state]) => {
-      if (componentId.startsWith('led-')) {
-        // Get the DOM element for the LED visualization
-        const ledElement = document.getElementById(`led-vis-${componentId}`);
-        if (ledElement && state.isLit !== undefined) {
-          ledElement.classList.toggle('led-on', state.isLit);
-        }
-      }
-      
-      // RGB LED handling
-      if (componentId.startsWith('rgbled-')) {
-        const rgbElement = document.getElementById(`rgbled-vis-${componentId}`);
-        if (rgbElement) {
-          const { redValue = 0, greenValue = 0, blueValue = 0 } = state;
-          // Convert binary RGB values to CSS color
-          const red = redValue * 255;
-          const green = greenValue * 255;
-          const blue = blueValue * 255;
-          rgbElement.style.backgroundColor = `rgb(${red}, ${green}, ${blue})`;
-          
-          // Add a 'lit' class if any value is > 0
-          const isLit = red > 0 || green > 0 || blue > 0;
-          rgbElement.classList.toggle('led-on', isLit);
-        }
-      }
-      
-      // Buzzer handling
-      if (componentId.startsWith('buzzer-')) {
-        const buzzerElement = document.getElementById(`buzzer-vis-${componentId}`);
-        if (buzzerElement && state.hasSignal !== undefined) {
-          buzzerElement.classList.toggle('buzzer-active', state.hasSignal);
-        }
-      }
-      
-      // Add more component types as needed
-    });
-    
-    // Visualize pin states on the HERO board
-    // Find pins that are connected to outputs and update their visual state
-    Object.entries(pinStates).forEach(([pinId, isHigh]) => {
-      const pinElement = document.querySelector(`[data-pin-id="${pinId}"]`);
-      if (pinElement) {
-        pinElement.classList.toggle('pin-high', isHigh);
-      }
-    });
-    
-    // Visualize the wires based on pin states
-    // For each wire, check if it's connected to a pin with a state
-    wires.forEach(wire => {
-      const wireId = wire.id;
-      const wireElement = document.getElementById(wireId);
-      
-      if (wireElement) {
-        let isActive = false;
-        
-        // Find the source and target pin IDs
-        const sourcePinName = wire.sourceName;
-        const targetPinName = wire.targetName;
-        
-        // Check if the source or target is a digital pin on the Arduino
-        if (
-          sourcePinName.match(/^[0-9]+$/) || 
-          sourcePinName.match(/^A[0-9]+$/) ||
-          targetPinName.match(/^[0-9]+$/) || 
-          targetPinName.match(/^A[0-9]+$/)
-        ) {
-          const pinId = sourcePinName.match(/^[0-9]+$/) || sourcePinName.match(/^A[0-9]+$/) 
-            ? sourcePinName
-            : targetPinName;
-          
-          const pinState = pinStates[`D${pinId}`] || pinStates[pinId];
-          isActive = pinState === true;
-        }
-        
-        // Update wire visual state
-        wireElement.classList.toggle('wire-active', isActive);
-      }
-    });
-    
-  }, [pinStates, componentStates, components, wires]);
+  if (!isSimulationRunning) {
+    return null; // Don't render anything when simulation is not running
+  }
   
-  return null; // This component doesn't render UI elements directly
+  return (
+    <div className="absolute bottom-4 right-4 bg-gray-900 border border-gray-700 rounded-md p-3 shadow-lg">
+      <h3 className="text-xs font-semibold mb-2 text-white">Pin States</h3>
+      
+      <div className="grid grid-cols-4 gap-2 mb-3">
+        {/* Digital pins */}
+        {Object.entries(pinStates)
+          .filter(([pin]) => pin.startsWith('D'))
+          .map(([pin, isHigh]) => (
+            <div key={pin} className="flex items-center">
+              <div 
+                className={`w-3 h-3 rounded-full mr-1 ${isHigh ? 'bg-green-500' : 'bg-gray-600'}`}
+              />
+              <span className="text-xs text-gray-300">{pin}</span>
+            </div>
+          ))
+        }
+      </div>
+      
+      <div className="grid grid-cols-3 gap-2">
+        {/* Analog pins */}
+        {Object.entries(pinStates)
+          .filter(([pin]) => pin.startsWith('A'))
+          .map(([pin, value]) => (
+            <div key={pin} className="flex flex-col">
+              <span className="text-xs text-gray-300">{pin}</span>
+              <div className="w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-blue-500"
+                  style={{ width: `${(value / 1023) * 100}%` }}
+                />
+              </div>
+              <span className="text-[10px] text-gray-400">{value}</span>
+            </div>
+          ))
+        }
+      </div>
+      
+      {/* Component states would be shown here in a full implementation */}
+    </div>
+  );
 };
 
 export default SimulationVisualizer;

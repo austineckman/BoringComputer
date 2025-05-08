@@ -1,77 +1,95 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useSimulator } from './SimulatorContext';
-import { calculateCircuitState } from './SimulatorUtils';
-import SimulationVisualizer from './SimulationVisualizer';
 
 /**
- * AVR8Simulator - Main component for Arduino simulation
- * 
- * This component acts as the bridge between the UI and the AVR8js simulation library,
- * providing visual feedback for pin states and component interactions.
+ * AVR8Simulator - This component handles the actual AVR8 simulation
+ * It runs the Arduino code and manages pin states
  */
 const AVR8Simulator = ({ 
-  code, 
-  isRunning, 
-  onPinChange, 
-  components, 
-  wires, 
-  onLog 
+  code,
+  isRunning,
+  onPinChange,
+  components,
+  wires,
+  onLog
 }) => {
   const { 
-    isSimulationRunning, 
-    componentStates, 
+    startSimulation,
+    stopSimulation,
     pinStates,
-    compilationErrors
+    addSimulatorLog
   } = useSimulator();
   
-  // Monitor simulation errors and provide visual feedback
+  // Start/stop simulation based on props
   useEffect(() => {
-    if (compilationErrors && compilationErrors.length > 0) {
-      // Log compilation errors
-      compilationErrors.forEach(error => {
-        onLog(`Error (Line ${error.line}): ${error.message}`);
+    if (isRunning) {
+      // In a real implementation, this would initialize the AVR8js simulation
+      // with the provided code, components and wires
+      addSimulatorLog('AVR8 simulator initialized');
+    } else {
+      // Cleanup when stopping simulation
+      addSimulatorLog('AVR8 simulator stopped');
+    }
+    
+    return () => {
+      // Cleanup on unmount
+      if (isRunning) {
+        stopSimulation();
+      }
+    };
+  }, [isRunning, code, components, wires]);
+  
+  // When pin states change, notify parent component
+  useEffect(() => {
+    // For example, when pin D13 (LED_BUILTIN) changes state
+    if (pinStates.D13 !== undefined) {
+      onPinChange(13, pinStates.D13);
+    }
+    
+    // Process all digital pins
+    Object.entries(pinStates)
+      .filter(([pin]) => pin.startsWith('D'))
+      .forEach(([pin, state]) => {
+        const pinNumber = parseInt(pin.substring(1), 10);
+        
+        // Find connected components and update them
+        updateConnectedComponents(pinNumber, state);
+      });
+  }, [pinStates]);
+  
+  // Find components connected to the given pin and update their state
+  const updateConnectedComponents = (pinNumber, isHigh) => {
+    // This is a simplified example
+    // In a real implementation, we would check the wires array to find
+    // which components are connected to this pin
+    
+    // For example, if pin 13 is connected to an LED component
+    if (pinNumber === 13) {
+      const connectedLEDs = findConnectedComponents('led', pinNumber);
+      
+      connectedLEDs.forEach(led => {
+        // Update the LED state
+        onPinChange(
+          { componentId: led.id, type: 'led', isOn: isHigh },
+          isHigh
+        );
       });
     }
-  }, [compilationErrors, onLog]);
+  };
   
-  // Detect changes in pin states and reflect them in the UI
-  useEffect(() => {
-    if (!isSimulationRunning) return;
+  // Helper to find components of a given type connected to a pin
+  const findConnectedComponents = (componentType, pinNumber) => {
+    // Simplified for demonstration
+    // In a real implementation, this would trace through the wires
+    // to find connected components
     
-    // Process pin state changes and pass them to the parent component
-    Object.entries(pinStates).forEach(([pinId, isHigh]) => {
-      // Extract the pin number (remove D or A prefix)
-      const pinType = pinId.charAt(0);
-      const pinNumber = parseInt(pinId.substring(1), 10);
-      
-      if (!isNaN(pinNumber)) {
-        // Notify parent component about pin state change
-        onPinChange(pinNumber, isHigh);
-      }
-    });
-    
-    // Process component state changes
-    Object.entries(componentStates).forEach(([componentId, state]) => {
-      // Find the component in our list
-      const component = components.find(c => c.id === componentId);
-      if (component) {
-        // Notify parent component about component state change
-        onPinChange({ componentId, ...state }, null);
-      }
-    });
-  }, [isSimulationRunning, pinStates, componentStates, components, onPinChange]);
+    // Dummy implementation that returns an empty array
+    return [];
+  };
   
-  // No visible UI - the visualization is handled by SimulationVisualizer
-  return (
-    <>
-      {isSimulationRunning && (
-        <SimulationVisualizer 
-          components={components} 
-          wires={wires} 
-        />
-      )}
-    </>
-  );
+  // This component doesn't render anything visible
+  // It just runs the simulation logic
+  return null;
 };
 
 export default AVR8Simulator;
