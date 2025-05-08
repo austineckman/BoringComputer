@@ -1,306 +1,192 @@
-import React, { createContext, useState, useContext, useCallback, useRef } from 'react';
-import { calculateCircuitState } from './SimulatorUtils';
-import { compileArduinoCode, validateCircuitForCode } from './ArduinoCompiler';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { validateArduinoCode, configureSimulationSpeed } from './ArduinoCompiler';
 
-// Create a context for the simulator
-const SimulatorContext = createContext({
-  isSimulationRunning: false,
-  isCompiling: false,
-  startSimulation: () => {},
-  stopSimulation: () => {},
-  setPinState: () => {},
-  updateComponentState: () => {},
-  compileAndRun: () => {},
-  componentStates: {},  // Store component states (e.g., LED on/off)
-  pinStates: {},        // Store pin states (HIGH/LOW)
-  logs: [],
-  addLog: () => {},
-  compilationErrors: [],
-  compilationWarnings: [],
-  simulationSpeed: 1,
-  setSimulationSpeed: () => {}
-});
+// Create a context for the simulator state
+const SimulatorContext = createContext(null);
 
-/**
- * SimulatorProvider - Provides simulation state and methods to the component tree
- */
+// Format timestamp for logs
+const formatTimestamp = () => {
+  const now = new Date();
+  return now.toLocaleTimeString();
+};
+
+// Provider component to wrap the application
 export const SimulatorProvider = ({ children }) => {
-  // State for simulation status
+  // Main simulation state
   const [isSimulationRunning, setIsSimulationRunning] = useState(false);
-  const [isCompiling, setIsCompiling] = useState(false);
   
-  // State for component signal states (connected to pins)
+  // Pin and component states
+  const [pinStates, setPinStates] = useState({});
   const [componentStates, setComponentStates] = useState({});
   
-  // State for pin states (HIGH/LOW)
-  const [pinStates, setPinStates] = useState({});
-  
-  // State for simulation logs
-  const [logs, setLogs] = useState([]);
-  
-  // State for compilation results
+  // Logs and errors
+  const [simulatorLogs, setSimulatorLogs] = useState([]);
   const [compilationErrors, setCompilationErrors] = useState([]);
-  const [compilationWarnings, setCompilationWarnings] = useState([]);
-  const [compiledProgram, setCompiledProgram] = useState(null);
   
-  // State for simulation speed
+  // Configuration options
   const [simulationSpeed, setSimulationSpeed] = useState(1);
   
-  // References for simulation interval
-  const simulationIntervalRef = useRef(null);
-  const simulationTickRef = useRef(0);
-  const simulationCodeRef = useRef('');
-  const circuitConnectionsRef = useRef({});
-  const circuitComponentsRef = useRef([]);
+  // Add a log entry
+  const addSimulatorLog = (message) => {
+    const timestamp = formatTimestamp();
+    setSimulatorLogs(prev => {
+      // Limit logs to 100 entries to prevent performance issues
+      const newLogs = [...prev, { timestamp, message }];
+      if (newLogs.length > 100) {
+        return newLogs.slice(-100);
+      }
+      return newLogs;
+    });
+  };
+  
+  // Clear logs
+  const clearSimulatorLogs = () => {
+    setSimulatorLogs([]);
+  };
   
   // Start the simulation
-  const startSimulation = useCallback(() => {
-    if (!compiledProgram) {
-      addLog('Error: No compiled program available. Compile the code first.');
-      return;
-    }
+  const startSimulation = (arduinoCode) => {
+    // Validate code before running
+    const errors = validateArduinoCode(arduinoCode);
+    setCompilationErrors(errors);
     
-    addLog('Simulation started');
-    setIsSimulationRunning(true);
-    
-    // Set up the simulation loop
-    if (simulationIntervalRef.current) {
-      clearInterval(simulationIntervalRef.current);
-    }
-    
-    // Initial component states based on setup function
-    const { pinModes, digitalWrites } = compiledProgram.analysis;
-    
-    // Set initial pin states based on pinMode declarations
-    const initialPinStates = {};
-    pinModes.forEach(({ pin, mode }) => {
-      if (mode === 'OUTPUT') {
-        // Initialize output pins to LOW
-        initialPinStates[`D${pin}`] = false;
-      }
-    });
-    setPinStates(initialPinStates);
-    
-    // Start the simulation interval
-    simulationTickRef.current = 0;
-    simulationIntervalRef.current = setInterval(() => {
-      simulationTick();
-    }, 100 / simulationSpeed); // Adjust frequency based on speed
-  }, [compiledProgram, simulationSpeed]);
-  
-  // Perform a single step of the simulation
-  const simulationTick = useCallback(() => {
-    if (!isSimulationRunning || !compiledProgram) return;
-    
-    simulationTickRef.current++;
-    const tick = simulationTickRef.current;
-    
-    // Get the digital writes from the compiled program
-    const { digitalWrites, analogWrites, delays } = compiledProgram.analysis;
-    
-    // Calculate total delay in the loop
-    const totalDelayMs = delays.reduce((sum, d) => sum + d.ms, 0) || 1000;
-    
-    // Calculate position in the loop based on time
-    const loopPosition = (tick * 100 / simulationSpeed) % totalDelayMs;
-    
-    // Determine current position in the loop timeline
-    let currentTime = 0;
-    
-    // Update pin states based on the loop position
-    setPinStates(prev => {
-      const newPinStates = { ...prev };
-      
-      // Process all digitalWrites in chronological order
-      for (let i = 0; i < digitalWrites.length; i++) {
-        const write = digitalWrites[i];
-        
-        // Simplified: assume writes occur at the start and after each delay
-        if (i === 0 || (currentTime <= loopPosition && loopPosition < currentTime + (delays[i]?.ms || 0))) {
-          // Apply this write
-          newPinStates[`D${write.pin}`] = write.state;
-          // Don't apply any more writes from this loop iteration
-          break;
-        }
-        
-        // Move time cursor forward
-        currentTime += delays[i]?.ms || 0;
-      }
-      
-      return newPinStates;
-    });
-    
-    // Process all circuit connections to update component states
-    const circuitState = calculateCircuitState(
-      circuitComponentsRef.current, 
-      circuitConnectionsRef.current,
-      pinStates
-    );
-    
-    // Update component states
-    setComponentStates(circuitState.componentStates);
-    
-    // Log periodically (not every tick)
-    if (tick % 20 === 0) {
-      console.log(`Simulation tick ${tick}: Processing circuit state`);
-    }
-  }, [isSimulationRunning, compiledProgram, pinStates, simulationSpeed]);
-  
-  // Stop the simulation
-  const stopSimulation = useCallback(() => {
-    if (simulationIntervalRef.current) {
-      clearInterval(simulationIntervalRef.current);
-      simulationIntervalRef.current = null;
-    }
-    
-    addLog('Simulation stopped');
-    setIsSimulationRunning(false);
-    
-    // Reset component states
-    setComponentStates({});
-    setPinStates({});
-  }, []);
-  
-  // Add a log entry with timestamp
-  const addLog = useCallback((message) => {
-    const timestamp = new Date().toLocaleTimeString();
-    setLogs(prev => [...prev, { timestamp, message }]);
-    console.log(`[Simulator] ${message}`);
-  }, []);
-  
-  // Set pin state (for input components like buttons)
-  const setPinState = useCallback((pin, isHigh) => {
-    // Update the pin state in our state object
-    setPinStates(prev => ({
-      ...prev,
-      [`D${pin}`]: isHigh
-    }));
-    
-    // This will be called by components to update pin states
-    // It gets passed to the AVR8Simulator component
-    addLog(`Pin ${pin} set to ${isHigh ? 'HIGH' : 'LOW'}`);
-  }, []);
-  
-  // Update component state based on pin state
-  const updateComponentState = useCallback((componentId, newState) => {
-    setComponentStates(prev => ({
-      ...prev,
-      [componentId]: newState
-    }));
-    
-    addLog(`Component ${componentId} state updated`);
-  }, []);
-  
-  // Compile and run the Arduino code
-  const compileAndRun = useCallback((code, components, connections) => {
-    // Store circuit connections for simulation
-    circuitConnectionsRef.current = connections || {};
-    circuitComponentsRef.current = components || [];
-    simulationCodeRef.current = code;
-    
-    // Stop any running simulation
-    if (isSimulationRunning) {
-      stopSimulation();
-    }
-    
-    setIsCompiling(true);
-    addLog("Compiling Arduino code...");
-    
-    // Clear previous errors and warnings
-    setCompilationErrors([]);
-    setCompilationWarnings([]);
-    
-    try {
-      // First, validate the circuit for the code
-      const circuitValidation = validateCircuitForCode(code, connections);
-      
-      // Log warnings from circuit validation
-      if (circuitValidation.warnings.length > 0) {
-        setCompilationWarnings(circuitValidation.warnings);
-        circuitValidation.warnings.forEach(warning => {
-          addLog(`Warning: ${warning}`);
-        });
-      }
-      
-      // Log missing connections
-      if (circuitValidation.missingConnections.length > 0) {
-        const missingSummary = `Warning: Pins ${circuitValidation.missingConnections.join(', ')} are used in code but not connected in circuit`;
-        addLog(missingSummary);
-        setCompilationWarnings(prev => [...prev, missingSummary]);
-      }
-      
-      // Compile the code
-      const compilationResult = compileArduinoCode(code);
-      
-      if (!compilationResult.success) {
-        // Compilation failed
-        setCompilationErrors(compilationResult.errors);
-        compilationResult.errors.forEach(error => {
-          addLog(`Error (line ${error.line}): ${error.message}`);
-        });
-        
-        setIsCompiling(false);
-        return false;
-      }
-      
-      // Compilation succeeded
-      setCompiledProgram(compilationResult);
-      
-      // Log compilation results
-      const { pinModes, digitalWrites, analogWrites, delays } = compilationResult.analysis;
-      
-      addLog(`Compilation successful. Found:`);
-      addLog(`- ${pinModes.length} pinMode declarations`);
-      addLog(`- ${digitalWrites.length} digitalWrite operations`);
-      addLog(`- ${analogWrites.length} analogWrite operations`);
-      addLog(`- ${delays.length} delay statements totaling ${delays.reduce((sum, d) => sum + d.ms, 0)}ms per loop`);
-      
-      // Check for blink patterns
-      const { patterns } = compilationResult.analysis;
-      if (patterns.blink.length > 0) {
-        patterns.blink.forEach(pattern => {
-          addLog(`Detected blink pattern on pin ${pattern.pin} (period: ${pattern.period}ms)`);
-        });
-      }
-      
-      setIsCompiling(false);
-      return true;
-    } catch (error) {
-      console.error("Compilation error:", error);
-      addLog(`Compilation error: ${error.message}`);
-      setCompilationErrors([{ line: 1, message: error.message }]);
-      setIsCompiling(false);
+    if (errors.length > 0) {
+      addSimulatorLog('Simulation failed to start due to code errors');
       return false;
     }
-  }, [isSimulationRunning, stopSimulation, addLog]);
+    
+    try {
+      // Configure simulation speed based on code complexity
+      const { performance } = configureSimulationSpeed(arduinoCode);
+      
+      // Initialize pin states
+      setPinStates({
+        // Digital pins default to LOW
+        D0: false, D1: false, D2: false, D3: false,
+        D4: false, D5: false, D6: false, D7: false,
+        D8: false, D9: false, D10: false, D11: false,
+        D12: false, D13: false,
+        // Analog pins default to 0
+        A0: 0, A1: 0, A2: 0, A3: 0, A4: 0, A5: 0
+      });
+      
+      // Initialize component states (empty object, will be populated during simulation)
+      setComponentStates({});
+      
+      // Log simulation start
+      addSimulatorLog('Simulation started');
+      setIsSimulationRunning(true);
+      
+      // Start a simple simulation loop - in a real implementation, this would
+      // interact with the AVR8js library
+      simulateLoop(arduinoCode);
+      
+      return true;
+    } catch (error) {
+      addSimulatorLog(`Error starting simulation: ${error.message}`);
+      console.error('Simulation error:', error);
+      return false;
+    }
+  };
   
-  // Create the context value object
-  const contextValue = {
+  // Stop the simulation
+  const stopSimulation = () => {
+    setIsSimulationRunning(false);
+    addSimulatorLog('Simulation stopped');
+  };
+  
+  // Simple simulation for testing (this is where AVR8js would be integrated)
+  const simulateLoop = (code) => {
+    // This function simulates simple Arduino behavior for demonstration purposes
+    // For example, let's simulate the LED blinking example:
+    let pin13State = false;
+    
+    // Extract blinking delay from the code (simple regex to find delay values)
+    let delayMatch = code.match(/delay\s*\(\s*(\d+)\s*\)/);
+    let blinkDelay = delayMatch ? parseInt(delayMatch[1], 10) : 1000;
+    
+    // Scale to reasonable speed regardless of actual delay
+    blinkDelay = Math.max(300, Math.min(blinkDelay, 1000));
+    
+    // Simulate the blinking
+    const blinkInterval = setInterval(() => {
+      if (!isSimulationRunning) {
+        clearInterval(blinkInterval);
+        return;
+      }
+      
+      // Toggle pin 13 (LED_BUILTIN)
+      pin13State = !pin13State;
+      setPinStates(prev => ({ ...prev, D13: pin13State }));
+      
+      // Update component states based on connections
+      // This would be more sophisticated in a real implementation
+      // using the actual circuit connections
+      addSimulatorLog(`Pin D13 (LED_BUILTIN) set to ${pin13State ? 'HIGH' : 'LOW'}`);
+    }, blinkDelay);
+    
+    // Make sure to clean up if component unmounts
+    return () => clearInterval(blinkInterval);
+  };
+  
+  // Set a pin state directly (for testing or manual override)
+  const setDigitalPinState = (pinNumber, isHigh) => {
+    setPinStates(prev => ({ ...prev, [`D${pinNumber}`]: isHigh }));
+    addSimulatorLog(`Pin D${pinNumber} set to ${isHigh ? 'HIGH' : 'LOW'}`);
+  };
+  
+  // Set an analog pin state directly
+  const setAnalogPinState = (pinNumber, value) => {
+    setPinStates(prev => ({ ...prev, [`A${pinNumber}`]: value }));
+    addSimulatorLog(`Pin A${pinNumber} set to ${value}`);
+  };
+  
+  // Update a component's state
+  const updateComponentState = (componentId, newState) => {
+    setComponentStates(prev => ({
+      ...prev,
+      [componentId]: {
+        ...(prev[componentId] || {}),
+        ...newState
+      }
+    }));
+  };
+  
+  // Create a value object with all the context methods and state
+  const value = {
+    // Simulation control
     isSimulationRunning,
-    isCompiling,
     startSimulation,
     stopSimulation,
-    setPinState,
-    updateComponentState,
-    compileAndRun,
-    componentStates,
-    pinStates,
-    logs,
-    addLog,
-    compilationErrors,
-    compilationWarnings,
     simulationSpeed,
-    setSimulationSpeed
+    setSimulationSpeed,
+    
+    // State management
+    pinStates,
+    componentStates,
+    setDigitalPinState,
+    setAnalogPinState,
+    updateComponentState,
+    
+    // Logs and errors
+    simulatorLogs,
+    addSimulatorLog,
+    clearSimulatorLogs,
+    compilationErrors,
   };
   
   return (
-    <SimulatorContext.Provider value={contextValue}>
+    <SimulatorContext.Provider value={value}>
       {children}
     </SimulatorContext.Provider>
   );
 };
 
-// Custom hook for using the simulator context
-export const useSimulator = () => useContext(SimulatorContext);
-
-export default SimulatorContext;
+// Custom hook to use the simulator context
+export const useSimulator = () => {
+  const context = useContext(SimulatorContext);
+  if (!context) {
+    throw new Error('useSimulator must be used within a SimulatorProvider');
+  }
+  return context;
+};
