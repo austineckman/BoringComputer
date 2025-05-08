@@ -49,14 +49,33 @@ const LED = ({
   
   // Check if this LED has been updated by the simulation
   useEffect(() => {
+    // Log to see if we're even getting component state updates
+    console.log(`LED ${id} checking for state updates, isSimulationRunning=${isSimulationRunning}`);
+    console.log(`Available component states:`, componentStates);
+    
+    // Check if there's a direct state update for this component ID
     if (componentStates && componentStates[id]) {
       const ledState = componentStates[id];
       // Update LED state based on simulation results
       const newLitState = ledState.isLit || false;
       console.log(`LED ${id} updated from simulation: isLit=${newLitState}`);
       setIsLit(newLitState);
+    } 
+    // Fallback: try alternative ID formats
+    else if (componentStates) {
+      // Try finding this LED's state using any key that contains this ID
+      const matchingStateKey = Object.keys(componentStates).find(key => 
+        key.includes(id) || (typeof id === 'string' && id.includes(key))
+      );
+      
+      if (matchingStateKey) {
+        const ledState = componentStates[matchingStateKey];
+        const newLitState = ledState.isLit || false;
+        console.log(`LED ${id} updated from simulation via alternative key ${matchingStateKey}: isLit=${newLitState}`);
+        setIsLit(newLitState);
+      }
     }
-  }, [componentStates, id]);
+  }, [componentStates, id, isSimulationRunning]);
   
   // Create a component data structure that matches what the original code expects
   const componentData = {
@@ -225,14 +244,39 @@ const LED = ({
         
         {/* Simulation state indicator */}
         {isSimulationRunning && (
-          <div 
-            className={`absolute rounded-full w-3 h-3 ${isLit ? 'bg-green-500' : 'bg-red-500'}`}
-            style={{
-              transform: `translate(${initPosLeft + 35}px, ${initPosTop}px)`,
-              boxShadow: isLit ? '0 0 8px 2px #4ade80' : 'none',
-              transition: 'background-color 0.2s, box-shadow 0.2s'
-            }}
-          ></div>
+          <>
+            {/* Status indicator dot */}
+            <div 
+              className={`absolute rounded-full w-3 h-3 ${isLit ? 'bg-green-500' : 'bg-red-500'}`}
+              style={{
+                transform: `translate(${initPosLeft + 35}px, ${initPosTop}px)`,
+                boxShadow: isLit ? '0 0 8px 2px #4ade80' : 'none',
+                transition: 'background-color 0.2s, box-shadow 0.2s',
+                zIndex: 100
+              }}
+            ></div>
+            
+            {/* Glow effect when LED is on */}
+            {isLit && (
+              <div 
+                className="absolute rounded-full w-10 h-10 opacity-50"
+                style={{
+                  backgroundColor: ledColor === 'red' ? '#ff0000' : 
+                                   ledColor === 'green' ? '#00ff00' : 
+                                   ledColor === 'blue' ? '#0000ff' : '#ff0000',
+                  transform: `translate(${initPosLeft + 10}px, ${initPosTop + 10}px)`,
+                  boxShadow: `0 0 15px 5px ${
+                    ledColor === 'red' ? '#ff0000' : 
+                    ledColor === 'green' ? '#00ff00' : 
+                    ledColor === 'blue' ? '#0000ff' : '#ff0000'
+                  }`,
+                  filter: 'blur(5px)',
+                  animation: 'pulse 1s infinite alternate',
+                  zIndex: 99
+                }}
+              ></div>
+            )}
+          </>
         )}
       </div>
     </>

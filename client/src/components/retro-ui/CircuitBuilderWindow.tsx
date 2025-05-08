@@ -584,16 +584,25 @@ void loop() {
                 // This is a pin change event
                 const pin = pinOrComponent;
                 console.log(`Simulator: Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+                
                 // Standard pin change
                 addSimulationLog(`Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
               } else if (typeof pinOrComponent === 'object' && pinOrComponent.componentId) {
                 // This is a component state update
-                const { componentId, ...state } = pinOrComponent;
-                console.log(`Simulator: Component ${componentId} state updated`, state);
+                const { componentId, type } = pinOrComponent;
+                console.log(`Simulator: Component ${componentId} (${type}) state updated to ${isHigh ? 'ON' : 'OFF'}`);
                 
-                // Update the component state in the simulator context
-                updateComponentState(componentId, { isLit: isHigh });
-                addSimulationLog(`Updated component ${componentId} to ${isHigh ? 'ON' : 'OFF'}`);
+                // Update the component state in the simulator context with the correct state data
+                const componentState = { isLit: isHigh };
+                
+                // Log the state we're about to update to help debugging
+                console.log(`Updating component state for ${componentId}:`, componentState);
+                
+                // Update the state in the context
+                updateComponentState(componentId, componentState);
+                
+                // Log the change for user feedback
+                addSimulationLog(`Updated ${type} ${componentId} to ${isHigh ? 'ON' : 'OFF'}`);
               }
             }}
             components={components}

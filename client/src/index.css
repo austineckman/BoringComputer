@@ -4,6 +4,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom animation for LED pulse effect */
+@keyframes pulse {
+  0% {
+    opacity: 0.3;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+}
+
 /* Custom styles for circuit builder */
 /* Hide all Moveable component selection indicators */
 .moveable-no-border .moveable-line, 
