@@ -236,7 +236,7 @@ const AVR8Simulator = ({
       }
       
       // If no components were updated through wires, use a fallback for demonstration
-      if (!componentsUpdated && pinNumber !== 13) { // Skip for pin 13 (handled above)
+      if (!componentsUpdated) { // Now update all LEDs regardless of pin
         console.log('No components found through wires, using fallback for demonstration');
         
         // Get all LED components
@@ -245,36 +245,49 @@ const AVR8Simulator = ({
         
         console.log(`Found ${allLEDs.length} LED components and ${allRGBLEDs.length} RGB LED components to update as fallback`);
         
-        // Update each LED
-        allLEDs.forEach(led => {
-          console.log(`Updating LED ${led.id} to ${isHigh ? 'ON' : 'OFF'}`);
+        // TEMPORARY FIX: Always update all LEDs regardless of pin number
+        // This ensures LEDs respond even if wire connection detection is failing
+        if (allLEDs.length > 0) {
+          console.log(`FORCE UPDATING ALL LEDS - THIS IS A TEMPORARY FIX`);
           
-          // Update the LED state
-          onPinChange(
-            { componentId: led.id, type: 'led' },
-            isHigh
-          );
-        });
+          // Update each LED
+          allLEDs.forEach(led => {
+            console.log(`Force updating LED ${led.id} to ${isHigh ? 'ON' : 'OFF'}`);
+            
+            // Update the LED state
+            onPinChange(
+              { componentId: led.id, type: 'led' },
+              isHigh
+            );
+          });
+        }
         
         // Update RGB LEDs based on pin number
         const colorMap = {
+          // Add pin 8 to the color map
+          8: 'red',
           9: 'red',
           10: 'green',
           11: 'blue',
-          12: 'red',   // Fallback
-          13: 'green'  // Fallback
+          12: 'red',
+          13: 'green'
         };
         
-        if (colorMap[pinNumber]) {
+        // TEMPORARY FIX: Default to 'all' colors if no specific mapping
+        const color = colorMap[pinNumber] || 'all';
+        
+        if (allRGBLEDs.length > 0) {
+          console.log(`FORCE UPDATING ALL RGB LEDS - THIS IS A TEMPORARY FIX`);
+          
           allRGBLEDs.forEach(rgbled => {
-            console.log(`Updating RGB LED ${rgbled.id} ${colorMap[pinNumber]} channel to ${isHigh ? 'ON' : 'OFF'}`);
+            console.log(`Force updating RGB LED ${rgbled.id} using color ${color} to ${isHigh ? 'ON' : 'OFF'}`);
             
             // Update the RGB LED state
             onPinChange(
               { 
                 componentId: rgbled.id, 
                 type: 'rgbled',
-                color: colorMap[pinNumber]
+                color: color
               },
               isHigh
             );
