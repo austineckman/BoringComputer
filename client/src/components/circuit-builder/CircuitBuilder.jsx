@@ -100,74 +100,94 @@ const CircuitBuilder = () => {
     setSelectedComponentId(id);
   };
   
-  // Handle pin connections with stable pin positioning
-  const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
-    console.log(`Pin ${pinId} (${pinType}) of component ${componentId} clicked`, pinPosition);
-    
-    // Get the component from our state
-    const component = components.find(c => c.id === componentId);
-    if (!component) {
-      console.error(`Component ${componentId} not found in circuit`);
-      return;
+  // Helper to dispatch component movement events for wire position updates
+const dispatchComponentMoveEvent = (componentId, final = false) => {
+  if (!componentId) return;
+  
+  const eventType = final ? 'componentMovedFinal' : 'componentMoved';
+  
+  // Create and dispatch the custom event
+  const moveEvent = new CustomEvent(eventType, {
+    detail: { componentId }
+  });
+  
+  document.dispatchEvent(moveEvent);
+};
+
+// Handle pin connections with stable pin positioning
+const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
+  console.log(`Pin ${pinId} (${pinType}) of component ${componentId} clicked`, pinPosition);
+  
+  // Get the component from our state
+  const component = components.find(c => c.id === componentId);
+  if (!component) {
+    console.error(`Component ${componentId} not found in circuit`);
+    return;
+  }
+  
+  // Create proper format for pin ID that matches wire manager expectations
+  // Avoid duplicate component types in the ID
+  const componentType = componentId.toLowerCase().split('-')[0];
+  const formattedPinId = `pt-${componentType}-${componentId}-${pinId}`;
+  
+  // Get the absolute position of the pin in the canvas
+  // CRITICAL IMPROVEMENT: Pin positions are now determined once and stored consistently
+  let pinPosData;
+  
+  if (pinPosition && typeof pinPosition.x === 'number' && typeof pinPosition.y === 'number') {
+    // Use the provided position which should be accurate
+    pinPosData = {
+      x: pinPosition.x,
+      y: pinPosition.y,
+      // Store the original component position for reference in case we need to
+      // recalculate relative positions later
+      origComponentX: component.x,
+      origComponentY: component.y,
+      component: componentId,
+      pin: pinId,
+      // Add a timestamp to track freshness of position data
+      timestamp: Date.now()
+    };
+  } else {
+    // Use component center as fallback - this is less accurate but prevents errors
+    pinPosData = {
+      x: component.x + (component.width ? component.width/2 : 50),
+      y: component.y + (component.height ? component.height/2 : 50),
+      isEstimated: true, // Mark as estimated for the wire manager
+      component: componentId,
+      pin: pinId,
+      timestamp: Date.now()
+    };
+  }
+  
+  // Store pin connection in a stable cache that persists across component rerenders
+  // This helps ensure stable wire positions
+  if (!window.pinPositionCache) {
+    window.pinPositionCache = new Map();
+  }
+  
+  // Store both formattedPinId and a simplified version for more robust lookup
+  window.pinPositionCache.set(formattedPinId, pinPosData);
+  window.pinPositionCache.set(`${componentId}-${pinId}`, pinPosData);
+  
+  console.log(`Using pin position: (${pinPosData.x}, ${pinPosData.y})`);
+  
+  // Create a custom pin click event with stable positioning
+  const pinClickEvent = new CustomEvent('pinClicked', {
+    detail: {
+      id: formattedPinId,
+      pinType: pinType || 'bidirectional',
+      parentId: componentId,
+      clientX: pinPosData.x,
+      clientY: pinPosData.y,
+      // Include comprehensive data about the pin for the wire manager
+      pinData: JSON.stringify(pinPosData)
     }
-    
-    // Create proper format for pin ID that matches wire manager expectations
-    // Avoid duplicate component types in the ID
-    const componentType = componentId.toLowerCase().split('-')[0];
-    const formattedPinId = `pt-${componentType}-${componentId}-${pinId}`;
-    
-    // Get the absolute position of the pin in the canvas
-    // CRITICAL IMPROVEMENT: Pin positions are now determined once and stored consistently
-    let pinPosData;
-    
-    if (pinPosition && typeof pinPosition.x === 'number' && typeof pinPosition.y === 'number') {
-      // Use the provided position which should be accurate
-      pinPosData = {
-        x: pinPosition.x,
-        y: pinPosition.y,
-        // Store the original component position for reference in case we need to
-        // recalculate relative positions later
-        origComponentX: component.x,
-        origComponentY: component.y,
-        component: componentId,
-        pin: pinId
-      };
-    } else {
-      // Use component center as fallback - this is less accurate but prevents errors
-      pinPosData = {
-        x: component.x + (component.width ? component.width/2 : 50),
-        y: component.y + (component.height ? component.height/2 : 50),
-        isEstimated: true, // Mark as estimated for the wire manager
-        component: componentId,
-        pin: pinId
-      };
-    }
-    
-    // Store pin connection in a stable cache that persists across component rerenders
-    // This helps ensure stable wire positions
-    if (!window.pinPositionCache) {
-      window.pinPositionCache = new Map();
-    }
-    window.pinPositionCache.set(formattedPinId, pinPosData);
-    
-    console.log(`Using pin position: (${pinPosData.x}, ${pinPosData.y})`);
-    
-    // Create a custom pin click event with stable positioning
-    const pinClickEvent = new CustomEvent('pinClicked', {
-      detail: {
-        id: formattedPinId,
-        pinType: pinType || 'bidirectional',
-        parentId: componentId,
-        clientX: pinPosData.x,
-        clientY: pinPosData.y,
-        // Include comprehensive data about the pin for the wire manager
-        pinData: JSON.stringify(pinPosData)
-      }
-    });
-    
-    // Dispatch the event to be captured by the SimpleWireManager
-    document.dispatchEvent(pinClickEvent);
-  };
+  });
+  
+  // Dispatch the event to be captured by the SimpleWireManager
+  document.dispatchEvent(pinClickEvent);
+};
   
   // Handle component deletion
   const handleDeleteComponent = () => {

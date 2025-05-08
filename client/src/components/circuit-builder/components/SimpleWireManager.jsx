@@ -1011,12 +1011,15 @@ const SimpleWireManager = ({ canvasRef }) => {
     const handleComponentMove = (event) => {
       const currentTime = performance.now();
       
-      // Extract the component ID from the event detail if available
+      // Extract the component ID and position from the event detail
       let movedComponentId = null;
+      let newPosition = null;
+      
       try {
         if (event.detail && event.detail.componentId) {
           movedComponentId = event.detail.componentId;
-          console.log(`Component moved: ${movedComponentId}`);
+          newPosition = event.detail.newPosition;
+          console.log(`Component moved: ${movedComponentId}`, newPosition ? `to (${newPosition.x},${newPosition.y})` : '');
         }
       } catch (e) {
         console.warn('Error extracting component ID from event:', e);
@@ -1030,6 +1033,34 @@ const SimpleWireManager = ({ canvasRef }) => {
       
       if (shouldUpdate) {
         console.log(`Updating wire positions due to ${event.type} event`);
+        
+        // Update pin positions in global cache if component moved with position data
+        if (movedComponentId && newPosition && window.pinPositionCache) {
+          // Update all pins from this component in the global pin position cache
+          Array.from(window.pinPositionCache.keys()).forEach(key => {
+            if (key.includes(movedComponentId)) {
+              const pinData = window.pinPositionCache.get(key);
+              if (pinData && pinData.origComponentX !== undefined) {
+                // Calculate pin's relative offset from component position
+                const deltaX = pinData.x - pinData.origComponentX;
+                const deltaY = pinData.y - pinData.origComponentY;
+                
+                // Update pin position based on new component position
+                const updatedPinData = {
+                  ...pinData,
+                  x: newPosition.x + deltaX,
+                  y: newPosition.y + deltaY,
+                  origComponentX: newPosition.x,
+                  origComponentY: newPosition.y,
+                  timestamp: Date.now()
+                };
+                
+                window.pinPositionCache.set(key, updatedPinData);
+                console.log(`Updated pin position for ${key}:`, updatedPinData);
+              }
+            }
+          });
+        }
         
         // Force position cache clearing for affected wires
         if (movedComponentId) {
@@ -1047,7 +1078,7 @@ const SimpleWireManager = ({ canvasRef }) => {
         // This triggers a re-render that will call getUpdatedWirePositions()
         // with fresh calculations since we cleared the relevant cache entries
         setWires(prevWires => {
-          // Force wire position recalculation by removing cached positions
+          // Mark affected wires as needing position update
           // This makes getUpdatedWirePositions() get fresh positions from DOM
           return prevWires.map(wire => {
             // If this wire is connected to the moved component, clear its positions
