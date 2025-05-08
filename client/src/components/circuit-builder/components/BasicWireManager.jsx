@@ -369,6 +369,7 @@ const BasicWireManager = ({ canvasRef }) => {
   
   // Delete a wire by ID
   const deleteWire = (wireId) => {
+    console.log(`Deleting wire with ID: ${wireId}`);
     setWires(wires.filter(wire => wire.id !== wireId));
     setSelectedWireId(null);
   };
