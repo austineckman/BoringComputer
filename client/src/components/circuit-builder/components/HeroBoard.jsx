@@ -283,7 +283,7 @@ const HeroBoard = ({
             boxShadow: pin13State ? '0 0 10px 4px rgba(255, 0, 0, 0.8)' : 'none', // Larger glow
             animation: pin13State ? 'pulse 1s infinite alternate ease-in-out' : 'none',
             top: `${posTop + 43}px`, // 1px lower
-            left: `${posLeft + 108}px`, // 1px more to the right
+            left: `${posLeft + 107}px`, // 1px back to the left as requested
             zIndex: 11,
             width: '8px', // 2x the size
             height: '8px' // 2x the size
