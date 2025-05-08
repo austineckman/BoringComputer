@@ -14,7 +14,7 @@ import { useSimulator } from './simulator/SimulatorContext';
 // Import specialized component implementations
 import HeroBoard from './components/HeroBoard';
 import LED from './components/LED';
-import RgbLed from './components/RgbLed'; // Fixed the casing to match the actual file
+import RGBLED from './components/RGBLED';
 import Resistor from './components/Resistor';
 import Photoresistor from './components/Photoresistor';
 import Buzzer from './components/Buzzer';
@@ -288,7 +288,7 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
     
     if (component.type === 'rgb-led') {
       return (
-        <RgbLed
+        <RGBLED
           key={component.id}
           id={component.id}
           initialX={component.x}
@@ -302,7 +302,7 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
           ledRed={component.props?.ledRed || 0}
           ledGreen={component.props?.ledGreen || 0}
           ledBlue={component.props?.ledBlue || 0}
-          commonType={component.props?.commonPin || 'cathode'}
+          commonPin={component.props?.commonPin || 'cathode'}
         />
       );
     }

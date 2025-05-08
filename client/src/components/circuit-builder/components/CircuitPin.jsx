@@ -14,7 +14,6 @@ const CircuitPin = ({
   id,
   parentId,
   pinType, // 'input', 'output', or 'bidirectional'
-  pinName, // Short name for the pin (R, G, B, COM, etc.)
   label,
   position, // {x, y} exact position within parent component
   color = '#ffcc00',
@@ -22,8 +21,7 @@ const CircuitPin = ({
   onPinClick,
   onPinHover,
   parentRef,
-  isConnected = false,
-  dataAttributes = {} // Custom data attributes for better DOM querying
+  isConnected = false
 }) => {
   const pinRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
@@ -64,64 +62,43 @@ const CircuitPin = ({
       pinElement.style.transform = 'translate(-50%, -50%)';
     }, 150);
     
-    // Get pin position for wire connection
-    const pinClientRect = pinElement.getBoundingClientRect();
-    const pinPositionObj = {
-      x: pinClientRect.left + pinClientRect.width / 2,
-      y: pinClientRect.top + pinClientRect.height / 2
-    };
+    // First handle internal pin click handler if provided
+    if (onPinClick) {
+      onPinClick(id, pinType, parentId);
+    }
+    
+    // Dispatch a global event for the WireManager to handle
+    const formattedPinId = `pt-${parentId.toLowerCase().split('-')[0]}-${parentId}-${id}`;
     
     // Create a data object that contains pin information for simulation
     // This includes the actual pin specs from component library if available
     const pinData = (e.currentTarget.dataset.pinData) 
       ? e.currentTarget.dataset.pinData 
       : JSON.stringify({
-          name: pinName || id, 
+          name: id, 
           x: position?.x || 0, 
           y: position?.y || 0, 
           signals: []
       });
     
-    // Create a formatted pin ID that will be consistent across the application
-    const formattedPinId = `pt-${parentId?.toLowerCase().split('-')[0]}-${parentId}-${id}`;
-    
-    // Create enhanced event detail for more accurate pin identification
-    const enhancedDetail = {
-      id: formattedPinId,
-      pinId: formattedPinId,
-      pinName: pinName || id,
-      pinType,
-      parentId,
-      parentComponentId: parentId,
-      data: pinData,
-      clientX: e.clientX,
-      clientY: e.clientY,
-      pinPosition: {
-        x: e.clientX,
-        y: e.clientY
-      }
-    };
-    
-    // First handle internal pin click handler if provided
-    if (onPinClick) {
-      onPinClick(id, pinType, parentId, pinPositionObj, enhancedDetail);
-    }
-    
-    // Dispatch a global event for the WireManager to handle
     const clickEvent = new CustomEvent('pinClicked', {
-      detail: enhancedDetail
+      detail: { 
+        id: formattedPinId, 
+        pinData,
+        pinType, 
+        parentId,
+        clientX: e.clientX,
+        clientY: e.clientY
+      }
     });
     document.dispatchEvent(clickEvent);
     
     console.log('Pin clicked on component:', clickEvent.detail);
     
     // Ensure the WireManager always focuses on pin clicks more than other events
-    // Only call stopImmediatePropagation if it exists (native events have it, custom events don't)
-    if (e && typeof e.stopImmediatePropagation === 'function') {
-      e.stopImmediatePropagation();
-    }
+    e.stopImmediatePropagation();
     
-    console.log(`Pin clicked: ${pinName || id} (${pinType})`);
+    console.log(`Pin clicked: ${id} (${pinType})`);
   };
   
   // Handle mouse hover
@@ -253,18 +230,6 @@ const CircuitPin = ({
     description: getPinDescription(pinType, label)
   };
   
-  // Generate additional data attributes object for DOM
-  const allDataAttributes = {
-    'data-pin-id': id,
-    'data-pin-name': pinName || id,
-    'data-pin-type': pinType,
-    'data-parent-id': parentId,
-    'data-formatted-id': formattedPinId,
-    'data-pin-data': JSON.stringify(pinDataObj),
-    'data-testid': `pin-${id}`,
-    ...dataAttributes // Merge in any custom data attributes
-  };
-
   return (
     <div
       id={formattedPinId}
@@ -286,7 +251,12 @@ const CircuitPin = ({
       onClick={handlePinClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      {...allDataAttributes} 
+      data-pin-id={id}
+      data-pin-type={pinType}
+      data-parent-id={parentId}
+      data-formatted-id={formattedPinId}
+      data-pin-data={JSON.stringify(pinDataObj)}
+      data-testid={`pin-${id}`}
     >
       {/* Pin dot center */}
       <div 

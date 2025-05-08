@@ -126,90 +126,48 @@ const RGBLED = ({
   // Handle pin click with improved pin details for the new wire manager
   const handlePinClicked = (e) => {
     if (onPinConnect) {
-      try {
-        // Parse the data object to get detailed pin information
-        const pinData = e.detail.data ? JSON.parse(e.detail.data) : {};
-        console.log(`Pin clicked on RGB LED:`, e.detail);
-        
-        // Get the actual pin name from the data
-        const pinId = e.detail.id;
-        
-        // Extract the proper pin name based on the data value
-        let pinName = pinData.name || '';
-        if (!pinName && pinId) {
-          pinName = pinId.split('-').pop();
-        }
-        
-        // Map the pin name to a proper type
-        let pinType = 'bidirectional';
-        if (pinName === 'R' || pinName.includes('red')) {
-          pinName = 'red';
-          pinType = 'input';
-        } else if (pinName === 'G' || pinName.includes('green')) {
-          pinName = 'green';
-          pinType = 'input';
-        } else if (pinName === 'B' || pinName.includes('blue')) {
-          pinName = 'blue';
-          pinType = 'input';
-        } else if (pinName === 'COM' || pinName.includes('common')) {
-          pinName = 'common';
-          pinType = 'power';
-        }
-        
-        // Get the position of the pin within the canvas if available
-        const targetRect = targetRef.current?.getBoundingClientRect();
-        const canvasRect = canvasRef?.current?.getBoundingClientRect();
-        
-        let pinPosition = null;
-        if (e.detail.clientX && e.detail.clientY && canvasRect) {
-          // Calculate the basic position
-          pinPosition = {
-            x: e.detail.clientX - canvasRect.left,
-            y: e.detail.clientY - canvasRect.top
-          };
-          
-          // Apply specific RGB LED pin position corrections
-          if (pinName === 'red') {
-            // Red pin on left side
-            pinPosition.x -= 5;
-          } else if (pinName === 'green') {
-            // Green pin on top
-            pinPosition.y -= 5;
-          } else if (pinName === 'blue') {
-            // Blue pin on right side
-            pinPosition.x += 5;
-          } else if (pinName === 'common') {
-            // Common pin on bottom
-            pinPosition.y += 5;
-          }
-        }
-        
-        // Create a custom event with enhanced details for the wire manager
-        const pinClickEvent = new CustomEvent('pinClicked', {
-          bubbles: true,
-          detail: {
-            id: `${id}-${pinName}`, // Use component ID + pin name for unique ID
-            pinId: `${id}-${pinName}`,
-            pinName,
-            pinType,
-            parentId: id,
-            parentComponentId: id,
-            clientX: e.detail.clientX,
-            clientY: e.detail.clientY,
-            pinPosition
-          }
-        });
-        
-        // Dispatch the event to be caught by the wire manager
-        document.dispatchEvent(pinClickEvent);
-        
-        // Also call the provided callback for backward compatibility
-        onPinConnect(`${id}-${pinName}`, pinType, id, pinPosition);
-        
-        console.log(`RGB LED Pin ${pinName} (${pinType}) of component ${id} clicked`, pinPosition);
-      } catch (error) {
-        console.error('Error processing RGB LED pin click:', error);
+      // Get details from the event
+      const pinId = e.detail.pinId;
+      const pinName = e.detail.pinName || (pinId ? pinId.split('-').pop() : '');
+      const pinType = e.detail.pinType || 'bidirectional';
+      
+      console.log(`Pin clicked on RGB LED:`, e.detail);
+      
+      // Get the position of the pin within the canvas if available
+      const targetRect = targetRef.current?.getBoundingClientRect();
+      const canvasRect = canvasRef?.current?.getBoundingClientRect();
+      
+      let pinPosition = null;
+      if (e.detail.clientX && e.detail.clientY && canvasRect) {
+        pinPosition = {
+          x: e.detail.clientX - canvasRect.left,
+          y: e.detail.clientY - canvasRect.top
+        };
       }
+      
+      // Create a custom event with enhanced details for the wire manager
+      const pinClickEvent = new CustomEvent('pinClicked', {
+        bubbles: true,
+        detail: {
+          id: pinId,
+          pinId,
+          pinName,
+          pinType,
+          parentId: id,
+          parentComponentId: id,
+          clientX: e.detail.clientX,
+          clientY: e.detail.clientY,
+          pinPosition
+        }
+      });
+      
+      // Dispatch the event to be caught by the wire manager
+      document.dispatchEvent(pinClickEvent);
+      
+      // Also call the provided callback for backward compatibility
+      onPinConnect(pinId, pinType, id, pinPosition);
+      
+      console.log(`Pin ${pinName} (${pinType}) of component ${id} clicked`, pinPosition);
     }
   };
 
