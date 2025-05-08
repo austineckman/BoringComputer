@@ -272,23 +272,7 @@ const HeroBoard = ({
           ledPower={isSimulationRunning} // Power LED only on when simulation is running
         ></ReactHeroBoardElement>
         
-        {/* Power LED indicator - only visible when simulation is running */}
-        {isSimulationRunning && (
-          <div 
-            className="heroboard-power-led absolute"
-            style={{
-              width: '5px',
-              height: '5px',
-              borderRadius: '50%',
-              backgroundColor: '#00ff00', /* Green LED */
-              boxShadow: '0 0 8px 2px rgba(0, 255, 0, 0.8)',
-              animation: 'pulse 0.8s ease-in-out infinite alternate',
-              top: `${posTop + 60}px`,
-              left: `${posLeft + 140}px`,
-              zIndex: 11 // Above the board but below moveable
-            }}
-          />
-        )}
+        {/* Power LED removed - we'll only use the built-in pin 13 LED */}
         
         {/* Built-in RED LED for pin 13 - using CSS class for better compatibility */}
         <div 
