@@ -497,9 +497,28 @@ const RetroDesktop: React.FC = () => {
         setQuestsAppState('loading');
       }
     } else if (iconId === "oracle") {
-      // Open the Oracle app if it's currently closed
-      if (oracleAppState === 'closed') {
-        setOracleAppState('open');
+      // Only allow admin users to open the Oracle app
+      if (user?.roles?.includes('admin')) {
+        // Open the Oracle app if it's currently closed
+        if (oracleAppState === 'closed') {
+          setOracleAppState('open');
+        }
+      } else {
+        // Non-admin users should never see this, but as a fallback,
+        // show an error message if they somehow try to access it
+        if (window.sounds) {
+          window.sounds.error();
+        }
+        openWindow(
+          "access-denied",
+          "Access Denied",
+          <div className="p-6 text-center">
+            <div className="text-red-600 text-xl mb-4">⚠️ Access Denied</div>
+            <p className="mb-4">You do not have permission to access The Oracle.</p>
+            <p className="text-sm text-gray-600">This administrative tool is restricted to admin users only.</p>
+          </div>,
+          "🔒"
+        );
       }
     } else if (iconId === "circuitbuilder") {
       // Open the Circuit Builder app if it's currently closed
@@ -868,13 +887,26 @@ const RetroDesktop: React.FC = () => {
         }} />
       )}
       
-      {/* Fullscreen Oracle Application */}
-      {oracleAppState === 'open' && (
+      {/* Fullscreen Oracle Application - Only visible to admin users */}
+      {oracleAppState === 'open' && user?.roles?.includes('admin') ? (
         <FullscreenOracleApp onClose={() => {
           // Reset app state to closed
           setOracleAppState('closed');
         }} />
-      )}
+      ) : oracleAppState === 'open' ? (
+        // Access denied screen for non-admin users who somehow got the app state to 'open'
+        <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center text-white">
+          <div className="text-3xl text-red-500 mb-6">⚠️ Access Denied</div>
+          <div className="text-xl mb-4">You do not have permission to access The Oracle.</div>
+          <div className="text-md mb-8">This administrative tool is restricted to admin users only.</div>
+          <button 
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+            onClick={() => setOracleAppState('closed')}
+          >
+            Return to Desktop
+          </button>
+        </div>
+      ) : null}
       
       {/* Fullscreen Circuit Builder Application */}
       {circuitBuilderAppState === 'open' && (
