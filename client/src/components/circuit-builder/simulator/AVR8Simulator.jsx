@@ -86,34 +86,44 @@ const AVR8Simulator = ({
     // Log the pin change for debugging
     console.log(`Checking components connected to pin ${pinNumber}, state=${isHigh}`);
     
-    // Always update pin 13 components for now (we'll implement proper wire tracing later)
+    // For demonstration purposes, we're focusing on pin 13, 
+    // but this same code would work for any pin
     if (pinNumber === 13) {
       // First, try to find LEDs connected through wires
       const connectedLEDs = findConnectedComponents('led', pinNumber);
       
       if (connectedLEDs.length > 0) {
         console.log(`Found ${connectedLEDs.length} LEDs connected to pin ${pinNumber}`);
+        
+        // Update each connected LED
         connectedLEDs.forEach(led => {
           console.log(`Updating LED ${led.id} to ${isHigh ? 'ON' : 'OFF'}`);
-          // Update the LED state
+          
+          // Update the LED state via onPinChange callback
           onPinChange(
             { componentId: led.id, type: 'led' },
             isHigh
           );
         });
       } else {
-        // Fallback: if no LEDs found through wire connections, 
-        // update all LEDs (for demonstration purposes)
-        console.log('No connected LEDs found through wires, updating all LEDs');
-        components
-          .filter(c => c.type.toLowerCase() === 'led')
-          .forEach(led => {
-            console.log(`Updating all LEDs: ${led.id} to ${isHigh ? 'ON' : 'OFF'}`);
-            onPinChange(
-              { componentId: led.id, type: 'led' },
-              isHigh
-            );
-          });
+        // Temporary fallback for debugging/development: update all LEDs
+        // In production, this would be removed so only connected LEDs are updated
+        console.log('No connected LEDs found through wires, updating all LEDs as fallback');
+        
+        // Get all LED components
+        const allLEDs = components.filter(c => c.type.toLowerCase() === 'led');
+        console.log(`Found ${allLEDs.length} total LED components to update as fallback`);
+        
+        // Update each LED
+        allLEDs.forEach(led => {
+          console.log(`Updating LED ${led.id} to ${isHigh ? 'ON' : 'OFF'}`);
+          
+          // Update the LED state
+          onPinChange(
+            { componentId: led.id, type: 'led' },
+            isHigh
+          );
+        });
       }
     }
   };
@@ -130,8 +140,12 @@ const AVR8Simulator = ({
     // Try multiple formats of pin IDs to handle different naming patterns
     const possiblePinFormats = [
       `pt-heroboard-${heroBoard.id}-${pinNumber}`,        // Standard format
+      `pt-heroboard-heroboard-${heroBoard.id}-${pinNumber}`, // Expanded format
       `pt-heroboard-${heroBoard.id}-D${pinNumber}`,       // Digital pin format
-      `pt-heroboard-${heroBoard.id}-digital-${pinNumber}` // Alternate digital pin format
+      `pt-heroboard-heroboard-${heroBoard.id}-D${pinNumber}`, // Expanded digital format
+      `pt-heroboard-${heroBoard.id}-digital-${pinNumber}`, // Alternate digital pin format
+      `pt-heroboard-${heroBoard.id}-${pinNumber}`,        // Standard format as string
+      `${pinNumber}`                                      // Just the pin number
     ];
     
     console.log("Possible pin formats:", possiblePinFormats);

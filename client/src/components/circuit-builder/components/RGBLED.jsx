@@ -188,6 +188,12 @@ const RGBLED = ({
     }
   };
 
+  // Check if any LED is on for simulation feedback
+  const isSimulationRunning = window.isSimulationRunning;
+  const redOn = ledRed > 0.1;
+  const greenOn = ledGreen > 0.1;
+  const blueOn = ledBlue > 0.1;
+
   return (
     <>
       {isSelected && (
@@ -206,29 +212,112 @@ const RGBLED = ({
         ></Moveable>
       )}
       
-      <ReactRGBLEDComponent
-        id={id}
-        className="min-w-min cursor-pointer absolute"
-        ref={targetRef}
-        isActive={false} // Explicitly set to false to remove blue outline
-        isDragged={isDragged}
-        onPinClicked={handlePinClicked}
-        onPininfoChange={(e) => onPinInfoChange(e)}
-        rotationTransform={0} // Fixed to 0 degrees - no rotation
-        onMouseDown={(e) => {
-          e.stopPropagation();
-          if (onSelect) onSelect(id);
-        }}
-        style={{
-          transform: `translate(${initPosLeft}px, ${initPosTop}px)`,
-          zIndex: isDragged ? 99999 : 10,
-          outline: isSelected ? '1px solid #3b82f6' : 'none' // Apply a single outline when selected
-        }}
-        ledRed={ledRed}
-        ledGreen={ledGreen}
-        ledBlue={ledBlue}
-        controlPin={commonPin}
-      ></ReactRGBLEDComponent>
+      <div className="relative">
+        <ReactRGBLEDComponent
+          id={id}
+          className="min-w-min cursor-pointer absolute"
+          ref={targetRef}
+          isActive={false} // Explicitly set to false to remove blue outline
+          isDragged={isDragged}
+          onPinClicked={handlePinClicked}
+          onPininfoChange={(e) => onPinInfoChange(e)}
+          rotationTransform={0} // Fixed to 0 degrees - no rotation
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            if (onSelect) onSelect(id);
+          }}
+          style={{
+            transform: `translate(${initPosLeft}px, ${initPosTop}px)`,
+            zIndex: isDragged ? 99999 : 10,
+            outline: isSelected ? '1px solid #3b82f6' : 'none' // Apply a single outline when selected
+          }}
+          ledRed={ledRed}
+          ledGreen={ledGreen}
+          ledBlue={ledBlue}
+          controlPin={commonPin}
+        />
+        
+        {/* Simulation state indicators and glow effects */}
+        {isSimulationRunning && (
+          <div className="absolute" style={{ transform: `translate(${initPosLeft}px, ${initPosTop}px)` }}>
+            {/* Status indicator dot */}
+            <div 
+              className={`rounded-full w-3 h-3 absolute top-2 right-2 ${redOn || greenOn || blueOn ? 'bg-green-500' : 'bg-red-500'}`}
+              style={{
+                boxShadow: redOn || greenOn || blueOn ? '0 0 8px 2px #4ade80' : 'none',
+                transition: 'background-color 0.2s, box-shadow 0.2s',
+                zIndex: 100
+              }}
+            ></div>
+            
+            {/* RGB Glow effects for each color when on */}
+            {redOn && (
+              <div 
+                className="absolute rounded-full w-8 h-8 opacity-60"
+                style={{
+                  backgroundColor: '#ff0000',
+                  transform: 'translate(5px, 10px)',
+                  boxShadow: '0 0 15px 5px #ff0000',
+                  filter: 'blur(4px)',
+                  animation: 'pulse 1s infinite alternate',
+                  zIndex: 99
+                }}
+              ></div>
+            )}
+            
+            {greenOn && (
+              <div 
+                className="absolute rounded-full w-8 h-8 opacity-60"
+                style={{
+                  backgroundColor: '#00ff00',
+                  transform: 'translate(5px, 10px)',
+                  boxShadow: '0 0 15px 5px #00ff00',
+                  filter: 'blur(4px)',
+                  animation: 'pulse 1s infinite alternate',
+                  zIndex: 99
+                }}
+              ></div>
+            )}
+            
+            {blueOn && (
+              <div 
+                className="absolute rounded-full w-8 h-8 opacity-60"
+                style={{
+                  backgroundColor: '#0000ff',
+                  transform: 'translate(5px, 10px)',
+                  boxShadow: '0 0 15px 5px #0000ff',
+                  filter: 'blur(4px)',
+                  animation: 'pulse 1s infinite alternate',
+                  zIndex: 99
+                }}
+              ></div>
+            )}
+            
+            {/* Mixed color effect if multiple colors are on */}
+            {((redOn && greenOn) || (redOn && blueOn) || (greenOn && blueOn)) && (
+              <div 
+                className="absolute rounded-full w-10 h-10 opacity-60"
+                style={{
+                  backgroundColor: `rgb(
+                    ${redOn ? 255 : 0}, 
+                    ${greenOn ? 255 : 0}, 
+                    ${blueOn ? 255 : 0}
+                  )`,
+                  transform: 'translate(5px, 10px)',
+                  boxShadow: `0 0 20px 8px rgb(
+                    ${redOn ? 255 : 0}, 
+                    ${greenOn ? 255 : 0}, 
+                    ${blueOn ? 255 : 0}
+                  )`,
+                  filter: 'blur(6px)',
+                  animation: 'pulse 1.5s infinite alternate',
+                  zIndex: 98
+                }}
+              ></div>
+            )}
+          </div>
+        )}
+      </div>
     </>
   );
 };
