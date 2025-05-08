@@ -445,21 +445,30 @@ const CircuitComponent = ({
         onMove(id, newX, newY);
       }
       
-      // WOKWI APPROACH: Notify directly that component was moved with its ID
-      // Allowing wire manager to directly lookup pins from this component
-      document.dispatchEvent(new CustomEvent('componentMoved', {
-        detail: {
-          componentId: id,
-          newPosition: { x: newX, y: newY }
-        }
-      }));
+      // Performance optimization: Throttle the move event dispatching
+      // Only dispatch full move events occasionally during active dragging
+      const now = Date.now();
+      if (!window._lastMoveEventTime || now - window._lastMoveEventTime > 50) {
+        window._lastMoveEventTime = now;
+        
+        // Dispatch move event to update connected wire positions
+        document.dispatchEvent(new CustomEvent('componentMoved', {
+          detail: {
+            componentId: id,
+            newPosition: { x: newX, y: newY }
+          }
+        }));
+      }
     };
     
     const handleMouseUp = () => {
       setIsDragging(false);
       
+      // Clear throttling timer
+      window._lastMoveEventTime = null;
+      
       // Final dispatch to ensure wire positions are updated
-      // This helps with performance by reducing updates during dragging
+      // This ensures all wires are properly positioned after dragging stops
       document.dispatchEvent(new CustomEvent('componentMovedFinal', {
         detail: { componentId: id }
       }));
