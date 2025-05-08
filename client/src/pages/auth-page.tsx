@@ -226,147 +226,125 @@ export default function AuthPage() {
             </div>
             
             {activeTab === 'login' ? (
-              <Form {...loginForm}>
-                <form onSubmit={loginForm.handleSubmit(onLoginSubmit)}>
-                  <div className="space-y-3">
-                    <FormField
-                      control={loginForm.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex items-center">
-                            <label className="w-24 text-sm text-black">Username:</label>
-                            <div className="flex-1">
-                              <FormControl>
-                                <input
-                                  {...field}
-                                  placeholder="Enter username"
-                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white text-black focus:outline-none retro-input"
-                                  style={{
-                                    zIndex: 5,
-                                    position: 'relative',
-                                    backgroundColor: '#fff'
-                                  }}
-                                />
-                              </FormControl>
-                              <FormMessage className="text-xs text-red-600 mt-1" />
-                            </div>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={loginForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex items-center">
-                            <label className="w-24 text-sm text-black">Password:</label>
-                            <div className="flex-1">
-                              <FormControl>
-                                <input
-                                  {...field}
-                                  type="password"
-                                  placeholder="Enter password"
-                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white text-black focus:outline-none retro-input"
-                                  style={{
-                                    zIndex: 5,
-                                    position: 'relative',
-                                    backgroundColor: '#fff'
-                                  }}
-                                />
-                              </FormControl>
-                              <FormMessage className="text-xs text-red-600 mt-1" />
-                            </div>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <div className="flex justify-center mt-5 pt-3 border-t border-gray-400">
-                      <button 
-                        type="submit" 
-                        disabled={isLoading} 
-                        className="min-w-32 px-6 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-normal text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white"
-                      >
-                        {isLoading ? "Logging in..." : "Login"}
-                      </button>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const username = formData.get('username') as string;
+                const password = formData.get('password') as string;
+                
+                if (username && password) {
+                  onLoginSubmit({ username, password });
+                }
+              }}>
+                <div className="space-y-3">
+                  <div className="flex items-center">
+                    <label htmlFor="login-username" className="w-24 text-sm text-black">Username:</label>
+                    <div className="flex-1">
+                      <input
+                        id="login-username"
+                        name="username"
+                        placeholder="Enter username"
+                        className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white text-black"
+                        style={{
+                          zIndex: 50,
+                          position: 'relative',
+                          backgroundColor: '#fff',
+                          pointerEvents: 'auto'
+                        }}
+                      />
                     </div>
                   </div>
-                </form>
-              </Form>
+                  
+                  <div className="flex items-center">
+                    <label htmlFor="login-password" className="w-24 text-sm text-black">Password:</label>
+                    <div className="flex-1">
+                      <input
+                        id="login-password"
+                        name="password"
+                        type="password"
+                        placeholder="Enter password"
+                        className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white text-black"
+                        style={{
+                          zIndex: 50,
+                          position: 'relative',
+                          backgroundColor: '#fff',
+                          pointerEvents: 'auto'
+                        }}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-center mt-5 pt-3 border-t border-gray-400">
+                    <button 
+                      type="submit" 
+                      disabled={isLoading} 
+                      className="min-w-32 px-6 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-normal text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white"
+                    >
+                      {isLoading ? "Logging in..." : "Login"}
+                    </button>
+                  </div>
+                </div>
+              </form>
             ) : (
-              <Form {...registerForm}>
-                <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)}>
-                  <div className="space-y-3">
-                    <FormField
-                      control={registerForm.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex items-center">
-                            <label className="w-24 text-sm text-black">Username:</label>
-                            <div className="flex-1">
-                              <FormControl>
-                                <input
-                                  {...field}
-                                  placeholder="Choose username"
-                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white text-black focus:outline-none retro-input"
-                                  style={{
-                                    zIndex: 5,
-                                    position: 'relative',
-                                    backgroundColor: '#fff'
-                                  }}
-                                />
-                              </FormControl>
-                              <FormMessage className="text-xs text-red-600 mt-1" />
-                            </div>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={registerForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex items-center">
-                            <label className="w-24 text-sm text-black">Password:</label>
-                            <div className="flex-1">
-                              <FormControl>
-                                <input
-                                  {...field}
-                                  type="password"
-                                  placeholder="Choose password"
-                                  className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white text-black focus:outline-none retro-input"
-                                  style={{
-                                    zIndex: 5,
-                                    position: 'relative',
-                                    backgroundColor: '#fff'
-                                  }}
-                                />
-                              </FormControl>
-                              <FormMessage className="text-xs text-red-600 mt-1" />
-                            </div>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <div className="flex justify-center mt-5 pt-3 border-t border-gray-400">
-                      <button 
-                        type="submit" 
-                        disabled={isLoading} 
-                        className="min-w-32 px-6 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-normal text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white"
-                      >
-                        {isLoading ? "Creating..." : "Create Account"}
-                      </button>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const username = formData.get('username') as string;
+                const password = formData.get('password') as string;
+                
+                if (username && password) {
+                  onRegisterSubmit({ username, password });
+                }
+              }}>
+                <div className="space-y-3">
+                  <div className="flex items-center">
+                    <label htmlFor="register-username" className="w-24 text-sm text-black">Username:</label>
+                    <div className="flex-1">
+                      <input
+                        id="register-username"
+                        name="username"
+                        placeholder="Choose username"
+                        className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white text-black"
+                        style={{
+                          zIndex: 50,
+                          position: 'relative',
+                          backgroundColor: '#fff',
+                          pointerEvents: 'auto'
+                        }}
+                      />
                     </div>
                   </div>
-                </form>
-              </Form>
+                  
+                  <div className="flex items-center">
+                    <label htmlFor="register-password" className="w-24 text-sm text-black">Password:</label>
+                    <div className="flex-1">
+                      <input
+                        id="register-password"
+                        name="password"
+                        type="password"
+                        placeholder="Choose password"
+                        className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white text-black"
+                        style={{
+                          zIndex: 50,
+                          position: 'relative',
+                          backgroundColor: '#fff',
+                          pointerEvents: 'auto'
+                        }}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-center mt-5 pt-3 border-t border-gray-400">
+                    <button 
+                      type="submit" 
+                      disabled={isLoading} 
+                      className="min-w-32 px-6 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-normal text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white"
+                    >
+                      {isLoading ? "Creating..." : "Create Account"}
+                    </button>
+                  </div>
+                </div>
+              </form>
             )}
           </div>
           
