@@ -25,7 +25,7 @@ const AVR8Simulator = ({
   useEffect(() => {
     if (isRunning) {
       // Initialize the AVR8js simulation with the provided code
-      addLog('AVR8 simulator initialized');
+      console.log('AVR8 simulator initialized');
       
       // For our basic LED blink example, we'll simulate pin 13 (LED_BUILTIN) toggling
       // This simulates the actual AVR8js functionality for the blink sketch
@@ -35,13 +35,13 @@ const AVR8Simulator = ({
         isHigh = !isHigh;
         
         // Update pin state in the simulator context
-        updatePinState(13, isHigh);
+        updatePinState(`D${13}`, isHigh);
         
         // Also directly notify the CircuitBuilderWindow via onPinChange
         onPinChange(13, isHigh);
         
-        // Log the state change
-        addLog(`Pin 13 changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+        // Log the state change via console to avoid re-render loop
+        console.log(`Pin 13 changed to ${isHigh ? 'HIGH' : 'LOW'}`);
         
         // Check for connected LEDs and update them
         updateConnectedComponents(13, isHigh);
@@ -50,17 +50,18 @@ const AVR8Simulator = ({
       // Store the interval ID for cleanup
       return () => {
         clearInterval(interval);
-        addLog('AVR8 simulator stopped');
+        console.log('AVR8 simulator stopped');
       };
     }
     
     return () => {
       // Cleanup on unmount
       if (isRunning) {
-        stopSimulation();
+        // Don't call stopSimulation() here to avoid update loops
+        console.log('Simulator cleanup on unmount');
       }
     };
-  }, [isRunning, code, components, wires, updatePinState, addLog, onPinChange, stopSimulation]);
+  }, [isRunning, code]); // Only depend on these two variables to prevent update loops
   
   // When pin states change, notify parent component
   useEffect(() => {
@@ -78,7 +79,7 @@ const AVR8Simulator = ({
         // Find connected components and update them
         updateConnectedComponents(pinNumber, state);
       });
-  }, [pinStates]);
+  }, [pinStates, onPinChange]);
   
   // Find components connected to the given pin and update their state
   const updateConnectedComponents = (pinNumber, isHigh) => {
