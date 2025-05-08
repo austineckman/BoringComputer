@@ -71,18 +71,27 @@ const AVR8Simulator = ({
     };
   }, [isRunning, code]); // Only depend on these two variables to prevent update loops
   
-  // When pin states change, notify parent component
+  // When pin states change, notify parent component - but only for newly updated pins
+  // We track last processed state to avoid update loops
+  const lastProcessedState = React.useRef({});
+  
   useEffect(() => {
     // For example, when pin D13 (LED_BUILTIN) changes state
-    if (pinStates.D13 !== undefined) {
+    if (pinStates.D13 !== undefined && pinStates.D13 !== lastProcessedState.current.D13) {
       onPinChange(13, pinStates.D13);
+      lastProcessedState.current.D13 = pinStates.D13;
     }
     
-    // Process all digital pins
+    // Process digital pins that have changed since last time
     Object.entries(pinStates)
-      .filter(([pin]) => pin.startsWith('D'))
+      .filter(([pin, state]) => {
+        return pin.startsWith('D') && state !== lastProcessedState.current[pin];
+      })
       .forEach(([pin, state]) => {
         const pinNumber = parseInt(pin.substring(1), 10);
+        
+        // Update our last processed state
+        lastProcessedState.current[pin] = state;
         
         // Find connected components and update them
         updateConnectedComponents(pinNumber, state);

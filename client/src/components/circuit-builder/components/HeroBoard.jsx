@@ -259,12 +259,12 @@ const HeroBoard = ({
           ledPower={isSimulationRunning} // Power LED only on when simulation is running
         ></ReactHeroBoardElement>
         
-        {/* Built-in LED on pin 13 */}
+        {/* Built-in LED on pin 13 - positioned to the right of L on the board */}
         <div 
           className={`heroboard-builtin-led ${pin13State ? 'on' : ''}`}
           style={{
-            top: posTop + 106, // Position based on HERO board image
-            left: posLeft + 136, // Position based on HERO board image
+            top: posTop + 149, // Repositioned based on screenshot
+            left: posLeft + 155, // Repositioned based on screenshot
           }}
         ></div>
         
@@ -272,8 +272,8 @@ const HeroBoard = ({
         <div 
           className={`heroboard-power-led ${isSimulationRunning ? 'on' : ''}`}
           style={{
-            top: posTop + 75, // Position based on HERO board image
-            left: posLeft + 185, // Position based on HERO board image
+            top: posTop + 195, // Repositioned based on screenshot
+            left: posLeft + 125, // Repositioned based on screenshot
           }}
         ></div>
       </div>
