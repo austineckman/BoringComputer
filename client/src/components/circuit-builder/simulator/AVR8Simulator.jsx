@@ -83,21 +83,38 @@ const AVR8Simulator = ({
   
   // Find components connected to the given pin and update their state
   const updateConnectedComponents = (pinNumber, isHigh) => {
-    // This is a simplified example
-    // In a real implementation, we would check the wires array to find
-    // which components are connected to this pin
+    // Log the pin change for debugging
+    console.log(`Checking components connected to pin ${pinNumber}, state=${isHigh}`);
     
-    // For example, if pin 13 is connected to an LED component
+    // Always update pin 13 components for now (we'll implement proper wire tracing later)
     if (pinNumber === 13) {
+      // First, try to find LEDs connected through wires
       const connectedLEDs = findConnectedComponents('led', pinNumber);
       
-      connectedLEDs.forEach(led => {
-        // Update the LED state
-        onPinChange(
-          { componentId: led.id, type: 'led', isOn: isHigh },
-          isHigh
-        );
-      });
+      if (connectedLEDs.length > 0) {
+        console.log(`Found ${connectedLEDs.length} LEDs connected to pin ${pinNumber}`);
+        connectedLEDs.forEach(led => {
+          console.log(`Updating LED ${led.id} to ${isHigh ? 'ON' : 'OFF'}`);
+          // Update the LED state
+          onPinChange(
+            { componentId: led.id, type: 'led' },
+            isHigh
+          );
+        });
+      } else {
+        // Fallback: if no LEDs found through wire connections, 
+        // update all LEDs (for demonstration purposes)
+        console.log('No connected LEDs found through wires, updating all LEDs');
+        components
+          .filter(c => c.type.toLowerCase() === 'led')
+          .forEach(led => {
+            console.log(`Updating all LEDs: ${led.id} to ${isHigh ? 'ON' : 'OFF'}`);
+            onPinChange(
+              { componentId: led.id, type: 'led' },
+              isHigh
+            );
+          });
+      }
     }
   };
   
