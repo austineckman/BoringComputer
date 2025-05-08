@@ -10,8 +10,9 @@
   font-size: 12px !important;
   padding: 3px 5px !important;
   box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.2) !important;
-  z-index: 1 !important;
+  z-index: 10 !important;
   position: relative !important;
+  pointer-events: auto !important;
 }
 
 .retro-input:focus {
