@@ -152,13 +152,139 @@ export const logPinStates = (pinStates) => {
 
 // Calculate the electrical state of a connected circuit
 // This is a simplified simulation that propagates signals through connections
-export const calculateCircuitState = (components, connections) => {
+export const calculateCircuitState = (components, connections, microcontrollerPins = {}) => {
   // Start with all pins at default state (LOW)
   const pinStates = {};
   
-  // Set known signal sources (e.g. from microcontroller outputs)
-  // Iterate through connections to propagate signals
+  // First, set all known microcontroller pin states (from the Arduino code simulation)
+  Object.keys(microcontrollerPins).forEach(pinId => {
+    pinStates[pinId] = microcontrollerPins[pinId];
+  });
   
-  // Return the calculated state of all pins
-  return pinStates;
+  // Get all component pins
+  const componentPins = {};
+  
+  // Extract all component pins
+  components.forEach(component => {
+    if (!component.id) return;
+    
+    // Get component configuration from the componentPinMap
+    const config = componentPinMap[component.type];
+    if (!config || !config.pins) return;
+    
+    // Initialize pins for this component
+    config.pins.forEach(pinName => {
+      const pinId = `${component.id}:${pinName}`;
+      componentPins[pinId] = {
+        component: component.id,
+        pinName,
+        state: false, // Default to LOW
+        isInput: config.inputs?.includes(pinName) || false,
+        isOutput: config.outputs?.includes(pinName) || false,
+        isPassthrough: config.passthrough || false
+      };
+    });
+  });
+  
+  // Process wire connections to propagate signals
+  if (connections) {
+    let changesMade = true;
+    let iterations = 0;
+    const MAX_ITERATIONS = 10; // Prevent infinite loops
+    
+    // Continue propagating signals until no more changes are made or max iterations reached
+    while (changesMade && iterations < MAX_ITERATIONS) {
+      changesMade = false;
+      iterations++;
+      
+      // Process each wire connection
+      Object.entries(connections).forEach(([sourcePin, targetPins]) => {
+        // Only propagate if we know the source pin state
+        if (pinStates[sourcePin] !== undefined) {
+          const sourceState = pinStates[sourcePin];
+          
+          // Propagate to all connected pins
+          targetPins.forEach(targetPin => {
+            // Parse the pin ID to get component and pin name
+            const [targetComponentId, targetPinName] = targetPin.split(':');
+            const targetPinId = targetPin;
+            
+            // Skip if already set to the same value
+            if (pinStates[targetPinId] === sourceState) return;
+            
+            // Update the target pin state
+            pinStates[targetPinId] = sourceState;
+            changesMade = true;
+            
+            // Process component-specific behavior
+            const componentType = targetComponentId.split('-')[0]; // Extract component type from ID
+            if (componentPinMap[componentType] && componentPinMap[componentType].updateState) {
+              // Collect all pin states for this component
+              const componentPinStates = {};
+              componentPinMap[componentType].pins.forEach(pin => {
+                const fullPinId = `${targetComponentId}:${pin}`;
+                componentPinStates[pin] = pinStates[fullPinId] || false;
+              });
+              
+              // Call the component-specific update function
+              const updatedComponent = componentPinMap[componentType].updateState(
+                { id: targetComponentId, type: componentType },
+                componentPinStates
+              );
+              
+              // Apply any changes to pin states based on component behavior
+              Object.entries(updatedComponent).forEach(([key, value]) => {
+                if (key !== 'id' && key !== 'type') {
+                  const propertyPin = `${targetComponentId}:${key}`;
+                  if (pinStates[propertyPin] !== value) {
+                    pinStates[propertyPin] = value;
+                    changesMade = true;
+                  }
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+    
+    if (iterations >= MAX_ITERATIONS) {
+      console.warn('Circuit simulation reached maximum iterations - possible circuit loop detected');
+    }
+  }
+  
+  // Return the calculated state of all pins and components
+  return {
+    pinStates,
+    componentStates: generateComponentStates(components, pinStates)
+  };
+};
+
+// Helper function to generate component states from pin states
+const generateComponentStates = (components, pinStates) => {
+  const componentStates = {};
+  
+  components.forEach(component => {
+    if (!component.id || !component.type) return;
+    
+    const componentType = component.type;
+    const config = componentPinMap[componentType];
+    
+    if (!config || !config.updateState) return;
+    
+    // Collect pin states for this component
+    const componentPinStates = {};
+    if (config.pins) {
+      config.pins.forEach(pinName => {
+        const pinId = `${component.id}:${pinName}`;
+        componentPinStates[pinName] = pinStates[pinId] || false;
+      });
+    }
+    
+    // Generate the component state
+    const state = config.updateState(component, componentPinStates);
+    componentStates[component.id] = state;
+  });
+  
+  return componentStates;
 };
