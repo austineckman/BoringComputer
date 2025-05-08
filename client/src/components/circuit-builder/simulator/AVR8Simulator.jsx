@@ -35,8 +35,11 @@ const AVR8Simulator = ({
       // Handle LED_BUILTIN constant
       if (pin === 'LED_BUILTIN') {
         pins.push('13');
-      } else {
+      } else if (!isNaN(parseInt(pin))) {
+        // Only add numeric pins
         pins.push(pin.toString());
+      } else {
+        console.log(`Warning: Found non-numeric pin reference "${pin}" in code`);
       }
     }
     
@@ -170,9 +173,9 @@ const AVR8Simulator = ({
       });
     }
     
-    // For demonstration purposes, we're focusing on pins 9-13, 
-    // but this same code would work for any pin
-    if (pinNumber >= 9 && pinNumber <= 13) {
+    // Process pin updates for all pins
+    // Now handling all pins, not just 9-13
+    if (pinNumber >= 0 && pinNumber <= 19) {
       // First, try to find regular LEDs connected through wires
       const connectedLEDs = findConnectedComponents('led', pinNumber);
       
