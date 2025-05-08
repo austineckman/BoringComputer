@@ -87,16 +87,48 @@ const BasicWireManager = ({ canvasRef }) => {
       let pinPosition;
       
       // Find the actual pin element in the DOM to get its position
-      const pinElement = document.getElementById(pinId);
+      // Try multiple selectors to increase our chances of finding the pin
+      let pinElement = document.getElementById(pinId);
       
+      // If not found by ID, try by data-pin-id attribute or custom attributes
+      if (!pinElement) {
+        pinElement = document.querySelector(`[data-pin-id="${pinName}"][data-parent-id="${parentComponentId}"]`);
+      }
+      
+      // Try by partial class or attribute match
+      if (!pinElement) {
+        const possiblePins = document.querySelectorAll(`[class*="pin"][class*="${pinName}"], [id*="${pinName}"]`);
+        if (possiblePins.length > 0) {
+          // Find the closest pin to where the click happened
+          if (detail.clientX && detail.clientY) {
+            let closestDistance = Infinity;
+            Array.from(possiblePins).forEach(element => {
+              const rect = element.getBoundingClientRect();
+              const centerX = rect.left + rect.width / 2;
+              const centerY = rect.top + rect.height / 2;
+              const distance = Math.hypot(detail.clientX - centerX, detail.clientY - centerY);
+              if (distance < closestDistance) {
+                closestDistance = distance;
+                pinElement = element;
+              }
+            });
+          } else {
+            // Just use the first one if we don't have coordinates
+            pinElement = possiblePins[0];
+          }
+        }
+      }
+      
+      // If we found a pin element, use our utility to get its true position
       if (pinElement) {
-        // Get the pin element's position relative to the canvas
-        const pinRect = pinElement.getBoundingClientRect();
-        pinPosition = {
-          x: pinRect.left + (pinRect.width / 2) - (canvasRect ? canvasRect.left : 0),
-          y: pinRect.top + (pinRect.height / 2) - (canvasRect ? canvasRect.top : 0)
-        };
-        console.log(`Found pin element, using direct position: (${pinPosition.x}, ${pinPosition.y})`);
+        const elementPos = getTrueElementPosition(pinElement);
+        if (elementPos && canvasRect) {
+          pinPosition = {
+            x: elementPos.x - canvasRect.left,
+            y: elementPos.y - canvasRect.top
+          };
+          console.log(`Found pin element using enhanced search, position: (${pinPosition.x}, ${pinPosition.y})`);
+        }
       }
       // Priority 1: Detail has the pinPosition object directly
       else if (detail.pinPosition && typeof detail.pinPosition.x === 'number') {
@@ -247,71 +279,86 @@ const BasicWireManager = ({ canvasRef }) => {
     
     console.log(`Component moved event received for: ${componentId}`, event.detail);
     
-    // Update wires even without pin positions - just adjust based on component movement
-    const movedX = event.detail?.x;
-    const movedY = event.detail?.y;
-    
+    // Update wires based on moved components - use a more accurate pin position approach
     setWires(prevWires => {
       return prevWires.map(wire => {
-        // Handle source component movement
+        const newWire = { ...wire };
+        
+        // Handle source component updates
         if (wire.sourceComponent === componentId) {
-          // If we have pin positions directly, use them
-          if (event.detail?.pinPositions && event.detail.pinPositions[wire.sourceId]) {
-            return { 
-              ...wire, 
-              sourcePos: event.detail.pinPositions[wire.sourceId] 
-            };
+          // Try to find the source pin element in the DOM by its ID
+          const sourcePinElement = document.getElementById(wire.sourceId);
+          if (sourcePinElement && canvasRef.current) {
+            // Use our utility to get the true position
+            const elementPos = getTrueElementPosition(sourcePinElement);
+            if (elementPos) {
+              const canvasRect = canvasRef.current.getBoundingClientRect();
+              newWire.sourcePos = {
+                x: elementPos.x - canvasRect.left,
+                y: elementPos.y - canvasRect.top
+              };
+              console.log(`Updated source wire position from element: (${newWire.sourcePos.x}, ${newWire.sourcePos.y})`);
+            }
           } 
-          // Otherwise calculate the new position based on component movement
-          else if (movedX !== undefined && movedY !== undefined) {
-            // Calculate how much the component moved since the last known position
+          // If pin element not found, use the movement delta approach
+          else if (event.detail?.x !== undefined && event.detail?.y !== undefined) {
+            const movedX = event.detail.x;
+            const movedY = event.detail.y;
+            
+            // Calculate movement delta
             const deltaX = movedX - (wire._lastKnownSourceX || 0);
             const deltaY = movedY - (wire._lastKnownSourceY || 0);
             
-            // Only update if there's actual movement
             if (deltaX !== 0 || deltaY !== 0) {
-              return { 
-                ...wire, 
-                sourcePos: { 
-                  x: wire.sourcePos.x + deltaX, 
-                  y: wire.sourcePos.y + deltaY 
-                },
-                _lastKnownSourceX: movedX,  // Store for next time
-                _lastKnownSourceY: movedY
+              newWire.sourcePos = { 
+                x: wire.sourcePos.x + deltaX, 
+                y: wire.sourcePos.y + deltaY 
               };
-            }
-          }
-        } 
-        // Handle target component movement
-        else if (wire.targetComponent === componentId) {
-          // If we have pin positions directly, use them
-          if (event.detail?.pinPositions && event.detail.pinPositions[wire.targetId]) {
-            return { 
-              ...wire, 
-              targetPos: event.detail.pinPositions[wire.targetId] 
-            };
-          } 
-          // Otherwise calculate the new position based on component movement
-          else if (movedX !== undefined && movedY !== undefined) {
-            // Calculate how much the component moved since the last known position
-            const deltaX = movedX - (wire._lastKnownTargetX || 0);
-            const deltaY = movedY - (wire._lastKnownTargetY || 0);
-            
-            // Only update if there's actual movement
-            if (deltaX !== 0 || deltaY !== 0) {
-              return { 
-                ...wire, 
-                targetPos: { 
-                  x: wire.targetPos.x + deltaX, 
-                  y: wire.targetPos.y + deltaY 
-                },
-                _lastKnownTargetX: movedX,  // Store for next time
-                _lastKnownTargetY: movedY
-              };
+              newWire._lastKnownSourceX = movedX;
+              newWire._lastKnownSourceY = movedY;
+              console.log(`Updated source wire position from delta: (${newWire.sourcePos.x}, ${newWire.sourcePos.y})`);
             }
           }
         }
-        return wire;
+        
+        // Handle target component updates
+        if (wire.targetComponent === componentId) {
+          // Try to find the target pin element in the DOM by its ID
+          const targetPinElement = document.getElementById(wire.targetId);
+          if (targetPinElement && canvasRef.current) {
+            // Use our utility to get the true position
+            const elementPos = getTrueElementPosition(targetPinElement);
+            if (elementPos) {
+              const canvasRect = canvasRef.current.getBoundingClientRect();
+              newWire.targetPos = {
+                x: elementPos.x - canvasRect.left,
+                y: elementPos.y - canvasRect.top
+              };
+              console.log(`Updated target wire position from element: (${newWire.targetPos.x}, ${newWire.targetPos.y})`);
+            }
+          } 
+          // If pin element not found, use the movement delta approach
+          else if (event.detail?.x !== undefined && event.detail?.y !== undefined) {
+            const movedX = event.detail.x;
+            const movedY = event.detail.y;
+            
+            // Calculate movement delta
+            const deltaX = movedX - (wire._lastKnownTargetX || 0);
+            const deltaY = movedY - (wire._lastKnownTargetY || 0);
+            
+            if (deltaX !== 0 || deltaY !== 0) {
+              newWire.targetPos = { 
+                x: wire.targetPos.x + deltaX, 
+                y: wire.targetPos.y + deltaY 
+              };
+              newWire._lastKnownTargetX = movedX;
+              newWire._lastKnownTargetY = movedY;
+              console.log(`Updated target wire position from delta: (${newWire.targetPos.x}, ${newWire.targetPos.y})`);
+            }
+          }
+        }
+        
+        return newWire;
       });
     });
   };
