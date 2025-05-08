@@ -58,12 +58,31 @@ const BasicWireManager = ({ canvasRef }) => {
   const adjustHeroboardPosition = (pinId, position, componentId) => {
     // Only apply to HERO board pins and if we have valid positions
     if (position && (pinId?.includes('pt-heroboard-') || (componentId && componentId.includes('heroboard')))) {
+      // Extract the pin name from the ID (format: pt-heroboard-heroboard-XXXXX-PINNAME)
+      const pinName = pinId.split('-').pop();
+      
       // These are experimentally determined based on the observed wire misalignment
       // They account for the special offset in the HeroBoard component's pin rendering
-      const OFFSET_X = 256; // Horizontal offset correction for HERO board pins
-      const OFFSET_Y = 304; // Vertical offset correction for HERO board pins
+      let OFFSET_X = 256; // Default horizontal offset correction for HERO board pins
+      let OFFSET_Y = 304; // Default vertical offset correction for HERO board pins
       
-      console.log(`Applying HERO board position correction`, position);
+      // Apply pin-specific adjustments based on pin type
+      if (pinName?.startsWith('GND')) {
+        // Ground pins need adjustment
+        OFFSET_Y += 10;
+      } else if (pinName?.startsWith('5V') || pinName?.startsWith('3V')) {
+        // Power pins need adjustment
+        OFFSET_Y += 10;
+      } else if (/^\d+$/.test(pinName)) {
+        // Digital pins (numbers) need adjustment
+        OFFSET_Y += 5;
+        OFFSET_X += 5;
+      } else if (pinName?.startsWith('A')) {
+        // Analog pins need adjustment
+        OFFSET_Y += 8;
+      }
+      
+      console.log(`Applying HERO board position correction for pin ${pinName}`, position);
       
       // Apply the offset for HERO board pins
       return {
@@ -153,7 +172,9 @@ const BasicWireManager = ({ canvasRef }) => {
           
           // Apply HERO board specific position correction if needed
           if (pinId && pinId.includes('heroboard')) {
-            pinPosition = adjustHeroboardPosition(pinId, pinPosition, parentComponentId);
+            const correctedPosition = adjustHeroboardPosition(pinId, pinPosition, parentComponentId);
+            console.log(`Corrected HERO board pin position from (${pinPosition.x}, ${pinPosition.y}) to (${correctedPosition.x}, ${correctedPosition.y})`);
+            pinPosition = correctedPosition;
           }
           
           console.log(`Found pin element using enhanced search, position: (${pinPosition.x}, ${pinPosition.y})`);
@@ -326,6 +347,12 @@ const BasicWireManager = ({ canvasRef }) => {
                 x: elementPos.x - canvasRect.left,
                 y: elementPos.y - canvasRect.top
               };
+              
+              // Apply HERO board correction if needed
+              if (wire.sourceId && wire.sourceId.includes('heroboard')) {
+                newWire.sourcePos = adjustHeroboardPosition(wire.sourceId, newWire.sourcePos, wire.sourceComponent);
+              }
+              
               console.log(`Updated source wire position from element: (${newWire.sourcePos.x}, ${newWire.sourcePos.y})`);
             }
           } 
@@ -363,6 +390,12 @@ const BasicWireManager = ({ canvasRef }) => {
                 x: elementPos.x - canvasRect.left,
                 y: elementPos.y - canvasRect.top
               };
+              
+              // Apply HERO board correction if needed
+              if (wire.targetId && wire.targetId.includes('heroboard')) {
+                newWire.targetPos = adjustHeroboardPosition(wire.targetId, newWire.targetPos, wire.targetComponent);
+              }
+              
               console.log(`Updated target wire position from element: (${newWire.targetPos.x}, ${newWire.targetPos.y})`);
             }
           } 
