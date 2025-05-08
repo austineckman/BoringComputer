@@ -74,16 +74,19 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction) =>
 // Setup authentication for the Express app
 export function setupAuth(app: any): void {
   // Configure session middleware
+  // Determine if we should use secure cookies based on request protocol
+  const useSecureCookies = process.env.NODE_ENV === "production";
+  
   app.use(
     session({
       secret: process.env.SESSION_SECRET || "quest-giver-secret-key",
       resave: false,
       saveUninitialized: false,
       cookie: {
-        secure: process.env.NODE_ENV === "production", // Use secure cookies in production
+        secure: useSecureCookies, // Use secure cookies in production
         httpOnly: true, // Prevents JavaScript from reading the cookie
-        maxAge: 24 * 60 * 60 * 1000, // 1 day
-        sameSite: 'lax', // Prevents CSRF attacks
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        sameSite: useSecureCookies ? 'none' : 'lax', // Allow cross-site cookie in production with HTTPS
       },
       store: storage.sessionStore,
       name: 'app.sid', // Don't use the default connect.sid name (reveals Express usage)
