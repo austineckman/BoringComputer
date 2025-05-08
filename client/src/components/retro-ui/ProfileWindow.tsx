@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useTitles } from '@/hooks/useTitles';
 import logoImage from "@assets/Asset 6@2x-8.png";
+import { apiRequest } from '@/lib/queryClient';
 
 interface ProfileWindowProps {
   onClose: () => void;
@@ -28,26 +29,66 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Check if password change is requested
+    const isPasswordChange = oldPassword && newPassword;
+    
     // Basic validation
-    if (newPassword && newPassword !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "New passwords do not match",
-        variant: "destructive"
-      });
-      return;
+    if (isPasswordChange) {
+      if (newPassword !== confirmPassword) {
+        toast({
+          title: "Error",
+          description: "New passwords do not match",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (newPassword.length < 6) {
+        toast({
+          title: "Error",
+          description: "New password must be at least 6 characters",
+          variant: "destructive"
+        });
+        return;
+      }
     }
     
     setIsLoading(true);
     
     try {
-      // Mock update for now - would be connected to API later
-      // In a real implementation, we would call an API endpoint to update the user profile
+      // Handle password change if requested
+      if (isPasswordChange) {
+        const response = await apiRequest('POST', '/api/auth/change-password', {
+          currentPassword: oldPassword,
+          newPassword: newPassword
+        });
+        
+        // Check if response is ok
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.message || 'Failed to change password');
+        }
+        
+        // Clear password fields
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        
+        toast({
+          title: "Success",
+          description: "Password updated successfully",
+        });
+      }
       
-      toast({
-        title: "Success",
-        description: "Profile updated successfully",
-      });
+      // Add profile info update here later if needed
+      // For example, update username/email
+      
+      if (!isPasswordChange) {
+        toast({
+          title: "Info",
+          description: "No changes were made. To update your password, please fill in all password fields.",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",
