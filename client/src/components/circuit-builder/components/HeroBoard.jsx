@@ -290,23 +290,19 @@ const HeroBoard = ({
           />
         )}
         
-        {/* Built-in LED for pin 13 - only visible when pin 13 is HIGH and simulation is running */}
-        {isSimulationRunning && pin13State && (
-          <div 
-            className="heroboard-pin13-led absolute"
-            style={{
-              width: '4px',
-              height: '4px',
-              borderRadius: '50%',
-              backgroundColor: '#ff0000', /* Red LED */
-              boxShadow: '0 0 6px 2px rgba(255, 0, 0, 0.8)',
-              animation: 'pulse 0.8s ease-in-out infinite alternate',
-              top: `${posTop + 42}px`,
-              left: `${posLeft + 107}px`,
-              zIndex: 11 // Above the board but below moveable
-            }}
-          />
-        )}
+        {/* Built-in RED LED for pin 13 - using CSS class for better compatibility */}
+        <div 
+          className={`heroboard-pin13-led absolute ${pin13State ? 'pin13-on' : ''}`}
+          style={{
+            opacity: (isSimulationRunning && pin13State) ? 1 : 0,
+            backgroundColor: pin13State ? '#ff0000' : 'transparent', 
+            boxShadow: pin13State ? '0 0 6px 2px rgba(255, 0, 0, 0.8)' : 'none',
+            animation: pin13State ? 'pulse 1s infinite alternate ease-in-out' : 'none',
+            top: `${posTop + 42}px`,
+            left: `${posLeft + 107}px`,
+            zIndex: 11
+          }}
+        />
       </div>
     </>
   );

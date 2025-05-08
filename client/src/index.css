@@ -882,8 +882,17 @@ body {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background-color: #ff0000;
-  box-shadow: 0 0 5px 2px rgba(255, 0, 0, 0.7);
-  animation: pulse 1s infinite alternate ease-in-out;
+  background-color: transparent;
+  box-shadow: none;
+  animation: none;
   pointer-events: none; /* Prevent LED from blocking interactions */
+  transition: opacity 0.1s ease, background-color 0.1s ease, box-shadow 0.1s ease;
+}
+
+/* Active state for pin 13 LED */
+.heroboard-pin13-led.pin13-on {
+  background-color: #ff0000 !important; /* Force red color */
+  box-shadow: 0 0 5px 2px rgba(255, 0, 0, 0.7) !important;
+  animation: pulse 1s infinite alternate ease-in-out !important;
+  opacity: 1 !important;
 }

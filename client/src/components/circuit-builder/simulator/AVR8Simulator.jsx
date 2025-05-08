@@ -130,6 +130,18 @@ const AVR8Simulator = ({
     // Log the pin change for debugging
     console.log(`Checking components connected to pin ${pinNumber}, state=${isHigh}`);
     
+    // SPECIAL CASE: For pin 13, ALWAYS update the built-in LED on all heroboards
+    if (pinNumber === 13) {
+      // Find all HERO boards
+      const heroBoards = components.filter(c => c.type.toLowerCase() === 'heroboard');
+      
+      // Update each HERO board's pin 13 LED
+      heroBoards.forEach(board => {
+        console.log(`Directly updating HERO board ${board.id} pin 13 LED to ${isHigh ? 'HIGH' : 'LOW'}`);
+        updateComponentPins(board.id, { '13': isHigh });
+      });
+    }
+    
     // For demonstration purposes, we're focusing on pins 9-13, 
     // but this same code would work for any pin
     if (pinNumber >= 9 && pinNumber <= 13) {
@@ -193,7 +205,7 @@ const AVR8Simulator = ({
       }
       
       // If no components were updated through wires, use a fallback for demonstration
-      if (!componentsUpdated) {
+      if (!componentsUpdated && pinNumber !== 13) { // Skip for pin 13 (handled above)
         console.log('No components found through wires, using fallback for demonstration');
         
         // Get all LED components
@@ -203,17 +215,15 @@ const AVR8Simulator = ({
         console.log(`Found ${allLEDs.length} LED components and ${allRGBLEDs.length} RGB LED components to update as fallback`);
         
         // Update each LED
-        if (pinNumber === 13) {  // Only use pin 13 for fallback LEDs
-          allLEDs.forEach(led => {
-            console.log(`Updating LED ${led.id} to ${isHigh ? 'ON' : 'OFF'}`);
-            
-            // Update the LED state
-            onPinChange(
-              { componentId: led.id, type: 'led' },
-              isHigh
-            );
-          });
-        }
+        allLEDs.forEach(led => {
+          console.log(`Updating LED ${led.id} to ${isHigh ? 'ON' : 'OFF'}`);
+          
+          // Update the LED state
+          onPinChange(
+            { componentId: led.id, type: 'led' },
+            isHigh
+          );
+        });
         
         // Update RGB LEDs based on pin number
         const colorMap = {
