@@ -416,9 +416,19 @@ const BasicWireManager = ({ canvasRef }) => {
                 y: elementPos.y - canvasRect.top
               };
               
-              // Apply HERO board correction if needed
+              // Apply component-specific corrections if needed
+              // HERO board correction
               if (wire.sourceId && wire.sourceId.includes('heroboard')) {
                 newWire.sourcePos = adjustHeroboardPosition(wire.sourceId, newWire.sourcePos, wire.sourceComponent);
+              }
+              
+              // RGB LED correction
+              if (wire.sourceId && (
+                wire.sourceId.includes('rgb-led') || 
+                wire.sourceId.includes('rgbled') || 
+                (wire.sourceComponent && (wire.sourceComponent.includes('rgb-led') || wire.sourceComponent.includes('rgbled')))
+              )) {
+                newWire.sourcePos = adjustRgbLedPosition(wire.sourceId, newWire.sourcePos, wire.sourceComponent);
               }
               
               console.log(`Updated source wire position from element: (${newWire.sourcePos.x}, ${newWire.sourcePos.y})`);
@@ -459,9 +469,19 @@ const BasicWireManager = ({ canvasRef }) => {
                 y: elementPos.y - canvasRect.top
               };
               
-              // Apply HERO board correction if needed
+              // Apply component-specific corrections if needed
+              // HERO board correction
               if (wire.targetId && wire.targetId.includes('heroboard')) {
                 newWire.targetPos = adjustHeroboardPosition(wire.targetId, newWire.targetPos, wire.targetComponent);
+              }
+              
+              // RGB LED correction
+              if (wire.targetId && (
+                wire.targetId.includes('rgb-led') || 
+                wire.targetId.includes('rgbled') || 
+                (wire.targetComponent && (wire.targetComponent.includes('rgb-led') || wire.targetComponent.includes('rgbled')))
+              )) {
+                newWire.targetPos = adjustRgbLedPosition(wire.targetId, newWire.targetPos, wire.targetComponent);
               }
               
               console.log(`Updated target wire position from element: (${newWire.targetPos.x}, ${newWire.targetPos.y})`);
