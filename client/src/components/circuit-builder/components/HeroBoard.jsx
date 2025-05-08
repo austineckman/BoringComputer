@@ -262,18 +262,17 @@ const HeroBoard = ({
         <div 
           className={`heroboard-builtin-led ${pin13State ? 'on' : ''}`}
           style={{
-            top: posTop + 42, // Moved up half the distance from previous position
-            left: posLeft + 107, // Moved right half the distance from previous position 
-            // No inline background color - using CSS classes instead for better visibility control
+            top: posTop + 43, 
+            left: posLeft + 107,
           }}
         ></div>
         
-        {/* Power LED indicator (to show simulation is running) */}
+        {/* Power LED indicator (green LED showing simulation is running) */}
         <div 
           className={`heroboard-power-led ${isSimulationRunning ? 'on' : ''}`}
           style={{
-            top: posTop + 79, // Position at the bottom part of the board
-            left: posLeft + 20, // Position at the left side of the board
+            top: posTop + 101, 
+            left: posLeft + 20,
           }}
         ></div>
       </div>
