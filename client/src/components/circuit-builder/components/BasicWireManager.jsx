@@ -11,6 +11,48 @@ const BasicWireManager = ({ canvasRef }) => {
   const [selectedWireId, setSelectedWireId] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   
+  // Utility function to calculate true element position (for both SVG and HTML)
+  const getTrueElementPosition = (element) => {
+    if (!element) return null;
+    
+    try {
+      // Check if this is an SVG element
+      const isSvgElement = element instanceof SVGElement;
+      
+      if (isSvgElement) {
+        // Handle SVG elements with proper transformation
+        const svgRoot = element.ownerSVGElement || document.querySelector('svg');
+        if (svgRoot) {
+          // Get bounding box in SVG coordinate system
+          const bbox = element.getBBox();
+          // Create a point at the center of the bounding box
+          const svgPoint = svgRoot.createSVGPoint();
+          svgPoint.x = bbox.x + bbox.width / 2;
+          svgPoint.y = bbox.y + bbox.height / 2;
+          
+          // Convert to screen coordinates using the element's transform matrix
+          const matrix = element.getScreenCTM();
+          const screenPoint = svgPoint.matrixTransform(matrix);
+          
+          return {
+            x: screenPoint.x,
+            y: screenPoint.y
+          };
+        }
+      }
+      
+      // For HTML elements or fallback
+      const rect = element.getBoundingClientRect();
+      return {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2
+      };
+    } catch (error) {
+      console.error('Error calculating element position:', error);
+      return null;
+    }
+  };
+
   // Generate a path with 90-degree bends for better "cable management"
   const getWirePath = (start, end) => {
     if (!start || !end) return '';
@@ -44,8 +86,20 @@ const BasicWireManager = ({ canvasRef }) => {
       // Get pin position - take the highest priority source of coordinates
       let pinPosition;
       
+      // Find the actual pin element in the DOM to get its position
+      const pinElement = document.getElementById(pinId);
+      
+      if (pinElement) {
+        // Get the pin element's position relative to the canvas
+        const pinRect = pinElement.getBoundingClientRect();
+        pinPosition = {
+          x: pinRect.left + (pinRect.width / 2) - (canvasRect ? canvasRect.left : 0),
+          y: pinRect.top + (pinRect.height / 2) - (canvasRect ? canvasRect.top : 0)
+        };
+        console.log(`Found pin element, using direct position: (${pinPosition.x}, ${pinPosition.y})`);
+      }
       // Priority 1: Detail has the pinPosition object directly
-      if (detail.pinPosition && typeof detail.pinPosition.x === 'number') {
+      else if (detail.pinPosition && typeof detail.pinPosition.x === 'number') {
         pinPosition = detail.pinPosition;
       } 
       // Priority 2: Get position from clientX/Y with canvas offset
