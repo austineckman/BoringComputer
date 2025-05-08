@@ -33,17 +33,17 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 export async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
-  // Check if this is a hashed password (contains a dot separator for hash.salt)
-  if (stored.includes('.')) {
-    // Handle hashed password
-    const [hashed, salt] = stored.split(".");
-    const hashedBuf = Buffer.from(hashed, "hex");
-    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-    return timingSafeEqual(hashedBuf, suppliedBuf);
-  } else {
-    // Handle plain text password (direct comparison for backward compatibility)
-    return supplied === stored;
+  // Only support properly hashed passwords (contains a dot separator for hash.salt)
+  if (!stored.includes('.')) {
+    console.error('Security warning: Found unhashed password in database');
+    return false; // Reject any non-hashed passwords for security
   }
+  
+  // Handle hashed password
+  const [hashed, salt] = stored.split(".");
+  const hashedBuf = Buffer.from(hashed, "hex");
+  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+  return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
 // No mock users - only use real authenticated users from the database
@@ -80,11 +80,13 @@ export function setupAuth(app: any): void {
       resave: false,
       saveUninitialized: false,
       cookie: {
-        secure: process.env.NODE_ENV === "production",
-        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // Use secure cookies in production
+        httpOnly: true, // Prevents JavaScript from reading the cookie
         maxAge: 24 * 60 * 60 * 1000, // 1 day
+        sameSite: 'lax', // Prevents CSRF attacks
       },
       store: storage.sessionStore,
+      name: 'app.sid', // Don't use the default connect.sid name (reveals Express usage)
     })
   );
 
