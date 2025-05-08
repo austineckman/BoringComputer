@@ -26,7 +26,7 @@ const SimpleWireManager = ({ canvasRef }) => {
   const [wireProperties, setWireProperties] = useState(null);
   const svgRef = useRef(null);
 
-  // Function to get pin position from event
+  // Function to get pin position from event with improved accuracy
   const getPinPosition = (event) => {
     if (!canvasRef?.current) return { x: 0, y: 0 };
     
@@ -45,6 +45,45 @@ const SimpleWireManager = ({ canvasRef }) => {
     return {
       x: mousePosition.x - canvasRect.left,
       y: mousePosition.y - canvasRect.top
+    };
+  };
+  
+  // Function to get accurate pin position for a given element
+  const getAccuratePinPosition = (element, pinName) => {
+    if (!element || !canvasRef?.current) return null;
+    
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    
+    // For SVG elements, use precise transformations
+    if (element.tagName && ['circle', 'rect', 'path'].includes(element.tagName.toLowerCase())) {
+      try {
+        const svgElement = svgRef?.current || document.querySelector('svg');
+        if (svgElement) {
+          const svgPoint = svgElement.createSVGPoint();
+          const bbox = element.getBBox();
+          svgPoint.x = bbox.x + bbox.width / 2;
+          svgPoint.y = bbox.y + bbox.height / 2;
+          
+          const matrix = element.getScreenCTM();
+          if (!matrix) throw new Error('No screen CTM available');
+          
+          const screenPoint = svgPoint.matrixTransform(matrix);
+          
+          return {
+            x: screenPoint.x - canvasRect.left,
+            y: screenPoint.y - canvasRect.top
+          };
+        }
+      } catch (e) {
+        console.warn(`SVG transform failed for pin ${pinName}:`, e);
+      }
+    }
+    
+    // Standard DOM element position calculation
+    const rect = element.getBoundingClientRect();
+    return {
+      x: rect.left + rect.width / 2 - canvasRect.left,
+      y: rect.top + rect.height / 2 - canvasRect.top
     };
   };
 
@@ -968,29 +1007,62 @@ const SimpleWireManager = ({ canvasRef }) => {
     let lastUpdateTime = 0;
     const throttleInterval = 50; // Reduced from 500ms to 50ms for more responsive updates
     
-    // Simple function to force a redraw of all wires - with minimal throttling for performance
+    // Enhanced function to update wire positions when components move
     const handleComponentMove = (event) => {
       const currentTime = performance.now();
       
-      // Always process 'componentMovedFinal' immediately for responsive UI when dragging stops
-      // Only minimal throttling during dragging to maintain responsiveness
+      // Extract the component ID from the event detail if available
+      let movedComponentId = null;
+      try {
+        if (event.detail && event.detail.componentId) {
+          movedComponentId = event.detail.componentId;
+          console.log(`Component moved: ${movedComponentId}`);
+        }
+      } catch (e) {
+        console.warn('Error extracting component ID from event:', e);
+      }
+      
+      // Always process these events immediately for responsive UI
       const shouldUpdate = 
         event.type === 'componentMovedFinal' || 
         event.type === 'redrawWires' || 
         currentTime - lastUpdateTime > throttleInterval;
       
       if (shouldUpdate) {
-        // This approach simply triggers a re-render that will call getUpdatedWirePositions()
-        // which directly reads pin positions from the DOM
+        console.log(`Updating wire positions due to ${event.type} event`);
+        
+        // Force position cache clearing for affected wires
+        if (movedComponentId) {
+          // Clear cache for wires connected to the moved component
+          Object.keys(wirePosCache.current).forEach(wireId => {
+            if (wireId.includes(movedComponentId)) {
+              delete wirePosCache.current[wireId];
+            }
+          });
+        } else {
+          // If we don't know which component moved, clear all caches
+          wirePosCache.current = {};
+        }
+        
+        // This triggers a re-render that will call getUpdatedWirePositions()
+        // with fresh calculations since we cleared the relevant cache entries
         setWires(prevWires => {
-          // Preserve the original position data when updating wires
-          // This helps prevent position jumps during redraw
-          return prevWires.map(wire => ({
-            ...wire,
-            // Only update positions for wires that need it
-            // (e.g., when specific components have moved)
-          }));
+          // Force wire position recalculation by removing cached positions
+          // This makes getUpdatedWirePositions() get fresh positions from DOM
+          return prevWires.map(wire => {
+            // If this wire is connected to the moved component, clear its positions
+            if (movedComponentId && 
+                (wire.sourceId?.includes(movedComponentId) || 
+                 wire.targetId?.includes(movedComponentId))) {
+              return {
+                ...wire,
+                _positionsNeedUpdate: true // Flag to force recalculation
+              };
+            }
+            return wire;
+          });
         });
+        
         lastUpdateTime = currentTime;
       }
     };
@@ -1017,27 +1089,46 @@ const SimpleWireManager = ({ canvasRef }) => {
     // First, deduplicate wires by ID to prevent duplicate keys in React
     const wireMap = new Map();
     wires.forEach(wire => {
-      // Use normalized IDs to prevent duplicates
-      const endpoints = [(wire.sourceId || '').split('-').pop(), (wire.targetId || '').split('-').pop()].sort().join('-');
-      const wireKey = `wire-${endpoints}`;
+      if (!wire) return; // Skip null/undefined wires
+      
+      // Use actual component and pin names to create a unique key
+      const sourceId = wire.sourceId || '';
+      const targetId = wire.targetId || '';
+      
+      // Extract actual pin names for more reliable identification
+      const sourcePin = sourceId.split('-').pop() || '';
+      const targetPin = targetId.split('-').pop() || '';
+      
+      // Extract component IDs (component type + component ID)
+      const sourceComponentId = sourceId.split('-').slice(1, 3).join('-');
+      const targetComponentId = targetId.split('-').slice(1, 3).join('-');
+      
+      // Create a consistent key by always ordering components alphabetically
+      const [firstComp, firstPin, secondComp, secondPin] = 
+        sourceComponentId < targetComponentId 
+          ? [sourceComponentId, sourcePin, targetComponentId, targetPin]
+          : [targetComponentId, targetPin, sourceComponentId, sourcePin];
+          
+      const wireKey = `wire-${firstComp}-${firstPin}-${secondComp}-${secondPin}`;
       
       // Only keep the most recent wire for each unique connection
-      wireMap.set(wireKey, wire);
+      // Check if we have a wire with this key already
+      if (!wireMap.has(wireKey) || 
+          (wire._positionsNeedUpdate && !wireMap.get(wireKey)._positionsNeedUpdate)) {
+        wireMap.set(wireKey, wire);
+      }
     });
     
     // Process all dynamic wires and update positions with the deduplicated list
     return Array.from(wireMap.values())
       .map(wire => {
-        // CRITICAL FIX: Check if the wire already has valid positions
-        // If so, just return it as-is to prevent position drift
-        const hasValidPositions = 
-          wire.sourcePos && wire.targetPos && 
-          typeof wire.sourcePos.x === 'number' && 
-          typeof wire.targetPos.x === 'number';
-        
-        if (hasValidPositions) {
-          return wire; // Preserve existing wire positions
+        // Skip invalid wires
+        if (!wire.sourceId || !wire.targetId) {
+          return { ...wire, invalid: true };
         }
+        
+        // Force position update if flagged or component moved
+        const forcePosUpdate = wire._positionsNeedUpdate === true;
         
         // Only continue with position calculation for new wires
         // Fix for duplicated component type in source ID
