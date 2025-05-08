@@ -267,6 +267,15 @@ const HeroBoard = ({
             // No inline background color - using CSS classes instead for better visibility control
           }}
         ></div>
+        
+        {/* Power LED indicator (to show simulation is running) */}
+        <div 
+          className={`heroboard-power-led ${isSimulationRunning ? 'on' : ''}`}
+          style={{
+            top: posTop + 79, // Position at the bottom part of the board
+            left: posLeft + 20, // Position at the left side of the board
+          }}
+        ></div>
       </div>
     </>
   );
