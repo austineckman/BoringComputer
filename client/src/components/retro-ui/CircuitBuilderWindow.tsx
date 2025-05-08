@@ -6,9 +6,10 @@ import ace from 'ace-builds';
 import CircuitBuilder from '../circuit-builder/CircuitBuilder';
 
 // Import simulator components
-import { SimulatorProvider } from '../circuit-builder/simulator/SimulatorContext';
+import { SimulatorProvider, useSimulator } from '../circuit-builder/simulator/SimulatorContext';
 import AVR8Simulator from '../circuit-builder/simulator/AVR8Simulator';
 import SimulationLogPanel from '../circuit-builder/simulator/SimulationLogPanel';
+import SimulationVisualizer from '../circuit-builder/simulator/SimulationVisualizer';
 import { defaultSketch } from '../circuit-builder/simulator/SimulatorUtils';
 
 // Legacy imports (keeping for compatibility with existing code)
@@ -452,20 +453,57 @@ void loop() {
     alert('Project saved! (This is a placeholder - in a real app, this would save to the database)');
   };
 
-  // Simulation state
-  const [isSimulationRunning, setIsSimulationRunning] = useState(false);
-  const [simulationLogs, setSimulationLogs] = useState<{timestamp: string, message: string}[]>([]);
+  // Simulation state - using the simulator context instead of local state
+  
+  // Import simulator context
+  const { 
+    isSimulationRunning, 
+    startSimulation, 
+    stopSimulation, 
+    compileAndRun,
+    addLog: addSimulatorLog,
+    logs: simulatorLogs
+  } = useSimulator();
   
   // Run the simulation
   const runSimulation = () => {
     if (isSimulationRunning) {
       // Stop the simulation
-      setIsSimulationRunning(false);
-      addSimulationLog('Simulation stopped');
+      stopSimulation();
     } else {
-      // Start the simulation
-      setIsSimulationRunning(true);
-      addSimulationLog('Simulation started');
+      // Get current connections from the wires
+      const connections = {};
+      
+      // Process each wire to build connection map
+      wires.forEach(wire => {
+        // Extract pin information
+        const sourceParts = wire.startPin.id.split('-');
+        const targetParts = wire.endPin.id.split('-');
+        
+        // Format in the way our simulator expects
+        // For heroboard pins, use the standard pin designation (D12, A0, etc.)
+        if (sourceParts[0] === 'heroboard') {
+          const pinKey = sourceParts[sourceParts.length - 1];
+          if (!connections[pinKey]) {
+            connections[pinKey] = [];
+          }
+          connections[pinKey].push(`${targetParts[0]}:${targetParts[targetParts.length - 1]}`);
+        }
+        else if (targetParts[0] === 'heroboard') {
+          const pinKey = targetParts[targetParts.length - 1];
+          if (!connections[pinKey]) {
+            connections[pinKey] = [];
+          }
+          connections[pinKey].push(`${sourceParts[0]}:${sourceParts[sourceParts.length - 1]}`);
+        }
+      });
+      
+      // Compile the code and start the simulation if successful
+      const code = getCode();
+      if (compileAndRun(code, components, connections)) {
+        // If compilation was successful, start the simulation
+        startSimulation();
+      }
     }
   };
   
