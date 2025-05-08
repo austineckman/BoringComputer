@@ -18,6 +18,7 @@ const AVR8Simulator = ({
     stopSimulation,
     pinStates,
     updatePinState,
+    updateComponentPins,
     addLog
   } = useSimulator();
   
@@ -38,29 +39,33 @@ const AVR8Simulator = ({
         updatePinState(`D${13}`, isHigh);
         
         // Also directly notify the CircuitBuilderWindow via onPinChange
-        onPinChange(13, isHigh);
+        // This needs to run outside interval to avoid an infinite update loop
+        const updateComponents = () => {
+          // Log the state change via console
+          console.log(`Simulator: Pin 13 changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+          
+          // Update the HERO board's built-in pin 13 LED
+          // Find the HERO board component
+          const heroBoard = components.find(c => c.type === 'heroboard');
+          if (heroBoard) {
+            // Use the dedicated function to update pin states in the context
+            updateComponentPins(heroBoard.id, { '13': isHigh });
+            
+            // Also notify the parent component via the callback
+            onPinChange(13, isHigh);
+          }
+          
+          // Check for connected LEDs and update them
+          updateConnectedComponents(13, isHigh);
+        };
         
-        // Log the state change via console to avoid re-render loop
-        console.log(`Simulator: Pin 13 changed to ${isHigh ? 'HIGH' : 'LOW'}`);
-        addLog(`Pin 13 changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+        // Execute the updates outside the React update cycle
+        setTimeout(updateComponents, 0);
         
-        // Update the HERO board's built-in pin 13 LED
-        // Find the HERO board component
-        const heroBoard = components.find(c => c.type === 'heroboard');
-        if (heroBoard) {
-          onPinChange(
-            { 
-              componentId: heroBoard.id, 
-              type: 'heroboard',
-              // Use special pins property to indicate we're updating a specific pin state
-              pins: { '13': isHigh }
-            },
-            true // This boolean becomes the overall component state (true = active)
-          );
+        // Add log entry - call this directly to avoid dependency on addLog changing
+        if (typeof addLog === 'function') {
+          addLog(`Pin 13 changed to ${isHigh ? 'HIGH' : 'LOW'}`);
         }
-        
-        // Check for connected LEDs and update them
-        updateConnectedComponents(13, isHigh);
       }, 1000); // 1 second interval for blinking
       
       // Store the interval ID for cleanup

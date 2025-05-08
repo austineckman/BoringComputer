@@ -128,6 +128,23 @@ export const SimulatorProvider = ({ children }) => {
       [componentId]: state
     }));
   }, []);
+  
+  // Update specific pins on a component
+  const updateComponentPins = useCallback((componentId, pins) => {
+    setComponentStates(prev => {
+      const currentState = prev[componentId] || {};
+      return {
+        ...prev,
+        [componentId]: {
+          ...currentState,
+          pins: {
+            ...(currentState.pins || {}),
+            ...pins
+          }
+        }
+      };
+    });
+  }, []);
 
   // Expose context value
   const contextValue = {
@@ -140,6 +157,7 @@ export const SimulatorProvider = ({ children }) => {
     updatePinState,
     componentStates,
     updateComponentState,
+    updateComponentPins,
     errors,
     logs,
     code,
