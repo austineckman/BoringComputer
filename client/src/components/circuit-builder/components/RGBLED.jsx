@@ -183,10 +183,33 @@ const RGBLED = ({
       case 'blue': 
         setLedBlue(value);
         break;
+      case 'all':
+        // Set all colors to the same value
+        setLedRed(value);
+        setLedGreen(value);
+        setLedBlue(value);
+        break;
       default:
         break;
     }
   };
+  
+  // Make the updateLEDColor function available to external components
+  useEffect(() => {
+    // Attach the function to the window for simulator access
+    window.updateRGBLED = window.updateRGBLED || {};
+    window.updateRGBLED[id] = (color, value) => {
+      console.log(`Updating RGB LED ${id} ${color} channel to ${value}`);
+      updateLEDColor(color, value ? 1 : 0);
+    };
+    
+    return () => {
+      // Clean up when component unmounts
+      if (window.updateRGBLED && window.updateRGBLED[id]) {
+        delete window.updateRGBLED[id];
+      }
+    };
+  }, [id]);
 
   // Check if any LED is on for simulation feedback
   const isSimulationRunning = window.isSimulationRunning;

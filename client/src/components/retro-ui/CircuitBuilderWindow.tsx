@@ -471,14 +471,27 @@ void loop() {
       // Stop the simulation
       stopSimulation();
       setIsSimulationRunning(false);
+      window.isSimulationRunning = false; // Set global flag for components
       addSimulationLog('Simulation stopped');
     } else {
       // Start the simulation with current code
       setIsSimulationRunning(true);
+      window.isSimulationRunning = true; // Set global flag for components
       startSimulation();
       addSimulationLog('Simulation started');
     }
   };
+  
+  // Set global simulation state when component mounts/unmounts
+  useEffect(() => {
+    // Initialize global state
+    window.isSimulationRunning = isSimulationRunning;
+    
+    // Cleanup when component unmounts
+    return () => {
+      window.isSimulationRunning = false;
+    };
+  }, [isSimulationRunning]);
   
   // Add a log entry with timestamp
   const addSimulationLog = (message: string) => {
@@ -589,20 +602,34 @@ void loop() {
                 addSimulationLog(`Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
               } else if (typeof pinOrComponent === 'object' && pinOrComponent.componentId) {
                 // This is a component state update
-                const { componentId, type } = pinOrComponent;
+                const { componentId, type, color } = pinOrComponent;
                 console.log(`Simulator: Component ${componentId} (${type}) state updated to ${isHigh ? 'ON' : 'OFF'}`);
                 
-                // Update the component state in the simulator context with the correct state data
-                const componentState = { isLit: isHigh };
-                
-                // Log the state we're about to update to help debugging
-                console.log(`Updating component state for ${componentId}:`, componentState);
-                
-                // Update the state in the context
-                updateComponentState(componentId, componentState);
-                
-                // Log the change for user feedback
-                addSimulationLog(`Updated ${type} ${componentId} to ${isHigh ? 'ON' : 'OFF'}`);
+                // Different handling based on component type
+                if (type === 'rgbled') {
+                  // Use the global update method for RGB LEDs
+                  if (window.updateRGBLED && window.updateRGBLED[componentId]) {
+                    console.log(`Updating RGB LED ${componentId} ${color} channel to ${isHigh ? 'ON' : 'OFF'}`);
+                    window.updateRGBLED[componentId](color, isHigh);
+                    
+                    // Log the change for user feedback
+                    addSimulationLog(`Updated RGB LED ${componentId} ${color} channel to ${isHigh ? 'ON' : 'OFF'}`);
+                  } else {
+                    console.warn(`RGB LED ${componentId} update function not found`);
+                  }
+                } else {
+                  // Standard LED component update
+                  const componentState = { isLit: isHigh };
+                  
+                  // Log the state we're about to update to help debugging
+                  console.log(`Updating component state for ${componentId}:`, componentState);
+                  
+                  // Update the state in the context
+                  updateComponentState(componentId, componentState);
+                  
+                  // Log the change for user feedback
+                  addSimulationLog(`Updated ${type} ${componentId} to ${isHigh ? 'ON' : 'OFF'}`);
+                }
               }
             }}
             components={components}
