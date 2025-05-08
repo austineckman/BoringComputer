@@ -9,8 +9,8 @@ const SimulationLogPanel = () => {
   const { logs: simulatorLogs, clearLogs: clearSimulatorLogs, isRunning: isSimulationRunning } = useSimulator();
   
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-md p-2 h-full overflow-hidden flex flex-col">
-      <div className="flex items-center justify-between mb-2">
+    <div className="bg-gray-800 border border-gray-700 rounded-md p-2 flex flex-col" style={{ maxHeight: '25vh' }}>
+      <div className="flex items-center justify-between mb-2 flex-shrink-0">
         <div className="flex items-center">
           <FileTerminal size={14} className="text-blue-400 mr-1" />
           <span className="text-xs font-medium">Simulation Logs</span>
@@ -32,7 +32,7 @@ const SimulationLogPanel = () => {
         </div>
       </div>
       
-      <div className="flex-1 overflow-y-auto text-xs font-mono">
+      <div className="flex-1 overflow-y-auto text-xs font-mono" style={{ scrollbarWidth: 'thin' }}>
         {simulatorLogs.length === 0 ? (
           <div className="text-gray-500 italic p-2">No simulation logs yet</div>
         ) : (
@@ -40,7 +40,7 @@ const SimulationLogPanel = () => {
             {simulatorLogs.map((log, index) => (
               <div key={index} className="flex">
                 <span className="text-gray-500 mr-2">[{log.timestamp}]</span>
-                <span className="text-gray-300">{log.message}</span>
+                <span className="text-gray-300 break-words">{log.message}</span>
               </div>
             ))}
           </div>
