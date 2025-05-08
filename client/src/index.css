@@ -16,6 +16,19 @@
   }
 }
 
+/* Pulse animation for the green LED */
+@keyframes pulse-green {
+  0% {
+    box-shadow: 0 0 5px rgba(0, 255, 0, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.9);
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(0, 255, 0, 0.8);
+  }
+}
+
 /* Custom styles for circuit builder */
 /* Hide all Moveable component selection indicators */
 .moveable-no-border .moveable-line, 
@@ -638,6 +651,41 @@ body {
 }
 
 /* Circuit Builder Styles */
+
+/* Built-in LED on pin 13 (LED_BUILTIN) for HERO board */
+.heroboard-builtin-led {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #003300; /* Dark green when off */
+  transition: background-color 0.2s ease;
+  box-shadow: 0 0 0px rgba(0, 200, 0, 0);
+  z-index: 20;
+}
+
+/* LED when turned on */
+.heroboard-builtin-led.on {
+  background-color: #00ff00; /* Bright green when on */
+  box-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
+  animation: pulse-green 1.5s infinite;
+}
+
+/* Power LED indicators for HERO board */
+.heroboard-power-led {
+  position: absolute; 
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #001100; /* Dark green when off */
+  z-index: 20;
+}
+
+.heroboard-power-led.on {
+  background-color: #00ff00; /* Bright green when on */
+  box-shadow: 0 0 5px rgba(0, 255, 0, 0.7);
+}
+
 .wire-source-pin {
   box-shadow: 0 0 0 4px rgba(255, 165, 0, 0.7), 0 0 10px 2px rgba(255, 255, 0, 0.5) !important;
   animation: pulse-pin 1.5s infinite alternate;

@@ -39,7 +39,10 @@ const HeroBoard = ({
   const [pinInfo, setPinInfo] = useState();
 
   // Access simulator context for simulation state
-  const { isRunning: isSimulationRunning } = useSimulator();
+  const { isRunning: isSimulationRunning, pinStates } = useSimulator();
+  
+  // Track the state of pin 13 (built-in LED)
+  const [pin13State, setPin13State] = useState(false);
   
   // Create a component data structure that matches what the original code expects
   const componentData = {
