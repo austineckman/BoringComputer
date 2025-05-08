@@ -235,63 +235,25 @@ const AVR8Simulator = ({
         });
       }
       
-      // If no components were updated through wires, use a fallback for demonstration
-      if (!componentsUpdated) { // Now update all LEDs regardless of pin
-        console.log('No components found through wires, using fallback for demonstration');
+      // Only update connected components - remove fallback mechanism
+      if (!componentsUpdated) {
+        console.log(`No components connected to pin ${pinNumber} found - nothing to update`);
         
-        // Get all LED components
-        const allLEDs = components.filter(c => c.type.toLowerCase() === 'led');
-        const allRGBLEDs = components.filter(c => c.type.toLowerCase() === 'rgbled');
+        // Log information about what we were looking for
+        console.log(`Was looking for components connected to pin ${pinNumber} with state=${isHigh}`);
+        console.log(`Available components: ${components.length}`);
+        console.log(`Available wires: ${wires.length}`);
         
-        console.log(`Found ${allLEDs.length} LED components and ${allRGBLEDs.length} RGB LED components to update as fallback`);
-        
-        // TEMPORARY FIX: Always update all LEDs regardless of pin number
-        // This ensures LEDs respond even if wire connection detection is failing
-        if (allLEDs.length > 0) {
-          console.log(`FORCE UPDATING ALL LEDS - THIS IS A TEMPORARY FIX`);
-          
-          // Update each LED
-          allLEDs.forEach(led => {
-            console.log(`Force updating LED ${led.id} to ${isHigh ? 'ON' : 'OFF'}`);
-            
-            // Update the LED state
-            onPinChange(
-              { componentId: led.id, type: 'led' },
-              isHigh
-            );
-          });
-        }
-        
-        // Update RGB LEDs based on pin number
-        const colorMap = {
-          // Add pin 8 to the color map
-          8: 'red',
-          9: 'red',
-          10: 'green',
-          11: 'blue',
-          12: 'red',
-          13: 'green'
-        };
-        
-        // TEMPORARY FIX: Default to 'all' colors if no specific mapping
-        const color = colorMap[pinNumber] || 'all';
-        
-        if (allRGBLEDs.length > 0) {
-          console.log(`FORCE UPDATING ALL RGB LEDS - THIS IS A TEMPORARY FIX`);
-          
-          allRGBLEDs.forEach(rgbled => {
-            console.log(`Force updating RGB LED ${rgbled.id} using color ${color} to ${isHigh ? 'ON' : 'OFF'}`);
-            
-            // Update the RGB LED state
-            onPinChange(
-              { 
-                componentId: rgbled.id, 
-                type: 'rgbled',
-                color: color
-              },
-              isHigh
-            );
-          });
+        // SPECIAL CASE: For pin 13 on the HERO board itself (built-in LED)
+        if (pinNumber === 13) {
+          // Always update the heroboard's pin 13 LED directly
+          const heroBoards = components.filter(c => c.type.toLowerCase() === 'heroboard');
+          if (heroBoards.length > 0) {
+            heroBoards.forEach(board => {
+              console.log(`Directly updating HERO board ${board.id} built-in pin 13 LED to ${isHigh ? 'ON' : 'OFF'}`);
+              updateComponentPins(board.id, { '13': isHigh });
+            });
+          }
         }
       }
     }
