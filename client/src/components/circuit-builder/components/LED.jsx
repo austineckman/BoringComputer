@@ -135,7 +135,6 @@ const LED = ({
         
         // Get pin ID and type from the parsed data
         const pinId = pinData.name;
-        
         // Determine pin type based on signals if available
         let pinType = 'bidirectional';
         if (pinData.signals && pinData.signals.length > 0) {
@@ -150,34 +149,29 @@ const LED = ({
         // Get position information
         const clientX = e.detail.clientX || 0;
         const clientY = e.detail.clientY || 0;
-
-        // Get position relative to canvas - critical for proper wire positioning
-        let position = { x: clientX, y: clientY };
         
-        // If canvas reference is available, adjust position
-        if (canvasRef && canvasRef.current) {
-          const canvasRect = canvasRef.current.getBoundingClientRect();
-          position = {
-            x: clientX - canvasRect.left,
-            y: clientY - canvasRect.top
-          };
-        }
+        console.log(`Pin clicked: ${pinId} (${pinType})`);
         
-        console.log(`Pin clicked: ${pinId} (${pinType})`, position);
+        // Call the parent's onPinConnect handler
+        onPinConnect(pinId, pinType, id);
         
-        // Call the parent's onPinConnect handler with correct position data
-        onPinConnect(pinId, pinType, id, position, {
-          id: pinId,
-          pinId: pinId,
-          pinName: pinId,
-          pinType: pinType,
-          parentId: id,
-          parentComponentId: id,
-          data: pinDataJson,
-          clientX,
-          clientY,
-          pinPosition: position
+        // Send another event with the formatted pin ID to match our wire manager
+        const formattedPinId = `pt-${id.toLowerCase().split('-')[0]}-${id}-${pinId}`;
+        
+        // Create a custom pin click event to trigger the wire manager
+        const pinClickEvent = new CustomEvent('pinClicked', {
+          detail: {
+            id: formattedPinId,
+            pinData: pinDataJson,
+            pinType: pinType,
+            parentId: id,
+            clientX,
+            clientY
+          }
         });
+        
+        // Dispatch the event to be captured by the SimpleWireManager
+        document.dispatchEvent(pinClickEvent);
       } catch (err) {
         console.error("Error parsing pin data:", err);
       }
