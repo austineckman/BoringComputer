@@ -17,18 +17,41 @@ const AVR8Simulator = ({
     startSimulation,
     stopSimulation,
     pinStates,
+    updatePinState,
     addLog
   } = useSimulator();
   
   // Start/stop simulation based on props
   useEffect(() => {
     if (isRunning) {
-      // In a real implementation, this would initialize the AVR8js simulation
-      // with the provided code, components and wires
+      // Initialize the AVR8js simulation with the provided code
       addLog('AVR8 simulator initialized');
-    } else {
-      // Cleanup when stopping simulation
-      addLog('AVR8 simulator stopped');
+      
+      // For our basic LED blink example, we'll simulate pin 13 (LED_BUILTIN) toggling
+      // This simulates the actual AVR8js functionality for the blink sketch
+      let isHigh = false;
+      const interval = setInterval(() => {
+        // Toggle pin 13 state to simulate the blink sketch
+        isHigh = !isHigh;
+        
+        // Update pin state in the simulator context
+        updatePinState(13, isHigh);
+        
+        // Also directly notify the CircuitBuilderWindow via onPinChange
+        onPinChange(13, isHigh);
+        
+        // Log the state change
+        addLog(`Pin 13 changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+        
+        // Check for connected LEDs and update them
+        updateConnectedComponents(13, isHigh);
+      }, 1000); // 1 second interval for blinking
+      
+      // Store the interval ID for cleanup
+      return () => {
+        clearInterval(interval);
+        addLog('AVR8 simulator stopped');
+      };
     }
     
     return () => {
@@ -37,7 +60,7 @@ const AVR8Simulator = ({
         stopSimulation();
       }
     };
-  }, [isRunning, code, components, wires]);
+  }, [isRunning, code, components, wires, updatePinState, addLog, onPinChange, stopSimulation]);
   
   // When pin states change, notify parent component
   useEffect(() => {
@@ -79,12 +102,40 @@ const AVR8Simulator = ({
   
   // Helper to find components of a given type connected to a pin
   const findConnectedComponents = (componentType, pinNumber) => {
-    // Simplified for demonstration
-    // In a real implementation, this would trace through the wires
-    // to find connected components
+    // Find the HERO board (Arduino) component
+    const heroBoard = components.find(c => c.type === 'heroboard');
+    if (!heroBoard) return [];
     
-    // Dummy implementation that returns an empty array
-    return [];
+    // Find the pin on the HERO board
+    const pinId = `pt-heroboard-${heroBoard.id}-${pinNumber}`;
+    
+    // Find wires connected to this pin
+    const connectedWires = wires.filter(wire => 
+      wire.sourceId === pinId || wire.targetId === pinId
+    );
+    
+    // Find connected components
+    const connectedComponents = [];
+    
+    connectedWires.forEach(wire => {
+      // Determine the other end of the wire
+      const otherEndId = wire.sourceId === pinId ? wire.targetId : wire.sourceId;
+      
+      // Extract component ID from the pin ID (format: pt-<type>-<componentId>-<pinName>)
+      const otherEndParts = otherEndId.split('-');
+      const otherComponentType = otherEndParts[1]; // e.g., 'led'
+      const otherComponentId = otherEndParts[2]; // e.g., 'abc123'
+      
+      // Find the component
+      if (otherComponentType === componentType) {
+        const component = components.find(c => c.id === otherComponentId);
+        if (component) {
+          connectedComponents.push(component);
+        }
+      }
+    });
+    
+    return connectedComponents;
   };
   
   // This component doesn't render anything visible
