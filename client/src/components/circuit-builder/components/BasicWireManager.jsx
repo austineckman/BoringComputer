@@ -106,34 +106,47 @@ const BasicWireManager = ({ canvasRef }) => {
       // Extract the pin name from the ID - different formats possible
       let pinName;
       
+      // Try various patterns to identify pin name
       if (pinId.includes('-red') || pinId.includes('-green') || pinId.includes('-blue') || pinId.includes('-common')) {
         pinName = pinId.split('-').pop();
+      } else if (pinId.includes('-R') || pinId.includes('-G') || pinId.includes('-B') || pinId.includes('-COM')) {
+        pinName = pinId.split('-').pop();
+        
+        // Map short names to full names
+        if (pinName === 'R') pinName = 'red';
+        if (pinName === 'G') pinName = 'green';
+        if (pinName === 'B') pinName = 'blue';
+        if (pinName === 'COM') pinName = 'common';
       } else {
         // Try to get it from the last part of the ID
         pinName = pinId.split('-').pop();
       }
       
-      // Default offset - experimentally determined
+      // Log what we found to help diagnose issues
+      console.log(`Extracted pin name '${pinName}' from RGB LED pin ID: ${pinId}`);
+      
+      // Default offset - adjusted based on the screenshot and logs
       let OFFSET_X = 0;
       let OFFSET_Y = 0;
       
       // Pin-specific adjustments based on which color pin it is
-      if (pinName === 'red' || pinName.includes('red')) {
-        // Red pin is on the left side
-        OFFSET_X = -15;
-        OFFSET_Y = 0;
-      } else if (pinName === 'green' || pinName.includes('green')) {
-        // Green pin is on the top
+      // These values are based on the screenshot showing how the pins are positioned
+      if (pinName === 'red' || pinName === 'R' || pinName?.toLowerCase().includes('red')) {
+        // Red pin (R) - left side of RGB LED
         OFFSET_X = 0;
-        OFFSET_Y = -15;
-      } else if (pinName === 'blue' || pinName.includes('blue')) {
-        // Blue pin is on the right side
-        OFFSET_X = 15;
         OFFSET_Y = 0;
-      } else if (pinName === 'common' || pinName.includes('common') || pinName.includes('anode') || pinName.includes('cathode')) {
-        // Common pin is on the bottom
+      } else if (pinName === 'green' || pinName === 'G' || pinName?.toLowerCase().includes('green')) {
+        // Green pin (G) - top of RGB LED
         OFFSET_X = 0;
-        OFFSET_Y = 15;
+        OFFSET_Y = 0;
+      } else if (pinName === 'blue' || pinName === 'B' || pinName?.toLowerCase().includes('blue')) {
+        // Blue pin (B) - right side of RGB LED
+        OFFSET_X = 0;
+        OFFSET_Y = 0;
+      } else if (pinName === 'common' || pinName === 'COM' || pinName?.toLowerCase().includes('com')) {
+        // Common pin (COM) - bottom of RGB LED
+        OFFSET_X = 0;
+        OFFSET_Y = 0;
       }
       
       console.log(`Adjusting RGB LED pin position for ${pinName}:`, { 
