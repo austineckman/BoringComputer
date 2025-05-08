@@ -49,7 +49,8 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 // Endpoint to generate quest content using OpenAI API
 router.post("/api/admin/generate-quest", async (req: Request, res: Response) => {
   try {
-    const { kitId, theme, missionKeywords, difficulty = 2, includeImage = true, imagePrompt = "" } = req.body as QuestGenRequest;
+    const { kitId, missionKeywords, difficulty = 2, includeImage = true, imagePrompt = "" } = req.body as QuestGenRequest;
+let theme = req.body.theme;
     
     if (!kitId) {
       return res.status(400).json({ error: "Kit ID is required" });
