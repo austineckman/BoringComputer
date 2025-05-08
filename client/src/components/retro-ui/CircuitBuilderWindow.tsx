@@ -462,7 +462,8 @@ void loop() {
     stopSimulation,
     addLog: addSimulatorLog,
     logs: simulatorLogs,
-    updateComponentState  // Access the updateComponentState function
+    updateComponentState,  // Access the updateComponentState function
+    updateComponentPins    // Access the updateComponentPins function for pin-specific updates
   } = useSimulator();
   
   // Run the simulation
@@ -600,6 +601,17 @@ void loop() {
                 
                 // Standard pin change
                 addSimulationLog(`Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+                
+                // Special handling for pin 13 - update all HERO boards
+                if (pin === 13) {
+                  // Find all HERO boards in the component list
+                  const heroBoards = components.filter(c => c.type === 'heroboard');
+                  heroBoards.forEach(board => {
+                    // Update the pin state for this board's pin 13 LED
+                    updateComponentPins(board.id, { '13': isHigh });
+                    console.log(`Updated HERO board ${board.id} pin 13 LED to ${isHigh ? 'ON' : 'OFF'}`);
+                  });
+                }
               } else if (typeof pinOrComponent === 'object' && pinOrComponent.componentId) {
                 // This is a component state update
                 const { componentId, type, color } = pinOrComponent;

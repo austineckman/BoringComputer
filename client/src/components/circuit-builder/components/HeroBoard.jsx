@@ -71,15 +71,15 @@ const HeroBoard = ({
   // Track pin 13 state for the built-in LED
   useEffect(() => {
     // Look for pin state changes from the simulator
-    if (componentStates && componentStates.pins) {
+    if (componentStates && componentStates[id] && componentStates[id].pins) {
       // Check if pin 13 has a state in the simulator
-      const pin13 = componentStates.pins['13'];
+      const pin13 = componentStates[id].pins['13'];
       if (pin13 !== undefined) {
         setPin13State(pin13);
         console.log(`[HeroBoard] Pin 13 state changed to ${pin13 ? 'HIGH' : 'LOW'}`);
       }
     }
-  }, [componentStates]);
+  }, [componentStates, id]);
   
   // Notify about component movement for wire position updates
   useEffect(() => {
@@ -262,11 +262,35 @@ const HeroBoard = ({
           ledPower={isSimulationRunning} // Power LED only on when simulation is running
         ></ReactHeroBoardElement>
         
+        {/* Power LED indicator - only visible when simulation is running */}
+        {isSimulationRunning && (
+          <div 
+            className="heroboard-power-led absolute"
+            style={{
+              width: '5px',
+              height: '5px',
+              borderRadius: '50%',
+              backgroundColor: '#00ff00', /* Green LED */
+              boxShadow: '0 0 8px 2px rgba(0, 255, 0, 0.8)',
+              animation: 'pulse 0.8s ease-in-out infinite alternate',
+              top: `${posTop + 60}px`,
+              left: `${posLeft + 140}px`,
+              zIndex: 11 // Above the board but below moveable
+            }}
+          />
+        )}
+        
         {/* Built-in LED for pin 13 - only visible when pin 13 is HIGH and simulation is running */}
         {isSimulationRunning && pin13State && (
           <div 
             className="heroboard-pin13-led absolute"
             style={{
+              width: '4px',
+              height: '4px',
+              borderRadius: '50%',
+              backgroundColor: '#ff0000', /* Red LED */
+              boxShadow: '0 0 6px 2px rgba(255, 0, 0, 0.8)',
+              animation: 'pulse 0.8s ease-in-out infinite alternate',
               top: `${posTop + 42}px`,
               left: `${posLeft + 107}px`,
               zIndex: 11 // Above the board but below moveable
