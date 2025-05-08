@@ -597,7 +597,49 @@ const BasicWireManager = ({ canvasRef }) => {
               strokeLinecap="round"
               onClick={(e) => handleWireClick(wire.id, e)}
               className="cursor-pointer"
+              title="Click to select wire, Delete key to remove"
             />
+            
+            {/* Delete button for the wire - only shown when wire is selected */}
+            {selectedWireId === wire.id && (
+              <g 
+                className="wire-delete-button" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteWire(wire.id);
+                }}
+                style={{ cursor: 'pointer' }}
+                transform={`translate(${(wire.sourcePos.x + wire.targetPos.x) / 2 - 10}, ${(wire.sourcePos.y + wire.targetPos.y) / 2 - 10})`}
+              >
+                <rect
+                  x="0"
+                  y="0"
+                  width="20"
+                  height="20"
+                  rx="4"
+                  fill="#ff3333"
+                  stroke="#000000"
+                  strokeWidth="1"
+                />
+                <line
+                  x1="5"
+                  y1="5"
+                  x2="15"
+                  y2="15"
+                  stroke="white"
+                  strokeWidth="2"
+                />
+                <line
+                  x1="15"
+                  y1="5"
+                  x2="5"
+                  y2="15"
+                  stroke="white"
+                  strokeWidth="2"
+                />
+                <title>Delete wire</title>
+              </g>
+            )}
             
             {/* Larger wire endpoint circles for better visibility */}
             <circle 
