@@ -86,14 +86,21 @@ const AVR8Simulator = ({
     // Log the pin change for debugging
     console.log(`Checking components connected to pin ${pinNumber}, state=${isHigh}`);
     
-    // For demonstration purposes, we're focusing on pin 13, 
+    // For demonstration purposes, we're focusing on pins 9-13, 
     // but this same code would work for any pin
-    if (pinNumber === 13) {
-      // First, try to find LEDs connected through wires
+    if (pinNumber >= 9 && pinNumber <= 13) {
+      // First, try to find regular LEDs connected through wires
       const connectedLEDs = findConnectedComponents('led', pinNumber);
       
+      // Also check for RGB LEDs connected to this pin
+      const connectedRGBLEDs = findConnectedComponents('rgbled', pinNumber);
+      
+      let componentsUpdated = false;
+      
+      // Update regular LEDs
       if (connectedLEDs.length > 0) {
         console.log(`Found ${connectedLEDs.length} LEDs connected to pin ${pinNumber}`);
+        componentsUpdated = true;
         
         // Update each connected LED
         connectedLEDs.forEach(led => {
@@ -105,25 +112,89 @@ const AVR8Simulator = ({
             isHigh
           );
         });
-      } else {
-        // Temporary fallback for debugging/development: update all LEDs
-        // In production, this would be removed so only connected LEDs are updated
-        console.log('No connected LEDs found through wires, updating all LEDs as fallback');
+      }
+      
+      // Update RGB LEDs
+      if (connectedRGBLEDs.length > 0) {
+        console.log(`Found ${connectedRGBLEDs.length} RGB LEDs connected to pin ${pinNumber}`);
+        componentsUpdated = true;
         
-        // Get all LED components
-        const allLEDs = components.filter(c => c.type.toLowerCase() === 'led');
-        console.log(`Found ${allLEDs.length} total LED components to update as fallback`);
-        
-        // Update each LED
-        allLEDs.forEach(led => {
-          console.log(`Updating LED ${led.id} to ${isHigh ? 'ON' : 'OFF'}`);
+        // Update each connected RGB LED
+        // For RGB LED, we need to determine which color channel to update based on pin
+        connectedRGBLEDs.forEach(rgbled => {
+          console.log(`Updating RGB LED ${rgbled.id} pin ${pinNumber} to ${isHigh ? 'ON' : 'OFF'}`);
           
-          // Update the LED state
+          // Map pins to RGB colors (simplified mapping)
+          // In a real project, this would use the actual pin mapping from the component
+          const colorMap = {
+            9: 'red',
+            10: 'green',
+            11: 'blue',
+            12: 'red',   // Fallback
+            13: 'green'  // Fallback
+          };
+          
+          const color = colorMap[pinNumber] || 'all';
+          
+          // Update the RGB LED state via onPinChange callback
           onPinChange(
-            { componentId: led.id, type: 'led' },
+            { 
+              componentId: rgbled.id, 
+              type: 'rgbled',
+              color: color  // Pass which color channel should be updated
+            },
             isHigh
           );
         });
+      }
+      
+      // If no components were updated through wires, use a fallback for demonstration
+      if (!componentsUpdated) {
+        console.log('No components found through wires, using fallback for demonstration');
+        
+        // Get all LED components
+        const allLEDs = components.filter(c => c.type.toLowerCase() === 'led');
+        const allRGBLEDs = components.filter(c => c.type.toLowerCase() === 'rgbled');
+        
+        console.log(`Found ${allLEDs.length} LED components and ${allRGBLEDs.length} RGB LED components to update as fallback`);
+        
+        // Update each LED
+        if (pinNumber === 13) {  // Only use pin 13 for fallback LEDs
+          allLEDs.forEach(led => {
+            console.log(`Updating LED ${led.id} to ${isHigh ? 'ON' : 'OFF'}`);
+            
+            // Update the LED state
+            onPinChange(
+              { componentId: led.id, type: 'led' },
+              isHigh
+            );
+          });
+        }
+        
+        // Update RGB LEDs based on pin number
+        const colorMap = {
+          9: 'red',
+          10: 'green',
+          11: 'blue',
+          12: 'red',   // Fallback
+          13: 'green'  // Fallback
+        };
+        
+        if (colorMap[pinNumber]) {
+          allRGBLEDs.forEach(rgbled => {
+            console.log(`Updating RGB LED ${rgbled.id} ${colorMap[pinNumber]} channel to ${isHigh ? 'ON' : 'OFF'}`);
+            
+            // Update the RGB LED state
+            onPinChange(
+              { 
+                componentId: rgbled.id, 
+                type: 'rgbled',
+                color: colorMap[pinNumber]
+              },
+              isHigh
+            );
+          });
+        }
       }
     }
   };
