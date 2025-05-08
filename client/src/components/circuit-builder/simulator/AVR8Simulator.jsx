@@ -22,50 +22,78 @@ const AVR8Simulator = ({
     addLog
   } = useSimulator();
   
+  // Parse Arduino code to extract active pins
+  const extractActivePins = (code) => {
+    const pins = [];
+    
+    // Extract all digitalWrite calls
+    const digitalWriteRegex = /digitalWrite\s*\(\s*(\w+|\d+)\s*,\s*\w+\s*\)/g;
+    let match;
+    
+    while ((match = digitalWriteRegex.exec(code)) !== null) {
+      const pin = match[1];
+      // Handle LED_BUILTIN constant
+      if (pin === 'LED_BUILTIN') {
+        pins.push('13');
+      } else {
+        pins.push(pin.toString());
+      }
+    }
+    
+    // If no pins found, default to pin 13
+    return pins.length > 0 ? [...new Set(pins)] : ['13'];
+  };
+
   // Start/stop simulation based on props
   useEffect(() => {
     if (isRunning) {
       // Initialize the AVR8js simulation with the provided code
       console.log('AVR8 simulator initialized');
       
-      // For our basic LED blink example, we'll simulate pin 13 (LED_BUILTIN) toggling
-      // This simulates the actual AVR8js functionality for the blink sketch
+      // Extract active pins from the Arduino code
+      const activePins = extractActivePins(code);
+      console.log('Active pins detected in code:', activePins);
+      
+      // For our basic simulation, we'll toggle the active pins
       let isHigh = false;
       const interval = setInterval(() => {
-        // Toggle pin 13 state to simulate the blink sketch
+        // Toggle pin state
         isHigh = !isHigh;
         
-        // Update pin state in the simulator context
-        updatePinState(`D${13}`, isHigh);
-        
-        // Also directly notify the CircuitBuilderWindow via onPinChange
-        // This needs to run outside interval to avoid an infinite update loop
-        const updateComponents = () => {
-          // Log the state change via console
-          console.log(`Simulator: Pin 13 changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+        // Update all active pins
+        activePins.forEach(pin => {
+          // Update pin state in the simulator context
+          updatePinState(`D${pin}`, isHigh);
           
-          // Update the HERO board's built-in pin 13 LED
-          // Find the HERO board component
-          const heroBoard = components.find(c => c.type === 'heroboard');
-          if (heroBoard) {
-            // Use the dedicated function to update pin states in the context
-            updateComponentPins(heroBoard.id, { '13': isHigh });
+          // Also directly notify the CircuitBuilderWindow via onPinChange
+          // This needs to run outside interval to avoid an infinite update loop
+          const updateComponents = () => {
+            // Log the state change via console
+            console.log(`Simulator: Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
             
-            // Also notify the parent component via the callback
-            onPinChange(13, isHigh);
-          }
+            // Update the HERO board's pin LED
+            // Find the HERO board component
+            const heroBoard = components.find(c => c.type === 'heroboard');
+            if (heroBoard) {
+              // Use the dedicated function to update pin states in the context
+              updateComponentPins(heroBoard.id, { [pin]: isHigh });
+              
+              // Also notify the parent component via the callback
+              onPinChange(parseInt(pin), isHigh);
+            }
+            
+            // Check for connected LEDs and update them
+            updateConnectedComponents(parseInt(pin), isHigh);
+          };
           
-          // Check for connected LEDs and update them
-          updateConnectedComponents(13, isHigh);
-        };
-        
-        // Execute the updates outside the React update cycle
-        setTimeout(updateComponents, 0);
-        
-        // Add log entry - call this directly to avoid dependency on addLog changing
-        if (typeof addLog === 'function') {
-          addLog(`Pin 13 changed to ${isHigh ? 'HIGH' : 'LOW'}`);
-        }
+          // Execute the updates outside the React update cycle
+          setTimeout(updateComponents, 0);
+          
+          // Add log entry - call this directly to avoid dependency on addLog changing
+          if (typeof addLog === 'function') {
+            addLog(`Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+          }
+        });
       }, 1000); // 1 second interval for blinking
       
       // Store the interval ID for cleanup
