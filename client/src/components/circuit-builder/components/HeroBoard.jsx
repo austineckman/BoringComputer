@@ -259,12 +259,12 @@ const HeroBoard = ({
           ledPower={isSimulationRunning} // Power LED only on when simulation is running
         ></ReactHeroBoardElement>
         
-        {/* Built-in LED on pin 13 - positioned exactly at the red X location from screenshot */}
+        {/* Built-in LED on pin 13 - adjusted based on pin distances */}
         <div 
           className={`heroboard-builtin-led ${pin13State ? 'on' : ''}`}
           style={{
-            top: posTop + 47, // Positioned exactly at the red X location from screenshot
-            left: posLeft + 67, // Positioned exactly at the red X location from screenshot
+            top: posTop + 37, // Up 1 pin distance from previous position
+            left: posLeft + 112, // Right 4.5 pins worth of distance from previous position
           }}
         ></div>
         
