@@ -94,6 +94,65 @@ const BasicWireManager = ({ canvasRef }) => {
     // For other components, return the position unchanged
     return position;
   };
+  
+  // RGB LED specific position correction
+  const adjustRgbLedPosition = (pinId, position, componentId) => {
+    // Only apply to RGB LED pins and if we have valid positions
+    if (position && (
+      pinId?.includes('rgb-led') || 
+      pinId?.includes('rgbled') || 
+      (componentId && (componentId.includes('rgb-led') || componentId.includes('rgbled')))
+    )) {
+      // Extract the pin name from the ID - different formats possible
+      let pinName;
+      
+      if (pinId.includes('-red') || pinId.includes('-green') || pinId.includes('-blue') || pinId.includes('-common')) {
+        pinName = pinId.split('-').pop();
+      } else {
+        // Try to get it from the last part of the ID
+        pinName = pinId.split('-').pop();
+      }
+      
+      // Default offset - experimentally determined
+      let OFFSET_X = 0;
+      let OFFSET_Y = 0;
+      
+      // Pin-specific adjustments based on which color pin it is
+      if (pinName === 'red' || pinName.includes('red')) {
+        // Red pin is on the left side
+        OFFSET_X = -15;
+        OFFSET_Y = 0;
+      } else if (pinName === 'green' || pinName.includes('green')) {
+        // Green pin is on the top
+        OFFSET_X = 0;
+        OFFSET_Y = -15;
+      } else if (pinName === 'blue' || pinName.includes('blue')) {
+        // Blue pin is on the right side
+        OFFSET_X = 15;
+        OFFSET_Y = 0;
+      } else if (pinName === 'common' || pinName.includes('common') || pinName.includes('anode') || pinName.includes('cathode')) {
+        // Common pin is on the bottom
+        OFFSET_X = 0;
+        OFFSET_Y = 15;
+      }
+      
+      console.log(`Adjusting RGB LED pin position for ${pinName}:`, { 
+        before: position,
+        after: {
+          x: position.x + OFFSET_X,
+          y: position.y + OFFSET_Y
+        }
+      });
+      
+      // Apply the offset to fix the position
+      return {
+        x: position.x + OFFSET_X,
+        y: position.y + OFFSET_Y
+      };
+    }
+    
+    return position;
+  };
 
   // Generate a path with 90-degree bends for better "cable management"
   const getWirePath = (start, end) => {
@@ -170,10 +229,19 @@ const BasicWireManager = ({ canvasRef }) => {
             y: elementPos.y - canvasRect.top
           };
           
-          // Apply HERO board specific position correction if needed
+          // Apply component-specific position corrections
+          
+          // HERO board correction
           if (pinId && pinId.includes('heroboard')) {
             const correctedPosition = adjustHeroboardPosition(pinId, pinPosition, parentComponentId);
             console.log(`Corrected HERO board pin position from (${pinPosition.x}, ${pinPosition.y}) to (${correctedPosition.x}, ${correctedPosition.y})`);
+            pinPosition = correctedPosition;
+          }
+          
+          // RGB LED correction
+          if (pinId && (pinId.includes('rgb-led') || pinId.includes('rgbled') || (parentComponentId && (parentComponentId.includes('rgb-led') || parentComponentId.includes('rgbled'))))) {
+            const correctedPosition = adjustRgbLedPosition(pinId, pinPosition, parentComponentId);
+            console.log(`Corrected RGB LED pin position from (${pinPosition.x}, ${pinPosition.y}) to (${correctedPosition.x}, ${correctedPosition.y})`);
             pinPosition = correctedPosition;
           }
           
