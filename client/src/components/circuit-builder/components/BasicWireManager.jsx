@@ -42,12 +42,17 @@ const BasicWireManager = ({ canvasRef }) => {
       // Get the pin name for display
       const pinName = pinId.split('-').pop() || '';
       
-      console.log(`Pin clicked in wire manager:`, {
+      console.log(`Pin clicked in wire manager (${new Date().toLocaleTimeString()}):`, {
         pinId,
         pinName,
         pinType,
         parentComponentId,
-        pinPosition
+        pinPosition,
+        pendingConnection: pendingConnection ? {
+          sourceId: pendingConnection.sourceId,
+          sourceName: pendingConnection.sourceName,
+          sourceComponent: pendingConnection.sourceComponent
+        } : null
       });
       
       // If no pending connection, start a new one
@@ -149,25 +154,75 @@ const BasicWireManager = ({ canvasRef }) => {
     const componentId = event.detail?.componentId;
     if (!componentId) return;
     
-    // Update wires connected to this component using pin positions from the event
-    if (event.detail?.pinPositions) {
-      setWires(prevWires => {
-        return prevWires.map(wire => {
-          if (wire.sourceComponent === componentId) {
-            const newPos = event.detail.pinPositions[wire.sourceId];
-            if (newPos) {
-              return { ...wire, sourcePos: newPos };
-            }
-          } else if (wire.targetComponent === componentId) {
-            const newPos = event.detail.pinPositions[wire.targetId];
-            if (newPos) {
-              return { ...wire, targetPos: newPos };
+    console.log(`Component moved event received for: ${componentId}`, event.detail);
+    
+    // Update wires even without pin positions - just adjust based on component movement
+    const movedX = event.detail?.x;
+    const movedY = event.detail?.y;
+    
+    setWires(prevWires => {
+      return prevWires.map(wire => {
+        // Handle source component movement
+        if (wire.sourceComponent === componentId) {
+          // If we have pin positions directly, use them
+          if (event.detail?.pinPositions && event.detail.pinPositions[wire.sourceId]) {
+            return { 
+              ...wire, 
+              sourcePos: event.detail.pinPositions[wire.sourceId] 
+            };
+          } 
+          // Otherwise calculate the new position based on component movement
+          else if (movedX !== undefined && movedY !== undefined) {
+            // Calculate how much the component moved since the last known position
+            const deltaX = movedX - (wire._lastKnownSourceX || 0);
+            const deltaY = movedY - (wire._lastKnownSourceY || 0);
+            
+            // Only update if there's actual movement
+            if (deltaX !== 0 || deltaY !== 0) {
+              return { 
+                ...wire, 
+                sourcePos: { 
+                  x: wire.sourcePos.x + deltaX, 
+                  y: wire.sourcePos.y + deltaY 
+                },
+                _lastKnownSourceX: movedX,  // Store for next time
+                _lastKnownSourceY: movedY
+              };
             }
           }
-          return wire;
-        });
+        } 
+        // Handle target component movement
+        else if (wire.targetComponent === componentId) {
+          // If we have pin positions directly, use them
+          if (event.detail?.pinPositions && event.detail.pinPositions[wire.targetId]) {
+            return { 
+              ...wire, 
+              targetPos: event.detail.pinPositions[wire.targetId] 
+            };
+          } 
+          // Otherwise calculate the new position based on component movement
+          else if (movedX !== undefined && movedY !== undefined) {
+            // Calculate how much the component moved since the last known position
+            const deltaX = movedX - (wire._lastKnownTargetX || 0);
+            const deltaY = movedY - (wire._lastKnownTargetY || 0);
+            
+            // Only update if there's actual movement
+            if (deltaX !== 0 || deltaY !== 0) {
+              return { 
+                ...wire, 
+                targetPos: { 
+                  x: wire.targetPos.x + deltaX, 
+                  y: wire.targetPos.y + deltaY 
+                },
+                _lastKnownTargetX: movedX,  // Store for next time
+                _lastKnownTargetY: movedY
+              };
+            }
+          }
+        }
+        return wire;
       });
-    }
+    });
   };
 
   // Setup event listeners

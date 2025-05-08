@@ -62,6 +62,26 @@ const HeroBoard = ({
   useEffect(() => {
     triggerRedraw();
   }, [pinInfo, posTop, posLeft]);
+  
+  // Notify about component movement for wire position updates
+  useEffect(() => {
+    // After drag, notify the Canvas about our new position
+    if (!isDragged && posLeft !== undefined && posTop !== undefined) {
+      // Only notify once the drag is complete
+      console.log(`HeroBoard ${id} moved to ${posLeft}, ${posTop}`);
+      
+      // Dispatch component moved event to update wire positions
+      const event = new CustomEvent('componentMovedFinal', {
+        detail: {
+          componentId: id,
+          x: posLeft,
+          y: posTop,
+          // We could include pin positions here if needed
+        }
+      });
+      document.dispatchEvent(event);
+    }
+  }, [id, isDragged, posLeft, posTop]);
 
   const onPinInfoChange = (e) => {
     setPinInfo(e.detail);
@@ -121,11 +141,24 @@ const HeroBoard = ({
         // Call the parent's onPinConnect handler with the position
         onPinConnect(pinId, pinType, id, pinPosition);
         
+        // Create a comprehensive pin position data object
+        const pinPositionData = {
+          x: pinPosition.x,
+          y: pinPosition.y,
+          origComponentX: isNaN(parseInt(pinPosition.origComponentX)) ? 0 : parseInt(pinPosition.origComponentX),
+          origComponentY: isNaN(parseInt(pinPosition.origComponentY)) ? 0 : parseInt(pinPosition.origComponentY),
+          pinId: pinId,
+          componentId: id,
+          formattedId: formattedPinId,
+          type: pinType,
+          timestamp: Date.now()
+        };
+        
         // Create a custom pin click event to trigger the wire manager
         const pinClickEvent = new CustomEvent('pinClicked', {
           detail: {
             id: formattedPinId,
-            pinData: pinDataJson,
+            pinData: JSON.stringify(pinPositionData),
             pinType: pinType,
             parentId: id,
             clientX: pinPosition.x,
