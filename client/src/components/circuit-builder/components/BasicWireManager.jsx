@@ -37,11 +37,47 @@ const BasicWireManager = ({ canvasRef }) => {
       // This is an important fix to handle custom component pins correctly
       const pinName = detail.pinName || (detail.pinId ? detail.pinId : pinId.split('-').pop() || '');
       
-      // Get pin position from the event
-      const pinPosition = {
-        x: detail.clientX,
-        y: detail.clientY
-      };
+      // Get canvas element to calculate relative position
+      const canvas = canvasRef?.current;
+      const canvasRect = canvas ? canvas.getBoundingClientRect() : null;
+      
+      // Get pin position - take the highest priority source of coordinates
+      let pinPosition;
+      
+      // Priority 1: Detail has the pinPosition object directly
+      if (detail.pinPosition && typeof detail.pinPosition.x === 'number') {
+        pinPosition = detail.pinPosition;
+      } 
+      // Priority 2: Get position from clientX/Y with canvas offset
+      else if (detail.clientX && detail.clientY && canvasRect) {
+        pinPosition = {
+          x: detail.clientX - canvasRect.left,
+          y: detail.clientY - canvasRect.top
+        };
+      } 
+      // Priority 3: Use the client as is (absolute coordinates)
+      else if (detail.clientX && detail.clientY) {
+        pinPosition = {
+          x: detail.clientX,
+          y: detail.clientY
+        };
+      }
+      // Fallback: create approximate position based on component position
+      else {
+        // Get all components from the DOM to find position
+        const componentElements = document.querySelectorAll(`[id^="${parentComponentId}"]`);
+        if (componentElements.length > 0) {
+          const componentRect = componentElements[0].getBoundingClientRect();
+          pinPosition = {
+            x: componentRect.left + (componentRect.width / 2) - (canvasRect ? canvasRect.left : 0),
+            y: componentRect.top + (componentRect.height / 2) - (canvasRect ? canvasRect.top : 0)
+          };
+        } else {
+          // Final fallback - just put it at 100,100
+          pinPosition = { x: 100, y: 100 };
+          console.warn("Could not determine pin position - using fallback position");
+        }
+      }
       
       console.log(`Pin clicked in wire manager (${new Date().toLocaleTimeString()}):`, {
         pinId,
@@ -259,55 +295,143 @@ const BasicWireManager = ({ canvasRef }) => {
     };
   }, [canvasRef, pendingConnection, selectedWireId, wires]);
   
+  // Debug information about wires for troubleshooting
+  useEffect(() => {
+    console.log(`Wire manager has ${wires.length} wires:`, wires);
+  }, [wires]);
+
   return (
-    <svg 
-      className="wire-layer absolute inset-0 pointer-events-none"
-      style={{ zIndex: 10 }}
-    >
-      {/* Render all wire connections */}
-      {wires.map(wire => (
-        <g key={wire.id} className="wire-connection" style={{ pointerEvents: 'auto' }}>
-          <path
-            d={getWirePath(wire.sourcePos, wire.targetPos)}
-            stroke={wire.color || '#aaaaaa'}
-            strokeWidth={selectedWireId === wire.id ? 3 : 2}
-            fill="none"
-            strokeLinecap="round"
-            onClick={(e) => handleWireClick(wire.id, e)}
-            className="cursor-pointer"
-          />
-          {/* Wire endpoint circles for better visibility */}
-          <circle 
-            cx={wire.sourcePos.x} 
-            cy={wire.sourcePos.y} 
-            r={4} 
-            fill={wire.color || '#aaaaaa'} 
-          />
-          <circle 
-            cx={wire.targetPos.x} 
-            cy={wire.targetPos.y} 
-            r={4} 
-            fill={wire.color || '#aaaaaa'} 
-          />
-        </g>
-      ))}
-      
-      {/* Pending connection wire */}
-      {pendingConnection && (
-        <path
-          d={getWirePath(
-            pendingConnection.sourcePos,
-            { x: mousePosition.x, y: mousePosition.y }
-          )}
-          stroke="#aaaaaa"
-          strokeWidth={2}
-          strokeDasharray="5,5"
-          fill="none"
-          strokeLinecap="square" // Changed to square to match 90-degree corners
-          strokeLinejoin="miter" // Added for sharp corners
-        />
+    <>
+      {/* Debugging information - visible on screen */}
+      {wires.length > 0 && (
+        <div className="wire-debug fixed top-2 left-2 bg-black/80 text-green-500 p-2 rounded text-xs z-50">
+          {wires.length} wire(s) created
+        </div>
       )}
-    </svg>
+      
+      {/* Enhanced wire layer with stronger visibility */}
+      <svg 
+        className="wire-layer absolute inset-0 pointer-events-none"
+        style={{ 
+          zIndex: 20, 
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none'
+        }}
+        width="100%"
+        height="100%"
+      >
+        {/* Render all wire connections with higher visibility */}
+        {wires.map(wire => (
+          <g key={wire.id} className="wire-connection" style={{ pointerEvents: 'auto' }}>
+            {/* Highlight path to make it more visible */}
+            <path
+              d={getWirePath(wire.sourcePos, wire.targetPos)}
+              stroke="#000000" 
+              strokeWidth={selectedWireId === wire.id ? 5 : 4}
+              fill="none"
+              strokeLinecap="round"
+              strokeOpacity={0.5}
+            />
+            
+            {/* Actual colored wire */}
+            <path
+              d={getWirePath(wire.sourcePos, wire.targetPos)}
+              stroke={wire.color || '#ff0000'} // Default to bright red for high visibility
+              strokeWidth={selectedWireId === wire.id ? 3 : 2}
+              fill="none"
+              strokeLinecap="round"
+              onClick={(e) => handleWireClick(wire.id, e)}
+              className="cursor-pointer"
+            />
+            
+            {/* Larger wire endpoint circles for better visibility */}
+            <circle 
+              cx={wire.sourcePos.x} 
+              cy={wire.sourcePos.y} 
+              r={5} 
+              stroke="#000000"
+              strokeWidth={1}
+              fill={wire.color || '#ff0000'} 
+            />
+            <circle 
+              cx={wire.targetPos.x} 
+              cy={wire.targetPos.y} 
+              r={5}
+              stroke="#000000"
+              strokeWidth={1} 
+              fill={wire.color || '#ff0000'} 
+            />
+            
+            {/* Pin labels for debugging */}
+            <text 
+              x={wire.sourcePos.x + 10} 
+              y={wire.sourcePos.y - 5} 
+              fill="black" 
+              stroke="white" 
+              strokeWidth={0.5} 
+              fontSize="10px"
+            >
+              {wire.sourceName}
+            </text>
+            <text 
+              x={wire.targetPos.x + 10} 
+              y={wire.targetPos.y - 5} 
+              fill="black" 
+              stroke="white" 
+              strokeWidth={0.5} 
+              fontSize="10px"
+            >
+              {wire.targetName}
+            </text>
+          </g>
+        ))}
+        
+        {/* Pending connection wire with improved visibility */}
+        {pendingConnection && (
+          <>
+            <path
+              d={getWirePath(
+                pendingConnection.sourcePos,
+                { x: mousePosition.x, y: mousePosition.y }
+              )}
+              stroke="#000000"
+              strokeWidth={4}
+              strokeDasharray="5,5"
+              fill="none"
+              strokeOpacity={0.3}
+              strokeLinecap="square"
+              strokeLinejoin="miter"
+            />
+            <path
+              d={getWirePath(
+                pendingConnection.sourcePos,
+                { x: mousePosition.x, y: mousePosition.y }
+              )}
+              stroke="#ff5500"
+              strokeWidth={2}
+              strokeDasharray="5,5"
+              fill="none"
+              strokeLinecap="square"
+              strokeLinejoin="miter"
+            />
+            <text 
+              x={pendingConnection.sourcePos.x + 10} 
+              y={pendingConnection.sourcePos.y - 5} 
+              fill="black" 
+              stroke="white" 
+              strokeWidth={0.5} 
+              fontSize="10px"
+            >
+              {pendingConnection.sourceName}
+            </text>
+          </>
+        )}
+      </svg>
+    </>
   );
 };
 
