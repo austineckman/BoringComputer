@@ -864,3 +864,15 @@ body {
     transform: scale(1.05);
   }
 }
+
+/* Built-in LED on pin 13 for HeroBoard */
+.heroboard-pin13-led {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #ff0000;
+  box-shadow: 0 0 5px 2px rgba(255, 0, 0, 0.7);
+  animation: pulse 1s infinite alternate ease-in-out;
+  pointer-events: none; /* Prevent LED from blocking interactions */
+}

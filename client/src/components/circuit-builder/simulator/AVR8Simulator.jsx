@@ -41,7 +41,23 @@ const AVR8Simulator = ({
         onPinChange(13, isHigh);
         
         // Log the state change via console to avoid re-render loop
-        console.log(`Pin 13 changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+        console.log(`Simulator: Pin 13 changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+        addLog(`Pin 13 changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+        
+        // Update the HERO board's built-in pin 13 LED
+        // Find the HERO board component
+        const heroBoard = components.find(c => c.type === 'heroboard');
+        if (heroBoard) {
+          onPinChange(
+            { 
+              componentId: heroBoard.id, 
+              type: 'heroboard',
+              // Use special pins property to indicate we're updating a specific pin state
+              pins: { '13': isHigh }
+            },
+            true // This boolean becomes the overall component state (true = active)
+          );
+        }
         
         // Check for connected LEDs and update them
         updateConnectedComponents(13, isHigh);
