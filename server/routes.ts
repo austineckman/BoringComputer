@@ -25,6 +25,8 @@ import oracleRoutes from './routes/oracle';
 import lootboxesRoutes from './routes/lootboxes';
 import lootboxRewardsRoutes from './routes/lootboxRewards';
 import { authenticate, hashPassword } from './auth';
+import { conditionalCsrfProtection, getCsrfToken, handleCsrfError } from './middleware/csrf';
+import { addSecurityHeaders } from './middleware/security-headers';
 import { componentKits, items } from '@shared/schema';
 import { itemDatabase } from './itemDatabase';
 import { eq } from 'drizzle-orm';
@@ -36,6 +38,9 @@ import { eq } from 'drizzle-orm';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
+  
+  // Add security headers to all responses
+  app.use(addSecurityHeaders);
   
   // Serve static files from the public directory
   const publicPath = path.join(process.cwd(), 'public');
@@ -84,7 +89,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Register the new auth routes
+  // Apply CSRF protection to API routes that modify data
+  app.use(conditionalCsrfProtection);
+  
+  // Add CSRF error handler
+  app.use(handleCsrfError);
+  
+  // Endpoint to get CSRF token
+  app.get('/api/csrf-token', getCsrfToken);
+  
+  // Register the auth routes
   app.use("/api/auth", authRoutes);
   
   // Auth routes have been moved to separate files
