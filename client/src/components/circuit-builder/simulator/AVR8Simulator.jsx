@@ -335,45 +335,84 @@ const AVR8Simulator = ({
       const otherEndParts = otherEndId.split('-');
       if (otherEndParts.length < 3) return [];
       
-      // Extract component type and ID
-      const otherComponentType = otherEndParts[1]?.toLowerCase();
-      const otherComponentId = otherEndParts[2];
+      // Direct lookup in the components list first - most reliable method
+      const directMatch = components.find(comp => 
+        otherEndId.includes(comp.id) && 
+        comp.type.toLowerCase() === targetType.toLowerCase()
+      );
       
-      console.log(`Extracted: type=${otherComponentType}, id=${otherComponentId}`);
+      if (directMatch) {
+        console.log(`Found direct component match: ${directMatch.type} ${directMatch.id}`);
+        return [directMatch];
+      }
+      
+      // If no direct match, extract type and ID from the pin ID
+      let compType = '';
+      let compId = '';
+      
+      if (otherEndId.includes('led-')) {
+        compType = 'led';
+        // Try to extract the full LED ID
+        const matches = otherEndId.match(/led-[a-z0-9]+/);
+        if (matches && matches.length > 0) {
+          compId = matches[0];
+        }
+      } else if (otherEndId.includes('rgbled-')) {
+        compType = 'rgbled';
+        const matches = otherEndId.match(/rgbled-[a-z0-9]+/);
+        if (matches && matches.length > 0) {
+          compId = matches[0];
+        }
+      } else {
+        // Standard format extraction
+        compType = otherEndParts[1]?.toLowerCase();
+        compId = otherEndParts[2];
+      }
+      
+      console.log(`Extracted: type=${compType}, id=${compId}`);
       
       // Add to visited components
-      visitedComponents.add(otherComponentId);
+      visitedComponents.add(compId);
       
-      // Check if this is our target component type
-      if (otherComponentType === targetType.toLowerCase()) {
-        // Find the actual component with this ID
-        const component = components.find(c => c.id === otherComponentId);
-        if (component) {
-          console.log(`Found target component: ${component.type} ${component.id}`);
-          return [component];
+      // If this matches our target type, look for the component
+      if (compType === targetType.toLowerCase()) {
+        const foundComponent = components.find(c => c.id === compId);
+        if (foundComponent) {
+          console.log(`Found target component: ${foundComponent.type} ${foundComponent.id}`);
+          return [foundComponent];
         }
       }
       
-      // If this is a passive component (resistor, capacitor, etc.), trace through it
-      const isPassiveComponent = otherComponentType === 'resistor' || 
-                               otherComponentType === 'capacitor' ||
-                               otherComponentType === 'jumper';
+      // Last resort for LED components - just try to find ANY LED
+      if (targetType.toLowerCase() === 'led' && compType === 'led') {
+        const anyLed = components.find(c => c.type.toLowerCase() === 'led');
+        if (anyLed) {
+          console.log(`Last resort: Using available LED ${anyLed.id}`);
+          return [anyLed];
+        }
+      }
+      
+      // If this is a passive component, trace through it
+      const isPassiveComponent = 
+        compType === 'resistor' || 
+        compType === 'capacitor' || 
+        compType === 'jumper';
       
       if (checkPassiveComponents && isPassiveComponent) {
-        console.log(`Found passive component ${otherComponentType}, tracing through it...`);
+        console.log(`Found passive component ${compType}, tracing through it...`);
         
-        // Get all wires connected to this passive component
+        // Get all other wires connected to this passive component
         const connectedPassiveWires = wires.filter(w => 
           w.id !== wire.id && // Skip the wire we came from
-          (w.sourceId?.includes(otherComponentId) || w.targetId?.includes(otherComponentId))
+          (w.sourceId?.includes(compId) || w.targetId?.includes(compId))
         );
         
-        console.log(`Found ${connectedPassiveWires.length} other wires connected to ${otherComponentType}`);
+        console.log(`Found ${connectedPassiveWires.length} other wires connected to ${compType}`);
         
         // Recursively trace through each connected wire
         const foundComponents = [];
+        
         connectedPassiveWires.forEach(nextWire => {
-          // Only proceed if we haven't visited this wire
           if (!visitedWires.has(nextWire.id)) {
             const traced = traceConnections(nextWire, targetType, visitedWires);
             foundComponents.push(...traced);
@@ -383,26 +422,24 @@ const AVR8Simulator = ({
         return foundComponents;
       }
       
-      // Not a target and not a passive component we can trace through
       return [];
     };
     
     // Make sure each wire has a unique ID for tracing
     const wiresWithIds = connectedWires.map((wire, index) => {
-      // If the wire doesn't have an ID, give it one
       if (!wire.id) {
         return { ...wire, id: `wire-${index}` };
       }
       return wire;
     });
     
-    // Trace connections from each wire connected to the HERO board pin
+    // Trace connections from each wire connected to the pin
     wiresWithIds.forEach(wire => {
-      const components = traceConnections(wire, componentType);
-      connectedComponents.push(...components);
+      const found = traceConnections(wire, componentType);
+      connectedComponents.push(...found);
     });
     
-    // Remove duplicates by ID
+    // Remove duplicates
     const uniqueComponents = [];
     const addedIds = new Set();
     
@@ -418,7 +455,6 @@ const AVR8Simulator = ({
   };
   
   // This component doesn't render anything visible
-  // It just runs the simulation logic
   return null;
 };
 
