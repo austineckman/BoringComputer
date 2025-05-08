@@ -28,6 +28,7 @@ export const SimulatorProvider = ({ children }) => {
   const [simulationElapsedTime, setSimulationElapsedTime] = useState(0);
   const [components, setComponents] = useState([]);
   const [pinStates, setPinStates] = useState({});
+  const [componentStates, setComponentStates] = useState({});
   const [errors, setErrors] = useState([]);
   const [logs, setLogs] = useState([]);
   const [code, setCode] = useState('');
@@ -119,6 +120,14 @@ export const SimulatorProvider = ({ children }) => {
   const setSimulationComponents = useCallback((newComponents) => {
     setComponents(newComponents);
   }, []);
+  
+  // Update a component's state
+  const updateComponentState = useCallback((componentId, state) => {
+    setComponentStates(prev => ({
+      ...prev,
+      [componentId]: state
+    }));
+  }, []);
 
   // Expose context value
   const contextValue = {
@@ -129,6 +138,8 @@ export const SimulatorProvider = ({ children }) => {
     setSimulationComponents,
     pinStates,
     updatePinState,
+    componentStates,
+    updateComponentState,
     errors,
     logs,
     code,

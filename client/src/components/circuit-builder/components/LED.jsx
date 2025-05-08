@@ -35,7 +35,7 @@ const LED = ({
   const oldDataRef = useRef();
 
   // Access simulator context for simulation state
-  const { isSimulationRunning, componentStates } = useSimulator();
+  const { isRunning: isSimulationRunning, componentStates } = useSimulator();
   
   const [ledColor, setLedColor] = useState(color);
   const [rotationAngle, setRotationAngle] = useState(initialRotation);
