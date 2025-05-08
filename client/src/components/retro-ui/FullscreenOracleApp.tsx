@@ -291,12 +291,20 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [searchQuery, setSearchQuery] = useState('');
   
   // State for modals and actions
-  const [confirmDelete, setConfirmDelete] = useState<{ show: boolean; type: string; id: string | null; name: string; kitId?: string }>({
+  const [confirmDelete, setConfirmDelete] = useState<{ 
+    show: boolean; 
+    type: string; 
+    id: string | null; 
+    name: string; 
+    kitId?: string;
+    message?: string;
+  }>({
     show: false,
     type: '',
     id: null,
     name: '',
-    kitId: undefined
+    kitId: undefined,
+    message: ''
   });
   const [notificationMessage, setNotificationMessage] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   
@@ -1198,13 +1206,23 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   // Delete handlers
   const handleDeleteClick = (type: string, id: string, name: string, kitId?: string) => {
     window.sounds?.click();
-    setConfirmDelete({
+    
+    // Create the base confirmation data
+    const confirmData = {
       show: true,
       type,
       id,
       name,
-      kitId
-    });
+      kitId,
+      message: ''
+    };
+    
+    // Add special confirmation message for user deletion
+    if (type === 'user') {
+      confirmData.message = "This will permanently delete this user account and all associated data including submissions, quests, achievements, inventory, and crafted items. This action cannot be undone.";
+    }
+    
+    setConfirmDelete(confirmData);
   };
   
   const closeDeleteDialog = () => {
@@ -1213,7 +1231,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       type: '',
       id: null,
       name: '',
-      kitId: undefined
+      kitId: undefined,
+      message: ''
     });
   };
   
