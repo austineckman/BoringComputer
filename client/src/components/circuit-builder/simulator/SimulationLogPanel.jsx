@@ -1,43 +1,49 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import { useSimulator } from './SimulatorContext';
+import { FileTerminal, Trash2 } from 'lucide-react';
 
 /**
- * SimulationLogPanel - Displays simulation logs and status
+ * SimulationLogPanel - Display simulation logs in a scrollable panel
  */
 const SimulationLogPanel = () => {
-  const { logs, isSimulationRunning } = useSimulator();
-  const logContainerRef = useRef(null);
-  
-  // Auto-scroll logs to bottom when new logs are added
-  useEffect(() => {
-    if (logContainerRef.current) {
-      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
-    }
-  }, [logs]);
+  const { simulatorLogs, clearSimulatorLogs, isSimulationRunning } = useSimulator();
   
   return (
-    <div className="bg-gray-800 border-t border-gray-700 text-white">
-      <div className="flex items-center justify-between p-2 border-b border-gray-700">
-        <h3 className="text-sm font-semibold">Simulation Logs</h3>
+    <div className="bg-gray-800 border border-gray-700 rounded-md p-2 h-full overflow-hidden flex flex-col">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center">
+          <FileTerminal size={14} className="text-blue-400 mr-1" />
+          <span className="text-xs font-medium">Simulation Logs</span>
+        </div>
+        
         <div className="flex items-center space-x-2">
-          <div className={`w-2 h-2 rounded-full ${isSimulationRunning ? 'bg-green-500' : 'bg-red-500'}`}></div>
-          <span className="text-xs">{isSimulationRunning ? 'Running' : 'Stopped'}</span>
+          <button 
+            onClick={clearSimulatorLogs}
+            className="text-gray-400 hover:text-white"
+            title="Clear Logs"
+          >
+            <Trash2 size={14} />
+          </button>
+          
+          <div className="flex items-center">
+            <div className={`w-2 h-2 rounded-full ${isSimulationRunning ? 'bg-green-500' : 'bg-red-500'} mr-1`}></div>
+            <span className="text-xs text-gray-400">{isSimulationRunning ? 'Running' : 'Stopped'}</span>
+          </div>
         </div>
       </div>
       
-      <div 
-        ref={logContainerRef}
-        className="h-32 overflow-y-auto p-2 text-xs font-mono"
-      >
-        {logs.length === 0 ? (
-          <div className="text-gray-500 italic">No simulation logs yet</div>
+      <div className="flex-1 overflow-y-auto text-xs font-mono">
+        {simulatorLogs.length === 0 ? (
+          <div className="text-gray-500 italic p-2">No simulation logs yet</div>
         ) : (
-          logs.map((log, index) => (
-            <div key={index} className="mb-1">
-              <span className="text-gray-400">[{log.timestamp}]</span>{' '}
-              <span>{log.message}</span>
-            </div>
-          ))
+          <div className="space-y-1">
+            {simulatorLogs.map((log, index) => (
+              <div key={index} className="flex">
+                <span className="text-gray-500 mr-2">[{log.timestamp}]</span>
+                <span className="text-gray-300">{log.message}</span>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

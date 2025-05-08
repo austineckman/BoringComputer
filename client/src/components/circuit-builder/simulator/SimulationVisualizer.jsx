@@ -1,187 +1,108 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useSimulator } from './SimulatorContext';
 
 /**
- * SimulationVisualizer
+ * SimulationVisualizer - Provides visual feedback for circuit simulation
  * 
- * Responsible for visualizing the current state of the simulation
- * Shows active pins, voltage levels, and provides visual feedback
+ * This component handles updating the visual state of components 
+ * (like LEDs lighting up) based on the simulation state.
  */
 const SimulationVisualizer = ({ components, wires }) => {
-  const { 
-    isSimulationRunning,
-    componentStates,
-    pinStates,
-    addLog
-  } = useSimulator();
+  const { pinStates, componentStates } = useSimulator();
   
-  const [activePins, setActivePins] = useState({});
-  const [highlightedWires, setHighlightedWires] = useState({});
-  
-  // Update visualization based on simulation state
   useEffect(() => {
-    if (!isSimulationRunning) {
-      // Clear all highlights when simulation is stopped
-      setActivePins({});
-      setHighlightedWires({});
-      return;
-    }
+    // When pin states change, update visual elements to reflect them
+    if (!pinStates) return;
     
-    // Map active pins
-    const newActivePins = {};
-    Object.entries(pinStates).forEach(([pinId, isHigh]) => {
-      newActivePins[pinId] = isHigh;
-    });
-    setActivePins(newActivePins);
+    // Create a mapping of component types and IDs
+    const componentMap = components.reduce((map, component) => {
+      map[component.id] = component;
+      return map;
+    }, {});
     
-    // Highlight wires that are carrying current
-    // A wire is active if its source or target pin is HIGH
-    const newHighlightedWires = {};
-    wires.forEach(wire => {
-      // Parse pin IDs into the format used in pinStates
-      const sourcePinParts = wire.sourceId.split('-');
-      const targetPinParts = wire.targetId.split('-');
-      
-      // Simplified: assume pin names after the last dash
-      const sourcePinName = sourcePinParts[sourcePinParts.length - 1];
-      const targetPinName = targetPinParts[targetPinParts.length - 1];
-      
-      // Check if source or target pin is active
-      const isSourceActive = pinStates[`D${sourcePinName}`] || pinStates[`A${sourcePinName}`];
-      const isTargetActive = pinStates[`D${targetPinName}`] || pinStates[`A${targetPinName}`];
-      
-      // Wire is highlighted if either end is active
-      newHighlightedWires[wire.id] = isSourceActive || isTargetActive;
-    });
-    setHighlightedWires(newHighlightedWires);
-    
-  }, [isSimulationRunning, pinStates, wires]);
-  
-  // Generate indicator elements for active pins
-  const pinIndicators = Object.entries(activePins).map(([pinId, isHigh]) => {
-    // Skip pins that are not on the board
-    if (!pinId.startsWith('D') && !pinId.startsWith('A')) return null;
-    
-    // Find the pin element in the DOM
-    const pinName = pinId.substring(1); // Remove the D or A prefix
-    const pinElement = document.querySelector(`[id$="-${pinName}"]`);
-    
-    if (!pinElement) return null;
-    
-    // Get pin position
-    const rect = pinElement.getBoundingClientRect();
-    
-    // Return indicator component
-    return (
-      <div
-        key={pinId}
-        className={`absolute rounded-full border-2 border-white ${isHigh ? 'bg-green-500' : 'bg-red-500'}`}
-        style={{
-          width: '12px',
-          height: '12px',
-          top: `${rect.top}px`,
-          left: `${rect.left}px`,
-          zIndex: 100,
-          boxShadow: isHigh ? '0 0 8px rgba(0, 255, 0, 0.8)' : 'none'
-        }}
-        title={`${pinId} ${isHigh ? 'HIGH' : 'LOW'}`}
-      />
-    );
-  }).filter(Boolean);
-  
-  // Apply visual effects to component elements based on state
-  useEffect(() => {
-    if (!isSimulationRunning || !componentStates) return;
-    
-    // Apply visual effects to each component based on its state
+    // Update LED components
     Object.entries(componentStates).forEach(([componentId, state]) => {
-      const componentElement = document.getElementById(componentId);
-      if (!componentElement) return;
+      if (componentId.startsWith('led-')) {
+        // Get the DOM element for the LED visualization
+        const ledElement = document.getElementById(`led-vis-${componentId}`);
+        if (ledElement && state.isLit !== undefined) {
+          ledElement.classList.toggle('led-on', state.isLit);
+        }
+      }
       
-      // Extract the component type from the ID
-      const componentType = componentId.split('-')[0];
+      // RGB LED handling
+      if (componentId.startsWith('rgbled-')) {
+        const rgbElement = document.getElementById(`rgbled-vis-${componentId}`);
+        if (rgbElement) {
+          const { redValue = 0, greenValue = 0, blueValue = 0 } = state;
+          // Convert binary RGB values to CSS color
+          const red = redValue * 255;
+          const green = greenValue * 255;
+          const blue = blueValue * 255;
+          rgbElement.style.backgroundColor = `rgb(${red}, ${green}, ${blue})`;
+          
+          // Add a 'lit' class if any value is > 0
+          const isLit = red > 0 || green > 0 || blue > 0;
+          rgbElement.classList.toggle('led-on', isLit);
+        }
+      }
       
-      // Apply component-specific visual effects
-      switch (componentType) {
-        case 'led':
-          // LED component
-          if (state.isLit) {
-            // Add glow effect for lit LED
-            componentElement.style.filter = 'drop-shadow(0 0 8px rgba(255, 0, 0, 0.8))';
-            componentElement.dataset.state = 'on';
-          } else {
-            componentElement.style.filter = '';
-            componentElement.dataset.state = 'off';
-          }
-          break;
-          
-        case 'rgbled':
-          // RGB LED component
-          const redIntensity = state.redValue || 0;
-          const greenIntensity = state.greenValue || 0;
-          const blueIntensity = state.blueValue || 0;
-          
-          if (redIntensity || greenIntensity || blueIntensity) {
-            // Calculate color based on RGB values
-            const r = Math.round(redIntensity * 255);
-            const g = Math.round(greenIntensity * 255);
-            const b = Math.round(blueIntensity * 255);
-            const rgbColor = `rgb(${r}, ${g}, ${b})`;
-            
-            componentElement.style.filter = `drop-shadow(0 0 8px ${rgbColor})`;
-            componentElement.dataset.state = 'on';
-          } else {
-            componentElement.style.filter = '';
-            componentElement.dataset.state = 'off';
-          }
-          break;
-          
-        case 'buzzer':
-          // Buzzer component
-          if (state.hasSignal) {
-            // Add animation for active buzzer
-            componentElement.classList.add('buzzer-active');
-            componentElement.dataset.state = 'on';
-            
-            // Play a sound (if implemented)
-            // This would be handled by the buzzer component itself
-          } else {
-            componentElement.classList.remove('buzzer-active');
-            componentElement.dataset.state = 'off';
-          }
-          break;
-          
-        default:
-          // Other components
-          break;
+      // Buzzer handling
+      if (componentId.startsWith('buzzer-')) {
+        const buzzerElement = document.getElementById(`buzzer-vis-${componentId}`);
+        if (buzzerElement && state.hasSignal !== undefined) {
+          buzzerElement.classList.toggle('buzzer-active', state.hasSignal);
+        }
+      }
+      
+      // Add more component types as needed
+    });
+    
+    // Visualize pin states on the HERO board
+    // Find pins that are connected to outputs and update their visual state
+    Object.entries(pinStates).forEach(([pinId, isHigh]) => {
+      const pinElement = document.querySelector(`[data-pin-id="${pinId}"]`);
+      if (pinElement) {
+        pinElement.classList.toggle('pin-high', isHigh);
       }
     });
     
-    // Cleanup function
-    return () => {
-      // Remove all visual effects when component unmounts
-      document.querySelectorAll('[data-state]').forEach(el => {
-        el.style.filter = '';
-        el.classList.remove('buzzer-active');
-        delete el.dataset.state;
-      });
-    };
-  }, [isSimulationRunning, componentStates]);
-  
-  return (
-    <div className="simulation-visualizer">
-      {/* Pin state indicators */}
-      {isSimulationRunning && pinIndicators}
+    // Visualize the wires based on pin states
+    // For each wire, check if it's connected to a pin with a state
+    wires.forEach(wire => {
+      const wireId = wire.id;
+      const wireElement = document.getElementById(wireId);
       
-      {/* Simulation status overlay */}
-      {isSimulationRunning && (
-        <div className="fixed top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold z-50 flex items-center">
-          <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></div>
-          Simulation Active
-        </div>
-      )}
-    </div>
-  );
+      if (wireElement) {
+        let isActive = false;
+        
+        // Find the source and target pin IDs
+        const sourcePinName = wire.sourceName;
+        const targetPinName = wire.targetName;
+        
+        // Check if the source or target is a digital pin on the Arduino
+        if (
+          sourcePinName.match(/^[0-9]+$/) || 
+          sourcePinName.match(/^A[0-9]+$/) ||
+          targetPinName.match(/^[0-9]+$/) || 
+          targetPinName.match(/^A[0-9]+$/)
+        ) {
+          const pinId = sourcePinName.match(/^[0-9]+$/) || sourcePinName.match(/^A[0-9]+$/) 
+            ? sourcePinName
+            : targetPinName;
+          
+          const pinState = pinStates[`D${pinId}`] || pinStates[pinId];
+          isActive = pinState === true;
+        }
+        
+        // Update wire visual state
+        wireElement.classList.toggle('wire-active', isActive);
+      }
+    });
+    
+  }, [pinStates, componentStates, components, wires]);
+  
+  return null; // This component doesn't render UI elements directly
 };
 
 export default SimulationVisualizer;

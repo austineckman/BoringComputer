@@ -453,14 +453,13 @@ void loop() {
     alert('Project saved! (This is a placeholder - in a real app, this would save to the database)');
   };
 
-  // Simulation state - using the simulator context instead of local state
-  
-  // Import simulator context
+  // Local simulation state
+  const [isSimulationRunning, setIsSimulationRunning] = useState(false);
+
+  // Use simulator context
   const { 
-    isSimulationRunning, 
-    startSimulation, 
-    stopSimulation, 
-    compileAndRun,
+    startSimulation,
+    stopSimulation,
     addLog: addSimulatorLog,
     logs: simulatorLogs
   } = useSimulator();
@@ -470,47 +469,23 @@ void loop() {
     if (isSimulationRunning) {
       // Stop the simulation
       stopSimulation();
+      setIsSimulationRunning(false);
+      addSimulationLog('Simulation stopped');
     } else {
-      // Get current connections from the wires
-      const connections = {};
-      
-      // Process each wire to build connection map
-      wires.forEach(wire => {
-        // Extract pin information
-        const sourceParts = wire.startPin.id.split('-');
-        const targetParts = wire.endPin.id.split('-');
-        
-        // Format in the way our simulator expects
-        // For heroboard pins, use the standard pin designation (D12, A0, etc.)
-        if (sourceParts[0] === 'heroboard') {
-          const pinKey = sourceParts[sourceParts.length - 1];
-          if (!connections[pinKey]) {
-            connections[pinKey] = [];
-          }
-          connections[pinKey].push(`${targetParts[0]}:${targetParts[targetParts.length - 1]}`);
-        }
-        else if (targetParts[0] === 'heroboard') {
-          const pinKey = targetParts[targetParts.length - 1];
-          if (!connections[pinKey]) {
-            connections[pinKey] = [];
-          }
-          connections[pinKey].push(`${sourceParts[0]}:${sourceParts[sourceParts.length - 1]}`);
-        }
-      });
-      
-      // Compile the code and start the simulation if successful
-      const code = getCode();
-      if (compileAndRun(code, components, connections)) {
-        // If compilation was successful, start the simulation
-        startSimulation();
+      // Start the simulation with current code
+      const success = startSimulation(code);
+      if (success) {
+        setIsSimulationRunning(true);
+        addSimulationLog('Simulation started');
+      } else {
+        addSimulationLog('Failed to start simulation - check for errors');
       }
     }
   };
   
   // Add a log entry with timestamp
   const addSimulationLog = (message: string) => {
-    const timestamp = new Date().toLocaleTimeString();
-    setSimulationLogs(prev => [...prev, { timestamp, message }]);
+    addSimulatorLog(message);
     console.log(`[Simulator] ${message}`);
   };
 
@@ -653,40 +628,20 @@ void loop() {
             </div>
           </div>
           
-          <div className="flex-1 flex flex-col">
-            <textarea 
-              ref={editorRef}
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="flex-1 w-full bg-gray-900 text-gray-100 p-4 text-sm resize-none outline-none border-none font-mono"
-              style={{ fontSize: '14px' }}
-              spellCheck="false"
-            ></textarea>
+          <div className="flex-1 flex">
+            <div className="flex-1">
+              <textarea 
+                ref={editorRef}
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className="w-full h-full bg-gray-900 text-gray-100 p-4 text-sm resize-none outline-none border-none font-mono"
+                style={{ fontSize: '14px' }}
+                spellCheck="false"
+              ></textarea>
+            </div>
             
-            {/* Simulation Log Panel */}
-            <div className="h-32 overflow-y-auto bg-gray-800 border-t border-gray-700">
-              <div className="p-2 text-xs text-white">
-                <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-semibold">Simulation Logs</h3>
-                  <div className="flex items-center">
-                    <div className={`w-2 h-2 rounded-full ${isSimulationRunning ? 'bg-green-500' : 'bg-red-500'} mr-1`}></div>
-                    <span>{isSimulationRunning ? 'Running' : 'Stopped'}</span>
-                  </div>
-                </div>
-                
-                <div className="font-mono h-20 overflow-y-auto">
-                  {simulationLogs.length === 0 ? (
-                    <div className="text-gray-500 italic">No simulation logs yet</div>
-                  ) : (
-                    simulationLogs.map((log, index) => (
-                      <div key={index} className="text-xs mb-1">
-                        <span className="text-gray-400">[{log.timestamp}]</span>{' '}
-                        <span>{log.message}</span>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
+            <div className="w-1/3 p-2">
+              <SimulationLogPanel />
             </div>
           </div>
         </div>
