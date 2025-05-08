@@ -107,6 +107,55 @@ router.post("/logout", (req, res) => {
   });
 });
 
+// Change password route
+router.post("/change-password", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    const user = req.user as Express.User;
+    
+    // Validate request body
+    const passwordSchema = z.object({
+      currentPassword: z.string().min(1, "Current password is required"),
+      newPassword: z.string().min(6, "New password must be at least 6 characters"),
+    });
+    
+    const result = passwordSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ 
+        message: "Invalid password data", 
+        errors: result.error.flatten().fieldErrors 
+      });
+    }
+    
+    // Get current user with password from DB
+    const fullUser = await storage.getUser(user.id);
+    if (!fullUser || !fullUser.password) {
+      return res.status(404).json({ message: "User account not found" });
+    }
+    
+    // Verify current password
+    const { currentPassword, newPassword } = req.body;
+    const isPasswordValid = await comparePasswords(currentPassword, fullUser.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Current password is incorrect" });
+    }
+    
+    // Hash new password
+    const hashedPassword = await hashPassword(newPassword);
+    
+    // Update user password
+    await storage.updateUser(user.id, { password: hashedPassword });
+    
+    return res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.error("Error changing password:", error);
+    return res.status(500).json({ message: "Failed to change password. Please try again." });
+  }
+});
+
 // Get current user
 router.get("/me", (req, res) => {
   if (!req.isAuthenticated()) {
