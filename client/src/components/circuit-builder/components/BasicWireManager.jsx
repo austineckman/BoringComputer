@@ -11,24 +11,15 @@ const BasicWireManager = ({ canvasRef }) => {
   const [selectedWireId, setSelectedWireId] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   
-  // Generate a simple bezier curve path between two points
+  // Generate a path with 90-degree bends for better "cable management"
   const getWirePath = (start, end) => {
     if (!start || !end) return '';
     
-    // Calculate control points for a simple curve
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const controlPoint1 = {
-      x: start.x + dx / 3,
-      y: start.y
-    };
-    const controlPoint2 = {
-      x: end.x - dx / 3,
-      y: end.y
-    };
+    // Determine the midpoint for the horizontal segment
+    const midX = start.x + (end.x - start.x) / 2;
     
-    // Generate SVG path with cubic bezier curve
-    return `M ${start.x},${start.y} C ${controlPoint1.x},${controlPoint1.y} ${controlPoint2.x},${controlPoint2.y} ${end.x},${end.y}`;
+    // Generate SVG path with 90-degree bends
+    return `M ${start.x},${start.y} H ${midX} V ${end.y} H ${end.x}`;
   };
   
   // Handle pin click events
@@ -250,7 +241,8 @@ const BasicWireManager = ({ canvasRef }) => {
           strokeWidth={2}
           strokeDasharray="5,5"
           fill="none"
-          strokeLinecap="round"
+          strokeLinecap="square" // Changed to square to match 90-degree corners
+          strokeLinejoin="miter" // Added for sharp corners
         />
       )}
     </svg>
