@@ -17,7 +17,7 @@ const AVR8Simulator = ({
     startSimulation,
     stopSimulation,
     pinStates,
-    addSimulatorLog
+    addLog
   } = useSimulator();
   
   // Start/stop simulation based on props
@@ -25,10 +25,10 @@ const AVR8Simulator = ({
     if (isRunning) {
       // In a real implementation, this would initialize the AVR8js simulation
       // with the provided code, components and wires
-      addSimulatorLog('AVR8 simulator initialized');
+      addLog('AVR8 simulator initialized');
     } else {
       // Cleanup when stopping simulation
-      addSimulatorLog('AVR8 simulator stopped');
+      addLog('AVR8 simulator stopped');
     }
     
     return () => {
