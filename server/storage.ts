@@ -39,6 +39,7 @@ export interface IStorage {
   getUserByDiscordId(discordId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>;
   
   // Quest methods
   getQuests(): Promise<Quest[]>;
@@ -210,6 +211,40 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return updatedUser || undefined;
+  }
+
+  async deleteUser(id: number): Promise<boolean> {
+    try {
+      // For proper foreign key constraints handling:
+      // 1. Delete user submissions
+      await db.delete(submissions).where(eq(submissions.userId, id));
+      
+      // 2. Delete user quests
+      await db.delete(userQuests).where(eq(userQuests.userId, id));
+      
+      // 3. Delete user achievements
+      await db.delete(userAchievements).where(eq(userAchievements.userId, id));
+      
+      // 4. Delete user loot boxes
+      await db.delete(lootBoxes).where(eq(lootBoxes.userId, id));
+      
+      // 5. Delete user inventory history
+      await db.delete(inventoryHistory).where(eq(inventoryHistory.userId, id));
+      
+      // 6. Delete user crafted items
+      await db.delete(craftedItems).where(eq(craftedItems.userId, id));
+      
+      // 7. Delete character equipment
+      await db.delete(characterEquipment).where(eq(characterEquipment.userId, id));
+      
+      // 8. Delete the user
+      const result = await db.delete(users).where(eq(users.id, id));
+      
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      return false;
+    }
   }
   
   // Quest methods

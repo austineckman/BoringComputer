@@ -556,6 +556,46 @@ router.get('/users', async (req, res) => {
 });
 
 // Update user roles - toggle admin status
+// Delete a user
+router.delete('/users/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+    
+    // Get the current user making the request
+    const adminUser = req.user;
+    if (!adminUser || !adminUser.roles?.includes('admin')) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    // Get the target user
+    const targetUser = await storage.getUser(id);
+    if (!targetUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Delete the user
+    const success = await storage.deleteUser(id);
+    
+    if (success) {
+      res.json({ 
+        message: 'User deleted successfully',
+        user: {
+          id: targetUser.id,
+          username: targetUser.username
+        }
+      });
+    } else {
+      res.status(500).json({ error: 'Failed to delete user' });
+    }
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
 router.put('/users/:id/toggle-admin', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
