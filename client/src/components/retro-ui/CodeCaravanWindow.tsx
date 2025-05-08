@@ -335,6 +335,8 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
 
   // Handle user choice selection
   function handleChoice(choice: EventChoice) {
+    console.log("Handle choice clicked:", choice.text);
+    
     // Check if choice requires resources
     if (choice.requiredResource) {
       const { type, amount } = choice.requiredResource;
@@ -376,17 +378,17 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
       distanceTraveled: Math.min(100, updatedState.distanceTraveled + 10),
       eventHistory: [...updatedState.eventHistory, gameState.currentEvent?.id || ''],
       day: updatedState.day + 1,
-      phase: 'journey'
+      phase: 'journey' as GamePhase
     };
 
     // Check if game over conditions are met
     if (updatedState.resources.energy <= 0) {
       updatedState.gameOver = true;
-      updatedState.phase = 'ending';
+      updatedState.phase = 'ending' as GamePhase;
       setTextToAnimate('Your team has run out of energy and cannot continue the journey. Game Over!');
     } else if (updatedState.distanceTraveled >= 100) {
       updatedState.gameOver = true;
-      updatedState.phase = 'ending';
+      updatedState.phase = 'ending' as GamePhase;
       updatedState.currentLocation = 'Silicon Valley';
       setTextToAnimate('Congratulations! Your team has successfully reached Silicon Valley with the revolutionary programming language!');
     } else {
@@ -406,9 +408,10 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
     setGameState({
       ...gameState,
       currentEvent: event,
-      phase: 'event'
+      phase: 'event' as GamePhase
     });
     
+    console.log("Random event generated:", event.title);
     setTextToAnimate(event.description);
   }
 
@@ -427,7 +430,7 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
     const newGameState = {
       ...gameState,
       team: selectedCharacters,
-      phase: 'journey'
+      phase: 'journey' as GamePhase
     };
     
     setGameState(newGameState);
@@ -438,6 +441,8 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
 
   // Continue journey after event
   function continueJourney() {
+    console.log("Continue journey clicked");
+    
     // 70% chance of random event, 30% chance of peaceful travel
     if (Math.random() < 0.7) {
       generateRandomEvent();
@@ -451,7 +456,8 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
       
       const randomMessage = peaceful[Math.floor(Math.random() * peaceful.length)];
       
-      setGameState({
+      // Create a new state object to avoid issues with stale state
+      const newState = {
         ...gameState,
         day: gameState.day + 1,
         distanceTraveled: Math.min(100, gameState.distanceTraveled + 5),
@@ -460,18 +466,27 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
           energy: Math.min(100, gameState.resources.energy + 5), // Rest a bit
           coffee: Math.max(0, gameState.resources.coffee - 1) // Use a little coffee
         }
-      });
+      };
       
-      setTextToAnimate(randomMessage);
-      
-      // Update current location
-      const locationIndex = Math.floor((gameState.distanceTraveled + 5) / 10);
-      if (locationIndex < locations.length && locations[locationIndex] !== gameState.currentLocation) {
-        setGameState(prev => ({
-          ...prev,
-          currentLocation: locations[locationIndex]
-        }));
+      // Check if we've reached 100%
+      if (newState.distanceTraveled >= 100) {
+        newState.phase = 'ending' as GamePhase;
+        newState.gameOver = true;
+        newState.currentLocation = 'Silicon Valley';
+        setTextToAnimate('Congratulations! Your team has successfully reached Silicon Valley with the revolutionary programming language!');
+      } else {
+        setTextToAnimate(randomMessage);
       }
+      
+      // Update current location if needed
+      const locationIndex = Math.floor(newState.distanceTraveled / 10);
+      if (locationIndex < locations.length && locations[locationIndex] !== newState.currentLocation) {
+        newState.currentLocation = locations[locationIndex];
+      }
+      
+      // Use a single state update
+      setGameState(newState);
+      console.log("Journey continued, new state:", newState);
     }
   }
 
@@ -506,7 +521,7 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
       </div>
       <button 
         className="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-md transition-colors duration-200"
-        onClick={() => setGameState({...gameState, phase: 'characterSelect'})}
+        onClick={() => setGameState({...gameState, phase: 'characterSelect' as GamePhase})}
       >
         Begin Adventure
       </button>
