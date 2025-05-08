@@ -129,30 +129,118 @@ const Buzzer = ({
           pinId = e.detail.pinId || 'pin1';
           pinType = e.detail.pinType || 'bidirectional';
         }
+
+        // Get the actual pin element directly
+        const pinElement = e.detail.target || e.target;
+        let pinPosition;
         
-        // Get pin position for accurate wire connections
-        const clientX = e.detail.clientX || 0;
-        const clientY = e.detail.clientY || 0;
+        // Get precise position from the DOM element
+        if (pinElement && canvasRef.current) {
+          const pinRect = pinElement.getBoundingClientRect();
+          const canvasRect = canvasRef.current.getBoundingClientRect();
+          
+          pinPosition = {
+            x: pinRect.left + (pinRect.width / 2) - canvasRect.left,
+            y: pinRect.top + (pinRect.height / 2) - canvasRect.top
+          };
+          
+          console.log(`Using pin element position for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
+        } 
+        // Fallback to event coordinates
+        else if (e.detail.clientX && e.detail.clientY) {
+          const clientX = e.detail.clientX;
+          const clientY = e.detail.clientY;
+          
+          // Calculate position relative to canvas
+          const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+          pinPosition = {
+            x: clientX - canvasRect.left,
+            y: clientY - canvasRect.top
+          };
+          
+          console.log(`Using event coordinates for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
+        } 
+        // Final fallback - use component position + approximated pin offset
+        else {
+          // Try to find the actual pin element by ID pattern
+          const buzzerElement = document.getElementById(id);
+          if (buzzerElement) {
+            const buzzerRect = buzzerElement.getBoundingClientRect();
+            const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+            
+            // Apply appropriate offset based on pin name if known
+            let offsetX = 0, offsetY = 0;
+            
+            if (pinId === 'bz1') {
+              offsetX = 10;
+              offsetY = buzzerRect.height - 15;
+            } else if (pinId === 'bz2') {
+              offsetX = buzzerRect.width / 2;
+              offsetY = buzzerRect.height - 10;
+            } else if (pinId === 'bz3') {
+              offsetX = buzzerRect.width - 10;
+              offsetY = buzzerRect.height - 15;
+            }
+            
+            pinPosition = {
+              x: buzzerRect.left + offsetX - canvasRect.left,
+              y: buzzerRect.top + offsetY - canvasRect.top
+            };
+            
+            console.log(`Using calculated offset for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
+          } else {
+            // Last resort fallback
+            pinPosition = {
+              x: posLeft + 20,
+              y: posTop + buzzerRect?.height || 100
+            };
+          }
+        }
         
-        // Calculate position relative to canvas
-        const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
-        const pinPosition = {
-          x: clientX - canvasRect.left,
-          y: clientY - canvasRect.top
-        };
+        // Generate formatted pin ID for consistent wire connections
+        const formattedPinId = `pt-buzzer-${id}-${pinId}`;
+        
+        // Create a custom pin click event with the correct position data
+        const pinClickEvent = new CustomEvent('pinClicked', {
+          detail: {
+            id: formattedPinId,
+            pinName: pinId,
+            pinType: pinType,
+            parentId: id,
+            pinPosition: pinPosition,
+            clientX: pinPosition.x + (canvasRef.current?.getBoundingClientRect()?.left || 0), 
+            clientY: pinPosition.y + (canvasRef.current?.getBoundingClientRect()?.top || 0)
+          }
+        });
+        
+        // Dispatch the event first, then call the callback
+        document.dispatchEvent(pinClickEvent);
         
         console.log(`Buzzer pin ${pinId} (${pinType}) clicked at position:`, pinPosition);
         
-        // Call the parent's connector function with pin information
-        onPinConnect(pinId, pinType, id, pinPosition);
+        // We don't need to call onPinConnect directly as the wire manager will handle the event
+        // onPinConnect(pinId, pinType, id, pinPosition);
       } catch (err) {
         console.error("Error parsing pin data in Buzzer:", err);
-        // Fallback to a default pin and position
+        // Error handling fallback just dispatch a basic event
         const defaultPinPosition = {
-          x: posLeft + 20, // Approximate position
+          x: posLeft + 20,
           y: posTop + 20
         };
-        onPinConnect('pin1', 'bidirectional', id, defaultPinPosition);
+        
+        // Dispatch a minimal event that the wire manager can handle
+        const fallbackEvent = new CustomEvent('pinClicked', {
+          detail: {
+            id: `pt-buzzer-${id}-bz1`,
+            pinName: 'bz1',
+            pinType: 'bidirectional',
+            parentId: id,
+            pinPosition: defaultPinPosition,
+            clientX: defaultPinPosition.x + (canvasRef.current?.getBoundingClientRect()?.left || 0),
+            clientY: defaultPinPosition.y + (canvasRef.current?.getBoundingClientRect()?.top || 0)
+          }
+        });
+        document.dispatchEvent(fallbackEvent);
       }
     }
   };
