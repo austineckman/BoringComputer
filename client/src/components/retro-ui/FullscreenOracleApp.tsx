@@ -18,6 +18,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import wallbg from '@assets/wallbg.png';
 import oracleIconImage from '@assets/01_Fire_Grimoire.png'; // Using grimoire as placeholder for Oracle icon
 import theOracleLogo from '@assets/TheOracleLogo.png';
+import { apiRequest } from "@/lib/queryClient";
 
 // Define types for lootboxes and quests
 interface LootBox {
@@ -1279,99 +1280,79 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         body = null;
       }
       
-      const response = await fetch(endpoint, {
-        method,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: body ? JSON.stringify(body) : undefined
-      });
+      // Use the apiRequest helper that properly handles CSRF tokens
+      const response = await apiRequest(
+        method as 'DELETE' | 'POST', 
+        endpoint,
+        body
+      );
       
-      if (response.ok) {
-        window.sounds?.success();
-        setNotificationMessage({
-          type: 'success',
-          message: `${confirmDelete.type.charAt(0).toUpperCase() + confirmDelete.type.slice(1)} deleted successfully!`
-        });
+      // apiRequest throws on error, so if we get here, it was successful
+      window.sounds?.success();
+      setNotificationMessage({
+        type: 'success',
+        message: `${confirmDelete.type.charAt(0).toUpperCase() + confirmDelete.type.slice(1)} deleted successfully!`
+      });
         
-        // Update the state to remove the deleted item
-        if (confirmDelete.type === 'lootbox') {
-          setLootboxes(prevBoxes => prevBoxes.filter(box => box.id !== confirmDelete.id));
-        } else if (confirmDelete.type === 'quest') {
-          setQuests(prevQuests => prevQuests.filter(quest => quest.id !== confirmDelete.id));
-        } else if (confirmDelete.type === 'item') {
-          setItems(prevItems => prevItems.filter(item => item.id !== confirmDelete.id));
-        } else if (confirmDelete.type === 'kit') {
-          setComponentKits(prevKits => prevKits.filter(kit => kit.id !== confirmDelete.id));
-          
-          // Also clean up kit components from state
-          setKitComponents(prev => {
-            const newComponents = { ...prev };
+      // Update the state to remove the deleted item
+      if (confirmDelete.type === 'lootbox') {
+        setLootboxes(prevBoxes => prevBoxes.filter(box => box.id !== confirmDelete.id));
+      } else if (confirmDelete.type === 'quest') {
+        setQuests(prevQuests => prevQuests.filter(quest => quest.id !== confirmDelete.id));
+      } else if (confirmDelete.type === 'item') {
+        setItems(prevItems => prevItems.filter(item => item.id !== confirmDelete.id));
+      } else if (confirmDelete.type === 'kit') {
+        setComponentKits(prevKits => prevKits.filter(kit => kit.id !== confirmDelete.id));
+        
+        // Also clean up kit components from state
+        setKitComponents(prev => {
+          const newComponents = { ...prev };
+          if (confirmDelete.id) {
             delete newComponents[confirmDelete.id];
-            return newComponents;
-          });
-          
-          // If this was the active kit, set a new active kit if possible
-          if (activeKitId === confirmDelete.id) {
-            setComponentKits(prevKits => {
-              const remainingKits = prevKits.filter(kit => kit.id !== confirmDelete.id);
-              if (remainingKits.length > 0) {
-                setActiveKitId(remainingKits[0].id);
-              } else {
-                setActiveKitId(null);
-              }
-              return prevKits;
-            });
           }
-        } else if (confirmDelete.type === 'component') {
-          // For component deletion, we need to identify which kit it belongs to
-          // This would ideally be passed in with the deletion request or stored
-          // temporarily when confirming deletion
-          const componentKitId = confirmDelete.kitId || activeKitId;
-          
-          if (componentKitId) {
-            setKitComponents(prev => {
-              if (!prev[componentKitId]) return prev;
-              
-              return {
-                ...prev,
-                [componentKitId]: prev[componentKitId].filter(
-                  comp => comp.id.toString() !== confirmDelete.id
-                )
-              };
-            });
-          }
-        } else if (confirmDelete.type === 'recipe') {
-          setRecipes(prevRecipes => prevRecipes.filter(recipe => recipe.id.toString() !== confirmDelete.id));
-        } else if (confirmDelete.type === 'user') {
-          // Filter the user from the state
-          setUsers(prevUsers => prevUsers.filter(user => user.id.toString() !== confirmDelete.id));
-        }
-        
-        setTimeout(() => {
-          setNotificationMessage(null);
-        }, 3000);
-      } else {
-        window.sounds?.error();
-        const errorText = await response.text();
-        let errorMessage = 'Failed to delete';
-        
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData.message || errorMessage;
-        } catch (e) {
-          // If the response isn't JSON, use the text directly
-          errorMessage = errorText || errorMessage;
-        }
-        
-        setNotificationMessage({
-          type: 'error',
-          message: `Error: ${errorMessage}`
+          return newComponents;
         });
-        setTimeout(() => {
-          setNotificationMessage(null);
-        }, 3000);
+        
+        // If this was the active kit, set a new active kit if possible
+        if (activeKitId === confirmDelete.id) {
+          setComponentKits(prevKits => {
+            const remainingKits = prevKits.filter(kit => kit.id !== confirmDelete.id);
+            if (remainingKits.length > 0) {
+              setActiveKitId(remainingKits[0].id);
+            } else {
+              setActiveKitId(null);
+            }
+            return prevKits;
+          });
+        }
+      } else if (confirmDelete.type === 'component') {
+        // For component deletion, we need to identify which kit it belongs to
+        // This would ideally be passed in with the deletion request or stored
+        // temporarily when confirming deletion
+        const componentKitId = confirmDelete.kitId || activeKitId;
+        
+        if (componentKitId) {
+          setKitComponents(prev => {
+            if (!prev[componentKitId]) return prev;
+            
+            return {
+              ...prev,
+              [componentKitId]: prev[componentKitId].filter(
+                comp => comp.id.toString() !== confirmDelete.id
+              )
+            };
+          });
+        }
+      } else if (confirmDelete.type === 'recipe') {
+        setRecipes(prevRecipes => prevRecipes.filter(recipe => recipe.id.toString() !== confirmDelete.id));
+      } else if (confirmDelete.type === 'user') {
+        // Filter the user from the state
+        setUsers(prevUsers => prevUsers.filter(user => user.id.toString() !== confirmDelete.id));
       }
+      
+      setTimeout(() => {
+        setNotificationMessage(null);
+      }, 3000);
     } catch (err) {
       window.sounds?.error();
       const error = err as Error;
