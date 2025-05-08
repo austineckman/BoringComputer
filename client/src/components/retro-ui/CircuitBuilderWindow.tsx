@@ -461,7 +461,8 @@ void loop() {
     startSimulation,
     stopSimulation,
     addLog: addSimulatorLog,
-    logs: simulatorLogs
+    logs: simulatorLogs,
+    updateComponentState  // Access the updateComponentState function
   } = useSimulator();
   
   // Run the simulation

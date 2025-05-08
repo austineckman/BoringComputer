@@ -52,7 +52,9 @@ const LED = ({
     if (componentStates && componentStates[id]) {
       const ledState = componentStates[id];
       // Update LED state based on simulation results
-      setIsLit(ledState.isLit || false);
+      const newLitState = ledState.isLit || false;
+      console.log(`LED ${id} updated from simulation: isLit=${newLitState}`);
+      setIsLit(newLitState);
     }
   }, [componentStates, id]);
   
@@ -197,28 +199,42 @@ const LED = ({
         ></Moveable>
       )}
       
-      <ReactLEDElement
-        id={id}
-        className="min-w-min cursor-pointer absolute"
-        ref={targetRef}
-        onMouseDown={(e) => {
-          e.stopPropagation();
-          if (onSelect) onSelect(id);
-        }}
-        onPinClicked={handlePinClicked}
-        onPininfoChange={(e) => onPinInfoChange(e)}
-        style={{
-          transform: `translate(${initPosLeft}px, ${initPosTop}px)`,
-          zIndex: isDragged ? 99999 : 10
-        }}
-        color={ledColor}
-        flip={false}
-        isActive={isSelected}
-        isDragged={isDragged}
-        rotationTransform={rotationAngle}
-        brightness={componentData.attrs.brightness}
-        value={componentData.attrs.value}
-      ></ReactLEDElement>
+      <div className="relative">
+        <ReactLEDElement
+          id={id}
+          className="min-w-min cursor-pointer absolute"
+          ref={targetRef}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            if (onSelect) onSelect(id);
+          }}
+          onPinClicked={handlePinClicked}
+          onPininfoChange={(e) => onPinInfoChange(e)}
+          style={{
+            transform: `translate(${initPosLeft}px, ${initPosTop}px)`,
+            zIndex: isDragged ? 99999 : 10
+          }}
+          color={ledColor}
+          flip={false}
+          isActive={isSelected}
+          isDragged={isDragged}
+          rotationTransform={rotationAngle}
+          brightness={componentData.attrs.brightness}
+          value={componentData.attrs.value}
+        ></ReactLEDElement>
+        
+        {/* Simulation state indicator */}
+        {isSimulationRunning && (
+          <div 
+            className={`absolute rounded-full w-3 h-3 ${isLit ? 'bg-green-500' : 'bg-red-500'}`}
+            style={{
+              transform: `translate(${initPosLeft + 35}px, ${initPosTop}px)`,
+              boxShadow: isLit ? '0 0 8px 2px #4ade80' : 'none',
+              transition: 'background-color 0.2s, box-shadow 0.2s'
+            }}
+          ></div>
+        )}
+      </div>
     </>
   );
 };
