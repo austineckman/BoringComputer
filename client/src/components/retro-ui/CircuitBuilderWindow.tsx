@@ -490,163 +490,161 @@ void loop() {
   };
 
   return (
-    <SimulatorProvider>
-      <div className="flex flex-col w-full h-full bg-gray-800 text-white overflow-hidden">
-        {/* Toolbar */}
-        <div className="bg-gray-900 p-2 flex items-center justify-between border-b border-gray-700">
-          <div className="flex items-center space-x-2">
-            <img 
-              src="/@fs/home/runner/workspace/attached_assets/led.icon.png" 
-              alt="Sandbox" 
-              className="h-6 mr-2" 
-            />
-            <h2 className="text-lg font-bold">Sandbox</h2>
-          </div>
-          <div className="flex items-center space-x-2">
-            {/* Canvas controls */}
-            <button 
-              className="bg-gray-700 p-1 rounded hover:bg-gray-600 text-xs"
-              onClick={() => setZoom(Math.min(3, zoom * 1.2))}
-              title="Zoom In"
-            >
-              <ZoomIn size={18} />
-            </button>
-            <button 
-              className="bg-gray-700 p-1 rounded hover:bg-gray-600 text-xs"
-              onClick={() => setZoom(Math.max(0.1, zoom * 0.8))}
-              title="Zoom Out"
-            >
-              <ZoomOut size={18} />
-            </button>
-            <button 
-              className="bg-gray-700 p-1 rounded hover:bg-gray-600 text-xs"
-              onClick={() => { setPan({ x: 0, y: 0 }); setZoom(1); }}
-              title="Reset View"
-            >
-              <Move size={18} />
-            </button>
-            <span className="text-xs">{Math.round(zoom * 100)}%</span>
-            
-            {/* Component controls */}
-            <button 
-              className={`p-1 rounded text-xs ${selectedComponent ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-700 hover:bg-gray-600 opacity-50 cursor-not-allowed'}`}
-              onClick={rotateSelectedComponent}
-              disabled={!selectedComponent}
-              title="Rotate Selected Component"
-            >
-              <RotateCcw size={18} />
-            </button>
-            <button 
-              className={`p-1 rounded text-xs ${selectedComponent || selectedWire ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-700 hover:bg-gray-600 opacity-50 cursor-not-allowed'}`}
-              onClick={deleteSelectedItem}
-              disabled={!selectedComponent && !selectedWire}
-              title="Delete Selected Item"
-            >
-              <Trash2 size={18} />
-            </button>
-            
-            {/* Project controls */}
-            <div className="w-px h-6 bg-gray-600 mx-2"></div>
-            <button 
-              className={`p-1 rounded text-xs ${isSimulationRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
-              onClick={runSimulation}
-              title={isSimulationRunning ? "Stop Simulation" : "Run Simulation"}
-            >
-              <Play size={18} />
-            </button>
-            <button 
-              className="bg-blue-600 p-1 rounded hover:bg-blue-700 text-xs"
-              onClick={saveProject}
-              title="Save Project"
-            >
-              <Save size={18} />
-            </button>
-            
-            {/* Close button */}
-            <button 
-              onClick={onClose}
-              className="bg-gray-700 px-2 py-1 rounded hover:bg-gray-600 ml-4"
-              title="Close Sandbox"
-            >
-              <X size={18} />
-            </button>
-          </div>
+    <div className="flex flex-col w-full h-full bg-gray-800 text-white overflow-hidden">
+      {/* Toolbar */}
+      <div className="bg-gray-900 p-2 flex items-center justify-between border-b border-gray-700">
+        <div className="flex items-center space-x-2">
+          <img 
+            src="/@fs/home/runner/workspace/attached_assets/led.icon.png" 
+            alt="Sandbox" 
+            className="h-6 mr-2" 
+          />
+          <h2 className="text-lg font-bold">Sandbox</h2>
         </div>
+        <div className="flex items-center space-x-2">
+          {/* Canvas controls */}
+          <button 
+            className="bg-gray-700 p-1 rounded hover:bg-gray-600 text-xs"
+            onClick={() => setZoom(Math.min(3, zoom * 1.2))}
+            title="Zoom In"
+          >
+            <ZoomIn size={18} />
+          </button>
+          <button 
+            className="bg-gray-700 p-1 rounded hover:bg-gray-600 text-xs"
+            onClick={() => setZoom(Math.max(0.1, zoom * 0.8))}
+            title="Zoom Out"
+          >
+            <ZoomOut size={18} />
+          </button>
+          <button 
+            className="bg-gray-700 p-1 rounded hover:bg-gray-600 text-xs"
+            onClick={() => { setPan({ x: 0, y: 0 }); setZoom(1); }}
+            title="Reset View"
+          >
+            <Move size={18} />
+          </button>
+          <span className="text-xs">{Math.round(zoom * 100)}%</span>
+          
+          {/* Component controls */}
+          <button 
+            className={`p-1 rounded text-xs ${selectedComponent ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-700 hover:bg-gray-600 opacity-50 cursor-not-allowed'}`}
+            onClick={rotateSelectedComponent}
+            disabled={!selectedComponent}
+            title="Rotate Selected Component"
+          >
+            <RotateCcw size={18} />
+          </button>
+          <button 
+            className={`p-1 rounded text-xs ${selectedComponent || selectedWire ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-700 hover:bg-gray-600 opacity-50 cursor-not-allowed'}`}
+            onClick={deleteSelectedItem}
+            disabled={!selectedComponent && !selectedWire}
+            title="Delete Selected Item"
+          >
+            <Trash2 size={18} />
+          </button>
+          
+          {/* Project controls */}
+          <div className="w-px h-6 bg-gray-600 mx-2"></div>
+          <button 
+            className={`p-1 rounded text-xs ${isSimulationRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
+            onClick={runSimulation}
+            title={isSimulationRunning ? "Stop Simulation" : "Run Simulation"}
+          >
+            <Play size={18} />
+          </button>
+          <button 
+            className="bg-blue-600 p-1 rounded hover:bg-blue-700 text-xs"
+            onClick={saveProject}
+            title="Save Project"
+          >
+            <Save size={18} />
+          </button>
+          
+          {/* Close button */}
+          <button 
+            onClick={onClose}
+            className="bg-gray-700 px-2 py-1 rounded hover:bg-gray-600 ml-4"
+            title="Close Sandbox"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      </div>
 
-        <div className="flex flex-1 overflow-hidden">
-          {/* Main Sandbox Component */}
-          <div className="w-full bg-gray-900 overflow-hidden relative">
-            <CircuitBuilder />
-            
-            {/* Simulation overlay - hidden in the UI but active when simulation is running */}
-            <AVR8Simulator 
-              code={code}
-              isRunning={isSimulationRunning}
-              onPinChange={(pinOrComponent, isHigh) => {
-                // Handle pin change events from the simulator
-                if (typeof pinOrComponent === 'number') {
-                  // This is a pin change event
-                  const pin = pinOrComponent;
-                  console.log(`Simulator: Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
-                  // Standard pin change
-                  addSimulationLog(`Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
-                } else if (typeof pinOrComponent === 'object' && pinOrComponent.componentId) {
-                  // This is a component state update
-                  const { componentId, ...state } = pinOrComponent;
-                  console.log(`Simulator: Component ${componentId} state updated`, state);
-                  
-                  // Find the component and update its state in the simulator context
-                  addSimulationLog(`Updated component ${componentId}`);
-                }
-              }}
-              components={components}
-              wires={wires}
-              onLog={addSimulationLog}
-            />
+      <div className="flex flex-1 overflow-hidden">
+        {/* Main Sandbox Component */}
+        <div className="w-full bg-gray-900 overflow-hidden relative">
+          <CircuitBuilder />
+          
+          {/* Simulation overlay - hidden in the UI but active when simulation is running */}
+          <AVR8Simulator 
+            code={code}
+            isRunning={isSimulationRunning}
+            onPinChange={(pinOrComponent, isHigh) => {
+              // Handle pin change events from the simulator
+              if (typeof pinOrComponent === 'number') {
+                // This is a pin change event
+                const pin = pinOrComponent;
+                console.log(`Simulator: Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+                // Standard pin change
+                addSimulationLog(`Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+              } else if (typeof pinOrComponent === 'object' && pinOrComponent.componentId) {
+                // This is a component state update
+                const { componentId, ...state } = pinOrComponent;
+                console.log(`Simulator: Component ${componentId} state updated`, state);
+                
+                // Find the component and update its state in the simulator context
+                addSimulationLog(`Updated component ${componentId}`);
+              }
+            }}
+            components={components}
+            wires={wires}
+            onLog={addSimulationLog}
+          />
+        </div>
+      </div>
+      
+      {/* Bottom Code Editor */}
+      <div className="h-1/3 bg-gray-800 border-t border-gray-700 flex flex-col">
+        <div className="p-2 bg-gray-900 text-sm font-bold border-b border-gray-700 flex justify-between items-center">
+          <div className="flex items-center">
+            <FileCode size={16} className="mr-2 text-blue-400" />
+            <span>Arduino Code</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button 
+              className={`px-2 py-1 rounded text-xs flex items-center ${isSimulationRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+              onClick={runSimulation}
+            >
+              <Play size={14} className="mr-1" />
+              <span>{isSimulationRunning ? 'Stop Simulation' : 'Run Simulation'}</span>
+            </button>
+            <button className="bg-green-600 hover:bg-green-700 px-2 py-1 rounded text-xs flex items-center">
+              <Save size={14} className="mr-1" />
+              <span>Save Code</span>
+            </button>
           </div>
         </div>
         
-        {/* Bottom Code Editor */}
-        <div className="h-1/3 bg-gray-800 border-t border-gray-700 flex flex-col">
-          <div className="p-2 bg-gray-900 text-sm font-bold border-b border-gray-700 flex justify-between items-center">
-            <div className="flex items-center">
-              <FileCode size={16} className="mr-2 text-blue-400" />
-              <span>Arduino Code</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <button 
-                className={`px-2 py-1 rounded text-xs flex items-center ${isSimulationRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
-                onClick={runSimulation}
-              >
-                <Play size={14} className="mr-1" />
-                <span>{isSimulationRunning ? 'Stop Simulation' : 'Run Simulation'}</span>
-              </button>
-              <button className="bg-green-600 hover:bg-green-700 px-2 py-1 rounded text-xs flex items-center">
-                <Save size={14} className="mr-1" />
-                <span>Save Code</span>
-              </button>
-            </div>
+        <div className="flex-1 flex">
+          <div className="flex-1">
+            <textarea 
+              ref={editorRef}
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              className="w-full h-full bg-gray-900 text-gray-100 p-4 text-sm resize-none outline-none border-none font-mono"
+              style={{ fontSize: '14px' }}
+              spellCheck="false"
+            ></textarea>
           </div>
           
-          <div className="flex-1 flex">
-            <div className="flex-1">
-              <textarea 
-                ref={editorRef}
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                className="w-full h-full bg-gray-900 text-gray-100 p-4 text-sm resize-none outline-none border-none font-mono"
-                style={{ fontSize: '14px' }}
-                spellCheck="false"
-              ></textarea>
-            </div>
-            
-            <div className="w-1/3 p-2">
-              <SimulationLogPanel />
-            </div>
+          <div className="w-1/3 p-2">
+            <SimulationLogPanel />
           </div>
         </div>
       </div>
-    </SimulatorProvider>
+    </div>
   );
 };
 

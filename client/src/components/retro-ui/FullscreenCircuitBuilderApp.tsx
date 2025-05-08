@@ -1,6 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import CircuitBuilderWindow from './CircuitBuilderWindow';
+import { SimulatorProvider } from '../circuit-builder/simulator/SimulatorContext';
 
 interface FullscreenCircuitBuilderAppProps {
   onClose: () => void;
@@ -11,10 +12,10 @@ const FullscreenCircuitBuilderApp: React.FC<FullscreenCircuitBuilderAppProps> = 
     <div className="fixed inset-0 bg-blue-950 z-50 flex flex-col">
       {/* App content */}
       <div className="flex-1 overflow-hidden">
-        <CircuitBuilderWindow onClose={onClose} />
+        <SimulatorProvider>
+          <CircuitBuilderWindow onClose={onClose} />
+        </SimulatorProvider>
       </div>
-      
-      {/* Close button integrated into main window */}
     </div>
   );
 };
