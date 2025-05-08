@@ -451,11 +451,33 @@ const CircuitComponent = ({
       if (!window._lastMoveEventTime || now - window._lastMoveEventTime > 50) {
         window._lastMoveEventTime = now;
         
+        // Get all pin positions for wire updates
+        const pinPositions = {};
+        if (componentRef.current) {
+          const pins = componentRef.current.querySelectorAll('.pin-point');
+          pins.forEach(pin => {
+            const pinId = pin.dataset.pinId;
+            if (pinId) {
+              const rect = pin.getBoundingClientRect();
+              const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+              
+              // Create formatted pin ID
+              const formattedPinId = `pt-${type.toLowerCase().replace(/ /g, '')}-${id.replace(/ /g, '')}-${pinId}`;
+              
+              pinPositions[formattedPinId] = {
+                x: rect.left + rect.width/2 - canvasRect.left,
+                y: rect.top + rect.height/2 - canvasRect.top
+              };
+            }
+          });
+        }
+        
         // Dispatch move event to update connected wire positions
         document.dispatchEvent(new CustomEvent('componentMoved', {
           detail: {
             componentId: id,
-            newPosition: { x: newX, y: newY }
+            newPosition: { x: newX, y: newY },
+            pinPositions
           }
         }));
       }
@@ -467,10 +489,34 @@ const CircuitComponent = ({
       // Clear throttling timer
       window._lastMoveEventTime = null;
       
+      // Get all pin positions for final wire positions update
+      const pinPositions = {};
+      if (componentRef.current) {
+        const pins = componentRef.current.querySelectorAll('.pin-point');
+        pins.forEach(pin => {
+          const pinId = pin.dataset.pinId;
+          if (pinId) {
+            const rect = pin.getBoundingClientRect();
+            const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+            
+            // Create formatted pin ID
+            const formattedPinId = `pt-${type.toLowerCase().replace(/ /g, '')}-${id.replace(/ /g, '')}-${pinId}`;
+            
+            pinPositions[formattedPinId] = {
+              x: rect.left + rect.width/2 - canvasRect.left,
+              y: rect.top + rect.height/2 - canvasRect.top
+            };
+          }
+        });
+      }
+      
       // Final dispatch to ensure wire positions are updated
       // This ensures all wires are properly positioned after dragging stops
       document.dispatchEvent(new CustomEvent('componentMovedFinal', {
-        detail: { componentId: id }
+        detail: { 
+          componentId: id,
+          pinPositions
+        }
       }));
     };
     
@@ -523,7 +569,8 @@ const CircuitComponent = ({
           <div
             key={pin.id}
             id={`${id}-${pin.id}`}
-            className={`circuit-pin absolute w-5 h-5 rounded-full transform -translate-x-1/2 -translate-y-1/2 cursor-crosshair border-2 shadow-md ${
+            data-pin-id={pin.id}
+            className={`circuit-pin pin-point absolute w-5 h-5 rounded-full transform -translate-x-1/2 -translate-y-1/2 cursor-crosshair border-2 shadow-md ${
               pin.type === 'input' ? 'bg-green-500 border-green-700' : 
               pin.type === 'output' ? 'bg-red-500 border-red-700' : 
               'bg-blue-500 border-blue-700' // bidirectional
