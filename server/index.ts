@@ -4,6 +4,11 @@ import { setupVite, serveStatic, log } from "./vite";
 import { setupAuth } from "./auth";
 
 const app = express();
+
+// Trust proxy headers (important for secure cookies to work behind proxies)
+// This is critical for production where we might be behind nginx/CDN
+app.set('trust proxy', 1);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
