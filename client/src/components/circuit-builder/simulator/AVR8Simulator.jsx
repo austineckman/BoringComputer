@@ -22,209 +22,185 @@ const AVR8Simulator = ({
     wires       // Get wires from context
   } = useSimulator();
   
-  // Parse Arduino code to extract active pins and delays
-  const extractArduinoInfo = (code) => {
-    const pins = [];
-    let delayTime = 1000; // Default delay time is 1 second
+  // NEW APPROACH:
+  // Parse Arduino code to extract a sequence of pin states and timing operations
+  // This better simulates how Arduino actually executes code sequentially
+  const parseArduinoCode = (code) => {
+    // First, clean the Arduino code for better parsing
+    // Remove comments and extra whitespace
+    const cleanedCode = code
+      .replace(/\/\/.*$/gm, '') // Remove single-line comments
+      .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .trim();
     
-    // Extract all digitalWrite calls
-    const digitalWriteRegex = /digitalWrite\s*\(\s*(\w+|\d+)\s*,\s*\w+\s*\)/g;
-    let match;
+    console.log('Parsing Arduino code...');
     
-    while ((match = digitalWriteRegex.exec(code)) !== null) {
-      const pin = match[1];
-      // Handle LED_BUILTIN constant
-      if (pin === 'LED_BUILTIN') {
-        pins.push('13');
-      } else if (!isNaN(parseInt(pin))) {
-        // Only add numeric pins
-        pins.push(pin.toString());
-      } else {
-        console.log(`Warning: Found non-numeric pin reference "${pin}" in code`);
-      }
-    }
-    
-    // Extract delay values in the context they appear
-    // Try to identify distinct delay patterns for HIGH and LOW states
-    
-    // This regex looks for a pattern like: digitalWrite(pin, HIGH); delay(1000); digitalWrite(pin, LOW); delay(500);
-    const highLowPatternRegex = /digitalWrite\s*\(\s*\w+\s*,\s*HIGH\s*\)[^;]*;[^;]*delay\s*\(\s*(\d+)\s*\)[^;]*;[^;]*digitalWrite\s*\(\s*\w+\s*,\s*LOW\s*\)[^;]*;[^;]*delay\s*\(\s*(\d+)\s*\)/g;
-    
-    // This captures basic delay calls 
-    const delayRegex = /delay\s*\(\s*(\d+)\s*\)/g;
-    
-    // Track high and low delay times separately
-    let highDelayTime = 1000;
-    let lowDelayTime = 1000;
-    let hasDistinctDelays = false;
-    
-    // Look for the HIGH/LOW pattern first (preferred)
-    let patternMatch;
-    while ((patternMatch = highLowPatternRegex.exec(code)) !== null) {
-      if (patternMatch.length >= 3) {
-        const highDelay = parseInt(patternMatch[1], 10);
-        const lowDelay = parseInt(patternMatch[2], 10);
-        
-        if (!isNaN(highDelay) && !isNaN(lowDelay)) {
-          highDelayTime = highDelay;
-          lowDelayTime = lowDelay;
-          hasDistinctDelays = true;
-          
-          console.log(`Found distinct HIGH/LOW delays: HIGH=${highDelayTime}ms, LOW=${lowDelayTime}ms`);
-          break; // Use the first pattern we find
-        }
-      }
-    }
-    
-    // If we didn't find a pattern, fall back to the basic approach
-    if (!hasDistinctDelays) {
-      const delays = [];
-      
-      // Reset and reuse the regex
-      delayRegex.lastIndex = 0;
-      
-      while ((match = delayRegex.exec(code)) !== null) {
-        const delayValue = parseInt(match[1], 10);
-        if (!isNaN(delayValue)) {
-          delays.push(delayValue);
-        }
-      }
-      
-      // If we found delay values, use the average of them
-      if (delays.length > 0) {
-        // Calculate the total delay time
-        const totalDelay = delays.reduce((sum, val) => sum + val, 0);
-        
-        // If there's an even number of delays, try to pair them as HIGH/LOW
-        if (delays.length >= 2 && delays.length % 2 === 0) {
-          // Group delays in pairs and calculate averages for odd (HIGH) and even (LOW) positions
-          let highSum = 0;
-          let lowSum = 0;
-          
-          for (let i = 0; i < delays.length; i++) {
-            if (i % 2 === 0) {
-              highSum += delays[i];
-            } else {
-              lowSum += delays[i];
-            }
-          }
-          
-          highDelayTime = Math.max(500, Math.floor(highSum / (delays.length / 2)));
-          lowDelayTime = Math.max(500, Math.floor(lowSum / (delays.length / 2)));
-          hasDistinctDelays = true;
-          
-          console.log(`Inferred HIGH/LOW delays from paired delays: HIGH=${highDelayTime}ms, LOW=${lowDelayTime}ms`);
-        } else {
-          // Just use the average of all delays
-          delayTime = Math.max(500, Math.floor(totalDelay / delays.length));
-          console.log(`Found delay values in code: ${delays.join(', ')}`);
-          console.log(`Using average delay time: ${delayTime}ms`);
-        }
-      } else {
-        console.log(`No delay values found in code, using default: ${delayTime}ms`);
-      }
-    }
-    
-    // Use the distinct delays if we found them
-    if (hasDistinctDelays) {
-      console.log(`Using asymmetric delays: HIGH=${highDelayTime}ms, LOW=${lowDelayTime}ms`);
-      // Return both delay times for the simulation to use
+    // We'll analyze the loop() function to extract our state sequence
+    const loopMatch = cleanedCode.match(/void\s+loop\s*\(\s*\)\s*\{([^}]*)\}/);
+    if (!loopMatch || !loopMatch[1]) {
+      console.log('Could not find loop() function in code or loop is empty');
+      // Default to blinking pin 13
       return {
-        pins: pins.length > 0 ? [...new Set(pins)] : ['13'],
-        highDelayTime,
-        lowDelayTime
+        sequence: [
+          { action: 'digitalWrite', pin: '13', state: 'HIGH' },
+          { action: 'delay', ms: 1000 },
+          { action: 'digitalWrite', pin: '13', state: 'LOW' },
+          { action: 'delay', ms: 1000 }
+        ],
+        pins: ['13']
       };
     }
     
-    // If no pins found, default to pin 13
+    // Loop content
+    const loopContent = loopMatch[1].trim();
+    console.log('Loop content:', loopContent);
+    
+    // Extract digitalWrite and delay operations
+    // We need to maintain their order in the sequence
+    const sequence = [];
+    const pins = new Set();
+    
+    // Match digitalWrite(pin, state) calls
+    const digitalWriteRegex = /digitalWrite\s*\(\s*(\w+|\d+)\s*,\s*(HIGH|LOW)\s*\)/g;
+    // Match delay(ms) calls
+    const delayRegex = /delay\s*\(\s*(\d+)\s*\)/g;
+    
+    // Combined regex that matches both calls while preserving their order
+    const combinedRegex = /digitalWrite\s*\(\s*(\w+|\d+)\s*,\s*(HIGH|LOW)\s*\)|delay\s*\(\s*(\d+)\s*\)/g;
+    
+    // Extract operations in sequence
+    let opMatch;
+    while ((opMatch = combinedRegex.exec(loopContent)) !== null) {
+      if (opMatch[1] !== undefined && opMatch[2] !== undefined) {
+        // This is a digitalWrite operation
+        let pin = opMatch[1];
+        const state = opMatch[2];
+        
+        // Handle LED_BUILTIN constant
+        if (pin === 'LED_BUILTIN') {
+          pin = '13';
+        } else if (isNaN(parseInt(pin, 10))) {
+          console.log(`Warning: Found non-numeric pin reference "${pin}" in code, using pin 13 as fallback`);
+          pin = '13';
+        }
+        
+        pins.add(pin.toString());
+        sequence.push({
+          action: 'digitalWrite',
+          pin: pin.toString(),
+          state
+        });
+        
+        console.log(`Found digitalWrite: pin ${pin}, state ${state}`);
+      } else if (opMatch[3] !== undefined) {
+        // This is a delay operation
+        const ms = parseInt(opMatch[3], 10);
+        
+        sequence.push({
+          action: 'delay',
+          ms
+        });
+        
+        console.log(`Found delay: ${ms}ms`);
+      }
+    }
+    
+    // If we couldn't find any meaningful operations, default to basic blink
+    if (sequence.length === 0) {
+      console.log('No operations found in loop, using default blink sequence');
+      sequence.push({ action: 'digitalWrite', pin: '13', state: 'HIGH' });
+      sequence.push({ action: 'delay', ms: 1000 });
+      sequence.push({ action: 'digitalWrite', pin: '13', state: 'LOW' });
+      sequence.push({ action: 'delay', ms: 1000 });
+      pins.add('13');
+    }
+    
+    console.log('Parsed sequence:', sequence);
+    
     return {
-      pins: pins.length > 0 ? [...new Set(pins)] : ['13'],
-      delayTime
+      sequence,
+      pins: Array.from(pins)
     };
   };
 
   // Start/stop simulation based on props
   useEffect(() => {
     if (isRunning) {
-      // Initialize the AVR8js simulation with the provided code
       console.log('AVR8 simulator initialized');
       
-      // Extract active pins and delay times from the Arduino code
-      const extractedInfo = extractArduinoInfo(code);
-      const activePins = extractedInfo.pins;
+      // Parse the Arduino code into a sequence of operations
+      const { sequence, pins: activePins } = parseArduinoCode(code);
       
-      // Check if we have distinct HIGH/LOW delays or just a single delay
-      const hasAsymmetricDelays = extractedInfo.hasOwnProperty('highDelayTime') && 
-                                 extractedInfo.hasOwnProperty('lowDelayTime');
+      console.log('Detected active pins:', activePins);
+      console.log('Operations sequence:', sequence);
       
-      const highDelayTime = hasAsymmetricDelays ? extractedInfo.highDelayTime : extractedInfo.delayTime;
-      const lowDelayTime = hasAsymmetricDelays ? extractedInfo.lowDelayTime : extractedInfo.delayTime;
+      // Current position in the sequence
+      let currentStep = 0;
+      let timeoutId = null;
       
-      console.log('Active pins detected in code:', activePins);
-      
-      if (hasAsymmetricDelays) {
-        console.log(`Using asymmetric delays: HIGH=${highDelayTime}ms, LOW=${lowDelayTime}ms`);
-      } else {
-        console.log(`Using consistent delay time: ${extractedInfo.delayTime}ms`);
-      }
-      
-      // Flag to track current state
-      let isHigh = false;
-      
-      // Function to update all pins with the current state
-      const updateAllPins = () => {
-        // Update all active pins
-        activePins.forEach(pin => {
-          // Update pin state in the simulator context
-          updatePinState(`D${pin}`, isHigh);
-          
-          // Update components via a separate function to avoid update loops
-          const updateComponents = () => {
-            // Log the state change via console
-            console.log(`Simulator: Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+      // Function to update pin state based on digitalWrite action
+      const setPinState = (pin, state) => {
+        const isHigh = state === 'HIGH';
+        console.log(`Executing digitalWrite: pin ${pin} -> ${state}`);
+        
+        // Update pin state in the simulator context
+        updatePinState(`D${pin}`, isHigh);
+        
+        // Create a function to update components to avoid React update issues
+        const updateComponents = () => {
+          // Find the HERO board component
+          const heroBoard = components.find(c => c.type === 'heroboard');
+          if (heroBoard) {
+            // Update the pin state in our component state tracking
+            updateComponentPins(heroBoard.id, { [pin]: isHigh });
             
-            // Update the HERO board's pin LED
-            // Find the HERO board component
-            const heroBoard = components.find(c => c.type === 'heroboard');
-            if (heroBoard) {
-              // Use the dedicated function to update pin states in the context
-              updateComponentPins(heroBoard.id, { [pin]: isHigh });
-              
-              // Also notify the parent component via the callback
-              onPinChange(parseInt(pin), isHigh);
-            }
-            
-            // Check for connected LEDs and update them
-            updateConnectedComponents(parseInt(pin), isHigh);
-          };
-          
-          // Execute the updates outside the React update cycle
-          setTimeout(updateComponents, 0);
-          
-          // Add log entry - call this directly to avoid dependency on addLog changing
-          if (typeof addLog === 'function') {
-            addLog(`Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+            // Also notify the parent component
+            onPinChange(parseInt(pin), isHigh);
           }
-        });
+          
+          // Update any connected components (LEDs, etc.)
+          updateConnectedComponents(parseInt(pin), isHigh);
+        };
         
-        // Schedule the next update using the appropriate delay based on current state
-        // If HIGH, we'll wait highDelayTime before turning LOW
-        // If LOW, we'll wait lowDelayTime before turning HIGH
-        const nextDelay = isHigh ? highDelayTime : lowDelayTime;
-        console.log(`Current state: ${isHigh ? 'HIGH' : 'LOW'}, waiting ${nextDelay}ms before toggling`);
+        // Execute component updates outside React cycle
+        setTimeout(updateComponents, 0);
         
-        // Toggle the state for next time
-        isHigh = !isHigh;
-        
-        // Schedule the next update
-        timeoutId = setTimeout(updateAllPins, nextDelay);
+        // Add log entry
+        if (typeof addLog === 'function') {
+          addLog(`Pin ${pin} set to ${state}`);
+        }
       };
       
-      // Start the simulation by setting pins to HIGH first
-      isHigh = true;
+      // Function to execute each step in sequence
+      const executeNextStep = () => {
+        if (!isRunning) return; // Safety check
+        
+        // Get the current operation
+        const operation = sequence[currentStep];
+        
+        // Execute the current operation
+        if (operation.action === 'digitalWrite') {
+          setPinState(operation.pin, operation.state);
+        } else if (operation.action === 'delay') {
+          console.log(`Executing delay: ${operation.ms}ms`);
+          
+          // Log the delay action
+          if (typeof addLog === 'function') {
+            addLog(`Delay for ${operation.ms}ms`);
+          }
+        }
+        
+        // Move to the next step (or loop back to beginning)
+        currentStep = (currentStep + 1) % sequence.length;
+        
+        // Schedule the next operation
+        const nextDelay = operation.action === 'delay' ? operation.ms : 0;
+        timeoutId = setTimeout(executeNextStep, nextDelay);
+      };
       
-      // Initial timeout ID for cleanup
-      let timeoutId = setTimeout(updateAllPins, 10); // Start almost immediately
+      // Start the simulation
+      timeoutId = setTimeout(executeNextStep, 10); // Start immediately
       
       // Store the timeout ID for cleanup
       return () => {
