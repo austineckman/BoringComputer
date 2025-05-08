@@ -27,6 +27,9 @@ const AVR8Simulator = ({
       // Initialize the AVR8js simulation with the provided code
       console.log('AVR8 simulator initialized');
       
+      // Initialize global simulation state
+      window.isSimulationRunning = true;
+      
       // For our basic LED blink example, we'll simulate pin 13 (LED_BUILTIN) toggling
       // This simulates the actual AVR8js functionality for the blink sketch
       let isHigh = false;
@@ -40,8 +43,11 @@ const AVR8Simulator = ({
         // Also directly notify the CircuitBuilderWindow via onPinChange
         onPinChange(13, isHigh);
         
-        // Log the state change via console to avoid re-render loop
-        console.log(`Pin 13 changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+        // Log the state change
+        console.log(`Simulator: Pin 13 changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+        
+        // Send a log to the simulator log panel
+        addLog(`Pin 13 changed to ${isHigh ? 'HIGH' : 'LOW'}`);
         
         // Check for connected LEDs and update them
         updateConnectedComponents(13, isHigh);
@@ -51,6 +57,7 @@ const AVR8Simulator = ({
       return () => {
         clearInterval(interval);
         console.log('AVR8 simulator stopped');
+        window.isSimulationRunning = false;
       };
     }
     
@@ -59,6 +66,7 @@ const AVR8Simulator = ({
       if (isRunning) {
         // Don't call stopSimulation() here to avoid update loops
         console.log('Simulator cleanup on unmount');
+        window.isSimulationRunning = false;
       }
     };
   }, [isRunning, code]); // Only depend on these two variables to prevent update loops
