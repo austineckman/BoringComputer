@@ -16,53 +16,6 @@
   }
 }
 
-/* Pulse animation for the green LED */
-@keyframes pulse-green {
-  0% {
-    box-shadow: 0 0 5px rgba(0, 255, 0, 0.8);
-  }
-  50% {
-    box-shadow: 0 0 15px rgba(0, 255, 0, 0.9);
-  }
-  100% {
-    box-shadow: 0 0 5px rgba(0, 255, 0, 0.8);
-  }
-}
-
-/* HERO board built-in LED */
-.heroboard-builtin-led {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  background-color: #222;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-  z-index: 50;
-}
-
-.heroboard-builtin-led.on {
-  background-color: #f00; /* Red color for the built-in LED */
-  box-shadow: 0 0 8px 2px rgba(255, 0, 0, 0.8);
-  animation: pulse 0.8s infinite alternate;
-}
-
-/* HERO board power LED */
-.heroboard-power-led {
-  position: absolute;
-  width: 5px;
-  height: 5px;
-  background-color: #222;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-  z-index: 50;
-}
-
-.heroboard-power-led.on {
-  background-color: #0f0; /* Green for power */
-  box-shadow: 0 0 8px 2px rgba(0, 255, 0, 0.8);
-  animation: pulse-green 1.5s infinite;
-}
-
 /* Custom styles for circuit builder */
 /* Hide all Moveable component selection indicators */
 .moveable-no-border .moveable-line, 
@@ -685,46 +638,6 @@ body {
 }
 
 /* Circuit Builder Styles */
-
-/* Built-in LED on pin 13 (LED_BUILTIN) for HERO board */
-.heroboard-builtin-led {
-  position: absolute;
-  width: 5px; /* Small size to match actual SMD LED */
-  height: 5px;
-  border-radius: 50%;
-  background-color: transparent; /* Completely transparent when off */
-  box-shadow: none;
-  z-index: 999; /* Keep above other elements */
-  opacity: 0; /* Completely invisible when off */
-  transform: translate(-50%, -50%); /* Center the LED */
-  pointer-events: none; /* Don't interfere with clicks */
-}
-
-/* LED when turned on */
-.heroboard-builtin-led.on {
-  background-color: #ff0000; /* Bright red when on */
-  box-shadow: 0 0 8px rgba(255, 0, 0, 0.8); /* Red glow effect */
-  animation: pulse 0.8s infinite alternate; /* Pulsing animation */
-  opacity: 1; /* Fully visible when on */
-}
-
-/* Power LED indicator for HERO board simulation status */
-.heroboard-power-led {
-  position: absolute; 
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #001100; /* Dark green when off */
-  z-index: 999; /* Keep above other elements */
-  pointer-events: none; /* Don't interfere with clicks */
-  transform: translate(-50%, -50%); /* Center the LED */
-}
-
-.heroboard-power-led.on {
-  background-color: #00ff00; /* Bright green when on */
-  box-shadow: 0 0 5px rgba(0, 255, 0, 0.7); /* Green glow effect */
-}
-
 .wire-source-pin {
   box-shadow: 0 0 0 4px rgba(255, 165, 0, 0.7), 0 0 10px 2px rgba(255, 255, 0, 0.5) !important;
   animation: pulse-pin 1.5s infinite alternate;

@@ -27,9 +27,6 @@ const AVR8Simulator = ({
       // Initialize the AVR8js simulation with the provided code
       console.log('AVR8 simulator initialized');
       
-      // Initialize global simulation state
-      window.isSimulationRunning = true;
-      
       // For our basic LED blink example, we'll simulate pin 13 (LED_BUILTIN) toggling
       // This simulates the actual AVR8js functionality for the blink sketch
       let isHigh = false;
@@ -43,11 +40,8 @@ const AVR8Simulator = ({
         // Also directly notify the CircuitBuilderWindow via onPinChange
         onPinChange(13, isHigh);
         
-        // Log the state change
-        console.log(`Simulator: Pin 13 changed to ${isHigh ? 'HIGH' : 'LOW'}`);
-        
-        // Send a log to the simulator log panel
-        addLog(`Pin 13 changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+        // Log the state change via console to avoid re-render loop
+        console.log(`Pin 13 changed to ${isHigh ? 'HIGH' : 'LOW'}`);
         
         // Check for connected LEDs and update them
         updateConnectedComponents(13, isHigh);
@@ -57,7 +51,6 @@ const AVR8Simulator = ({
       return () => {
         clearInterval(interval);
         console.log('AVR8 simulator stopped');
-        window.isSimulationRunning = false;
       };
     }
     
@@ -66,32 +59,22 @@ const AVR8Simulator = ({
       if (isRunning) {
         // Don't call stopSimulation() here to avoid update loops
         console.log('Simulator cleanup on unmount');
-        window.isSimulationRunning = false;
       }
     };
   }, [isRunning, code]); // Only depend on these two variables to prevent update loops
   
-  // When pin states change, notify parent component - but only for newly updated pins
-  // We track last processed state to avoid update loops
-  const lastProcessedState = React.useRef({});
-  
+  // When pin states change, notify parent component
   useEffect(() => {
     // For example, when pin D13 (LED_BUILTIN) changes state
-    if (pinStates.D13 !== undefined && pinStates.D13 !== lastProcessedState.current.D13) {
+    if (pinStates.D13 !== undefined) {
       onPinChange(13, pinStates.D13);
-      lastProcessedState.current.D13 = pinStates.D13;
     }
     
-    // Process digital pins that have changed since last time
+    // Process all digital pins
     Object.entries(pinStates)
-      .filter(([pin, state]) => {
-        return pin.startsWith('D') && state !== lastProcessedState.current[pin];
-      })
+      .filter(([pin]) => pin.startsWith('D'))
       .forEach(([pin, state]) => {
         const pinNumber = parseInt(pin.substring(1), 10);
-        
-        // Update our last processed state
-        lastProcessedState.current[pin] = state;
         
         // Find connected components and update them
         updateConnectedComponents(pinNumber, state);
