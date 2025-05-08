@@ -424,13 +424,16 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
       return;
     }
     
-    setGameState({
+    const newGameState = {
       ...gameState,
       team: selectedCharacters,
       phase: 'journey'
-    });
+    };
     
+    setGameState(newGameState);
     setTextToAnimate(`Team ${teamName} begins their epic journey along the Silicon Road. Your first stop is ${locations[0]}...`);
+    
+    console.log("Journey started with team:", selectedCharacters);
   }
 
   // Continue journey after event
@@ -547,9 +550,16 @@ const CodeCaravanWindow = ({ onClose, onMinimize, isActive }: CodeCaravanWindowP
         <button 
           className="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-md transition-colors duration-200"
           onClick={startJourney}
+          disabled={selectedCharacters.length < 2 || !teamName.trim()}
         >
           Start Journey
         </button>
+        {selectedCharacters.length < 2 && (
+          <p className="text-yellow-500 mt-2">Select at least 2 team members</p>
+        )}
+        {!teamName.trim() && selectedCharacters.length >= 2 && (
+          <p className="text-yellow-500 mt-2">Enter a team name</p>
+        )}
       </div>
     </div>
   );
