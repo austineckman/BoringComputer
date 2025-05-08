@@ -27,6 +27,7 @@ export const SimulatorProvider = ({ children }) => {
   const [simulationStartTime, setSimulationStartTime] = useState(null);
   const [simulationElapsedTime, setSimulationElapsedTime] = useState(0);
   const [components, setComponents] = useState([]);
+  const [wires, setWires] = useState([]); // Add wires state to the simulator
   const [pinStates, setPinStates] = useState({});
   const [componentStates, setComponentStates] = useState({});
   const [errors, setErrors] = useState([]);
@@ -156,6 +157,8 @@ export const SimulatorProvider = ({ children }) => {
     formatElapsedTime: () => formatTimeElapsed(simulationElapsedTime),
     components,
     setSimulationComponents,
+    wires,
+    setWires,
     pinStates,
     updatePinState,
     componentStates,

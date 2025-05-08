@@ -303,11 +303,10 @@ const AVR8Simulator = ({
     const heroBoard = components.find(c => c.type === 'heroboard');
     if (!heroBoard) return [];
     
-    // Avoid excessive logging to reduce browser load
-    if (pinNumber === 13) {
-      console.log(`Looking for ${componentType} components connected to pin ${pinNumber}`);
-      console.log(`HERO board ID: ${heroBoard.id}`);
-    }
+    // Log wire connection check for any pin (to debug the connection issue)
+    console.log(`Looking for ${componentType} components connected to pin ${pinNumber}`);
+    console.log(`HERO board ID: ${heroBoard.id}`);
+    console.log(`Available wires from context: ${wires.length}`);
     
     // Try multiple formats of pin IDs to handle different naming patterns
     const possiblePinFormats = [
@@ -317,17 +316,21 @@ const AVR8Simulator = ({
       `pt-heroboard-heroboard-${heroBoard.id}-D${pinNumber}`, // Expanded digital format
       `pt-heroboard-${heroBoard.id}-digital-${pinNumber}`, // Alternate digital pin format
       `pt-heroboard-${heroBoard.id}-${pinNumber}`,        // Standard format as string
-      `${pinNumber}`                                      // Just the pin number
+      `${pinNumber}`,                                     // Just the pin number
+      pinNumber.toString()                               // Pin number as string
     ];
     
-    // Avoid excessive logging to reduce browser load
-    if (pinNumber === 13) {
-      console.log("Possible pin formats:", possiblePinFormats);
-    }
+    // Log potential pin formats
+    console.log("Possible pin formats:", possiblePinFormats);
+    
+    // More detailed wire checking - log each wire's source and target for easier debugging
+    wires.forEach(wire => {
+      console.log(`Wire: ${wire.sourceName} (${wire.sourceId}) -> ${wire.targetName} (${wire.targetId})`);
+    });
     
     // Find wires connected to any of these pin formats
     const connectedWires = wires.filter(wire => {
-      // Only log for pin 13 to reduce console spam
+      // Check if the source or target contains any of the pin formats
       if (pinNumber === 13) {
         console.log(`Wire: source=${wire.sourceId}, target=${wire.targetId}`);
       }

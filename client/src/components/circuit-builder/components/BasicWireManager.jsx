@@ -1,10 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useSimulator } from '../simulator/SimulatorContext';
 
 /**
  * BasicWireManager - A simplified wire manager component that handles
  * connecting pins between circuit components.
  */
 const BasicWireManager = ({ canvasRef }) => {
+  // Access the simulator context to share wire information
+  const { setWires: setSimulatorWires } = useSimulator();
+  
   // State for managing wires and selections
   const [wires, setWires] = useState([]);
   const [pendingConnection, setPendingConnection] = useState(null);
@@ -547,10 +551,18 @@ const BasicWireManager = ({ canvasRef }) => {
     };
   }, [canvasRef, pendingConnection, selectedWireId, wires]);
   
-  // Debug information about wires for troubleshooting
+  // Share wires with the simulator through context
   useEffect(() => {
     console.log(`Wire manager has ${wires.length} wires:`, wires);
-  }, [wires]);
+    
+    // Share the wires with the simulator via context
+    if (setSimulatorWires) {
+      setSimulatorWires(wires);
+      console.log("Shared wires with simulator context:", wires.length);
+    } else {
+      console.warn("Could not share wires with simulator: setSimulatorWires not available");
+    }
+  }, [wires, setSimulatorWires]);
 
   return (
     <>
