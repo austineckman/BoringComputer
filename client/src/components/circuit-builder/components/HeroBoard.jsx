@@ -107,11 +107,19 @@ const HeroBoard = ({
         
         console.log(`Pin clicked: ${pinId} (${pinType})`);
         
-        // Call the parent's onPinConnect handler
-        onPinConnect(pinId, pinType, id);
+        // Calculate accurate pin position
+        const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+        const pinPosition = {
+          x: clientX - canvasRect.left,
+          y: clientY - canvasRect.top
+        };
         
         // Send another event with the formatted pin ID to match our wire manager
-        const formattedPinId = `pt-${id.toLowerCase().split('-')[0]}-${id}-${pinId}`;
+        // Use first part of component ID (heroboard) as type, and full ID as component ID
+        const formattedPinId = `pt-heroboard-${id}-${pinId}`;
+        
+        // Call the parent's onPinConnect handler with the position
+        onPinConnect(pinId, pinType, id, pinPosition);
         
         // Create a custom pin click event to trigger the wire manager
         const pinClickEvent = new CustomEvent('pinClicked', {
@@ -120,8 +128,8 @@ const HeroBoard = ({
             pinData: pinDataJson,
             pinType: pinType,
             parentId: id,
-            clientX,
-            clientY
+            clientX: pinPosition.x,
+            clientY: pinPosition.y
           }
         });
         
