@@ -52,6 +52,29 @@ const BasicWireManager = ({ canvasRef }) => {
       return null;
     }
   };
+  
+  // HERO board specific position correction 
+  // For HERO board pins, apply special offsets to fix the position
+  const adjustHeroboardPosition = (pinId, position, componentId) => {
+    // Only apply to HERO board pins and if we have valid positions
+    if (position && (pinId?.includes('pt-heroboard-') || (componentId && componentId.includes('heroboard')))) {
+      // These are experimentally determined based on the observed wire misalignment
+      // They account for the special offset in the HeroBoard component's pin rendering
+      const OFFSET_X = 256; // Horizontal offset correction for HERO board pins
+      const OFFSET_Y = 304; // Vertical offset correction for HERO board pins
+      
+      console.log(`Applying HERO board position correction`, position);
+      
+      // Apply the offset for HERO board pins
+      return {
+        x: position.x + OFFSET_X,
+        y: position.y + OFFSET_Y
+      };
+    }
+    
+    // For other components, return the position unchanged
+    return position;
+  };
 
   // Generate a path with 90-degree bends for better "cable management"
   const getWirePath = (start, end) => {
@@ -127,6 +150,12 @@ const BasicWireManager = ({ canvasRef }) => {
             x: elementPos.x - canvasRect.left,
             y: elementPos.y - canvasRect.top
           };
+          
+          // Apply HERO board specific position correction if needed
+          if (pinId && pinId.includes('heroboard')) {
+            pinPosition = adjustHeroboardPosition(pinId, pinPosition, parentComponentId);
+          }
+          
           console.log(`Found pin element using enhanced search, position: (${pinPosition.x}, ${pinPosition.y})`);
         }
       }
