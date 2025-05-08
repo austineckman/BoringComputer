@@ -42,7 +42,13 @@ const BasicWireManager = ({ canvasRef }) => {
       // Get the pin name for display
       const pinName = pinId.split('-').pop() || '';
       
-      console.log(`Pin clicked: ${pinName} (${pinType})`);
+      console.log(`Pin clicked in wire manager:`, {
+        pinId,
+        pinName,
+        pinType,
+        parentComponentId,
+        pinPosition
+      });
       
       // If no pending connection, start a new one
       if (!pendingConnection) {

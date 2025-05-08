@@ -115,8 +115,8 @@ const HeroBoard = ({
         };
         
         // Send another event with the formatted pin ID to match our wire manager
-        // Use first part of component ID (heroboard) as type, and full ID as component ID
-        const formattedPinId = `pt-heroboard-${id}-${pinId}`;
+        // Format MUST match the format in CircuitComponent.jsx
+        const formattedPinId = `pt-heroboard-${id.replace(/ /g, '')}-${pinId}`;
         
         // Call the parent's onPinConnect handler with the position
         onPinConnect(pinId, pinType, id, pinPosition);
