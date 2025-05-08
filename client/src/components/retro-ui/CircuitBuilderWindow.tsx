@@ -473,13 +473,9 @@ void loop() {
       addSimulationLog('Simulation stopped');
     } else {
       // Start the simulation with current code
-      const success = startSimulation(code);
-      if (success) {
-        setIsSimulationRunning(true);
-        addSimulationLog('Simulation started');
-      } else {
-        addSimulationLog('Failed to start simulation - check for errors');
-      }
+      setIsSimulationRunning(true);
+      startSimulation();
+      addSimulationLog('Simulation started');
     }
   };
   
