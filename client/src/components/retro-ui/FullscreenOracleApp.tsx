@@ -1753,14 +1753,15 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                         : 'Never'}
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        className={`
-                          text-xs px-2 py-1 rounded flex items-center gap-1 
-                          ${user.roles?.includes('admin') 
-                            ? 'text-red-500 hover:text-red-400' 
-                            : 'text-green-500 hover:text-green-400'}
-                        `}
-                        onClick={async () => {
+                      <div className="flex space-x-2">
+                        <button
+                          className={`
+                            text-xs px-2 py-1 rounded flex items-center gap-1 
+                            ${user.roles?.includes('admin') 
+                              ? 'text-red-500 hover:text-red-400' 
+                              : 'text-green-500 hover:text-green-400'}
+                          `}
+                          onClick={async () => {
                           try {
                             const response = await fetch(`/api/admin/users/${user.id}/toggle-admin`, {
                               method: 'PUT'
@@ -1817,6 +1818,15 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                           </>
                         )}
                       </button>
+                      <button
+                          className="text-xs px-2 py-1 rounded flex items-center gap-1 text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20"
+                          onClick={() => handleDeleteClick('user', user.id.toString(), user.username)}
+                          onMouseEnter={() => window.sounds?.hover()}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          <span>Delete User</span>
+                      </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
