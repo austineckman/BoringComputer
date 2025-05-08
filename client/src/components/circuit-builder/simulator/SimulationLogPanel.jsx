@@ -6,7 +6,7 @@ import { FileTerminal, Trash2 } from 'lucide-react';
  * SimulationLogPanel - Display simulation logs in a scrollable panel
  */
 const SimulationLogPanel = () => {
-  const { simulatorLogs, clearSimulatorLogs, isSimulationRunning } = useSimulator();
+  const { logs: simulatorLogs, clearLogs: clearSimulatorLogs, isRunning: isSimulationRunning } = useSimulator();
   
   return (
     <div className="bg-gray-800 border border-gray-700 rounded-md p-2 h-full overflow-hidden flex flex-col">
