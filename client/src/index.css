@@ -692,11 +692,11 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: rgba(150, 0, 0, 0.5); /* Dark red with transparency when off */
+  background-color: transparent; /* Completely transparent when off */
   transition: all 0.2s ease;
-  box-shadow: 0 0 0px rgba(255, 0, 0, 0);
+  box-shadow: none;
   z-index: 20;
-  opacity: 0.7;
+  opacity: 0; /* Invisible when off */
 }
 
 /* LED when turned on */
@@ -704,23 +704,10 @@ body {
   background-color: rgba(255, 0, 0, 0.9); /* Bright red with transparency when on */
   box-shadow: 0 0 8px rgba(255, 0, 0, 0.8);
   animation: pulse 0.8s infinite alternate;
-  opacity: 1;
+  opacity: 1; /* Fully visible when on */
 }
 
-/* Power LED indicators for HERO board */
-.heroboard-power-led {
-  position: absolute; 
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #001100; /* Dark green when off */
-  z-index: 20;
-}
-
-.heroboard-power-led.on {
-  background-color: #00ff00; /* Bright green when on */
-  box-shadow: 0 0 5px rgba(0, 255, 0, 0.7);
-}
+/* Note: Manual power LED indicator removed - using the built-in one in HERO board SVG */
 
 .wire-source-pin {
   box-shadow: 0 0 0 4px rgba(255, 165, 0, 0.7), 0 0 10px 2px rgba(255, 255, 0, 0.5) !important;

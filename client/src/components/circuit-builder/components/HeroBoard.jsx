@@ -51,8 +51,7 @@ const HeroBoard = ({
     attrs: {
       top: posTop,
       left: posLeft,
-      zIndex: 10,
-      ledPower: isSimulationRunning // Power LED only lit when simulation is running
+      zIndex: 10
     }
   };
 
@@ -256,26 +255,16 @@ const HeroBoard = ({
             zIndex: isDragged ? 99999 : 10,
             outline: isSelected ? '1px solid #3b82f6' : 'none' // Apply a single outline when selected
           }}
-          ledPower={isSimulationRunning} // Power LED only on when simulation is running
+          // Power LED managed by the SVG component itself
         ></ReactHeroBoardElement>
         
-        {/* Built-in LED on pin 13 - fine-tuned position */}
+        {/* Built-in LED on pin 13 - fine-tuned position and visibility */}
         <div 
           className={`heroboard-builtin-led ${pin13State ? 'on' : ''}`}
           style={{
             top: posTop + 42, // Moved up half the distance from previous position
             left: posLeft + 107, // Moved right half the distance from previous position 
-            backgroundColor: 'rgba(255, 0, 0, 0.7)', // Red with transparency
-            boxShadow: pin13State ? '0 0 5px 2px rgba(255, 0, 0, 0.7)' : 'none', // Red glow when on
-          }}
-        ></div>
-        
-        {/* Power LED indicator */}
-        <div 
-          className={`heroboard-power-led ${isSimulationRunning ? 'on' : ''}`}
-          style={{
-            top: posTop + 195, // Keep power LED in original location
-            left: posLeft + 125,
+            // No inline background color - using CSS classes instead for better visibility control
           }}
         ></div>
       </div>
