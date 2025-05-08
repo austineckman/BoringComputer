@@ -3563,8 +3563,16 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
             <p className="mb-6 text-gray-300">
               Are you sure you want to delete this {confirmDelete.type}?<br />
               <span className="font-bold">{confirmDelete.name}</span>
-              <br /><br />
-              This action cannot be undone.
+              
+              {confirmDelete.message ? (
+                <span className="block mt-4 p-3 bg-red-900/30 border border-red-800 rounded text-red-200">
+                  {confirmDelete.message}
+                </span>
+              ) : (
+                <span className="block mt-4">
+                  This action cannot be undone.
+                </span>
+              )}
             </p>
             <div className="flex justify-end space-x-3">
               <button
