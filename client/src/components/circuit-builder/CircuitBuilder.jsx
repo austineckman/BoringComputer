@@ -288,7 +288,7 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
     
     if (component.type === 'rgb-led') {
       return (
-        <RGBLED
+        <RgbLed
           key={component.id}
           id={component.id}
           initialX={component.x}
@@ -302,7 +302,7 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
           ledRed={component.props?.ledRed || 0}
           ledGreen={component.props?.ledGreen || 0}
           ledBlue={component.props?.ledBlue || 0}
-          commonPin={component.props?.commonPin || 'cathode'}
+          commonType={component.props?.commonPin || 'cathode'}
         />
       );
     }
