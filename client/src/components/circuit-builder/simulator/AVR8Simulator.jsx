@@ -124,35 +124,78 @@ const AVR8Simulator = ({
     const heroBoard = components.find(c => c.type === 'heroboard');
     if (!heroBoard) return [];
     
-    // Find the pin on the HERO board
-    const pinId = `pt-heroboard-${heroBoard.id}-${pinNumber}`;
+    console.log(`Looking for ${componentType} components connected to pin ${pinNumber}`);
+    console.log(`HERO board ID: ${heroBoard.id}`);
     
-    // Find wires connected to this pin
-    const connectedWires = wires.filter(wire => 
-      wire.sourceId === pinId || wire.targetId === pinId
-    );
+    // Try multiple formats of pin IDs to handle different naming patterns
+    const possiblePinFormats = [
+      `pt-heroboard-${heroBoard.id}-${pinNumber}`,        // Standard format
+      `pt-heroboard-${heroBoard.id}-D${pinNumber}`,       // Digital pin format
+      `pt-heroboard-${heroBoard.id}-digital-${pinNumber}` // Alternate digital pin format
+    ];
+    
+    console.log("Possible pin formats:", possiblePinFormats);
+    
+    // Find wires connected to any of these pin formats
+    const connectedWires = wires.filter(wire => {
+      // Log wire source and target for debugging
+      console.log(`Wire: source=${wire.sourceId}, target=${wire.targetId}`);
+      
+      return possiblePinFormats.some(pinFormat => 
+        wire.sourceId?.includes(pinFormat) || 
+        wire.targetId?.includes(pinFormat)
+      );
+    });
+    
+    console.log(`Found ${connectedWires.length} wires connected to pin ${pinNumber}`);
     
     // Find connected components
     const connectedComponents = [];
     
     connectedWires.forEach(wire => {
-      // Determine the other end of the wire
-      const otherEndId = wire.sourceId === pinId ? wire.targetId : wire.sourceId;
+      // Determine which end is connected to the HERO board
+      const isSourceHeroBoard = possiblePinFormats.some(format => wire.sourceId?.includes(format));
       
-      // Extract component ID from the pin ID (format: pt-<type>-<componentId>-<pinName>)
-      const otherEndParts = otherEndId.split('-');
-      const otherComponentType = otherEndParts[1]; // e.g., 'led'
-      const otherComponentId = otherEndParts[2]; // e.g., 'abc123'
+      // Get the other end ID (either source or target depending on which is the HERO board)
+      const otherEndId = isSourceHeroBoard ? wire.targetId : wire.sourceId;
       
-      // Find the component
-      if (otherComponentType === componentType) {
-        const component = components.find(c => c.id === otherComponentId);
-        if (component) {
-          connectedComponents.push(component);
+      console.log(`Other end ID: ${otherEndId}`);
+      
+      // Try to extract component type from the ID
+      // The format can vary, but we'll try to handle common patterns
+      if (otherEndId) {
+        const otherEndParts = otherEndId.split('-');
+        
+        // Handle multiple possible formats
+        let otherComponentType = '';
+        let otherComponentId = '';
+        
+        if (otherEndParts.length >= 3) {
+          // Format: pt-<type>-<id>-<pin>
+          otherComponentType = otherEndParts[1]?.toLowerCase();
+          otherComponentId = otherEndParts[2];
+          
+          console.log(`Extracted component type: ${otherComponentType}, id: ${otherComponentId}`);
+          
+          // Check if this is the component type we're looking for
+          if (otherComponentType === componentType.toLowerCase()) {
+            // Find the corresponding component in our list
+            const component = components.find(c => 
+              c.id === otherComponentId || 
+              // Fallback: any component of the right type
+              (c.type.toLowerCase() === componentType.toLowerCase())
+            );
+            
+            if (component) {
+              console.log(`Found connected ${componentType} component: ${component.id}`);
+              connectedComponents.push(component);
+            }
+          }
         }
       }
     });
     
+    console.log(`Returning ${connectedComponents.length} ${componentType} components`);
     return connectedComponents;
   };
   
