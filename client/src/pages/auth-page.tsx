@@ -61,6 +61,12 @@ export default function AuthPage() {
       password: "",
     },
   });
+  
+  // Reset forms when switching tabs
+  useEffect(() => {
+    loginForm.reset({ username: "", password: "" });
+    registerForm.reset({ username: "", password: "" });
+  }, [activeTab]);
 
   // Handle login submission
   const onLoginSubmit = async (values: LoginFormValues) => {
@@ -146,7 +152,8 @@ export default function AuthPage() {
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
-          imageRendering: 'pixelated'
+          imageRendering: 'pixelated',
+          pointerEvents: 'auto'
         }}
       >
       {/* Glitchy overlay effect */}
