@@ -44,26 +44,96 @@ const AVR8Simulator = ({
       }
     }
     
-    // Extract delay values
-    const delayRegex = /delay\s*\(\s*(\d+)\s*\)/g;
-    const delays = [];
+    // Extract delay values in the context they appear
+    // Try to identify distinct delay patterns for HIGH and LOW states
     
-    while ((match = delayRegex.exec(code)) !== null) {
-      const delayValue = parseInt(match[1], 10);
-      if (!isNaN(delayValue)) {
-        delays.push(delayValue);
+    // This regex looks for a pattern like: digitalWrite(pin, HIGH); delay(1000); digitalWrite(pin, LOW); delay(500);
+    const highLowPatternRegex = /digitalWrite\s*\(\s*\w+\s*,\s*HIGH\s*\)[^;]*;[^;]*delay\s*\(\s*(\d+)\s*\)[^;]*;[^;]*digitalWrite\s*\(\s*\w+\s*,\s*LOW\s*\)[^;]*;[^;]*delay\s*\(\s*(\d+)\s*\)/g;
+    
+    // This captures basic delay calls 
+    const delayRegex = /delay\s*\(\s*(\d+)\s*\)/g;
+    
+    // Track high and low delay times separately
+    let highDelayTime = 1000;
+    let lowDelayTime = 1000;
+    let hasDistinctDelays = false;
+    
+    // Look for the HIGH/LOW pattern first (preferred)
+    let patternMatch;
+    while ((patternMatch = highLowPatternRegex.exec(code)) !== null) {
+      if (patternMatch.length >= 3) {
+        const highDelay = parseInt(patternMatch[1], 10);
+        const lowDelay = parseInt(patternMatch[2], 10);
+        
+        if (!isNaN(highDelay) && !isNaN(lowDelay)) {
+          highDelayTime = highDelay;
+          lowDelayTime = lowDelay;
+          hasDistinctDelays = true;
+          
+          console.log(`Found distinct HIGH/LOW delays: HIGH=${highDelayTime}ms, LOW=${lowDelayTime}ms`);
+          break; // Use the first pattern we find
+        }
       }
     }
     
-    // If we found delay values, use the average of them
-    if (delays.length > 0) {
-      // Calculate the average delay time
-      const totalDelay = delays.reduce((sum, val) => sum + val, 0);
-      delayTime = Math.max(500, Math.floor(totalDelay / delays.length));
-      console.log(`Found delay values in code: ${delays.join(', ')}`);
-      console.log(`Using average delay time: ${delayTime}ms`);
-    } else {
-      console.log(`No delay values found in code, using default: ${delayTime}ms`);
+    // If we didn't find a pattern, fall back to the basic approach
+    if (!hasDistinctDelays) {
+      const delays = [];
+      
+      // Reset and reuse the regex
+      delayRegex.lastIndex = 0;
+      
+      while ((match = delayRegex.exec(code)) !== null) {
+        const delayValue = parseInt(match[1], 10);
+        if (!isNaN(delayValue)) {
+          delays.push(delayValue);
+        }
+      }
+      
+      // If we found delay values, use the average of them
+      if (delays.length > 0) {
+        // Calculate the total delay time
+        const totalDelay = delays.reduce((sum, val) => sum + val, 0);
+        
+        // If there's an even number of delays, try to pair them as HIGH/LOW
+        if (delays.length >= 2 && delays.length % 2 === 0) {
+          // Group delays in pairs and calculate averages for odd (HIGH) and even (LOW) positions
+          let highSum = 0;
+          let lowSum = 0;
+          
+          for (let i = 0; i < delays.length; i++) {
+            if (i % 2 === 0) {
+              highSum += delays[i];
+            } else {
+              lowSum += delays[i];
+            }
+          }
+          
+          highDelayTime = Math.max(500, Math.floor(highSum / (delays.length / 2)));
+          lowDelayTime = Math.max(500, Math.floor(lowSum / (delays.length / 2)));
+          hasDistinctDelays = true;
+          
+          console.log(`Inferred HIGH/LOW delays from paired delays: HIGH=${highDelayTime}ms, LOW=${lowDelayTime}ms`);
+        } else {
+          // Just use the average of all delays
+          delayTime = Math.max(500, Math.floor(totalDelay / delays.length));
+          console.log(`Found delay values in code: ${delays.join(', ')}`);
+          console.log(`Using average delay time: ${delayTime}ms`);
+        }
+      } else {
+        console.log(`No delay values found in code, using default: ${delayTime}ms`);
+      }
+    }
+    
+    // Use the distinct delays if we found them
+    if (hasDistinctDelays) {
+      console.log(`Using asymmetric delays: HIGH=${highDelayTime}ms, LOW=${lowDelayTime}ms`);
+      // Return both delay times for the simulation to use
+      return {
+        pins: pins.length > 0 ? [...new Set(pins)] : ['13'],
+        highDelayTime,
+        lowDelayTime
+      };
     }
     
     // If no pins found, default to pin 13
@@ -80,23 +150,35 @@ const AVR8Simulator = ({
       console.log('AVR8 simulator initialized');
       
       // Extract active pins and delay times from the Arduino code
-      const { pins: activePins, delayTime } = extractArduinoInfo(code);
-      console.log('Active pins detected in code:', activePins);
-      console.log(`Using delay time: ${delayTime}ms`);
+      const extractedInfo = extractArduinoInfo(code);
+      const activePins = extractedInfo.pins;
       
-      // For our basic simulation, we'll toggle the active pins
+      // Check if we have distinct HIGH/LOW delays or just a single delay
+      const hasAsymmetricDelays = extractedInfo.hasOwnProperty('highDelayTime') && 
+                                 extractedInfo.hasOwnProperty('lowDelayTime');
+      
+      const highDelayTime = hasAsymmetricDelays ? extractedInfo.highDelayTime : extractedInfo.delayTime;
+      const lowDelayTime = hasAsymmetricDelays ? extractedInfo.lowDelayTime : extractedInfo.delayTime;
+      
+      console.log('Active pins detected in code:', activePins);
+      
+      if (hasAsymmetricDelays) {
+        console.log(`Using asymmetric delays: HIGH=${highDelayTime}ms, LOW=${lowDelayTime}ms`);
+      } else {
+        console.log(`Using consistent delay time: ${extractedInfo.delayTime}ms`);
+      }
+      
+      // Flag to track current state
       let isHigh = false;
-      const interval = setInterval(() => {
-        // Toggle pin state
-        isHigh = !isHigh;
-        
+      
+      // Function to update all pins with the current state
+      const updateAllPins = () => {
         // Update all active pins
         activePins.forEach(pin => {
           // Update pin state in the simulator context
           updatePinState(`D${pin}`, isHigh);
           
-          // Also directly notify the CircuitBuilderWindow via onPinChange
-          // This needs to run outside interval to avoid an infinite update loop
+          // Update components via a separate function to avoid update loops
           const updateComponents = () => {
             // Log the state change via console
             console.log(`Simulator: Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
@@ -124,11 +206,29 @@ const AVR8Simulator = ({
             addLog(`Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
           }
         });
-      }, delayTime); // Use the extracted delay time
+        
+        // Schedule the next update using the appropriate delay based on current state
+        // If HIGH, we'll wait highDelayTime before turning LOW
+        // If LOW, we'll wait lowDelayTime before turning HIGH
+        const nextDelay = isHigh ? highDelayTime : lowDelayTime;
+        console.log(`Current state: ${isHigh ? 'HIGH' : 'LOW'}, waiting ${nextDelay}ms before toggling`);
+        
+        // Toggle the state for next time
+        isHigh = !isHigh;
+        
+        // Schedule the next update
+        timeoutId = setTimeout(updateAllPins, nextDelay);
+      };
       
-      // Store the interval ID for cleanup
+      // Start the simulation by setting pins to HIGH first
+      isHigh = true;
+      
+      // Initial timeout ID for cleanup
+      let timeoutId = setTimeout(updateAllPins, 10); // Start almost immediately
+      
+      // Store the timeout ID for cleanup
       return () => {
-        clearInterval(interval);
+        clearTimeout(timeoutId);
         console.log('AVR8 simulator stopped');
       };
     }
