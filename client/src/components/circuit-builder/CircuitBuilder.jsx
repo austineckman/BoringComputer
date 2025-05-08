@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { componentOptions, generateId } from './constants/componentOptions';
 import ComponentPalette from './components/ComponentPalette';
-import SimpleWireManager from './components/SimpleWireManager';
+import BasicWireManager from './components/BasicWireManager';
 import CircuitComponent from './components/CircuitComponent';
 import PinTooltip from './components/PinTooltip'; // Import custom tooltip component
 import './styles/tooltips.css'; // Import custom tooltip styles
@@ -474,7 +474,7 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
         {components.map(renderComponent)}
         
         {/* Wire management layer */}
-        <SimpleWireManager canvasRef={canvasRef} />
+        <BasicWireManager canvasRef={canvasRef} />
         
         {/* Custom pin tooltip component */}
         <PinTooltip />
