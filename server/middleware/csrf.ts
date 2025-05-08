@@ -1,56 +1,115 @@
 import { Request, Response, NextFunction } from 'express';
-import csurf from 'csurf';
+import crypto from 'crypto';
 
-// Create CSRF middleware with cookie-based tokens
-export const csrfProtection = csurf({ 
-  cookie: {
-    key: '_csrf',
-    path: '/',
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000 // 1 day
+const csrfTokens = new Map<string, { token: string, expires: number }>();
+
+// Clean up expired tokens every hour
+setInterval(() => {
+  const now = Date.now();
+  // Use Array.from to avoid downlevelIteration issues
+  Array.from(csrfTokens.entries()).forEach(([sessionId, data]) => {
+    if (data.expires < now) {
+      csrfTokens.delete(sessionId);
+    }
+  });
+}, 3600 * 1000);
+
+/**
+ * Generate a CSRF token for the current session
+ */
+export function generateCsrfToken(sessionId: string): string {
+  const token = crypto.randomBytes(32).toString('hex');
+  
+  // Store the token with a 24-hour expiration
+  csrfTokens.set(sessionId, {
+    token,
+    expires: Date.now() + 24 * 3600 * 1000
+  });
+  
+  return token;
+}
+
+/**
+ * Validate a CSRF token for the current session
+ */
+export function validateCsrfToken(sessionId: string, token: string): boolean {
+  const storedData = csrfTokens.get(sessionId);
+  
+  if (!storedData) {
+    return false;
   }
-});
+  
+  // Check if token is expired
+  if (storedData.expires < Date.now()) {
+    csrfTokens.delete(sessionId);
+    return false;
+  }
+  
+  return storedData.token === token;
+}
 
-// Route to get a CSRF token
-export const getCsrfToken = (req: Request, res: Response) => {
-  return res.json({ csrfToken: req.csrfToken() });
-};
+/**
+ * CSRF protection middleware that only applies to state-changing methods
+ * This avoids placing CSRF requirements on GET requests
+ */
+export function conditionalCsrfProtection(req: Request, res: Response, next: NextFunction) {
+  // Only apply CSRF protection to state-changing methods and API routes
+  if (
+    (req.method === 'POST' || 
+     req.method === 'PUT' || 
+     req.method === 'PATCH' || 
+     req.method === 'DELETE') && 
+    req.path.startsWith('/api')
+  ) {
+    // Skip CSRF validation for the login/register endpoints
+    if (req.path === '/api/auth/login' || req.path === '/api/auth/register') {
+      return next();
+    }
+    
+    const sessionId = (req as any).sessionID;
+    
+    if (!sessionId) {
+      return res.status(403).json({ error: 'CSRF validation failed: No session ID' });
+    }
+    
+    const token = req.headers['x-csrf-token'] as string;
+    
+    if (!token) {
+      return res.status(403).json({ error: 'CSRF token is required' });
+    }
+    
+    if (!validateCsrfToken(sessionId, token)) {
+      return res.status(403).json({ error: 'Invalid CSRF token' });
+    }
+  }
+  
+  next();
+}
 
-// Custom error handler for CSRF errors
-export const handleCsrfError = (err: any, req: Request, res: Response, next: NextFunction) => {
+/**
+ * Error handler for CSRF errors
+ */
+export function handleCsrfError(err: any, req: Request, res: Response, next: NextFunction) {
   if (err.code === 'EBADCSRFTOKEN') {
-    // CSRF token validation failed
-    console.error('CSRF attack detected:', req.method, req.path);
-    return res.status(403).json({ 
-      error: 'CSRF token validation failed',
-      message: 'Form has been tampered with'
-    });
+    // Handle CSRF token errors
+    return res.status(403).json({ error: 'Invalid CSRF token' });
   }
   
-  // Pass other errors to next error handler
+  // Pass other errors to the next middleware
   next(err);
-};
+}
 
-// List of routes that should be exempt from CSRF protection
-const csrfExemptRoutes = [
-  '/api/auth/login',   // Login can be exempt as it uses credentials
-  '/api/auth/register' // Registration can be exempt as it creates a new user
-];
-
-// Middleware to conditionally apply CSRF protection
-export const conditionalCsrfProtection = (req: Request, res: Response, next: NextFunction) => {
-  // Skip CSRF for exempt routes
-  if (csrfExemptRoutes.includes(req.path)) {
-    return next();
+/**
+ * Endpoint to get a CSRF token
+ */
+export function getCsrfToken(req: Request, res: Response) {
+  const sessionId = (req as any).sessionID;
+  
+  if (!sessionId) {
+    return res.status(403).json({ error: 'No session found' });
   }
   
-  // Skip CSRF for GET, HEAD, OPTIONS requests (they should be safe)
-  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
-    return next();
-  }
+  const token = generateCsrfToken(sessionId);
   
-  // Apply CSRF protection for all other routes
-  return csrfProtection(req, res, next);
-};
+  res.json({ token });
+}

@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { nanoid } from 'nanoid';
 import { adminAuth } from '../../middleware/adminAuth';
+import { upload, handleUploadErrors, scanUploadedFile } from '../../middleware/secure-uploads';
 
 const router = Router();
 
@@ -71,36 +72,82 @@ const recipeHeroUpload = multer({
   },
 });
 
-// Quest image upload endpoint
-router.post('/upload-image', adminAuth, questImageUpload.single('image'), (req: Request, res: Response) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+// Quest image upload endpoint with enhanced security
+router.post(
+  '/upload-image', 
+  adminAuth, 
+  upload.single('image'), 
+  handleUploadErrors,
+  scanUploadedFile,
+  (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+
+      // Use the secureFilePath that was validated by scanUploadedFile
+      const securePath = (req as any).secureFilePath || `/uploads/${path.basename(req.file.path)}`;
+      
+      // Move the file to the quest-images directory
+      const sourceFile = req.file.path;
+      const targetDir = path.join(process.cwd(), 'public', 'uploads', 'quest-images');
+      const targetFile = path.join(targetDir, path.basename(sourceFile));
+      
+      // Ensure the directory exists
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+      
+      // Move the file
+      fs.renameSync(sourceFile, targetFile);
+      
+      // Return the path to the uploaded file
+      const relativePath = `/uploads/quest-images/${path.basename(targetFile)}`;
+      return res.status(200).json({ url: relativePath });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return res.status(500).json({ error: 'Failed to upload image' });
     }
-
-    // Return the path to the uploaded file
-    const relativePath = `/uploads/quest-images/${req.file.filename}`;
-    return res.status(200).json({ url: relativePath });
-  } catch (error) {
-    console.error('Error uploading image:', error);
-    return res.status(500).json({ error: 'Failed to upload image' });
   }
-});
+);
 
-// Recipe hero image upload endpoint
-router.post('/upload-recipe-hero', adminAuth, recipeHeroUpload.single('heroImage'), (req: Request, res: Response) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+// Recipe hero image upload endpoint with enhanced security
+router.post(
+  '/upload-recipe-hero', 
+  adminAuth, 
+  upload.single('heroImage'), 
+  handleUploadErrors,
+  scanUploadedFile,
+  (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+
+      // Use the secureFilePath that was validated by scanUploadedFile
+      const securePath = (req as any).secureFilePath || `/uploads/${path.basename(req.file.path)}`;
+      
+      // Move the file to the recipe-heroes directory
+      const sourceFile = req.file.path;
+      const targetDir = path.join(process.cwd(), 'public', 'uploads', 'recipe-heroes');
+      const targetFile = path.join(targetDir, `recipe-hero-${path.basename(sourceFile)}`);
+      
+      // Ensure the directory exists
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+      
+      // Move the file
+      fs.renameSync(sourceFile, targetFile);
+      
+      // Return the path to the uploaded file
+      const relativePath = `/uploads/recipe-heroes/${path.basename(targetFile)}`;
+      return res.status(200).json({ url: relativePath });
+    } catch (error) {
+      console.error('Error uploading recipe hero image:', error);
+      return res.status(500).json({ error: 'Failed to upload recipe hero image' });
     }
-
-    // Return the path to the uploaded file
-    const relativePath = `/uploads/recipe-heroes/${req.file.filename}`;
-    return res.status(200).json({ url: relativePath });
-  } catch (error) {
-    console.error('Error uploading recipe hero image:', error);
-    return res.status(500).json({ error: 'Failed to upload recipe hero image' });
   }
-});
+);
 
 export default router;
