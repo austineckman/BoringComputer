@@ -3,7 +3,26 @@ import passport from "passport";
 import { z } from "zod";
 import { storage } from "../storage";
 import { insertUserSchema } from "@shared/schema";
-import { hashPassword, comparePasswords } from "../auth";
+import { hashPassword } from "../auth";
+import { scrypt, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+
+// Implement our own comparePasswords function here for now
+const scryptAsync = promisify(scrypt);
+
+async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
+  // Only support properly hashed passwords (contains a dot separator for hash.salt)
+  if (!stored.includes('.')) {
+    console.error('Security warning: Found unhashed password in database');
+    return false; // Reject any non-hashed passwords for security
+  }
+  
+  // Handle hashed password
+  const [hashed, salt] = stored.split(".");
+  const hashedBuf = Buffer.from(hashed, "hex");
+  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+  return timingSafeEqual(hashedBuf, suppliedBuf);
+}
 
 const router = Router();
 
@@ -138,9 +157,16 @@ router.post("/change-password", async (req, res) => {
     
     // Verify current password
     const { currentPassword, newPassword } = req.body;
-    const isPasswordValid = await comparePasswords(currentPassword, fullUser.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: "Current password is incorrect" });
+    console.log("Verifying password...");
+    try {
+      const isPasswordValid = await comparePasswords(currentPassword, fullUser.password);
+      console.log("Password verification result:", isPasswordValid);
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: "Current password is incorrect" });
+      }
+    } catch (error) {
+      console.error("Error in password verification:", error);
+      return res.status(500).json({ message: "Error verifying password" });
     }
     
     // Hash new password
