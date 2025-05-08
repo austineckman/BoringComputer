@@ -29,6 +29,9 @@ import OLEDDisplay from './components/OLEDDisplay';
  * Manages components, wires, and interactions
  */
 const CircuitBuilder = () => {
+  // Access simulator context to share component data
+  const { setSimulationComponents } = useSimulator();
+  
   // State for circuit components
   const [components, setComponents] = useState([]);
   const [selectedComponentId, setSelectedComponentId] = useState(null);
@@ -37,6 +40,14 @@ const CircuitBuilder = () => {
   
   // Get the currently selected component
   const selectedComponent = components.find(c => c.id === selectedComponentId);
+  
+  // Share components with the simulator context
+  useEffect(() => {
+    if (setSimulationComponents) {
+      console.log(`Sharing ${components.length} components with simulator context`);
+      setSimulationComponents(components);
+    }
+  }, [components, setSimulationComponents]);
   
   // Track mouse position for wire connections
   useEffect(() => {
