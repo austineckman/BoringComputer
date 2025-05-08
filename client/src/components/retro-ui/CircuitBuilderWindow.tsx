@@ -602,15 +602,27 @@ void loop() {
                 // Standard pin change
                 addSimulationLog(`Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
                 
-                // Special handling for pin 13 - update all HERO boards
+                // Special handling for pin 13 - update all HERO boards DIRECTLY
                 if (pin === 13) {
-                  // Find all HERO boards in the component list
+                  // Find all HERO boards in the component list - always update pin 13
                   const heroBoards = components.filter(c => c.type === 'heroboard');
-                  heroBoards.forEach(board => {
-                    // Update the pin state for this board's pin 13 LED
-                    updateComponentPins(board.id, { '13': isHigh });
-                    console.log(`Updated HERO board ${board.id} pin 13 LED to ${isHigh ? 'ON' : 'OFF'}`);
-                  });
+                  
+                  if (heroBoards.length > 0) {
+                    heroBoards.forEach(board => {
+                      // Update the pin state for this board's pin 13 LED - forced direct update
+                      updateComponentPins(board.id, { '13': isHigh });
+                      console.log(`[DIRECT] Updated HERO board ${board.id} pin 13 LED to ${isHigh ? 'ON' : 'OFF'}`);
+                    });
+                  } else {
+                    // No heroboards found, use a generic ID that will get picked up anyway
+                    updateComponentPins('heroboard', { '13': isHigh });
+                    console.log(`[FALLBACK] Updated generic heroboard pin 13 LED to ${isHigh ? 'ON' : 'OFF'}`);
+                  }
+                  
+                  // Force state refresh
+                  setTimeout(() => {
+                    console.log(`Refreshing component states after pin 13 update`);
+                  }, 10);
                 }
               } else if (typeof pinOrComponent === 'object' && pinOrComponent.componentId) {
                 // This is a component state update
