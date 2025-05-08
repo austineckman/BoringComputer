@@ -39,10 +39,7 @@ const HeroBoard = ({
   const [pinInfo, setPinInfo] = useState();
 
   // Access simulator context for simulation state
-  const { isRunning: isSimulationRunning, pinStates } = useSimulator();
-  
-  // Track the state of pin 13 (built-in LED)
-  const [pin13State, setPin13State] = useState(false);
+  const { isRunning: isSimulationRunning } = useSimulator();
   
   // Create a component data structure that matches what the original code expects
   const componentData = {
@@ -51,7 +48,8 @@ const HeroBoard = ({
     attrs: {
       top: posTop,
       left: posLeft,
-      zIndex: 10
+      zIndex: 10,
+      ledPower: isSimulationRunning // Power LED only lit when simulation is running
     }
   };
 
@@ -68,14 +66,6 @@ const HeroBoard = ({
   useEffect(() => {
     triggerRedraw();
   }, [pinInfo, posTop, posLeft]);
-  
-  // Monitor pin 13 state for built-in LED
-  useEffect(() => {
-    if (pinStates && pinStates.D13 !== undefined) {
-      setPin13State(pinStates.D13);
-      console.log(`[Simulator] Pin 13 changed to ${pinStates.D13 ? 'HIGH' : 'LOW'}`);
-    }
-  }, [pinStates]);
   
   // Notify about component movement for wire position updates
   useEffect(() => {
@@ -236,46 +226,26 @@ const HeroBoard = ({
         ></Moveable>
       )}
       
-      <div className="relative">
-        <ReactHeroBoardElement
-          id={id}
-          className="min-w-min cursor-pointer absolute"
-          ref={targetRef}
-          isDragged={isDragged}
-          onPinClicked={handlePinClicked}
-          onPininfoChange={(e) => onPinInfoChange(e)}
-          isActive={false} // Remove the active state to prevent blue outline
-          rotationTransform={0} // Fixed to 0 degrees - no rotation
-          onMouseDown={(e) => {
-            e.stopPropagation();
-            if (onSelect) onSelect(id);
-          }}
-          style={{
-            transform: `translate(${initPosLeft}px, ${initPosTop}px)`,
-            zIndex: isDragged ? 99999 : 10,
-            outline: isSelected ? '1px solid #3b82f6' : 'none' // Apply a single outline when selected
-          }}
-          // Power LED managed by the SVG component itself
-        ></ReactHeroBoardElement>
-        
-        {/* Built-in LED on pin 13 - fine-tuned position and visibility */}
-        <div 
-          className={`heroboard-builtin-led ${pin13State ? 'on' : ''}`}
-          style={{
-            top: posTop + 43, 
-            left: posLeft + 107,
-          }}
-        ></div>
-        
-        {/* Power LED indicator (green LED showing simulation is running) */}
-        <div 
-          className={`heroboard-power-led ${isSimulationRunning ? 'on' : ''}`}
-          style={{
-            top: posTop + 101, 
-            left: posLeft + 20,
-          }}
-        ></div>
-      </div>
+      <ReactHeroBoardElement
+        id={id}
+        className="min-w-min cursor-pointer absolute"
+        ref={targetRef}
+        isDragged={isDragged}
+        onPinClicked={handlePinClicked}
+        onPininfoChange={(e) => onPinInfoChange(e)}
+        isActive={false} // Remove the active state to prevent blue outline
+        rotationTransform={0} // Fixed to 0 degrees - no rotation
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          if (onSelect) onSelect(id);
+        }}
+        style={{
+          transform: `translate(${initPosLeft}px, ${initPosTop}px)`,
+          zIndex: isDragged ? 99999 : 10,
+          outline: isSelected ? '1px solid #3b82f6' : 'none' // Apply a single outline when selected
+        }}
+        ledPower={isSimulationRunning} // Power LED only on when simulation is running
+      ></ReactHeroBoardElement>
     </>
   );
 };
