@@ -131,9 +131,10 @@ export const SimulatorProvider = ({ children }) => {
   
   // Update specific pins on a component
   const updateComponentPins = useCallback((componentId, pins) => {
+    console.log(`Updating pins for ${componentId}:`, pins);
     setComponentStates(prev => {
       const currentState = prev[componentId] || {};
-      return {
+      const newState = {
         ...prev,
         [componentId]: {
           ...currentState,
@@ -143,6 +144,8 @@ export const SimulatorProvider = ({ children }) => {
           }
         }
       };
+      console.log("Updated component states:", newState);
+      return newState;
     });
   }, []);
 

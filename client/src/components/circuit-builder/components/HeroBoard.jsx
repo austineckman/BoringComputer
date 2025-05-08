@@ -70,13 +70,23 @@ const HeroBoard = ({
   
   // Track pin 13 state for the built-in LED
   useEffect(() => {
-    // Look for pin state changes from the simulator
-    if (componentStates && componentStates[id] && componentStates[id].pins) {
-      // Check if pin 13 has a state in the simulator
-      const pin13 = componentStates[id].pins['13'];
-      if (pin13 !== undefined) {
-        setPin13State(pin13);
-        console.log(`[HeroBoard] Pin 13 state changed to ${pin13 ? 'HIGH' : 'LOW'}`);
+    // Check if the component has any states registered
+    if (componentStates) {
+      // Try looking up by heroboard prefix (fallback for updateComponentPins from AVR8Simulator)
+      const heroboardPrefix = Object.keys(componentStates).find(key => 
+        key === 'heroboard' || key.startsWith('heroboard-')
+      );
+
+      // Use either the exact ID or the prefixed version as a fallback
+      const stateKey = componentStates[id] ? id : heroboardPrefix;
+      
+      if (stateKey && componentStates[stateKey] && componentStates[stateKey].pins) {
+        // Check if pin 13 has a state in the simulator
+        const pin13 = componentStates[stateKey].pins['13'];
+        if (pin13 !== undefined) {
+          setPin13State(!!pin13); // Force boolean conversion
+          console.log(`[HeroBoard ${id}] Pin 13 state changed to ${pin13 ? 'HIGH' : 'LOW'}`);
+        }
       }
     }
   }, [componentStates, id]);

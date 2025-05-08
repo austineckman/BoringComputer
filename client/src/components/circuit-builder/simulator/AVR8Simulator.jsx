@@ -86,21 +86,44 @@ const AVR8Simulator = ({
   
   // When pin states change, notify parent component
   useEffect(() => {
+    if (!isRunning) return; // Only process pin changes when simulation is running
+    
     // For example, when pin D13 (LED_BUILTIN) changes state
-    if (pinStates.D13 !== undefined) {
-      onPinChange(13, pinStates.D13);
+    const pinD13State = pinStates.D13;
+    if (pinD13State !== undefined) {
+      // Only call this directly for pin 13 (our standard example)
+      // Use a stable reference to avoid dependency loops
+      const pin13Value = !!pinD13State; // Convert to boolean
+      console.log(`Processing pin D13 state change to ${pin13Value}`);
+      updateComponentPins('heroboard', { '13': pin13Value });
     }
     
-    // Process all digital pins
-    Object.entries(pinStates)
-      .filter(([pin]) => pin.startsWith('D'))
-      .forEach(([pin, state]) => {
-        const pinNumber = parseInt(pin.substring(1), 10);
-        
-        // Find connected components and update them
-        updateConnectedComponents(pinNumber, state);
-      });
-  }, [pinStates, onPinChange]);
+    // Process all digital pins - using a copy to avoid dependency issues
+    const pinStateEntries = Object.entries(pinStates)
+      .filter(([pin]) => pin.startsWith('D'));
+    
+    if (pinStateEntries.length > 0) {
+      // Isolate this in a separate function to avoid dependency loop
+      setTimeout(() => {
+        pinStateEntries.forEach(([pin, state]) => {
+          const pinNumber = parseInt(pin.substring(1), 10);
+          // Store in local variables to break circular dependencies
+          const currentPin = pinNumber;
+          const currentState = !!state; // Convert to boolean
+          
+          // Call the update function directly
+          if (updateComponentPins && typeof updateComponentPins === 'function') {
+            // Find connected components and update them using a more stable method
+            components.forEach(comp => {
+              if (comp.type === 'heroboard') {
+                updateComponentPins(comp.id, { [currentPin]: currentState });
+              }
+            });
+          }
+        });
+      }, 0);
+    }
+  }, [pinStates, isRunning]); // Remove onPinChange from dependencies
   
   // Find components connected to the given pin and update their state
   const updateConnectedComponents = (pinNumber, isHigh) => {
@@ -226,8 +249,11 @@ const AVR8Simulator = ({
     const heroBoard = components.find(c => c.type === 'heroboard');
     if (!heroBoard) return [];
     
-    console.log(`Looking for ${componentType} components connected to pin ${pinNumber}`);
-    console.log(`HERO board ID: ${heroBoard.id}`);
+    // Avoid excessive logging to reduce browser load
+    if (pinNumber === 13) {
+      console.log(`Looking for ${componentType} components connected to pin ${pinNumber}`);
+      console.log(`HERO board ID: ${heroBoard.id}`);
+    }
     
     // Try multiple formats of pin IDs to handle different naming patterns
     const possiblePinFormats = [
@@ -240,12 +266,17 @@ const AVR8Simulator = ({
       `${pinNumber}`                                      // Just the pin number
     ];
     
-    console.log("Possible pin formats:", possiblePinFormats);
+    // Avoid excessive logging to reduce browser load
+    if (pinNumber === 13) {
+      console.log("Possible pin formats:", possiblePinFormats);
+    }
     
     // Find wires connected to any of these pin formats
     const connectedWires = wires.filter(wire => {
-      // Log wire source and target for debugging
-      console.log(`Wire: source=${wire.sourceId}, target=${wire.targetId}`);
+      // Only log for pin 13 to reduce console spam
+      if (pinNumber === 13) {
+        console.log(`Wire: source=${wire.sourceId}, target=${wire.targetId}`);
+      }
       
       return possiblePinFormats.some(pinFormat => 
         wire.sourceId?.includes(pinFormat) || 
@@ -253,7 +284,9 @@ const AVR8Simulator = ({
       );
     });
     
-    console.log(`Found ${connectedWires.length} wires connected to pin ${pinNumber}`);
+    if (pinNumber === 13) {
+      console.log(`Found ${connectedWires.length} wires connected to pin ${pinNumber}`);
+    }
     
     // Find connected components
     const connectedComponents = [];
