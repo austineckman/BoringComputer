@@ -47,23 +47,16 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
   // Define menu items
   const menuItems: MenuItem[] = [
     {
-      id: "adventures",
-      label: "Adventures",
+      id: "quests",
+      label: "Available Quests",
       icon: <FileText size={16} />,
-      submenu: [
-        {
-          id: "quests",
-          label: "Available Quests",
-          icon: <FileText size={16} />,
-          path: "/quests"
-        },
-        {
-          id: "my-quests",
-          label: "My Active Quests",
-          icon: <FileText size={16} />,
-          path: "/my-quests"
-        }
-      ]
+      path: "/quests"
+    },
+    {
+      id: "my-quests",
+      label: "My Active Quests",
+      icon: <FileText size={16} />,
+      path: "/my-quests"
     },
     {
       id: "minigames",
