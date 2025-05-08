@@ -28,19 +28,20 @@ const BasicWireManager = ({ canvasRef }) => {
       const detail = event.detail;
       if (!detail) return;
       
-      // Extract basic pin data
-      const pinId = detail.id;
+      // Extract basic pin data - prefer pinName field if available, then pinId
+      const pinId = detail.id || detail.pinId;
       const pinType = detail.pinType || 'bidirectional';
-      const parentComponentId = detail.parentId;
+      const parentComponentId = detail.parentId || detail.parentComponentId;
+      
+      // Get actual pin name - use the explicit pinName field if available
+      // This is an important fix to handle custom component pins correctly
+      const pinName = detail.pinName || (detail.pinId ? detail.pinId : pinId.split('-').pop() || '');
       
       // Get pin position from the event
       const pinPosition = {
         x: detail.clientX,
         y: detail.clientY
       };
-      
-      // Get the pin name for display
-      const pinName = pinId.split('-').pop() || '';
       
       console.log(`Pin clicked in wire manager (${new Date().toLocaleTimeString()}):`, {
         pinId,

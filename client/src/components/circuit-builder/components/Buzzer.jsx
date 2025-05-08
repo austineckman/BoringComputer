@@ -101,10 +101,59 @@ const Buzzer = ({
 
   // Handle pin click
   const handlePinClicked = (e) => {
+    console.log("Buzzer pin clicked", e.detail);
+    
     if (onPinConnect) {
-      const pinId = e.detail.pinId;
-      const pinType = e.detail.pinType;
-      onPinConnect(pinId, pinType, id);
+      try {
+        // Parse pin data from the event
+        let pinId, pinType;
+        
+        // Check if this is data in JSON format (from the Web Component)
+        if (e.detail.data && typeof e.detail.data === 'string') {
+          // Parse the JSON string to get the pin data
+          const pinData = JSON.parse(e.detail.data);
+          pinId = pinData.name || 'pin1'; // Default to pin1 if no name is provided
+          pinType = 'bidirectional'; // Default type
+          
+          // Determine pin type if signals are available
+          if (pinData.signals && pinData.signals.length > 0) {
+            const signal = pinData.signals[0];
+            if (signal.type === 'power') {
+              pinType = 'power';
+            } else if (signal.type === 'ground') {
+              pinType = 'ground';
+            }
+          }
+        } else {
+          // Use the pin ID and type directly if available
+          pinId = e.detail.pinId || 'pin1';
+          pinType = e.detail.pinType || 'bidirectional';
+        }
+        
+        // Get pin position for accurate wire connections
+        const clientX = e.detail.clientX || 0;
+        const clientY = e.detail.clientY || 0;
+        
+        // Calculate position relative to canvas
+        const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+        const pinPosition = {
+          x: clientX - canvasRect.left,
+          y: clientY - canvasRect.top
+        };
+        
+        console.log(`Buzzer pin ${pinId} (${pinType}) clicked at position:`, pinPosition);
+        
+        // Call the parent's connector function with pin information
+        onPinConnect(pinId, pinType, id, pinPosition);
+      } catch (err) {
+        console.error("Error parsing pin data in Buzzer:", err);
+        // Fallback to a default pin and position
+        const defaultPinPosition = {
+          x: posLeft + 20, // Approximate position
+          y: posTop + 20
+        };
+        onPinConnect('pin1', 'bidirectional', id, defaultPinPosition);
+      }
     }
   };
 

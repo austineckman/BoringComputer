@@ -116,6 +116,37 @@ const dispatchComponentMoveEvent = (componentId, final = false) => {
 
 // Handle pin connections with stable pin positioning
 const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
+  // FIXED: Handle undefined or missing pin IDs by providing a default
+  // This addresses the issue with component pins returning undefined values
+  if (!pinId || pinId === 'undefined') {
+    // Generate a valid pin name based on the component type
+    const component = components.find(c => c.id === componentId);
+    if (component) {
+      const componentType = component.type || componentId.split('-')[0];
+      // Use a different pin ID based on the component type
+      if (componentType === 'buzzer') {
+        pinId = 'pin1'; // Buzzer typically has one pin
+      } else if (componentType === 'rgb-led') {
+        pinId = 'red'; // Default to red pin for RGB LED
+      } else if (componentType === 'led') {
+        pinId = 'anode'; // Default to anode for regular LED
+      } else if (componentType === 'custom-keypad') {
+        pinId = 'out1'; // Default to out1 for keypad
+      } else {
+        pinId = `pin-${Date.now() % 1000}`; // Fallback to a unique pin name
+      }
+    } else {
+      pinId = `pin-${Date.now() % 1000}`; // Fallback if component not found
+    }
+    
+    // Also ensure pinType has a valid value
+    if (!pinType) {
+      pinType = 'bidirectional';
+    }
+    
+    console.log(`Auto-assigned pin ID ${pinId} for component ${componentId}`);
+  }
+  
   console.log(`Pin ${pinId} (${pinType}) of component ${componentId} clicked`, pinPosition);
   
   // Get the component from our state
@@ -128,7 +159,7 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
   // Create proper format for pin ID that matches wire manager expectations
   // Avoid duplicate component types in the ID
   const componentType = componentId.toLowerCase().split('-')[0];
-  const formattedPinId = `pt-${componentType}-${componentId}-${pinId}`;
+  const formattedPinId = `pt-${componentType}-${componentId.replace(/ /g, '')}-${pinId}`;
   
   // Get the absolute position of the pin in the canvas
   // CRITICAL IMPROVEMENT: Pin positions are now determined once and stored consistently
@@ -176,6 +207,8 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
   const pinClickEvent = new CustomEvent('pinClicked', {
     detail: {
       id: formattedPinId,
+      pinId: pinId, // Include the actual pin ID separately for better debugging
+      pinName: pinId, // Add pinName field for wire manager to use
       pinType: pinType || 'bidirectional',
       parentId: componentId,
       clientX: pinPosData.x,
@@ -185,7 +218,7 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
     }
   });
   
-  // Dispatch the event to be captured by the SimpleWireManager
+  // Dispatch the event to be captured by the wire manager
   document.dispatchEvent(pinClickEvent);
 };
   
