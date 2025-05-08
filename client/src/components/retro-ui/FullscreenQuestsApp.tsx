@@ -393,10 +393,10 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
     const questCodeBlocks = selectedQuest.content?.codeBlocks || [];
     
     return (
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-6 max-w-7xl mx-auto">
         {/* Back button */}
         <button 
-          className="flex items-center text-white hover:text-brand-orange mb-6 bg-space-dark/50 px-4 py-2 rounded-md border border-brand-orange/30"
+          className="flex items-center text-white hover:text-brand-orange mb-4 bg-gray-900/90 px-4 py-2 rounded-md border border-brand-orange/50 shadow-md"
           onClick={() => {
             window.sounds?.click();
             setQuestView('list');
@@ -408,269 +408,336 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
           Back to Quest List
         </button>
         
-        {/* Quest hero image and title section */}
-        <div className="relative mb-6">
-          {questImages[0] && (
-            <div className="w-full h-64 md:h-80 overflow-hidden rounded-lg mb-4">
-              <img 
-                src={questImages[0]} 
-                alt={selectedQuest.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-          
-          <div className="flex items-center mb-2">
-            <h1 className="text-3xl font-bold text-white">{selectedQuest.title}</h1>
-            <div className="ml-4 flex items-center">
-              <span className="text-brand-orange flex items-center mr-4">
-                <Award className="h-5 w-5 mr-1" />
-                {selectedQuest.xpReward} XP
-              </span>
-              <span className="text-white">
-                Difficulty: {Array(selectedQuest.difficulty).fill('★').join('')}
-              </span>
+        {/* Quest content container with semi-transparent background */}
+        <div className="bg-gray-900/80 rounded-lg shadow-lg border border-brand-orange/30 overflow-hidden">
+          {/* Hero section with reduced height image */}
+          <div className="relative">
+            {questImages[0] && (
+              <div className="w-full h-48 md:h-56 lg:h-64 overflow-hidden">
+                <img 
+                  src={questImages[0]} 
+                  alt={selectedQuest.title}
+                  className="w-full h-full object-cover"
+                />
+                {/* Gradient overlay to improve text visibility */}
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent opacity-80"></div>
+              </div>
+            )}
+            
+            {/* Title and info positioned over image with better contrast */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
+              <h1 className="text-2xl md:text-3xl font-bold text-white text-shadow mb-1">{selectedQuest.title}</h1>
+              <div className="flex flex-wrap items-center gap-4 text-shadow">
+                <span className="text-brand-orange flex items-center">
+                  <Award className="h-5 w-5 mr-1" />
+                  {selectedQuest.xpReward} XP
+                </span>
+                <span className="text-yellow-400">
+                  Difficulty: {Array(selectedQuest.difficulty).fill('★').join('')}
+                </span>
+                <span className="text-blue-300">
+                  Adventure: {selectedQuest.adventureLine}
+                </span>
+                <span className="text-gray-300">
+                  Order: {selectedQuest.orderInLine}
+                </span>
+              </div>
             </div>
           </div>
           
-          <div className="flex items-center text-gray-400 mb-4">
-            <span className="mr-4">Adventure Line: {selectedQuest.adventureLine}</span>
-            <span>Order: {selectedQuest.orderInLine}</span>
+          {/* Quest description section with better contrast */}
+          <div className="px-6 py-6 bg-gray-800/50">
+            <p className="text-lg text-white leading-relaxed">{selectedQuest.description}</p>
           </div>
-          
-          <p className="text-lg text-gray-300 mb-6">{selectedQuest.description}</p>
         </div>
         
-        {/* Mission brief section */}
+        {/* Mission brief section with improved readability */}
         {selectedQuest.missionBrief && (
-          <div className="bg-space-dark/70 border border-brand-orange/30 rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold text-brand-orange mb-3">Mission Brief</h2>
-            <p className="text-gray-300 whitespace-pre-line">{selectedQuest.missionBrief}</p>
+          <div className="mt-6 bg-gray-900/80 border border-brand-orange/30 rounded-lg p-6 shadow-lg">
+            <h2 className="text-xl font-bold text-brand-orange mb-4 border-b border-brand-orange/30 pb-2">Mission Brief</h2>
+            <p className="text-white leading-relaxed whitespace-pre-line">{selectedQuest.missionBrief}</p>
           </div>
         )}
         
         {/* Rewards section */}
         {selectedQuest.rewards && selectedQuest.rewards.length > 0 && (
-          <div className="bg-space-dark/70 border border-brand-orange/30 rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold text-brand-orange mb-4">Quest Rewards</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {selectedQuest.rewards.map((reward, idx) => {
-                // Find item details
-                const item = items?.find(i => i.id === reward.id);
-                
-                // Check if this is a lootbox type reward
-                const isLootbox = reward.type === 'lootbox';
-                // Get lootbox config if available
-                const lootboxConfig = isLootbox ? getLootBoxConfigById(lootBoxConfigsMap, reward.id) : null;
-                
-                // Debug logging to help identify image issues
-                console.log(`Reward [${idx}] - ID: ${reward.id}, Type: ${reward.type}`);
-                console.log(`Item found: ${!!item}, Image path: ${item?.imagePath}`);
-                console.log(`Is lootbox: ${isLootbox}, Lootbox config found: ${!!lootboxConfig}, Image: ${lootboxConfig?.image}`);
-                
-                return (
-                  <div 
-                    key={`${reward.id}-${idx}`}
-                    className="bg-black/50 rounded-lg border border-gray-700 p-4 flex flex-col items-center"
-                  >
-                    <div className="flex items-center justify-center mb-3">
-                      {item?.imagePath ? (
-                        // Show item image from database
-                        <img 
-                          src={item.imagePath} 
-                          alt={reward.id}
-                          className="w-24 h-24"
-                          style={{ imageRendering: 'pixelated' }}
-                        />
-                      ) : isLootbox && lootboxConfig?.image ? (
-                        // Show lootbox image from lootbox config
-                        <img 
-                          src={lootboxConfig.image} 
-                          alt={lootboxConfig.name}
-                          className="w-24 h-24"
-                          style={{ imageRendering: 'pixelated' }}
-                        />
-                      ) : isLootbox ? (
-                        // For lootboxes without config, look for item with matching ID in items list
-                        <img 
-                          src={`/uploads/items/${reward.id}.png`} 
-                          alt={reward.id || "Loot Crate"}
-                          className="w-24 h-24"
-                          style={{ imageRendering: 'pixelated' }}
-                          onError={(e) => {
-                            // If image fails to load, try looking for item with this ID
-                            const img = e.currentTarget;
-                            // Try looking for a default image with this generic type
-                            img.src = `/uploads/lootboxes/${reward.id}.png`;
-                            img.onerror = () => {
-                              // As last resort, use our real crate asset
-                              img.src = '/assets/goldcrate.png';
-                            };
-                          }}
-                        />
-                      ) : (
-                        // Show generic package icon with appropriate styling for non-lootbox items
-                        <div className="rounded bg-gray-700 p-2">
-                          <Package className="w-24 h-24" />
-                        </div>
+          <div className="mt-6 bg-gray-900/80 border border-brand-orange/30 rounded-lg shadow-lg overflow-hidden">
+            <div className="bg-gray-800/60 px-6 py-4 border-b border-brand-orange/30">
+              <h2 className="text-xl font-bold text-brand-orange flex items-center">
+                <Gift className="h-5 w-5 mr-2" />
+                Quest Rewards
+              </h2>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {selectedQuest.rewards.map((reward, idx) => {
+                  // Find item details
+                  const item = items?.find(i => i.id === reward.id);
+                  
+                  // Check if this is a lootbox type reward
+                  const isLootbox = reward.type === 'lootbox';
+                  // Get lootbox config if available
+                  const lootboxConfig = isLootbox ? getLootBoxConfigById(lootBoxConfigsMap, reward.id) : null;
+                  
+                  // Debug logging to help identify image issues
+                  console.log(`Reward [${idx}] - ID: ${reward.id}, Type: ${reward.type}`);
+                  console.log(`Item found: ${!!item}, Image path: ${item?.imagePath}`);
+                  console.log(`Is lootbox: ${isLootbox}, Lootbox config found: ${!!lootboxConfig}, Image: ${lootboxConfig?.image}`);
+                  
+                  // Determine rarity class for border color
+                  const rarityClass = item?.rarity ? getRarityColorClass(item.rarity) : 'border-gray-600';
+                  
+                  return (
+                    <div 
+                      key={`${reward.id}-${idx}`}
+                      className={`bg-gray-800/70 rounded-lg border ${rarityClass} p-4 flex flex-col items-center hover:shadow-md hover:border-opacity-100 transition-all duration-300`}
+                    >
+                      <div className="bg-gradient-to-b from-gray-700/50 to-black/50 p-3 rounded-lg mb-3 flex items-center justify-center">
+                        {item?.imagePath ? (
+                          // Show item image from database
+                          <img 
+                            src={item.imagePath} 
+                            alt={reward.id}
+                            className="w-20 h-20 object-contain"
+                            style={{ imageRendering: 'pixelated' }}
+                          />
+                        ) : isLootbox && lootboxConfig?.image ? (
+                          // Show lootbox image from lootbox config
+                          <img 
+                            src={lootboxConfig.image} 
+                            alt={lootboxConfig.name}
+                            className="w-20 h-20 object-contain"
+                            style={{ imageRendering: 'pixelated' }}
+                          />
+                        ) : isLootbox ? (
+                          // For lootboxes without config, look for item with matching ID in items list
+                          <img 
+                            src={`/uploads/items/${reward.id}.png`} 
+                            alt={reward.id || "Loot Crate"}
+                            className="w-20 h-20 object-contain"
+                            style={{ imageRendering: 'pixelated' }}
+                            onError={(e) => {
+                              // If image fails to load, try looking for item with this ID
+                              const img = e.currentTarget;
+                              // Try looking for a default image with this generic type
+                              img.src = `/uploads/lootboxes/${reward.id}.png`;
+                              img.onerror = () => {
+                                // As last resort, use our real crate asset
+                                img.src = '/assets/goldcrate.png';
+                              };
+                            }}
+                          />
+                        ) : (
+                          // Show generic package icon with appropriate styling for non-lootbox items
+                          <div className="flex items-center justify-center">
+                            <Package className="w-16 h-16 text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="text-white font-semibold text-center mb-1 px-1">
+                        {item?.name || (lootboxConfig ? lootboxConfig.name : reward.id)}
+                      </h3>
+                      <div className="px-2 py-1 bg-brand-orange/90 rounded-full text-white text-xs font-bold mt-1">
+                        {reward.quantity}x
+                      </div>
+                      {item?.description ? (
+                        <p className="text-gray-300 text-xs text-center mt-2 line-clamp-2 px-1">{item.description}</p>
+                      ) : lootboxConfig?.description && (
+                        <p className="text-gray-300 text-xs text-center mt-2 line-clamp-2 px-1">{lootboxConfig.description}</p>
                       )}
                     </div>
-                    <h3 className="text-white font-medium text-center mb-1">
-                      {item?.name || (lootboxConfig ? lootboxConfig.name : reward.id)}
-                    </h3>
-                    <p className="text-brand-orange text-center font-bold">{reward.quantity}x</p>
-                    {item?.description ? (
-                      <p className="text-gray-400 text-xs text-center mt-2">{item.description}</p>
-                    ) : lootboxConfig?.description && (
-                      <p className="text-gray-400 text-xs text-center mt-2">{lootboxConfig.description}</p>
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
         
         {/* Required Components section */}
         {selectedQuest.componentRequirements && selectedQuest.componentRequirements.length > 0 && (
-          <div className="bg-space-dark/70 border border-brand-orange/30 rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold text-brand-orange mb-4">Required Components</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {selectedQuest.componentRequirements.map((component) => (
-                <div 
-                  key={component.id}
-                  className="bg-black/50 rounded-lg border border-gray-700 p-4 flex"
-                >
-                  <div className="mr-4 flex-shrink-0 flex items-center justify-center">
-                    {component.imagePath ? (
-                      <img 
-                        src={component.imagePath} 
-                        alt={component.name}
-                        className="w-20 h-20 object-contain"
-                        style={{ imageRendering: 'pixelated' }}
-                      />
-                    ) : (
-                      <Cpu className="w-16 h-16 text-gray-500" />
-                    )}
+          <div className="mt-6 bg-gray-900/80 border border-brand-orange/30 rounded-lg shadow-lg overflow-hidden">
+            <div className="bg-gray-800/60 px-6 py-4 border-b border-brand-orange/30">
+              <h2 className="text-xl font-bold text-brand-orange flex items-center">
+                <Cpu className="h-5 w-5 mr-2" />
+                Required Components
+              </h2>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {selectedQuest.componentRequirements.map((component) => (
+                  <div 
+                    key={component.id}
+                    className="bg-gray-800/80 rounded-lg border border-gray-600 hover:border-gray-400 p-4 flex transition-all duration-300"
+                  >
+                    <div className="mr-4 flex-shrink-0 flex items-center justify-center bg-black/40 p-2 rounded-md">
+                      {component.imagePath ? (
+                        <img 
+                          src={component.imagePath} 
+                          alt={component.name}
+                          className="w-16 h-16 object-contain"
+                          style={{ imageRendering: 'pixelated' }}
+                        />
+                      ) : (
+                        <Cpu className="w-12 h-12 text-gray-400" />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-white font-semibold mb-1">{component.name}</h3>
+                      <p className="text-gray-300 text-sm">{component.description}</p>
+                      {component.quantity > 1 && (
+                        <div className="flex items-center mt-2">
+                          <div className="bg-brand-orange/80 text-white text-xs px-2 py-1 rounded-full font-bold">
+                            Qty: {component.quantity}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-white font-medium mb-1">{component.name}</h3>
-                    <p className="text-gray-400 text-sm">{component.description}</p>
-                    {component.quantity > 1 && (
-                      <p className="text-brand-orange text-sm mt-1">Quantity: {component.quantity}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         )}
         
         {/* Images gallery */}
         {questImages.length > 1 && (
-          <div className="bg-space-dark/70 border border-brand-orange/30 rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold text-brand-orange mb-4">Images</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {questImages.slice(1).map((image, index) => (
-                <div key={index} className="rounded-lg overflow-hidden border border-gray-700">
-                  <img 
-                    src={image} 
-                    alt={`Quest image ${index + 1}`}
-                    className="w-full h-48 object-cover"
-                  />
-                </div>
-              ))}
+          <div className="mt-6 bg-gray-900/80 border border-brand-orange/30 rounded-lg shadow-lg overflow-hidden">
+            <div className="bg-gray-800/60 px-6 py-4 border-b border-brand-orange/30">
+              <h2 className="text-xl font-bold text-brand-orange flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                Reference Images
+              </h2>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {questImages.slice(1).map((image, index) => (
+                  <div key={index} className="rounded-lg overflow-hidden border border-gray-700 bg-black/30 hover:shadow-lg transition-all duration-300 hover:border-gray-500">
+                    <img 
+                      src={image} 
+                      alt={`Quest image ${index + 1}`}
+                      className="w-full h-40 object-cover hover:opacity-90 transition-opacity"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
         
         {/* Videos gallery */}
         {questVideos && questVideos.length > 0 && (
-          <div className="bg-space-dark/70 border border-brand-orange/30 rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold text-brand-orange mb-4">Videos</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {questVideos.map((video, index) => (
-                <div key={index} className="relative rounded-lg overflow-hidden border border-gray-700">
-                  <div className="aspect-video bg-black flex items-center justify-center">
-                    {/* Embed video or show placeholder with link */}
-                    <a 
-                      href={video} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex flex-col items-center justify-center text-white hover:text-brand-orange"
-                    >
-                      <Play className="w-16 h-16 mb-3" />
-                      <div className="flex items-center">
-                        <span>Watch Video</span>
-                        <ExternalLink className="w-4 h-4 ml-1" />
-                      </div>
-                    </a>
+          <div className="mt-6 bg-gray-900/80 border border-brand-orange/30 rounded-lg shadow-lg overflow-hidden">
+            <div className="bg-gray-800/60 px-6 py-4 border-b border-brand-orange/30">
+              <h2 className="text-xl font-bold text-brand-orange flex items-center">
+                <Video className="h-5 w-5 mr-2" />
+                Tutorial Videos
+              </h2>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {questVideos.map((video, index) => (
+                  <div key={index} className="relative rounded-lg overflow-hidden border border-gray-700 hover:border-gray-500 shadow-md hover:shadow-lg transition-all duration-300">
+                    <div className="aspect-video bg-black/70 flex items-center justify-center">
+                      {/* Embed video or show placeholder with link */}
+                      <a 
+                        href={video} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex flex-col items-center justify-center text-white hover:text-brand-orange transition-colors duration-300"
+                      >
+                        <div className="w-16 h-16 rounded-full bg-brand-orange/80 flex items-center justify-center mb-3 hover:bg-brand-orange transition-colors duration-300">
+                          <Play className="w-8 h-8 text-white" />
+                        </div>
+                        <div className="flex items-center px-4 py-2 bg-black/50 rounded-full">
+                          <span>Watch Video</span>
+                          <ExternalLink className="w-4 h-4 ml-1" />
+                        </div>
+                      </a>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         )}
         
         {/* Code blocks */}
         {questCodeBlocks && questCodeBlocks.length > 0 && (
-          <div className="bg-space-dark/70 border border-brand-orange/30 rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold text-brand-orange mb-4">Code Examples</h2>
-            <div className="space-y-4">
-              {questCodeBlocks.map((codeBlock, index) => (
-                <div key={index} className="bg-black rounded-lg border border-gray-700 overflow-hidden">
-                  <div className="bg-gray-900 border-b border-gray-700 px-4 py-2 flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Code className="w-4 h-4 mr-2 text-brand-orange" />
-                      <span className="text-gray-300">{codeBlock.language || 'Code'}</span>
+          <div className="mt-6 bg-gray-900/80 border border-brand-orange/30 rounded-lg shadow-lg overflow-hidden">
+            <div className="bg-gray-800/60 px-6 py-4 border-b border-brand-orange/30">
+              <h2 className="text-xl font-bold text-brand-orange flex items-center">
+                <Code className="h-5 w-5 mr-2" />
+                Code Examples
+              </h2>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                {questCodeBlocks.map((codeBlock, index) => (
+                  <div key={index} className="bg-black rounded-lg border border-gray-700 overflow-hidden">
+                    <div className="bg-gray-900 border-b border-gray-700 px-4 py-2 flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Code className="w-4 h-4 mr-2 text-brand-orange" />
+                        <span className="text-gray-300 font-mono text-sm">{codeBlock.language || 'Code'}</span>
+                      </div>
                     </div>
+                    <pre className="p-4 overflow-x-auto text-sm">
+                      <code className="font-mono text-gray-100 whitespace-pre-wrap break-words">{codeBlock.code}</code>
+                    </pre>
                   </div>
-                  <pre className="p-4 text-gray-300 overflow-x-auto text-sm">
-                    <code>{codeBlock.code}</code>
-                  </pre>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         )}
         
         {/* Kit information if available */}
         {selectedQuest.kitId && (
-          <div className="bg-space-dark/70 border border-brand-orange/30 rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold text-brand-orange mb-4">Required Kit</h2>
-            {kits ? (
-              <div>
-                {kits.find(k => k.id === selectedQuest.kitId) ? (
-                  <div className="flex items-start">
-                    <div className="mr-4 flex-shrink-0">
-                      {kits.find(k => k.id === selectedQuest.kitId)?.imagePath ? (
-                        <img 
-                          src={kits.find(k => k.id === selectedQuest.kitId)?.imagePath} 
-                          alt={kits.find(k => k.id === selectedQuest.kitId)?.name}
-                          className="w-24 h-24 object-contain rounded-md"
-                          style={{ imageRendering: 'pixelated' }}
-                        />
-                      ) : (
-                        <div className="bg-black/50 rounded-md flex items-center justify-center p-2">
-                          <Cpu className="w-20 h-20 text-gray-500" />
-                        </div>
-                      )}
+          <div className="mt-6 bg-gray-900/80 border border-brand-orange/30 rounded-lg shadow-lg overflow-hidden">
+            <div className="bg-gray-800/60 px-6 py-4 border-b border-brand-orange/30">
+              <h2 className="text-xl font-bold text-brand-orange flex items-center">
+                <Cpu className="h-5 w-5 mr-2" />
+                Required Kit
+              </h2>
+            </div>
+            <div className="p-6">
+              {kits ? (
+                <div>
+                  {kits.find(k => k.id === selectedQuest.kitId) ? (
+                    <div className="flex items-start bg-gray-800/40 p-4 rounded-lg border border-gray-700">
+                      <div className="mr-4 flex-shrink-0 bg-black/40 p-3 rounded-md">
+                        {kits.find(k => k.id === selectedQuest.kitId)?.imagePath ? (
+                          <img 
+                            src={kits.find(k => k.id === selectedQuest.kitId)?.imagePath} 
+                            alt={kits.find(k => k.id === selectedQuest.kitId)?.name || 'Kit'}
+                            className="w-20 h-20 object-contain"
+                            style={{ imageRendering: 'pixelated' }}
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center p-2">
+                            <Cpu className="w-16 h-16 text-gray-500" />
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-white mb-2">{kits.find(k => k.id === selectedQuest.kitId)?.name}</h3>
+                        <p className="text-gray-300 leading-relaxed">{kits.find(k => k.id === selectedQuest.kitId)?.description}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-white mb-1">{kits.find(k => k.id === selectedQuest.kitId)?.name}</h3>
-                      <p className="text-gray-300">{kits.find(k => k.id === selectedQuest.kitId)?.description}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-gray-300">Kit information not available</p>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center">
-                <Loader2 className="w-5 h-5 animate-spin mr-2 text-brand-orange" />
-                <p className="text-gray-300">Loading kit information...</p>
-              </div>
-            )}
+                  ) : (
+                    <p className="text-gray-300 p-4 bg-gray-800/40 rounded-lg">Kit information not available</p>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center p-4 bg-gray-800/40 rounded-lg">
+                  <Loader2 className="w-5 h-5 animate-spin mr-2 text-brand-orange" />
+                  <p className="text-gray-300">Loading kit information...</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
         
