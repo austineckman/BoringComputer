@@ -3,7 +3,7 @@ import passport from "passport";
 import { z } from "zod";
 import { storage } from "../storage";
 import { insertUserSchema } from "@shared/schema";
-import { hashPassword } from "../auth";
+import { hashPassword, comparePasswords } from "../auth";
 
 const router = Router();
 
