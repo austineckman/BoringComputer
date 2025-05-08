@@ -210,7 +210,13 @@ export default function AuthPage() {
                   className={`px-4 py-1 text-sm text-black ${activeTab === 'login' 
                     ? 'bg-gray-200' 
                     : 'bg-gray-300'}`}
-                  onClick={() => setActiveTab('login')}
+                  onClick={() => {
+                    // Clear form fields when switching tabs
+                    document.querySelectorAll('input[name="username"], input[name="password"]').forEach(
+                      input => (input as HTMLInputElement).value = ''
+                    );
+                    setActiveTab('login');
+                  }}
                 >
                   Login
                 </button>
@@ -218,7 +224,13 @@ export default function AuthPage() {
                   className={`px-4 py-1 text-sm text-black ${activeTab === 'register' 
                     ? 'bg-gray-200' 
                     : 'bg-gray-300'}`}
-                  onClick={() => setActiveTab('register')}
+                  onClick={() => {
+                    // Clear form fields when switching tabs
+                    document.querySelectorAll('input[name="username"], input[name="password"]').forEach(
+                      input => (input as HTMLInputElement).value = ''
+                    );
+                    setActiveTab('register');
+                  }}
                 >
                   Register
                 </button>
