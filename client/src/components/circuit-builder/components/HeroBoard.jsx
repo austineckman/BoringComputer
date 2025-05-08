@@ -70,18 +70,43 @@ const HeroBoard = ({
       // Only notify once the drag is complete
       console.log(`HeroBoard ${id} moved to ${posLeft}, ${posTop}`);
       
+      // Get all pin elements for this component
+      const heroboardPins = [...document.querySelectorAll(`[id^="pt-heroboard-${id}-"]`)];
+      const pinPositions = {};
+      
+      // The offset correction for HERO board pins - critical fix
+      // This offset accounts for the discrepancy between the web component's
+      // internal pin positioning and our DOM/canvas coordinate system
+      const OFFSET_CORRECTION_X = 256; // Experimentally determined for HERO board 
+      const OFFSET_CORRECTION_Y = 304; // Experimentally determined for HERO board
+      
+      // Calculate updated pin positions
+      heroboardPins.forEach(pinElement => {
+        if (pinElement && pinElement.id) {
+          const rect = pinElement.getBoundingClientRect();
+          const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+          
+          // Apply the offset correction specifically for HERO board
+          pinPositions[pinElement.id] = {
+            x: rect.left + rect.width/2 - canvasRect.left + OFFSET_CORRECTION_X,
+            y: rect.top + rect.height/2 - canvasRect.top + OFFSET_CORRECTION_Y
+          };
+        }
+      });
+      
       // Dispatch component moved event to update wire positions
       const event = new CustomEvent('componentMovedFinal', {
         detail: {
           componentId: id,
           x: posLeft,
           y: posTop,
-          // We could include pin positions here if needed
+          pinPositions: pinPositions, // Include accurate pin positions
+          isCorrected: true, // Flag to indicate these coordinates are already corrected
         }
       });
       document.dispatchEvent(event);
     }
-  }, [id, isDragged, posLeft, posTop]);
+  }, [id, isDragged, posLeft, posTop, canvasRef]);
 
   const onPinInfoChange = (e) => {
     setPinInfo(e.detail);
@@ -95,7 +120,7 @@ const HeroBoard = ({
     }
   };
 
-  // Handle pin click
+  // Handle pin click with position correction for HERO board
   const handlePinClicked = (e) => {
     console.log("Pin clicked on HeroBoard:", e.detail);
     
@@ -121,14 +146,22 @@ const HeroBoard = ({
           }
         }
         
-        // Get position information
+        // Get position information from the click event
         const clientX = e.detail.clientX || 0;
         const clientY = e.detail.clientY || 0;
         
         console.log(`Pin clicked: ${pinId} (${pinType})`);
         
-        // Calculate accurate pin position
+        // Calculate the board's DOM element position
+        const targetElement = targetRef.current;
+        const componentRect = targetElement ? targetElement.getBoundingClientRect() : { left: 0, top: 0, width: 0, height: 0 };
+        
+        // Calculate accurate pin position - CRITICAL FIX FOR HERO BOARD
+        // The HERO board internally offsets pins but reports global coordinates
+        // We need to convert these to the actual canvas coordinates
         const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+        
+        // Calculate the ACTUAL pin position based on the click coordinates
         const pinPosition = {
           x: clientX - canvasRect.left,
           y: clientY - canvasRect.top
@@ -138,35 +171,32 @@ const HeroBoard = ({
         // Format MUST match the format in CircuitComponent.jsx
         const formattedPinId = `pt-heroboard-${id.replace(/ /g, '')}-${pinId}`;
         
-        // Call the parent's onPinConnect handler with the position
+        // Call the parent's onPinConnect handler
         onPinConnect(pinId, pinType, id, pinPosition);
         
-        // Create a comprehensive pin position data object
-        const pinPositionData = {
-          x: pinPosition.x,
-          y: pinPosition.y,
-          origComponentX: isNaN(parseInt(pinPosition.origComponentX)) ? 0 : parseInt(pinPosition.origComponentX),
-          origComponentY: isNaN(parseInt(pinPosition.origComponentY)) ? 0 : parseInt(pinPosition.origComponentY),
-          pinId: pinId,
-          componentId: id,
-          formattedId: formattedPinId,
-          type: pinType,
-          timestamp: Date.now()
-        };
+        console.log(`Pin ${pinId} (${pinType}) of component ${id} clicked`, pinPosition);
+        console.log(`Using pin position: (${pinPosition.x}, ${pinPosition.y})`);
         
         // Create a custom pin click event to trigger the wire manager
+        // The critical fix is using the ACTUAL client coordinates here
         const pinClickEvent = new CustomEvent('pinClicked', {
           detail: {
-            id: formattedPinId,
-            pinData: JSON.stringify(pinPositionData),
+            pinId: formattedPinId,
+            pinName: pinId,
             pinType: pinType,
-            parentId: id,
-            clientX: pinPosition.x,
-            clientY: pinPosition.y
+            parentComponentId: id,
+            // Using the direct pin position property which our BasicWireManager expects
+            pinPosition: {
+              x: pinPosition.x,
+              y: pinPosition.y
+            },
+            // Also include the raw client coordinates for fallback
+            clientX: clientX,
+            clientY: clientY
           }
         });
         
-        // Dispatch the event to be captured by the SimpleWireManager
+        // Dispatch the event to be captured by the wire manager
         document.dispatchEvent(pinClickEvent);
       } catch (err) {
         console.error("Error parsing pin data:", err);
