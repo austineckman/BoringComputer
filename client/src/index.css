@@ -29,6 +29,40 @@
   }
 }
 
+/* HERO board built-in LED */
+.heroboard-builtin-led {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background-color: #222;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  z-index: 50;
+}
+
+.heroboard-builtin-led.on {
+  background-color: #f00; /* Red color for the built-in LED */
+  box-shadow: 0 0 8px 2px rgba(255, 0, 0, 0.8);
+  animation: pulse 0.8s infinite alternate;
+}
+
+/* HERO board power LED */
+.heroboard-power-led {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background-color: #222;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  z-index: 50;
+}
+
+.heroboard-power-led.on {
+  background-color: #0f0; /* Green for power */
+  box-shadow: 0 0 8px 2px rgba(0, 255, 0, 0.8);
+  animation: pulse-green 1.5s infinite;
+}
+
 /* Custom styles for circuit builder */
 /* Hide all Moveable component selection indicators */
 .moveable-no-border .moveable-line, 
