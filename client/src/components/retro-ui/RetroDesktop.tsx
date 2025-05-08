@@ -105,22 +105,29 @@ const RetroDesktop: React.FC = () => {
   const [colorScheme, setColorScheme] = useState<'blue' | 'black' | 'orange' | 'green' | 'red'>('blue');
   
   // Desktop icons (regular icons visible to all users)
-  const [desktopIcons, setDesktopIcons] = useState<DesktopIcon[]>([
-    // First column (recyclebin at top left)
-    { id: "recyclebin", name: "Recycle Bin", icon: "trashIcon", position: { x: 20, y: 20 } },
-    { id: "quests", name: "Quests", icon: "questgrimoire", path: "/quests", position: { x: 20, y: 120 } },
-    { id: "inventory", name: "Inventory.exe", icon: "ironbag", path: "/inventory", position: { x: 20, y: 220 } },
-    { id: "crafting", name: "Gizbo's Forge", icon: "craftingarmor", path: "/crafting", position: { x: 20, y: 320 } },
+  const [desktopIcons, setDesktopIcons] = useState<DesktopIcon[]>(() => {
+    // Base icons that all users see
+    const baseIcons = [
+      // First column (recyclebin at top left)
+      { id: "recyclebin", name: "Recycle Bin", icon: "trashIcon", position: { x: 20, y: 20 } },
+      { id: "quests", name: "Quests", icon: "questgrimoire", path: "/quests", position: { x: 20, y: 120 } },
+      { id: "inventory", name: "Inventory.exe", icon: "ironbag", path: "/inventory", position: { x: 20, y: 220 } },
+      { id: "crafting", name: "Gizbo's Forge", icon: "craftingarmor", path: "/crafting", position: { x: 20, y: 320 } },
+      
+      // Second column (after 4 icons in first column)
+      { id: "lootboxes", name: "HackLock.exe", icon: "picklock", path: "/lootboxes", position: { x: 140, y: 20 } },
+      { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 140, y: 120 } },
+      { id: "circuitbuilder", name: "Sandbox", icon: "circuitbuilder", position: { x: 140, y: 220 } },
+      { id: "discord", name: "Discord", icon: "discord", position: { x: 140, y: 320 } },
+    ];
     
-    // Second column (after 4 icons in first column)
-    { id: "lootboxes", name: "HackLock.exe", icon: "picklock", path: "/lootboxes", position: { x: 140, y: 20 } },
-    { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 140, y: 120 } },
-    { id: "circuitbuilder", name: "Sandbox", icon: "circuitbuilder", position: { x: 140, y: 220 } },
-    { id: "discord", name: "Discord", icon: "discord", position: { x: 140, y: 320 } },
+    // Only add Oracle icon for admin users
+    if (user?.roles?.includes('admin')) {
+      baseIcons.push({ id: "oracle", name: "The Oracle", icon: "oracle", position: { x: 800, y: 20 } });
+    }
     
-    // Oracle in top right
-    { id: "oracle", name: "The Oracle", icon: "oracle", position: { x: 800, y: 20 } },
-  ]);
+    return baseIcons;
+  });
   
   // Admin icons (for reference only - no longer displayed in a folder)
   const adminIcons: DesktopIcon[] = [
