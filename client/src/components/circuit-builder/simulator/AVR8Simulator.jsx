@@ -176,11 +176,11 @@ const AVR8Simulator = ({
     // Process pin updates for all pins
     // Now handling all pins, not just 9-13
     if (pinNumber >= 0 && pinNumber <= 19) {
-      // First, try to find regular LEDs connected through wires
-      const connectedLEDs = findConnectedComponents('led', pinNumber);
+      // First, try to find regular LEDs connected through wires (directly or through resistors)
+      const connectedLEDs = findConnectedComponents('led', pinNumber, true);
       
       // Also check for RGB LEDs connected to this pin
-      const connectedRGBLEDs = findConnectedComponents('rgbled', pinNumber);
+      const connectedRGBLEDs = findConnectedComponents('rgbled', pinNumber, true);
       
       let componentsUpdated = false;
       
@@ -259,16 +259,17 @@ const AVR8Simulator = ({
     }
   };
   
-  // Helper to find components of a given type connected to a pin
-  const findConnectedComponents = (componentType, pinNumber) => {
+  // Helper to find components of a given type connected to a pin (directly or through resistors)
+  const findConnectedComponents = (componentType, pinNumber, checkPassiveComponents = false) => {
     // Find the HERO board (Arduino) component
     const heroBoard = components.find(c => c.type === 'heroboard');
     if (!heroBoard) return [];
     
     // Log wire connection check for any pin (to debug the connection issue)
-    console.log(`Looking for ${componentType} components connected to pin ${pinNumber}`);
+    console.log(`Looking for ${componentType} components connected to pin ${pinNumber} (with passive component check: ${checkPassiveComponents})`);
     console.log(`HERO board ID: ${heroBoard.id}`);
     console.log(`Available wires from context: ${wires.length}`);
+    console.log(`Available components: ${components.length}`);
     
     // Try multiple formats of pin IDs to handle different naming patterns
     const possiblePinFormats = [
@@ -293,68 +294,127 @@ const AVR8Simulator = ({
     // Find wires connected to any of these pin formats
     const connectedWires = wires.filter(wire => {
       // Check if the source or target contains any of the pin formats
-      if (pinNumber === 13) {
-        console.log(`Wire: source=${wire.sourceId}, target=${wire.targetId}`);
-      }
-      
       return possiblePinFormats.some(pinFormat => 
         wire.sourceId?.includes(pinFormat) || 
         wire.targetId?.includes(pinFormat)
       );
     });
     
-    if (pinNumber === 13) {
-      console.log(`Found ${connectedWires.length} wires connected to pin ${pinNumber}`);
-    }
+    console.log(`Found ${connectedWires.length} wires connected to pin ${pinNumber}`);
+    
+    // Set to track visited component IDs for cycle detection
+    const visitedComponents = new Set();
     
     // Find connected components
     const connectedComponents = [];
     
-    connectedWires.forEach(wire => {
-      // Determine which end is connected to the HERO board
+    // Helper function to recursively trace connections through components
+    const traceConnections = (wire, targetType, visitedWires = new Set()) => {
+      // Don't process the same wire twice (prevents cycles)
+      if (visitedWires.has(wire.id)) return [];
+      visitedWires.add(wire.id);
+      
+      // Determine which end is connected to the source we're tracing from
       const isSourceHeroBoard = possiblePinFormats.some(format => wire.sourceId?.includes(format));
+      const isSourceVisited = Array.from(visitedComponents).some(id => wire.sourceId?.includes(id));
       
-      // Get the other end ID (either source or target depending on which is the HERO board)
-      const otherEndId = isSourceHeroBoard ? wire.targetId : wire.sourceId;
+      // Get the other end ID (either source or target depending on context)
+      let otherEndId;
+      if (isSourceHeroBoard || isSourceVisited) {
+        otherEndId = wire.targetId;
+      } else {
+        otherEndId = wire.sourceId;
+      }
       
+      console.log(`Tracing from wire ${wire.id}: ${wire.sourceId} -> ${wire.targetId}`);
       console.log(`Other end ID: ${otherEndId}`);
       
-      // Try to extract component type from the ID
-      // The format can vary, but we'll try to handle common patterns
-      if (otherEndId) {
-        const otherEndParts = otherEndId.split('-');
-        
-        // Handle multiple possible formats
-        let otherComponentType = '';
-        let otherComponentId = '';
-        
-        if (otherEndParts.length >= 3) {
-          // Format: pt-<type>-<id>-<pin>
-          otherComponentType = otherEndParts[1]?.toLowerCase();
-          otherComponentId = otherEndParts[2];
-          
-          console.log(`Extracted component type: ${otherComponentType}, id: ${otherComponentId}`);
-          
-          // Check if this is the component type we're looking for
-          if (otherComponentType === componentType.toLowerCase()) {
-            // Find the corresponding component in our list
-            const component = components.find(c => 
-              c.id === otherComponentId || 
-              // Fallback: any component of the right type
-              (c.type.toLowerCase() === componentType.toLowerCase())
-            );
-            
-            if (component) {
-              console.log(`Found connected ${componentType} component: ${component.id}`);
-              connectedComponents.push(component);
-            }
-          }
+      // If no other end, skip this wire
+      if (!otherEndId) return [];
+      
+      const otherEndParts = otherEndId.split('-');
+      if (otherEndParts.length < 3) return [];
+      
+      // Extract component type and ID
+      const otherComponentType = otherEndParts[1]?.toLowerCase();
+      const otherComponentId = otherEndParts[2];
+      
+      console.log(`Extracted: type=${otherComponentType}, id=${otherComponentId}`);
+      
+      // Add to visited components
+      visitedComponents.add(otherComponentId);
+      
+      // Check if this is our target component type
+      if (otherComponentType === targetType.toLowerCase()) {
+        // Find the actual component with this ID
+        const component = components.find(c => c.id === otherComponentId);
+        if (component) {
+          console.log(`Found target component: ${component.type} ${component.id}`);
+          return [component];
         }
+      }
+      
+      // If this is a passive component (resistor, capacitor, etc.), trace through it
+      const isPassiveComponent = otherComponentType === 'resistor' || 
+                               otherComponentType === 'capacitor' ||
+                               otherComponentType === 'jumper';
+      
+      if (checkPassiveComponents && isPassiveComponent) {
+        console.log(`Found passive component ${otherComponentType}, tracing through it...`);
+        
+        // Get all wires connected to this passive component
+        const connectedPassiveWires = wires.filter(w => 
+          w.id !== wire.id && // Skip the wire we came from
+          (w.sourceId?.includes(otherComponentId) || w.targetId?.includes(otherComponentId))
+        );
+        
+        console.log(`Found ${connectedPassiveWires.length} other wires connected to ${otherComponentType}`);
+        
+        // Recursively trace through each connected wire
+        const foundComponents = [];
+        connectedPassiveWires.forEach(nextWire => {
+          // Only proceed if we haven't visited this wire
+          if (!visitedWires.has(nextWire.id)) {
+            const traced = traceConnections(nextWire, targetType, visitedWires);
+            foundComponents.push(...traced);
+          }
+        });
+        
+        return foundComponents;
+      }
+      
+      // Not a target and not a passive component we can trace through
+      return [];
+    };
+    
+    // Make sure each wire has a unique ID for tracing
+    const wiresWithIds = connectedWires.map((wire, index) => {
+      // If the wire doesn't have an ID, give it one
+      if (!wire.id) {
+        return { ...wire, id: `wire-${index}` };
+      }
+      return wire;
+    });
+    
+    // Trace connections from each wire connected to the HERO board pin
+    wiresWithIds.forEach(wire => {
+      const components = traceConnections(wire, componentType);
+      connectedComponents.push(...components);
+    });
+    
+    // Remove duplicates by ID
+    const uniqueComponents = [];
+    const addedIds = new Set();
+    
+    connectedComponents.forEach(comp => {
+      if (!addedIds.has(comp.id)) {
+        addedIds.add(comp.id);
+        uniqueComponents.push(comp);
       }
     });
     
-    console.log(`Returning ${connectedComponents.length} ${componentType} components`);
-    return connectedComponents;
+    console.log(`Returning ${uniqueComponents.length} ${componentType} components`);
+    return uniqueComponents;
   };
   
   // This component doesn't render anything visible
