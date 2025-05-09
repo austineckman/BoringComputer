@@ -18,6 +18,9 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
   // Get library manager context
   const { loadLibrary, isLibraryLoaded, loadedLibraries } = useLibraryManager();
   
+  // Get simulator context for updating component states
+  const { updateComponentState } = useSimulator();
+  
   // Log information to the simulator console
   const logInfo = (message) => {
     if (onLog) {
