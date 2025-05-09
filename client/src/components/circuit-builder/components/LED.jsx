@@ -51,43 +51,21 @@ const LED = ({
   useEffect(() => {
     // Log to see if we're even getting component state updates
     console.log(`LED ${id} checking for state updates, isSimulationRunning=${isSimulationRunning}`);
-    console.log(`Available component states:`, componentStates);
     
-    // Check if there's a direct state update for this component ID
-    if (componentStates && componentStates[id]) {
-      const ledState = componentStates[id];
-      // Update LED state based on simulation results
-      const newLitState = ledState.isLit || false;
-      console.log(`LED ${id} updated from simulation: isLit=${newLitState}`);
-      setIsLit(newLitState);
-    } 
-    // Check for heroboard pin states which control the LED
-    else if (componentStates && componentStates.heroboard && componentStates.heroboard.pins) {
-      console.log(`Refreshing component states after pin update`);
-      // Check for pin connections (pin 13 is commonly used for onboard LED)
-      // This will need to be updated to check the actual pin this LED is connected to
-      const connectedPin = '13'; // Default to pin 13 - ideally this would be dynamically determined
-      
-      if (componentStates.heroboard.pins[connectedPin] !== undefined) {
-        const newLitState = componentStates.heroboard.pins[connectedPin] === true;
-        console.log(`LED ${id} updated from heroboard pin ${connectedPin}: isLit=${newLitState}`);
-        setIsLit(newLitState);
-      }
+    // Only check LED state when simulation is running
+    if (!isSimulationRunning) {
+      // Turn off LED when simulation stops
+      setIsLit(false);
+      return;
     }
-    // Fallback: try alternative ID formats
-    else if (componentStates) {
-      // Try finding this LED's state using any key that contains this ID
-      const matchingStateKey = Object.keys(componentStates).find(key => 
-        key.includes(id) || (typeof id === 'string' && id.includes(key))
-      );
-      
-      if (matchingStateKey) {
-        const ledState = componentStates[matchingStateKey];
-        const newLitState = ledState.isLit || false;
-        console.log(`LED ${id} updated from simulation via alternative key ${matchingStateKey}: isLit=${newLitState}`);
-        setIsLit(newLitState);
-      }
-    }
+    
+    // For now, simply turn LEDs off to fix the blinking issue
+    // This is a temporary fix until we implement proper wire-based logic
+    setIsLit(false);
+    
+    // The proper solution would check for wire connections between the LED and heroboard
+    // and then check if the specific heroboard pin is HIGH
+    
   }, [componentStates, id, isSimulationRunning]);
   
   // Create a component data structure that matches what the original code expects
