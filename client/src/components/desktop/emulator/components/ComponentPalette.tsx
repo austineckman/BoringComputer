@@ -2,19 +2,20 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
-// Import component icons from the 30 Days Lost in Space sandbox
+// Import component icons from the Inventr Share repository
 // These are the exact same images used in the sandbox
-const ledIcon = '/attached_assets/led.icon.png';
-const rgbLedIcon = '/attached_assets/rgb-led.icon.png';
-const oledDisplayIcon = '/attached_assets/oled-display.icon.png';
-const resistorIcon = '/attached_assets/resistor.icon.png';
-const photoresistorIcon = '/attached_assets/photoresistor.icon.png';
-const buzzerIcon = '/attached_assets/buzzer.icon.svg';
-const heroBoardIcon = '/attached_assets/hero-board.icon.png';
-const rotaryEncoderIcon = '/attached_assets/rotary-encoder.icon.png';
-const segmentedDisplayIcon = '/attached_assets/segmented-display.icon.png';
-const dipSwitchIcon = '/attached_assets/dip-switch-3.icon.png';
-const customKeypadIcon = '/attached_assets/custom-keypad.icon.png';
+const ledIcon = '/images/led.icon.png';
+const rgbLedIcon = '/images/rgb-led.icon.png';
+const oledDisplayIcon = '/images/oled-display.icon.png';
+const resistorIcon = '/images/resistor.icon.png';
+const photoresistorIcon = '/images/photoresistor.icon.png';
+const buzzerIcon = '/images/buzzer.icon.png';
+const heroBoardIcon = '/images/hero-board.icon.png';
+const rotaryEncoderIcon = '/images/rotary-encoder.icon.png';
+const segmentedDisplayIcon = '/images/segmented-display.icon.png';
+const dipSwitchIcon = '/images/dip-switch-3.icon.png';
+const customKeypadIcon = '/images/custom-keypad.icon.png';
+const breadboardMiniIcon = '/images/breadboard-mini.icon.png';
 
 // Define the component types and their metadata with category grouping
 // Matching the 30 Days Lost in Space sandbox component organization
@@ -99,9 +100,9 @@ const COMPONENT_CATEGORIES = [
     name: 'ESSENTIAL COMPONENTS',
     components: [
       {
-        id: 'arduino',
-        name: 'Arduino UNO',
-        icon: <img src={heroBoardIcon} className="h-6 w-6" alt="Arduino UNO" />,
+        id: 'hero-board',
+        name: 'HERO Board',
+        icon: <img src={heroBoardIcon} className="h-6 w-6" alt="HERO Board" />,
         description: 'Main microcontroller board',
         rarity: 'legendary',
       },
@@ -111,6 +112,13 @@ const COMPONENT_CATEGORIES = [
         icon: <img src={resistorIcon} className="h-6 w-6" alt="Resistor" />,
         description: 'Limits current flow',
         rarity: 'common',
+      },
+      {
+        id: 'breadboard-mini',
+        name: 'Mini Breadboard',
+        icon: <img src={breadboardMiniIcon} className="h-6 w-6" alt="Mini Breadboard" />,
+        description: 'For connecting components',
+        rarity: 'uncommon',
       }
     ]
   }
