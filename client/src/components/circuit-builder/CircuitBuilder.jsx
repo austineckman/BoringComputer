@@ -69,41 +69,68 @@ const CircuitBuilder = () => {
   
   // Add a new component to the canvas
   const handleAddComponent = (type) => {
-    // Find component details in our componentOptions
-    const componentInfo = componentOptions.find(c => c.name === type);
-    if (!componentInfo) {
-      console.warn(`Unknown component type: ${type}`);
-      return;
+    try {
+      // Validate component type
+      if (!type) {
+        console.warn('No component type provided');
+        return;
+      }
+      
+      // Find component details in our componentOptions
+      const componentInfo = componentOptions.find(c => c.name === type);
+      if (!componentInfo) {
+        console.warn(`Unknown component type: ${type}`);
+        return;
+      }
+      
+      // Log the image path to debug
+      console.log(`Adding component with image: ${componentInfo.imagePath || 'no image path'}`);
+      
+      // Generate random position near the center of the canvas
+      const canvasWidth = canvasRef.current?.clientWidth || 800;
+      const canvasHeight = canvasRef.current?.clientHeight || 600;
+      
+      // Adjust position to be more centered and randomized slightly
+      const randomX = (canvasWidth / 2) + (Math.random() * 100 - 50);
+      const randomY = (canvasHeight / 2) + (Math.random() * 100 - 50);
+      
+      // Generate a unique ID that's safe for use as a component identifier
+      const safeType = type.replace(/[^a-zA-Z0-9-]/g, '');
+      const uniqueId = generateId();
+      const componentId = `${safeType}-${uniqueId}`;
+      
+      console.log(`Creating component with ID: ${componentId}`);
+      
+      // Create the new component with robust defaults for all properties
+      const newComponent = {
+        id: componentId,
+        type: safeType, // Use sanitized type name
+        x: randomX,
+        y: randomY,
+        // No rotation property needed - rotation is removed
+        props: {
+          // Add any component-specific properties with defaults
+          label: componentInfo.displayName || type,
+          description: componentInfo.description || `${type} component`
+        } 
+      };
+      
+      console.log('New component created:', newComponent);
+      
+      // Add component to state with defensive copy to avoid state mutation issues
+      setComponents(prev => {
+        const newComponents = [...(prev || []), newComponent];
+        console.log(`Updated components array, now contains ${newComponents.length} components`);
+        return newComponents;
+      });
+      
+      // Set the newly created component as selected
+      setSelectedComponentId(componentId);
+    } catch (error) {
+      console.error('Error adding component:', error);
+      // Provide user feedback that something went wrong
+      alert('There was an error adding the component. Please try again.');
     }
-    
-    // Log the image path to debug
-    console.log(`Adding component with image: ${componentInfo.imagePath}`);
-    
-    // Generate random position near the center of the canvas
-    const canvasWidth = canvasRef.current?.clientWidth || 800;
-    const canvasHeight = canvasRef.current?.clientHeight || 600;
-    
-    // Adjust position to be more centered and randomized slightly
-    const randomX = (canvasWidth / 2) + (Math.random() * 100 - 50);
-    const randomY = (canvasHeight / 2) + (Math.random() * 100 - 50);
-    
-    // Create the new component with a unique ID
-    const newComponent = {
-      id: `${type}-${generateId()}`,
-      type, // Use the component name from componentOptions
-      x: randomX,
-      y: randomY,
-      // No rotation property needed - rotation is removed
-      props: {
-        // Add any component-specific properties
-        label: componentInfo.displayName,
-        description: componentInfo.description
-      } 
-    };
-    
-    // Add component to state
-    setComponents(prev => [...prev, newComponent]);
-    setSelectedComponentId(newComponent.id);
   };
   
   // Handle component selection

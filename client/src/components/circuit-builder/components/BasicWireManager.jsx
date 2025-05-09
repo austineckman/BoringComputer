@@ -553,14 +553,31 @@ const BasicWireManager = ({ canvasRef }) => {
   
   // Share wires with the simulator through context
   useEffect(() => {
-    console.log(`Wire manager has ${wires.length} wires:`, wires);
-    
-    // Share the wires with the simulator via context
-    if (setSimulatorWires) {
-      setSimulatorWires(wires);
-      console.log("Shared wires with simulator context:", wires.length);
-    } else {
-      console.warn("Could not share wires with simulator: setSimulatorWires not available");
+    try {
+      console.log(`Wire manager has ${wires?.length || 0} wires:`, wires);
+      
+      // Ensure wires is always an array
+      const safeWires = Array.isArray(wires) ? wires : [];
+      
+      // Share the wires with the simulator via context
+      if (typeof setSimulatorWires === 'function') {
+        // Add extra debug information to each wire to help with debugging
+        const wiresWithDebug = safeWires.map(wire => ({
+          ...wire,
+          _debug: {
+            timestamp: Date.now(),
+            sourceValid: Boolean(wire.sourceId && wire.sourcePos),
+            targetValid: Boolean(wire.targetId && wire.targetPos)
+          }
+        }));
+        
+        setSimulatorWires(wiresWithDebug);
+        console.log("Shared wires with simulator context:", wiresWithDebug.length);
+      } else {
+        console.warn("Could not share wires with simulator: setSimulatorWires not available");
+      }
+    } catch (error) {
+      console.error("Error sharing wires with simulator:", error);
     }
   }, [wires, setSimulatorWires]);
 
@@ -589,7 +606,13 @@ const BasicWireManager = ({ canvasRef }) => {
         height="100%"
       >
         {/* Render all wire connections with higher visibility */}
-        {wires.map(wire => (
+        {Array.isArray(wires) ? wires.map(wire => {
+          // Safety check to prevent rendering invalid wires
+          if (!wire || !wire.id || !wire.sourcePos || !wire.targetPos) {
+            return null; // Skip invalid wires
+          }
+          
+          return (
           <g key={wire.id} className="wire-connection" style={{ pointerEvents: 'auto' }}>
             {/* Highlight path to make it more visible */}
             <path
@@ -694,7 +717,8 @@ const BasicWireManager = ({ canvasRef }) => {
               {wire.targetName}
             </text>
           </g>
-        ))}
+          );
+        }) : null}
         
         {/* Pending connection wire with improved visibility */}
         {pendingConnection && (
