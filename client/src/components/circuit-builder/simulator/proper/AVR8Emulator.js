@@ -1,249 +1,318 @@
 /**
- * AVR8Emulator.js
+ * AVR8Emulator
  * 
- * A wrapper around the avr8js library that provides a higher-level interface
- * for simulating an Arduino microcontroller with proper instruction execution.
+ * This is the core emulator that uses avr8js to create a cycle-accurate
+ * simulation of an Arduino board.
  */
 
-import { CPU, AVRIOPort, AVRTimer, AVRUSART } from 'avr8js';
+import { 
+  CPU, 
+  AVRIOPort, 
+  portBConfig, 
+  portCConfig, 
+  portDConfig,
+  AVRSPI,
+  AVRUSART,
+  AVRTimer,
+  timer0Config,
+  timer1Config,
+  timer2Config 
+} from 'avr8js';
 
-// Constants for the ATmega328P used in Arduino Uno
-const AVR_FREQUENCY = 16000000; // 16 MHz
-const MEMORY_SIZE = 32 * 1024; // 32KB for program memory
-const SRAM_SIZE = 2 * 1024; // 2KB for SRAM
-
-// Pin mappings for Arduino Uno (ATmega328P)
-export const PIN_MAPPINGS = {
-  // Digital pins
-  0: { port: 'D', bit: 0 }, // RXD
-  1: { port: 'D', bit: 1 }, // TXD
-  2: { port: 'D', bit: 2 }, // INT0
-  3: { port: 'D', bit: 3 }, // INT1/PWM
-  4: { port: 'D', bit: 4 }, // XCK/T0
-  5: { port: 'D', bit: 5 }, // T1/PWM
-  6: { port: 'D', bit: 6 }, // AIN0/PWM
-  7: { port: 'D', bit: 7 }, // AIN1
-  8: { port: 'B', bit: 0 }, // ICP1/CLKO
-  9: { port: 'B', bit: 1 }, // OC1A/PWM
-  10: { port: 'B', bit: 2 }, // SS/OC1B/PWM
-  11: { port: 'B', bit: 3 }, // MOSI/OC2A/PWM
+// Maps Arduino pins to AVR ports and bits
+const PIN_MAPPING = {
+  0: { port: 'D', bit: 0 },  // RXD
+  1: { port: 'D', bit: 1 },  // TXD
+  2: { port: 'D', bit: 2 },  // INT0
+  3: { port: 'D', bit: 3 },  // INT1/OC2B (PWM)
+  4: { port: 'D', bit: 4 },
+  5: { port: 'D', bit: 5 },  // OC0B (PWM)
+  6: { port: 'D', bit: 6 },  // OC0A (PWM)
+  7: { port: 'D', bit: 7 },
+  8: { port: 'B', bit: 0 },
+  9: { port: 'B', bit: 1 },  // OC1A (PWM)
+  10: { port: 'B', bit: 2 }, // SS/OC1B (PWM)
+  11: { port: 'B', bit: 3 }, // MOSI/OC2A (PWM)
   12: { port: 'B', bit: 4 }, // MISO
-  13: { port: 'B', bit: 5 }, // SCK/LED
-  
-  // Analog pins (A0-A5)
-  14: { port: 'C', bit: 0 }, // A0
-  15: { port: 'C', bit: 1 }, // A1
-  16: { port: 'C', bit: 2 }, // A2
-  17: { port: 'C', bit: 3 }, // A3
-  18: { port: 'C', bit: 4 }, // A4/SDA
-  19: { port: 'C', bit: 5 }, // A5/SCL
-  
-  // Aliases for analog pins
+  13: { port: 'B', bit: 5 }, // SCK - Also connected to the built-in LED
   'A0': { port: 'C', bit: 0 },
   'A1': { port: 'C', bit: 1 },
   'A2': { port: 'C', bit: 2 },
   'A3': { port: 'C', bit: 3 },
-  'A4': { port: 'C', bit: 4 },
-  'A5': { port: 'C', bit: 5 },
+  'A4': { port: 'C', bit: 4 }, // SDA
+  'A5': { port: 'C', bit: 5 }  // SCL
 };
 
-// Port addresses for ATmega328P
-const PORT_ADDRESSES = {
-  'B': { data: 0x25, ddr: 0x24, pin: 0x23 }, // PORTB, DDRB, PINB
-  'C': { data: 0x28, ddr: 0x27, pin: 0x26 }, // PORTC, DDRC, PINC
-  'D': { data: 0x2B, ddr: 0x2A, pin: 0x29 }, // PORTD, DDRD, PIND
+// Port register addresses in the AVR microcontroller
+const PORT_ADDR = {
+  'B': portBConfig,
+  'C': portCConfig,
+  'D': portDConfig
 };
+
+// Arduino clock speed (16 MHz)
+const CLOCK_SPEED = 16e6;
 
 /**
- * AVR8Emulator Class
- * Provides a complete emulation of an Arduino UNO microcontroller
+ * The AVR8Emulator class provides a clean interface to the avr8js library,
+ * abstracting the details of the AVR microcontroller and providing
+ * Arduino-compatible pin access.
  */
 export class AVR8Emulator {
-  constructor() {
-    this.running = false;
+  constructor(options = {}) {
+    this.onPinChange = options.onPinChange || null;
+    this.onSerialByte = options.onSerialByte || null;
+    this.onError = options.onError || null;
+
+    // References to AVR components
     this.cpu = null;
     this.program = null;
-    this.programSize = 0;
     this.ports = {};
     this.timers = [];
     this.usart = null;
     this.spi = null;
-    this.eventHandlers = {
-      pinChange: [],
-      serialData: [],
-      log: []
-    };
-    this.lastExecutionTime = 0;
-    this.animationFrameId = null;
-    this.pins = {};
-    this.debug = false;
     
-    // Pre-initialize pin states
-    Object.keys(PIN_MAPPINGS).forEach(pin => {
-      if (!isNaN(parseInt(pin, 10)) || pin.startsWith('A')) {
-        this.pins[pin] = { value: false, mode: 'INPUT', analogValue: 0 };
+    // Internal state
+    this.running = false;
+    this.animationFrameId = null;
+    this.lastTime = 0;
+    this.pinStates = {}; // Tracks current state of all pins
+    
+    // Performance tuning
+    this.batchSize = options.batchSize || 500000; // Instructions per batch
+  }
+
+  /**
+   * Load a compiled program (array of bytes) into the emulator
+   * @param {Uint16Array} program - The compiled AVR program
+   * @returns {boolean} - Whether loading was successful
+   */
+  loadProgram(program) {
+    try {
+      this.stop();
+      this.program = program;
+      
+      // Initialize a new CPU with the program
+      this.cpu = new CPU(this.program);
+      
+      // Initialize I/O ports
+      this._initPorts();
+      
+      // Initialize peripherals
+      this._initTimers();
+      this._initUSART();
+      this._initSPI();
+      
+      return true;
+    } catch (err) {
+      if (this.onError) {
+        this.onError(`Failed to load program: ${err.message}`);
+      } else {
+        console.error('AVR8Emulator load error:', err);
+      }
+      return false;
+    }
+  }
+  
+  /**
+   * Start the emulator
+   */
+  start() {
+    if (!this.cpu || !this.program) {
+      if (this.onError) {
+        this.onError('Cannot start emulator: No program loaded');
+      }
+      return false;
+    }
+    
+    if (this.running) return true; // Already running
+    
+    this.running = true;
+    this.lastTime = performance.now();
+    this._runCycle();
+    return true;
+  }
+  
+  /**
+   * Stop the emulator
+   */
+  stop() {
+    if (!this.running) return;
+    
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+    
+    this.running = false;
+  }
+  
+  /**
+   * Reset the CPU and peripherals
+   */
+  reset() {
+    if (!this.cpu) return;
+    
+    // Stop if running
+    this.stop();
+    
+    // Reset CPU to initial state
+    this.cpu.reset();
+    
+    // Reset pin states
+    this.pinStates = {};
+    
+    // Reset peripherals
+    if (this.usart) {
+      // USART reset logic would go here if needed
+    }
+    
+    // Re-initialize ports (to ensure correct pin states)
+    this._initPorts();
+    
+    // Re-initialize timers
+    this._initTimers();
+  }
+  
+  /**
+   * Get the state of a pin
+   * @param {number|string} pin - The pin number (0-13) or analog pin name ('A0'-'A5')
+   * @returns {boolean} - The current state of the pin (true = HIGH, false = LOW)
+   */
+  getPinState(pin) {
+    return this.pinStates[pin] || false;
+  }
+  
+  /**
+   * Set input on a digital pin
+   * @param {number|string} pin - The pin number (0-13) or analog pin name ('A0'-'A5')
+   * @param {boolean} value - true for HIGH, false for LOW
+   */
+  setDigitalInput(pin, value) {
+    const mapping = PIN_MAPPING[pin];
+    if (!mapping || !this.ports[mapping.port]) return;
+    
+    const port = this.ports[mapping.port];
+    const bit = mapping.bit;
+    
+    // Set pin to input mode 
+    // (clear the corresponding bit in DDR register)
+    port.setDDRBit(bit, false);
+    
+    // Set the pin value in the PIN register
+    // Note: Writing a 1 to PINx toggles the bit
+    const currentValue = (port.PIN >> bit) & 1;
+    if (currentValue !== (value ? 1 : 0)) {
+      port.setPINBit(bit, true); // Toggle
+    }
+  }
+  
+  /**
+   * Set an analog input value (for analog pins A0-A5)
+   * Note: This would connect to the ADC in a complete implementation
+   * @param {string} pin - The analog pin name ('A0'-'A5')
+   * @param {number} value - Value between 0-1023 (10-bit ADC value)
+   */
+  setAnalogInput(pin, value) {
+    // For now, we just map this to digital HIGH/LOW
+    // A full implementation would connect to the AVR's ADC
+    if (pin.startsWith('A') && PIN_MAPPING[pin]) {
+      this.setDigitalInput(pin, value > 512);
+    }
+  }
+  
+  // PRIVATE METHODS
+  
+  /**
+   * Initialize the I/O ports
+   * @private
+   */
+  _initPorts() {
+    // Create ports B, C, and D
+    ['B', 'C', 'D'].forEach(portName => {
+      const config = PORT_ADDR[portName];
+      const port = new AVRIOPort(this.cpu, config);
+      
+      // Add listener for port changes
+      port.addListener(() => {
+        this._handlePortChange(portName, port);
+      });
+      
+      this.ports[portName] = port;
+    });
+  }
+  
+  /**
+   * Initialize timers
+   * @private
+   */
+  _initTimers() {
+    this.timers = [];
+    // Timer 0 (8-bit) - Controls PWM on pins 5 & 6
+    this.timers[0] = new AVRTimer(this.cpu, timer0Config);
+    // Timer 1 (16-bit) - Controls PWM on pins 9 & 10
+    this.timers[1] = new AVRTimer(this.cpu, timer1Config);
+    // Timer 2 (8-bit) - Controls PWM on pins 3 & 11
+    this.timers[2] = new AVRTimer(this.cpu, timer2Config);
+  }
+  
+  /**
+   * Initialize USART for serial communication
+   * @private
+   */
+  _initUSART() {
+    this.usart = new AVRUSART(this.cpu, {
+      onByteTransmit: (value) => {
+        // Convert byte to character
+        const char = String.fromCharCode(value);
+        
+        // Call the serial byte callback if provided
+        if (this.onSerialByte) {
+          this.onSerialByte(value, char);
+        }
       }
     });
   }
   
   /**
-   * Load a compiled program into the emulator
-   * @param {Uint16Array} program - The compiled AVR program
-   * @returns {boolean} - Success status
+   * Initialize SPI
+   * @private
    */
-  loadProgram(program) {
-    if (!program || !(program instanceof Uint16Array)) {
-      this.log('Error: Invalid program format');
-      return false;
-    }
-    
-    this.log(`Loading program (${program.length} words)`);
-    this.program = program;
-    this.programSize = program.length * 2; // Size in bytes
-    
-    // Reset and initialize CPU with new program
-    this.reset();
-    return true;
+  _initSPI() {
+    this.spi = new AVRSPI(this.cpu);
   }
   
   /**
-   * Initialize the microcontroller with the loaded program
-   * @returns {boolean} - Success status
+   * Handle changes to port values (pin states)
+   * @private
    */
-  initialize() {
-    if (!this.program) {
-      this.log('Error: No program loaded');
-      return false;
-    }
+  _handlePortChange(portName, port) {
+    // Get the PORT value (output pins)
+    const portValue = port.PORT;
+    // Get the DDR value (data direction register - 1 for output, 0 for input)
+    const ddrValue = port.DDR;
     
-    try {
-      this.log('Initializing AVR microcontroller');
-      
-      // Create memory for the CPU
-      const progMem = new Uint16Array(MEMORY_SIZE / 2);
-      
-      // Copy the program into program memory
-      progMem.set(this.program);
-      
-      // Create CPU
-      this.cpu = new CPU(progMem);
-      
-      // Initialize I/O ports (B, C, D)
-      this.initPorts();
-      
-      // Initialize timers
-      this.initTimers();
-      
-      // Initialize serial port
-      this.initSerial();
-      
-      this.log('AVR microcontroller initialized successfully');
-      return true;
-    } catch (error) {
-      this.log(`Error initializing emulator: ${error.message}`);
-      return false;
-    }
-  }
-  
-  /**
-   * Initialize the microcontroller I/O ports
-   */
-  initPorts() {
-    this.ports = {};
-    
-    // Create ports for ATmega328P (B, C, D)
-    Object.entries(PORT_ADDRESSES).forEach(([portName, addr]) => {
-      // Create the port
-      const port = new AVRIOPort(this.cpu, addr.data, addr.ddr, addr.pin);
-      this.ports[portName] = port;
-      
-      // Add a listener for port changes
-      port.addPortListener(() => this.handlePortChange(portName));
-    });
-  }
-  
-  /**
-   * Initialize timers for PWM capability
-   */
-  initTimers() {
-    this.timers = [];
-    
-    // Timer 0 (8-bit) - Controls pins 5 & 6
-    this.timers[0] = new AVRTimer(this.cpu, 0);
-    
-    // Timer 1 (16-bit) - Controls pins 9 & 10
-    this.timers[1] = new AVRTimer(this.cpu, 1);
-    
-    // Timer 2 (8-bit) - Controls pins 3 & 11
-    this.timers[2] = new AVRTimer(this.cpu, 2);
-  }
-  
-  /**
-   * Initialize USART for serial communication
-   */
-  initSerial() {
-    this.usart = new AVRUSART(this.cpu, {
-      onByte: this.handleSerialByte.bind(this)
-    });
-  }
-  
-  /**
-   * Handle serial data from the emulator
-   * @param {number} value - The byte received from serial
-   */
-  handleSerialByte(value) {
-    const char = String.fromCharCode(value);
-    
-    // Notify all serial data event handlers
-    this.eventHandlers.serialData.forEach(handler => {
-      handler(value, char);
-    });
-  }
-  
-  /**
-   * Handle changes in port values
-   * @param {string} portName - The port that changed (B, C, D)
-   */
-  handlePortChange(portName) {
-    const port = this.ports[portName];
-    if (!port) return;
-    
-    // Get port values
-    const portValue = port.PORT; // Output register
-    const ddrValue = port.DDR;   // Data Direction Register (1=output, 0=input)
-    
-    // Find Arduino pins associated with this port
-    Object.entries(PIN_MAPPINGS).forEach(([pin, mapping]) => {
+    // Check each pin that maps to this port
+    Object.entries(PIN_MAPPING).forEach(([pin, mapping]) => {
       if (mapping.port === portName) {
         const { bit } = mapping;
         const mask = 1 << bit;
         
-        // Check if pin is configured as OUTPUT
+        // Check if this pin is configured as OUTPUT
         const isOutput = (ddrValue & mask) !== 0;
         
+        // If it's an output pin, get its value
         if (isOutput) {
-          // Get the pin value (HIGH or LOW)
           const isHigh = (portValue & mask) !== 0;
           
-          // Update our pin state cache
-          const pinKey = pin;
-          const prevValue = this.pins[pinKey]?.value;
-          
-          // Only notify if value changed
-          if (prevValue !== isHigh) {
-            this.pins[pinKey] = {
-              ...this.pins[pinKey],
-              value: isHigh,
-              mode: 'OUTPUT'
-            };
+          // If state has changed, notify
+          if (this.pinStates[pin] !== isHigh) {
+            // Update our cached state
+            this.pinStates[pin] = isHigh;
             
-            // Notify all pin change event handlers
-            this.eventHandlers.pinChange.forEach(handler => {
-              handler(pin, isHigh);
-            });
-            
-            if (this.debug) {
-              this.log(`Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+            // Notify about pin change
+            if (this.onPinChange) {
+              this.onPinChange(pin, isHigh);
             }
           }
         }
@@ -252,238 +321,38 @@ export class AVR8Emulator {
   }
   
   /**
-   * Start the emulator
-   * @returns {boolean} - Success status
+   * Run a cycle of the CPU emulation
+   * @private
    */
-  start() {
-    if (this.running) return true;
-    
-    if (!this.cpu) {
-      const initialized = this.initialize();
-      if (!initialized) return false;
-    }
-    
-    this.log('Starting AVR emulator');
-    this.running = true;
-    this.lastExecutionTime = performance.now();
-    
-    // Start the execution loop
-    this.executionLoop();
-    return true;
-  }
-  
-  /**
-   * Stop the emulator
-   */
-  stop() {
-    this.log('Stopping AVR emulator');
-    this.running = false;
-    
-    if (this.animationFrameId) {
-      cancelAnimationFrame(this.animationFrameId);
-      this.animationFrameId = null;
-    }
-  }
-  
-  /**
-   * Reset the emulator to initial state
-   */
-  reset() {
-    this.log('Resetting AVR emulator');
-    
-    // Stop first if running
-    if (this.running) {
-      this.stop();
-    }
-    
-    // Clear CPU and peripherals
-    this.cpu = null;
-    this.ports = {};
-    this.timers = [];
-    this.usart = null;
-    this.spi = null;
-    
-    // Reset pin states
-    Object.keys(this.pins).forEach(pin => {
-      this.pins[pin] = { value: false, mode: 'INPUT', analogValue: 0 };
-    });
-    
-    // Initialize again with the current program
-    this.initialize();
-  }
-  
-  /**
-   * Main execution loop for the CPU
-   */
-  executionLoop() {
+  _runCycle() {
     if (!this.running || !this.cpu) return;
-    
-    const currentTime = performance.now();
-    const elapsedTime = currentTime - this.lastExecutionTime;
-    this.lastExecutionTime = currentTime;
-    
-    // Calculate cycles to execute based on elapsed time and CPU frequency
-    const cycles = Math.floor((AVR_FREQUENCY * elapsedTime) / 1000);
-    
-    // Execute in smaller batches to prevent blocking the UI
-    const batchSize = 10000; // Instructions per batch
-    let remainingCycles = cycles;
-    
+  
     try {
-      while (remainingCycles > 0 && this.running) {
-        const cyclesToExecute = Math.min(remainingCycles, batchSize);
-        this.cpu.execute(cyclesToExecute);
-        remainingCycles -= cyclesToExecute;
-        
-        // Allow UI updates between batches if we have a lot to process
-        if (remainingCycles > 0) {
-          setTimeout(() => this.executionLoop(), 0);
-          return;
-        }
+      // Get elapsed time
+      const now = performance.now();
+      const elapsed = now - this.lastTime;
+      this.lastTime = now;
+      
+      // Calculate cycles based on clock speed and elapsed time
+      // CLOCK_SPEED is in Hz, elapsed is in ms
+      const cyclesPerMs = CLOCK_SPEED / 1000;
+      const cycles = Math.floor(cyclesPerMs * elapsed);
+      
+      // Execute CPU cycles in batches to avoid blocking UI
+      const batchSize = Math.min(cycles, this.batchSize);
+      if (batchSize > 0) {
+        this.cpu.execute(batchSize);
       }
       
-      // Schedule next frame if still running
-      if (this.running) {
-        this.animationFrameId = requestAnimationFrame(() => this.executionLoop());
-      }
-    } catch (error) {
-      this.log(`CPU execution error: ${error.message}`);
+      // Schedule next execution
+      this.animationFrameId = requestAnimationFrame(() => this._runCycle());
+    } catch (err) {
       this.stop();
-    }
-  }
-  
-  /**
-   * Set an input pin value (for buttons, sensors, etc.)
-   * @param {string|number} pin - The pin number or name (e.g., 'A0')
-   * @param {boolean|number} value - The value to set (digital or analog)
-   * @param {boolean} isAnalog - Whether this is an analog value
-   */
-  setInputPinValue(pin, value, isAnalog = false) {
-    const pinInfo = PIN_MAPPINGS[pin];
-    if (!pinInfo) {
-      this.log(`Error: Invalid pin ${pin}`);
-      return false;
-    }
-    
-    // Get the port and bit
-    const { port: portName, bit } = pinInfo;
-    const port = this.ports[portName];
-    
-    if (!port) {
-      this.log(`Error: Port ${portName} not initialized`);
-      return false;
-    }
-    
-    if (isAnalog) {
-      // For analog input (future implementation)
-      // TODO: Implement ADC simulation
-      this.pins[pin] = {
-        ...this.pins[pin],
-        analogValue: value,
-        mode: 'INPUT'
-      };
-      
-      this.log(`Set analog pin ${pin} to ${value}`);
-    } else {
-      // For digital input
-      const mask = 1 << bit;
-      
-      // First make sure the pin is set as INPUT in the DDR
-      // This is just a safety check - the Arduino code should set this
-      if ((port.DDR & mask) !== 0) {
-        this.log(`Warning: Pin ${pin} is configured as OUTPUT but trying to use as INPUT`);
-      }
-      
-      // Set the PIN register value - this simulates an external signal
-      if (value) {
-        // Set the bit (HIGH)
-        port.PIN = port.PIN | mask;
+      if (this.onError) {
+        this.onError(`CPU execution error: ${err.message}`);
       } else {
-        // Clear the bit (LOW)
-        port.PIN = port.PIN & ~mask;
+        console.error('AVR8Emulator execution error:', err);
       }
-      
-      // Update our pin state cache
-      this.pins[pin] = {
-        ...this.pins[pin],
-        value: !!value,
-        mode: 'INPUT'
-      };
-      
-      this.log(`Set digital pin ${pin} to ${value ? 'HIGH' : 'LOW'}`);
     }
-    
-    return true;
-  }
-  
-  /**
-   * Get the current value of a pin
-   * @param {string|number} pin - The pin number or name
-   * @returns {object} - The pin state object
-   */
-  getPinValue(pin) {
-    return this.pins[pin] || { value: false, mode: 'UNKNOWN', analogValue: 0 };
-  }
-  
-  /**
-   * Register an event handler for pin changes
-   * @param {function} handler - The event handler function
-   */
-  onPinChange(handler) {
-    if (typeof handler === 'function') {
-      this.eventHandlers.pinChange.push(handler);
-    }
-  }
-  
-  /**
-   * Register an event handler for serial data
-   * @param {function} handler - The event handler function
-   */
-  onSerialData(handler) {
-    if (typeof handler === 'function') {
-      this.eventHandlers.serialData.push(handler);
-    }
-  }
-  
-  /**
-   * Register an event handler for log messages
-   * @param {function} handler - The event handler function
-   */
-  onLog(handler) {
-    if (typeof handler === 'function') {
-      this.eventHandlers.log.push(handler);
-    }
-  }
-  
-  /**
-   * Log a message from the emulator
-   * @param {string} message - The message to log
-   */
-  log(message) {
-    console.log(`[AVR8] ${message}`);
-    
-    // Notify all log event handlers
-    this.eventHandlers.log.forEach(handler => {
-      handler(message);
-    });
-  }
-  
-  /**
-   * Clean up resources used by the emulator
-   */
-  cleanup() {
-    this.stop();
-    this.cpu = null;
-    this.program = null;
-    this.ports = {};
-    this.timers = [];
-    this.usart = null;
-    this.eventHandlers = {
-      pinChange: [],
-      serialData: [],
-      log: []
-    };
   }
 }
-
-export default AVR8Emulator;

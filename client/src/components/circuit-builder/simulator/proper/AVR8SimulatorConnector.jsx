@@ -55,11 +55,18 @@ const AVR8SimulatorConnector = ({
     };
   }, []);
   
-  // Utility for logging
+  // Import our emulator
+  const { AVR8Emulator } = require('./AVR8Emulator');
+
+  // Utility for logging - only log errors and pin updates
   const logInfo = (message) => {
-    console.log(`[AVR8] ${message}`);
-    if (onLog) {
-      onLog(message);
+    if (message.toLowerCase().includes('error') || 
+        message.toLowerCase().includes('pin ') || 
+        message.toLowerCase().includes('fail')) {
+      console.log(`[AVR8] ${message}`);
+      if (onLog) {
+        onLog(message);
+      }
     }
   };
   
