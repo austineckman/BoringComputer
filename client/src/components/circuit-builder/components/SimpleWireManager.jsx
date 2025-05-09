@@ -1595,7 +1595,9 @@ const SimpleWireManager = ({ canvasRef }) => {
                     return (
                       <path
                         key={`pending-segment-${index}`}
-                        d={`M ${waypoint.x} ${waypoint.y} L ${mousePosition.x} ${mousePosition.y}`}
+                        d={`M ${waypoint.x} ${waypoint.y} 
+                            L ${waypoint.x} ${mousePosition.y} 
+                            L ${mousePosition.x} ${mousePosition.y}`}
                         stroke="#3b82f6"
                         strokeWidth={2.5}
                         fill="none"
@@ -1610,7 +1612,9 @@ const SimpleWireManager = ({ canvasRef }) => {
                   return (
                     <path
                       key={`pending-segment-${index}`}
-                      d={`M ${waypoint.x} ${waypoint.y} L ${nextWaypoint.x} ${nextWaypoint.y}`}
+                      d={`M ${waypoint.x} ${waypoint.y} 
+                          L ${waypoint.x} ${nextWaypoint.y} 
+                          L ${nextWaypoint.x} ${nextWaypoint.y}`}
                       stroke="#3b82f6"
                       strokeWidth={2.5}
                       fill="none"
@@ -1636,18 +1640,22 @@ const SimpleWireManager = ({ canvasRef }) => {
             ) : (
               // Draw direct line if no waypoints
               <>
-                {/* Shadow for pending wire */}
+                {/* Shadow for pending wire - vertical then horizontal */}
                 <path
-                  d={`M ${pendingWire.sourcePos.x} ${pendingWire.sourcePos.y} L ${mousePosition.x} ${mousePosition.y}`}
+                  d={`M ${pendingWire.sourcePos.x} ${pendingWire.sourcePos.y} 
+                      L ${pendingWire.sourcePos.x} ${mousePosition.y} 
+                      L ${mousePosition.x} ${mousePosition.y}`}
                   stroke="rgba(0,0,0,0.15)"
                   strokeWidth={4.5}
                   fill="none"
                   className="pending-wire-shadow"
                   style={{ filter: 'blur(1.5px)' }}
                 />
-                {/* Animated dashed line */}
+                {/* Animated dashed line - vertical then horizontal */}
                 <path
-                  d={`M ${pendingWire.sourcePos.x} ${pendingWire.sourcePos.y} L ${mousePosition.x} ${mousePosition.y}`}
+                  d={`M ${pendingWire.sourcePos.x} ${pendingWire.sourcePos.y} 
+                      L ${pendingWire.sourcePos.x} ${mousePosition.y} 
+                      L ${mousePosition.x} ${mousePosition.y}`}
                   stroke="#3b82f6"
                   strokeWidth={2.5}
                   fill="none"
