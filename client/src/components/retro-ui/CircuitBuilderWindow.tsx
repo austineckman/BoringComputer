@@ -11,7 +11,7 @@ import { SimulatorProvider, useSimulator } from '../circuit-builder/simulator/Si
 import AVR8Simulator from '../circuit-builder/simulator/AVR8Simulator';
 import SimulationLogPanel from '../circuit-builder/simulator/SimulationLogPanel';
 import SimulationVisualizer from '../circuit-builder/simulator/SimulationVisualizer';
-import { defaultSketch } from '../circuit-builder/simulator/SimulatorUtils';
+import { defaultSketch, parseLibraryImports, parseDigitalWrites } from '../circuit-builder/simulator/SimulatorUtils';
 import { LibraryManagerProvider } from '../circuit-builder/simulator/LibraryManager';
 
 // Legacy imports (keeping for compatibility with existing code)
@@ -586,6 +586,25 @@ void loop() {
       default:
         exampleCode = defaultCode;
         addSimulationLog('Loaded default blink example');
+    }
+    
+    // Detect libraries in the loaded example
+    const libraries = parseLibraryImports(exampleCode);
+    if (libraries.length > 0) {
+      addSimulationLog(`Detected libraries: ${libraries.join(', ')}`);
+      
+      // In a real implementation, we would check if these libraries are available
+      // and load them if needed
+      libraries.forEach((library: string) => {
+        addSimulationLog(`Loading library: ${library}`);
+      });
+    }
+    
+    // Detect pins used in the code
+    const pinWrites = parseDigitalWrites(exampleCode);
+    const pins = Object.keys(pinWrites);
+    if (pins.length > 0) {
+      addSimulationLog(`Detected pins: ${pins.join(', ')}`);
     }
     
     // Update the code in the editor
