@@ -311,23 +311,35 @@ const OLEDDisplayRenderer = ({ componentId }) => {
   };
   
   return (
-    <canvas
-      ref={canvasRef}
-      className="oled-display-canvas"
-      width={displayWidth}
-      height={displayHeight}
+    <div
+      className="oled-display-glow"
       style={{
-        border: 'none',
         position: 'absolute',
-        top: '35px',
-        left: '31px',
-        width: '88px',  // Exact size of the display area
-        height: '48px', // Exact size of the display area
+        top: '28px',
+        left: '25px',
+        width: '100px',  // About double the width (wider)
+        height: '60px',  // 1.5x height
         backgroundColor: '#000',
-        zIndex: 10,
-        borderRadius: '1px'
+        borderRadius: '2px',
+        boxShadow: '0 0 10px 2px rgba(0, 150, 255, 0.5)', // Base glow (enhanced by animation)
+        overflow: 'hidden',
+        zIndex: 10
       }}
-    />
+    >
+      <canvas
+        ref={canvasRef}
+        className="oled-display-canvas"
+        width={displayWidth}
+        height={displayHeight}
+        style={{
+          border: 'none',
+          width: '100%',
+          height: '100%',
+          backgroundColor: '#000',
+          borderRadius: '1px'
+        }}
+      />
+    </div>
   );
 };
 
