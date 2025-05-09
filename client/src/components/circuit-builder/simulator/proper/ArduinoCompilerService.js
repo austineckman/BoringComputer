@@ -1,27 +1,51 @@
 /**
  * ArduinoCompilerService
  * 
- * This service provides functions for compiling Arduino code to AVR machine code.
- * In a full implementation, this would use a WebAssembly-based compiler.
- * For this demonstration, it uses a simple parser to detect common patterns.
+ * This service provides functions for parsing Arduino code and determining
+ * the appropriate simulated behavior. In a real-world implementation,
+ * this would use a WebAssembly-based compiler to generate actual AVR machine code.
+ * 
+ * For this simulation, we only need to identify what pins are used in the code
+ * and how they are being manipulated, so the emulator can simulate pin state changes.
  */
 
-// For demonstration purposes, this is a simple blink program
-// that turns pin 13 on and off
+// Each program is marked with specific byte sequences that can be used
+// to identify the type of behavior during emulation
+const PROGRAM_TYPES = {
+  // Marker byte for simple blink sketch (pin 13 on/off)
+  BLINK: 0x01,
+  
+  // Marker byte for LED on (pin 13 stays on)
+  LED_ON: 0x02,
+  
+  // Marker byte for RGB LED sketch (pins 9-11)
+  RGB_LED: 0x03,
+  
+  // Marker byte for OLED sketch
+  OLED: 0x04,
+  
+  // Marker byte for buzzer sketch
+  BUZZER: 0x05,
+  
+  // Marker byte for 7-segment display sketch
+  SEGMENT: 0x06
+};
+
+// Compiled program for each type
 const BLINK_PROGRAM = new Uint16Array([
-  0x2411, 0x2400, 0xBE1F, 0x2482, 0xBB12, 0x2C00, 0xBC12, 0x2EE2,
+  PROGRAM_TYPES.BLINK, 0x2400, 0xBE1F, 0x2482, 0xBB12, 0x2C00, 0xBC12, 0x2EE2,
   0xBF27, 0x95E8, 0xCFFE, 0x95E8, 0xCFFE, 0x94F0
 ]);
 
 // Program that turns on LED on pin 13
 const LED_ON_PROGRAM = new Uint16Array([
-  0x2411, 0x2400, 0xBE1F, 0x2482, 0xBB12, 0x2C00, 0xBC12, 0x95E8,
+  PROGRAM_TYPES.LED_ON, 0x2400, 0xBE1F, 0x2482, 0xBB12, 0x2C00, 0xBC12, 0x95E8,
   0x94F0
 ]);
 
 // Program that blinks RGB LED (pins 9, 10, 11)
 const RGB_BLINK_PROGRAM = new Uint16Array([
-  0x2411, 0x2400, 0xBE1F, 0x2482, 0xBB10, 0x2C00, 0xBC10, 0x2EE0,
+  PROGRAM_TYPES.RGB_LED, 0x2400, 0xBE1F, 0x2482, 0xBB10, 0x2C00, 0xBC10, 0x2EE0,
   0xBF25, 0x95E4, 0xCFF8, 0x95E2, 0xCFF8, 0x95E1, 0xCFF8, 0x94F0
 ]);
 
@@ -29,19 +53,19 @@ const RGB_BLINK_PROGRAM = new Uint16Array([
 const COMPONENT_PROGRAMS = {
   // OLED Display program
   'oled': new Uint16Array([
-    0x2411, 0x2400, 0xBE1F, 0x2482, 0xBB12, 0x2C00, 0xBC12, 0x2EE2,
+    PROGRAM_TYPES.OLED, 0x2400, 0xBE1F, 0x2482, 0xBB12, 0x2C00, 0xBC12, 0x2EE2,
     0xBF27, 0x95E8, 0xCFFE, 0x95E8, 0xCFFE, 0x94F0
   ]),
   
   // Buzzer program
   'buzzer': new Uint16Array([
-    0x2411, 0x2400, 0xBE1F, 0x2482, 0xBB12, 0x2C00, 0xBC12, 0x2EE2,
+    PROGRAM_TYPES.BUZZER, 0x2400, 0xBE1F, 0x2482, 0xBB12, 0x2C00, 0xBC12, 0x2EE2,
     0xBF27, 0x95E8, 0xCFFE, 0x95E8, 0xCFFE, 0x94F0
   ]),
   
   // 7-segment display program
   '7segment': new Uint16Array([
-    0x2411, 0x2400, 0xBE1F, 0x2482, 0xBB12, 0x2C00, 0xBC12, 0x2EE2,
+    PROGRAM_TYPES.SEGMENT, 0x2400, 0xBE1F, 0x2482, 0xBB12, 0x2C00, 0xBC12, 0x2EE2,
     0xBF27, 0x95E8, 0xCFFE, 0x95E8, 0xCFFE, 0x94F0
   ])
 };

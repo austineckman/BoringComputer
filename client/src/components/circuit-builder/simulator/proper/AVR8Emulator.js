@@ -112,35 +112,86 @@ export class AVR8Emulator {
     
     this.running = true;
     
-    // Simple simulation - blink pin 13 every 1 second
-    // In a real implementation, this would execute the actual program
-    this.intervalId = setInterval(() => {
-      // Toggle pin 13 (built-in LED)
-      this.setDigitalOutput(13, !this.pinStates[13]);
-      
-      // Simulate RGB LED animations if pins 9-11 are used
-      if (this.program.length > 10) { // More complex program might use RGB
-        const rgbValues = [
-          Math.floor(Math.random() * 255), // Red (pin 9)
-          Math.floor(Math.random() * 255), // Green (pin 10)
-          Math.floor(Math.random() * 255)  // Blue (pin 11)
-        ];
+    // Get the program type from the first byte (marker)
+    const programType = this.program[0] || 1; // Default to blink (type 1)
+    
+    // Set behavior based on program type
+    console.log(`[AVR8] Program type detected: ${programType}`);
+    
+    // Different delay times based on program complexity
+    let delay = 1000; // Default delay
+    
+    // Execute specific program behaviors based on the type
+    switch (programType) {
+      case 1: // BLINK - Standard LED blink program
+        console.log('[AVR8] Running blink program');
+        this.intervalId = setInterval(() => {
+          // Toggle pin 13 (built-in LED)
+          this.setDigitalOutput(13, !this.pinStates[13]);
+        }, delay);
+        break;
         
-        this.setPWMOutput(9, rgbValues[0]);
-        this.setPWMOutput(10, rgbValues[1]);
-        this.setPWMOutput(11, rgbValues[2]);
-      }
-      
-      // Send some dummy serial data
-      if (this.onSerialByte) {
-        const text = "Hello from Arduino!\n";
-        for (let i = 0; i < text.length; i++) {
-          setTimeout(() => {
-            this.onSerialByte(text.charCodeAt(i), text[i]);
-          }, i * 100);
-        }
-      }
-    }, 1000);
+      case 2: // LED_ON - LED stays on
+        console.log('[AVR8] Running LED on program');
+        // Turn on pin 13 and keep it on
+        this.setDigitalOutput(13, true);
+        break;
+        
+      case 3: // RGB_LED - RGB LED animation
+        console.log('[AVR8] Running RGB LED program');
+        delay = 200; // Faster for RGB
+        this.intervalId = setInterval(() => {
+          // For RGB LED, vary pin 9, 10, 11 values
+          const r = Math.floor(Math.sin(Date.now() / 1000) * 127 + 128);
+          const g = Math.floor(Math.sin(Date.now() / 1000 + 2) * 127 + 128);
+          const b = Math.floor(Math.sin(Date.now() / 1000 + 4) * 127 + 128);
+          
+          this.setPWMOutput(9, r);
+          this.setPWMOutput(10, g);
+          this.setPWMOutput(11, b);
+          
+          // Also blink the built-in LED for visibility
+          this.setDigitalOutput(13, !this.pinStates[13]);
+        }, delay);
+        break;
+        
+      case 4: // OLED - OLED display program
+        console.log('[AVR8] Running OLED display program');
+        // OLED displays typically use pins 4 (data) and 5 (clock) for I2C
+        // and may also have other digital pins for control
+        delay = 500;
+        this.intervalId = setInterval(() => {
+          // Toggle data and clock pins to simulate I2C
+          this.setDigitalOutput(4, !this.pinStates[4]);
+          this.setDigitalOutput(5, !this.pinStates[5]);
+          
+          // Also blink the built-in LED for visibility
+          this.setDigitalOutput(13, !this.pinStates[13]);
+        }, delay);
+        break;
+        
+      case 5: // BUZZER - Buzzer program
+        console.log('[AVR8] Running buzzer program');
+        // Buzzer typically on pin 8
+        delay = 300;
+        this.intervalId = setInterval(() => {
+          // Toggle buzzer pin to simulate tone
+          this.setDigitalOutput(8, !this.pinStates[8]);
+          
+          // Also blink the built-in LED for visibility
+          this.setDigitalOutput(13, !this.pinStates[13]);
+        }, delay);
+        break;
+        
+      default:
+        // Default to simple blink behavior
+        console.log('[AVR8] Running default program');
+        this.intervalId = setInterval(() => {
+          // Toggle pin 13 (built-in LED)
+          this.setDigitalOutput(13, !this.pinStates[13]);
+        }, delay);
+        break;
+    }
     
     return true;
   }
