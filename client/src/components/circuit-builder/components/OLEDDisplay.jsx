@@ -148,7 +148,7 @@ const OLEDDisplay = ({
         let pinType = 'bidirectional';
         if (pinId === 'GND' || pinId === 'VCC') {
           pinType = 'power';
-        } else if (pinId === 'SCL' || pinId === 'SDA' || pinId === 'SCK') {
+        } else if (pinId === 'SCL' || pinId === 'SDA') {
           pinType = 'digital';
         }
         
