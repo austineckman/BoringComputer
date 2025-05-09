@@ -102,6 +102,87 @@ function checkBasicSyntaxErrors(code, errors) {
       }
     }
   });
+  
+  // Check for common Arduino-specific errors
+  
+  // Check for analogWrite on non-PWM pins
+  const analogWriteRegex = /analogWrite\s*\(\s*(\d+)/g;
+  let match;
+  const pwmPins = [3, 5, 6, 9, 10, 11]; // Common Arduino PWM pins
+  
+  while ((match = analogWriteRegex.exec(code)) !== null) {
+    const pin = parseInt(match[1], 10);
+    if (!isNaN(pin) && !pwmPins.includes(pin)) {
+      errors.push({
+        line: getLineNumberForMatch(code, match.index),
+        message: `Pin ${pin} does not support analogWrite (PWM). Use pins 3, 5, 6, 9, 10, or 11.`
+      });
+    }
+  }
+  
+  // Check for missing initialization in digitalWrite
+  const digitalWriteRegex = /digitalWrite\s*\(\s*(\d+|LED_BUILTIN)/g;
+  const pinModeRegex = /pinMode\s*\(\s*(\d+|LED_BUILTIN)/g;
+  
+  // Get all pins used in digitalWrite
+  const digitalWritePins = [];
+  while ((match = digitalWriteRegex.exec(code)) !== null) {
+    const pin = match[1];
+    if (!digitalWritePins.includes(pin)) {
+      digitalWritePins.push(pin);
+    }
+  }
+  
+  // Get all pins initialized with pinMode
+  const initializedPins = [];
+  while ((match = pinModeRegex.exec(code)) !== null) {
+    const pin = match[1];
+    if (!initializedPins.includes(pin)) {
+      initializedPins.push(pin);
+    }
+  }
+  
+  // Check if any pin used in digitalWrite is not initialized
+  digitalWritePins.forEach(pin => {
+    if (!initializedPins.includes(pin)) {
+      errors.push({
+        line: 1, // Hard to determine exact line number
+        message: `Pin ${pin} is used in digitalWrite() but not initialized with pinMode()`
+      });
+    }
+  });
+  
+  // Check for digitalRead without INPUT mode
+  const digitalReadRegex = /digitalRead\s*\(\s*(\d+|LED_BUILTIN)/g;
+  const pinModeInputRegex = /pinMode\s*\(\s*(\d+|LED_BUILTIN)\s*,\s*(INPUT|INPUT_PULLUP)/g;
+  
+  // Get all pins used in digitalRead
+  const digitalReadPins = [];
+  while ((match = digitalReadRegex.exec(code)) !== null) {
+    const pin = match[1];
+    if (!digitalReadPins.includes(pin)) {
+      digitalReadPins.push(pin);
+    }
+  }
+  
+  // Get all pins initialized as INPUT
+  const inputPins = [];
+  while ((match = pinModeInputRegex.exec(code)) !== null) {
+    const pin = match[1];
+    if (!inputPins.includes(pin)) {
+      inputPins.push(pin);
+    }
+  }
+  
+  // Check if any pin used in digitalRead is not set as INPUT
+  digitalReadPins.forEach(pin => {
+    if (!inputPins.includes(pin)) {
+      errors.push({
+        line: 1, // Hard to determine exact line number
+        message: `Pin ${pin} is used in digitalRead() but not set as INPUT or INPUT_PULLUP`
+      });
+    }
+  });
 }
 
 // Configure the simulation CPU speed based on complexity
@@ -197,8 +278,56 @@ export function getPinMode(parsedCode, pin) {
   return 'UNKNOWN';
 }
 
+// List of supported libraries in the system
+const SUPPORTED_LIBRARIES = [
+  'Wire',
+  'SPI',
+  'EEPROM',
+  'SoftwareSerial',
+  'Servo',
+  'LiquidCrystal',
+  'Stepper',
+  'TM1637Display',
+  'Adafruit_GFX',
+  'Adafruit_SSD1306',
+  'SSD1306',
+  'U8g2lib',
+  'U8glib',
+  'BasicEncoder',
+  'Keypad',
+  'IRremote',
+  'DHT',
+  'Adafruit_Sensor',
+  'FastLED',
+  'NeoPixel',
+  'OneWire',
+  'DallasTemperature'
+];
+
 // Validate code and return any errors
 export function validateArduinoCode(code) {
   const parsedCode = parseArduinoCode(code);
-  return parsedCode.errors;
+  const errors = [...parsedCode.errors];
+  
+  // Check for unsupported libraries
+  const includeRegex = /#include\s*<([^>]+)>/g;
+  let match;
+  
+  while ((match = includeRegex.exec(code)) !== null) {
+    const libraryName = match[1].replace('.h', '');
+    if (!SUPPORTED_LIBRARIES.includes(libraryName)) {
+      errors.push({
+        line: getLineNumberForMatch(code, match.index),
+        message: `Library "${libraryName}" is not supported`
+      });
+    }
+  }
+  
+  return errors;
+}
+
+// Helper function to get line number for a position in the code
+function getLineNumberForMatch(code, index) {
+  const lines = code.slice(0, index).split('\n');
+  return lines.length;
 }

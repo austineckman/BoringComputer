@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSimulator } from './SimulatorContext';
 import { useLibraryManager } from './LibraryManager';
+import { validateArduinoCode } from './ArduinoCompiler';
 
 /**
  * AVR8 Arduino Simulator Component
@@ -138,9 +139,26 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     return 1000;
   };
   
+  // Import the Arduino code validation function
+  const { validateArduinoCode } = require('./ArduinoCompiler');
+  
   // Compile the Arduino code
   const compileCode = (code) => {
-    // For now, we don't actually compile the code, we just detect the libraries and pins
+    // First, check for any errors in the code
+    const errors = validateArduinoCode(code);
+    
+    // If there are errors, we should log them but still try to analyze what we can
+    if (errors && errors.length > 0) {
+      logInfo(`⚠️ Found ${errors.length} potential issues in your Arduino code`);
+      errors.forEach(error => {
+        logInfo(`   Line ${error.line}: ${error.message}`);
+      });
+      
+      // Since we're in development mode, don't fail compilation entirely
+      logInfo("Attempting to continue with simulation despite errors...");
+    }
+    
+    // Detect libraries, pins, and delays
     const libraries = detectLibraries(code);
     const pinsUsed = detectPinsUsed(code);
     const avgDelay = detectDelays(code);
@@ -155,11 +173,23 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     logInfo(`Detected libraries: ${libraries.length > 0 ? libraries.join(', ') : 'None'}`);
     logInfo(`Detected pins: ${pinsUsed.length > 0 ? pinsUsed.join(', ') : 'None'}`);
     
+    // For each library, check if it's loaded
+    if (libraries.length > 0) {
+      libraries.forEach(library => {
+        if (!isLibraryLoaded(library)) {
+          logInfo(`Library '${library}' will need to be loaded before simulation`);
+        } else {
+          logInfo(`Library '${library}' is already loaded`);
+        }
+      });
+    }
+    
     // Return a simple "compiled" object for demo purposes
     return {
       libraries,
       pinsUsed,
-      delay: avgDelay
+      delay: avgDelay,
+      errors: errors && errors.length > 0 ? errors : null
     };
   };
   
