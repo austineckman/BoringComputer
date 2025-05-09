@@ -6333,26 +6333,26 @@ let T = class extends m {
     return [
       {
         name: "GND",
-        x: 44,
-        y: 112,
+        x: 74,
+        y: 11,
         signals: [{ type: "power", signal: "GND" }]
       },
       {
         name: "VCC",
-        x: 62,
-        y: 112,
+        x: 92,
+        y: 11,
         signals: [{ type: "power", signal: "VCC" }]
       },
       {
         name: "SCL",
-        x: 80,
-        y: 112,
+        x: 110,
+        y: 11,
         signals: [s0("SCL")]
       },
       {
         name: "SDA",
-        x: 98,
-        y: 112,
+        x: 128,
+        y: 11,
         signals: [i0("SDA")]
       }
     ];
