@@ -363,15 +363,66 @@ export function validateArduinoCode(code) {
   const parsedCode = parseArduinoCode(code);
   const errors = [...parsedCode.errors];
   
-  // Check for unsupported libraries
+  // Preprocess the code to filter out comments
+  let inMultilineComment = false;
+  let processedCode = '';
+  const lines = code.split('\n');
+  
+  lines.forEach(line => {
+    let processedLine = line;
+    
+    // If we're inside a multiline comment
+    if (inMultilineComment) {
+      const endCommentIndex = line.indexOf('*/');
+      if (endCommentIndex !== -1) {
+        // End of multiline comment found
+        inMultilineComment = false;
+        processedLine = line.substring(endCommentIndex + 2);
+      } else {
+        // Still inside multiline comment, skip this line
+        return;
+      }
+    }
+    
+    // Check for start of multiline comment
+    const startCommentIndex = processedLine.indexOf('/*');
+    if (startCommentIndex !== -1) {
+      const endCommentIndex = processedLine.indexOf('*/', startCommentIndex);
+      if (endCommentIndex !== -1) {
+        // Comment begins and ends on same line
+        processedLine = 
+          processedLine.substring(0, startCommentIndex) + 
+          processedLine.substring(endCommentIndex + 2);
+      } else {
+        // Comment starts but doesn't end on this line
+        inMultilineComment = true;
+        processedLine = processedLine.substring(0, startCommentIndex);
+      }
+    }
+    
+    // Handle single-line comments
+    const lineCommentIndex = processedLine.indexOf('//');
+    if (lineCommentIndex !== -1) {
+      processedLine = processedLine.substring(0, lineCommentIndex);
+    }
+    
+    // Add the processed line to our code
+    processedCode += processedLine + '\n';
+  });
+  
+  // Now check for unsupported libraries in the processed code (excluding comments)
   const includeRegex = /#include\s*<([^>]+)>/g;
   let match;
   
-  while ((match = includeRegex.exec(code)) !== null) {
+  while ((match = includeRegex.exec(processedCode)) !== null) {
     const libraryName = match[1].replace('.h', '');
     if (!SUPPORTED_LIBRARIES.includes(libraryName)) {
+      // Find the actual line number in the original code
+      const matchPositionInProcessed = match.index;
+      const lineNumber = getLineNumberForMatch(processedCode, matchPositionInProcessed);
+      
       errors.push({
-        line: getLineNumberForMatch(code, match.index),
+        line: lineNumber,
         message: `Library "${libraryName}" is not supported`
       });
     }
