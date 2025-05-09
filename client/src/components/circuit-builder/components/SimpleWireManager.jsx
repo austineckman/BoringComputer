@@ -90,61 +90,34 @@ const SimpleWireManager = ({ canvasRef }) => {
   // Use a ref to store wire position cache to avoid unnecessary recalculations
   const wirePosCache = useRef({});
   
-  // Get path for wire with enhanced TinkerCad-style routing
-  const getWirePath = (start, end) => {
+  // Get path for wire with direct straight lines
+  const getWirePath = (start, end, wireId) => {
     // Validate input coordinates
     if (!start || !end || start.x === undefined || end.x === undefined) {
       console.warn('Invalid wire coordinates:', start, end);
       return ''; // Return empty path if coordinates are invalid
     }
     
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    // Check if this wire has any user-defined anchor points
+    const anchorPoints = wireAnchorPoints[wireId] || [];
     
-    // For short wires, use a simple arc
-    if (distance < 30) {
-      // Arc path with small curvature
-      return `M ${start.x} ${start.y} 
-              Q ${(start.x + end.x) / 2} ${(start.y + end.y) / 2 - 5}, 
-                ${end.x} ${end.y}`;
+    // If no anchor points, draw a direct straight line
+    if (anchorPoints.length === 0) {
+      return `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
     }
     
-    // For diagonal wires, determine routing approach based on angle and distance
-    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-    const isHorizontalFirst = Math.abs(angle) < 45 || Math.abs(angle) > 135;
+    // If there are anchor points, draw a path through each point
+    let path = `M ${start.x} ${start.y}`;
     
-    if (isHorizontalFirst) {
-      // Route horizontally first with smoother bend
-      const midX = start.x + dx * 0.6; // Go 60% of the way horizontally for better balance
-      const bendRadius = Math.min(Math.abs(dy) * 0.25, 15); // Smoother bend radius
-      
-      return `M ${start.x} ${start.y}
-              L ${midX - bendRadius * Math.sign(dx)} ${start.y}
-              C ${midX} ${start.y}, 
-                ${midX} ${start.y}, 
-                ${midX} ${start.y + bendRadius * Math.sign(dy)}
-              L ${midX} ${end.y - bendRadius * Math.sign(dy)}
-              C ${midX} ${end.y}, 
-                ${midX} ${end.y}, 
-                ${midX + bendRadius * Math.sign(dx)} ${end.y}
-              L ${end.x} ${end.y}`;
-    } else {
-      // Route vertically first with smoother bend
-      const midY = start.y + dy * 0.6; // Go 60% of the way vertically for better balance
-      const bendRadius = Math.min(Math.abs(dx) * 0.25, 15); // Smoother bend radius
-      
-      return `M ${start.x} ${start.y}
-              L ${start.x} ${midY - bendRadius * Math.sign(dy)}
-              C ${start.x} ${midY}, 
-                ${start.x} ${midY}, 
-                ${start.x + bendRadius * Math.sign(dx)} ${midY}
-              L ${end.x - bendRadius * Math.sign(dx)} ${midY}
-              C ${end.x} ${midY}, 
-                ${end.x} ${midY}, 
-                ${end.x} ${midY + bendRadius * Math.sign(dy)}
-              L ${end.x} ${end.y}`;
-    }
+    // Add line segments through each anchor point
+    anchorPoints.forEach(point => {
+      path += ` L ${point.x} ${point.y}`;
+    });
+    
+    // Complete the path to the end point
+    path += ` L ${end.x} ${end.y}`;
+    
+    return path;
   };
 
   // Get style for wire based on type and color
