@@ -205,19 +205,53 @@ const HeroBoard = ({
         console.log(`Pin ${pinId} (${pinType}) of component ${id} clicked`, pinPosition);
         console.log(`Using pin position: (${pinPosition.x}, ${pinPosition.y})`);
         
-        // Create a custom pin click event to trigger the wire manager
-        // The critical fix is using the ACTUAL client coordinates here
+        // First dispatch an adjustment event to notify about heroboard specific pin position
+        console.log(`Adjusting heroboard pin position for pin ${pinId}`);
+        
+        // Create a pin position adjustment specific to the HERO board pins
+        // This creates the corrected coordinate that the wire endpoint should use
+        let adjustedPinPosition = { ...pinPosition };
+        
+        // Adjustments for digital pins (0-13) on right side
+        if (/^\d+$/.test(pinId)) {
+          const pinNum = parseInt(pinId, 10);
+          if (pinNum >= 0 && pinNum <= 13) {
+            // Apply specific adjustments for digital pins
+            adjustedPinPosition = {
+              x: pinPosition.x + 25, // Move right for digital pins
+              y: pinPosition.y + (pinNum <= 7 ? (pinNum * 4 - 3) : (pinNum * 4 - 10))
+            };
+          }
+        }
+        // Adjustments for power pins (5V, GND, etc.) on left side  
+        else if (pinId === "5V" || pinId === "GND" || pinId === "GND.1" || pinId === "GND.2") {
+          adjustedPinPosition = {
+            x: pinPosition.x - 15, // Move left for power pins
+            y: pinPosition.y
+          };
+        }
+        
+        // Dispatch a pre-adjustment event so the BasicWireManager can see the raw position
+        const pinPreAdjustEvent = new CustomEvent('pinClicked', {
+          detail: {
+            pinId: formattedPinId,
+            pinName: pinId,
+            pinType: pinType,
+            parentComponentId: id,
+            coordinates: pinPosition
+          }
+        });
+        document.dispatchEvent(pinPreAdjustEvent);
+        
+        // Create the final pin click event with the adjusted position
         const pinClickEvent = new CustomEvent('pinClicked', {
           detail: {
             pinId: formattedPinId,
             pinName: pinId,
             pinType: pinType,
             parentComponentId: id,
-            // Using the direct pin position property which our BasicWireManager expects
-            pinPosition: {
-              x: pinPosition.x,
-              y: pinPosition.y
-            },
+            // Using the precisely adjusted position for this exact pin
+            coordinates: adjustedPinPosition,
             // Also include the raw client coordinates for fallback
             clientX: clientX,
             clientY: clientY

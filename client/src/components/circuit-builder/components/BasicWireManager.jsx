@@ -105,14 +105,17 @@ const BasicWireManager = ({ canvasRef }) => {
         // Digital pins - right side
         const pin = parseInt(pinNumber, 10);
         if (!isNaN(pin)) {
+          // Calculate offsets with more precise values
           if (pin >= 0 && pin <= 7) {
-            // Lower digital pins
+            // Lower digital pins (right side, pins 0-7)
             OFFSET_X = 25;
-            OFFSET_Y = pin * 5 - 15;
+            // Precise spacing between pins
+            OFFSET_Y = pin * 4 - 3; 
           } else if (pin >= 8 && pin <= 13) {
-            // Upper digital pins
+            // Upper digital pins (right side, pins 8-13)
             OFFSET_X = 25;
-            OFFSET_Y = pin * 5 - 20;
+            // Precise spacing for upper pins
+            OFFSET_Y = pin * 4 - 10;
           }
         }
       }
@@ -226,6 +229,17 @@ const BasicWireManager = ({ canvasRef }) => {
       // If not found by ID, try by data-pin-id attribute or custom attributes
       if (!pinElement) {
         pinElement = document.querySelector(`[data-pin-id="${pinName}"][data-parent-id="${parentComponentId}"]`);
+      }
+      
+      // Try a more specific selector for HERO board pins
+      if (!pinElement && parentComponentId?.includes('heroboard')) {
+        pinElement = document.querySelector(`[data-formatted-id="${pinId}"]`);
+        
+        // Also try simplified pin name for numbered pins
+        if (!pinElement && !isNaN(parseInt(pinName, 10))) {
+          const simplePinSelector = `[data-pin-id="${pinName}"][data-parent-id*="heroboard"]`;
+          pinElement = document.querySelector(simplePinSelector);
+        }
       }
       
       // If still not found, try with compound selectors
