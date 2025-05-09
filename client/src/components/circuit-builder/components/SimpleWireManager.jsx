@@ -752,28 +752,29 @@ const SimpleWireManager = ({ canvasRef }) => {
     return null; // No nearby pin found
   };
   
-  // Handle clicks on canvas to cancel pending wire, deselect wires, or add anchor points
+  // Handle clicks on canvas to add turning points to wires, deselect wires, or add anchor points
   const handleCanvasClick = (e) => {
     // Ignore if click was on a pin
     if (e.target.classList.contains('pin-connection-point')) {
       return;
     }
     
-    // If in anchor mode, add anchor point where clicked
+    // Get click position relative to canvas
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    let point = {
+      x: e.clientX - canvasRect.left,
+      y: e.clientY - canvasRect.top
+    };
+    
+    // Check if the click is near a pin - if so, snap to the pin
+    const nearbyPin = findNearbyPin(point);
+    if (nearbyPin) {
+      console.log(`Found nearby pin at (${nearbyPin.x}, ${nearbyPin.y}). Snapping point.`);
+      point = nearbyPin;
+    }
+    
+    // If in anchor mode, add anchor point for existing wire
     if (showAnchorMode && activeWireForAnchors) {
-      const canvasRect = canvasRef.current.getBoundingClientRect();
-      let point = {
-        x: e.clientX - canvasRect.left,
-        y: e.clientY - canvasRect.top
-      };
-      
-      // Check if the click is near a pin - if so, snap to the pin
-      const nearbyPin = findNearbyPin(point);
-      if (nearbyPin) {
-        console.log(`Found nearby pin at (${nearbyPin.x}, ${nearbyPin.y}). Snapping anchor point.`);
-        point = nearbyPin;
-      }
-      
       // Add anchor point for the active wire
       setWireAnchorPoints(prev => {
         const currentAnchors = prev[activeWireForAnchors] || [];
@@ -797,19 +798,22 @@ const SimpleWireManager = ({ canvasRef }) => {
       return;
     }
     
+    // If there's a pending wire, add a waypoint to it
+    if (pendingWire) {
+      // Store the waypoint with the pending wire
+      const waypoints = pendingWire.waypoints || [];
+      setPendingWire({
+        ...pendingWire,
+        waypoints: [...waypoints, point]
+      });
+      console.log(`Added waypoint at (${point.x}, ${point.y}) to pending wire`);
+      return;
+    }
+    
     // Deselect any selected wire
     if (selectedWireId) {
       setSelectedWireId(null);
       setShowWireProperties(false);
-    }
-    
-    // Cancel pending wire
-    if (pendingWire) {
-      setPendingWire(null);
-      document.querySelectorAll('.wire-source-active').forEach(el => {
-        el.classList.remove('wire-source-active');
-        el.style.animation = '';
-      });
     }
   };
 
