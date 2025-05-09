@@ -206,7 +206,7 @@ const RGBLED = ({
     window.updateRGBLED = window.updateRGBLED || {};
     window.updateRGBLED[id] = (color, value) => {
       console.log(`Updating RGB LED ${id} ${color} channel to ${value}`);
-      updateLEDColor(color, value ? 1 : 0);
+      updateLEDColor(color, value);
     };
     
     return () => {
