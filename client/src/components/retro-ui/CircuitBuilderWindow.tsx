@@ -632,6 +632,14 @@ void loop() {
         exampleCode = multiLibraryExample;
         addSimulationLog('Loaded multi-library example');
         break;
+      case 'rgbled':
+        exampleCode = rgbLedExample;
+        addSimulationLog('Loaded RGB LED example');
+        break;
+      case 'buzzer':
+        exampleCode = buzzerExample;
+        addSimulationLog('Loaded Buzzer example');
+        break;
       default:
         exampleCode = defaultCode;
         addSimulationLog('Loaded default blink example');
@@ -907,6 +915,18 @@ void loop() {
                       className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
                     >
                       Rotary Encoder
+                    </button>
+                    <button
+                      onClick={() => loadExampleCode('rgbled')}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                    >
+                      RGB LED Control
+                    </button>
+                    <button
+                      onClick={() => loadExampleCode('buzzer')}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                    >
+                      Buzzer & Tones
                     </button>
                     <button
                       onClick={() => loadExampleCode('multi')}
