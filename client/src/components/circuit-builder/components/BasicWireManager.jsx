@@ -146,14 +146,13 @@ const BasicWireManager = ({ canvasRef }) => {
   };
 
   // Generate a path with 90-degree bends for better "cable management"
+  // Using vertical-first routing (up/down then left/right)
   const getWirePath = (start, end) => {
     if (!start || !end) return '';
     
-    // Determine the midpoint for the horizontal segment
-    const midX = start.x + (end.x - start.x) / 2;
-    
-    // Generate SVG path with 90-degree bends
-    return `M ${start.x},${start.y} H ${midX} V ${end.y} H ${end.x}`;
+    // Generate SVG path with vertical-first 90-degree bends
+    // This goes up/down first, then left/right
+    return `M ${start.x},${start.y} V ${end.y} H ${end.x}`;
   };
   
   // Handle pin click events
