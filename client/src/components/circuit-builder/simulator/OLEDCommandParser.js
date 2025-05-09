@@ -501,20 +501,37 @@ function processAdafruitCommands(commands, buffer, state, width, height) {
               text = text.toString();
             }
             
-            // Draw at current cursor position
-            drawText(buffer, text, state.cursorX, state.cursorY, state.textSize, state.textColor);
-            
-            // Move cursor for next print
+            // For println, automatically add a newline character
             if (method === 'println') {
+              text += '\n';
+            }
+            
+            // Draw at current cursor position using our enhanced drawText function
+            const newPosition = drawText(buffer, text, state.cursorX, state.cursorY, state.textSize, state.textColor);
+            
+            // Update cursor position based on text drawn
+            if (method === 'println') {
+              // For println, move cursor to start of next line
               state.cursorX = 0;
-              state.cursorY += state.fontHeight * state.textSize; // Move to next line
+              state.cursorY = newPosition.y; // Use the y position returned by drawText
             } else {
-              state.cursorX += text.length * state.fontWidth * state.textSize; // Move to end of text
+              // For regular print, handle multi-line text
+              const lines = text.split('\n');
               
-              // Handle text wrapping if needed
-              if (state.textWrap && state.cursorX > width - state.fontWidth * state.textSize) {
-                state.cursorX = 0;
-                state.cursorY += state.fontHeight * state.textSize;
+              if (lines.length > 1) {
+                // If there are newlines in the text, position at the last line
+                const lastLine = lines[lines.length - 1];
+                state.cursorX = lastLine.length * state.fontWidth * state.textSize;
+                state.cursorY = newPosition.y;
+              } else {
+                // Single line case - just move cursor forward
+                state.cursorX += text.length * state.fontWidth * state.textSize;
+                
+                // Handle text wrapping if needed
+                if (state.textWrap && state.cursorX > width - state.fontWidth * state.textSize) {
+                  state.cursorX = 0;
+                  state.cursorY += state.fontHeight * state.textSize;
+                }
               }
             }
           }
@@ -672,7 +689,14 @@ function processU8g2Commands(commands, buffer, state, width, height) {
               text = text.toString();
             }
             
-            drawText(buffer, text, x, y, state.fontScale, state.drawColor);
+            // Use our enhanced drawText function that returns positioning info
+            const newPosition = drawText(buffer, text, x, y, state.fontScale, state.drawColor);
+            
+            // In U8g2, these drawing functions return the width of the string
+            // We simulate this by tracking the width for potential return value usage
+            // This is important if code chains function calls: u8g2.drawStr(5, 10, "Hello").drawStr(5, 20, "World");
+            const returnWidth = text.length * state.fontWidth * state.fontScale;
+            return returnWidth;
           }
           break;
           
@@ -1003,33 +1027,55 @@ const fontData = {
 };
 
 // Helper function to draw text using our simple font
+// Enhanced to support both Adafruit and U8g2 libraries
 const drawText = (buffer, text, x, y, scale = 1, color = 1) => {
   // Scale should be at least 1
   scale = Math.max(1, scale);
   
   let cursorX = x;
-  // Draw each character
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    const charData = fontData[char] || fontData[' ']; // Default to space if char not found
+  
+  // Special case handling for newlines in text
+  const lines = text.split('\n');
+  
+  // Process each line
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex];
     
-    // Draw the character pixel by pixel with scaling
-    for (let cy = 0; cy < charData.length; cy++) {
-      for (let cx = 0; cx < charData[cy].length; cx++) {
-        if (charData[cy][cx]) {
-          // Apply scaling by drawing multiple pixels
-          for (let sy = 0; sy < scale; sy++) {
-            for (let sx = 0; sx < scale; sx++) {
-              const px = cursorX + (cx * scale) + sx;
-              const py = y + (cy * scale) + sy;
-              setPixelSafe(buffer, px, py, color);
+    // Reset cursorX for each line
+    let lineX = cursorX;
+    
+    // Draw each character in the line
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      const charData = fontData[char] || fontData[' ']; // Default to space if char not found
+      
+      // Draw the character pixel by pixel with scaling
+      for (let cy = 0; cy < charData.length; cy++) {
+        for (let cx = 0; cx < charData[cy].length; cx++) {
+          if (charData[cy][cx]) {
+            // Apply scaling by drawing multiple pixels
+            for (let sy = 0; sy < scale; sy++) {
+              for (let sx = 0; sx < scale; sx++) {
+                const px = lineX + (cx * scale) + sx;
+                const py = y + (cy * scale) + sy + (lineIndex * 8 * scale); // Move down 8 pixels (scaled) per line
+                
+                // Use our safe pixel setting function
+                setPixelSafe(buffer, px, py, color);
+              }
             }
           }
         }
       }
+      
+      // Move cursor to the next character position
+      lineX += (6 * scale); // Each character is 5 pixels wide + 1 pixel space
     }
-    
-    // Move cursor to the next character position
-    cursorX += (6 * scale); // Each character is 5 pixels wide + 1 pixel space
   }
+  
+  // Return the final cursor position - useful for U8g2 style APIs that return cursor position
+  // This mimics the behavior of libraries like U8g2 where drawing functions return updated positions
+  return { 
+    x: cursorX, 
+    y: y + (lines.length * 8 * scale) 
+  };
 };
