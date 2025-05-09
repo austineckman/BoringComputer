@@ -1033,6 +1033,12 @@ const RetroDesktop: React.FC = () => {
                 />
               ) : icon.icon === "discord" ? (
                 <FaDiscord size={28} className="text-indigo-600" />
+              ) : icon.icon === "emulator" ? (
+                <img 
+                  src={circuitBoardImage} 
+                  alt="Universal Emulator"
+                  className="w-9 h-9 object-contain"
+                />
               ) : icon.icon === "trashIcon" ? (
                 <Trash2 size={24} className="text-gray-700" />
               ) : (
