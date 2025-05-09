@@ -1,6 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, RotateCcw, Trash2, ZoomIn, ZoomOut, Move, Play, Save, FileCode, Download } from 'lucide-react';
 import AceEditor from 'react-ace';
+import ace from 'ace-builds';
+
+// Configure ace paths properly
+ace.config.set('basePath', '/node_modules/ace-builds/src-noconflict');
+ace.config.set('modePath', '/node_modules/ace-builds/src-noconflict');
+ace.config.set('themePath', '/node_modules/ace-builds/src-noconflict');
 
 // Import Arduino syntax highlighting and theme
 import 'ace-builds/src-noconflict/mode-c_cpp';
