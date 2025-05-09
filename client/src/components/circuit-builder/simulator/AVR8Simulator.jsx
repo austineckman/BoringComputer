@@ -244,6 +244,32 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
         // Set the pin to the current state (HIGH or LOW)
         newPins[pin] = state;
         
+        // Update all heroboard components with this pin
+        // This ensures any heroboard component will have the latest pin state
+        if (typeof window !== 'undefined' && window.simulatorContext) {
+          // Get all heroboard component IDs from the simulatorContext
+          const componentStates = window.simulatorContext.componentStates || {};
+          const heroboardIds = Object.keys(componentStates).filter(id => 
+            id === 'heroboard' || id.includes('heroboard')
+          );
+          
+          // Update each heroboard component with the pin state
+          heroboardIds.forEach(heroboardId => {
+            const pinUpdate = {};
+            pinUpdate[pin] = state;
+            window.simulatorContext.updateComponentPins(heroboardId, pinUpdate);
+            console.log(`Updated ${heroboardId} pin ${pin} to ${state ? 'HIGH' : 'LOW'}`);
+          });
+          
+          // Also update the generic 'heroboard' for fallback compatibility
+          if (!heroboardIds.includes('heroboard')) {
+            const pinUpdate = {};
+            pinUpdate[pin] = state;
+            window.simulatorContext.updateComponentPins('heroboard', pinUpdate);
+            console.log(`Updated generic heroboard pin ${pin} to ${state ? 'HIGH' : 'LOW'}`);
+          }
+        }
+        
         // Call the onPinChange callback
         if (onPinChange) {
           onPinChange(pin, newPins[pin]);
