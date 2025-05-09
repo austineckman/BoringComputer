@@ -1,8 +1,9 @@
 // Centralized item database for the server
-// This connects to the database for persistent storage
+// This now uses an in-memory item database with our new architecture
 
 import { db } from './db';
-import { items } from '../shared/schema';
+import { components } from '../shared/schema';
+import { eq } from 'drizzle-orm';
 
 export interface ItemDetails {
   id: string;
@@ -18,35 +19,93 @@ export interface ItemDetails {
 // This will be populated from the database
 export let itemDatabase: Record<string, ItemDetails> = {};
 
-// Function to initialize the database from PostgreSQL
+// Function to initialize the database with components from our component table
 export async function initializeItemDatabase() {
   try {
-    // Query all items from the database
-    const dbItems = await db.select().from(items);
-    console.log(`Loaded ${dbItems.length} items from database`);
+    // For our Universal Emulator, we'll use the components table
+    const dbComponents = await db.select().from(components);
+    console.log(`Loaded ${dbComponents.length} components from database`);
     
     // Clear existing items
     itemDatabase = {};
     
-    // Add all items to the in-memory cache
-    for (const item of dbItems) {
-      itemDatabase[item.id] = {
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        flavorText: item.flavorText || '',
-        rarity: item.rarity,
-        craftingUses: item.craftingUses || [],
-        imagePath: item.imagePath || '',
-        category: item.category || undefined
-      };
+    // Add default items for demonstration (in real implementation we'd convert from components)
+    const defaultItems = [
+      {
+        id: 'resistor',
+        name: 'Resistor',
+        description: 'A standard resistor component',
+        flavorText: 'Resists electrical current flow',
+        rarity: 'common' as const,
+        craftingUses: ['circuits', 'displays', 'sensors'],
+        imagePath: '/images/components/resistor.png',
+        category: 'passive'
+      },
+      {
+        id: 'led-red',
+        name: 'Red LED',
+        description: 'A standard red light-emitting diode',
+        flavorText: 'Emits a bright red light when current flows through it',
+        rarity: 'common' as const,
+        craftingUses: ['displays', 'indicators'],
+        imagePath: '/images/components/led-red.png',
+        category: 'indicator'
+      },
+      {
+        id: 'capacitor',
+        name: 'Capacitor',
+        description: 'A standard capacitor component',
+        flavorText: 'Stores electrical energy in an electric field',
+        rarity: 'common' as const,
+        craftingUses: ['circuits', 'filters', 'timing'],
+        imagePath: '/images/components/capacitor.png',
+        category: 'passive'
+      }
+    ];
+    
+    // Add default items to the in-memory cache
+    for (const item of defaultItems) {
+      itemDatabase[item.id] = item;
+    }
+    
+    // Add any components from the database as well (if the schema is compatible)
+    for (const component of dbComponents) {
+      if (component.type && component.name) {
+        try {
+          const itemId = component.type.toLowerCase().replace(/\s+/g, '-');
+          itemDatabase[itemId] = {
+            id: itemId,
+            name: component.name,
+            description: component.description || 'No description available',
+            flavorText: 'A circuit component',
+            rarity: 'common' as const,
+            craftingUses: [],
+            imagePath: component.imageUrl || '/images/components/default.png',
+            category: component.category || 'unknown'
+          };
+        } catch (err) {
+          console.warn('Could not convert component to item:', err);
+        }
+      }
     }
     
     console.log(`Item database initialized with ${Object.keys(itemDatabase).length} items`);
     return itemDatabase;
   } catch (error) {
     console.error('Error initializing item database:', error);
-    return {};
+    // Return default items even if database loading fails
+    return {
+      'resistor': {
+        id: 'resistor',
+        name: 'Resistor',
+        description: 'A standard resistor component',
+        flavorText: 'Resists electrical current flow',
+        rarity: 'common' as const,
+        craftingUses: ['circuits', 'displays', 'sensors'],
+        imagePath: '/images/components/resistor.png',
+        category: 'passive'
+      }
+    };
   }
 }
 
@@ -68,14 +127,14 @@ export function getItemDetails(itemId: string): ItemDetails {
   };
 }
 
-// Add an item to the database (create or update)
+// Add an item to the database (create or update) - Using the components table
 export async function addOrUpdateItem(item: ItemDetails): Promise<ItemDetails> {
   if (!item.id) {
     throw new Error('Item ID is required');
   }
   
   try {
-    // First, clean up the item data
+    // For our Universal Emulator version, just update the in-memory cache
     const cleanItem = {
       ...item,
       flavorText: item.flavorText || '',
@@ -86,53 +145,15 @@ export async function addOrUpdateItem(item: ItemDetails): Promise<ItemDetails> {
           : {})
     };
     
-    // Check if item exists in the database
-    const existingItem = await db.select().from(items).where(eq(items.id, item.id));
+    // Add to the in-memory database
+    itemDatabase[item.id] = cleanItem;
     
-    if (existingItem.length > 0) {
-      // Update existing item
-      const [updatedItem] = await db
-        .update(items)
-        .set(cleanItem)
-        .where(eq(items.id, item.id))
-        .returning();
-      
-      // Update the in-memory cache
-      itemDatabase[updatedItem.id] = {
-        id: updatedItem.id,
-        name: updatedItem.name,
-        description: updatedItem.description,
-        flavorText: updatedItem.flavorText || '',
-        rarity: updatedItem.rarity,
-        craftingUses: updatedItem.craftingUses || [],
-        imagePath: updatedItem.imagePath || '',
-        category: updatedItem.category || undefined
-      };
-      
-      return itemDatabase[updatedItem.id];
-    } else {
-      // Insert new item
-      const [newItem] = await db
-        .insert(items)
-        .values(cleanItem)
-        .returning();
-      
-      // Update the in-memory cache
-      itemDatabase[newItem.id] = {
-        id: newItem.id,
-        name: newItem.name,
-        description: newItem.description,
-        flavorText: newItem.flavorText || '',
-        rarity: newItem.rarity,
-        craftingUses: newItem.craftingUses || [],
-        imagePath: newItem.imagePath || '',
-        category: newItem.category || undefined
-      };
-      
-      return itemDatabase[newItem.id];
-    }
+    // In the future, we could map this to a component in the database
+    console.log(`Item ${item.id} added/updated in memory cache`);
+    
+    return itemDatabase[item.id];
   } catch (error) {
-    console.error('Error adding/updating item in database:', error);
+    console.error('Error adding/updating item:', error);
     throw error;
   }
 }
@@ -140,19 +161,16 @@ export async function addOrUpdateItem(item: ItemDetails): Promise<ItemDetails> {
 // Remove an item from the database
 export async function removeItem(itemId: string): Promise<boolean> {
   try {
-    // Remove from the database
-    const result = await db.delete(items).where(eq(items.id, itemId));
-    
-    // If successful, also remove from in-memory cache
-    if (result) {
+    // For our Universal Emulator version, just remove from in-memory cache
+    if (itemId in itemDatabase) {
       delete itemDatabase[itemId];
-      console.log(`Item ${itemId} deleted from database and cache`);
+      console.log(`Item ${itemId} removed from memory cache`);
       return true;
     }
     
     return false;
   } catch (error) {
-    console.error(`Error removing item ${itemId} from database:`, error);
+    console.error(`Error removing item ${itemId}:`, error);
     return false;
   }
 }

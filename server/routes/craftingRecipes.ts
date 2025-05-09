@@ -1,7 +1,16 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage';
 import { z } from 'zod';
-import { insertCraftingRecipeSchema } from '@shared/schema';
+
+// Define our own schema since we don't have craftingRecipes in our schema yet
+const craftingRecipeSchema = z.object({
+  name: z.string(),
+  description: z.string().optional(),
+  resultItem: z.string(),
+  resultQuantity: z.number().positive(),
+  difficulty: z.enum(['easy', 'medium', 'hard']),
+  unlocked: z.boolean().default(false),
+});
 
 // Get all recipes for a user
 export const getCraftingRecipes = async (req: Request, res: Response) => {
@@ -43,7 +52,7 @@ export const getCraftingRecipeById = async (req: Request, res: Response) => {
 // Create a new recipe (admin only)
 export const createCraftingRecipe = async (req: Request, res: Response) => {
   try {
-    const recipeSchema = insertCraftingRecipeSchema.extend({
+    const recipeSchema = craftingRecipeSchema.extend({
       // Pattern is a 2D array representing required items in each position
       pattern: z.array(z.array(z.string().nullable())),
       // Dictionary of items required with quantities
@@ -71,7 +80,7 @@ export const updateCraftingRecipe = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Invalid recipe ID' });
     }
 
-    const recipeSchema = insertCraftingRecipeSchema.extend({
+    const recipeSchema = craftingRecipeSchema.extend({
       // Pattern is a 2D array representing required items in each position
       pattern: z.array(z.array(z.string().nullable())),
       // Dictionary of items required with quantities
