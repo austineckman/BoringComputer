@@ -1,187 +1,105 @@
-/**
- * SimulatorContext.jsx
- * 
- * This context provides centralized state management for the simulator.
- * It allows components to share simulator state and coordinate actions.
- */
+import React, { createContext, useState, useContext, useEffect } from 'react';
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { formatTimeElapsed } from './SimulatorUtils';
+// Create a context for the simulator
+const SimulatorContext = createContext({
+  code: '',
+  logs: [],
+  components: [],
+  wires: [],
+  componentStates: {},
+  startSimulation: () => {},
+  stopSimulation: () => {},
+  addLog: () => {},
+  setCode: () => {},
+  updateComponentState: () => {},
+  updateComponentPins: () => {},
+  setComponents: () => {},
+  setWires: () => {}
+});
 
-// Create the context
-const SimulatorContext = createContext(null);
+// Custom hook to access simulator context
+export const useSimulator = () => useContext(SimulatorContext);
 
-// Create a custom hook to use the simulator context
-export const useSimulator = () => {
-  const context = useContext(SimulatorContext);
-  if (!context) {
-    throw new Error('useSimulator must be used within a SimulatorProvider');
-  }
-  return context;
-};
-
-// Main provider component
+// Simulator Provider component
 export const SimulatorProvider = ({ children }) => {
-  // Simulator state
-  const [isRunning, setIsRunning] = useState(false);
-  const [simulationStartTime, setSimulationStartTime] = useState(null);
-  const [simulationElapsedTime, setSimulationElapsedTime] = useState(0);
-  const [components, setComponents] = useState([]);
-  const [wires, setWires] = useState([]); // Add wires state to the simulator
-  const [pinStates, setPinStates] = useState({});
-  const [componentStates, setComponentStates] = useState({});
-  const [errors, setErrors] = useState([]);
-  const [logs, setLogs] = useState([]);
+  // State variables
   const [code, setCode] = useState('');
-  const [compileStatus, setCompileStatus] = useState(null);
-  const [currentSpeed, setCurrentSpeed] = useState(1); // Speed multiplier
-
-  // Timer for tracking simulation time
-  useEffect(() => {
-    let interval = null;
-    
-    if (isRunning && simulationStartTime) {
-      interval = setInterval(() => {
-        const elapsed = Date.now() - simulationStartTime;
-        setSimulationElapsedTime(elapsed);
-      }, 100);
-    } else if (!isRunning) {
-      clearInterval(interval);
-    }
-    
-    return () => clearInterval(interval);
-  }, [isRunning, simulationStartTime]);
-
-  // Start the simulation
-  const startSimulation = useCallback(() => {
-    setIsRunning(true);
-    setSimulationStartTime(Date.now() - simulationElapsedTime);
-    addLog('Simulation started', 'success');
-  }, [simulationElapsedTime]);
-
-  // Stop the simulation
-  const stopSimulation = useCallback(() => {
-    setIsRunning(false);
-    addLog('Simulation stopped', 'info');
-  }, []);
-
-  // Reset the simulation state
-  const resetSimulation = useCallback(() => {
-    setIsRunning(false);
-    setSimulationStartTime(null);
-    setSimulationElapsedTime(0);
-    setPinStates({});
-    setErrors([]);
-    addLog('Simulation reset', 'info');
-  }, []);
-
-  // Update a pin's state
-  const updatePinState = useCallback((pinId, state) => {
-    setPinStates(prev => ({
-      ...prev,
-      [pinId]: state
-    }));
-  }, []);
-
-  // Add a log entry
-  const addLog = useCallback((message, type = 'info') => {
+  const [logs, setLogs] = useState([]);
+  const [isRunning, setIsRunning] = useState(false);
+  const [components, setComponents] = useState([]);
+  const [wires, setWires] = useState([]);
+  const [componentStates, setComponentStates] = useState({});
+  
+  // Function to add a log entry with timestamp
+  const addLog = (message) => {
     const timestamp = new Date().toLocaleTimeString();
-    const simTime = simulationStartTime ? formatTimeElapsed(Date.now() - simulationStartTime) : '0ms';
-    
-    setLogs(prev => [
-      { 
-        id: Date.now().toString(), 
-        timestamp,
-        simTime,
-        message, 
-        type 
-      }, 
-      ...prev
-    ].slice(0, 100)); // Keep only the latest 100 logs
-  }, [simulationStartTime]);
-
-  // Add an error
-  const addError = useCallback((message) => {
-    setErrors(prev => [...prev, { id: Date.now().toString(), message }]);
-    addLog(`Error: ${message}`, 'error');
-  }, [addLog]);
-
-  // Clear all logs
-  const clearLogs = useCallback(() => {
-    setLogs([]);
-  }, []);
-
-  // Set simulator speed (0.25x to 4x)
-  const setSimulationSpeed = useCallback((speed) => {
-    setCurrentSpeed(speed);
-    addLog(`Simulation speed set to ${speed}x`, 'info');
-  }, [addLog]);
-
-  // Update component list
-  const setSimulationComponents = useCallback((newComponents) => {
-    setComponents(newComponents);
-  }, []);
+    const formattedMessage = `[${timestamp}] ${message}`;
+    setLogs(prevLogs => [...prevLogs, formattedMessage]);
+  };
   
-  // Update a component's state
-  const updateComponentState = useCallback((componentId, state) => {
-    setComponentStates(prev => ({
-      ...prev,
-      [componentId]: state
+  // Function to update the state of a component
+  const updateComponentState = (componentId, newState) => {
+    setComponentStates(prevStates => ({
+      ...prevStates,
+      [componentId]: {
+        ...(prevStates[componentId] || {}),
+        ...newState
+      }
     }));
-  }, []);
+  };
   
-  // Update specific pins on a component
-  const updateComponentPins = useCallback((componentId, pins) => {
-    console.log(`Updating pins for ${componentId}:`, pins);
-    setComponentStates(prev => {
-      const currentState = prev[componentId] || {};
-      const newState = {
-        ...prev,
-        [componentId]: {
-          ...currentState,
-          pins: {
-            ...(currentState.pins || {}),
-            ...pins
-          }
-        }
-      };
-      console.log("Updated component states:", newState);
-      return newState;
-    });
-  }, []);
-
-  // Expose context value
-  const contextValue = {
-    isRunning,
-    simulationElapsedTime,
-    formatElapsedTime: () => formatTimeElapsed(simulationElapsedTime),
-    components,
-    setSimulationComponents,
-    wires,
-    setWires,
-    pinStates,
-    updatePinState,
-    componentStates,
-    updateComponentState,
-    updateComponentPins,
-    errors,
-    logs,
-    code,
-    setCode,
-    compileStatus,
-    setCompileStatus,
-    currentSpeed,
+  // Function to update pin states for a component
+  const updateComponentPins = (componentId, pinStates) => {
+    const currentState = componentStates[componentId] || {};
+    const currentPins = currentState.pins || {};
     
-    // Methods
+    updateComponentState(componentId, {
+      pins: {
+        ...currentPins,
+        ...pinStates
+      }
+    });
+  };
+  
+  // Function to start the simulation
+  const startSimulation = () => {
+    addLog('Starting simulation...');
+    setIsRunning(true);
+  };
+  
+  // Function to stop the simulation
+  const stopSimulation = () => {
+    addLog('Stopping simulation...');
+    setIsRunning(false);
+  };
+  
+  // Log component and wire state changes for debugging
+  useEffect(() => {
+    console.log('Simulator components updated:', components.length);
+  }, [components]);
+  
+  useEffect(() => {
+    console.log('Simulator wires updated:', wires.length);
+  }, [wires]);
+  
+  // Create an object with all the context values
+  const contextValue = {
+    code,
+    logs,
+    isRunning,
+    components,
+    wires,
+    componentStates,
     startSimulation,
     stopSimulation,
-    resetSimulation,
     addLog,
-    addError,
-    clearLogs,
-    setSimulationSpeed
+    setCode,
+    updateComponentState,
+    updateComponentPins,
+    setComponents,
+    setWires
   };
-
+  
   return (
     <SimulatorContext.Provider value={contextValue}>
       {children}
@@ -189,4 +107,4 @@ export const SimulatorProvider = ({ children }) => {
   );
 };
 
-export default SimulatorContext;
+export default SimulatorProvider;
