@@ -121,7 +121,7 @@ const OLEDDisplay = ({
         let pinType = 'bidirectional';
         if (pinId === 'GND' || pinId === 'VCC') {
           pinType = 'power';
-        } else if (pinId === 'SCL' || pinId === 'SDA') {
+        } else if (pinId === 'SCL' || pinId === 'SDA' || pinId === 'SCK') {
           pinType = 'digital';
         }
         
@@ -135,6 +135,7 @@ const OLEDDisplay = ({
         onPinConnect(pinId, pinType, id);
         
         // Send another event with the formatted pin ID to match our wire manager
+        // IMPORTANT: This must match exactly the LED component format which is working correctly
         const formattedPinId = `pt-${id.toLowerCase().split('-')[0]}-${id}-${pinId}`;
         
         // Create a custom pin click event to trigger the wire manager
@@ -148,6 +149,9 @@ const OLEDDisplay = ({
             clientY
           }
         });
+        
+        // Add console message to verify code is updated and execution happens
+        console.log("OLED dispatching pin click event with updated code:", formattedPinId);
         
         // Dispatch the event to be captured by the wire manager
         document.dispatchEvent(pinClickEvent);
