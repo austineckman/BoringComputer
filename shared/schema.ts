@@ -221,6 +221,67 @@ export const systemSettings = pgTable("system_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Arduino Circuit Projects table - for saving user-created circuit designs
+export const circuitProjects = pgTable("circuit_projects", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  // The actual circuit design, stored as a serialized JSON object
+  circuit: jsonb("circuit").notNull(),
+  // The Arduino code associated with this circuit
+  code: text("code").notNull(),
+  thumbnail: text("thumbnail"), // Optional image representation
+  isPublic: boolean("is_public").default(false),
+  tags: json("tags").$type<string[]>().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Arduino Components table - for metadata about available components
+export const arduinoComponents = pgTable("arduino_components", {
+  id: text("id").primaryKey(), // e.g., "led", "button", "resistor"
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(), // e.g., "input", "output", "passive"
+  iconPath: text("icon_path").notNull(),
+  pins: json("pins").$type<{
+    name: string,
+    type: 'input' | 'output' | 'power' | 'ground',
+    description: string
+  }[]>().notNull(),
+  properties: jsonb("properties").$type<Record<string, any>>().default({}),
+  exampleCode: text("example_code"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User Settings for Arduino Simulator
+export const userSimulatorSettings = pgTable("user_simulator_settings", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  preferences: jsonb("preferences").$type<{
+    theme: string,
+    fontSize: number,
+    autosave: boolean,
+    livePreview: boolean,
+    highlightSyntax: boolean
+  }>().default({
+    theme: "default",
+    fontSize: 14,
+    autosave: true,
+    livePreview: true,
+    highlightSyntax: true
+  }),
+  recentProjects: json("recent_projects").$type<number[]>().default([]),
+  savedTemplates: jsonb("saved_templates").$type<{
+    name: string,
+    circuit: any,
+    code: string
+  }[]>().default([]),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -376,6 +437,36 @@ export const insertCharacterEquipmentSchema = createInsertSchema(characterEquipm
   slot: true
 });
 
+// Insert schemas for Arduino tables
+export const insertCircuitProjectSchema = createInsertSchema(circuitProjects).pick({
+  userId: true,
+  name: true,
+  description: true,
+  circuit: true,
+  code: true,
+  thumbnail: true,
+  isPublic: true,
+  tags: true
+});
+
+export const insertArduinoComponentSchema = createInsertSchema(arduinoComponents).pick({
+  id: true,
+  name: true,
+  description: true,
+  category: true,
+  iconPath: true,
+  pins: true,
+  properties: true,
+  exampleCode: true
+});
+
+export const insertUserSimulatorSettingsSchema = createInsertSchema(userSimulatorSettings).pick({
+  userId: true,
+  preferences: true,
+  recentProjects: true,
+  savedTemplates: true
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -418,6 +509,16 @@ export type InsertLootBoxConfig = z.infer<typeof insertLootBoxConfigSchema>;
 
 export type CharacterEquipment = typeof characterEquipment.$inferSelect;
 export type InsertCharacterEquipment = z.infer<typeof insertCharacterEquipmentSchema>;
+
+// Arduino table types
+export type CircuitProject = typeof circuitProjects.$inferSelect;
+export type InsertCircuitProject = z.infer<typeof insertCircuitProjectSchema>;
+
+export type ArduinoComponent = typeof arduinoComponents.$inferSelect;
+export type InsertArduinoComponent = z.infer<typeof insertArduinoComponentSchema>;
+
+export type UserSimulatorSettings = typeof userSimulatorSettings.$inferSelect;
+export type InsertUserSimulatorSettings = z.infer<typeof insertUserSimulatorSettingsSchema>;
 
 // Component Kits table - for educational kits (Arduino, Raspberry Pi, etc.)
 export const componentKits = pgTable("component_kits", {
