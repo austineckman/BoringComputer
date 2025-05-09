@@ -1,13 +1,12 @@
 import React from 'react';
 import { Play, Square, RefreshCw, Save, FolderOpen, Cpu, Zap } from 'lucide-react';
-import { Button } from "@/components/ui/button";
 import { useEmulator } from './EmulatorContext';
 
 /**
- * Emulator Controls Component - Retro Gaming Style
+ * Emulator Controls Component - Sandbox Style
  * 
  * Provides buttons to compile, run, and stop the emulator
- * with a retro gaming aesthetic
+ * with styles matching the Sandbox UI
  */
 export function EmulatorControls() {
   const { 
@@ -28,69 +27,50 @@ export function EmulatorControls() {
   };
   
   return (
-    <div className="flex items-center gap-2">
-      <Button
-        variant="outline"
-        size="sm"
+    <div className="flex items-center space-x-2">
+      <button 
+        className={`p-1 rounded text-xs ${isRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
         onClick={handleRun}
         disabled={isCompiling}
-        className={`border ${isRunning 
-          ? 'border-red-500 bg-red-900/30 hover:bg-red-800/50 text-red-300' 
-          : 'border-green-500 bg-blue-900/30 hover:bg-green-800/50 text-green-300'}`}
+        title={isRunning ? "Stop Simulation" : "Run Simulation"}
       >
-        {isRunning ? (
-          <>
-            <Square className="h-4 w-4 mr-2" />
-            STOP
-          </>
-        ) : (
-          <>
-            <Play className="h-4 w-4 mr-2" />
-            RUN
-          </>
-        )}
-      </Button>
+        <Play size={18} />
+      </button>
       
-      <Button
-        variant="outline"
-        size="sm"
+      <button
+        className="bg-blue-600 p-1 rounded hover:bg-blue-700 text-xs"
         disabled={isRunning || isCompiling}
         onClick={() => compileAndRun()}
-        className="border border-yellow-500 bg-blue-900/30 hover:bg-yellow-900/30 text-yellow-300"
+        title="Verify Code"
       >
-        <Cpu className="h-4 w-4 mr-2" />
-        VERIFY
-      </Button>
+        <Cpu size={18} />
+      </button>
       
-      <Button 
-        variant="outline" 
-        size="sm" 
+      <button 
+        className="bg-blue-600 p-1 rounded hover:bg-blue-700 text-xs"
         disabled={isRunning}
-        className="border border-cyan-500 bg-blue-900/30 hover:bg-blue-800/50 text-cyan-300"
+        title="Save Project"
       >
-        <Save className="h-4 w-4 mr-2" />
-        SAVE
-      </Button>
+        <Save size={18} />
+      </button>
       
-      <Button 
-        variant="outline" 
-        size="sm" 
+      <button 
+        className="bg-blue-600 p-1 rounded hover:bg-blue-700 text-xs"
         disabled={isRunning}
-        className="border border-cyan-500 bg-blue-900/30 hover:bg-blue-800/50 text-cyan-300"
+        title="Open Project"
       >
-        <FolderOpen className="h-4 w-4 mr-2" />
-        OPEN
-      </Button>
+        <FolderOpen size={18} />
+      </button>
       
       {isCompiling && (
-        <div className="ml-2 px-2 py-1 bg-amber-900/30 border border-amber-700 rounded text-amber-300 text-xs font-bold animate-pulse flex items-center">
+        <div className="px-2 py-1 bg-amber-900 rounded text-amber-300 text-xs font-bold animate-pulse flex items-center">
           <Zap className="h-3 w-3 mr-1 animate-pulse" />
-          COMPILING...
+          Compiling...
         </div>
       )}
       
       {error && (
-        <div className="ml-2 px-2 py-1 bg-red-900/30 border border-red-700 rounded text-red-300 text-xs">
+        <div className="px-2 py-1 bg-red-900 rounded text-red-300 text-xs">
           {error}
         </div>
       )}
