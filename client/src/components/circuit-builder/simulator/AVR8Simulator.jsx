@@ -360,6 +360,10 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
   const checkOLEDWiring = (oledId) => {
     // Get all wires in the circuit
     const { wires } = window.simulatorContext || { wires: [] };
+    
+    // Debug output to see what wires are actually detected
+    console.log("Raw wires data in simulator context:", JSON.stringify(window.simulatorContext?.wires));
+    
     if (!wires || wires.length === 0) {
       // No wires found, so the OLED can't be properly wired
       console.log("No wires found in the circuit");
@@ -372,8 +376,14 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     // 3. VCC (5V or 3.3V)
     // 4. GND
     
-    // Extract the component ID without the pin part
-    const oledBaseId = oledId.split('-').slice(0, 3).join('-');
+    // Extract the component ID without the pin part - More flexible approach
+    // This handles both formats oled-display-123 and other possible ID formats
+    const oledBaseId = oledId.includes('oled-display') ? 
+        oledId.substring(0, oledId.lastIndexOf('-')) : 
+        oledId.split('-').slice(0, 3).join('-');
+
+    console.log(`OLED ID being checked: ${oledId}`);
+    console.log(`Base OLED ID: ${oledBaseId}`);
     
     // Check if the required pins are connected
     let hasSDA = false;
@@ -409,30 +419,43 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
             
             console.log(`OLED wire detected: ${oledPinName} to ${otherPinName}`);
             
-            // Check SDA connection
-            if (oledPinName === 'sda') {
-              if (otherPinName === 'a4' || otherPinName === 'sda') {
+            // More flexible SDA connection check
+            if (oledPinName.includes('sda') || oledPinName.includes('data')) {
+              // Check connection to Arduino A4 or another SDA pin
+              if (otherPinName === 'a4' || otherPinName.includes('sda') || 
+                  otherPinName.includes('data') || otherPinName === '4') {
                 hasSDA = true;
                 console.log("SDA connection verified");
               }
             } 
-            // Check SCL connection
-            else if (oledPinName === 'scl') {
-              if (otherPinName === 'a5' || otherPinName === 'scl') {
+            // More flexible SCL connection check
+            else if (oledPinName.includes('scl') || oledPinName.includes('clock')) {
+              // Check connection to Arduino A5 or another SCL pin
+              if (otherPinName === 'a5' || otherPinName.includes('scl') || 
+                  otherPinName.includes('clock') || otherPinName === '5') {
                 hasSCL = true;
                 console.log("SCL connection verified");
               }
             } 
-            // Check VCC connection
-            else if (oledPinName === 'vcc') {
-              if (otherPinName === '5v' || otherPinName === '3.3v' || otherPinName === 'vcc') {
+            // More flexible VCC connection check
+            else if (oledPinName.includes('vcc') || oledPinName.includes('pwr') || 
+                     oledPinName.includes('power') || oledPinName.includes('vdd') ||
+                     oledPinName === '+') {
+              // Check connection to power
+              if (otherPinName.includes('5v') || otherPinName.includes('3.3v') || 
+                  otherPinName.includes('vcc') || otherPinName.includes('power') || 
+                  otherPinName.includes('pwr') || otherPinName.includes('vdd') ||
+                  otherPinName === '+') {
                 hasVCC = true;
                 console.log("VCC connection verified");
               }
             } 
-            // Check GND connection
-            else if (oledPinName === 'gnd') {
-              if (otherPinName === 'gnd' || otherPinName.startsWith('gnd')) {
+            // More flexible GND connection check
+            else if (oledPinName.includes('gnd') || oledPinName.includes('ground') || 
+                     oledPinName === '-') {
+              // Check connection to ground
+              if (otherPinName.includes('gnd') || otherPinName.includes('ground') || 
+                  otherPinName === '-') {
                 hasGND = true;
                 console.log("GND connection verified");
               }
@@ -473,28 +496,47 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
             const oledPin = isSourceOLED ? sourcePin : targetPin;
             const otherPin = isSourceOLED ? targetPin : sourcePin;
             
-            // Check for SDA connection
-            if (oledPin === 'sda') {
-              if (otherPin === 'a4' || otherPin === 'sda') {
+            console.log(`OLED wire detected (fallback method): ${oledPin} to ${otherPin}`);
+            
+            // More flexible SDA connection check
+            if (oledPin.includes('sda') || oledPin.includes('data')) {
+              // Check connection to Arduino A4 or another SDA pin
+              if (otherPin === 'a4' || otherPin.includes('sda') || 
+                  otherPin.includes('data') || otherPin === '4') {
                 hasSDA = true;
+                console.log("SDA connection verified (fallback)");
               }
-            }
-            // Check for SCL connection 
-            else if (oledPin === 'scl') {
-              if (otherPin === 'a5' || otherPin === 'scl') {
+            } 
+            // More flexible SCL connection check
+            else if (oledPin.includes('scl') || oledPin.includes('clock')) {
+              // Check connection to Arduino A5 or another SCL pin
+              if (otherPin === 'a5' || otherPin.includes('scl') || 
+                  otherPin.includes('clock') || otherPin === '5') {
                 hasSCL = true;
+                console.log("SCL connection verified (fallback)");
               }
-            }
-            // Check for power connections
-            else if (oledPin === 'vcc') {
-              if (otherPin === '5v' || otherPin === '3.3v' || otherPin.includes('vcc')) {
+            } 
+            // More flexible VCC connection check
+            else if (oledPin.includes('vcc') || oledPin.includes('pwr') || 
+                     oledPin.includes('power') || oledPin.includes('vdd') ||
+                     oledPin === 'v' || oledPin === '+') {
+              // Check connection to power
+              if (otherPin.includes('5v') || otherPin.includes('3.3v') || 
+                  otherPin.includes('vcc') || otherPin.includes('power') || 
+                  otherPin.includes('pwr') || otherPin.includes('vdd') ||
+                  otherPin === 'v' || otherPin === '+') {
                 hasVCC = true;
+                console.log("VCC connection verified (fallback)");
               }
-            }
-            // Check for ground connection
-            else if (oledPin === 'gnd') {
-              if (otherPin.includes('gnd')) {
+            } 
+            // More flexible GND connection check
+            else if (oledPin.includes('gnd') || oledPin.includes('ground') || 
+                     oledPin === 'g' || oledPin === '-') {
+              // Check connection to ground
+              if (otherPin.includes('gnd') || otherPin.includes('ground') || 
+                  otherPin === 'g' || otherPin === '-') {
                 hasGND = true;
+                console.log("GND connection verified (fallback)");
               }
             }
           }
@@ -574,7 +616,16 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
               shouldDisplay: hasRequiredLibraries && hasOLEDCode && isProperlyWired
             });
             
-            logInfo(`OLED display ${oledId} initialized`);
+            // Detailed logging for debugging
+            if (!hasRequiredLibraries) {
+              logInfo(`OLED display ${oledId} missing required libraries. Include #include <Wire.h> and either #include <Adafruit_SSD1306.h> or #include <U8g2lib.h>`);
+            } else if (!hasOLEDCode) {
+              logInfo(`OLED display ${oledId} initialized but no OLED code detected. Add OLED initialization and draw commands.`);
+            } else if (!isProperlyWired) {
+              logInfo(`OLED display ${oledId} not properly wired. Connect SDA→A4, SCL→A5, VCC→5V, GND→GND`);
+            } else {
+              logInfo(`OLED display ${oledId} successfully initialized and ready`);
+            }
           } catch (error) {
             console.error("Error initializing OLED display:", error);
           }
