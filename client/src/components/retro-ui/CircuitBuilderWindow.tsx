@@ -14,6 +14,9 @@ import SimulationVisualizer from '../circuit-builder/simulator/SimulationVisuali
 import { defaultSketch, parseLibraryImports, parseDigitalWrites } from '../circuit-builder/simulator/SimulatorUtils';
 import { LibraryManagerProvider } from '../circuit-builder/simulator/LibraryManager';
 
+// Import utility to fix OLED component pin tooltips
+import initOLEDTooltipFix from '../circuit-builder/utils/fixOLEDTooltips';
+
 // Legacy imports (keeping for compatibility with existing code)
 import { 
   componentOptions, 
@@ -122,6 +125,9 @@ void loop() {
   // Simple editor for now
   useEffect(() => {
     setEditorReady(true);
+    
+    // Initialize the OLED tooltip fix
+    initOLEDTooltipFix();
   }, []);
 
   // Generate a unique ID
