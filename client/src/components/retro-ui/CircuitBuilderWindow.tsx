@@ -337,11 +337,6 @@ void loop() {
           setWireStartPin(null);
           setTempWirePosition(null);
         }
-      } else if (e.key === 'Home' || (e.ctrlKey && e.key === 'Home')) {
-        // Scroll to top of editor when Home key is pressed
-        if (editorRef.current) {
-          editorRef.current.scrollTop = 0;
-        }
       }
     };
     
@@ -878,38 +873,15 @@ void loop() {
         </div>
         
         <div className="flex-1 flex">
-          <div className="flex-1 relative">
+          <div className="flex-1">
             <textarea 
               ref={editorRef}
               value={code}
-              onChange={(e) => {
-                setCode(e.target.value);
-                // Keep the scroll position at the top when pasting large blocks of code
-                if (e.target.value.length > code.length + 500) {
-                  setTimeout(() => {
-                    if (editorRef.current) {
-                      editorRef.current.scrollTop = 0;
-                    }
-                  }, 0);
-                }
-              }}
+              onChange={(e) => setCode(e.target.value)}
               className="w-full h-full bg-gray-900 text-gray-100 p-4 text-sm resize-none outline-none border-none font-mono"
               style={{ fontSize: '14px' }}
               spellCheck="false"
             ></textarea>
-            {/* Add a button that appears when code is large to scroll back to top */}
-            {code.length > 1000 && (
-              <button 
-                onClick={() => {
-                  if (editorRef.current) {
-                    editorRef.current.scrollTop = 0;
-                  }
-                }}
-                className="absolute top-2 right-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-xs"
-              >
-                Scroll to Top
-              </button>
-            )}
           </div>
           
           <div className="w-1/3 p-2">

@@ -1,6 +1,4 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { getComponentHandler } from '../registry/ComponentRegistry';
-import '../registry/RegistryInitializer'; // Import to ensure registry is initialized
 
 // Create a context for the simulator
 const SimulatorContext = createContext({
@@ -31,9 +29,6 @@ export const SimulatorProvider = ({ children }) => {
   const [components, setComponents] = useState([]);
   const [wires, setWires] = useState([]);
   const [componentStates, setComponentStates] = useState({});
-  
-  // Debug flag for development - helps with OLED display debugging
-  const [debugMode, setDebugMode] = useState(true);
   
   // Function to add a log entry with timestamp
   const addLog = (message) => {
@@ -101,66 +96,6 @@ export const SimulatorProvider = ({ children }) => {
     };
   }, [componentStates, wires]);
   
-  // Add component registry system to the simulator context
-  const getComponentTypeFromId = (componentId) => {
-    if (!componentId) return null;
-    
-    if (componentId.includes('led')) return 'LED';
-    if (componentId.includes('oled')) return 'OLED';
-    if (componentId.includes('rgb-led')) return 'RGB_LED';
-    if (componentId.includes('button')) return 'BUTTON';
-    
-    // Add more component type detection as needed
-    return null;
-  };
-  
-  // Function to check wiring using component registry
-  const checkComponentWiring = (componentId) => {
-    try {
-      const componentType = getComponentTypeFromId(componentId);
-      if (!componentType) return false;
-      
-      // Get the appropriate handler from the registry
-      const checkWiringHandler = getComponentHandler(componentType, 'checkWiring');
-      if (!checkWiringHandler) {
-        console.warn(`No wiring check handler found for ${componentType}`);
-        return false;
-      }
-      
-      // Call the handler from the registry
-      return checkWiringHandler(componentId);
-    } catch (error) {
-      console.error('Error checking component wiring:', error);
-      return false;
-    }
-  };
-  
-  // Function to update component state using component registry
-  const updateComponentWithRegistry = (componentId, pinValues) => {
-    try {
-      const componentType = getComponentTypeFromId(componentId);
-      if (!componentType) return null;
-      
-      // Get the appropriate handler from the registry
-      const updateStateHandler = getComponentHandler(componentType, 'updateState');
-      if (!updateStateHandler) {
-        console.warn(`No update state handler found for ${componentType}`);
-        return null;
-      }
-      
-      // Call the handler and update the component state
-      const newState = updateStateHandler(componentId, pinValues);
-      if (newState) {
-        updateComponentState(componentId, newState);
-      }
-      
-      return newState;
-    } catch (error) {
-      console.error('Error updating component with registry:', error);
-      return null;
-    }
-  };
-  
   // Create an object with all the context values
   const contextValue = {
     code,
@@ -176,43 +111,8 @@ export const SimulatorProvider = ({ children }) => {
     updateComponentState,
     updateComponentPins,
     setComponents,
-    setWires,
-    debugMode,
-    setDebugMode,
-    // Add the registry functions to the context
-    getComponentTypeFromId,
-    checkComponentWiring,
-    updateComponentWithRegistry
+    setWires
   };
-  
-  // Also expose the context to the window for non-React components
-  useEffect(() => {
-    window.simulatorContext = {
-      code,
-      logs,
-      isRunning,
-      components,
-      wires,
-      componentStates,
-      startSimulation,
-      stopSimulation,
-      addLog,
-      debugMode,
-      // Add registry functions
-      getComponentTypeFromId,
-      checkComponentWiring,
-      updateComponentWithRegistry,
-      // Expose registry utility directly
-      getComponentHandler
-    };
-    
-    console.log("Simulator context updated with registry integration");
-    
-    return () => {
-      // Clean up when unmounted
-      window.simulatorContext = undefined;
-    };
-  }, [code, logs, isRunning, components, wires, componentStates, debugMode]);
   
   return (
     <SimulatorContext.Provider value={contextValue}>
