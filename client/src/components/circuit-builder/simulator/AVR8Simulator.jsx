@@ -139,8 +139,7 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     return 1000;
   };
   
-  // Import the Arduino code validation function
-  const { validateArduinoCode } = require('./ArduinoCompiler');
+  // Arduino code validation function is imported at the top
   
   // Compile the Arduino code
   const compileCode = (code) => {
