@@ -61,32 +61,68 @@ export const parseDigitalWrites = (code) => {
 export const parseAnalogWrites = (code) => {
   const analogWrites = {};
   
+  // Define regex to match pin definitions
+  const pinDefineRegex = /#define\s+(RED_PIN|GREEN_PIN|BLUE_PIN)\s+(\d+)/g;
+  
+  // Extract custom pin definitions if present
+  const pinDefinitions = {
+    'RED_PIN': '9',  // Default to standard pins
+    'GREEN_PIN': '10',
+    'BLUE_PIN': '11'
+  };
+  
+  let defineMatch;
+  while ((defineMatch = pinDefineRegex.exec(code)) !== null) {
+    const pinName = defineMatch[1];
+    const pinNumber = defineMatch[2];
+    pinDefinitions[pinName] = pinNumber;
+  }
+  
   // Regular expression to match analogWrite calls
-  const analogWriteRegex = /analogWrite\s*\(\s*(\d+|RED_PIN|GREEN_PIN|BLUE_PIN)\s*,\s*(\d+|[^,;)]+)\s*\)/g;
+  const analogWriteRegex = /analogWrite\s*\(\s*(\d+|RED_PIN|GREEN_PIN|BLUE_PIN|LED_BUILTIN)\s*,\s*(\d+|[^,;)]+)\s*\)/g;
   
   // Extract analog writes
   let match;
   while ((match = analogWriteRegex.exec(code)) !== null) {
     let pin = match[1];
+    
     // Handle pin definitions (like RED_PIN, BLUE_PIN etc.)
-    if (pin === 'RED_PIN') pin = '9';  // Default to standard pins
-    if (pin === 'GREEN_PIN') pin = '10';
-    if (pin === 'BLUE_PIN') pin = '11';
+    if (pin === 'RED_PIN') pin = pinDefinitions['RED_PIN'];
+    else if (pin === 'GREEN_PIN') pin = pinDefinitions['GREEN_PIN'];
+    else if (pin === 'BLUE_PIN') pin = pinDefinitions['BLUE_PIN'];
+    else if (pin === 'LED_BUILTIN') pin = '13';
     
     // Try to parse the value - handle constants or expressions by assuming non-zero value
     let value;
     if (/^\d+$/.test(match[2])) {
       value = parseInt(match[2], 10);
     } else {
-      value = 128; // Default mid-value for non-numeric expressions
+      // For variables or constants, use a default value
+      // Try to be smarter about the variable name - if it includes "red", "green", "blue"
+      const variableName = match[2].toLowerCase();
+      if (variableName.includes('red')) value = 255;
+      else if (variableName.includes('green')) value = 255;
+      else if (variableName.includes('blue')) value = 255;
+      else value = 128; // Default mid-value for non-numeric expressions
     }
+    
+    // Log what we found for debugging
+    console.log(`Found analogWrite: pin ${pin}, value ${value}`);
     
     // Store the pin and value
     if (!analogWrites[pin]) {
       analogWrites[pin] = [];
     }
     
-    analogWrites[pin].push(value);
+    // Ensure value is in valid range
+    if (value >= 0 && value <= 255) {
+      analogWrites[pin].push(value);
+    }
+  }
+  
+  // If we found any values, log them
+  if (Object.keys(analogWrites).length > 0) {
+    console.log('Analog pin values detected:', analogWrites);
   }
   
   return analogWrites;
