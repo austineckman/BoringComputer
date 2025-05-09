@@ -60,6 +60,16 @@ const LED = ({
       return;
     }
     
+    // First check if this LED has direct state data from a resistor component
+    if (componentStates[id]) {
+      const myState = componentStates[id];
+      if (myState.isConnectedToHeroboard && myState.connectedPinState !== undefined) {
+        console.log(`LED ${id} has direct state data: connectedPinState=${myState.connectedPinState}`);
+        setIsLit(myState.connectedPinState);
+        return;
+      }
+    }
+    
     // Keep track of LED connections to pins and their values
     let connectedToPin = false;
     let pinValue = false;
@@ -140,7 +150,7 @@ const LED = ({
         }
         // If connected to a resistor (trace connections through resistors)
         else if (otherComponentId && otherComponentId.includes('resistor')) {
-          console.log(`LED ${id} is connected to resistor ${otherComponentId}`);
+          console.log(`LED ${id} is connected to resistor ${otherComponentId} at pin ${otherPinName}`);
           
           // Find all wires connected to this resistor (except the one to this LED)
           const resistorWires = Array.isArray(connectionWires) ?
@@ -148,6 +158,8 @@ const LED = ({
               (w.sourceComponent === otherComponentId || w.targetComponent === otherComponentId) &&
               w.id !== wire.id // Not the wire we just followed
             ) : [];
+          
+          console.log(`Found ${resistorWires.length} wires connected to resistor ${otherComponentId}`);
           
           // Follow each wire from the resistor
           resistorWires.forEach(resistorWire => {
@@ -158,10 +170,14 @@ const LED = ({
             const nextComponentId = isResistorSource ? resistorWire.targetComponent : resistorWire.sourceComponent;
             const nextPinName = isResistorSource ? resistorWire.targetName : resistorWire.sourceName;
             
+            console.log(`Resistor ${otherComponentId} connects to ${nextComponentId} at pin ${nextPinName}`);
+            
             // If the resistor connects to a heroboard
             if (nextComponentId && nextComponentId.includes('heroboard')) {
               // Get the pin name/number from the heroboard
               const pinNumber = nextPinName;
+              
+              console.log(`LED ${id} is following connection through resistor to heroboard pin ${pinNumber}`);
               
               // Now we need to check the state of this pin
               // First, try the specific heroboard ID
@@ -188,11 +204,18 @@ const LED = ({
               }
               // Look through all component states for any heroboard with this pin
               else {
+                console.log(`LED ${id} is searching all component states for a heroboard with pin ${pinNumber}`);
+                
+                // Log available component states for debugging
+                console.log("Available component states:", Object.keys(componentStates));
+                
                 const heroboardComponents = Object.keys(componentStates).filter(key => 
                   key.includes('heroboard') && 
                   componentStates[key].pins && 
                   componentStates[key].pins[pinNumber] !== undefined
                 );
+                
+                console.log(`Found ${heroboardComponents.length} heroboard components with pin ${pinNumber}`);
                 
                 if (heroboardComponents.length > 0) {
                   const firstHeroboard = heroboardComponents[0];
