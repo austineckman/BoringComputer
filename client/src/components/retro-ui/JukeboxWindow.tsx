@@ -206,9 +206,9 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
               style={{ imageRendering: 'pixelated' }}
             />
             
-            {/* Light glow effect when playing - positioned at the top golden display */}
+            {/* Light glow effect properly positioned at the very top of the jukebox */}
             {isPlaying && (
-              <div className="absolute top-[22%] left-1/2 transform -translate-x-1/2 w-28 h-8 bg-orange-400 rounded-md opacity-5 animate-pulse blur-md"></div>
+              <div className="absolute top-[7%] left-1/2 transform -translate-x-1/2 w-32 h-6 bg-orange-300 rounded-md opacity-4 animate-pulse blur-sm"></div>
             )}
             
             {/* Visualizer effect on jukebox display */}
