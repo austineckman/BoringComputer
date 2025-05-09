@@ -438,19 +438,50 @@ void loop() {
     return code;
   };
 
+  // Notification system
+  const [notification, setNotification] = useState(null);
+  
+  // Show a notification in the bottom right corner
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type });
+    
+    // Auto-hide the notification after 2 seconds
+    setTimeout(() => {
+      setNotification(null);
+    }, 2000);
+  };
+  
   // Save the current project
   const saveProject = () => {
+    // Get the current code from the editor
+    const currentCode = getCode();
+    
+    // Update the project data
     const projectData = {
       components,
       wires,
-      code: getCode()
+      code: currentCode
     };
     
     // In a real app, you'd save this to a database or file
     console.log('Saving project:', projectData);
     
-    // For now, just show an alert
-    alert('Project saved! (This is a placeholder - in a real app, this would save to the database)');
+    // Update the code in the simulator context
+    setCode(currentCode);
+    
+    // Update the simulator context with the latest code
+    if (typeof window !== 'undefined') {
+      // Store in localStorage for persistence
+      try {
+        localStorage.setItem('arduino-sandbox-code', currentCode);
+        localStorage.setItem('arduino-sandbox-lastSaved', new Date().toISOString());
+      } catch (err) {
+        console.error('Error saving to localStorage:', err);
+      }
+    }
+    
+    // Show notification
+    showNotification('Project saved!');
   };
 
   // Local simulation state
@@ -463,7 +494,8 @@ void loop() {
     addLog: addSimulatorLog,
     logs: simulatorLogs,
     updateComponentState,  // Access the updateComponentState function
-    updateComponentPins    // Access the updateComponentPins function for pin-specific updates
+    updateComponentPins,   // Access the updateComponentPins function for pin-specific updates
+    setCode: updateSimulatorCode // Get the simulator's setCode function
   } = useSimulator();
   
   // Run the simulation
