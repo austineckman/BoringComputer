@@ -1,0 +1,23 @@
+We’re beginning development of the Universal Emulator app inside CraftingTable OS. This is going to become a core part of the platform and it’s critical that the foundation is set up properly from the start. The purpose of this app is to allow users to emulate real hardware — starting with Arduino Uno using avr8js — and eventually expand to platforms like ESP32 and Raspberry Pi Pico. This is not meant to be a visual-only sandbox or a mocked learning tool. This should be a real hardware emulator, running actual compiled code and driving pin-level signals that affect live components in a virtual circuit.
+
+The initial work involves creating the scaffolding for this app and building in proper support for true emulation, component signal flow, and isolated runtime environments. While I’m not fully sure how CraftingTable OS renders its windowed apps, you’ll need to connect this like any other OS tool — allowing the user to open and interact with it in a standalone desktop-style window.
+
+In this build, you’ll set up the code editor, circuit builder interface, and the emulator engine. The emulator engine should use avr8js and must be wired directly into the pin state logic. For example, when the emulator sets pin 13 to HIGH, an LED connected to that pin should glow because of that signal — not because we manually told the LED to turn on when the user writes “digitalWrite(13, HIGH)”. This difference is everything.
+
+Each emulator window should maintain its own isolated environment. Multiple emulator windows should not share memory, state, or runtime context. The entire emulator instance — firmware, memory, pin map, connected components — should be scoped cleanly to the window it lives in. This is critical because in future builds users will be able to run multiple simulations in parallel.
+
+Now here’s the most important part of this prompt: there are ten things you absolutely must not do in this first version. If any of these show up, it will break the foundation of what we’re building.
+	1.	Do not hardcode any component behavior like “LED turns on when code says pin 13 high.” All behavior must come from emulator-driven pin signals.
+	2.	Do not fake simulation logic. All output must originate from the emulator engine.
+	3.	Do not simulate circuits using conditionals or mock states. Everything must be driven by real emulator state, even if it looks slower or more difficult at first.
+	4.	Do not combine multiple emulator instances into one shared state. Each window should be fully isolated.
+	5.	Do not build placeholder interactions that bypass the emulator (e.g. clicking a button directly changes state). Buttons should only affect circuits by altering emulator inputs.
+	6.	Do not skip integration of the actual avr8js engine. If you can’t compile firmware yet, use hardcoded precompiled hex files as a stand-in, but they must be loaded and run by avr8js.
+	7.	Do not assume the emulator output will always be digital. The system should be built in a way that it can support analog signals, voltage ranges, or more complex hardware later.
+	8.	Do not run the emulator engine on the main thread. It must run in a worker or separate thread so it doesn’t interfere with UI responsiveness.
+	9.	Do not build this in a way that requires refactoring to add future board types. The emulator engine logic should be abstracted so it can plug in multiple runtimes later.
+	10.	Do not fake serial monitor output. If serial output is shown, it must be coming from actual emulator activity, not prewritten strings or console.log equivalents.
+
+We only get one chance to lay the right foundation here. The goal isn’t to make something that looks like it works. The goal is to build something that actually runs. Once you have the structure in place and you’re able to load a real program, send it to avr8js, and see the pin states update through real instruction execution, we’ll move on to the next phase: adding more components, saving circuit layouts, and eventually integrating support for MicroPython and ESP boards.
+
+Let me know once the first build is complete and behaving exactly as described.
