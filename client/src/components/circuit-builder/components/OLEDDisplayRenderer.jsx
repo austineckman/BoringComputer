@@ -6,19 +6,29 @@ import { findRectangleWithCache } from '../utils/imageAnalysis';
  * Component for rendering OLED display content based on simulator state
  * This is specifically for simulating an SSD1306 128x64 OLED display
  */
-const OLEDDisplayRenderer = ({ componentId }) => {
+const OLEDDisplayRenderer = ({ id, componentId }) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const { componentStates, isRunning } = useSimulator();
   const [displayBuffer, setDisplayBuffer] = useState(null);
   const [displayRect, setDisplayRect] = useState(null);
   
+  // Handle either id or componentId being passed (defensive programming)
+  const displayId = id || componentId;
+  
   // Canvas dimensions to match SSD1306 OLED dimensions (128x64 pixels)
   const displayWidth = 128;
   const displayHeight = 64;
   
   // Get the current state of this specific OLED display
-  const displayState = componentStates[componentId];
+  const displayState = displayId ? componentStates[displayId] : null;
+  
+  // Log for debugging
+  useEffect(() => {
+    if (!displayId) {
+      console.warn("OLEDDisplayRenderer: No valid ID provided (id or componentId)");
+    }
+  }, [displayId]);
   
   // Initialize display buffer on mount
   useEffect(() => {
@@ -43,7 +53,7 @@ const OLEDDisplayRenderer = ({ componentId }) => {
         // Check for component container classes or data attributes
         if (parent.classList.contains('circuit-component') || 
             parent.dataset.componentId ||
-            parent.id === componentId) {
+            parent.id === displayId) {
           
           // Look for the image within the component
           const img = parent.querySelector('img');
@@ -740,7 +750,8 @@ const OLEDDisplayRenderer = ({ componentId }) => {
   // Per user request, use specific manual positioning instead of image analysis
   // Double the size and adjust position (lower 10px, right 3px)
   // Check if the OLED is properly configured (for visuals)
-  const isDisplayActive = displayState && displayState.shouldDisplay;
+  // Added extra defensive checks 
+  const isDisplayActive = displayState && displayState.shouldDisplay === true;
   
   return (
     <div
