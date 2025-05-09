@@ -65,20 +65,9 @@ const AVR8SimulatorConnector = ({
       // Log setup complete
       logInfo('AVR8 simulator initialized');
       
-      // Prepare a default test program (blink sketch)
-      const testProgram = new Uint16Array([
-        0x2411, 0x2400, 0xBE1F, 0x2482, 0xBB12, 0x2C00, 0xBC12, 0x2EE2,
-        0xBF27, 0x95E8, 0xCFFE, 0x95E8, 0xCFFE, 0x94F0
-      ]);
-      
-      // Load the program (this will initialize the emulator)
-      const loaded = emulator.loadProgram(testProgram);
-      
-      if (loaded) {
-        logInfo('Default blink program loaded successfully');
-      } else {
-        logInfo('Failed to load default program');
-      }
+      // Set initialization flag
+      emulator.initialized = true;
+      logInfo('Simulator ready - waiting for user to click "Run Simulation"');
       
       // Cleanup on unmount
       return () => {
@@ -93,109 +82,114 @@ const AVR8SimulatorConnector = ({
     }
   }, []);
   
-  // Effect to handle code changes
+  // Effect to handle code changes - but only compile, don't auto-run
   useEffect(() => {
     codeRef.current = code;
     
     if (!code || !emulatorRef.current) return;
     
-    // Stop the emulator if it's running
-    if (emulatorRef.current.running) {
-      emulatorRef.current.stop();
-    }
+    // Don't auto-compile on every code change
+    // User needs to explicitly click Run Simulation
     
-    // Compile the new code
-    logInfo('Compiling code...');
+    // If isRunning changes (user clicks button), then we'll handle
+    // compilation and execution in the isRunning effect below
     
-    // Set compilation status to loading
-    if (setCompilationStatus) {
-      setCompilationStatus({
-        status: 'compiling',
-        message: 'Compiling Arduino code...'
-      });
-    }
+    // Just update the stored code without compiling
+    logInfo('Code updated - waiting for user to click "Run Simulation"');
     
-    const compileAndLoad = async () => {
-      try {
-        // Compile the Arduino code
-        const result = await compileArduino(code);
+  }, [code]);
+  
+  // Effect to handle running state changes - compile and execute when Run Simulation is clicked
+  useEffect(() => {
+    if (!emulatorRef.current || !codeRef.current) return;
+    
+    if (isRunning) {
+      // User clicked Run Simulation button
+      if (!emulatorRef.current.running) {
+        logInfo('User requested to start simulation');
         
-        if (result.success) {
-          logInfo(`Compilation successful. Program size: ${result.program.length * 2} bytes`);
-          
-          // Load the program into the emulator
-          const loaded = emulatorRef.current.loadProgram(result.program);
-          
-          if (loaded) {
-            logInfo('Program loaded successfully');
+        // First stop any existing simulation
+        emulatorRef.current.stop();
+        
+        // Update compilation status to loading
+        if (setCompilationStatus) {
+          setCompilationStatus({
+            status: 'compiling',
+            message: 'Compiling Arduino code...'
+          });
+        }
+        
+        // Compile and load the code, then start the simulation
+        const compileAndStart = async () => {
+          try {
+            // Compile the Arduino code
+            const result = await compileArduino(codeRef.current);
             
-            // Update compilation status
-            if (setCompilationStatus) {
-              setCompilationStatus({
-                status: 'ready',
-                message: 'Compilation successful'
-              });
+            if (result.success) {
+              logInfo(`Compilation successful. Program size: ${result.program.length * 2} bytes`);
+              
+              // Load the program into the emulator
+              const loaded = emulatorRef.current.loadProgram(result.program);
+              
+              if (loaded) {
+                logInfo('Program loaded successfully');
+                
+                // Update compilation status
+                if (setCompilationStatus) {
+                  setCompilationStatus({
+                    status: 'ready',
+                    message: 'Compilation successful'
+                  });
+                }
+                
+                // Start the emulator
+                emulatorRef.current.start();
+              } else {
+                logInfo('Failed to load program');
+                
+                // Update compilation status
+                if (setCompilationStatus) {
+                  setCompilationStatus({
+                    status: 'error',
+                    message: 'Failed to load program'
+                  });
+                }
+              }
+            } else {
+              logInfo(`Compilation failed: ${result.error}`);
+              
+              // Update compilation status
+              if (setCompilationStatus) {
+                setCompilationStatus({
+                  status: 'error',
+                  message: `Compilation failed: ${result.error}`
+                });
+              }
             }
-            
-            // Start the emulator if isRunning is true
-            if (isRunning) {
-              emulatorRef.current.start();
-            }
-          } else {
-            logInfo('Failed to load program');
+          } catch (error) {
+            logInfo(`Error during compilation: ${error.message}`);
             
             // Update compilation status
             if (setCompilationStatus) {
               setCompilationStatus({
                 status: 'error',
-                message: 'Failed to load program'
+                message: `Error: ${error.message}`
               });
             }
           }
-        } else {
-          logInfo(`Compilation failed: ${result.error}`);
-          
-          // Update compilation status
-          if (setCompilationStatus) {
-            setCompilationStatus({
-              status: 'error',
-              message: `Compilation failed: ${result.error}`
-            });
-          }
-        }
-      } catch (error) {
-        logInfo(`Error during compilation: ${error.message}`);
+        };
         
-        // Update compilation status
-        if (setCompilationStatus) {
-          setCompilationStatus({
-            status: 'error',
-            message: `Error: ${error.message}`
-          });
-        }
-      }
-    };
-    
-    // Run the compilation process
-    compileAndLoad();
-  }, [code]);
-  
-  // Effect to handle running state changes
-  useEffect(() => {
-    if (!emulatorRef.current) return;
-    
-    if (isRunning) {
-      if (!emulatorRef.current.running) {
-        logInfo('Starting emulator');
-        emulatorRef.current.start();
+        // Run the compilation and start process
+        compileAndStart();
       }
     } else {
+      // User clicked Stop Simulation button
       if (emulatorRef.current.running) {
         logInfo('Stopping emulator');
         emulatorRef.current.stop();
       }
     }
-  }, [isRunning]);
+  }, [isRunning, setCompilationStatus]);
   
   // This is a non-visual component
   return null;
