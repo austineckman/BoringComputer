@@ -112,12 +112,37 @@ const OLEDDisplay = ({
     // Extract pin information from the event
     if (onPinConnect) {
       try {
+        // Defensive check - make sure e.detail exists
+        if (!e || !e.detail) {
+          console.error("Invalid pin click event, missing detail:", e);
+          return;
+        }
+        
         // The data is a JSON string inside the detail object
         const pinDataJson = e.detail.data;
-        const pinData = JSON.parse(pinDataJson);
+        
+        // Defensive check - make sure pinDataJson is valid
+        if (!pinDataJson) {
+          console.error("Missing pin data in event:", e.detail);
+          return;
+        }
+        
+        let pinData;
+        try {
+          pinData = JSON.parse(pinDataJson);
+        } catch (parseError) {
+          console.error("Failed to parse pin data JSON:", pinDataJson, parseError);
+          return;
+        }
         
         // Get pin ID and type from the parsed data
-        const pinId = pinData.name;
+        const pinId = pinData?.name;
+        
+        // Another defensive check
+        if (!pinId) {
+          console.error("Missing pin ID in parsed data:", pinData);
+          return;
+        }
         
         // Determine pin type based on pin name
         let pinType = 'bidirectional';
@@ -158,7 +183,7 @@ const OLEDDisplay = ({
         // Dispatch the event to be captured by the wire manager
         document.dispatchEvent(pinClickEvent);
       } catch (err) {
-        console.error("Error parsing pin data:", err);
+        console.error("Error handling pin click:", err);
       }
     }
   };

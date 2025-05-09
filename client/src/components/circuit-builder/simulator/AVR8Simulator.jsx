@@ -363,39 +363,61 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     
     // Go through all wires to check connections
     for (const wire of wires) {
-      const [startCompId, startPin] = wire.start.id.split('-', 3);
-      const [endCompId, endPin] = wire.end.id.split('-', 3);
+      // Add defensive checks to prevent crashes
+      if (!wire || !wire.start || !wire.end || !wire.start.id || !wire.end.id) {
+        console.warn("Wire with incomplete data found:", wire);
+        continue; // Skip this wire
+      }
       
-      // Check if this wire is connected to our OLED
-      if (startCompId.includes(oledBaseId) || endCompId.includes(oledBaseId)) {
-        // This wire is connected to our OLED component
+      try {
+        const [startCompId, startPin] = (wire.start.id || "").split('-', 3);
+        const [endCompId, endPin] = (wire.end.id || "").split('-', 3);
         
-        // Check the pins at both ends
-        const oledPin = startCompId.includes(oledBaseId) ? startPin : endPin;
-        const otherPin = startCompId.includes(oledBaseId) ? endPin : startPin;
+        // Additional defensive checks
+        if (!startCompId || !endCompId) {
+          continue; // Skip wires with invalid component IDs
+        }
         
-        // Check what type of connection this is
-        if (oledPin === 'sda' || oledPin === 'data') {
-          // SDA pin should be connected to A4 on Arduino
-          if (otherPin === 'a4' || otherPin === 'sda') {
-            hasSDA = true;
+        // Check if this wire is connected to our OLED
+        if (startCompId.includes(oledBaseId) || endCompId.includes(oledBaseId)) {
+          // This wire is connected to our OLED component
+          
+          // Check the pins at both ends
+          const oledPin = startCompId.includes(oledBaseId) ? startPin : endPin;
+          const otherPin = startCompId.includes(oledBaseId) ? endPin : startPin;
+          
+          // More defensive checks
+          if (!oledPin || !otherPin) {
+            continue; // Skip if we can't determine the pins
           }
-        } else if (oledPin === 'scl' || oledPin === 'clock') {
-          // SCL pin should be connected to A5 on Arduino
-          if (otherPin === 'a5' || otherPin === 'scl') {
-            hasSCL = true;
-          }
-        } else if (oledPin === 'vcc' || oledPin === '5v' || oledPin === '3v3') {
-          // VCC pin should be connected to 5V or 3.3V
-          if (otherPin === '5v' || otherPin === '3v3' || otherPin === 'vcc') {
-            hasVCC = true;
-          }
-        } else if (oledPin === 'gnd') {
-          // GND pin should be connected to GND
-          if (otherPin === 'gnd') {
-            hasGND = true;
+          
+          // Check what type of connection this is
+          if (oledPin === 'sda' || oledPin === 'data') {
+            // SDA pin should be connected to A4 on Arduino
+            if (otherPin === 'a4' || otherPin === 'sda') {
+              hasSDA = true;
+            }
+          } else if (oledPin === 'scl' || oledPin === 'clock') {
+            // SCL pin should be connected to A5 on Arduino
+            if (otherPin === 'a5' || otherPin === 'scl') {
+              hasSCL = true;
+            }
+          } else if (oledPin === 'vcc' || oledPin === '5v' || oledPin === '3v3') {
+            // VCC pin should be connected to 5V or 3.3V
+            if (otherPin === '5v' || otherPin === '3v3' || otherPin === 'vcc') {
+              hasVCC = true;
+            }
+          } else if (oledPin === 'gnd') {
+            // GND pin should be connected to GND
+            if (otherPin === 'gnd') {
+              hasGND = true;
+            }
           }
         }
+      } catch (error) {
+        console.error("Error processing wire:", error);
+        // Continue with the next wire rather than crashing
+        continue;
       }
     }
     
@@ -423,40 +445,59 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
   useEffect(() => {
     if (!isRunning || !compiledCode) return;
     
-    // Find all OLED components in the DOM
-    const oledElements = document.querySelectorAll('[id^="oled-display-"]');
-    
-    if (oledElements.length > 0) {
-      logInfo(`Initializing ${oledElements.length} OLED display(s)`);
+    try {
+      // Find all OLED components in the DOM
+      const oledElements = document.querySelectorAll('[id^="oled-display-"]');
       
-      // Check if we have required OLED libraries
-      const hasRequiredLibraries = hasOLEDLibrary(compiledCode.libraries);
+      // Add defensive check - make sure oledElements is valid
+      if (!oledElements || typeof oledElements.length !== 'number') {
+        console.warn("Invalid oledElements result:", oledElements);
+        return;
+      }
       
-      // Parse OLED commands from the code
-      const oledCommands = parseOLEDCommands(code);
-      const hasOLEDCode = oledCommands && oledCommands.hasOLEDCode;
-      
-      oledElements.forEach(element => {
-        const oledId = element.id;
-        const isProperlyWired = checkOLEDWiring(oledId);
+      if (oledElements.length > 0) {
+        logInfo(`Initializing ${oledElements.length} OLED display(s)`);
         
-        // Create an empty display buffer (128x64 pixels for SSD1306)
-        const displayBuffer = new Array(64).fill(0).map(() => 
-          new Array(128).fill(0)
-        );
+        // Check if we have required OLED libraries
+        const hasRequiredLibraries = hasOLEDLibrary(compiledCode.libraries);
         
-        // Update component state with the buffer and library status
-        updateComponentState(oledId, {
-          buffer: displayBuffer,
-          initialized: true,
-          hasRequiredLibraries,
-          hasOLEDCode,
-          isProperlyWired,
-          shouldDisplay: hasRequiredLibraries && hasOLEDCode && isProperlyWired
+        // Parse OLED commands from the code
+        const oledCommands = parseOLEDCommands(code);
+        const hasOLEDCode = oledCommands && oledCommands.hasOLEDCode;
+        
+        oledElements.forEach(element => {
+          if (!element || !element.id) {
+            console.warn("Invalid OLED element:", element);
+            return; // Skip this element
+          }
+          
+          try {
+            const oledId = element.id;
+            const isProperlyWired = checkOLEDWiring(oledId);
+            
+            // Create an empty display buffer (128x64 pixels for SSD1306)
+            const displayBuffer = new Array(64).fill(0).map(() => 
+              new Array(128).fill(0)
+            );
+            
+            // Update component state with the buffer and library status
+            updateComponentState(oledId, {
+              buffer: displayBuffer,
+              initialized: true,
+              hasRequiredLibraries,
+              hasOLEDCode,
+              isProperlyWired,
+              shouldDisplay: hasRequiredLibraries && hasOLEDCode && isProperlyWired
+            });
+            
+            logInfo(`OLED display ${oledId} initialized`);
+          } catch (error) {
+            console.error("Error initializing OLED display:", error);
+          }
         });
-        
-        logInfo(`OLED display ${oledId} initialized`);
-      });
+      }
+    } catch (error) {
+      console.error("Error in OLED initialization effect:", error);
     }
   }, [isRunning, code, compiledCode]);
   
