@@ -144,29 +144,13 @@ const OLEDDisplay = ({
           return;
         }
         
-        // Determine pin type based on pin name - case insensitive
-        const pinIdLower = pinId.toLowerCase();
+        // Determine pin type based on pin name
         let pinType = 'bidirectional';
-        
-        // Power pins
-        if (pinIdLower === 'gnd' || 
-            pinIdLower === 'vcc' || 
-            pinIdLower === '5v' || 
-            pinIdLower === '3v3' || 
-            pinIdLower === '3.3v') {
+        if (pinId === 'GND' || pinId === 'VCC') {
           pinType = 'power';
-        } 
-        // Data pins - I2C
-        else if (pinIdLower === 'scl' || 
-                 pinIdLower === 'sck' || 
-                 pinIdLower === 'sda' || 
-                 pinIdLower === 'data' || 
-                 pinIdLower === 'clock') {
+        } else if (pinId === 'SCL' || pinId === 'SDA' || pinId === 'SCK') {
           pinType = 'digital';
         }
-        
-        // Log the pin type for debugging
-        console.log(`OLED Pin ${pinId} recognized as ${pinType} type`);
         
         // Get position information
         const clientX = e.detail.clientX || 0;
