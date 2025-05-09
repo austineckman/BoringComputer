@@ -42,15 +42,22 @@ export function CircuitBuilder() {
   const [showProperties, setShowProperties] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   
-  // Add Arduino board by default
+  // Add Arduino board by default with safe initial position
   useEffect(() => {
     if (circuitComponents.length === 0) {
+      // Get canvas size if available
+      const canvasRect = canvasRef.current?.getBoundingClientRect();
+      
+      // Calculate center position of the canvas
+      const centerX = canvasRect ? (canvasRect.width / 2) - 150 : 200; // Half of Arduino width
+      const centerY = canvasRect ? (canvasRect.height / 2) - 100 : 200; // Half of Arduino height
+      
       setCircuitComponents([
         {
           id: 'arduino-board',
           type: 'arduino-board',
-          x: 300,
-          y: 200,
+          x: centerX,
+          y: centerY,
           rotation: 0,
           connections: {}
         }
@@ -74,14 +81,100 @@ export function CircuitBuilder() {
     });
   }, [circuitComponents, components, addComponent]);
   
-  // Add a new component to the circuit
+  // Handle pin click events to establish connections between components
+  useEffect(() => {
+    let firstPinData: any = null;
+    
+    const handlePinClicked = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      
+      if (!firstPinData) {
+        // Store the first pin clicked
+        firstPinData = detail;
+      } else {
+        // Second pin clicked - create connection if compatible
+        const secondPinData = detail;
+        
+        // Don't allow connecting pins from the same component
+        if (firstPinData.componentId === secondPinData.componentId) {
+          firstPinData = secondPinData; // Replace with the new pin
+          return;
+        }
+        
+        // Determine which is the Arduino board pin
+        let boardPin = null;
+        let componentPin = null;
+        let componentId = null;
+        
+        // Check which is the board and which is the component
+        if (firstPinData.componentType === 'arduinoboard') {
+          boardPin = firstPinData.pinId;
+          componentPin = secondPinData.pinId;
+          componentId = secondPinData.componentId;
+        } else if (secondPinData.componentType === 'arduinoboard') {
+          boardPin = secondPinData.pinId;
+          componentPin = firstPinData.pinId;
+          componentId = firstPinData.componentId;
+        }
+        
+        // If we have a valid board pin and component pin
+        if (boardPin && componentPin && componentId) {
+          // Dispatch an event to let the component know which pins to connect
+          document.dispatchEvent(new CustomEvent('pinToConnect', {
+            detail: {
+              boardPin,
+              componentPin,
+              componentId
+            }
+          }));
+          
+          // Update the connection in the circuit builder state
+          handleConnectPin(componentId, componentPin, boardPin);
+          
+          // TODO: Wire visualization between pins will be added here
+          console.log(`Connected ${componentId}.${componentPin} to Arduino.${boardPin}`);
+        }
+        
+        // Reset for next connection
+        firstPinData = null;
+      }
+    };
+    
+    // Listen for pin clicks
+    document.addEventListener('pinClicked', handlePinClicked);
+    
+    return () => {
+      document.removeEventListener('pinClicked', handlePinClicked);
+    };
+  }, [handleConnectPin]);
+  
+  // Add a new component to the circuit with proper positioning
   const handleAddComponent = (type: string) => {
     const id = `${type}-${Date.now()}`;
+    
+    // Get canvas size if available for better positioning
+    const canvasRect = canvasRef.current?.getBoundingClientRect();
+    
+    // Calculate a position based on where the canvas is currently scrolled to
+    // and the center of the visible viewport
+    const scrollLeft = canvasRef.current?.scrollLeft || 0;
+    const scrollTop = canvasRef.current?.scrollTop || 0;
+    
+    // Using safer defaults that would keep components visible on the canvas
+    const viewport = {
+      width: canvasRect?.width || 800,
+      height: canvasRect?.height || 600
+    };
+    
+    // Calculate position to be in the center of the visible area
+    const x = scrollLeft + (viewport.width / 2) - 40; // 40 is half the estimated component width
+    const y = scrollTop + (viewport.height / 2) - 40; // 40 is half the estimated component height
+    
     const newComponent: ComponentPosition = {
       id,
       type,
-      x: 400,
-      y: 300,
+      x: x,
+      y: y,
       rotation: 0,
       connections: {}
     };
@@ -90,15 +183,53 @@ export function CircuitBuilder() {
     setSelectedComponent(id);
   };
   
-  // Move a component on the canvas
+  // Move a component on the canvas with proper bounds checking
   const handleMoveComponent = (id: string, x: number, y: number) => {
+    // Get the canvas dimensions for boundary checking
+    const canvasRect = canvasRef.current?.getBoundingClientRect();
+    
+    // Ensure component stays within canvas bounds
+    let boundedX = x;
+    let boundedY = y;
+    
+    // If we have canvas dimensions, ensure component stays within bounds
+    if (canvasRect) {
+      // Get the component to calculate its width and height
+      const component = circuitComponents.find(c => c.id === id);
+      if (component) {
+        // Get component width and height (default to reasonable values if not set)
+        const componentWidth = 100;
+        const componentHeight = 100;
+        
+        // Calculate canvas bounds with margins for the component size
+        const minX = 50; // Left margin
+        const minY = 50; // Top margin
+        const maxX = canvasRect.width - componentWidth - 50; // Right margin
+        const maxY = canvasRect.height - componentHeight - 50; // Bottom margin
+        
+        // Constrain position within bounds
+        boundedX = Math.max(minX, Math.min(maxX, x));
+        boundedY = Math.max(minY, Math.min(maxY, y));
+      }
+    }
+    
+    // Update component position with bounded values
     setCircuitComponents(prev => 
       prev.map(component => 
         component.id === id 
-          ? { ...component, x, y } 
+          ? { ...component, x: boundedX, y: boundedY } 
           : component
       )
     );
+    
+    // Let everyone know the component has moved for wire updates
+    document.dispatchEvent(new CustomEvent('componentMoved', {
+      detail: { 
+        componentId: id,
+        x: boundedX,
+        y: boundedY
+      }
+    }));
   };
   
   // Rotate a component

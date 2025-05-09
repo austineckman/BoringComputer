@@ -177,8 +177,28 @@ export function LED({
       // Dispatch the detailed event
       document.dispatchEvent(clickEvent);
       
-      // Call the connect function
-      onConnect(pinId, 'pin13'); // Default to pin13 for simple testing, this should be replaced with proper pin selection
+      // Listen for the pinToConnect event which will be fired when a second pin is clicked
+      const pinToConnectHandler = (e: Event) => {
+        const detail = (e as CustomEvent).detail;
+        if (detail && detail.boardPin && detail.componentPin === pinId && detail.componentId === id) {
+          onConnect(pinId, detail.boardPin);
+          setConnecting(null);
+          
+          // Clean up event listener
+          document.removeEventListener('pinToConnect', pinToConnectHandler);
+        }
+      };
+      
+      // Add event listener for pin connection
+      document.addEventListener('pinToConnect', pinToConnectHandler);
+      
+      // Create a timeout to clear the connecting state if no connection is made
+      setTimeout(() => {
+        if (connecting === pinId) {
+          setConnecting(null);
+          document.removeEventListener('pinToConnect', pinToConnectHandler);
+        }
+      }, 10000); // 10 second timeout
     }
   };
   
