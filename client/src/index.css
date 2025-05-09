@@ -6,24 +6,11 @@
 
 /* OLED Display Canvas Styles */
 .oled-display-canvas {
-  border-radius: 2px;
-  box-shadow: inset 0 0 3px rgba(0, 200, 255, 0.3);
-  overflow: hidden;
+  border-radius: 0px;
   background-color: #000;
-}
-
-/* Add pulsing animation for the OLED glow */
-@keyframes oled-glow {
-  0%, 100% { 
-    box-shadow: 0 0 8px 2px rgba(0, 150, 255, 0.4);
-  }
-  50% { 
-    box-shadow: 0 0 12px 4px rgba(0, 150, 255, 0.6);
-  }
-}
-
-.oled-display-glow {
-  animation: oled-glow 2s infinite ease-in-out;
+  image-rendering: pixelated; /* Make pixels crisp and sharp */
+  image-rendering: crisp-edges;
+  filter: brightness(1.2); /* Slightly brighter to make blue pixels pop */
 }
 
 /* Custom animation for LED pulse effect */

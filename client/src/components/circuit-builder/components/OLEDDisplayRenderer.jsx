@@ -38,7 +38,7 @@ const OLEDDisplayRenderer = ({ componentId }) => {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     // Set pixel color (blue for SSD1306 OLED display)
-    ctx.fillStyle = '#64B5F6'; // SSD1306 typical blue color
+    ctx.fillStyle = '#29B6F6'; // SSD1306 typical blue color
     
     // Draw pixels based on buffer
     const pixelSize = Math.min(
@@ -311,35 +311,22 @@ const OLEDDisplayRenderer = ({ componentId }) => {
   };
   
   return (
-    <div
-      className="oled-display-glow"
+    <canvas
+      ref={canvasRef}
+      className="oled-display-canvas"
+      width={displayWidth}
+      height={displayHeight}
       style={{
         position: 'absolute',
-        top: '28px',
-        left: '25px',
-        width: '100px',  // About double the width (wider)
-        height: '60px',  // 1.5x height
+        top: '38px',     // Precise position targeting the black rectangle area
+        left: '32px',    // Precise position targeting the black rectangle area
+        width: '64px',   // Standard SSD1306 OLED width
+        height: '32px',  // Standard SSD1306 OLED height
         backgroundColor: '#000',
-        borderRadius: '2px',
-        boxShadow: '0 0 10px 2px rgba(0, 150, 255, 0.5)', // Base glow (enhanced by animation)
-        overflow: 'hidden',
+        borderRadius: '0px',
         zIndex: 10
       }}
-    >
-      <canvas
-        ref={canvasRef}
-        className="oled-display-canvas"
-        width={displayWidth}
-        height={displayHeight}
-        style={{
-          border: 'none',
-          width: '100%',
-          height: '100%',
-          backgroundColor: '#000',
-          borderRadius: '1px'
-        }}
-      />
-    </div>
+    />
   );
 };
 
