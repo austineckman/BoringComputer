@@ -35,6 +35,14 @@ export function unfreezeForDevelopment(componentType) {
 // Automatically initialize the registry when imported
 initializeRegistry();
 
+// Export named functions
+export {
+  initializeRegistry,
+  unfreezeForDevelopment,
+  getRegistryStatus
+};
+
+// Also export as default
 export default {
   initializeRegistry,
   unfreezeForDevelopment,
