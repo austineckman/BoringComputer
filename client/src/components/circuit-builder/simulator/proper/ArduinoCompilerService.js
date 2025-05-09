@@ -1,133 +1,67 @@
 /**
  * ArduinoCompilerService
  * 
- * This service provides functions for parsing Arduino code and determining
- * the appropriate simulated behavior. In a real-world implementation,
- * this would use a WebAssembly-based compiler to generate actual AVR machine code.
- * 
- * For this simulation, we only need to identify what pins are used in the code
- * and how they are being manipulated, so the emulator can simulate pin state changes.
+ * This service provides functions for parsing and analyzing actual Arduino code.
+ * Instead of using pre-defined behaviors, we extract the exact pin operations
+ * from the user's code and execute them as specified.
  */
 
-// Each program is marked with specific byte sequences that can be used
-// to identify the type of behavior during emulation
+/**
+ * PinOperation - Represents a specific operation on a pin
+ * @typedef {Object} PinOperation
+ * @property {number} pin - The pin number
+ * @property {string} operation - Type of operation (digitalWrite, analogWrite, etc)
+ * @property {number|boolean} value - Value to set (HIGH/LOW for digital, 0-255 for analog)
+ * @property {number} [delay] - Delay after this operation in milliseconds
+ * @property {boolean} [conditional] - Whether this operation depends on a condition
+ */
+
+/**
+ * UserProgram - Represents the parsed user program
+ * @typedef {Object} UserProgram
+ * @property {PinOperation[]} setup - Operations to execute once at startup
+ * @property {PinOperation[]} loop - Operations to execute repeatedly
+ * @property {Object.<number, string>} pinModes - Pin modes (INPUT, OUTPUT, etc.)
+ * @property {boolean} hasSerial - Whether the program uses Serial communication
+ * @property {Object} additionalData - Any additional extracted data from the code
+ */
+
+/**
+ * Special marker bytes to identify program types 
+ * when executing without proper compilation
+ */
 const PROGRAM_TYPES = {
-  // Marker byte for simple blink sketch (pin 13 on/off)
-  BLINK: 0x01,
+  // Program contains custom user code
+  CUSTOM: 0xFF,
   
-  // Marker byte for LED on (pin 13 stays on)
-  LED_ON: 0x02,
-  
-  // Marker byte for RGB LED sketch (pins 9-11)
-  RGB_LED: 0x03,
-  
-  // Marker byte for OLED sketch
-  OLED: 0x04,
-  
-  // Marker byte for buzzer sketch
-  BUZZER: 0x05,
-  
-  // Marker byte for 7-segment display sketch
-  SEGMENT: 0x06
-};
-
-// Compiled program for each type
-const BLINK_PROGRAM = new Uint16Array([
-  PROGRAM_TYPES.BLINK, 0x2400, 0xBE1F, 0x2482, 0xBB12, 0x2C00, 0xBC12, 0x2EE2,
-  0xBF27, 0x95E8, 0xCFFE, 0x95E8, 0xCFFE, 0x94F0
-]);
-
-// Program that turns on LED on pin 13
-const LED_ON_PROGRAM = new Uint16Array([
-  PROGRAM_TYPES.LED_ON, 0x2400, 0xBE1F, 0x2482, 0xBB12, 0x2C00, 0xBC12, 0x95E8,
-  0x94F0
-]);
-
-// Program that blinks RGB LED (pins 9, 10, 11)
-const RGB_BLINK_PROGRAM = new Uint16Array([
-  PROGRAM_TYPES.RGB_LED, 0x2400, 0xBE1F, 0x2482, 0xBB10, 0x2C00, 0xBC10, 0x2EE0,
-  0xBF25, 0x95E4, 0xCFF8, 0x95E2, 0xCFF8, 0x95E1, 0xCFF8, 0x94F0
-]);
-
-// Programs for specific components
-const COMPONENT_PROGRAMS = {
-  // OLED Display program
-  'oled': new Uint16Array([
-    PROGRAM_TYPES.OLED, 0x2400, 0xBE1F, 0x2482, 0xBB12, 0x2C00, 0xBC12, 0x2EE2,
-    0xBF27, 0x95E8, 0xCFFE, 0x95E8, 0xCFFE, 0x94F0
-  ]),
-  
-  // Buzzer program
-  'buzzer': new Uint16Array([
-    PROGRAM_TYPES.BUZZER, 0x2400, 0xBE1F, 0x2482, 0xBB12, 0x2C00, 0xBC12, 0x2EE2,
-    0xBF27, 0x95E8, 0xCFFE, 0x95E8, 0xCFFE, 0x94F0
-  ]),
-  
-  // 7-segment display program
-  '7segment': new Uint16Array([
-    PROGRAM_TYPES.SEGMENT, 0x2400, 0xBE1F, 0x2482, 0xBB12, 0x2C00, 0xBC12, 0x2EE2,
-    0xBF27, 0x95E8, 0xCFFE, 0x95E8, 0xCFFE, 0x94F0
-  ])
+  // Default empty program
+  EMPTY: 0x00
 };
 
 /**
- * Compile Arduino code to AVR machine code
+ * Compile Arduino code to a simulatable program structure
  * @param {string} code - The Arduino code to compile
- * @returns {Promise<{success: boolean, program?: Uint16Array, error?: string}>} - Compilation result
+ * @returns {Promise<{success: boolean, program?: Uint16Array, userProgram?: Object, error?: string}>} - Compilation result
  */
 export async function compileArduino(code) {
   try {
-    // First, analyze the code to identify components
-    const components = analyzeCode(code);
+    // Parse the actual user code to extract pin operations
+    const userProgram = parseArduinoCode(code);
     
-    // Check for common patterns in the code to determine which program to use
-    if (components.oled) {
-      // OLED display code
-      return {
-        success: true,
-        program: COMPONENT_PROGRAMS.oled,
-        components
-      };
-    } else if (code.includes('tone(') && !code.includes('noTone(')) {
-      // This is a buzzer sketch
-      return {
-        success: true,
-        program: COMPONENT_PROGRAMS.buzzer,
-        components
-      };
-    } else if (code.includes('digitalWrite(13, HIGH') && code.includes('digitalWrite(13, LOW') && 
-        code.includes('delay(')) {
-      // This is a blink sketch
-      return {
-        success: true,
-        program: BLINK_PROGRAM,
-        components
-      };
-    } else if (code.includes('digitalWrite(13, HIGH') && !code.includes('digitalWrite(13, LOW')) {
-      // This is an LED on sketch
-      return {
-        success: true,
-        program: LED_ON_PROGRAM,
-        components
-      };
-    } else if (components.rgbled || 
-              ((code.includes('digitalWrite(9,') || code.includes('analogWrite(9,')) &&
-               (code.includes('digitalWrite(10,') || code.includes('analogWrite(10,')) &&
-               (code.includes('digitalWrite(11,') || code.includes('analogWrite(11,')))) {
-      // This is an RGB LED sketch
-      return {
-        success: true,
-        program: RGB_BLINK_PROGRAM,
-        components
-      };
-    } else {
-      // Default to blink for now
-      return {
-        success: true,
-        program: BLINK_PROGRAM,
-        components
-      };
-    }
+    // Also analyze components for backward compatibility
+    const components = analyzeComponents(userProgram);
+    
+    // Create a program that identifies itself as custom code
+    const customProgram = new Uint16Array([PROGRAM_TYPES.CUSTOM, 0, 0, 0, 0]);
+    
+    console.log('Parsed user program:', userProgram);
+    
+    return {
+      success: true,
+      program: customProgram,
+      userProgram: userProgram,
+      components: components
+    };
   } catch (error) {
     console.error("Arduino compilation error:", error);
     return {
@@ -138,11 +72,172 @@ export async function compileArduino(code) {
 }
 
 /**
- * Find patterns in code for specific components
- * @param {string} code - The Arduino code to analyze
- * @returns {Object} - Component usage information
+ * Extract pin operations from Arduino code
+ * @param {string} code - Arduino code to parse
+ * @returns {UserProgram} - Extracted program structure
  */
-export function analyzeCode(code) {
+function parseArduinoCode(code) {
+  // Initialize program structure
+  const userProgram = {
+    setup: [],
+    loop: [],
+    pinModes: {},
+    hasSerial: false,
+    additionalData: {},
+    rawCode: code // Store the raw code for debugging
+  };
+  
+  // Extract setup and loop functions
+  const setupMatch = code.match(/void\s+setup\s*\(\s*\)\s*{([^}]*)}/s);
+  const loopMatch = code.match(/void\s+loop\s*\(\s*\)\s*{([^}]*)}/s);
+  
+  const setupCode = setupMatch ? setupMatch[1] : '';
+  const loopCode = loopMatch ? loopMatch[1] : '';
+  
+  // Check for Serial usage
+  userProgram.hasSerial = code.includes('Serial.begin') || 
+                         code.includes('Serial.print') || 
+                         code.includes('Serial.write');
+  
+  // Extract pinMode calls
+  const pinModeRegex = /pinMode\s*\(\s*(\d+)\s*,\s*(INPUT|OUTPUT|INPUT_PULLUP)\s*\)/g;
+  let pinModeMatch;
+  
+  while ((pinModeMatch = pinModeRegex.exec(setupCode)) !== null) {
+    const pin = parseInt(pinModeMatch[1], 10);
+    const mode = pinModeMatch[2];
+    userProgram.pinModes[pin] = mode;
+  }
+  
+  // Extract digitalWrite calls from setup
+  extractDigitalWriteOperations(setupCode, userProgram.setup);
+  
+  // Extract analogWrite calls from setup
+  extractAnalogWriteOperations(setupCode, userProgram.setup);
+  
+  // Extract digitalWrite calls from loop
+  extractDigitalWriteOperations(loopCode, userProgram.loop);
+  
+  // Extract analogWrite calls from loop
+  extractAnalogWriteOperations(loopCode, userProgram.loop);
+  
+  // Extract delay calls and associate with the preceding operation
+  extractDelayOperations(setupCode, userProgram.setup);
+  extractDelayOperations(loopCode, userProgram.loop);
+  
+  return userProgram;
+}
+
+/**
+ * Extract digitalWrite operations from code
+ * @param {string} code - Code snippet to parse
+ * @param {PinOperation[]} operations - Array to add operations to
+ */
+function extractDigitalWriteOperations(code, operations) {
+  // Match digitalWrite(pin, HIGH/LOW) pattern
+  // Also matches variations with spaces and constants
+  const regex = /digitalWrite\s*\(\s*(\d+)\s*,\s*(HIGH|LOW|1|0)\s*\)/g;
+  let match;
+  
+  while ((match = regex.exec(code)) !== null) {
+    const pin = parseInt(match[1], 10);
+    const valueStr = match[2];
+    const value = (valueStr === 'HIGH' || valueStr === '1') ? true : false;
+    
+    operations.push({
+      pin: pin,
+      operation: 'digitalWrite',
+      value: value,
+      sourceCode: match[0],
+      conditional: isInConditionalBlock(match.index, code)
+    });
+  }
+}
+
+/**
+ * Extract analogWrite operations from code
+ * @param {string} code - Code snippet to parse
+ * @param {PinOperation[]} operations - Array to add operations to
+ */
+function extractAnalogWriteOperations(code, operations) {
+  // Match analogWrite(pin, value) pattern
+  // Handles direct values as well as variables
+  const regex = /analogWrite\s*\(\s*(\d+)\s*,\s*(\d+|0x[0-9A-Fa-f]+)\s*\)/g;
+  let match;
+  
+  while ((match = regex.exec(code)) !== null) {
+    const pin = parseInt(match[1], 10);
+    let valueStr = match[2];
+    
+    // Convert hexadecimal values
+    let value;
+    if (valueStr.startsWith('0x')) {
+      value = parseInt(valueStr, 16);
+    } else {
+      value = parseInt(valueStr, 10);
+    }
+    
+    operations.push({
+      pin: pin,
+      operation: 'analogWrite',
+      value: value,
+      sourceCode: match[0],
+      conditional: isInConditionalBlock(match.index, code)
+    });
+  }
+}
+
+/**
+ * Extract delay operations and associate with preceding operations
+ * @param {string} code - Code snippet to parse
+ * @param {PinOperation[]} operations - Array of operations to update
+ */
+function extractDelayOperations(code, operations) {
+  // Match delay(ms) pattern
+  const regex = /delay\s*\(\s*(\d+)\s*\)/g;
+  let match;
+  
+  while ((match = regex.exec(code)) !== null) {
+    const delayValue = parseInt(match[1], 10);
+    const position = match.index;
+    
+    // Find the last operation before this delay
+    for (let i = operations.length - 1; i >= 0; i--) {
+      const op = operations[i];
+      // Check if we have operation source code info and position
+      if (op.sourceCode && code.indexOf(op.sourceCode) < position) {
+        // Associate the delay with this operation
+        op.delay = delayValue;
+        break;
+      }
+    }
+  }
+}
+
+/**
+ * Check if a code position is inside a conditional block (if, for, while)
+ * @param {number} position - Position in code
+ * @param {string} code - Code snippet
+ * @returns {boolean} - True if in conditional block
+ */
+function isInConditionalBlock(position, code) {
+  // Simple heuristic: check if there's an "if", "for", or "while" before the position
+  // and before the last curly brace opening
+  const codeBeforePosition = code.substring(0, position);
+  const lastOpenBrace = codeBeforePosition.lastIndexOf('{');
+  
+  if (lastOpenBrace === -1) return false;
+  
+  const relevantCode = codeBeforePosition.substring(0, lastOpenBrace);
+  return /if\s*\(|for\s*\(|while\s*\(/.test(relevantCode);
+}
+
+/**
+ * Convert a user program to component analysis
+ * @param {UserProgram} userProgram - The parsed user program
+ * @returns {Object} - Component information
+ */
+function analyzeComponents(userProgram) {
   const components = {
     led: false,
     rgbled: false,
@@ -153,41 +248,51 @@ export function analyzeCode(code) {
     photoresistor: false
   };
   
-  // Check for basic components
-  if (code.includes('digitalWrite(13,') || 
-      (code.includes('pinMode(13,') && code.includes('OUTPUT'))) {
+  // Combine setup and loop operations
+  const allOperations = [...userProgram.setup, ...userProgram.loop];
+  
+  // Check pin usage in the operations
+  const usedPins = new Set();
+  const pwmPins = new Set();
+  
+  allOperations.forEach(op => {
+    usedPins.add(op.pin);
+    if (op.operation === 'analogWrite') {
+      pwmPins.add(op.pin);
+    }
+  });
+  
+  // Check for basic LED usage
+  if (usedPins.has(13)) {
     components.led = true;
   }
   
-  // Check for RGB LED
-  if ((code.includes('digitalWrite(9,') || code.includes('analogWrite(9,')) &&
-      (code.includes('digitalWrite(10,') || code.includes('analogWrite(10,')) &&
-      (code.includes('digitalWrite(11,') || code.includes('analogWrite(11,'))) {
+  // Check for RGB LED usage (pins 9, 10, 11)
+  if (usedPins.has(9) && usedPins.has(10) && usedPins.has(11)) {
     components.rgbled = true;
   }
   
-  // Check for OLED display
-  if (code.includes('Adafruit_SSD1306') || 
-      code.includes('U8g2') || 
-      code.includes('display.')) {
+  // Check for analog inputs
+  for (let i = 0; i < 6; i++) {
+    if (userProgram.rawCode.includes(`analogRead(A${i}`)) {
+      components.photoresistor = true;
+      break;
+    }
+  }
+  
+  // Check for OLED usage based on keywords in the code
+  if (userProgram.rawCode.includes('Adafruit_SSD1306') || 
+      userProgram.rawCode.includes('U8g2') || 
+      userProgram.rawCode.includes('display.')) {
     components.oled = true;
   }
   
-  // Check for servo
-  if (code.includes('Servo') && code.includes('.attach') && code.includes('.write')) {
-    components.servo = true;
-  }
-  
-  // Check for button
-  if (code.includes('digitalRead(') && 
-      (code.includes('INPUT_PULLUP') || code.includes('INPUT'))) {
-    components.button = true;
-  }
-  
-  // Check for photoresistor
-  if (code.includes('analogRead(A') || code.includes('analogRead (A')) {
-    components.photoresistor = true;
-  }
+  // Check for buttons based on INPUT mode pins
+  Object.entries(userProgram.pinModes).forEach(([pin, mode]) => {
+    if (mode === 'INPUT' || mode === 'INPUT_PULLUP') {
+      components.button = true;
+    }
+  });
   
   return components;
 }

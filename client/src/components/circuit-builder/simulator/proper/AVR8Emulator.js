@@ -98,9 +98,10 @@ export class AVR8Emulator {
   }
   
   /**
-   * Start the emulator with a basic simulation
+   * Start the emulator by executing the user's program
+   * @param {Object} [userProgram] - Optional user program structure from parsed Arduino code
    */
-  start() {
+  start(userProgram) {
     if (!this.program) {
       if (this.onError) {
         this.onError('Cannot start emulator: No program loaded');
@@ -113,78 +114,122 @@ export class AVR8Emulator {
     this.running = true;
     
     // Get the program type from the first byte (marker)
-    const programType = this.program[0] || 1; // Default to blink (type 1)
+    const programType = this.program[0];
     
-    // Set behavior based on program type but don't take ANY actions until user clicks Run
-    console.log(`[AVR8] Program type detected: ${programType}`);
+    console.log(`[AVR8] Starting simulation with program type: ${programType}`);
     
-    // Different delay times based on program complexity
-    let delay = 1000; // Default delay
+    // If we have a parsed user program, use that for simulation
+    if (userProgram) {
+      console.log('[AVR8] Using parsed user program for simulation');
+      return this.executeUserProgram(userProgram);
+    }
     
-    // Only configure the behavior - no actual pin changes until user explicitly runs simulation
-    switch (programType) {
-      case 1: // BLINK - Standard LED blink program
-        console.log('[AVR8] Preparing blink program (waiting for Run button)');
-        this.intervalId = setInterval(() => {
-          // Only toggle pins when user has clicked Run Simulation
-          this.setDigitalOutput(13, !this.pinStates[13]);
+    // Fallback to simple blink if no userProgram
+    console.log('[AVR8] No user program provided, defaulting to basic blink');
+    
+    // Set a 1 second interval for basic blink
+    this.intervalId = setInterval(() => {
+      this.setDigitalOutput(13, !this.pinStates[13]);
+    }, 1000);
+    
+    return true;
+  }
+  
+  /**
+   * Execute a parsed user program
+   * @param {Object} userProgram - The parsed user program
+   * @returns {boolean} - Success
+   */
+  executeUserProgram(userProgram) {
+    // First, set pinMode based on detected pinModes
+    for (const [pinStr, mode] of Object.entries(userProgram.pinModes)) {
+      const pin = parseInt(pinStr, 10);
+      console.log(`[AVR8] Setting pin ${pin} mode to ${mode}`);
+      // Not much to do here in the simulation except log it
+    }
+    
+    // Execute setup operations
+    console.log(`[AVR8] Executing setup with ${userProgram.setup.length} operations`);
+    this.executeOperations(userProgram.setup, false);
+    
+    // If there are loop operations, set up interval to execute them
+    if (userProgram.loop.length > 0) {
+      console.log(`[AVR8] Setting up loop with ${userProgram.loop.length} operations`);
+      
+      // Find the longest delay in the loop for reasonable timing
+      const maxDelay = userProgram.loop
+        .filter(op => op.delay)
+        .map(op => op.delay)
+        .reduce((max, delay) => Math.max(max, delay), 100);
+      
+      // Execute loop operations on an interval
+      this.intervalId = setInterval(() => {
+        this.executeOperations(userProgram.loop, true);
+      }, maxDelay);
+    }
+    
+    return true;
+  }
+  
+  /**
+   * Execute a series of pin operations
+   * @param {Array} operations - The operations to execute
+   * @param {boolean} isLoop - Whether these are loop operations
+   */
+  executeOperations(operations, isLoop) {
+    if (!operations || operations.length === 0) {
+      return;
+    }
+    
+    // For setup operations, execute sequentially with delays
+    if (!isLoop) {
+      let delay = 0;
+      
+      operations.forEach((op, index) => {
+        // Schedule each operation with its accumulated delay
+        setTimeout(() => {
+          this.executeOperation(op);
         }, delay);
+        
+        // Add this operation's delay to the accumulated delay
+        delay += (op.delay || 50); // Default small delay if none specified
+      });
+      
+      return;
+    }
+    
+    // For loop operations, execute all at once per loop iteration
+    operations.forEach(op => {
+      this.executeOperation(op);
+    });
+  }
+  
+  /**
+   * Execute a single pin operation
+   * @param {Object} operation - The pin operation to execute
+   */
+  executeOperation(operation) {
+    const { pin, operation: opType, value } = operation;
+    
+    // Skip operations in conditional blocks (simplification, can't evaluate conditions)
+    if (operation.conditional) {
+      console.log(`[AVR8] Skipping conditional operation: ${operation.sourceCode}`);
+      return;
+    }
+    
+    console.log(`[AVR8] Executing ${opType} on pin ${pin} with value ${value}`);
+    
+    // Execute the appropriate operation type
+    switch (opType) {
+      case 'digitalWrite':
+        this.setDigitalOutput(pin, !!value);
         break;
         
-      case 2: // LED_ON - LED stays on
-        console.log('[AVR8] Preparing LED on program (waiting for Run button)');
-        // We will create a delayed execution to ensure it only runs after user clicks Run
-        this.intervalId = setTimeout(() => {
-          this.setDigitalOutput(13, true);
-        }, 100);
+      case 'analogWrite':
+        this.setPWMOutput(pin, value);
         break;
         
-      case 3: // RGB_LED - RGB LED animation
-        console.log('[AVR8] Preparing RGB LED program (waiting for Run button)');
-        delay = 200; // Faster for RGB
-        this.intervalId = setInterval(() => {
-          // Only execute after user clicks Run Simulation
-          const r = Math.floor(Math.sin(Date.now() / 1000) * 127 + 128);
-          const g = Math.floor(Math.sin(Date.now() / 1000 + 2) * 127 + 128);
-          const b = Math.floor(Math.sin(Date.now() / 1000 + 4) * 127 + 128);
-          
-          this.setPWMOutput(9, r);
-          this.setPWMOutput(10, g);
-          this.setPWMOutput(11, b);
-          
-          this.setDigitalOutput(13, !this.pinStates[13]);
-        }, delay);
-        break;
-        
-      case 4: // OLED - OLED display program
-        console.log('[AVR8] Preparing OLED display program (waiting for Run button)');
-        delay = 500;
-        this.intervalId = setInterval(() => {
-          // Only execute after user clicks Run Simulation
-          this.setDigitalOutput(4, !this.pinStates[4]);
-          this.setDigitalOutput(5, !this.pinStates[5]);
-          this.setDigitalOutput(13, !this.pinStates[13]);
-        }, delay);
-        break;
-        
-      case 5: // BUZZER - Buzzer program
-        console.log('[AVR8] Preparing buzzer program (waiting for Run button)');
-        delay = 300;
-        this.intervalId = setInterval(() => {
-          // Only execute after user clicks Run Simulation
-          this.setDigitalOutput(8, !this.pinStates[8]);
-          this.setDigitalOutput(13, !this.pinStates[13]);
-        }, delay);
-        break;
-        
-      default:
-        // Default to simple blink behavior
-        console.log('[AVR8] Preparing default program (waiting for Run button)');
-        this.intervalId = setInterval(() => {
-          // Only execute after user clicks Run Simulation
-          this.setDigitalOutput(13, !this.pinStates[13]);
-        }, delay);
-        break;
+      // Add more operation types as needed
     }
     
     return true;
