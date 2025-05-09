@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Code, CircuitBoard, MonitorPlay, Cpu, Joystick, PanelLeft, PanelRight } from 'lucide-react';
+import { ZoomIn, ZoomOut, Move, RotateCcw, Trash2, Play, Save, FileCode, Download, X } from 'lucide-react';
 import { AppWindow } from '../os/AppWindow';
 import { CodeEditor } from './emulator/CodeEditor';
 import { CircuitBuilder } from './emulator/CircuitBuilder';
@@ -14,7 +13,7 @@ import { ComponentPalette } from './emulator/components/ComponentPalette';
 const EMULATOR_ICON = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNpcmN1aXQtYm9hcmQiPjxyZWN0IHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgeD0iMyIgeT0iMyIgcng9IjIiIHJ5PSIyIi8+PGNpcmNsZSBjeD0iOSIgY3k9IjkiIHI9IjIiLz48cGF0aCBkPSJNOS4xNCAxNUg3YTIgMiAwIDAgMSAwLTRoMiIvPjxwYXRoIGQ9Ik0xNSA5aDJhMiAyIDAgMCAxIDIgMnY0TTkuMTQgMTVsNS41Mi0zLjUyTTE1IDE3aDJhMiAyIDAgMSAwIDAtNGgtMSIvPjwvc3ZnPg==';
 
 /**
- * Universal Emulator Desktop App - TinkerCAD-inspired with Retro Gaming Twist
+ * Universal Emulator Desktop App - Style matched with Sandbox UI
  * 
  * This component serves as the entry point for the emulator app 
  * in the CraftingTable OS desktop environment.
@@ -30,13 +29,14 @@ export function UniversalEmulator({
 }) {
   // States for UI management
   const [activeTab, setActiveTab] = useState(0);
-  const [sidebarVisible, setSidebarVisible] = useState(true);
-  const [sidebarTab, setSidebarTab] = useState<'components' | 'code'>('components');
-  const [serialVisible, setSerialVisible] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [isSimulationRunning, setIsSimulationRunning] = useState(false);
+  const [showExampleDropdown, setShowExampleDropdown] = useState(false);
   
-  // Toggle functions
-  const toggleSidebar = () => setSidebarVisible(!sidebarVisible);
-  const toggleSerial = () => setSerialVisible(!serialVisible);
+  // Toggle simulation
+  const toggleSimulation = () => {
+    setIsSimulationRunning(!isSimulationRunning);
+  };
   
   return (
     <AppWindow
@@ -51,90 +51,141 @@ export function UniversalEmulator({
     >
       {/* Each EmulatorProvider creates an isolated emulator instance */}
       <EmulatorProvider instanceId={`${appId}-${activeTab}`}>
-        <div className="flex flex-col w-full h-full bg-background overflow-hidden bg-slate-900 bg-[url('/grid-pattern-dark.png')] bg-repeat">
-          {/* App Toolbar with retro gaming style */}
-          <div className="flex items-center justify-between p-2 bg-gradient-to-r from-blue-900 to-purple-900 text-white border-b-2 border-cyan-400">
-            <div className="flex items-center gap-2">
-              <Joystick className="h-5 w-5 text-yellow-300" />
-              <span className="font-bold text-green-300">UNIVERSAL</span>
-              <span className="font-bold text-cyan-300">EMULATOR</span>
+        <div className="flex flex-col w-full h-full bg-gray-800 text-white overflow-hidden">
+          {/* Toolbar */}
+          <div className="bg-gray-900 p-2 flex items-center justify-between border-b border-gray-700">
+            <div className="flex items-center space-x-2">
+              <img 
+                src={EMULATOR_ICON}
+                alt="Universal Emulator" 
+                className="h-6 mr-2" 
+              />
+              <h2 className="text-lg font-bold">Universal Emulator</h2>
             </div>
-            
-            <EmulatorControls />
-            
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={toggleSidebar}
-                className={`border border-cyan-500 bg-blue-900/50 hover:bg-blue-800 text-cyan-300 ${sidebarVisible ? 'bg-blue-800' : ''}`}
+            <div className="flex items-center space-x-2">
+              {/* Canvas controls */}
+              <button 
+                className="bg-gray-700 p-1 rounded hover:bg-gray-600 text-xs"
+                onClick={() => setZoom(Math.min(3, zoom * 1.2))}
+                title="Zoom In"
               >
-                {sidebarVisible ? <PanelLeft className="h-4 w-4" /> : <PanelRight className="h-4 w-4" />}
-              </Button>
+                <ZoomIn size={18} />
+              </button>
+              <button 
+                className="bg-gray-700 p-1 rounded hover:bg-gray-600 text-xs"
+                onClick={() => setZoom(Math.max(0.1, zoom * 0.8))}
+                title="Zoom Out"
+              >
+                <ZoomOut size={18} />
+              </button>
+              <button 
+                className="bg-gray-700 p-1 rounded hover:bg-gray-600 text-xs"
+                title="Reset View"
+              >
+                <Move size={18} />
+              </button>
+              <span className="text-xs">{Math.round(zoom * 100)}%</span>
               
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={toggleSerial}
-                className={`border border-cyan-500 bg-blue-900/50 hover:bg-blue-800 text-cyan-300 ${serialVisible ? 'bg-blue-800' : ''}`}
+              {/* Component controls */}
+              <button 
+                className="bg-gray-700 p-1 rounded hover:bg-gray-600 opacity-50 cursor-not-allowed text-xs"
+                title="Rotate Selected Component"
+                disabled={true}
               >
-                <MonitorPlay className="h-4 w-4" />
-              </Button>
+                <RotateCcw size={18} />
+              </button>
+              <button 
+                className="bg-gray-700 p-1 rounded hover:bg-gray-600 opacity-50 cursor-not-allowed text-xs"
+                title="Delete Selected Item"
+                disabled={true}
+              >
+                <Trash2 size={18} />
+              </button>
+              
+              {/* Project controls */}
+              <div className="w-px h-6 bg-gray-600 mx-2"></div>
+              <EmulatorControls />
+              
+              {/* Close button */}
+              <button 
+                onClick={onClose}
+                className="bg-gray-700 px-2 py-1 rounded hover:bg-gray-600 ml-4"
+                title="Close Universal Emulator"
+              >
+                <X size={18} />
+              </button>
             </div>
           </div>
           
-          {/* Main Content with flexible layout */}
+          {/* Main content area */}
           <div className="flex flex-1 overflow-hidden">
-            {/* Left Sidebar - Components or Code */}
-            {sidebarVisible && (
-              <div className="w-72 bg-slate-800 border-r border-cyan-900 flex flex-col">
-                {/* Sidebar Tabs */}
-                <div className="flex border-b border-cyan-900">
-                  <button 
-                    className={`flex-1 p-2 text-xs font-semibold flex items-center justify-center ${sidebarTab === 'components' ? 'bg-blue-800 text-cyan-300' : 'bg-slate-800 text-gray-300 hover:bg-slate-700'}`}
-                    onClick={() => setSidebarTab('components')}
-                  >
-                    <CircuitBoard className="h-4 w-4 mr-2" />
-                    COMPONENTS
-                  </button>
-                  <button 
-                    className={`flex-1 p-2 text-xs font-semibold flex items-center justify-center ${sidebarTab === 'code' ? 'bg-blue-800 text-cyan-300' : 'bg-slate-800 text-gray-300 hover:bg-slate-700'}`}
-                    onClick={() => setSidebarTab('code')}
-                  >
-                    <Code className="h-4 w-4 mr-2" />
-                    CODE
-                  </button>
-                </div>
-                
-                {/* Sidebar Content */}
-                <div className="flex-1 overflow-auto">
-                  {sidebarTab === 'components' && (
-                    <div className="p-2">
-                      <ComponentPalette onAddComponent={() => {}} />
-                    </div>
-                  )}
-                  
-                  {sidebarTab === 'code' && (
-                    <div className="h-full">
-                      <CodeEditor />
-                    </div>
-                  )}
-                </div>
+            {/* Left Component Palette */}
+            <div className="w-64 bg-gray-900 border-r border-gray-700">
+              <div className="p-2 border-b border-gray-700">
+                <h3 className="text-sm font-bold">Components</h3>
               </div>
-            )}
+              <div className="overflow-auto p-2 h-full">
+                <ComponentPalette onAddComponent={() => {}} />
+              </div>
+            </div>
             
-            {/* Main Circuit Builder Canvas */}
-            <div className="flex-1 h-full flex flex-col">
+            {/* Main Circuit Canvas */}
+            <div className="flex-1 bg-gray-900 overflow-hidden relative">
               <CircuitBuilder />
             </div>
           </div>
           
-          {/* Bottom Panel: Serial Monitor (Collapsible) */}
-          {serialVisible && (
-            <div className="h-40 border-t border-cyan-900 bg-slate-800">
-              <SerialMonitor />
+          {/* Bottom Code Editor */}
+          <div className="h-1/3 bg-gray-800 border-t border-gray-700 flex flex-col">
+            <div className="p-2 bg-gray-900 text-sm font-bold border-b border-gray-700 flex justify-between items-center">
+              <div className="flex items-center">
+                <FileCode size={16} className="mr-2 text-blue-400" />
+                <span>Arduino Code</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button 
+                  className={`px-2 py-1 rounded text-xs flex items-center ${isSimulationRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                  onClick={toggleSimulation}
+                >
+                  <Play size={14} className="mr-1" />
+                  <span>{isSimulationRunning ? 'Stop Simulation' : 'Run Simulation'}</span>
+                </button>
+                <button className="bg-green-600 hover:bg-green-700 px-2 py-1 rounded text-xs flex items-center">
+                  <Save size={14} className="mr-1" />
+                  <span>Save Code</span>
+                </button>
+                
+                <div className="relative">
+                  <button 
+                    className="bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded text-xs flex items-center"
+                    onClick={() => setShowExampleDropdown(!showExampleDropdown)}
+                  >
+                    <Download size={14} className="mr-1" />
+                    <span>Load Example</span>
+                  </button>
+                  
+                  {showExampleDropdown && (
+                    <div className="absolute right-0 mt-1 w-48 bg-gray-800 border border-gray-700 rounded shadow-lg z-50">
+                      <div className="py-1">
+                        <button className="w-full text-left px-4 py-2 text-xs hover:bg-gray-700">
+                          Blink Example
+                        </button>
+                        <button className="w-full text-left px-4 py-2 text-xs hover:bg-gray-700">
+                          OLED Display Example
+                        </button>
+                        <button className="w-full text-left px-4 py-2 text-xs hover:bg-gray-700">
+                          RGB LED Example
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          )}
+            <div className="flex-1 overflow-hidden">
+              <CodeEditor />
+            </div>
+          </div>
         </div>
       </EmulatorProvider>
     </AppWindow>
