@@ -1453,24 +1453,22 @@ const SimpleWireManager = ({ canvasRef }) => {
               style={{ pointerEvents: 'all' }}
               id={wire.id}
             >
-              {/* Background shadow path for wire */}
-              <PathLine
-                points={points}
+              {/* Background shadow path for wire - using direct line segments */}
+              <path
+                d={getWirePath(points[0], points[points.length - 1], wire.id)}
                 stroke="rgba(0,0,0,0.2)"
                 strokeWidth={style.strokeWidth + 2.5}
                 fill="none"
-                r={10}  // Curve radius
                 className="wire-path-shadow"
                 style={{ filter: 'blur(1.5px)' }}
               />
               
-              {/* Main wire path */}
-              <PathLine
-                points={points}
+              {/* Main wire path - using direct line segments */}
+              <path
+                d={getWirePath(points[0], points[points.length - 1], wire.id)}
                 stroke={style.stroke}
                 strokeWidth={style.strokeWidth}
                 fill="none"
-                r={10}  // Curve radius
                 className="wire-path"
                 data-wire-id={wire.id}
               />
@@ -1510,12 +1508,11 @@ const SimpleWireManager = ({ canvasRef }) => {
               ))}
               
               {/* Transparent wider path for easier selection */}
-              <PathLine
-                points={points}
+              <path
+                d={getWirePath(points[0], points[points.length - 1], wire.id)}
                 stroke="transparent"
                 strokeWidth={12}
                 fill="none"
-                r={10}  // Curve radius
                 style={{ pointerEvents: "stroke" }}
               />
               
