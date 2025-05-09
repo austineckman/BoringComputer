@@ -218,6 +218,7 @@ export default {
   defaultSketch,
   parsePinConfig,
   parseDigitalWrites,
+  parseAnalogWrites,
   parseDelays,
   parseLibraryImports,
   mapPinToComponent,

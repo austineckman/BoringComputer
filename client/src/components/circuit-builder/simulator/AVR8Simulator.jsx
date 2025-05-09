@@ -93,14 +93,31 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     );
   };
   
-  // Detect any digitalWrite calls to identify which pins are being used
+  // Detect any digitalWrite and analogWrite calls to identify which pins are being used
   const detectPinsUsed = (code) => {
     const digitalWriteRegex = /digitalWrite\s*\(\s*(\d+|LED_BUILTIN)\s*,\s*(HIGH|LOW)\s*\)/g;
+    const analogWriteRegex = /analogWrite\s*\(\s*(\d+|RED_PIN|GREEN_PIN|BLUE_PIN)\s*,\s*(\d+|[^,;)]+)\s*\)/g;
+    const pinDefineRegex = /#define\s+(RED_PIN|GREEN_PIN|BLUE_PIN)\s+(\d+)/g;
     const pins = new Set();
     let match;
     
     // LED_BUILTIN is usually pin 13
     const LED_BUILTIN = 13;
+    
+    // Default pins for RGB LED if not defined
+    const defaultPins = {
+      'RED_PIN': 9,
+      'GREEN_PIN': 10,
+      'BLUE_PIN': 11
+    };
+    
+    // Extract pin definitions if present
+    const pinDefinitions = {...defaultPins};
+    while ((match = pinDefineRegex.exec(code)) !== null) {
+      const pinName = match[1];
+      const pinNumber = parseInt(match[2], 10);
+      pinDefinitions[pinName] = pinNumber;
+    }
     
     // Find all digitalWrite calls
     while ((match = digitalWriteRegex.exec(code)) !== null) {
@@ -108,6 +125,18 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
       // Replace LED_BUILTIN with the actual pin number
       if (pin === 'LED_BUILTIN') {
         pin = LED_BUILTIN;
+      } else {
+        pin = parseInt(pin, 10);
+      }
+      pins.add(pin);
+    }
+    
+    // Find all analogWrite calls (for RGB LEDs and other PWM devices)
+    while ((match = analogWriteRegex.exec(code)) !== null) {
+      let pin = match[1];
+      // Handle special pin names
+      if (pin === 'RED_PIN' || pin === 'GREEN_PIN' || pin === 'BLUE_PIN') {
+        pin = pinDefinitions[pin];
       } else {
         pin = parseInt(pin, 10);
       }
@@ -267,6 +296,36 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
             pinUpdate[pin] = state;
             window.simulatorContext.updateComponentPins('heroboard', pinUpdate);
             console.log(`Updated generic heroboard pin ${pin} to ${state ? 'HIGH' : 'LOW'}`);
+          }
+          
+          // Check for RGB LEDs that might be using this pin
+          const rgbLedComponentIds = Object.keys(componentStates).filter(id => 
+            id.includes('rgb-led')
+          );
+          
+          if (rgbLedComponentIds.length > 0) {
+            // For RGB LEDs, we need to handle each color pin
+            rgbLedComponentIds.forEach(rgbLedId => {
+              // Update RGB LED values based on which pin is connected
+              if (window.updateRGBLED && window.updateRGBLED[rgbLedId]) {
+                // Determine which color pin this might be
+                // Default pins for RGB LED
+                const pinToColorMap = {
+                  '9': 'red',
+                  '10': 'green',
+                  '11': 'blue'
+                };
+                
+                // If this pin is a color pin, update that color
+                if (pinToColorMap[pin]) {
+                  const color = pinToColorMap[pin];
+                  // Use analogWrite value for more precision if available
+                  const value = state ? 255 : 0; // Binary value for now, could be PWM analog later
+                  window.updateRGBLED[rgbLedId](color, value / 255);
+                  console.log(`Updated RGB LED ${rgbLedId} ${color} to ${value}`);
+                }
+              }
+            });
           }
         }
         
