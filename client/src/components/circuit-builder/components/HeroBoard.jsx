@@ -254,15 +254,18 @@ const HeroBoard = ({
         <div 
           className={`heroboard-pin13-led absolute ${pin13State ? 'pin13-on' : ''}`}
           style={{
-            opacity: (isSimulationRunning && pin13State) ? 0.7 : 0, // More transparent like the green LED was
-            backgroundColor: pin13State ? '#ff0000' : 'transparent', 
-            boxShadow: pin13State ? '0 0 10px 4px rgba(255, 0, 0, 0.8)' : 'none', // Larger glow
+            // Always visible during simulation, but with lower opacity when off
+            opacity: isSimulationRunning ? (pin13State ? 0.9 : 0.25) : 0, 
+            backgroundColor: pin13State ? '#ff0000' : '#440000', // Darker red when off
+            boxShadow: pin13State ? '0 0 10px 4px rgba(255, 0, 0, 0.8)' : 'none', // Glow only when on
             animation: pin13State ? 'pulse 1s infinite alternate ease-in-out' : 'none',
-            top: `${posTop + 43}px`, // 1px lower
-            left: `${posLeft + 107}px`, // 1px back to the left as requested
+            top: `${posTop + 43}px`, 
+            left: `${posLeft + 107}px`,
             zIndex: 11,
-            width: '8px', // 2x the size
-            height: '8px' // 2x the size
+            width: '8px', 
+            height: '8px',
+            // Add a border to make it more visible when off
+            border: '1px solid #331111'
           }}
         />
       </div>
