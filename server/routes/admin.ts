@@ -2,77 +2,17 @@ import { Router } from 'express';
 import { adminAuth } from '../middleware/adminAuth';
 import { db } from '../db';
 import { 
-  components,
-  insertComponentSchema,
+  quests, 
+  items, 
+  craftingRecipes,
+  lootBoxConfigs,
+  insertQuestSchema,
+  insertItemSchema,
+  insertCraftingRecipeSchema,
+  insertLootBoxConfigSchema,
 } from '../../shared/schema';
-
-// Define local schemas for tables not yet in our schema
-import { z } from 'zod';
-
-const insertQuestSchema = z.object({
-  title: z.string(),
-  description: z.string(),
-  missionBrief: z.string().optional(),
-  adventureLine: z.string(),
-  difficulty: z.string(),
-  orderInLine: z.number().int().positive(),
-  xpReward: z.number().int().positive(),
-  rewards: z.record(z.string(), z.number()).optional(),
-  content: z.string().optional(),
-  lootBoxRewards: z.array(z.string()).optional(),
-  kitId: z.number().optional()
-});
-
-const insertItemSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string(),
-  rarity: z.enum(['common', 'uncommon', 'rare', 'epic', 'legendary']),
-  flavorText: z.string().optional(),
-  craftingUses: z.array(z.string()).optional(),
-  imagePath: z.string().optional(),
-  category: z.string().optional()
-});
-
-// Temporary placeholder tables for backward compatibility
-const quests = {
-  id: { name: 'id' }
-};
-
-const craftingRecipes = {
-  id: { name: 'id' }
-};
-
-const lootBoxConfigs = {
-  id: { name: 'id' }
-};
-
-const insertCraftingRecipeSchema = z.object({
-  name: z.string(),
-  description: z.string().optional(),
-  resultItem: z.string(),
-  resultQuantity: z.number().positive(),
-  difficulty: z.enum(['easy', 'medium', 'hard']),
-  unlocked: z.boolean().default(false),
-  pattern: z.array(z.array(z.string().nullable())).optional(),
-  requiredItems: z.record(z.string(), z.number().positive()).optional()
-});
-
-const insertLootBoxConfigSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string().optional(),
-  type: z.string(),
-  minRewards: z.number().int().positive(),
-  maxRewards: z.number().int().positive(),
-  itemDropTable: z.array(z.object({
-    itemId: z.string(),
-    weight: z.number().positive(),
-    minQuantity: z.number().int().positive(),
-    maxQuantity: z.number().int().positive()
-  }))
-});
 import { eq, count } from 'drizzle-orm';
+import { z } from 'zod';
 import { storage } from '../storage';
 import path from 'path';
 import fs from 'fs';

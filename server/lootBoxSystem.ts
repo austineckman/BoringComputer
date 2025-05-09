@@ -1,6 +1,6 @@
 import { db } from './db';
 import { storage } from './storage';
-// Using itemDatabase directly instead of schema imports
+import { lootBoxConfigs, lootBoxes, items } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { getItemDetails } from './itemDatabase';
 
@@ -146,9 +146,11 @@ function generateQuantity(tier: RarityTier): number {
  */
 export async function generateLootBoxRewards(lootBoxType: LootBoxType): Promise<Reward[]> {
   try {
-    // In our new architecture, we'll use in-memory lootbox config
-    // This is a temporary solution until we implement the actual config
-    const config = null;
+    // Check if this lootbox type has a database config
+    const [config] = await db
+      .select()
+      .from(lootBoxConfigs)
+      .where(eq(lootBoxConfigs.id, lootBoxType));
     
     // If we have a database config, use it instead of the hardcoded logic
     if (config) {
@@ -190,15 +192,11 @@ export async function generateLootBoxRewards(lootBoxType: LootBoxType): Promise<
  */
 export async function openLootBox(lootBoxId: number, userId: number): Promise<{ success: boolean, message: string, rewards: Reward[] | null }> {
   try {
-    // For our new implementation, we will not use lootBoxes directly
-    // This is a temporary placeholder
-    const lootbox = { 
-      id: lootBoxId, 
-      userId, 
-      opened: false, 
-      type: 'common' as LootBoxType,
-      rewards: [] 
-    };
+    // Fetch the lootbox
+    const [lootbox] = await db
+      .select()
+      .from(lootBoxes)
+      .where(eq(lootBoxes.id, lootBoxId));
     
     // Extra validation for userId
     if (lootbox && lootbox.userId !== userId) {
@@ -230,16 +228,61 @@ export async function openLootBox(lootBoxId: number, userId: number): Promise<{ 
       rewards = await generateLootBoxRewards(lootbox.type as LootBoxType);
     }
     
-    // In our new system, we handle inventory differently
-    console.log('DEBUG - Opening lootbox for user:', userId);
-    console.log('DEBUG - Generated rewards:', rewards);
+    // Add the rewards to the user's inventory
+    const inventory = { ...user.inventory };
+    console.log('DEBUG - Before opening lootbox, user inventory:', inventory);
     
-    // In our new implementation, we don't update the lootbox
-    // Just mark it as opened in memory
-    lootbox.opened = true;
+    for (const reward of rewards) {
+      // For items and equipment, add directly to inventory
+      if (reward.type === 'item' || reward.type === 'equipment') {
+        console.log(`DEBUG - Adding item ${reward.id} x${reward.quantity} to inventory`);
+        inventory[reward.id] = (inventory[reward.id] || 0) + reward.quantity;
+        
+        // Create inventory history entry
+        await storage.createInventoryHistory({
+          userId,
+          type: reward.id,
+          quantity: reward.quantity,
+          action: 'gained',
+          source: 'lootbox'
+        });
+      }
+    }
     
-    // In our new system, we'll handle inventory differently
-    console.log('DEBUG - Lootbox opened successfully');
+    console.log('DEBUG - After rewards added, user inventory:', inventory);
+    
+    // Mark the lootbox as opened and store the rewards
+    await db
+      .update(lootBoxes)
+      .set({
+        opened: true,
+        openedAt: new Date(),
+        rewards
+      })
+      .where(eq(lootBoxes.id, lootBoxId));
+    
+    // Special case for mock user (ID 999)
+    if (userId === 999) {
+      // For the mock user, update the in-memory object directly
+      const mockUser = (global as any).mockUser || { id: 999, username: "devuser" };
+      mockUser.inventory = inventory;
+      (global as any).mockUser = mockUser;
+      console.log('DEBUG - Development mode: Updated mock user inventory directly:', inventory);
+      
+      // Also update the mockUser in the auth module
+      try {
+        const authModule = require('./auth');
+        if (authModule && typeof authModule.updateMockUserInventory === 'function') {
+          authModule.updateMockUserInventory(inventory);
+        }
+      } catch (err) {
+        console.log('Could not update auth module mock user:', err);
+      }
+    } else {
+      // Update user's inventory in the database
+      await storage.updateUser(userId, { inventory });
+      console.log('DEBUG - User inventory updated in database');
+    }
     
     return { success: true, message: 'Lootbox opened successfully', rewards };
   } catch (error) {
@@ -257,9 +300,9 @@ async function generateConfiguredLootBoxRewards(config: any): Promise<Reward[]> 
   const numRewards = getRandomInt(config.minRewards, config.maxRewards);
   const rewards: Reward[] = [];
   
-  // Use our itemDatabase instead of direct database access
-  const allItems = await Promise.resolve([]); // Placeholder for future implementation
-  const allItemIds = ['copper', 'circuit', 'crystal', 'emerald', 'ruby', 'sapphire', 'diamond', 'obsidian', 'artifact', 'cosmiccore'];
+  // Get all items from the database for validation
+  const allItems = await db.select().from(items);
+  const allItemIds = allItems.map(item => item.id);
   
   // Generate rewards based on the item drop table
   for (let i = 0; i < numRewards; i++) {
