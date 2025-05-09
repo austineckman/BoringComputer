@@ -260,14 +260,21 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     // Update initial pin states
     setPins(initialPins);
     
-    // Track which state we're in (HIGH or LOW)
+    // Track simulation state (HIGH/LOW) and steps for analog patterns
     let state = false; // Start with LOW, then toggle to HIGH
+    let analogSimStep = 0; // For cycling through analog values
+    let analogValueShown = false; // For tracking if we've used analog values
     
     // Start a timer to simulate pin changes for the pins used in the code
-    // This simulates the classic Arduino blink pattern
     const id = setInterval(() => {
-      // Toggle the state
+      // Toggle the state every time (for digital pins)
       state = !state;
+      
+      // Log analog values for debugging
+      if (compiledCode.analogValues && !analogValueShown) {
+        console.log("Analog values detected in code:", compiledCode.analogValues);
+        analogValueShown = true;
+      }
       
       // Get the pins used in the code
       const { pinsUsed } = compiledCode;
@@ -275,7 +282,7 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
       // Update pin states based on current state
       const newPins = { ...pins };
       for (const pin of pinsUsed) {
-        // Set the pin to the current state (HIGH or LOW)
+        // Default to binary state (HIGH/LOW)
         newPins[pin] = state;
         
         // Update all heroboard components with this pin
