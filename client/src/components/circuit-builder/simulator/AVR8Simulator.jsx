@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSimulator } from './SimulatorContext';
 import { useLibraryManager } from './LibraryManager';
+import { parseOLEDCommands } from './OLEDCommandParser';
 
 /**
  * AVR8 Arduino Simulator Component
@@ -523,9 +524,11 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
         // Check if we have required OLED libraries
         const hasRequiredLibraries = hasOLEDLibrary(compiledCode.libraries);
         
-        // Parse OLED commands from the code
+        // Parse OLED commands from the code using our new parser
+        // This will get a more detailed analysis of OLED commands
         const oledCommands = parseOLEDCommands(code);
-        const hasOLEDCode = oledCommands && oledCommands.hasOLEDCode;
+        const hasOLEDCode = oledCommands && (oledCommands.hasOLEDCode || 
+                               (oledCommands.commands && oledCommands.commands.length > 0));
         
         oledElements.forEach(element => {
           if (!element || !element.id) {
