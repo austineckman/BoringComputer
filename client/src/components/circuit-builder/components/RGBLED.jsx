@@ -30,10 +30,16 @@ const RGBLED = ({
   const targetRef = useRef();
   const moveableRef = useRef();
 
-  const [ledRed, setLedRed] = useState(0); // Initial red value (0-1)
-  const [ledGreen, setLedGreen] = useState(0); // Initial green value (0-1)
-  const [ledBlue, setLedBlue] = useState(0); // Initial blue value (0-1)
+  // Internal state is 0-1 values as required by ReactRGBLEDComponent
+  const [ledRed, setLedRed] = useState(0);     // Internal red value (0-1)
+  const [ledGreen, setLedGreen] = useState(0); // Internal green value (0-1)
+  const [ledBlue, setLedBlue] = useState(0);   // Internal blue value (0-1)
   const [commonPin, setCommonPin] = useState('anode'); // 'anode' or 'cathode'
+  
+  // Debug values for checking what's coming in
+  const [redRaw, setRedRaw] = useState(0);   // Raw value (0-255) for debugging
+  const [greenRaw, setGreenRaw] = useState(0); // Raw value (0-255) for debugging
+  const [blueRaw, setBlueRaw] = useState(0);  // Raw value (0-255) for debugging
   
   // Initialize from props at component creation
   useEffect(() => {
@@ -177,23 +183,40 @@ const RGBLED = ({
     }
   };
 
-  // Update LED color function
-  const updateLEDColor = (color, value) => {
+  // Update LED color function - Convert Arduino values (0-255) to component values (0-1)
+  const updateLEDColor = (color, rawValue) => {
+    // Store raw value for debugging
+    let normalizedValue;
+    
+    // Ensure value is within Arduino PWM range (0-255)
+    const clampedValue = Math.max(0, Math.min(255, rawValue));
+    
+    // Convert to 0-1 range for the component
+    normalizedValue = clampedValue / 255;
+    
+    console.log(`RGB LED ${id}: Setting ${color} to raw=${clampedValue}, normalized=${normalizedValue}`);
+    
     switch(color) {
       case 'red':
-        setLedRed(value);
+        setRedRaw(clampedValue);
+        setLedRed(normalizedValue);
         break;
       case 'green':
-        setLedGreen(value);
+        setGreenRaw(clampedValue);
+        setLedGreen(normalizedValue);
         break;
       case 'blue': 
-        setLedBlue(value);
+        setBlueRaw(clampedValue);
+        setLedBlue(normalizedValue);
         break;
       case 'all':
         // Set all colors to the same value
-        setLedRed(value);
-        setLedGreen(value);
-        setLedBlue(value);
+        setRedRaw(clampedValue);
+        setGreenRaw(clampedValue);
+        setBlueRaw(clampedValue);
+        setLedRed(normalizedValue);
+        setLedGreen(normalizedValue);
+        setLedBlue(normalizedValue);
         break;
       default:
         break;
@@ -242,6 +265,20 @@ const RGBLED = ({
       )}
       
       <div className="relative">
+        {/* Add debug info when selected */}
+        {isSelected && isSimulationRunning && (
+          <div 
+            className="absolute bg-black bg-opacity-70 text-white text-xs p-1 rounded"
+            style={{ 
+              top: posTop - 40, 
+              left: posLeft, 
+              zIndex: 1000 
+            }}
+          >
+            Raw: [R:{redRaw} G:{greenRaw} B:{blueRaw}]
+          </div>
+        )}
+        
         <ReactRGBLEDComponent
           id={id}
           className="min-w-min cursor-pointer absolute"
@@ -284,9 +321,9 @@ const RGBLED = ({
               <div 
                 className="absolute rounded-full w-8 h-8 opacity-60"
                 style={{
-                  backgroundColor: '#ff0000',
+                  backgroundColor: `rgba(255, 0, 0, ${ledRed})`,
                   transform: 'translate(5px, 10px)',
-                  boxShadow: '0 0 15px 5px #ff0000',
+                  boxShadow: `0 0 15px 5px rgba(255, 0, 0, ${ledRed})`,
                   filter: 'blur(4px)',
                   animation: 'pulse 1s infinite alternate',
                   zIndex: 99
@@ -298,9 +335,9 @@ const RGBLED = ({
               <div 
                 className="absolute rounded-full w-8 h-8 opacity-60"
                 style={{
-                  backgroundColor: '#00ff00',
+                  backgroundColor: `rgba(0, 255, 0, ${ledGreen})`,
                   transform: 'translate(5px, 10px)',
-                  boxShadow: '0 0 15px 5px #00ff00',
+                  boxShadow: `0 0 15px 5px rgba(0, 255, 0, ${ledGreen})`,
                   filter: 'blur(4px)',
                   animation: 'pulse 1s infinite alternate',
                   zIndex: 99
@@ -312,9 +349,9 @@ const RGBLED = ({
               <div 
                 className="absolute rounded-full w-8 h-8 opacity-60"
                 style={{
-                  backgroundColor: '#0000ff',
+                  backgroundColor: `rgba(0, 0, 255, ${ledBlue})`,
                   transform: 'translate(5px, 10px)',
-                  boxShadow: '0 0 15px 5px #0000ff',
+                  boxShadow: `0 0 15px 5px rgba(0, 0, 255, ${ledBlue})`,
                   filter: 'blur(4px)',
                   animation: 'pulse 1s infinite alternate',
                   zIndex: 99
@@ -328,15 +365,15 @@ const RGBLED = ({
                 className="absolute rounded-full w-10 h-10 opacity-60"
                 style={{
                   backgroundColor: `rgb(
-                    ${redOn ? 255 : 0}, 
-                    ${greenOn ? 255 : 0}, 
-                    ${blueOn ? 255 : 0}
+                    ${Math.round(ledRed * 255)}, 
+                    ${Math.round(ledGreen * 255)}, 
+                    ${Math.round(ledBlue * 255)}
                   )`,
                   transform: 'translate(5px, 10px)',
                   boxShadow: `0 0 20px 8px rgb(
-                    ${redOn ? 255 : 0}, 
-                    ${greenOn ? 255 : 0}, 
-                    ${blueOn ? 255 : 0}
+                    ${Math.round(ledRed * 255)}, 
+                    ${Math.round(ledGreen * 255)}, 
+                    ${Math.round(ledBlue * 255)}
                   )`,
                   filter: 'blur(6px)',
                   animation: 'pulse 1.5s infinite alternate',

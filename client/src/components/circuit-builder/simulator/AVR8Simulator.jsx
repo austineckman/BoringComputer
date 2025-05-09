@@ -336,17 +336,29 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
 
                   // Check if we have analog values for this pin
                   if (compiledCode.analogValues && compiledCode.analogValues[pin] && compiledCode.analogValues[pin].length > 0) {
-                    // Use the first analog value in the array (could be improved to cycle through values)
-                    value = compiledCode.analogValues[pin][0];
+                    // Use the last (most recent) analog value in the array
+                    value = compiledCode.analogValues[pin][compiledCode.analogValues[pin].length - 1];
                     console.log(`Using analog value ${value} for pin ${pin} (${color})`);
                   } else {
                     // Fallback to binary HIGH/LOW
                     value = state ? 255 : 0;
                   }
                   
-                  // Normalize to 0-1 range for the LED component
-                  window.updateRGBLED[rgbLedId](color, value / 255);
-                  console.log(`Updated RGB LED ${rgbLedId} ${color} to ${value} (normalized: ${value/255})`);
+                  // Send the raw value (0-255) to the LED component
+                  // The component will normalize internally
+                  window.updateRGBLED[rgbLedId](color, value);
+                  console.log(`Updated RGB LED ${rgbLedId} ${color} to ${value}`);
+                  
+                  // Also notify any other connected components via the callback
+                  if (onPinChange) {
+                    onPinChange(pin, state, { 
+                      componentId: rgbLedId, 
+                      type: 'rgbled', 
+                      color,
+                      // Include analogValues in the update to be used by CircuitBuilderWindow
+                      analogValue: value
+                    });
+                  }
                 }
               }
             });

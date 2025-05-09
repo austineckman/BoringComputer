@@ -826,11 +826,39 @@ void loop() {
                 if (type === 'rgbled') {
                   // Use the global update method for RGB LEDs
                   if (typeof window !== 'undefined' && window.updateRGBLED && window.updateRGBLED[componentId]) {
-                    console.log(`Updating RGB LED ${componentId} ${color} channel to ${isHigh ? 'ON' : 'OFF'}`);
-                    window.updateRGBLED[componentId](color, isHigh);
+                    // For RGB LEDs, we need to use the actual PWM value (0-255)
+                    // Get the analog value from compiledCode if available  
+                    let analogValue = 0;
+                    
+                    // Access compiledCode via the refs to avoid TypeScript errors
+                    const currentCompiledCode = compiledCodeRef.current;
+                    
+                    // Try to find specific pin value for the color channel from compiledCode
+                    if (currentCompiledCode && 
+                        currentCompiledCode.analogValues && 
+                        typeof currentCompiledCode.analogValues === 'object') {
+                      
+                      const analogValues = currentCompiledCode.analogValues as Record<string, number[]>;
+                      
+                      if (color === 'red' && analogValues['9'] && analogValues['9'].length > 0) {
+                        analogValue = analogValues['9'][analogValues['9'].length - 1];
+                      } else if (color === 'green' && analogValues['10'] && analogValues['10'].length > 0) {
+                        analogValue = analogValues['10'][analogValues['10'].length - 1];
+                      } else if (color === 'blue' && analogValues['11'] && analogValues['11'].length > 0) {
+                        analogValue = analogValues['11'][analogValues['11'].length - 1];
+                      }
+                    }
+                    
+                    // If no analog value is found, use binary 0/255 based on digital state
+                    if (analogValue === 0 && isHigh) {
+                      analogValue = 255;
+                    }
+                    
+                    console.log(`Updating RGB LED ${componentId} ${color} channel to ${analogValue} (${isHigh ? 'HIGH' : 'LOW'})`);
+                    window.updateRGBLED[componentId](color, analogValue);
                     
                     // Log the change for user feedback
-                    addSimulationLog(`Updated RGB LED ${componentId} ${color} channel to ${isHigh ? 'ON' : 'OFF'}`);
+                    addSimulationLog(`Updated RGB LED ${componentId} ${color} channel to ${analogValue}`);
                   } else {
                     console.warn(`RGB LED ${componentId} update function not found`);
                   }
