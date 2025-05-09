@@ -273,9 +273,15 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
     
     // Check if we have a valid Arduino sketch with OLED commands
     const hasValidCode = parsedCommands && 
-                        (parsedCommands.commands.length > 0 || 
-                         parsedCommands.hasPageLoop || 
-                         parsedCommands.hasDisplayMethod);
+                        // Check for presence of commands
+                        ((parsedCommands.commands && parsedCommands.commands.length > 0) ||
+                        // Alternative ways to detect valid OLED code patterns
+                        parsedCommands.hasPageLoop || 
+                        parsedCommands.hasDisplayMethod ||
+                        parsedCommands.hasBufferMethod ||
+                        // Also check library style flags from our enhanced parser
+                        parsedCommands.isAdafruitStyle ||
+                        parsedCommands.isU8g2Style);
                          
     // Track animation state
     let frameCount = 0;
@@ -303,17 +309,28 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
           // Execute the parsed commands to render a buffer
           newBuffer = executeOLEDCommands(freshParsedCommands, displayWidth, displayHeight);
           
-          // Add a small indicator in the corner to show this is running real live code
-          const codeText = "LIVE";
-          for (let i = 0; i < codeText.length; i++) {
-            drawChar(newBuffer, codeText.charAt(i), displayWidth - 25 + (i * 5), 2, true);
-          }
-          
-          // Show the command count in the other corner
-          const commandCount = freshParsedCommands.commands ? freshParsedCommands.commands.length : 0;
-          const countText = `CMD:${commandCount}`;
-          for (let i = 0; i < countText.length; i++) {
-            drawChar(newBuffer, countText.charAt(i), 5 + (i * 5), 2, true);
+          // Add debugging info if needed 
+          if (window.simulatorContext?.debugMode) {
+            // Add a small indicator in the corner to show this is running real live code
+            const codeText = "LIVE";
+            for (let i = 0; i < codeText.length; i++) {
+              drawChar(newBuffer, codeText.charAt(i), displayWidth - 25 + (i * 5), 2, true);
+            }
+            
+            // Show the command count in the other corner
+            const commandCount = freshParsedCommands.commands ? freshParsedCommands.commands.length : 0;
+            const countText = `CMD:${commandCount}`;
+            for (let i = 0; i < countText.length; i++) {
+              drawChar(newBuffer, countText.charAt(i), 5 + (i * 5), 2, true);
+            }
+            
+            // Also show library style detected
+            const libStyle = freshParsedCommands.isAdafruitStyle ? "ADA" : 
+                            freshParsedCommands.isU8g2Style ? "U8G2" : "??";
+            const libText = `LIB:${libStyle}`;
+            for (let i = 0; i < libText.length; i++) {
+              drawChar(newBuffer, libText.charAt(i), 5 + (i * 5), displayHeight - 10, true);
+            }
           }
           
         } catch (error) {
@@ -384,10 +401,15 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
         }
       }
       
-      // Always show a small frame counter in the bottom corner for reference
-      const frameText = `F:${frameCount++}`;
-      for (let i = 0; i < frameText.length; i++) {
-        drawChar(newBuffer, frameText.charAt(i), displayWidth - 25 + (i * 5), displayHeight - 10, true);
+      // Only show frame counter in debug mode
+      if (window.simulatorContext?.debugMode) {
+        const frameText = `F:${frameCount++}`;
+        for (let i = 0; i < frameText.length; i++) {
+          drawChar(newBuffer, frameText.charAt(i), displayWidth - 25 + (i * 5), displayHeight - 10, true);
+        }
+      } else {
+        // Just increment the frame counter for internal tracking
+        frameCount++;
       }
       
       // Update the display buffer

@@ -30,6 +30,9 @@ export const SimulatorProvider = ({ children }) => {
   const [wires, setWires] = useState([]);
   const [componentStates, setComponentStates] = useState({});
   
+  // Debug flag for development - helps with OLED display debugging
+  const [debugMode, setDebugMode] = useState(true);
+  
   // Function to add a log entry with timestamp
   const addLog = (message) => {
     const timestamp = new Date().toLocaleTimeString();
@@ -111,7 +114,9 @@ export const SimulatorProvider = ({ children }) => {
     updateComponentState,
     updateComponentPins,
     setComponents,
-    setWires
+    setWires,
+    debugMode,
+    setDebugMode
   };
   
   // Also expose the context to the window for non-React components
@@ -125,7 +130,8 @@ export const SimulatorProvider = ({ children }) => {
       componentStates,
       startSimulation,
       stopSimulation,
-      addLog
+      addLog,
+      debugMode
     };
     
     console.log("Simulator context updated with code:", code);
@@ -134,7 +140,7 @@ export const SimulatorProvider = ({ children }) => {
       // Clean up when unmounted
       window.simulatorContext = undefined;
     };
-  }, [code, logs, isRunning, components, wires, componentStates]);
+  }, [code, logs, isRunning, components, wires, componentStates, debugMode]);
   
   return (
     <SimulatorContext.Provider value={contextValue}>
