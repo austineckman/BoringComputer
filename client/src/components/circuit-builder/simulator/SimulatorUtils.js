@@ -57,6 +57,41 @@ export const parseDigitalWrites = (code) => {
   return pinWrites;
 };
 
+// Parse analogWrite calls to identify PWM pin values
+export const parseAnalogWrites = (code) => {
+  const analogWrites = {};
+  
+  // Regular expression to match analogWrite calls
+  const analogWriteRegex = /analogWrite\s*\(\s*(\d+|RED_PIN|GREEN_PIN|BLUE_PIN)\s*,\s*(\d+|[^,;)]+)\s*\)/g;
+  
+  // Extract analog writes
+  let match;
+  while ((match = analogWriteRegex.exec(code)) !== null) {
+    let pin = match[1];
+    // Handle pin definitions (like RED_PIN, BLUE_PIN etc.)
+    if (pin === 'RED_PIN') pin = '9';  // Default to standard pins
+    if (pin === 'GREEN_PIN') pin = '10';
+    if (pin === 'BLUE_PIN') pin = '11';
+    
+    // Try to parse the value - handle constants or expressions by assuming non-zero value
+    let value;
+    if (/^\d+$/.test(match[2])) {
+      value = parseInt(match[2], 10);
+    } else {
+      value = 128; // Default mid-value for non-numeric expressions
+    }
+    
+    // Store the pin and value
+    if (!analogWrites[pin]) {
+      analogWrites[pin] = [];
+    }
+    
+    analogWrites[pin].push(value);
+  }
+  
+  return analogWrites;
+};
+
 // Parse delay calls to extract timing information
 export const parseDelays = (code) => {
   const delays = [];
