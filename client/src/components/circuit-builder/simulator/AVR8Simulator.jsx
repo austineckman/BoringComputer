@@ -213,16 +213,36 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
   const startSimulation = () => {
     if (!compiledCode) return;
     
+    // Get the delay from the compiled code
+    const simulationDelay = compiledCode.delay || delay;
+    
+    // Set up pin states based on the default blink pattern
+    // Initialize with all pins LOW
+    const initialPins = {};
+    compiledCode.pinsUsed.forEach(pin => {
+      initialPins[pin] = false; // LOW
+    });
+    
+    // Update initial pin states
+    setPins(initialPins);
+    
+    // Track which state we're in (HIGH or LOW)
+    let state = false; // Start with LOW, then toggle to HIGH
+    
     // Start a timer to simulate pin changes for the pins used in the code
+    // This simulates the classic Arduino blink pattern
     const id = setInterval(() => {
+      // Toggle the state
+      state = !state;
+      
       // Get the pins used in the code
       const { pinsUsed } = compiledCode;
       
-      // Update pin states
+      // Update pin states based on current state
       const newPins = { ...pins };
       for (const pin of pinsUsed) {
-        // Toggle the pin state
-        newPins[pin] = !newPins[pin];
+        // Set the pin to the current state (HIGH or LOW)
+        newPins[pin] = state;
         
         // Call the onPinChange callback
         if (onPinChange) {
@@ -232,7 +252,9 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
       
       // Update pins state
       setPins(newPins);
-    }, delay); // Use the detected delay value
+      
+      logInfo(`Simulating ${state ? 'HIGH' : 'LOW'} state`);
+    }, simulationDelay);
     
     // Save the interval ID for cleanup
     setIntervalId(id);
