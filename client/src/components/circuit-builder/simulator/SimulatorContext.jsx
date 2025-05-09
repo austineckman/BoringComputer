@@ -82,6 +82,20 @@ export const SimulatorProvider = ({ children }) => {
     console.log('Simulator wires updated:', wires.length);
   }, [wires]);
   
+  // Make the simulator context available globally for non-React components
+  useEffect(() => {
+    window.simulatorContext = {
+      componentStates,
+      wires,
+      updateComponentState,
+      updateComponentPins
+    };
+    
+    return () => {
+      delete window.simulatorContext;
+    };
+  }, [componentStates, wires]);
+  
   // Create an object with all the context values
   const contextValue = {
     code,
