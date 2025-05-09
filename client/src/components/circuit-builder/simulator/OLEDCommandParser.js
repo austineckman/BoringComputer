@@ -292,9 +292,20 @@ export const executeOLEDCommands = (commandData, width = 128, height = 64) => {
 
 /**
  * Process commands for Adafruit SSD1306 style
+ * 
+ * Adafruit_SSD1306 library typically follows this pattern:
+ * - display.begin() for initialization
+ * - display.clearDisplay() to clear the buffer
+ * - display.setTextSize(), display.setTextColor(), display.setCursor() for text settings
+ * - display.print() or display.println() for text
+ * - drawing functions like display.drawPixel(), display.drawLine(), etc.
+ * - display.display() to actually update the physical display
  */
 function processAdafruitCommands(commands, buffer, state, width, height) {
   console.log("Processing Adafruit-style commands:", commands.length);
+  
+  // Track whether a clearDisplay has occurred to properly simulate Adafruit behavior
+  let hasCleared = false;
   
   // Process commands in order
   for (const cmd of commands) {
@@ -751,8 +762,22 @@ const drawLine = (buffer, x0, y0, x1, y1, color = 1) => {
 
 // Helper to set a pixel safely (checking bounds)
 const setPixelSafe = (buffer, x, y, color = 1) => {
-  if (x >= 0 && x < buffer[0].length && y >= 0 && y < buffer.length) {
-    buffer[y][x] = color;
+  // Convert coordinates to integers to handle string parameters
+  const px = Math.floor(Number(x));
+  const py = Math.floor(Number(y));
+  
+  // Apply color (ensure it's numeric)
+  const pixelColor = Number(color) ? 1 : 0;
+  
+  // Safety check to avoid out-of-bounds errors
+  if (px >= 0 && px < buffer[0].length && py >= 0 && py < buffer.length) {
+    buffer[py][px] = pixelColor;
+  } else {
+    // Don't log every out-of-bounds pixel to avoid console spam
+    // but track the issue for debugging
+    if (window.simulatorContext?.debugMode) {
+      console.log(`Pixel out of bounds: (${px}, ${py})`);
+    }
   }
 };
 
