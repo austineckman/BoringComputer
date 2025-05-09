@@ -259,52 +259,77 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
   
   // Detect OLED display commands and patterns in the code
   const parseOLEDCommands = (code) => {
-    // Check if this is OLED-related code
-    const isOLEDCode = code.includes('SSD1306') || 
-                       code.includes('U8G2') || 
-                       code.includes('U8g2') ||
-                       code.includes('Adafruit_GFX') || 
-                       code.includes('Adafruit_SSD1306') ||
-                       code.includes('U8glib');
+    // Look for common OLED-related code patterns
+    const hasOLEDClass = 
+      code.includes('SSD1306') || 
+      code.includes('U8G2') || 
+      code.includes('U8g2') ||
+      code.includes('Adafruit_GFX') || 
+      code.includes('Adafruit_SSD1306') ||
+      code.includes('U8glib');
+    
+    // Check for any object instantiation (assuming it might be an OLED object)
+    const hasObjectInit = /\w+\s+\w+\s*\([\s\w,]*\)/g.test(code);
+    
+    // Only consider it OLED code if there's both a related class AND object init
+    const isOLEDCode = hasOLEDClass && hasObjectInit;
                        
     if (!isOLEDCode) return null;
     
-    // Extract OLED initialization
+    // Extract OLED initialization patterns
     const oledInitRegex = /(SSD1306|Adafruit_SSD1306|U8G2|U8g2|U8GLIB)[\s\w]*\([\s\w,]*\)/g;
-    const initMatches = [...code.matchAll(oledInitRegex)];
+    const generalInitRegex = /(\w+)\s+(\w+)\s*\([\s\w,]*\)/g;
+    
+    // Try the specific pattern first, then fall back to general
+    let initMatches = [...code.matchAll(oledInitRegex)];
+    if (initMatches.length === 0) {
+      initMatches = [...code.matchAll(generalInitRegex)];
+    }
     
     // Extract drawing commands
     const drawCommands = [];
     
     // U8g2 drawing commands
     if (code.includes('U8g2') || code.includes('U8g2lib')) {
-      const u8g2DrawRegex = /\.(drawStr|drawLine|drawCircle|drawBox|drawFrame|drawPixel|drawXBM|drawBitmap)\(/g;
+      const u8g2DrawRegex = /\.(drawStr|drawLine|drawCircle|drawBox|drawFrame|drawPixel|drawXBM|drawBitmap|begin|firstPage|nextPage|setFont)\(/g;
       const u8g2Matches = [...code.matchAll(u8g2DrawRegex)];
       drawCommands.push(...u8g2Matches);
     }
     
     // Adafruit drawing commands
     if (code.includes('Adafruit_SSD1306') || code.includes('Adafruit_GFX')) {
-      const adafruitDrawRegex = /\.(drawPixel|drawLine|drawRect|fillRect|drawCircle|fillCircle|drawTriangle|fillTriangle|drawRoundRect|fillRoundRect|print|println|setTextSize|setTextColor|setTextWrap|setCursor)\(/g;
+      const adafruitDrawRegex = /\.(drawPixel|drawLine|drawRect|fillRect|drawCircle|fillCircle|drawTriangle|fillTriangle|drawRoundRect|fillRoundRect|print|println|setTextSize|setTextColor|setTextWrap|setCursor|begin|display|clearDisplay)\(/g;
       const adafruitMatches = [...code.matchAll(adafruitDrawRegex)];
       drawCommands.push(...adafruitMatches);
     }
     
     // SSD1306 direct commands - these are low-level commands that might be used
     if (code.includes('SSD1306')) {
-      const ssd1306CommandRegex = /\.(ssd1306_command|ssd1306_data|command|data)\(/g;
+      const ssd1306CommandRegex = /\.(ssd1306_command|ssd1306_data|command|data|begin|display)\(/g;
       const ssd1306Matches = [...code.matchAll(ssd1306CommandRegex)];
       drawCommands.push(...ssd1306Matches);
     }
     
-    // Text display commands - these are very common
-    const textRegex = /\.(print|println|drawString|drawStr|setCursor|setTextSize|write)\(/g;
+    // Generic text display commands - these are very common
+    const textRegex = /\.(print|println|drawString|drawStr|setCursor|setTextSize|write|begin|display)\(/g;
     const textMatches = [...code.matchAll(textRegex)];
     drawCommands.push(...textMatches);
+    
+    // Look for begin() method which is essential for OLED initialization
+    const hasBeginMethod = code.includes('.begin(');
+    
+    // For Adafruit lib, check for display() which is needed to update screen
+    const hasDisplayMethod = code.includes('.display(');
+    
+    // For U8G2, check for firstPage()/nextPage() loop pattern
+    const hasPageLoop = code.includes('.firstPage()') && code.includes('.nextPage()');
+    
+    // We need at least begin() or one of the display update methods
+    const hasRequiredMethods = hasBeginMethod && (hasDisplayMethod || hasPageLoop || drawCommands.length > 0);
 
     // Return the parsing results
     return {
-      hasOLEDCode: isOLEDCode,
+      hasOLEDCode: isOLEDCode && hasRequiredMethods,
       initCommands: initMatches.map(match => match[0]),
       drawCommands: drawCommands.map(match => match[0]),
       requiresLibrary: true
@@ -383,9 +408,15 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     // In a real implementation, we would require all connections
     // return hasSDA && hasSCL && hasVCC && hasGND;
     
-    // For debugging and development, let's make this a bit more forgiving
-    // We'll consider it properly wired if at least some key connections are present
-    return true; // hasSDA || hasSCL;
+    // Require essential connections for OLED to work properly
+    // SDA and SCL are absolutely required for I2C communication
+    const hasEssentialConnections = hasSDA && hasSCL;
+    
+    // Power connections are important too, but we can be slightly more forgiving here
+    // At minimum one of VCC or GND should be connected
+    const hasPowerConnection = hasVCC || hasGND;
+    
+    return hasEssentialConnections && hasPowerConnection;
   };
 
   // Find and initialize OLED displays in the circuit

@@ -222,122 +222,32 @@ const OLEDDisplayRenderer = ({ componentId }) => {
       isProperlyWired: displayState?.isProperlyWired
     });
     
-    // Don't show the demo if the OLED is not properly configured
+    // Check if the OLED is properly configured
     if (!shouldDisplay) {
-      // Create a message buffer to show error message
-      const errorBuffer = new Array(displayHeight).fill(0).map(() => 
+      // Create a completely blank buffer - the OLED should be OFF when not properly configured
+      const blankBuffer = new Array(displayHeight).fill(0).map(() => 
         new Array(displayWidth).fill(0)
       );
       
-      // Draw OLED text at the top
-      const titleText = "OLED Display";
-      let titleX = 5;
-      for (let i = 0; i < titleText.length; i++) {
-        drawChar(errorBuffer, titleText.charAt(i), titleX, 8);
-        titleX += 7;
-      }
+      // Set the blank buffer - no pixels lit
+      setDisplayBuffer(blankBuffer);
       
-      // Draw divider line
-      for (let x = 5; x < displayWidth - 5; x++) {
-        errorBuffer[14][x] = 1;
-      }
-      
-      // Show different messages based on the error condition
+      // Log the appropriate error but don't show anything on screen
+      // This is more realistic - an OLED with no power or no proper code would be blank
       if (displayState) {
-        // Get the error code based on state
-        let errorCode = "";
-        if (!displayState.hasRequiredLibraries) errorCode = "E01";
-        else if (!displayState.hasOLEDCode) errorCode = "E02";
-        else if (!displayState.isProperlyWired) errorCode = "E03";
-        
-        // Draw error code in top-right if there's an error
-        if (errorCode) {
-          let codeX = displayWidth - 30;
-          for (let i = 0; i < errorCode.length; i++) {
-            drawChar(errorBuffer, errorCode.charAt(i), codeX, 8);
-            codeX += 7;
-          }
-        }
-        
-        // Display specific error messages
         if (!displayState.hasRequiredLibraries) {
-          // Draw "Missing Libraries" message
-          const messages = [
-            "Missing Library:",
-            "Include one of:",
-            "#include <U8g2lib.h>",
-            "#include <Adafruit_SSD1306.h>",
-            "",
-            "Error: E01-LIB"
-          ];
-          
-          for (let msgIdx = 0; msgIdx < messages.length; msgIdx++) {
-            const message = messages[msgIdx];
-            let xPos = 5;
-            for (let i = 0; i < message.length; i++) {
-              drawChar(errorBuffer, message.charAt(i), xPos, 22 + msgIdx * 10);
-              xPos += 6;
-            }
-          }
-          
-          // Log the error for easier debugging
           console.error("OLED Error E01: Missing required libraries");
-          
         } else if (!displayState.hasOLEDCode) {
-          // Draw "No OLED Code" message with more details
-          const messages = [
-            "No OLED Display Code",
-            "Need to initialize and",
-            "use display functions:",
-            "u8g2.drawStr() or",
-            "display.print()",
-            "Error: E02-CODE"
-          ];
-          
-          for (let msgIdx = 0; msgIdx < messages.length; msgIdx++) {
-            const message = messages[msgIdx];
-            let xPos = 5;
-            for (let i = 0; i < message.length; i++) {
-              drawChar(errorBuffer, message.charAt(i), xPos, 22 + msgIdx * 10);
-              xPos += 6;
-            }
-          }
-          
-          // Log the error for easier debugging
           console.error("OLED Error E02: No display code detected");
-          
         } else if (!displayState.isProperlyWired) {
-          // Draw "Check Wiring" message with pin details
-          const messages = [
-            "Check Wiring:",
-            "Connect SDA to Arduino A4",
-            "Connect SCL to Arduino A5",
-            "Connect VCC to 5V",
-            "Connect GND to GND",
-            "Error: E03-WIRE"
-          ];
-          
-          for (let msgIdx = 0; msgIdx < messages.length; msgIdx++) {
-            const message = messages[msgIdx];
-            let xPos = 5;
-            for (let i = 0; i < message.length; i++) {
-              drawChar(errorBuffer, message.charAt(i), xPos, 22 + msgIdx * 10);
-              xPos += 6;
-            }
-          }
-          
-          // Log the error for easier debugging
           console.error("OLED Error E03: Display not properly wired");
           
-          // Show more debugging info about wires
           if (window.simulatorContext && window.simulatorContext.wires) {
             console.log("Current circuit wires:", window.simulatorContext.wires.length);
           }
         }
       }
       
-      // Set the error buffer
-      setDisplayBuffer(errorBuffer);
       return;
     }
     
@@ -829,10 +739,13 @@ const OLEDDisplayRenderer = ({ componentId }) => {
   
   // Per user request, use specific manual positioning instead of image analysis
   // Double the size and adjust position (lower 10px, right 3px)
+  // Check if the OLED is properly configured (for visuals)
+  const isDisplayActive = displayState && displayState.shouldDisplay;
+  
   return (
     <div
       ref={containerRef}
-      className="oled-display-glow"
+      className={isDisplayActive ? "oled-display-glow" : ""}
       style={{
         position: 'absolute',
         top: '47px',     // 50px - 3px = 47px (moved up by another 3px)
@@ -841,8 +754,8 @@ const OLEDDisplayRenderer = ({ componentId }) => {
         height: '84.67px',  // 80.64px * 1.05 = 84.67px (increased by 5%)
         backgroundColor: '#000',
         borderRadius: '2px',
-        boxShadow: '0 0 10px 2px rgba(0, 150, 255, 0.6)',
-        animation: 'oled-glow 2s infinite ease-in-out',
+        boxShadow: isDisplayActive ? '0 0 10px 2px rgba(0, 150, 255, 0.6)' : 'none',
+        animation: isDisplayActive ? 'oled-glow 2s infinite ease-in-out' : 'none',
         overflow: 'hidden',
         zIndex: 10
       }}
