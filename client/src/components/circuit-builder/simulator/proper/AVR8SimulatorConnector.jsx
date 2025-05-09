@@ -40,9 +40,14 @@ const AVR8SimulatorConnector = ({
     try {
       // Create a new emulator instance with callbacks
       const emulator = new AVR8Emulator({
-        onPinChange: (pin, isHigh) => {
+        onPinChange: (pin, isHigh, options) => {
           if (onPinChange) {
-            onPinChange(pin, isHigh);
+            // Pass analog value if available (for PWM pins)
+            if (options && typeof options.analogValue === 'number') {
+              onPinChange(pin, isHigh, { analogValue: options.analogValue });
+            } else {
+              onPinChange(pin, isHigh);
+            }
           }
         },
         onSerialByte: (value, char) => {
@@ -60,14 +65,20 @@ const AVR8SimulatorConnector = ({
       // Log setup complete
       logInfo('AVR8 simulator initialized');
       
-      // Load a test program right away
+      // Prepare a default test program (blink sketch)
       const testProgram = new Uint16Array([
         0x2411, 0x2400, 0xBE1F, 0x2482, 0xBB12, 0x2C00, 0xBC12, 0x2EE2,
         0xBF27, 0x95E8, 0xCFFE, 0x95E8, 0xCFFE, 0x94F0
       ]);
       
-      // Attempt to load the program
-      emulator.loadProgram(testProgram);
+      // Load the program (this will initialize the emulator)
+      const loaded = emulator.loadProgram(testProgram);
+      
+      if (loaded) {
+        logInfo('Default blink program loaded successfully');
+      } else {
+        logInfo('Failed to load default program');
+      }
       
       // Cleanup on unmount
       return () => {
