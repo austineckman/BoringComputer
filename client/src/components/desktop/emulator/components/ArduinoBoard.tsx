@@ -57,12 +57,20 @@ interface ArduinoBoardProps {
   onMove: (x: number, y: number) => void;
 }
 
+// Declare window properties for TypeScript
+declare global {
+  interface Window {
+    pinPositionCache: Map<string, any>;
+    _lastMoveEventTime: number | null;
+  }
+}
+
 /**
- * Arduino Board Component
+ * Arduino Board Component - Exact implementation from sandbox CircuitComponent
  * 
- * Renders an Arduino UNO board with pins that reflect the current state
- * from the emulator. Uses the same styling and pin representation as
- * the CircuitComponent.
+ * This component is an exact match to the behavior in the sandbox app's
+ * CircuitComponent.jsx, with the same pin management, position calculation,
+ * and event handling mechanisms.
  */
 export function ArduinoBoard({
   id,
@@ -71,30 +79,37 @@ export function ArduinoBoard({
   onSelect,
   onMove
 }: ArduinoBoardProps) {
+  // State for component position and interaction
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const boardRef = useRef<HTMLDivElement>(null);
+  
+  // Refs
+  const componentRef = useRef<HTMLDivElement>(null);
+  
+  // Component dimensions
   const width = 300;
   const height = 200;
   
   // Handle click on component
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onSelect();
+    if (onSelect) {
+      onSelect();
+    }
   };
   
   // Handle mouse down on component for dragging
   const handleMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     
-    // Only allow dragging from the board, not pins
+    // Don't initiate drag if clicking on a pin
     if ((e.target as HTMLElement).classList.contains('circuit-pin')) {
       return;
     }
     
     if (e.button === 0) { // Left mouse button
-      const rect = boardRef.current?.getBoundingClientRect();
+      const rect = componentRef.current?.getBoundingClientRect();
       if (rect) {
         setDragOffset({
           x: e.clientX - rect.left,
@@ -105,23 +120,51 @@ export function ArduinoBoard({
     }
   };
   
-  // Calculate pin position (similar to CircuitComponent)
+  // Calculate the position of pins with stable positioning - matching CircuitComponent
   const getPinPosition = (pin: typeof ARDUINO_PINS[0]) => {
-    // Create a new position that's relative to the component
+    // Check if this pin already has a position in our stable cache
+    const componentType = 'arduinoboard';
+    const pinId = pin.id;
+    const formattedPinId = `pt-${componentType}-${id.replace(/ /g, '')}-${pinId}`;
+    
+    // Check for an existing stable position in the cache
+    if (window.pinPositionCache && window.pinPositionCache.has(formattedPinId)) {
+      const cachedPos = window.pinPositionCache.get(formattedPinId);
+      
+      // If component hasn't moved, use the cached position exactly
+      if (cachedPos.origComponentX === position.x && cachedPos.origComponentY === position.y) {
+        return {
+          x: cachedPos.x,
+          y: cachedPos.y
+        };
+      }
+      
+      // If component has moved, adjust the pin position by the same delta
+      if (cachedPos.origComponentX !== undefined && cachedPos.origComponentY !== undefined) {
+        const deltaX = position.x - cachedPos.origComponentX;
+        const deltaY = position.y - cachedPos.origComponentY;
+        
+        return {
+          x: cachedPos.x + deltaX,
+          y: cachedPos.y + deltaY
+        };
+      }
+    }
+    
+    // Calculate a new position based on the pin's relative position
     const pinRelativeX = pin.x / width;
     const pinRelativeY = pin.y / height;
     
+    // Calculate position without rotation adjustment
     const newPosition = {
       x: position.x + pinRelativeX * width,
       y: position.y + pinRelativeY * height
     };
     
-    // Store the pin position in the global cache for wire connections
+    // Store this position in our cache for future reference
     if (!window.pinPositionCache) {
       window.pinPositionCache = new Map();
     }
-    
-    const formattedPinId = `pt-arduinoboard-${id.replace(/ /g, '')}-${pin.id}`;
     
     window.pinPositionCache.set(formattedPinId, {
       x: newPosition.x,
@@ -129,22 +172,43 @@ export function ArduinoBoard({
       origComponentX: position.x,
       origComponentY: position.y,
       component: id,
-      pin: pin.id
+      pin: pinId
     });
     
     return newPosition;
   };
   
-  // Handle pin click for connection
+  // Handle pin click - FIXED for improved position stability
   const handlePinClick = (pin: typeof ARDUINO_PINS[0], e: React.MouseEvent) => {
     e.stopPropagation();
     
+    // Calculate exact pin position
     const pinPosition = getPinPosition(pin);
     
     // Create pin ID with consistent format
     const formattedPinId = `pt-arduinoboard-${id.replace(/ /g, '')}-${pin.id}`;
     
-    // Create a detailed event with stable position data
+    // Initialize the global pin position cache if it doesn't exist
+    if (!window.pinPositionCache) {
+      window.pinPositionCache = new Map();
+    }
+    
+    // Store the exact pin position in the global cache with additional metadata
+    const pinPositionData = {
+      x: pinPosition.x,
+      y: pinPosition.y,
+      origComponentX: position.x,
+      origComponentY: position.y,
+      pinId: pin.id,
+      componentId: id,
+      formattedId: formattedPinId,
+      type: pin.type
+    };
+    
+    // Save to global cache for future reference
+    window.pinPositionCache.set(formattedPinId, pinPositionData);
+    
+    // Create a detailed event with stable position data from our cache
     const clickEvent = new CustomEvent('pinClicked', {
       detail: {
         id: formattedPinId,
@@ -154,16 +218,8 @@ export function ArduinoBoard({
         clientX: pinPosition.x,
         clientY: pinPosition.y,
         componentType: 'arduinoboard',
-        pinData: JSON.stringify({
-          x: pinPosition.x,
-          y: pinPosition.y,
-          origComponentX: position.x,
-          origComponentY: position.y,
-          pinId: pin.id,
-          componentId: id,
-          formattedId: formattedPinId,
-          type: pin.type
-        })
+        // Include full position data to ensure consistency
+        pinData: JSON.stringify(pinPositionData)
       },
       bubbles: true
     });
@@ -172,51 +228,89 @@ export function ArduinoBoard({
     document.dispatchEvent(clickEvent);
   };
   
-  // Handle mouse move for dragging
+  // Enhanced handle global mouse events for dragging with pin movement tracking
   useEffect(() => {
     if (!isDragging) return;
-
+    
     const handleMouseMove = (e: MouseEvent) => {
-      // Calculate the new position based on mouse position and drag offset
+      // Calculate new position relative to document
       const newX = e.clientX - dragOffset.x;
       const newY = e.clientY - dragOffset.y;
       
-      // Update component position
+      // Update position
       setPosition({ x: newX, y: newY });
       
-      // Also update using the callback for parent component tracking
-      onMove(newX, newY);
+      // Notify parent component
+      if (onMove) {
+        onMove(newX, newY);
+      }
       
-      // After position update, dispatch custom event for wire updates
-      document.dispatchEvent(new CustomEvent('componentMoved', {
-        detail: { 
-          componentId: id,
-          x: newX,
-          y: newY
+      // Performance optimization: Throttle the move event dispatching
+      // Only dispatch full move events occasionally during active dragging
+      const now = Date.now();
+      if (!window._lastMoveEventTime || now - window._lastMoveEventTime > 50) {
+        window._lastMoveEventTime = now;
+        
+        // Get all pin positions for wire updates
+        const pinPositions: Record<string, {x: number, y: number}> = {};
+        if (componentRef.current) {
+          const pins = componentRef.current.querySelectorAll('.pin-point');
+          pins.forEach(pin => {
+            const pinId = pin.getAttribute('data-pin-id');
+            if (pinId) {
+              const rect = pin.getBoundingClientRect();
+              
+              // Create formatted pin ID
+              const formattedPinId = `pt-arduinoboard-${id.replace(/ /g, '')}-${pinId}`;
+              
+              pinPositions[formattedPinId] = {
+                x: rect.left + rect.width/2,
+                y: rect.top + rect.height/2
+              };
+            }
+          });
         }
-      }));
+        
+        // Dispatch move event to update connected wire positions
+        document.dispatchEvent(new CustomEvent('componentMoved', {
+          detail: {
+            componentId: id,
+            newPosition: { x: newX, y: newY },
+            pinPositions
+          }
+        }));
+      }
     };
     
     const handleMouseUp = () => {
       setIsDragging(false);
       
-      // Final position update event
+      // Clear throttling timer
+      window._lastMoveEventTime = null;
+      
+      // Get all pin positions for final wire positions update
       const pinPositions: Record<string, {x: number, y: number}> = {};
+      if (componentRef.current) {
+        const pins = componentRef.current.querySelectorAll('.pin-point');
+        pins.forEach(pin => {
+          const pinId = pin.getAttribute('data-pin-id');
+          if (pinId) {
+            const rect = pin.getBoundingClientRect();
+            
+            // Create formatted pin ID
+            const formattedPinId = `pt-arduinoboard-${id.replace(/ /g, '')}-${pinId}`;
+            
+            pinPositions[formattedPinId] = {
+              x: rect.left + rect.width/2,
+              y: rect.top + rect.height/2
+            };
+          }
+        });
+      }
       
-      // Update all pin positions after movement
-      ARDUINO_PINS.forEach(pin => {
-        const pinPos = getPinPosition(pin);
-        const formattedPinId = `pt-arduinoboard-${id.replace(/ /g, '')}-${pin.id}`;
-        
-        pinPositions[formattedPinId] = {
-          x: pinPos.x,
-          y: pinPos.y
-        };
-      });
-      
-      // Dispatch final move event to update wires
+      // Dispatch final move event with pins
       document.dispatchEvent(new CustomEvent('componentMovedFinal', {
-        detail: { 
+        detail: {
           componentId: id,
           pinPositions
         }
@@ -232,42 +326,55 @@ export function ArduinoBoard({
     };
   }, [isDragging, dragOffset, id, onMove]);
   
-  // Register pins for wire connections
+  // Register pins in the global pin registry
   useEffect(() => {
     ARDUINO_PINS.forEach(pin => {
       const pinPosition = getPinPosition(pin);
-      const formattedPinId = `pt-arduinoboard-${id.replace(/ /g, '')}-${pin.id}`;
+      const pinElement = document.getElementById(`${id}-${pin.id}`);
       
-      // Dispatch event to register this pin for wire connections
-      const event = new CustomEvent('registerPin', {
-        detail: {
-          id: formattedPinId,
-          componentId: id,
-          pinId: pin.id,
-          pinType: pin.type,
-          x: pinPosition.x,
-          y: pinPosition.y
-        },
-        bubbles: true
-      });
-      
-      document.dispatchEvent(event);
+      if (pinElement) {
+        // Dispatch event to register this pin for wire connections
+        const event = new CustomEvent('registerPin', {
+          detail: {
+            id: `${id}-${pin.id}`,
+            parentId: id,
+            pinType: pin.type,
+            label: pin.label || pin.id,
+            element: pinElement
+          }
+        });
+        
+        document.dispatchEvent(event);
+      }
     });
+    
+    return () => {
+      // Unregister pins when component is removed or rerendered
+      ARDUINO_PINS.forEach(pin => {
+        const event = new CustomEvent('unregisterPin', {
+          detail: {
+            id: `${id}-${pin.id}`
+          }
+        });
+        
+        document.dispatchEvent(event);
+      });
+    };
   }, [id, position]);
   
   return (
     <div
-      ref={boardRef}
+      ref={componentRef}
       id={`component-${id}`}
       className="circuit-component absolute select-none"
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
+        transform: `translate(${position.x}px, ${position.y}px)`,
         width: `${width}px`,
         height: `${height}px`,
         cursor: isDragging ? 'grabbing' : 'grab',
         border: isSelected ? '2px solid #3b82f6' : 'none',
-        borderRadius: '4px'
+        borderRadius: '4px',
+        zIndex: isSelected ? 10 : 1
       }}
       onClick={handleClick}
       onMouseDown={handleMouseDown}
