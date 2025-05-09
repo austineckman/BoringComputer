@@ -724,6 +724,161 @@ body {
   }
 }
 
+/* TinkerCAD-inspired Retro Gaming UI animations */
+@keyframes crt-flicker {
+  0% {
+    opacity: 0.97;
+  }
+  5% {
+    opacity: 0.95;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  15% {
+    opacity: 0.95;
+  }
+  20% {
+    opacity: 0.98;
+  }
+  25% {
+    opacity: 0.97;
+  }
+  30% {
+    opacity: 0.99;
+  }
+  35% {
+    opacity: 0.98;
+  }
+  40% {
+    opacity: 0.97;
+  }
+  45% {
+    opacity: 0.99;
+  }
+  50% {
+    opacity: 0.98;
+  }
+  55% {
+    opacity: 0.97;
+  }
+  60% {
+    opacity: 0.99;
+  }
+  70% {
+    opacity: 0.98;
+  }
+  80% {
+    opacity: 0.99;
+  }
+  90% {
+    opacity: 0.97;
+  }
+  100% {
+    opacity: 0.98;
+  }
+}
+
+@keyframes scan-line {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 100%;
+  }
+}
+
+/* Slide-in animation for property panel */
+@keyframes slide-in-right {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pixel-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px rgba(0, 255, 255, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.8));
+  }
+}
+
+/* Utility classes for the retro gaming look */
+.retro-text {
+  font-family: 'Press Start 2P', monospace;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.8);
+}
+
+.crt-overlay {
+  position: relative;
+  overflow: hidden;
+}
+
+.crt-overlay::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.02) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 10;
+  animation: scan-line 8s linear infinite;
+}
+
+.crt-overlay::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 25, 45, 0.1);
+  opacity: 0;
+  z-index: 11;
+  pointer-events: none;
+  animation: crt-flicker 0.3s infinite;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s forwards;
+}
+
+.animate-pixel-glow {
+  animation: pixel-glow 2s infinite;
+}
+
+/* Game-like button styles */
+.game-button {
+  border: 2px solid rgba(0, 255, 255, 0.6);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.4), 
+              inset 0 0 5px rgba(0, 255, 255, 0.2);
+  text-transform: uppercase;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.7rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(to bottom, #0f2a4a, #071527);
+  color: cyan;
+  transition: all 0.2s;
+}
+
+.game-button:hover {
+  border-color: rgba(0, 255, 255, 0.8);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.6), 
+              inset 0 0 8px rgba(0, 255, 255, 0.3);
+}
+
 /* Hide the default blue control squares from Moveable component */
 .circuit-moveable .moveable-control {
   background-color: transparent !important;
