@@ -28,7 +28,10 @@ import CircuitBuilder from '../circuit-builder/CircuitBuilder';
 
 // Import simulator components
 import { SimulatorProvider, useSimulator } from '../circuit-builder/simulator/SimulatorContext';
+// Import the legacy simulator
 import AVR8Simulator from '../circuit-builder/simulator/AVR8Simulator';
+// Import our proper AVR8 simulator 
+import ProperAVR8Simulator from '../circuit-builder/simulator/ProperAVR8Simulator';
 import SimulationLogPanel from '../circuit-builder/simulator/SimulationLogPanel';
 import SimulationVisualizer from '../circuit-builder/simulator/SimulationVisualizer';
 import { defaultSketch, parseLibraryImports, parseDigitalWrites } from '../circuit-builder/simulator/SimulatorUtils';
