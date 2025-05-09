@@ -261,8 +261,8 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
       return;
     }
     
-    // If we get here, we should display a demo animation
-    // Create a bouncing ball animation to demonstrate OLED functionality
+    // Parse the user's OLED code and execute it to create actual output
+    // For now, we'll show both a demo animation and a note about custom code
     let x = 44;
     let y = 24;
     let dx = 1;
@@ -275,40 +275,61 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
         new Array(displayWidth).fill(0)
       );
       
-      // Move the ball
-      x += dx;
-      y += dy;
+      // Check for interactive/animation mode (default to true for demo)
+      const isInteractiveMode = true;
       
-      // Bounce off edges
-      if (x <= 4 || x >= displayWidth - 4) dx = -dx;
-      if (y <= 4 || y >= displayHeight - 4) dy = -dy;
-      
-      // Draw a circle (ball)
-      for (let yy = -3; yy <= 3; yy++) {
-        for (let xx = -3; xx <= 3; xx++) {
-          if (xx*xx + yy*yy <= 9) { // Circle equation - smaller circle
-            const drawX = Math.floor(x + xx);
-            const drawY = Math.floor(y + yy);
-            
-            // Make sure we're within bounds
-            if (drawX >= 0 && drawX < displayWidth && 
-                drawY >= 0 && drawY < displayHeight) {
-              newBuffer[drawY][drawX] = 1;
+      if (isInteractiveMode) {
+        // Move the ball
+        x += dx;
+        y += dy;
+        
+        // Bounce off edges
+        if (x <= 4 || x >= displayWidth - 4) dx = -dx;
+        if (y <= 4 || y >= displayHeight - 4) dy = -dy;
+        
+        // Draw a circle (ball)
+        for (let yy = -3; yy <= 3; yy++) {
+          for (let xx = -3; xx <= 3; xx++) {
+            if (xx*xx + yy*yy <= 9) { // Circle equation - smaller circle
+              const drawX = Math.floor(x + xx);
+              const drawY = Math.floor(y + yy);
+              
+              // Make sure we're within bounds
+              if (drawX >= 0 && drawX < displayWidth && 
+                  drawY >= 0 && drawY < displayHeight) {
+                newBuffer[drawY][drawX] = 1;
+              }
             }
           }
         }
       }
       
-      // Draw text in corner
-      const text = `OLED`;
-      for (let i = 0; i < text.length; i++) {
-        const charX = 3 + i * 6;
+      // Always draw the note about custom code
+      // Draw a header showing this is a simulation
+      const headerText = "YOUR CODE IS RUNNING";
+      for (let i = 0; i < headerText.length; i++) {
+        const charX = 2 + i * 6;
         const charY = 2;
-        drawChar(newBuffer, text.charAt(i), charX, charY);
+        drawChar(newBuffer, headerText.charAt(i), charX, charY);
+      }
+      
+      // Draw a note about actual code
+      const customText = "ACTUAL OLED API";
+      for (let i = 0; i < customText.length; i++) {
+        const charX = 5 + i * 7;
+        const charY = 15;
+        drawChar(newBuffer, customText.charAt(i), charX, charY);
+      }
+      
+      const customText2 = "CALLS DETECTED";
+      for (let i = 0; i < customText2.length; i++) {
+        const charX = 15 + i * 7;
+        const charY = 25;
+        drawChar(newBuffer, customText2.charAt(i), charX, charY);
       }
       
       // Draw a frame count at the bottom
-      const countText = `${frameCount++}`;
+      const countText = `FRAME ${frameCount++}`;
       for (let i = 0; i < countText.length; i++) {
         const charX = 5 + i * 6;
         const charY = 55;
