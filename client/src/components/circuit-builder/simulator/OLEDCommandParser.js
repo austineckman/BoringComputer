@@ -226,153 +226,504 @@ export const parseOLEDCommands = (code) => {
   };
 };
 
-// Execute parsed OLED commands on a virtual buffer
+/**
+ * Execute parsed OLED commands on a virtual buffer
+ * This simulates how an Adafruit SSD1306 or U8g2 display actually works
+ * with a framebuffer and drawing operations
+ */
 export const executeOLEDCommands = (commandData, width = 128, height = 64) => {
-  // Create an empty display buffer
+  console.log("Executing OLED commands:", commandData);
+  
+  // Create an empty display buffer (1 bit per pixel, 0=off, 1=on)
   const buffer = new Array(height).fill(0).map(() => new Array(width).fill(0));
   
   // If no valid command data, return empty buffer
   if (!commandData || !commandData.commands || commandData.commands.length === 0) {
+    console.log("No valid OLED commands found, returning empty buffer");
     return buffer;
   }
   
-  // Track current cursor position and text settings
-  let cursorX = 0;
-  let cursorY = 0;
-  let textSize = 1;
-  let fontScale = 1;
+  // Track display state (these values persist between commands)
+  const displayState = {
+    // Text cursor position
+    cursorX: 0,
+    cursorY: 0,
+    // Text properties
+    textSize: 1,
+    textColor: 1, // 1=on, 0=off
+    textWrap: true,
+    // U8g2-specific
+    fontScale: 1,
+    // Whether display is inverted (black on white vs white on black)
+    inverted: false,
+    // Current drawing color (for U8g2)
+    drawColor: 1,
+    // Font metrics
+    fontWidth: 6,
+    fontHeight: 8,
+    // For Adafruit GFX
+    rotation: 0
+  };
   
-  // Process each command in order
-  commandData.commands.forEach(cmd => {
-    const { method, params } = cmd;
-    
-    // Basic methods with pixel coordinates
-    switch (method) {
-      case 'drawPixel':
-        if (params.length >= 2) {
-          const x = parseInt(params[0], 10);
-          const y = parseInt(params[1], 10);
-          if (x >= 0 && x < width && y >= 0 && y < height) {
-            buffer[y][x] = 1;
-          }
-        }
-        break;
-        
-      case 'drawLine':
-        if (params.length >= 4) {
-          const x0 = parseInt(params[0], 10);
-          const y0 = parseInt(params[1], 10);
-          const x1 = parseInt(params[2], 10);
-          const y1 = parseInt(params[3], 10);
-          drawLine(buffer, x0, y0, x1, y1);
-        }
-        break;
-        
-      case 'drawRect':
-      case 'drawFrame':
-      case 'drawBox':
-        if (params.length >= 4) {
-          const x = parseInt(params[0], 10);
-          const y = parseInt(params[1], 10);
-          const w = parseInt(params[2], 10);
-          const h = parseInt(params[3], 10);
-          drawRect(buffer, x, y, w, h, false);
-        }
-        break;
-        
-      case 'fillRect':
-        if (params.length >= 4) {
-          const x = parseInt(params[0], 10);
-          const y = parseInt(params[1], 10);
-          const w = parseInt(params[2], 10);
-          const h = parseInt(params[3], 10);
-          drawRect(buffer, x, y, w, h, true);
-        }
-        break;
-        
-      case 'drawCircle':
-        if (params.length >= 3) {
-          const x = parseInt(params[0], 10);
-          const y = parseInt(params[1], 10);
-          const r = parseInt(params[2], 10);
-          drawCircle(buffer, x, y, r, false);
-        }
-        break;
-        
-      case 'fillCircle':
-        if (params.length >= 3) {
-          const x = parseInt(params[0], 10);
-          const y = parseInt(params[1], 10);
-          const r = parseInt(params[2], 10);
-          drawCircle(buffer, x, y, r, true);
-        }
-        break;
-        
-      case 'drawStr':
-        if (params.length >= 3) {
-          const x = parseInt(params[0], 10);
-          const y = parseInt(params[1], 10);
-          // The text might be quoted, remove quotes if present
-          let text = params[2];
-          if (text.startsWith('"') && text.endsWith('"')) {
-            text = text.substring(1, text.length - 1);
-          }
-          drawText(buffer, text, x, y, fontScale);
-        }
-        break;
-        
-      case 'print':
-      case 'println':
-        if (params.length >= 1) {
-          // Parse text parameter
-          let text = params[0];
-          if (text.startsWith('"') && text.endsWith('"')) {
-            text = text.substring(1, text.length - 1);
-          }
-          
-          // Draw at current cursor position
-          drawText(buffer, text, cursorX, cursorY, textSize);
-          
-          // Move cursor for next print
-          if (method === 'println') {
-            cursorX = 0;
-            cursorY += 8 * textSize; // Move to next line
-          } else {
-            cursorX += text.length * 6 * textSize; // Move to end of text
-          }
-        }
-        break;
-        
-      case 'setCursor':
-        if (params.length >= 2) {
-          cursorX = parseInt(params[0], 10);
-          cursorY = parseInt(params[1], 10);
-        }
-        break;
-        
-      case 'setTextSize':
-        if (params.length >= 1) {
-          textSize = parseInt(params[0], 10);
-          if (textSize < 1) textSize = 1;
-        }
-        break;
-        
-      case 'setFont':
-        // This would set different fonts, but we'll just adjust scale for simplicity
-        fontScale = 1;
-        break;
-        
-      default:
-        // Other methods not implemented yet
-        break;
+  try {
+    // Process each command based on the library style
+    if (commandData.isAdafruitStyle) {
+      processAdafruitCommands(commandData.commands, buffer, displayState, width, height);
+    } 
+    else if (commandData.isU8g2Style) {
+      processU8g2Commands(commandData.commands, buffer, displayState, width, height);
     }
-  });
+    else {
+      // Try both approaches
+      console.log("Library style not determined, trying both Adafruit and U8g2 command styles");
+      processAdafruitCommands(commandData.commands, buffer, displayState, width, height);
+      processU8g2Commands(commandData.commands, buffer, displayState, width, height);
+    }
+  } catch (error) {
+    console.error("Error executing OLED commands:", error);
+    
+    // Add error message to the buffer
+    const errorMsg = `ERR: ${error.message.substring(0, 16)}`;
+    drawText(buffer, errorMsg, 5, 20, 1);
+  }
   
   return buffer;
 };
 
-// Helper function to draw a line (Bresenham's algorithm)
-const drawLine = (buffer, x0, y0, x1, y1) => {
+/**
+ * Process commands for Adafruit SSD1306 style
+ */
+function processAdafruitCommands(commands, buffer, state, width, height) {
+  console.log("Processing Adafruit-style commands:", commands.length);
+  
+  // Process commands in order
+  for (const cmd of commands) {
+    const { method, params } = cmd;
+    
+    try {
+      // Basic methods with pixel coordinates
+      switch (method) {
+        case 'clearDisplay':
+          // Clear the entire buffer
+          for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+              buffer[y][x] = 0;
+            }
+          }
+          // Reset cursor position
+          state.cursorX = 0;
+          state.cursorY = 0;
+          break;
+          
+        case 'display':
+          // In real hardware this would send the buffer to display
+          // For our simulator this is a no-op as we're constantly rendering the buffer
+          console.log("display() called - buffer would be sent to hardware");
+          break;
+          
+        case 'drawPixel':
+          if (params.length >= 3) {
+            const x = parseInt(params[0], 10);
+            const y = parseInt(params[1], 10);
+            const color = parseInt(params[2], 10);
+            if (x >= 0 && x < width && y >= 0 && y < height) {
+              buffer[y][x] = color ? 1 : 0;
+            }
+          } else if (params.length >= 2) {
+            // Default to white if color not specified
+            const x = parseInt(params[0], 10);
+            const y = parseInt(params[1], 10);
+            if (x >= 0 && x < width && y >= 0 && y < height) {
+              buffer[y][x] = 1;
+            }
+          }
+          break;
+          
+        case 'drawLine':
+          if (params.length >= 4) {
+            const x0 = parseInt(params[0], 10);
+            const y0 = parseInt(params[1], 10);
+            const x1 = parseInt(params[2], 10);
+            const y1 = parseInt(params[3], 10);
+            // Optional color parameter
+            const color = params.length >= 5 ? parseInt(params[4], 10) : 1;
+            drawLine(buffer, x0, y0, x1, y1, color);
+          }
+          break;
+          
+        case 'drawRect':
+          if (params.length >= 4) {
+            const x = parseInt(params[0], 10);
+            const y = parseInt(params[1], 10);
+            const w = parseInt(params[2], 10);
+            const h = parseInt(params[3], 10);
+            // Optional color parameter
+            const color = params.length >= 5 ? parseInt(params[4], 10) : 1;
+            drawRect(buffer, x, y, w, h, false, color);
+          }
+          break;
+          
+        case 'fillRect':
+          if (params.length >= 4) {
+            const x = parseInt(params[0], 10);
+            const y = parseInt(params[1], 10);
+            const w = parseInt(params[2], 10);
+            const h = parseInt(params[3], 10);
+            // Optional color parameter
+            const color = params.length >= 5 ? parseInt(params[4], 10) : 1;
+            drawRect(buffer, x, y, w, h, true, color);
+          }
+          break;
+          
+        case 'drawCircle':
+          if (params.length >= 3) {
+            const x = parseInt(params[0], 10);
+            const y = parseInt(params[1], 10);
+            const r = parseInt(params[2], 10);
+            // Optional color parameter
+            const color = params.length >= 4 ? parseInt(params[3], 10) : 1;
+            drawCircle(buffer, x, y, r, false, color);
+          }
+          break;
+          
+        case 'fillCircle':
+          if (params.length >= 3) {
+            const x = parseInt(params[0], 10);
+            const y = parseInt(params[1], 10);
+            const r = parseInt(params[2], 10);
+            // Optional color parameter
+            const color = params.length >= 4 ? parseInt(params[3], 10) : 1;
+            drawCircle(buffer, x, y, r, true, color);
+          }
+          break;
+          
+        case 'print':
+        case 'println':
+          if (params.length >= 1) {
+            // Parse text parameter (might be in quotes)
+            let text = params[0];
+            if (text.startsWith('"') && text.endsWith('"')) {
+              text = text.substring(1, text.length - 1);
+            }
+            
+            // Try to parse number if it's not a string
+            if (!text.startsWith('"') && !isNaN(text)) {
+              text = text.toString();
+            }
+            
+            // Draw at current cursor position
+            drawText(buffer, text, state.cursorX, state.cursorY, state.textSize, state.textColor);
+            
+            // Move cursor for next print
+            if (method === 'println') {
+              state.cursorX = 0;
+              state.cursorY += state.fontHeight * state.textSize; // Move to next line
+            } else {
+              state.cursorX += text.length * state.fontWidth * state.textSize; // Move to end of text
+              
+              // Handle text wrapping if needed
+              if (state.textWrap && state.cursorX > width - state.fontWidth * state.textSize) {
+                state.cursorX = 0;
+                state.cursorY += state.fontHeight * state.textSize;
+              }
+            }
+          }
+          break;
+          
+        case 'setCursor':
+          if (params.length >= 2) {
+            state.cursorX = parseInt(params[0], 10);
+            state.cursorY = parseInt(params[1], 10);
+          }
+          break;
+          
+        case 'setTextSize':
+          if (params.length >= 1) {
+            state.textSize = parseInt(params[0], 10);
+            if (state.textSize < 1) state.textSize = 1;
+          }
+          break;
+          
+        case 'setTextColor':
+          if (params.length >= 1) {
+            state.textColor = parseInt(params[0], 10) ? 1 : 0;
+          }
+          break;
+          
+        case 'setTextWrap':
+          if (params.length >= 1) {
+            state.textWrap = params[0] === 'true' || parseInt(params[0], 10) === 1;
+          }
+          break;
+          
+        case 'setRotation':
+          if (params.length >= 1) {
+            state.rotation = parseInt(params[0], 10) % 4;
+          }
+          break;
+          
+        case 'drawRoundRect':
+        case 'fillRoundRect':
+          if (params.length >= 5) {
+            const x = parseInt(params[0], 10);
+            const y = parseInt(params[1], 10);
+            const w = parseInt(params[2], 10);
+            const h = parseInt(params[3], 10);
+            const r = parseInt(params[4], 10);
+            const color = params.length >= 6 ? parseInt(params[5], 10) : 1;
+            drawRoundRect(buffer, x, y, w, h, r, method === 'fillRoundRect', color);
+          }
+          break;
+          
+        case 'invertDisplay':
+          if (params.length >= 1) {
+            state.inverted = params[0] === 'true' || parseInt(params[0], 10) === 1;
+            // Actually invert every pixel
+            if (state.inverted) {
+              for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                  buffer[y][x] = buffer[y][x] ? 0 : 1;
+                }
+              }
+            }
+          }
+          break;
+      }
+    }
+    catch (error) {
+      console.error(`Error executing Adafruit command '${method}':`, error);
+    }
+  }
+}
+
+/**
+ * Process commands for U8g2 style
+ */
+function processU8g2Commands(commands, buffer, state, width, height) {
+  console.log("Processing U8g2-style commands:", commands.length);
+  
+  // Process commands in order
+  for (const cmd of commands) {
+    const { method, params } = cmd;
+    
+    try {
+      switch (method) {
+        case 'clearBuffer':
+          // Clear the entire buffer
+          for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+              buffer[y][x] = 0;
+            }
+          }
+          break;
+          
+        case 'sendBuffer':
+          // In real hardware this would send the buffer to display
+          // For our simulator this is a no-op as we're constantly rendering the buffer
+          console.log("sendBuffer() called - buffer would be sent to hardware");
+          break;
+          
+        case 'drawStr':
+        case 'drawUTF8':
+          if (params.length >= 3) {
+            const x = parseInt(params[0], 10);
+            const y = parseInt(params[1], 10);
+            // The text might be quoted, remove quotes if present
+            let text = params[2];
+            if (text.startsWith('"') && text.endsWith('"')) {
+              text = text.substring(1, text.length - 1);
+            }
+            
+            // Try to parse number if it's not a string
+            if (!text.startsWith('"') && !isNaN(text)) {
+              text = text.toString();
+            }
+            
+            drawText(buffer, text, x, y, state.fontScale, state.drawColor);
+          }
+          break;
+          
+        case 'drawBox':
+        case 'drawFrame':
+          if (params.length >= 4) {
+            const x = parseInt(params[0], 10);
+            const y = parseInt(params[1], 10);
+            const w = parseInt(params[2], 10);
+            const h = parseInt(params[3], 10);
+            const fill = method === 'drawBox';
+            drawRect(buffer, x, y, w, h, fill, state.drawColor);
+          }
+          break;
+          
+        case 'drawLine':
+          if (params.length >= 4) {
+            const x0 = parseInt(params[0], 10);
+            const y0 = parseInt(params[1], 10);
+            const x1 = parseInt(params[2], 10);
+            const y1 = parseInt(params[3], 10);
+            drawLine(buffer, x0, y0, x1, y1, state.drawColor);
+          }
+          break;
+          
+        case 'drawPixel':
+          if (params.length >= 2) {
+            const x = parseInt(params[0], 10);
+            const y = parseInt(params[1], 10);
+            if (x >= 0 && x < width && y >= 0 && y < height) {
+              buffer[y][x] = state.drawColor;
+            }
+          }
+          break;
+          
+        case 'drawCircle':
+          if (params.length >= 3) {
+            const x = parseInt(params[0], 10);
+            const y = parseInt(params[1], 10);
+            const r = parseInt(params[2], 10);
+            drawCircle(buffer, x, y, r, false, state.drawColor);
+          }
+          break;
+          
+        case 'drawDisc':
+          if (params.length >= 3) {
+            const x = parseInt(params[0], 10);
+            const y = parseInt(params[1], 10);
+            const r = parseInt(params[2], 10);
+            drawCircle(buffer, x, y, r, true, state.drawColor);
+          }
+          break;
+          
+        case 'setFont':
+          // This would set different fonts, but we'll just adjust scale for simplicity
+          if (params.length >= 1) {
+            // Try to detect font size from font name (e.g., u8g2_font_6x10_tr)
+            const fontName = params[0].toString();
+            if (fontName.includes('6x10')) {
+              state.fontWidth = 6;
+              state.fontHeight = 10;
+            } else if (fontName.includes('10x20')) {
+              state.fontWidth = 10;
+              state.fontHeight = 20;
+            } else if (fontName.includes('7x13')) {
+              state.fontWidth = 7;
+              state.fontHeight = 13;
+            } else {
+              // Default
+              state.fontWidth = 6;
+              state.fontHeight = 8;
+            }
+          }
+          break;
+          
+        case 'setDrawColor':
+          if (params.length >= 1) {
+            state.drawColor = parseInt(params[0], 10) ? 1 : 0;
+          }
+          break;
+          
+        case 'setFontMode':
+          // This controls transparent vs. opaque background
+          // We're not implementing this for simplicity
+          break;
+      }
+    }
+    catch (error) {
+      console.error(`Error executing U8g2 command '${method}':`, error);
+    }
+  }
+}
+
+/**
+ * Draw a round rectangle
+ */
+function drawRoundRect(buffer, x, y, w, h, radius, fill, color = 1) {
+  // Draw straight parts
+  drawRect(buffer, x + radius, y, w - 2 * radius, h, fill, color);
+  drawRect(buffer, x, y + radius, w, h - 2 * radius, fill, color);
+  
+  // Draw four corners
+  drawCircle(buffer, x + radius, y + radius, radius, fill, color);
+  drawCircle(buffer, x + w - radius - 1, y + radius, radius, fill, color);
+  drawCircle(buffer, x + radius, y + h - radius - 1, radius, fill, color);
+  drawCircle(buffer, x + w - radius - 1, y + h - radius - 1, radius, fill, color);
+}
+
+// Removed duplicate drawLine function as it's defined further down
+// with the color parameter
+
+// Helper function to draw a rectangle
+const drawRect = (buffer, x, y, w, h, fill, color = 1) => {
+  // Clamp dimensions to buffer size
+  const startX = Math.max(0, x);
+  const startY = Math.max(0, y);
+  const endX = Math.min(buffer[0].length - 1, x + w - 1);
+  const endY = Math.min(buffer.length - 1, y + h - 1);
+  
+  if (fill) {
+    // Filled rectangle
+    for (let iy = startY; iy <= endY; iy++) {
+      for (let ix = startX; ix <= endX; ix++) {
+        buffer[iy][ix] = color;
+      }
+    }
+  } else {
+    // Outline only
+    // Draw horizontal lines
+    for (let ix = startX; ix <= endX; ix++) {
+      if (startY >= 0 && startY < buffer.length) buffer[startY][ix] = color;
+      if (endY >= 0 && endY < buffer.length) buffer[endY][ix] = color;
+    }
+    // Draw vertical lines
+    for (let iy = startY; iy <= endY; iy++) {
+      if (startX >= 0 && startX < buffer[0].length) buffer[iy][startX] = color;
+      if (endX >= 0 && endX < buffer[0].length) buffer[iy][endX] = color;
+    }
+  }
+};
+
+// Helper function to draw a circle
+const drawCircle = (buffer, x0, y0, radius, fill, color = 1) => {
+  // Mid-point circle algorithm
+  let x = radius;
+  let y = 0;
+  let err = 0;
+  
+  while (x >= y) {
+    if (fill) {
+      // For filled circles, draw horizontal lines between the points
+      for (let ix = -x; ix <= x; ix++) {
+        setPixelSafe(buffer, x0 + ix, y0 + y, color);
+        setPixelSafe(buffer, x0 + ix, y0 - y, color);
+      }
+      for (let ix = -y; ix <= y; ix++) {
+        setPixelSafe(buffer, x0 + ix, y0 + x, color);
+        setPixelSafe(buffer, x0 + ix, y0 - x, color);
+      }
+    } else {
+      // For outline circles, just draw the 8 points
+      setPixelSafe(buffer, x0 + x, y0 + y, color);
+      setPixelSafe(buffer, x0 + y, y0 + x, color);
+      setPixelSafe(buffer, x0 - y, y0 + x, color);
+      setPixelSafe(buffer, x0 - x, y0 + y, color);
+      setPixelSafe(buffer, x0 - x, y0 - y, color);
+      setPixelSafe(buffer, x0 - y, y0 - x, color);
+      setPixelSafe(buffer, x0 + y, y0 - x, color);
+      setPixelSafe(buffer, x0 + x, y0 - y, color);
+    }
+    
+    y++;
+    if (err <= 0) {
+      err += 2 * y + 1;
+    }
+    if (err > 0) {
+      x--;
+      err -= 2 * x + 1;
+    }
+  }
+};
+
+// Helper function to draw a line with color parameter
+const drawLine = (buffer, x0, y0, x1, y1, color = 1) => {
   const dx = Math.abs(x1 - x0);
   const dy = Math.abs(y1 - y0);
   const sx = x0 < x1 ? 1 : -1;
@@ -381,7 +732,7 @@ const drawLine = (buffer, x0, y0, x1, y1) => {
   
   while (true) {
     if (x0 >= 0 && x0 < buffer[0].length && y0 >= 0 && y0 < buffer.length) {
-      buffer[y0][x0] = 1;
+      buffer[y0][x0] = color;
     }
     
     if (x0 === x1 && y0 === y1) break;
@@ -398,81 +749,10 @@ const drawLine = (buffer, x0, y0, x1, y1) => {
   }
 };
 
-// Helper function to draw a rectangle
-const drawRect = (buffer, x, y, w, h, fill) => {
-  // Clamp dimensions to buffer size
-  const startX = Math.max(0, x);
-  const startY = Math.max(0, y);
-  const endX = Math.min(buffer[0].length - 1, x + w - 1);
-  const endY = Math.min(buffer.length - 1, y + h - 1);
-  
-  if (fill) {
-    // Filled rectangle
-    for (let iy = startY; iy <= endY; iy++) {
-      for (let ix = startX; ix <= endX; ix++) {
-        buffer[iy][ix] = 1;
-      }
-    }
-  } else {
-    // Outline only
-    // Draw horizontal lines
-    for (let ix = startX; ix <= endX; ix++) {
-      if (startY >= 0 && startY < buffer.length) buffer[startY][ix] = 1;
-      if (endY >= 0 && endY < buffer.length) buffer[endY][ix] = 1;
-    }
-    // Draw vertical lines
-    for (let iy = startY; iy <= endY; iy++) {
-      if (startX >= 0 && startX < buffer[0].length) buffer[iy][startX] = 1;
-      if (endX >= 0 && endX < buffer[0].length) buffer[iy][endX] = 1;
-    }
-  }
-};
-
-// Helper function to draw a circle
-const drawCircle = (buffer, x0, y0, radius, fill) => {
-  // Mid-point circle algorithm
-  let x = radius;
-  let y = 0;
-  let err = 0;
-  
-  while (x >= y) {
-    if (fill) {
-      // For filled circles, draw horizontal lines between the points
-      for (let ix = -x; ix <= x; ix++) {
-        setPixelSafe(buffer, x0 + ix, y0 + y);
-        setPixelSafe(buffer, x0 + ix, y0 - y);
-      }
-      for (let ix = -y; ix <= y; ix++) {
-        setPixelSafe(buffer, x0 + ix, y0 + x);
-        setPixelSafe(buffer, x0 + ix, y0 - x);
-      }
-    } else {
-      // For outline circles, just draw the 8 points
-      setPixelSafe(buffer, x0 + x, y0 + y);
-      setPixelSafe(buffer, x0 + y, y0 + x);
-      setPixelSafe(buffer, x0 - y, y0 + x);
-      setPixelSafe(buffer, x0 - x, y0 + y);
-      setPixelSafe(buffer, x0 - x, y0 - y);
-      setPixelSafe(buffer, x0 - y, y0 - x);
-      setPixelSafe(buffer, x0 + y, y0 - x);
-      setPixelSafe(buffer, x0 + x, y0 - y);
-    }
-    
-    y++;
-    if (err <= 0) {
-      err += 2 * y + 1;
-    }
-    if (err > 0) {
-      x--;
-      err -= 2 * x + 1;
-    }
-  }
-};
-
 // Helper to set a pixel safely (checking bounds)
-const setPixelSafe = (buffer, x, y) => {
+const setPixelSafe = (buffer, x, y, color = 1) => {
   if (x >= 0 && x < buffer[0].length && y >= 0 && y < buffer.length) {
-    buffer[y][x] = 1;
+    buffer[y][x] = color;
   }
 };
 
@@ -576,7 +856,7 @@ const fontData = {
 };
 
 // Helper function to draw text using our simple font
-const drawText = (buffer, text, x, y, scale = 1) => {
+const drawText = (buffer, text, x, y, scale = 1, color = 1) => {
   // Scale should be at least 1
   scale = Math.max(1, scale);
   
@@ -595,7 +875,7 @@ const drawText = (buffer, text, x, y, scale = 1) => {
             for (let sx = 0; sx < scale; sx++) {
               const px = cursorX + (cx * scale) + sx;
               const py = y + (cy * scale) + sy;
-              setPixelSafe(buffer, px, py);
+              setPixelSafe(buffer, px, py, color);
             }
           }
         }
