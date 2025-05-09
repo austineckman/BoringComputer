@@ -650,6 +650,22 @@ export const kitComponentsRelations = relations(kitComponents, ({ one }) => ({
   }),
 }));
 
+// Define circuit project relations
+export const circuitProjectsRelations = relations(circuitProjects, ({ one }) => ({
+  user: one(users, {
+    fields: [circuitProjects.userId],
+    references: [users.id],
+  }),
+}));
+
+// Define user simulator settings relations
+export const userSimulatorSettingsRelations = relations(userSimulatorSettings, ({ one }) => ({
+  user: one(users, {
+    fields: [userSimulatorSettings.userId],
+    references: [users.id],
+  }),
+}));
+
 // Define lootbox relations
 export const lootBoxesRelations = relations(lootBoxes, ({ one }) => ({
   user: one(users, {
@@ -660,4 +676,6 @@ export const lootBoxesRelations = relations(lootBoxes, ({ one }) => ({
 
 export const usersRelations = relations(users, ({ many }) => ({
   lootBoxes: many(lootBoxes),
+  circuitProjects: many(circuitProjects),
+  simulatorSettings: many(userSimulatorSettings),
 }));
