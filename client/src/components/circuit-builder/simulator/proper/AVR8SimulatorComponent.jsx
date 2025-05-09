@@ -27,9 +27,6 @@ const AVR8SimulatorComponent = ({
   
   // Handle pin state changes from the emulator
   const handlePinChange = useCallback((pin, isHigh) => {
-    // Log the pin change
-    console.log(`[AVR8] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
-    
     // Call the parent callback if provided
     if (onPinChange) {
       onPinChange(pin, isHigh);
@@ -68,7 +65,7 @@ const AVR8SimulatorComponent = ({
   const updateConnectedComponents = useCallback((pin, isHigh) => {
     if (typeof pin === 'string' && pin.startsWith('A')) {
       // Handle analog pins (A0-A5)
-      console.log(`[AVR8] Analog pin ${pin} state changed: ${isHigh}`);
+      if (onLog) onLog(`Pin ${pin} changed: ${isHigh}`);
       return;
     }
     
@@ -95,22 +92,20 @@ const AVR8SimulatorComponent = ({
         
         // Update the component's pins
         updateComponentPins(boardId, pinUpdate);
-        console.log(`[AVR8] Updated ${boardId} pin ${pinNumber} to ${isHigh ? 'HIGH' : 'LOW'}`);
+        if (onLog) onLog(`Pin ${pinNumber} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
       });
     } else {
       // Fallback to update a generic heroboard
       const pinUpdate = {};
       pinUpdate[pinNumber] = isHigh;
       updateComponentPins('heroboard', pinUpdate);
-      console.log(`[AVR8] Fallback: Updated generic heroboard pin ${pinNumber} to ${isHigh ? 'HIGH' : 'LOW'}`);
+      if (onLog) onLog(`Pin ${pinNumber} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
     }
     
     // Handle special component updates
     
     // Pin 13 is the built-in LED
     if (pinNumber === 13) {
-      console.log(`[AVR8] Built-in LED (pin 13) changed to ${isHigh ? 'ON' : 'OFF'}`);
-      
       // Force updates to all LED components connected to pin 13
       const ledIds = Object.keys(componentStates || {}).filter(id => {
         const component = componentStates[id];
@@ -124,7 +119,6 @@ const AVR8SimulatorComponent = ({
       ledIds.forEach(ledId => {
         if (componentStates[ledId]?.connectedPin === 13) {
           updateComponentState(ledId, { isLit: isHigh });
-          console.log(`[AVR8] Updated LED ${ledId} connected to pin 13 to ${isHigh ? 'ON' : 'OFF'}`);
         }
       });
     }
@@ -161,7 +155,6 @@ const AVR8SimulatorComponent = ({
           // Use global update function if available (legacy support)
           if (typeof window !== 'undefined' && window.updateRGBLED && window.updateRGBLED[ledId]) {
             window.updateRGBLED[ledId](color, value);
-            console.log(`[AVR8] Updated RGB LED ${ledId} ${color} channel to ${value}`);
           } else {
             // Use our context update mechanism
             // Create RGB state object with just this color updated
@@ -170,14 +163,13 @@ const AVR8SimulatorComponent = ({
             };
             
             updateComponentState(ledId, rgbState);
-            console.log(`[AVR8] Updated RGB LED ${ledId} state for ${color}: ${value}`);
           }
         });
       }
     }
     
     // TODO: Handle other component types (OLED, 7-segment, etc.)
-  }, [componentStates, updateComponentState, updateComponentPins]);
+  }, [componentStates, updateComponentState, updateComponentPins, onLog]);
   
   // Render the connector component
   return (

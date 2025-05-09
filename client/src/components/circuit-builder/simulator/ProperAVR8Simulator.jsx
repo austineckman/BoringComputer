@@ -17,11 +17,16 @@ const ProperAVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
   // Access simulator context
   const { updateComponentState, updateComponentPins } = useSimulator();
   
-  // Log to console and pass to parent
+  // Log to console and pass to parent - only log errors and pin updates
   const handleLog = useCallback((message) => {
-    console.log(`[AVR8] ${message}`);
-    if (onLog) {
-      onLog(message);
+    if (message.toLowerCase().includes('error') || 
+        message.toLowerCase().includes('pin ') || 
+        message.toLowerCase().includes('fail') ||
+        message.toLowerCase().includes('serial:')) {
+      console.log(`[AVR8] ${message}`);
+      if (onLog) {
+        onLog(message);
+      }
     }
   }, [onLog]);
   
