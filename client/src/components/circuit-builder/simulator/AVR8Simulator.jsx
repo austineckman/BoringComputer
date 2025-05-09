@@ -311,9 +311,15 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
           }
           
           // Check for RGB LEDs that might be using this pin
+          // Multiple possible naming formats: 'rgb-led', 'rgbled', etc.
           const rgbLedComponentIds = Object.keys(componentStates).filter(id => 
-            id.includes('rgb-led')
+            id.includes('rgb-led') || id.includes('rgbled')
           );
+          
+          // Log RGB LEDs for debugging
+          if (rgbLedComponentIds.length > 0) {
+            console.log("Found RGB LED components:", rgbLedComponentIds);
+          }
           
           if (rgbLedComponentIds.length > 0) {
             // For RGB LEDs, we need to handle each color pin
