@@ -179,8 +179,37 @@ const OLEDDisplayRenderer = ({ componentId }) => {
   useEffect(() => {
     if (!isRunning) return;
     
+    // Clear any existing animation intervals
+    return () => {
+      if (animationInterval.current) {
+        clearInterval(animationInterval.current);
+        animationInterval.current = null;
+      }
+    };
+  }, [isRunning]);
+  
+  // Reference to store animation interval
+  const animationInterval = useRef(null);
+  
+  // Handle display updates based on simulation state
+  useEffect(() => {
+    if (!isRunning) return;
+    
+    // Always clear any existing animation when display state changes
+    if (animationInterval.current) {
+      clearInterval(animationInterval.current);
+      animationInterval.current = null;
+    }
+    
     // Check if the component state indicates we should display content
     const shouldDisplay = displayState && displayState.shouldDisplay;
+    
+    console.log("OLED Display State:", {
+      shouldDisplay,
+      hasRequiredLibraries: displayState?.hasRequiredLibraries,
+      hasOLEDCode: displayState?.hasOLEDCode,
+      isProperlyWired: displayState?.isProperlyWired
+    });
     
     // Don't show the demo if the OLED is not properly configured
     if (!shouldDisplay) {
@@ -189,31 +218,71 @@ const OLEDDisplayRenderer = ({ componentId }) => {
         new Array(displayWidth).fill(0)
       );
       
+      // Draw OLED text at the top
+      const titleText = "OLED Display";
+      let titleX = 5;
+      for (let i = 0; i < titleText.length; i++) {
+        drawChar(errorBuffer, titleText.charAt(i), titleX, 8);
+        titleX += 7;
+      }
+      
+      // Draw divider line
+      for (let x = 5; x < displayWidth - 5; x++) {
+        errorBuffer[14][x] = 1;
+      }
+      
       // Show different messages based on the error condition
       if (displayState) {
         if (!displayState.hasRequiredLibraries) {
-          // Draw "No Library" message
-          const message = "No Library";
-          let xPos = 10;
-          for (let i = 0; i < message.length; i++) {
-            drawChar(errorBuffer, message.charAt(i), xPos, 28);
-            xPos += 7;
+          // Draw "Missing Libraries" message
+          const messages = [
+            "Missing Library:",
+            "Include one of:",
+            "#include <U8g2lib.h>",
+            "#include <Adafruit_SSD1306.h>"
+          ];
+          
+          for (let msgIdx = 0; msgIdx < messages.length; msgIdx++) {
+            const message = messages[msgIdx];
+            let xPos = 5;
+            for (let i = 0; i < message.length; i++) {
+              drawChar(errorBuffer, message.charAt(i), xPos, 22 + msgIdx * 10);
+              xPos += 6;
+            }
           }
         } else if (!displayState.hasOLEDCode) {
-          // Draw "No OLED Code" message
-          const message = "No OLED Code";
-          let xPos = 10;
-          for (let i = 0; i < message.length; i++) {
-            drawChar(errorBuffer, message.charAt(i), xPos, 28);
-            xPos += 7;
+          // Draw "No OLED Code" message with more details
+          const messages = [
+            "No OLED Display Code",
+            "Need to initialize and",
+            "use display functions:",
+            "u8g2.drawStr() or display.print()"
+          ];
+          
+          for (let msgIdx = 0; msgIdx < messages.length; msgIdx++) {
+            const message = messages[msgIdx];
+            let xPos = 5;
+            for (let i = 0; i < message.length; i++) {
+              drawChar(errorBuffer, message.charAt(i), xPos, 22 + msgIdx * 10);
+              xPos += 6;
+            }
           }
         } else if (!displayState.isProperlyWired) {
-          // Draw "Check Wiring" message
-          const message = "Check Wiring";
-          let xPos = 10;
-          for (let i = 0; i < message.length; i++) {
-            drawChar(errorBuffer, message.charAt(i), xPos, 28);
-            xPos += 7;
+          // Draw "Check Wiring" message with pin details
+          const messages = [
+            "Check Wiring:",
+            "Connect SDA to Arduino A4",
+            "Connect SCL to Arduino A5",
+            "Connect VCC to 5V and GND"
+          ];
+          
+          for (let msgIdx = 0; msgIdx < messages.length; msgIdx++) {
+            const message = messages[msgIdx];
+            let xPos = 5;
+            for (let i = 0; i < message.length; i++) {
+              drawChar(errorBuffer, message.charAt(i), xPos, 22 + msgIdx * 10);
+              xPos += 6;
+            }
           }
         }
       }
@@ -231,7 +300,7 @@ const OLEDDisplayRenderer = ({ componentId }) => {
     let dy = 1;
     let frameCount = 0;
     
-    const animationInterval = setInterval(() => {
+    animationInterval.current = setInterval(() => {
       // Create new empty buffer
       const newBuffer = new Array(displayHeight).fill(0).map(() => 
         new Array(displayWidth).fill(0)
@@ -282,7 +351,10 @@ const OLEDDisplayRenderer = ({ componentId }) => {
     }, 100); // Update every 100ms for smoother animation
     
     return () => {
-      clearInterval(animationInterval);
+      if (animationInterval.current) {
+        clearInterval(animationInterval.current);
+        animationInterval.current = null;
+      }
     };
   }, [isRunning, displayState]);
   

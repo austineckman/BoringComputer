@@ -133,9 +133,14 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     if (detectedLibraries.length === 0) return;
     
     for (const lib of detectedLibraries) {
-      if (!isLibraryLoaded(lib)) {
-        logInfo(`Loading library: ${lib}`);
-        await loadLibrary(lib);
+      try {
+        if (!isLibraryLoaded(lib)) {
+          logInfo(`Loading library: ${lib}`);
+          await loadLibrary(lib);
+        }
+      } catch (error) {
+        console.error(`Error loading library ${lib}:`, error);
+        logInfo(`Warning: Could not load library ${lib}`);
       }
     }
   };
