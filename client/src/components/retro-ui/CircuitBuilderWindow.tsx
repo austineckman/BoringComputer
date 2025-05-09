@@ -827,32 +827,12 @@ void loop() {
                   // Use the global update method for RGB LEDs
                   if (typeof window !== 'undefined' && window.updateRGBLED && window.updateRGBLED[componentId]) {
                     // For RGB LEDs, we need to use the actual PWM value (0-255)
-                    // Get the analog value from compiledCode if available  
-                    let analogValue = 0;
+                    // Get the analog value directly from digital state (0 or 255)
+                    let analogValue = isHigh ? 255 : 0;
                     
-                    // Access compiledCode via the refs to avoid TypeScript errors
-                    const currentCompiledCode = compiledCodeRef.current;
-                    
-                    // Try to find specific pin value for the color channel from compiledCode
-                    if (currentCompiledCode && 
-                        currentCompiledCode.analogValues && 
-                        typeof currentCompiledCode.analogValues === 'object') {
-                      
-                      const analogValues = currentCompiledCode.analogValues as Record<string, number[]>;
-                      
-                      if (color === 'red' && analogValues['9'] && analogValues['9'].length > 0) {
-                        analogValue = analogValues['9'][analogValues['9'].length - 1];
-                      } else if (color === 'green' && analogValues['10'] && analogValues['10'].length > 0) {
-                        analogValue = analogValues['10'][analogValues['10'].length - 1];
-                      } else if (color === 'blue' && analogValues['11'] && analogValues['11'].length > 0) {
-                        analogValue = analogValues['11'][analogValues['11'].length - 1];
-                      }
-                    }
-                    
-                    // If no analog value is found, use binary 0/255 based on digital state
-                    if (analogValue === 0 && isHigh) {
-                      analogValue = 255;
-                    }
+                    // We don't have direct access to compiledCode analog values here,
+                    // so we're using the digital state (HIGH/LOW) to set colors
+                    // This will allow the RGB LED to at least show some color when pins are HIGH
                     
                     console.log(`Updating RGB LED ${componentId} ${color} channel to ${analogValue} (${isHigh ? 'HIGH' : 'LOW'})`);
                     window.updateRGBLED[componentId](color, analogValue);
