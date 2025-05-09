@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, RotateCcw, Trash2, ZoomIn, ZoomOut, Move, Play, Save, FileCode } from 'lucide-react';
+import { X, RotateCcw, Trash2, ZoomIn, ZoomOut, Move, Play, Save, FileCode, Download } from 'lucide-react';
 import ace from 'ace-builds';
+import { oledDisplayExample, sevenSegmentExample, keypadExample, rotaryEncoderExample, multiLibraryExample } from '../circuit-builder/simulator/exampleLibraryCode';
 
 // Import our CircuitBuilder component
 import CircuitBuilder from '../circuit-builder/CircuitBuilder';
@@ -11,6 +12,7 @@ import AVR8Simulator from '../circuit-builder/simulator/AVR8Simulator';
 import SimulationLogPanel from '../circuit-builder/simulator/SimulationLogPanel';
 import SimulationVisualizer from '../circuit-builder/simulator/SimulationVisualizer';
 import { defaultSketch } from '../circuit-builder/simulator/SimulatorUtils';
+import { LibraryManagerProvider } from '../circuit-builder/simulator/LibraryManager';
 
 // Legacy imports (keeping for compatibility with existing code)
 import { 
@@ -103,6 +105,13 @@ void loop() {
   - analogRead(pin): Reads an analog input, returns 0-1023
   - delay(ms): Pauses program execution for 'ms' milliseconds
   - millis(): Returns time since program started in milliseconds
+  
+  Available libraries (include with #include <LibraryName.h>):
+  
+  - U8g2lib.h: For OLED displays
+  - TM1637Display.h: For 7-segment displays 
+  - Keypad.h: For matrix keypads
+  - BasicEncoder.h: For rotary encoders
 */`;
   
   // References
@@ -564,7 +573,8 @@ void loop() {
   }, [saveProject]);
 
   return (
-    <div className="flex flex-col w-full h-full bg-gray-800 text-white overflow-hidden">
+    <LibraryManagerProvider>
+      <div className="flex flex-col w-full h-full bg-gray-800 text-white overflow-hidden">
       {/* Toolbar */}
       <div className="bg-gray-900 p-2 flex items-center justify-between border-b border-gray-700">
         <div className="flex items-center space-x-2">
@@ -773,6 +783,7 @@ void loop() {
         </div>
       )}
     </div>
+    </LibraryManagerProvider>
   );
 };
 
