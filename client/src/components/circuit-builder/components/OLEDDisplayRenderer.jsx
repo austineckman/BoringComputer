@@ -37,8 +37,8 @@ const OLEDDisplayRenderer = ({ componentId }) => {
     ctx.fillStyle = '#000000'; // Black background
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Set pixel color (white or blue depending on display type)
-    ctx.fillStyle = '#AACCFF'; // Light blue for OLED pixels
+    // Set pixel color (blue for SSD1306 OLED display)
+    ctx.fillStyle = '#64B5F6'; // SSD1306 typical blue color
     
     // Draw pixels based on buffer
     const pixelSize = Math.min(
@@ -73,8 +73,8 @@ const OLEDDisplayRenderer = ({ componentId }) => {
     if (!isRunning) return;
     
     // Create a bouncing ball animation to demonstrate OLED functionality
-    let x = 64;
-    let y = 32;
+    let x = 44;
+    let y = 24;
     let dx = 1;
     let dy = 1;
     let frameCount = 0;
@@ -90,13 +90,13 @@ const OLEDDisplayRenderer = ({ componentId }) => {
       y += dy;
       
       // Bounce off edges
-      if (x <= 5 || x >= displayWidth - 5) dx = -dx;
-      if (y <= 5 || y >= displayHeight - 5) dy = -dy;
+      if (x <= 4 || x >= displayWidth - 4) dx = -dx;
+      if (y <= 4 || y >= displayHeight - 4) dy = -dy;
       
       // Draw a circle (ball)
-      for (let yy = -4; yy <= 4; yy++) {
-        for (let xx = -4; xx <= 4; xx++) {
-          if (xx*xx + yy*yy <= 16) { // Circle equation
+      for (let yy = -3; yy <= 3; yy++) {
+        for (let xx = -3; xx <= 3; xx++) {
+          if (xx*xx + yy*yy <= 9) { // Circle equation - smaller circle
             const drawX = Math.floor(x + xx);
             const drawY = Math.floor(y + yy);
             
@@ -109,27 +109,25 @@ const OLEDDisplayRenderer = ({ componentId }) => {
         }
       }
       
-      // Draw a border
-      for (let i = 0; i < displayWidth; i++) {
-        newBuffer[0][i] = 1;
-        newBuffer[displayHeight-1][i] = 1;
-      }
-      for (let i = 0; i < displayHeight; i++) {
-        newBuffer[i][0] = 1;
-        newBuffer[i][displayWidth-1] = 1;
+      // Draw text in corner
+      const text = `OLED`;
+      for (let i = 0; i < text.length; i++) {
+        const charX = 3 + i * 6;
+        const charY = 2;
+        drawChar(newBuffer, text.charAt(i), charX, charY);
       }
       
-      // Draw text (frame count)
-      const text = `Frame: ${frameCount++}`;
-      for (let i = 0; i < text.length; i++) {
+      // Draw a frame count at the bottom
+      const countText = `${frameCount++}`;
+      for (let i = 0; i < countText.length; i++) {
         const charX = 5 + i * 6;
-        const charY = 5;
-        drawChar(newBuffer, text.charAt(i), charX, charY);
+        const charY = 55;
+        drawChar(newBuffer, countText.charAt(i), charX, charY);
       }
       
       // Update the display buffer
       setDisplayBuffer(newBuffer);
-    }, 50); // Update every 50ms
+    }, 100); // Update every 100ms for smoother animation
     
     return () => {
       clearInterval(animationInterval);
@@ -319,15 +317,15 @@ const OLEDDisplayRenderer = ({ componentId }) => {
       width={displayWidth}
       height={displayHeight}
       style={{
-        border: '1px solid #444',
+        border: 'none',
         position: 'absolute',
-        top: '22px',
-        left: '20px',
-        width: '114px',
-        height: '35px',
+        top: '35px',
+        left: '31px',
+        width: '88px',  // Exact size of the display area
+        height: '48px', // Exact size of the display area
         backgroundColor: '#000',
-        zIndex: 20,
-        boxShadow: '0 0 6px rgba(0, 200, 255, 0.5)'
+        zIndex: 10,
+        borderRadius: '1px'
       }}
     />
   );
