@@ -299,8 +299,8 @@ W.elementStyles = [], W.shadowRootOptions = { mode: "open" }, W[n0("elementPrope
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const r0 = globalThis, u0 = r0.trustedTypes, j0 = u0 ? u0.createPolicy("lit-html", { createHTML: (t) => t }) : void 0, Y0 = "$lit$", B = `lit$${(Math.random() + "").slice(9)}$`, J0 = "?" + B, gt = `<${J0}>`, q = document, a0 = () => q.createComment(""), o0 = (t) => t === null || typeof t != "object" && typeof t != "function", Z0 = Array.isArray, ft = (t) => Z0(t) || typeof (t == null ? void 0 : t[Symbol.iterator]) == "function", C0 = `[ 	
-\f\r]`, e0 = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, R0 = /-->/g, B0 = />/g, U = RegExp(`>|${C0}(?:([^\\s"'>=/]+)(${C0}*=${C0}*(?:[^ 	
+const r0 = globalThis, u0 = r0.trustedTypes, j0 = u0 ? u0.createPolicy("lit-html", { createHTML: (t) => t }) : void 0, Y0 = "$lit$", B = `lit$${(Math.random() + "").slice(9)}$`, J0 = "?" + B, gt = `<${J0}>`, q = document, a0 = () => q.createComment(""), o0 = (t) => t === null || typeof t != "object" && typeof t != "function", Z0 = Array.isArray, ft = (t) => Z0(t) || typeof (t == null ? void 0 : t[Symbol.iterator]) == "function", C0 = `[        
+\f\r]`, e0 = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, R0 = /-->/g, B0 = />/g, U = RegExp(`>|${C0}(?:([^\\s"'>=/]+)(${C0}*=${C0}*(?:[^     
 \f\r"'\`<>=]|("|')|))|$)`, "g"), N0 = /'/g, L0 = /"/g, Q0 = /^(?:script|style|textarea|title)$/i, tt = (t) => (e, ...i) => ({ _$litType$: t, strings: e, values: i }), v = tt(1), p = tt(2), Y = Symbol.for("lit-noChange"), y = Symbol.for("lit-nothing"), U0 = /* @__PURE__ */ new WeakMap(), M = q.createTreeWalker(q, 129);
 function et(t, e) {
   if (!Array.isArray(t) || !t.hasOwnProperty("raw"))
@@ -6332,27 +6332,27 @@ let T = class extends m {
   get pinInfo() {
     return [
       {
-        name: "VCC",
-        x: 74,
-        y: 11,
-        signals: [{ type: "power", signal: "VCC" }]
-      },
-      {
         name: "GND",
-        x: 92,
-        y: 11,
+        x: 44,
+        y: 112,
         signals: [{ type: "power", signal: "GND" }]
       },
       {
-        name: "SCK",
-        x: 110,
-        y: 11,
-        signals: [s0("SCK")]
+        name: "VCC",
+        x: 62,
+        y: 112,
+        signals: [{ type: "power", signal: "VCC" }]
+      },
+      {
+        name: "SCL",
+        x: 80,
+        y: 112,
+        signals: [s0("SCL")]
       },
       {
         name: "SDA",
-        x: 128,
-        y: 11,
+        x: 98,
+        y: 112,
         signals: [i0("SDA")]
       }
     ];
