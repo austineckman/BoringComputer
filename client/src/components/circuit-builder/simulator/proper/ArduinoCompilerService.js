@@ -99,14 +99,41 @@ function parseArduinoCode(code) {
                          code.includes('Serial.print') || 
                          code.includes('Serial.write');
   
-  // Extract pinMode calls
-  const pinModeRegex = /pinMode\s*\(\s*(\d+)\s*,\s*(INPUT|OUTPUT|INPUT_PULLUP)\s*\)/g;
+  // Define Arduino constants
+  const arduinoConstants = {
+    'LED_BUILTIN': 13, // Arduino built-in LED pin
+    'HIGH': 1,
+    'LOW': 0,
+    'INPUT': 'INPUT',
+    'OUTPUT': 'OUTPUT',
+    'INPUT_PULLUP': 'INPUT_PULLUP'
+  };
+  
+  // Store constants in the user program
+  userProgram.constants = arduinoConstants;
+  
+  // Extract pinMode calls, handling both numeric pins and constants
+  const pinModeRegex = /pinMode\s*\(\s*([a-zA-Z0-9_]+|\d+)\s*,\s*(INPUT|OUTPUT|INPUT_PULLUP)\s*\)/g;
   let pinModeMatch;
   
   while ((pinModeMatch = pinModeRegex.exec(setupCode)) !== null) {
-    const pin = parseInt(pinModeMatch[1], 10);
-    const mode = pinModeMatch[2];
-    userProgram.pinModes[pin] = mode;
+    let pin;
+    const pinIdentifier = pinModeMatch[1];
+    
+    // Check if this is a constant or a direct number
+    if (/^\d+$/.test(pinIdentifier)) {
+      // It's a direct number
+      pin = parseInt(pinIdentifier, 10);
+    } else {
+      // It's a constant like LED_BUILTIN
+      pin = arduinoConstants[pinIdentifier] || -1; // Use -1 if constant not found
+      console.log(`Resolving constant ${pinIdentifier} to pin ${pin}`);
+    }
+    
+    if (pin >= 0) {
+      const mode = pinModeMatch[2];
+      userProgram.pinModes[pin] = mode;
+    }
   }
   
   // Extract digitalWrite calls from setup
@@ -134,23 +161,54 @@ function parseArduinoCode(code) {
  * @param {PinOperation[]} operations - Array to add operations to
  */
 function extractDigitalWriteOperations(code, operations) {
-  // Match digitalWrite(pin, HIGH/LOW) pattern
-  // Also matches variations with spaces and constants
-  const regex = /digitalWrite\s*\(\s*(\d+)\s*,\s*(HIGH|LOW|1|0)\s*\)/g;
+  // Arduino constants needed for parsing
+  const arduinoConstants = {
+    'LED_BUILTIN': 13,
+    'HIGH': 1,
+    'LOW': 0
+  };
+
+  // Match digitalWrite(pin, HIGH/LOW) pattern with support for constants
+  const regex = /digitalWrite\s*\(\s*([a-zA-Z0-9_]+|\d+)\s*,\s*([a-zA-Z0-9_]+|\d+)\s*\)/g;
   let match;
   
   while ((match = regex.exec(code)) !== null) {
-    const pin = parseInt(match[1], 10);
-    const valueStr = match[2];
-    const value = (valueStr === 'HIGH' || valueStr === '1') ? true : false;
+    // Process pin parameter - could be a constant like LED_BUILTIN or a number
+    let pin;
+    const pinIdentifier = match[1];
     
-    operations.push({
-      pin: pin,
-      operation: 'digitalWrite',
-      value: value,
-      sourceCode: match[0],
-      conditional: isInConditionalBlock(match.index, code)
-    });
+    if (/^\d+$/.test(pinIdentifier)) {
+      // Direct number
+      pin = parseInt(pinIdentifier, 10);
+    } else {
+      // Constant like LED_BUILTIN
+      pin = arduinoConstants[pinIdentifier] || -1;
+      console.log(`Resolving pin constant ${pinIdentifier} to ${pin}`);
+    }
+    
+    // Process value parameter - could be HIGH/LOW or 1/0
+    let value;
+    const valueStr = match[2];
+    
+    if (/^\d+$/.test(valueStr)) {
+      // Direct number (1 or 0)
+      value = parseInt(valueStr, 10) !== 0;
+    } else {
+      // Constant like HIGH or LOW
+      value = valueStr === 'HIGH';
+      console.log(`Resolving value constant ${valueStr} to ${value}`);
+    }
+    
+    // Only add operation if we successfully resolved the pin
+    if (pin >= 0) {
+      operations.push({
+        pin: pin,
+        operation: 'digitalWrite',
+        value: value,
+        sourceCode: match[0],
+        conditional: isInConditionalBlock(match.index, code)
+      });
+    }
   }
 }
 
@@ -160,30 +218,54 @@ function extractDigitalWriteOperations(code, operations) {
  * @param {PinOperation[]} operations - Array to add operations to
  */
 function extractAnalogWriteOperations(code, operations) {
-  // Match analogWrite(pin, value) pattern
-  // Handles direct values as well as variables
-  const regex = /analogWrite\s*\(\s*(\d+)\s*,\s*(\d+|0x[0-9A-Fa-f]+)\s*\)/g;
+  // Arduino constants needed for parsing
+  const arduinoConstants = {
+    'LED_BUILTIN': 13
+  };
+
+  // Match analogWrite(pin, value) pattern with support for constants
+  const regex = /analogWrite\s*\(\s*([a-zA-Z0-9_]+|\d+)\s*,\s*([a-zA-Z0-9_]+|\d+|0x[0-9A-Fa-f]+)\s*\)/g;
   let match;
   
   while ((match = regex.exec(code)) !== null) {
-    const pin = parseInt(match[1], 10);
-    let valueStr = match[2];
+    // Process pin parameter - could be a constant like LED_BUILTIN or a number
+    let pin;
+    const pinIdentifier = match[1];
     
-    // Convert hexadecimal values
-    let value;
-    if (valueStr.startsWith('0x')) {
-      value = parseInt(valueStr, 16);
+    if (/^\d+$/.test(pinIdentifier)) {
+      // Direct number
+      pin = parseInt(pinIdentifier, 10);
     } else {
-      value = parseInt(valueStr, 10);
+      // Constant like LED_BUILTIN
+      pin = arduinoConstants[pinIdentifier] || -1;
+      console.log(`Resolving pin constant ${pinIdentifier} to ${pin}`);
     }
     
-    operations.push({
-      pin: pin,
-      operation: 'analogWrite',
-      value: value,
-      sourceCode: match[0],
-      conditional: isInConditionalBlock(match.index, code)
-    });
+    // Process value parameter
+    let value;
+    let valueStr = match[2];
+    
+    // Handle direct numbers (decimal or hex)
+    if (/^\d+$/.test(valueStr)) {
+      value = parseInt(valueStr, 10);
+    } else if (valueStr.startsWith('0x')) {
+      value = parseInt(valueStr, 16);
+    } else {
+      // This could be a variable, just use 128 as a fallback for demonstration
+      console.log(`Unresolved value: ${valueStr}, using default of 128`);
+      value = 128;
+    }
+    
+    // Only add operation if we successfully resolved the pin
+    if (pin >= 0) {
+      operations.push({
+        pin: pin,
+        operation: 'analogWrite',
+        value: value,
+        sourceCode: match[0],
+        conditional: isInConditionalBlock(match.index, code)
+      });
+    }
   }
 }
 
