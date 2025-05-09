@@ -899,6 +899,18 @@ void loop() {
                       OLED Display
                     </button>
                     <button
+                      onClick={() => loadExampleCode('rgbled')}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                    >
+                      RGB LED Control
+                    </button>
+                    <button
+                      onClick={() => loadExampleCode('buzzer')}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                    >
+                      Buzzer & Tones
+                    </button>
+                    <button
                       onClick={() => loadExampleCode('sevenSegment')}
                       className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
                     >
@@ -915,18 +927,6 @@ void loop() {
                       className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
                     >
                       Rotary Encoder
-                    </button>
-                    <button
-                      onClick={() => loadExampleCode('rgbled')}
-                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                    >
-                      RGB LED Control
-                    </button>
-                    <button
-                      onClick={() => loadExampleCode('buzzer')}
-                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                    >
-                      Buzzer & Tones
                     </button>
                     <button
                       onClick={() => loadExampleCode('multi')}
