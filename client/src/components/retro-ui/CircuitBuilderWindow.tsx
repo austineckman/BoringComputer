@@ -503,6 +503,7 @@ void loop() {
 
   // Local simulation state
   const [isSimulationRunning, setIsSimulationRunning] = useState(false);
+  const [showExampleDropdown, setShowExampleDropdown] = useState(false);
 
   // Use simulator context
   const { 
@@ -555,6 +556,49 @@ void loop() {
   const addSimulationLog = (message: string) => {
     addSimulatorLog(message);
     console.log(`[Simulator] ${message}`);
+  };
+  
+  // Handle loading example code
+  const loadExampleCode = (exampleType: string) => {
+    let exampleCode;
+    
+    switch(exampleType) {
+      case 'oled':
+        exampleCode = oledDisplayExample;
+        addSimulationLog('Loaded OLED Display example');
+        break;
+      case 'sevenSegment':
+        exampleCode = sevenSegmentExample;
+        addSimulationLog('Loaded 7-Segment Display example');
+        break;
+      case 'keypad':
+        exampleCode = keypadExample;
+        addSimulationLog('Loaded Keypad example');
+        break;
+      case 'encoder':
+        exampleCode = rotaryEncoderExample;
+        addSimulationLog('Loaded Rotary Encoder example');
+        break;
+      case 'multi':
+        exampleCode = multiLibraryExample;
+        addSimulationLog('Loaded multi-library example');
+        break;
+      default:
+        exampleCode = defaultCode;
+        addSimulationLog('Loaded default blink example');
+    }
+    
+    // Update the code in the editor
+    setCode(exampleCode);
+    
+    // Update the simulator code
+    updateSimulatorCode(exampleCode);
+    
+    // Close the dropdown
+    setShowExampleDropdown(false);
+    
+    // Show notification
+    showNotification('Example code loaded!');
   };
 
   // Update the Save Code button to also save the project
@@ -753,6 +797,59 @@ void loop() {
               <Save size={14} className="mr-1" />
               <span>Save Code</span>
             </button>
+            
+            <div className="relative">
+              <button 
+                className="bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded text-xs flex items-center"
+                onClick={() => setShowExampleDropdown(!showExampleDropdown)}
+              >
+                <Download size={14} className="mr-1" />
+                <span>Load Example</span>
+              </button>
+              
+              {showExampleDropdown && (
+                <div className="absolute right-0 mt-1 w-48 bg-gray-800 border border-gray-700 rounded shadow-lg z-50">
+                  <div className="py-1">
+                    <button
+                      onClick={() => loadExampleCode('default')}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                    >
+                      Basic Blink
+                    </button>
+                    <button
+                      onClick={() => loadExampleCode('oled')}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                    >
+                      OLED Display
+                    </button>
+                    <button
+                      onClick={() => loadExampleCode('sevenSegment')}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                    >
+                      7-Segment Display
+                    </button>
+                    <button
+                      onClick={() => loadExampleCode('keypad')}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                    >
+                      4x4 Keypad
+                    </button>
+                    <button
+                      onClick={() => loadExampleCode('encoder')}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                    >
+                      Rotary Encoder
+                    </button>
+                    <button
+                      onClick={() => loadExampleCode('multi')}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                    >
+                      Multi-Library Demo
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         
@@ -782,7 +879,7 @@ void loop() {
           {notification.message}
         </div>
       )}
-    </div>
+      </div>
     </LibraryManagerProvider>
   );
 };
