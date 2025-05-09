@@ -17,9 +17,13 @@ import {
   KitComponent, InsertKitComponent,
   SystemSettings, InsertSystemSettings,
   LootBoxConfig, InsertLootBoxConfig,
+  CircuitProject, InsertCircuitProject,
+  ArduinoComponent, InsertArduinoComponent,
+  UserSimulatorSettings, InsertUserSimulatorSettings,
   users, quests, userQuests, submissions, craftables, craftedItems,
   achievements, userAchievements, lootBoxes, inventoryHistory, craftingRecipes, items, lootBoxConfigs, characterEquipment,
-  componentKits, kitComponents, questComponents, systemSettings
+  componentKits, kitComponents, questComponents, systemSettings,
+  circuitProjects, arduinoComponents, userSimulatorSettings
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count, sql } from "drizzle-orm";
