@@ -12,6 +12,7 @@ const BasicWireManager = ({ canvasRef }) => {
   // State for managing wires and selections
   const [wires, setWires] = useState([]);
   const [pendingConnection, setPendingConnection] = useState(null);
+  const [pendingWireWaypoints, setPendingWireWaypoints] = useState([]); // For storing clicks during wire creation
   const [selectedWireId, setSelectedWireId] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   
@@ -145,14 +146,35 @@ const BasicWireManager = ({ canvasRef }) => {
     return position;
   };
 
-  // Generate a path with 90-degree bends for better "cable management"
-  // Using vertical-first routing (up/down then left/right)
-  const getWirePath = (start, end) => {
+  // Generate a path with waypoints and 90-degree bends
+  const getWirePath = (start, end, waypoints = []) => {
     if (!start || !end) return '';
     
-    // Generate SVG path with vertical-first 90-degree bends
-    // This goes up/down first, then left/right
-    return `M ${start.x},${start.y} V ${end.y} H ${end.x}`;
+    // If there are no waypoints, return a direct straight line
+    if (!waypoints || waypoints.length === 0) {
+      return `M ${start.x},${start.y} L ${end.x},${end.y}`;
+    }
+    
+    // Start the path
+    let path = `M ${start.x},${start.y}`;
+    
+    // Add path through each waypoint with 90-degree bend
+    waypoints.forEach((point, index) => {
+      if (index === 0) {
+        // First waypoint connects from start with 90-degree vertical-first bend
+        path += ` V ${point.y} H ${point.x}`;
+      } else {
+        // Other waypoints connect from previous waypoint with 90-degree vertical-first bend
+        const prevPoint = waypoints[index - 1];
+        path += ` V ${point.y} H ${point.x}`;
+      }
+    });
+    
+    // Connect last waypoint to end with 90-degree vertical-first bend
+    const lastPoint = waypoints[waypoints.length - 1];
+    path += ` V ${end.y} H ${end.x}`;
+    
+    return path;
   };
   
   // Handle pin click events
@@ -247,7 +269,7 @@ const BasicWireManager = ({ canvasRef }) => {
         return;
       }
       
-      // Create a new wire connection
+      // Create a new wire connection including waypoints
       const newWire = {
         id: `wire-${Date.now()}`,
         sourceId: pendingConnection.sourceId,
@@ -260,14 +282,16 @@ const BasicWireManager = ({ canvasRef }) => {
         targetComponent: parentComponentId,
         sourceName: pendingConnection.sourceName,
         targetName: pinName,
+        waypoints: [...pendingWireWaypoints], // Store the waypoints for this wire
         color: getWireColor(pendingConnection.sourceType, pinType)
       };
       
-      // Add the new wire and reset pending connection
+      // Add the new wire and reset pending connection and waypoints
       setWires([...wires, newWire]);
       setPendingConnection(null);
+      setPendingWireWaypoints([]); // Reset waypoints
       
-      console.log(`Created wire from ${pendingConnection.sourceName} to ${pinName}`);
+      console.log(`Created wire from ${pendingConnection.sourceName} to ${pinName} with ${pendingWireWaypoints.length} waypoints`);
     } catch (error) {
       console.error('Error handling pin click:', error);
       setPendingConnection(null);
@@ -285,11 +309,20 @@ const BasicWireManager = ({ canvasRef }) => {
     return '#aaaaaa'; // Default (light gray)
   };
   
-  // Handle canvas clicks to cancel pending connections
+  // Handle canvas clicks to add waypoints during wire drawing
   const handleCanvasClick = (e) => {
     // Only respond if clicking directly on the canvas (not a component)
     if (e.target === canvasRef.current && pendingConnection) {
-      setPendingConnection(null);
+      // Get the click position relative to the canvas
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      const clickPosition = {
+        x: e.clientX - canvasRect.left,
+        y: e.clientY - canvasRect.top
+      };
+      
+      // Add a waypoint at the click position
+      setPendingWireWaypoints([...pendingWireWaypoints, clickPosition]);
+      console.log('Added waypoint for wire at:', clickPosition);
     }
   };
   
@@ -474,7 +507,7 @@ const BasicWireManager = ({ canvasRef }) => {
       }
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [canvasRef, pendingConnection, selectedWireId, wires]);
+  }, [canvasRef, pendingConnection, pendingWireWaypoints, selectedWireId, wires]);
   
   // Share wires with the simulator through context
   useEffect(() => {
@@ -554,7 +587,7 @@ const BasicWireManager = ({ canvasRef }) => {
             <g key={wire.id} className="wire-connection" style={{ pointerEvents: 'auto' }}>
               {/* Highlight path to make it more visible */}
               <path
-                d={getWirePath(wire.sourcePos, wire.targetPos)}
+                d={getWirePath(wire.sourcePos, wire.targetPos, wire.waypoints)}
                 stroke="#000000" 
                 strokeWidth={selectedWireId === wire.id ? 5 : 4}
                 fill="none"
@@ -564,7 +597,7 @@ const BasicWireManager = ({ canvasRef }) => {
               
               {/* Actual colored wire */}
               <path
-                d={getWirePath(wire.sourcePos, wire.targetPos)}
+                d={getWirePath(wire.sourcePos, wire.targetPos, wire.waypoints)}
                 stroke={wire.color || '#ff0000'} // Default to bright red for high visibility
                 strokeWidth={selectedWireId === wire.id ? 3 : 2}
                 fill="none"
@@ -633,6 +666,20 @@ const BasicWireManager = ({ canvasRef }) => {
                 fill={wire.color || '#ff0000'} 
               />
               
+              {/* Show waypoint markers for the completed wire */}
+              {wire.waypoints && wire.waypoints.map((point, index) => (
+                <circle
+                  key={`waypoint-${wire.id}-${index}`}
+                  cx={point.x}
+                  cy={point.y}
+                  r={3}
+                  fill={wire.color || '#ff0000'}
+                  stroke="#000000"
+                  strokeWidth={1}
+                  opacity={selectedWireId === wire.id ? 1 : 0.7}
+                />
+              ))}
+              
               {/* Pin labels for debugging */}
               <text 
                 x={wire.sourcePos.x + 10} 
@@ -664,7 +711,8 @@ const BasicWireManager = ({ canvasRef }) => {
             <path
               d={getWirePath(
                 pendingConnection.sourcePos,
-                { x: mousePosition.x, y: mousePosition.y }
+                { x: mousePosition.x, y: mousePosition.y },
+                pendingWireWaypoints
               )}
               stroke="#000000"
               strokeWidth={4}
@@ -677,7 +725,8 @@ const BasicWireManager = ({ canvasRef }) => {
             <path
               d={getWirePath(
                 pendingConnection.sourcePos,
-                { x: mousePosition.x, y: mousePosition.y }
+                { x: mousePosition.x, y: mousePosition.y },
+                pendingWireWaypoints
               )}
               stroke="#ff5500"
               strokeWidth={2}
@@ -686,6 +735,19 @@ const BasicWireManager = ({ canvasRef }) => {
               strokeLinecap="square"
               strokeLinejoin="miter"
             />
+            
+            {/* Draw waypoint markers for pending wire */}
+            {pendingWireWaypoints.map((point, index) => (
+              <circle
+                key={`waypoint-${index}`}
+                cx={point.x}
+                cy={point.y}
+                r={4}
+                fill="#ff5500"
+                stroke="#000000"
+                strokeWidth={1}
+              />
+            ))}
             <text 
               x={pendingConnection.sourcePos.x + 10} 
               y={pendingConnection.sourcePos.y - 5} 
