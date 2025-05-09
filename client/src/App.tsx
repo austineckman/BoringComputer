@@ -27,6 +27,7 @@ import AdminSettings from "@/pages/admin-settings";
 import AdminQuestGenerator from "@/pages/admin-quest-generator";
 import LootBoxPreview from "@/pages/loot-box-preview";
 import OLEDTest from "@/pages/oled-test";
+import OLEDExampleTest from "@/pages/oled-example-test";
 import NotFound from "@/pages/not-found";
 import MainLayout from "@/components/layout/MainLayout";
 import { useQuery } from "@tanstack/react-query";
@@ -267,6 +268,10 @@ function App() {
         
         <Route path="/oled-test">
           <OLEDTest />
+        </Route>
+        
+        <Route path="/oled-example">
+          <OLEDExampleTest />
         </Route>
         
         <Route>
