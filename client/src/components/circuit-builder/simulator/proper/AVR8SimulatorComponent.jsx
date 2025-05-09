@@ -1,274 +1,194 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import AVR8SimulatorConnector from './AVR8SimulatorConnector';
 import { useSimulator } from '../SimulatorContext';
-import AVR8Emulator, { createTestProgram } from './AVR8Emulator';
 
 /**
- * AVR8 Arduino Simulator Component
+ * AVR8SimulatorComponent
  * 
- * This component is a proper implementation that actually compiles and
- * executes Arduino code on a simulated AVR microcontroller.
- * 
- * It provides cycle-accurate simulation using avr8js, with proper handling
- * of pin states, memory, and instruction execution.
+ * Main component that integrates the AVR8 emulator with the UI.
+ * It mediates between the low-level emulator and the higher-level
+ * component visualization.
  */
-const AVR8SimulatorComponent = ({ 
-  code, 
-  isRunning, 
-  onPinChange, 
-  onLog, 
-  onCompileError 
+const AVR8SimulatorComponent = ({
+  code,
+  isRunning,
+  onPinChange,
+  onLog
 }) => {
-  // Reference to the emulator instance
-  const emulatorRef = useRef(null);
-  // Compiled program
-  const [compiledProgram, setCompiledProgram] = useState(null);
-  // Compilation status
-  const [compilationStatus, setCompilationStatus] = useState({ 
-    status: 'idle', 
-    message: '' 
+  // Simulator state
+  const [serialOutput, setSerialOutput] = useState('');
+  const [compilationStatus, setCompilationStatus] = useState({
+    status: 'idle',
+    message: 'Ready'
   });
-  // Emulator log messages
-  const [logs, setLogs] = useState([]);
-  // Pin states
-  const [pinStates, setPinStates] = useState({});
-  // Serial output from the program
-  const [serialOutput, setSerialOutput] = useState([]);
-
-  // Get simulator context for updating component states
-  const { updateComponentState } = useSimulator();
-
-  // Add a log message
-  const addLog = (message) => {
-    const timestamp = new Date().toLocaleTimeString();
-    const formattedMessage = `${timestamp} - ${message}`;
-    
-    setLogs(prevLogs => [...prevLogs, formattedMessage]);
-    
-    if (onLog) {
-      onLog(formattedMessage);
-    }
-  };
-
+  
+  // Access the simulator context to update component states
+  const { componentStates, updateComponentState, updateComponentPins } = useSimulator();
+  
   // Handle pin state changes from the emulator
-  const handlePinChange = (pin, isHigh, details = {}) => {
-    const pinState = {
-      pin,
-      value: isHigh ? 1 : 0,
-      mode: details.mode || 'OUTPUT',
-      analogValue: details.analogValue !== undefined ? details.analogValue : (isHigh ? 255 : 0)
-    };
-
-    // Update internal pin states
-    setPinStates(prevStates => ({
-      ...prevStates,
-      [pin]: pinState
-    }));
-
-    // Call the onPinChange callback
+  const handlePinChange = useCallback((pin, isHigh) => {
+    // Log the pin change
+    console.log(`[AVR8] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+    
+    // Call the parent callback if provided
     if (onPinChange) {
-      onPinChange(pin, isHigh, details);
+      onPinChange(pin, isHigh);
     }
-
-    // Update components connected to this pin via the simulator context
-    if (updateComponentState) {
-      // Find heroboard component
-      const componentStates = window.simulatorContext?.componentStates || {};
-      const heroboardIds = Object.keys(componentStates).filter(id => 
-        id === 'heroboard' || id.includes('heroboard')
-      );
-
-      // Update each heroboard component with the pin state
-      heroboardIds.forEach(heroboardId => {
+    
+    // Update connected components
+    updateConnectedComponents(pin, isHigh);
+  }, [onPinChange, componentStates]);
+  
+  // Handle serial data from the emulator
+  const handleSerialData = useCallback((value, char) => {
+    setSerialOutput(prev => {
+      let newOutput = prev + char;
+      
+      // If we have a newline, log it and reset
+      if (char === '\n') {
+        const line = newOutput.trim();
+        if (line && onLog) {
+          onLog(`Serial: ${line}`);
+        }
+        return '';
+      }
+      
+      return newOutput;
+    });
+  }, [onLog]);
+  
+  // Log messages from the emulator
+  const handleLog = useCallback((message) => {
+    if (onLog) {
+      onLog(message);
+    }
+  }, [onLog]);
+  
+  // Update components connected to a pin
+  const updateConnectedComponents = useCallback((pin, isHigh) => {
+    if (typeof pin === 'string' && pin.startsWith('A')) {
+      // Handle analog pins (A0-A5)
+      console.log(`[AVR8] Analog pin ${pin} state changed: ${isHigh}`);
+      return;
+    }
+    
+    // Convert pin to number (if it's not already)
+    const pinNumber = typeof pin === 'number' ? pin : parseInt(pin, 10);
+    
+    // Skip if pin is not valid
+    if (isNaN(pinNumber)) return;
+    
+    // Update Arduino board pins
+    // Find all Arduino/hero board components
+    const heroboardIds = Object.keys(componentStates || {}).filter(id => 
+      id === 'heroboard' || 
+      id.includes('heroboard') || 
+      id.includes('arduino')
+    );
+    
+    // Update each board
+    if (heroboardIds.length > 0) {
+      heroboardIds.forEach(boardId => {
+        // Create pin update object
         const pinUpdate = {};
-        pinUpdate[pin] = isHigh;
-        window.simulatorContext.updateComponentPins(heroboardId, pinUpdate);
-        console.log(`[AVR8] Updated ${heroboardId} pin ${pin} to ${isHigh ? 'HIGH' : 'LOW'}`);
-      });
-
-      // Handle RGB LEDs
-      // Find any RGB LEDs that might be connected to this pin
-      const rgbLedComponentIds = Object.keys(componentStates).filter(id => {
-        const component = componentStates[id];
-        if (component && component.type === 'rgb-led') {
-          return true;
-        }
+        pinUpdate[pinNumber] = isHigh;
         
-        const idLower = id.toLowerCase();
-        return idLower.includes('rgb-led') || 
-               idLower.includes('rgbled') || 
-               idLower.includes('rgb');
+        // Update the component's pins
+        updateComponentPins(boardId, pinUpdate);
+        console.log(`[AVR8] Updated ${boardId} pin ${pinNumber} to ${isHigh ? 'HIGH' : 'LOW'}`);
       });
-
-      if (rgbLedComponentIds.length > 0) {
-        // Default pin mapping for RGB LEDs
-        const pinToColorMap = {
-          '9': 'red',
-          '10': 'green',
-          '11': 'blue'
-        };
-
-        // Update RGB LEDs connected to this pin
-        if (pinToColorMap[pin] && window.updateRGBLED) {
-          const color = pinToColorMap[pin];
-          const value = pinState.analogValue;
-
-          rgbLedComponentIds.forEach(rgbLedId => {
-            if (window.updateRGBLED[rgbLedId]) {
-              // Send the value to the RGB LED component
-              window.updateRGBLED[rgbLedId](color, value);
-              console.log(`[AVR8] Updated RGB LED ${rgbLedId} ${color} to ${value}`);
-            }
-          });
-        }
-      }
-    }
-  };
-
-  // Handle serial output from the emulator
-  const handleSerialOutput = (line) => {
-    setSerialOutput(prev => [...prev, line]);
-    addLog(`Serial output: ${line}`);
-  };
-
-  // Compile the Arduino code
-  const compileCode = async (code) => {
-    setCompilationStatus({ status: 'compiling', message: 'Compiling Arduino code...' });
-    
-    try {
-      addLog('Starting compilation...');
-      
-      // In a real implementation, we would use a proper compiler
-      // For now, we're using a test program since we don't have a WebAssembly compiler
-      const program = createTestProgram();
-      
-      setCompiledProgram(program);
-      setCompilationStatus({ 
-        status: 'success', 
-        message: 'Compilation successful. Using test program for demonstration.' 
-      });
-      
-      addLog('Compilation successful (using test program)');
-      return program;
-    } catch (error) {
-      setCompilationStatus({ 
-        status: 'error', 
-        message: `Compilation error: ${error.message}` 
-      });
-      
-      addLog(`Compilation error: ${error.message}`);
-      
-      if (onCompileError) {
-        onCompileError(error);
-      }
-      
-      return null;
-    }
-  };
-
-  // Initialize the emulator
-  const initializeEmulator = (program) => {
-    if (!program) return;
-    
-    try {
-      addLog('Initializing AVR8 emulator...');
-      
-      // Create the emulator with appropriate options
-      const emulator = new AVR8Emulator({
-        cpuFrequency: 16e6, // 16MHz Arduino
-        onPinChange: handlePinChange,
-        onSerialOutput: handleSerialOutput,
-        debug: true // Enable debug logs
-      });
-      
-      // Load the program
-      emulator.loadProgram(program);
-      
-      // Initialize the emulator
-      emulator.init();
-      
-      // Store the emulator reference
-      emulatorRef.current = emulator;
-      
-      addLog('AVR8 emulator initialized successfully');
-    } catch (error) {
-      addLog(`Error initializing emulator: ${error.message}`);
-      console.error('Emulator initialization error:', error);
-    }
-  };
-
-  // Start the emulator
-  const startEmulator = () => {
-    const emulator = emulatorRef.current;
-    if (!emulator) return;
-    
-    try {
-      addLog('Starting AVR8 emulator execution...');
-      emulator.start();
-    } catch (error) {
-      addLog(`Error starting emulator: ${error.message}`);
-      console.error('Emulator start error:', error);
-    }
-  };
-
-  // Stop the emulator
-  const stopEmulator = () => {
-    const emulator = emulatorRef.current;
-    if (!emulator) return;
-    
-    try {
-      addLog('Stopping AVR8 emulator...');
-      emulator.stop();
-    } catch (error) {
-      addLog(`Error stopping emulator: ${error.message}`);
-      console.error('Emulator stop error:', error);
-    }
-  };
-
-  // When code changes, recompile
-  useEffect(() => {
-    if (code) {
-      // Compile the code
-      compileCode(code).then(program => {
-        if (program) {
-          // Clean up any previous emulator
-          if (emulatorRef.current) {
-            stopEmulator();
-            emulatorRef.current = null;
-          }
-          
-          // Initialize new emulator with the compiled program
-          initializeEmulator(program);
-        }
-      });
-    }
-  }, [code]);
-
-  // Start/stop emulator when isRunning changes
-  useEffect(() => {
-    if (isRunning) {
-      startEmulator();
     } else {
-      stopEmulator();
+      // Fallback to update a generic heroboard
+      const pinUpdate = {};
+      pinUpdate[pinNumber] = isHigh;
+      updateComponentPins('heroboard', pinUpdate);
+      console.log(`[AVR8] Fallback: Updated generic heroboard pin ${pinNumber} to ${isHigh ? 'HIGH' : 'LOW'}`);
     }
-  }, [isRunning, compiledProgram]);
-
-  // Clean up on unmount
-  useEffect(() => {
-    return () => {
-      // Stop the emulator if it's running
-      if (emulatorRef.current) {
-        stopEmulator();
+    
+    // Handle special component updates
+    
+    // Pin 13 is the built-in LED
+    if (pinNumber === 13) {
+      console.log(`[AVR8] Built-in LED (pin 13) changed to ${isHigh ? 'ON' : 'OFF'}`);
+      
+      // Force updates to all LED components connected to pin 13
+      const ledIds = Object.keys(componentStates || {}).filter(id => {
+        const component = componentStates[id];
+        return component && (
+          component.type === 'led' || 
+          id.includes('led') || 
+          id.includes('LED')
+        );
+      });
+      
+      ledIds.forEach(ledId => {
+        if (componentStates[ledId]?.connectedPin === 13) {
+          updateComponentState(ledId, { isLit: isHigh });
+          console.log(`[AVR8] Updated LED ${ledId} connected to pin 13 to ${isHigh ? 'ON' : 'OFF'}`);
+        }
+      });
+    }
+    
+    // Handle RGB LEDs (pins 9-11 typically)
+    if ([9, 10, 11].includes(pinNumber)) {
+      const rgbLedIds = Object.keys(componentStates || {}).filter(id => {
+        const component = componentStates[id];
+        return component && (
+          component.type === 'rgbled' || 
+          component.type === 'rgb-led' || 
+          id.includes('rgb') || 
+          id.includes('RGB')
+        );
+      });
+      
+      // Standard pin mapping for RGB LEDs
+      const pinToColorMap = {
+        9: 'red',
+        10: 'green',
+        11: 'blue'
+      };
+      
+      const color = pinToColorMap[pinNumber];
+      
+      // Only update if this is a color pin and we have RGB LEDs
+      if (color && rgbLedIds.length > 0) {
+        // Set analog value (0-255) based on digital state for now
+        // In a full implementation, we'd get this from the PWM
+        const value = isHigh ? 255 : 0;
+        
+        // Update each RGB LED component
+        rgbLedIds.forEach(ledId => {
+          // Use global update function if available (legacy support)
+          if (typeof window !== 'undefined' && window.updateRGBLED && window.updateRGBLED[ledId]) {
+            window.updateRGBLED[ledId](color, value);
+            console.log(`[AVR8] Updated RGB LED ${ledId} ${color} channel to ${value}`);
+          } else {
+            // Use our context update mechanism
+            // Create RGB state object with just this color updated
+            const rgbState = { 
+              [color]: value 
+            };
+            
+            updateComponentState(ledId, rgbState);
+            console.log(`[AVR8] Updated RGB LED ${ledId} state for ${color}: ${value}`);
+          }
+        });
       }
-    };
-  }, []);
-
-  // Render debugging information
+    }
+    
+    // TODO: Handle other component types (OLED, 7-segment, etc.)
+  }, [componentStates, updateComponentState, updateComponentPins]);
+  
+  // Render the connector component
   return (
-    <div style={{ display: 'none' }}>
-      {/* This component doesn't render anything visible */}
-      {/* It works in the background to simulate the Arduino */}
-      {/* Add debugging elements here if needed */}
-    </div>
+    <AVR8SimulatorConnector
+      code={code}
+      isRunning={isRunning}
+      onPinChange={handlePinChange}
+      onSerialData={handleSerialData}
+      onLog={handleLog}
+      setCompilationStatus={setCompilationStatus}
+    />
   );
 };
 
