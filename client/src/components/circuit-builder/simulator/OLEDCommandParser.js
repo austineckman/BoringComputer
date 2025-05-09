@@ -7,8 +7,30 @@
 
 // Helper function to match a pattern in code and extract parameters
 const extractParams = (code, methodName) => {
-  const regex = new RegExp(`\\.${methodName}\\(([^;]*?)\\)`, 'g');
+  // More lenient regex that can handle various formatting styles and multiline calls
+  const regex = new RegExp(`\\.${methodName}\\s*\\(([^;]*?)\\)`, 'g');
   const matches = [...code.matchAll(regex)];
+  
+  if (matches.length === 0) {
+    // Try alternative format (without dot) for direct function calls
+    const altRegex = new RegExp(`\\b${methodName}\\s*\\(([^;]*?)\\)`, 'g');
+    const altMatches = [...code.matchAll(altRegex)];
+    
+    if (altMatches.length > 0) {
+      console.log(`Found ${altMatches.length} alternative matches for ${methodName}`);
+    }
+    
+    return altMatches.map(match => {
+      // Clean up the parameter string
+      const params = match[1].trim().split(',').map(p => p.trim());
+      return {
+        method: methodName,
+        params: params
+      };
+    });
+  }
+  
+  console.log(`Found ${matches.length} matches for ${methodName}`);
   return matches.map(match => {
     // Clean up the parameter string
     const params = match[1].trim().split(',').map(p => p.trim());
@@ -21,76 +43,186 @@ const extractParams = (code, methodName) => {
 
 // Helper function to find the display object name from initialization
 const findDisplayObjectName = (code) => {
+  console.log("Finding display object in code:", code ? code.substring(0, 100) + "..." : "no code");
+  
   // Look for common OLED initialization patterns
   const patterns = [
+    // Adafruit style
     /(\w+)\s*=\s*new\s+Adafruit_SSD1306/,
+    // U8G2 styles (multiple variants)
     /(\w+)\s*=\s*new\s+U8G2_SSD1306/,
-    /(\w+)\s+(\w+)\s*\(\s*U8G2_R0/,
     /U8G2_SSD1306[^(]*\([^)]*\)\s+(\w+)/,
+    /U8G2_SH1106[^(]*\([^)]*\)\s+(\w+)/,
+    // Constructor with variable declaration
+    /(\w+)\s+(\w+)\s*\(\s*U8G2_R0/,
+    // Other SSD1306 variants
     /Adafruit_SSD1306[^(]*\([^)]*\)\s+(\w+)/,
-    /SSD1306[^(]*\([^)]*\)\s+(\w+)/
+    /SSD1306[^(]*\([^)]*\)\s+(\w+)/,
+    // Direct declaration format
+    /U8G2_SSD1306[^;]*;\s*\/\/\s*(\w+)/
   ];
   
   for (const pattern of patterns) {
     const match = code.match(pattern);
     if (match) {
-      return match[1]; // Return the captured variable name
+      const name = match[1] || match[2];
+      console.log(`Found display object name: ${name} using pattern:`, pattern);
+      return name; // Return the captured variable name
     }
   }
   
+  // Explicit search for u8g2 which is the most common name
+  if (code.includes("u8g2.begin") || 
+      code.includes("u8g2.drawStr") || 
+      code.includes("u8g2.drawBox")) {
+    console.log("Found u8g2 object via explicit method calls");
+    return "u8g2";
+  }
+  
   // If no specific pattern matches, look for any reasonable display object
-  const fallbackPattern = /(\w+)\.(begin|display|clear|drawPixel|drawLine|print|setCursor|drawCircle|fillCircle)/;
-  const fallbackMatch = code.match(fallbackPattern);
-  return fallbackMatch ? fallbackMatch[1] : 'display'; // Default to 'display' if nothing found
+  const methods = ["begin", "display", "clearDisplay", "clear", "drawPixel", "drawLine", 
+                  "print", "setCursor", "drawCircle", "fillCircle", "drawRect", "drawBox"];
+  
+  for (const method of methods) {
+    const methodPattern = new RegExp(`(\\w+)\\.${method}\\s*\\(`);
+    const methodMatch = code.match(methodPattern);
+    if (methodMatch) {
+      console.log(`Found display object name: ${methodMatch[1]} via method call: ${method}`);
+      return methodMatch[1];
+    }
+  }
+  
+  // Default
+  console.log("No display object name found, using default: 'u8g2'");
+  return 'u8g2'; // Default to u8g2 if nothing found as it's most common
 };
 
 // Parse all OLED commands from code
 export const parseOLEDCommands = (code) => {
-  if (!code) return { commands: [], objectName: 'display' };
+  if (!code) {
+    console.log("No code provided to parseOLEDCommands");
+    return { commands: [], objectName: 'display' };
+  }
+  
+  console.log("Parsing OLED commands from code:", code.length > 100 ? code.substring(0, 100) + "..." : code);
   
   // Find the display object name
   const objectName = findDisplayObjectName(code);
-  
-  // Create regular expressions for each OLED object
-  const objectRegex = new RegExp(`${objectName}\\.`, 'g');
+  console.log("Found OLED object name:", objectName);
   
   // Extract commands based on the object name
   const commands = [];
   
-  // Common OLED commands to extract
-  const methodsToExtract = [
-    // U8g2 methods
-    'begin', 'firstPage', 'nextPage', 'drawStr', 'drawLine', 'drawBox', 
-    'drawFrame', 'drawCircle', 'drawPixel', 'drawXBM', 'drawBitmap', 'setFont',
-    // Adafruit methods
-    'display', 'clearDisplay', 'drawPixel', 'drawLine', 'drawRect', 'fillRect',
-    'drawCircle', 'fillCircle', 'drawTriangle', 'fillTriangle', 'drawRoundRect',
-    'fillRoundRect', 'print', 'println', 'setCursor', 'setTextSize', 'setTextColor',
-    'setTextWrap'
-  ];
+  // Detect the library type (Adafruit vs U8g2)
+  const isAdafruitStyle = code.includes('Adafruit_SSD1306') || 
+                          code.includes('SSD1306_SWITCHCAPVCC') ||
+                          code.includes('clearDisplay()') || 
+                          code.includes('clearDisplay();') ||
+                          code.includes(`${objectName}.display()`);
+                          
+  const isU8g2Style = code.includes('U8G2_SSD1306') || 
+                      code.includes('U8g2') || 
+                      code.includes('u8g2') ||
+                      code.includes(`${objectName}.firstPage()`) || 
+                      code.includes(`${objectName}.nextPage()`);
   
-  // Extract all matching methods
+  console.log("Detected library styles:", { isAdafruitStyle, isU8g2Style });
+  
+  // Common OLED commands to extract based on the detected library style
+  let methodsToExtract = [];
+  
+  if (isAdafruitStyle) {
+    methodsToExtract = [
+      'begin', 'display', 'clearDisplay', 'drawPixel', 'drawLine', 'drawRect', 'fillRect',
+      'drawCircle', 'fillCircle', 'drawTriangle', 'fillTriangle', 'drawRoundRect',
+      'fillRoundRect', 'print', 'println', 'setCursor', 'setTextSize', 'setTextColor',
+      'setTextWrap', 'write'
+    ];
+  } 
+  else if (isU8g2Style) {
+    methodsToExtract = [
+      'begin', 'firstPage', 'nextPage', 'drawStr', 'drawLine', 'drawBox', 
+      'drawFrame', 'drawCircle', 'drawPixel', 'drawXBM', 'drawBitmap', 'setFont',
+      'drawUTF8', 'setFontMode', 'setDrawColor', 'sendBuffer', 'clearBuffer'
+    ];
+  }
+  else {
+    // Try both styles since we couldn't determine
+    methodsToExtract = [
+      // Adafruit methods
+      'begin', 'display', 'clearDisplay', 'drawPixel', 'drawLine', 'drawRect', 'fillRect',
+      'drawCircle', 'fillCircle', 'print', 'println', 'setCursor', 'setTextSize', 'setTextColor',
+      // U8g2 methods
+      'firstPage', 'nextPage', 'drawStr', 'drawBox', 'drawFrame', 'drawXBM', 
+      'setFont', 'clearBuffer', 'sendBuffer',
+      // Common methods
+      'clear', 'draw', 'fill'
+    ];
+  }
+  
+  // Extract all matching methods, with detailed logs of what's found
   methodsToExtract.forEach(method => {
     const methodCommands = extractParams(code, method);
+    if (methodCommands.length > 0) {
+      console.log(`Found ${methodCommands.length} commands for method '${method}'`);
+    }
     commands.push(...methodCommands);
   });
   
-  // Look for initialization pattern (u8g2.begin())
-  const hasBeginMethod = code.includes(`${objectName}.begin`);
+  // Look for initialization pattern (object.begin())
+  const hasBeginMethod = code.includes(`${objectName}.begin`) ||
+                         code.includes('begin(') ||
+                         code.includes('begin (');
   
   // For U8g2 library, detect page loop pattern
-  const hasPageLoop = code.includes(`${objectName}.firstPage`) && 
-                      code.includes(`${objectName}.nextPage`);
+  const hasPageLoop = (code.includes(`${objectName}.firstPage`) && 
+                      code.includes(`${objectName}.nextPage`)) ||
+                      (code.includes('firstPage') && code.includes('nextPage'));
   
-  // Adafruit lib needs display() method
-  const hasDisplayMethod = code.includes(`${objectName}.display(`);
+  // For Adafruit lib, check for display() which is needed to update screen
+  const hasDisplayMethod = code.includes(`${objectName}.display`) ||
+                           code.includes('display(') ||
+                           code.includes('display (');
   
+  // For U8g2, check for clearBuffer/sendBuffer pattern
+  const hasBufferMethod = (code.includes(`${objectName}.clearBuffer`) && 
+                          code.includes(`${objectName}.sendBuffer`)) ||
+                          (code.includes('clearBuffer') && code.includes('sendBuffer'));
+  
+  // For either library, check for drawing calls
+  const hasDrawCall = code.includes('draw') || 
+                      code.includes('fill') || 
+                      code.includes('print') ||
+                      code.includes('set');
+  
+  // Try to detect OLED initialization patterns
+  const hasSSD1306Init = code.includes('SSD1306') || code.includes('ssd1306');
+  const hasI2CInit = code.includes('0x3C') || code.includes('0x3D') || code.includes('&Wire');
+  
+  // Log detailed diagnostics
+  console.log("OLED command diagnostics:", {
+    objectName,
+    commandsFound: commands.length,
+    hasBeginMethod,
+    hasPageLoop,
+    hasDisplayMethod,
+    hasBufferMethod,
+    hasDrawCall,
+    hasSSD1306Init,
+    hasI2CInit
+  });
+  
+  // Return comprehensive information about the commands found
   return {
     commands,
     objectName,
+    isAdafruitStyle,
+    isU8g2Style,
     hasBeginMethod,
     hasPageLoop,
-    hasDisplayMethod
+    hasDisplayMethod,
+    hasBufferMethod,
+    hasDrawCall
   };
 };
 
