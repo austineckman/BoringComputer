@@ -936,6 +936,14 @@ const RetroDesktop: React.FC = () => {
           setLockpickingAppState('closed');
         }} />
       )}
+
+      {/* Fullscreen Universal Emulator Application */}
+      {universalEmulatorState === 'open' && (
+        <FullscreenUniversalEmulatorApp onClose={() => {
+          // Reset app state to closed
+          setUniversalEmulatorState('closed');
+        }} />
+      )}
       {/* Desktop Icons */}
       <div className="absolute top-0 left-0 right-0 bottom-0">
         {/* Regular icons */}
