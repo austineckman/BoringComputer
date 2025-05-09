@@ -316,9 +316,20 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
           console.log("All component IDs:", Object.keys(componentStates));
           
           // Look for any RGB LED component with various naming patterns
-          const rgbLedComponentIds = Object.keys(componentStates).filter(id => 
-            id.includes('rgb-led') || id.includes('rgbled') || id.toLowerCase().includes('rgb')
-          );
+          // Use more inclusive pattern matching for RGB LEDs
+          const rgbLedComponentIds = Object.keys(componentStates).filter(id => {
+            // First check if the component is explicitly marked as rgb-led type
+            const component = componentStates[id];
+            if (component && component.type === 'rgb-led') {
+              return true;
+            }
+            
+            // Then check with various naming patterns
+            const idLower = id.toLowerCase();
+            return idLower.includes('rgb-led') || 
+                  idLower.includes('rgbled') || 
+                  idLower.includes('rgb');
+          });
           
           // Log RGB LEDs for debugging
           if (rgbLedComponentIds.length > 0) {
