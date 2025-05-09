@@ -23,41 +23,6 @@ const AVR8SimulatorConnector = ({
   // Keep track of our current code
   const codeRef = useRef(code);
   
-  // Initialize the emulator
-  useEffect(() => {
-    // Create a new emulator instance
-    const emulator = new AVR8Emulator();
-    emulatorRef.current = emulator;
-    
-    // Set up event handlers
-    if (onPinChange) {
-      emulator.onPinChange(onPinChange);
-    }
-    
-    if (onSerialData) {
-      emulator.onSerialData(onSerialData);
-    }
-    
-    if (onLog) {
-      emulator.onLog(onLog);
-    }
-    
-    // Log setup complete
-    logInfo('AVR8 simulator initialized');
-    
-    // Cleanup on unmount
-    return () => {
-      if (emulatorRef.current) {
-        logInfo('Cleaning up simulator');
-        emulatorRef.current.cleanup();
-        emulatorRef.current = null;
-      }
-    };
-  }, []);
-  
-  // Import our emulator
-  const { AVR8Emulator } = require('./AVR8Emulator');
-
   // Utility for logging - only log errors and pin updates
   const logInfo = (message) => {
     if (message.toLowerCase().includes('error') || 
@@ -69,6 +34,39 @@ const AVR8SimulatorConnector = ({
       }
     }
   };
+  
+  // Initialize the emulator
+  useEffect(() => {
+    // Create a new emulator instance with callbacks
+    const emulator = new AVR8Emulator({
+      onPinChange: (pin, isHigh) => {
+        if (onPinChange) {
+          onPinChange(pin, isHigh);
+        }
+      },
+      onSerialByte: (value, char) => {
+        if (onSerialData) {
+          onSerialData(value, char);
+        }
+      },
+      onError: (message) => {
+        logInfo(message);
+      }
+    });
+    
+    emulatorRef.current = emulator;
+    
+    // Log setup complete
+    logInfo('AVR8 simulator initialized');
+    
+    // Cleanup on unmount
+    return () => {
+      if (emulatorRef.current) {
+        emulatorRef.current.stop();
+        emulatorRef.current = null;
+      }
+    };
+  }, []);
   
   // Effect to handle code changes
   useEffect(() => {
