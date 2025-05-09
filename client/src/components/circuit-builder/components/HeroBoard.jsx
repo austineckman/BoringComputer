@@ -68,26 +68,43 @@ const HeroBoard = ({
     triggerRedraw();
   }, [pinInfo, posTop, posLeft]);
   
-  // Track pin 13 state for the built-in LED
+  // Track pin states from the emulator signals - responsive to ALL pins
   useEffect(() => {
-    // Check if the component has any states registered
-    if (componentStates) {
-      // Try looking up by heroboard prefix (fallback for updateComponentPins from AVR8Simulator)
-      const heroboardPrefix = Object.keys(componentStates).find(key => 
-        key === 'heroboard' || key.startsWith('heroboard-')
-      );
-
-      // Use either the exact ID or the prefixed version as a fallback
-      const stateKey = componentStates[id] ? id : heroboardPrefix;
-      
-      if (stateKey && componentStates[stateKey] && componentStates[stateKey].pins) {
-        // Check if pin 13 has a state in the simulator
-        const pin13 = componentStates[stateKey].pins['13'];
-        if (pin13 !== undefined) {
-          setPin13State(!!pin13); // Force boolean conversion
-          console.log(`[HeroBoard ${id}] Pin 13 state changed to ${pin13 ? 'HIGH' : 'LOW'}`);
-        }
+    // This effect listens for pin state changes from the emulator
+    // and updates the HeroBoard display accordingly
+    if (!componentStates) return;
+    
+    // More robust lookup for this board or fallbacks
+    const boardKeys = Object.keys(componentStates).filter(key => 
+      key === id || 
+      key === 'heroboard' || 
+      key.startsWith('heroboard-') ||
+      key.includes('arduino')
+    );
+    
+    // No relevant board state found
+    if (boardKeys.length === 0) return;
+    
+    // Use this board's state or the first fallback
+    const stateKey = boardKeys[0];
+    const boardState = componentStates[stateKey];
+    
+    if (boardState && boardState.pins) {
+      // Check pin 13 for built-in LED
+      const pin13State = boardState.pins['13'];
+      if (pin13State !== undefined) {
+        // Handle cases where pin state might be object or boolean
+        const isHigh = typeof pin13State === 'object' 
+          ? pin13State.isHigh 
+          : !!pin13State;
+          
+        setPin13State(isHigh);
+        
+        console.log(`[HeroBoard ${id}] Pin 13 state changed to ${isHigh ? 'HIGH' : 'LOW'}`);
       }
+      
+      // We could track other pins here as well, adding support
+      // for visualizing all Arduino pin states, not just pin 13
     }
   }, [componentStates, id]);
   
