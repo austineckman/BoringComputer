@@ -426,9 +426,9 @@ const OLEDDisplayRenderer = ({ componentId }) => {
       style={{
         position: 'absolute',
         top: '53px',     // 48px + 5px = 53px (lowered by another 5px)
-        left: '35px',    // 32px + 3px = 35px (moved right by 3px)
-        width: '153.6px',  // 128px * 1.2 = 153.6px (increased by 20%)
-        height: '76.8px',  // 64px * 1.2 = 76.8px (increased by 20%)
+        left: '30px',    // 35px - 5px = 30px (moved left by 5px)
+        width: '161.28px',  // 153.6px * 1.05 = 161.28px (increased by another 5%)
+        height: '80.64px',  // 76.8px * 1.05 = 80.64px (increased by another 5%)
         backgroundColor: '#000',
         borderRadius: '2px',
         boxShadow: '0 0 10px 2px rgba(0, 150, 255, 0.6)',
