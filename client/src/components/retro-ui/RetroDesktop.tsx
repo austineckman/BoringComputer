@@ -17,6 +17,7 @@ import FullscreenQuestsApp from "./FullscreenQuestsApp";
 import FullscreenOracleApp from "./FullscreenOracleApp";
 import FullscreenCircuitBuilderApp from "./FullscreenCircuitBuilderApp";
 import FullscreenLockpickingApp from "./FullscreenLockpickingApp";
+import FullscreenUniversalEmulatorApp from "./FullscreenUniversalEmulatorApp";
 import RecycleBinWindow from "./RecycleBinWindow";
 import SettingsWindow from "./SettingsWindow";
 import QuestLoadingScreen from "./QuestLoadingScreen";
@@ -42,6 +43,8 @@ import oracleIconImage from "@assets/hooded-figure.png";
 import picklockImage from "@assets/Untitled design - 2025-04-26T171551.402.png";
 import craftingImage from "@assets/Untitled design - 2025-04-26T171858.770.png";
 import bughuntIconImage from "@assets/Untitled design - 2025-05-01T164432.025.png";
+// Import circuit board icon for emulator
+import circuitBoardImage from "@assets/circuit board.png";
 
 // Type definitions
 interface Position {
@@ -89,6 +92,8 @@ const RetroDesktop: React.FC = () => {
   const [circuitBuilderAppState, setCircuitBuilderAppState] = useState<'closed' | 'open'>('closed');
   // State to manage PickLock.exe app: 'closed' or 'open'
   const [lockpickingAppState, setLockpickingAppState] = useState<'closed' | 'open'>('closed');
+  // State to manage Universal Emulator app: 'closed' or 'open'
+  const [universalEmulatorState, setUniversalEmulatorState] = useState<'closed' | 'open'>('closed');
   // Use global audio player context
   const { isPlaying: isMusicPlaying, toggleMute } = useAudioPlayer();
   
@@ -119,6 +124,9 @@ const RetroDesktop: React.FC = () => {
       { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 140, y: 120 } },
       { id: "circuitbuilder", name: "Sandbox", icon: "circuitbuilder", position: { x: 140, y: 220 } },
       { id: "discord", name: "Discord", icon: "discord", position: { x: 140, y: 320 } },
+      
+      // Third column - add Universal Emulator icon
+      { id: "universal-emulator", name: "Universal Emulator", icon: "emulator", position: { x: 260, y: 20 } },
     ];
     
     // Only add Oracle icon for admin users
@@ -529,6 +537,11 @@ const RetroDesktop: React.FC = () => {
       // Open the HackLock app if it's currently closed
       if (lockpickingAppState === 'closed') {
         setLockpickingAppState('open');
+      }
+    } else if (iconId === "universal-emulator") {
+      // Open the Universal Emulator app if it's currently closed
+      if (universalEmulatorState === 'closed') {
+        setUniversalEmulatorState('open');
       }
     } else if (iconId === "discord") {
       // Open Discord link in a new tab
