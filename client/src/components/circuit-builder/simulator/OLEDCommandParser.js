@@ -45,12 +45,20 @@ const extractParams = (code, methodName) => {
 const findDisplayObjectName = (code) => {
   console.log("Finding display object in code:", code ? code.substring(0, 100) + "..." : "no code");
   
+  if (!code) {
+    return 'display'; // Default if no code provided
+  }
+  
   // Look for common OLED initialization patterns
   const patterns = [
-    // Adafruit style
+    // Adafruit style - declaration with assignment
     /(\w+)\s*=\s*new\s+Adafruit_SSD1306/,
-    // U8G2 styles (multiple variants)
+    // Adafruit style - declaration with variable
+    /Adafruit_SSD1306\s+(\w+)\(/,
+    // U8G2 styles (multiple variants) with assignment
     /(\w+)\s*=\s*new\s+U8G2_SSD1306/,
+    /(\w+)\s*=\s*new\s+U8G2_SH1106/,
+    // U8G2 constructor followed by variable
     /U8G2_SSD1306[^(]*\([^)]*\)\s+(\w+)/,
     /U8G2_SH1106[^(]*\([^)]*\)\s+(\w+)/,
     // Constructor with variable declaration
@@ -59,29 +67,45 @@ const findDisplayObjectName = (code) => {
     /Adafruit_SSD1306[^(]*\([^)]*\)\s+(\w+)/,
     /SSD1306[^(]*\([^)]*\)\s+(\w+)/,
     // Direct declaration format
-    /U8G2_SSD1306[^;]*;\s*\/\/\s*(\w+)/
+    /U8G2_SSD1306[^;]*;\s*\/\/\s*(\w+)/,
+    // Direct declaration without comment
+    /U8G2_SSD1306[^;]*\s+(\w+);/,
+    // Common variables people use
+    /(display|oled|lcd|screen|ssd1306)\s*\./i
   ];
   
   for (const pattern of patterns) {
     const match = code.match(pattern);
     if (match) {
+      // Get the captured group (1 or 2, whichever has the name)
       const name = match[1] || match[2];
       console.log(`Found display object name: ${name} using pattern:`, pattern);
       return name; // Return the captured variable name
     }
   }
   
-  // Explicit search for u8g2 which is the most common name
-  if (code.includes("u8g2.begin") || 
-      code.includes("u8g2.drawStr") || 
-      code.includes("u8g2.drawBox")) {
-    console.log("Found u8g2 object via explicit method calls");
-    return "u8g2";
+  // Check for some common display object names directly used with methods
+  const commonNames = ["u8g2", "display", "oled", "lcd", "screen"];
+  for (const name of commonNames) {
+    if (code.includes(`${name}.begin`) || 
+        code.includes(`${name}.drawStr`) || 
+        code.includes(`${name}.drawBox`) ||
+        code.includes(`${name}.clearDisplay`) ||
+        code.includes(`${name}.display`)) {
+      console.log(`Found display object by common name: ${name}`);
+      return name;
+    }
   }
   
-  // If no specific pattern matches, look for any reasonable display object
-  const methods = ["begin", "display", "clearDisplay", "clear", "drawPixel", "drawLine", 
-                  "print", "setCursor", "drawCircle", "fillCircle", "drawRect", "drawBox"];
+  // If no specific pattern matches, look for any reasonable display object by method call
+  const methods = [
+    // Adafruit methods
+    "begin", "display", "clearDisplay", "setTextSize", "setCursor", "print", "println",
+    // U8g2 methods 
+    "drawStr", "drawUTF8", "firstPage", "nextPage", "clearBuffer", "sendBuffer",
+    // Common to both
+    "drawPixel", "drawLine", "drawCircle", "fillCircle", "drawRect", "drawBox"
+  ];
   
   for (const method of methods) {
     const methodPattern = new RegExp(`(\\w+)\\.${method}\\s*\\(`);
@@ -92,9 +116,18 @@ const findDisplayObjectName = (code) => {
     }
   }
   
-  // Default
-  console.log("No display object name found, using default: 'u8g2'");
-  return 'u8g2'; // Default to u8g2 if nothing found as it's most common
+  // Analyze which library style was detected to provide a sensible default
+  if (code.includes("Adafruit") || code.includes("clearDisplay") || code.includes("setTextSize")) {
+    console.log("No display object name found, but Adafruit style detected. Using default: 'display'");
+    return 'display';
+  } else if (code.includes("U8G2") || code.includes("u8g2") || code.includes("firstPage")) {
+    console.log("No display object name found, but U8G2 style detected. Using default: 'u8g2'");
+    return 'u8g2';
+  }
+  
+  // Absolute fallback
+  console.log("No display object name found, using generic default: 'display'");
+  return 'display';
 };
 
 // Parse all OLED commands from code
@@ -113,18 +146,64 @@ export const parseOLEDCommands = (code) => {
   // Extract commands based on the object name
   const commands = [];
   
-  // Detect the library type (Adafruit vs U8g2)
-  const isAdafruitStyle = code.includes('Adafruit_SSD1306') || 
-                          code.includes('SSD1306_SWITCHCAPVCC') ||
-                          code.includes('clearDisplay()') || 
-                          code.includes('clearDisplay();') ||
-                          code.includes(`${objectName}.display()`);
-                          
-  const isU8g2Style = code.includes('U8G2_SSD1306') || 
-                      code.includes('U8g2') || 
-                      code.includes('u8g2') ||
-                      code.includes(`${objectName}.firstPage()`) || 
-                      code.includes(`${objectName}.nextPage()`);
+  // Detect the library type (Adafruit vs U8g2) using more comprehensive detection
+  // Adafruit patterns
+  const adafruitPatterns = [
+    // Common class initialization patterns
+    'Adafruit_SSD1306',
+    'Adafruit_GFX',
+    'SSD1306_SWITCHCAPVCC',
+    // Common method patterns 
+    'clearDisplay()',
+    'clearDisplay();',
+    'setTextSize(',
+    'setTextColor(',
+    'setCursor(',
+    'display()',
+    `${objectName}.display()`
+  ];
+  
+  // U8g2 patterns
+  const u8g2Patterns = [
+    // Common class initialization patterns
+    'U8G2_SSD1306',
+    'U8G2_SH1106',
+    'U8g2',
+    'u8g2',
+    // Common method patterns
+    'firstPage()',
+    'nextPage()',
+    'clearBuffer()',
+    'sendBuffer()',
+    'drawStr(',
+    'drawUTF8(',
+    'drawBox(',
+    'drawFrame(',
+    `${objectName}.firstPage()`,
+    `${objectName}.nextPage()`
+  ];
+  
+  // Check each pattern against code
+  const adafruitMatches = adafruitPatterns.filter(pattern => code.includes(pattern));
+  const u8g2Matches = u8g2Patterns.filter(pattern => code.includes(pattern));
+  
+  // Determine library style based on matches
+  const isAdafruitStyle = adafruitMatches.length > 0;
+  const isU8g2Style = u8g2Matches.length > 0;
+  
+  // If both patterns match, log info for debugging
+  if (isAdafruitStyle && isU8g2Style) {
+    console.log("Both Adafruit and U8g2 styles detected:", { 
+      adafruitMatches, 
+      u8g2Matches 
+    });
+    // In case of conflict, prefer the one with more matches
+    if (adafruitMatches.length > u8g2Matches.length) {
+      console.log("Preferring Adafruit style due to more pattern matches");
+    } else {
+      console.log("Preferring U8g2 style due to more pattern matches");
+    }
+  }
   
   console.log("Detected library styles:", { isAdafruitStyle, isU8g2Style });
   
@@ -509,9 +588,26 @@ function processAdafruitCommands(commands, buffer, state, width, height) {
 
 /**
  * Process commands for U8g2 style
+ * 
+ * U8g2 library typically follows these patterns:
+ * Pattern 1 (Page-based):
+ * - u8g2.begin() for initialization
+ * - u8g2.firstPage() to start the drawing loop
+ * - u8g2.nextPage() to continue the drawing loop
+ * - Drawing happens between firstPage and nextPage in a do-while loop
+ * 
+ * Pattern 2 (Buffer-based):
+ * - u8g2.begin() for initialization
+ * - u8g2.clearBuffer() to clear the internal buffer
+ * - Drawing functions between clearBuffer and sendBuffer
+ * - u8g2.sendBuffer() to update the display
  */
 function processU8g2Commands(commands, buffer, state, width, height) {
   console.log("Processing U8g2-style commands:", commands.length);
+  
+  // Track if we're in a page loop mode or buffer mode
+  let isPageMode = false;
+  let isBufferMode = false;
   
   // Process commands in order
   for (const cmd of commands) {
@@ -519,8 +615,34 @@ function processU8g2Commands(commands, buffer, state, width, height) {
     
     try {
       switch (method) {
+        case 'begin':
+          // Initialize the display
+          console.log("U8g2 begin() called - initializing display");
+          break;
+          
+        case 'firstPage':
+          // Start the page loop (in the actual library, this prepares for drawing)
+          isPageMode = true;
+          console.log("U8g2 firstPage() called - starting page loop");
+          // In real U8g2, firstPage clears the display buffer, so we'll do the same
+          for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+              buffer[y][x] = 0;
+            }
+          }
+          break;
+          
+        case 'nextPage':
+          // Continue the page loop (in the actual library, this would advance pages)
+          console.log("U8g2 nextPage() called - continuing page loop");
+          // In the actual library, nextPage would refresh the display with the current buffer
+          // Since we're constantly rendering the buffer, this is mostly a no-op for us
+          break;
+        
         case 'clearBuffer':
-          // Clear the entire buffer
+          // Clear the entire buffer - this is used in the full buffer mode of U8g2
+          isBufferMode = true;
+          console.log("U8g2 clearBuffer() called - using buffer mode");
           for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
               buffer[y][x] = 0;
@@ -530,8 +652,8 @@ function processU8g2Commands(commands, buffer, state, width, height) {
           
         case 'sendBuffer':
           // In real hardware this would send the buffer to display
-          // For our simulator this is a no-op as we're constantly rendering the buffer
-          console.log("sendBuffer() called - buffer would be sent to hardware");
+          isBufferMode = true;
+          console.log("U8g2 sendBuffer() called - buffer would be sent to hardware");
           break;
           
         case 'drawStr':
