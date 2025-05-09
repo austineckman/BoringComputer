@@ -29,6 +29,7 @@ import AdminQuestGenerator from "@/pages/admin-quest-generator";
 import LootBoxPreview from "@/pages/loot-box-preview";
 import NotFound from "@/pages/not-found";
 import MainLayout from "@/components/layout/MainLayout";
+import FullscreenUniversalEmulatorApp from "@/components/retro-ui/FullscreenUniversalEmulatorApp";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { ProtectedRoute, AdminRoute } from "@/lib/protected-route";
@@ -263,6 +264,13 @@ function App() {
               <Settings />
             </MainLayout>
           )} 
+        />
+
+        <ProtectedRoute
+          path="/universal-emulator"
+          component={() => (
+            <FullscreenUniversalEmulatorApp onClose={() => window.location.href = '/'} />
+          )}
         />
         
         <Route>
