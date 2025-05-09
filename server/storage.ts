@@ -165,6 +165,30 @@ export interface IStorage {
   
   // Database management methods
   resetDatabase(): Promise<void>;
+  
+  // Arduino Circuit Projects methods
+  getCircuitProjects(userId: number): Promise<CircuitProject[]>;
+  getPublicCircuitProjects(): Promise<CircuitProject[]>;
+  getCircuitProject(id: number): Promise<CircuitProject | undefined>;
+  createCircuitProject(project: InsertCircuitProject): Promise<CircuitProject>;
+  updateCircuitProject(id: number, projectData: Partial<CircuitProject>): Promise<CircuitProject | undefined>;
+  deleteCircuitProject(id: number): Promise<boolean>;
+  searchCircuitProjects(query: string, tags?: string[]): Promise<CircuitProject[]>;
+  
+  // Arduino Components methods
+  getArduinoComponents(): Promise<ArduinoComponent[]>;
+  getArduinoComponent(id: string): Promise<ArduinoComponent | undefined>;
+  createArduinoComponent(component: InsertArduinoComponent): Promise<ArduinoComponent>;
+  updateArduinoComponent(id: string, componentData: Partial<ArduinoComponent>): Promise<ArduinoComponent | undefined>;
+  deleteArduinoComponent(id: string): Promise<boolean>;
+  getArduinoComponentsByCategory(category: string): Promise<ArduinoComponent[]>;
+  
+  // User Simulator Settings methods
+  getUserSimulatorSettings(userId: number): Promise<UserSimulatorSettings | undefined>;
+  createUserSimulatorSettings(settings: InsertUserSimulatorSettings): Promise<UserSimulatorSettings>;
+  updateUserSimulatorSettings(userId: number, settingsData: Partial<UserSimulatorSettings>): Promise<UserSimulatorSettings | undefined>;
+  addRecentProject(userId: number, projectId: number): Promise<UserSimulatorSettings | undefined>;
+  saveTemplate(userId: number, template: { name: string, circuit: any, code: string }): Promise<UserSimulatorSettings | undefined>;
 }
 
 // Database Storage implementation
@@ -968,6 +992,201 @@ export class DatabaseStorage implements IStorage {
     // This is a dangerous operation and should be used with caution
     console.warn("resetDatabase() called - This would reset the entire database");
     // Implementation would go here for development environments only
+  }
+
+  // Arduino Circuit Projects methods
+  async getCircuitProjects(userId: number): Promise<CircuitProject[]> {
+    return await db.select().from(circuitProjects).where(eq(circuitProjects.userId, userId));
+  }
+  
+  async getPublicCircuitProjects(): Promise<CircuitProject[]> {
+    return await db.select().from(circuitProjects).where(eq(circuitProjects.isPublic, true));
+  }
+  
+  async getCircuitProject(id: number): Promise<CircuitProject | undefined> {
+    const [project] = await db.select().from(circuitProjects).where(eq(circuitProjects.id, id));
+    return project || undefined;
+  }
+  
+  async createCircuitProject(insertProject: InsertCircuitProject): Promise<CircuitProject> {
+    const [project] = await db
+      .insert(circuitProjects)
+      .values(insertProject)
+      .returning();
+    return project;
+  }
+  
+  async updateCircuitProject(id: number, projectData: Partial<CircuitProject>): Promise<CircuitProject | undefined> {
+    const [updatedProject] = await db
+      .update(circuitProjects)
+      .set({
+        ...projectData,
+        updatedAt: new Date()
+      })
+      .where(eq(circuitProjects.id, id))
+      .returning();
+    return updatedProject || undefined;
+  }
+  
+  async deleteCircuitProject(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(circuitProjects).where(eq(circuitProjects.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting circuit project:', error);
+      return false;
+    }
+  }
+  
+  async searchCircuitProjects(query: string, tags?: string[]): Promise<CircuitProject[]> {
+    let projectsQuery = db.select().from(circuitProjects);
+    
+    // Search by text in name or description
+    if (query) {
+      projectsQuery = projectsQuery.where(
+        sql`to_tsvector('english', ${circuitProjects.name} || ' ' || COALESCE(${circuitProjects.description}, '')) @@ to_tsquery('english', ${query.replace(/ /g, ' & ')})`
+      );
+    }
+    
+    // Filter by tags if provided
+    if (tags && tags.length > 0) {
+      // This assumes tags is stored as a JSON array in the database
+      projectsQuery = projectsQuery.where(
+        sql`${circuitProjects.tags} ?& array[${tags.map(t => `'${t}'`).join(', ')}]`
+      );
+    }
+    
+    return await projectsQuery;
+  }
+  
+  // Arduino Components methods
+  async getArduinoComponents(): Promise<ArduinoComponent[]> {
+    return await db.select().from(arduinoComponents);
+  }
+  
+  async getArduinoComponent(id: string): Promise<ArduinoComponent | undefined> {
+    const [component] = await db.select().from(arduinoComponents).where(eq(arduinoComponents.id, id));
+    return component || undefined;
+  }
+  
+  async createArduinoComponent(insertComponent: InsertArduinoComponent): Promise<ArduinoComponent> {
+    const [component] = await db
+      .insert(arduinoComponents)
+      .values(insertComponent)
+      .returning();
+    return component;
+  }
+  
+  async updateArduinoComponent(id: string, componentData: Partial<ArduinoComponent>): Promise<ArduinoComponent | undefined> {
+    const [updatedComponent] = await db
+      .update(arduinoComponents)
+      .set({
+        ...componentData,
+        updatedAt: new Date()
+      })
+      .where(eq(arduinoComponents.id, id))
+      .returning();
+    return updatedComponent || undefined;
+  }
+  
+  async deleteArduinoComponent(id: string): Promise<boolean> {
+    try {
+      const result = await db.delete(arduinoComponents).where(eq(arduinoComponents.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting Arduino component:', error);
+      return false;
+    }
+  }
+  
+  async getArduinoComponentsByCategory(category: string): Promise<ArduinoComponent[]> {
+    return await db.select().from(arduinoComponents).where(eq(arduinoComponents.category, category));
+  }
+  
+  // User Simulator Settings methods
+  async getUserSimulatorSettings(userId: number): Promise<UserSimulatorSettings | undefined> {
+    const [settings] = await db.select().from(userSimulatorSettings).where(eq(userSimulatorSettings.userId, userId));
+    return settings || undefined;
+  }
+  
+  async createUserSimulatorSettings(insertSettings: InsertUserSimulatorSettings): Promise<UserSimulatorSettings> {
+    const [settings] = await db
+      .insert(userSimulatorSettings)
+      .values(insertSettings)
+      .returning();
+    return settings;
+  }
+  
+  async updateUserSimulatorSettings(userId: number, settingsData: Partial<UserSimulatorSettings>): Promise<UserSimulatorSettings | undefined> {
+    const [updatedSettings] = await db
+      .update(userSimulatorSettings)
+      .set({
+        ...settingsData,
+        updatedAt: new Date()
+      })
+      .where(eq(userSimulatorSettings.userId, userId))
+      .returning();
+    return updatedSettings || undefined;
+  }
+  
+  async addRecentProject(userId: number, projectId: number): Promise<UserSimulatorSettings | undefined> {
+    // Get current settings
+    const settings = await this.getUserSimulatorSettings(userId);
+    
+    if (!settings) {
+      // If no settings exist, create new ones with this project
+      return this.createUserSimulatorSettings({
+        userId,
+        recentProjects: [projectId]
+      });
+    }
+    
+    // Add the project to recent list and remove duplicates
+    const updatedProjects = [
+      projectId,
+      ...settings.recentProjects.filter(id => id !== projectId)
+    ].slice(0, 10); // Keep only the 10 most recent
+    
+    // Update settings
+    return this.updateUserSimulatorSettings(userId, {
+      recentProjects: updatedProjects
+    });
+  }
+  
+  async saveTemplate(userId: number, template: { name: string, circuit: any, code: string }): Promise<UserSimulatorSettings | undefined> {
+    // Get current settings
+    const settings = await this.getUserSimulatorSettings(userId);
+    
+    if (!settings) {
+      // If no settings exist, create new ones with this template
+      return this.createUserSimulatorSettings({
+        userId,
+        savedTemplates: [template]
+      });
+    }
+    
+    // Check if a template with this name already exists
+    const existingIndex = settings.savedTemplates.findIndex(t => t.name === template.name);
+    
+    let updatedTemplates;
+    if (existingIndex >= 0) {
+      // Update existing template
+      updatedTemplates = [...settings.savedTemplates];
+      updatedTemplates[existingIndex] = template;
+    } else {
+      // Add new template
+      updatedTemplates = [...settings.savedTemplates, template];
+    }
+    
+    // Limit to 20 templates
+    if (updatedTemplates.length > 20) {
+      updatedTemplates = updatedTemplates.slice(-20);
+    }
+    
+    // Update settings
+    return this.updateUserSimulatorSettings(userId, {
+      savedTemplates: updatedTemplates
+    });
   }
 }
 
