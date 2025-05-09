@@ -41,26 +41,39 @@ const PROGRAM_TYPES = {
 /**
  * Compile Arduino code to a simulatable program structure
  * @param {string} code - The Arduino code to compile
- * @returns {Promise<{success: boolean, program?: Uint16Array, userProgram?: Object, error?: string}>} - Compilation result
+ * @returns {Promise<{success: boolean, program?: Uint16Array, error?: string}>} - Compilation result
  */
 export async function compileArduino(code) {
   try {
-    // Parse the actual user code to extract pin operations
-    const userProgram = parseArduinoCode(code);
+    // NOTE: This function now only performs a basic syntactic check
+    // of the Arduino code and returns a marker program that tells the
+    // system to run proper hardware emulation.
+    //
+    // The actual simulation of components happens in the AVR8 CPU emulator,
+    // not through static code analysis.
     
-    // Also analyze components for backward compatibility
+    // We still parse the code for editor hints and UI feedback
+    // but this information should NEVER be used to drive component behavior
+    const userProgram = parseArduinoCode(code);
     const components = analyzeComponents(userProgram);
     
     // Create a program that identifies itself as custom code
+    // This is just a marker to tell the system that proper emulation is needed
     const customProgram = new Uint16Array([PROGRAM_TYPES.CUSTOM, 0, 0, 0, 0]);
     
-    console.log('Parsed user program:', userProgram);
+    console.log('[Compiler] Code analysis complete - for IDE hints only');
+    console.warn(
+      'IMPORTANT: Static code analysis should NOT be used to drive ' +
+      'component behavior. All component behavior must come from ' +
+      'real-time CPU emulation signals.'
+    );
     
     return {
       success: true,
       program: customProgram,
-      userProgram: userProgram,
-      components: components
+      // IMPORTANT: We're intentionally not returning the userProgram
+      // to prevent its use for bypassing proper hardware emulation
+      components: components // For IDE hints only, not for component behavior
     };
   } catch (error) {
     console.error("Arduino compilation error:", error);
@@ -251,9 +264,12 @@ function extractAnalogWriteOperations(code, operations) {
     } else if (valueStr.startsWith('0x')) {
       value = parseInt(valueStr, 16);
     } else {
-      // This could be a variable, just use 128 as a fallback for demonstration
-      console.log(`Unresolved value: ${valueStr}, using default of 128`);
-      value = 128;
+      // If it's a variable, we cannot statically resolve it
+      // The proper emulator will handle this at runtime
+      console.warn(`Cannot statically resolve value: ${valueStr}. Proper emulation required.`);
+      // We set a placeholder value, but this won't be used for actual emulation
+      // since the emulator will execute the real code
+      value = 0;
     }
     
     // Only add operation if we successfully resolved the pin
