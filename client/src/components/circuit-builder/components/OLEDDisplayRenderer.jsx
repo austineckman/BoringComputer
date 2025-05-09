@@ -141,7 +141,7 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
       // Give a slight delay to ensure component is fully rendered
       setTimeout(analyzeComponentImage, 200);
     }
-  }, [componentId]); // Only run when componentId changes
+  }, [displayId]); // Only run when displayId changes
   
   // Update canvas when display buffer changes
   useEffect(() => {
