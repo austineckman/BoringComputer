@@ -232,6 +232,21 @@ const RGBLED = ({
       updateLEDColor(color, value);
     };
     
+    // Register component with simulator directly for extra reliability
+    if (window.simulatorContext) {
+      // Ensure the component is registered in the simulator
+      if (!window.simulatorContext.componentStates[id]) {
+        console.log(`Directly registering RGB LED ${id} with simulator context`);
+        window.simulatorContext.updateComponentState(id, {
+          id,
+          type: 'rgb-led',
+          pins: {}
+        });
+      }
+    }
+    
+    console.log(`RGB LED ${id} initialized, update function registered`);
+    
     return () => {
       // Clean up when component unmounts
       if (window.updateRGBLED && window.updateRGBLED[id]) {

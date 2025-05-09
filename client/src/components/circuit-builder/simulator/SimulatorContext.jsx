@@ -76,7 +76,32 @@ export const SimulatorProvider = ({ children }) => {
   // Log component and wire state changes for debugging
   useEffect(() => {
     console.log('Simulator components updated:', components.length);
-  }, [components]);
+    
+    // Add each component to the component states if it's not already there
+    // This ensures components are registered in the simulator context immediately
+    if (components.length > 0) {
+      const newStates = { ...componentStates };
+      let hasChanges = false;
+      
+      components.forEach(component => {
+        if (!componentStates[component.id]) {
+          // Initialize component state with empty values
+          newStates[component.id] = {
+            id: component.id,
+            type: component.type,
+            pins: {}
+          };
+          hasChanges = true;
+          console.log(`Registered component in simulator context: ${component.id} (${component.type})`);
+        }
+      });
+      
+      // Only update state if we have new components
+      if (hasChanges) {
+        setComponentStates(newStates);
+      }
+    }
+  }, [components, componentStates]);
   
   useEffect(() => {
     console.log('Simulator wires updated:', wires.length);
@@ -88,8 +113,13 @@ export const SimulatorProvider = ({ children }) => {
       componentStates,
       wires,
       updateComponentState,
-      updateComponentPins
+      updateComponentPins,
+      // Add a debug function to list all components
+      listComponents: () => console.log('All simulator components:', Object.keys(componentStates))
     };
+    
+    // Log all components for debugging
+    console.log('Current component states:', Object.keys(componentStates));
     
     return () => {
       delete window.simulatorContext;
