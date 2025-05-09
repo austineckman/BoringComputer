@@ -913,38 +913,45 @@ void loop() {
           </div>
         </div>
         
-        <div className="flex-1 flex">
-          <div className="flex-1">
-            <AceEditor
-              mode="c_cpp"
-              theme="monokai"
-              name="arduino-code-editor"
-              value={code}
-              onChange={(newCode) => setCode(newCode)}
-              width="100%"
-              height="100%"
-              fontSize={14}
-              showPrintMargin={true}
-              showGutter={true}
-              highlightActiveLine={true}
-              wrapEnabled={false}
-              setOptions={{
-                enableBasicAutocompletion: true,
-                enableLiveAutocompletion: true,
-                enableSnippets: true,
-                showLineNumbers: true,
-                tabSize: 2,
-              }}
-              style={{
-                fontFamily: "'Source Code Pro', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace",
-                backgroundColor: "#1E1E1E",
-                minHeight: '200px'
-              }}
-            />
+        <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 overflow-hidden">
+            <div className="h-full">
+              <AceEditor
+                mode="c_cpp"
+                theme="monokai"
+                name="arduino-code-editor"
+                value={code}
+                onChange={(newCode) => setCode(newCode)}
+                width="100%"
+                height="100%"
+                fontSize={14}
+                showPrintMargin={true}
+                showGutter={true}
+                highlightActiveLine={true}
+                wrapEnabled={false}
+                setOptions={{
+                  enableBasicAutocompletion: true,
+                  enableLiveAutocompletion: true,
+                  enableSnippets: true,
+                  showLineNumbers: true,
+                  tabSize: 2,
+                  firstLineNumber: 1, // Start line numbers at 1
+                  scrollPastEnd: false, // Prevents auto-scrolling past the end
+                }}
+                style={{
+                  fontFamily: "'Source Code Pro', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace",
+                  backgroundColor: "#1E1E1E",
+                  minHeight: '200px'
+                }}
+                editorProps={{ $blockScrolling: Infinity }} // Prevents scrolling issues
+              />
+            </div>
           </div>
           
-          <div className="w-1/3 p-2">
-            <SimulationLogPanel />
+          <div className="w-1/3 p-2 overflow-auto">
+            <div className="h-full" style={{ overflow: 'hidden' }}>
+              <SimulationLogPanel />
+            </div>
           </div>
         </div>
       </div>
