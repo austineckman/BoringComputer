@@ -460,10 +460,12 @@ void loop() {
   const showNotification = (message: string, type = 'success') => {
     setNotification({ message, type });
     
-    // Auto-hide the notification after 2 seconds
+    // Auto-hide the notification - longer for errors so users can read them
+    const duration = type === 'error' ? 6000 : 3000;
+    
     setTimeout(() => {
       setNotification(null);
-    }, 2000);
+    }, duration);
   };
   
   // Save the current project
@@ -541,8 +543,13 @@ void loop() {
           addSimulationLog(`Line ${error.line}: ${error.message}`);
         });
         
-        // Show an error notification
-        showNotification('Compilation failed! Check the logs for details.', 'error');
+        // Show an error notification with specific first error
+        const firstError = errors[0];
+        if (firstError) {
+          showNotification(`Compilation error on line ${firstError.line}: ${firstError.message}. Check logs for more.`, 'error');
+        } else {
+          showNotification('Compilation failed! Check the logs for details.', 'error');
+        }
         return;
       }
       
@@ -900,8 +907,8 @@ void loop() {
               ref={editorRef}
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              className="w-full h-full bg-gray-900 text-gray-100 p-4 text-sm resize-none outline-none border-none font-mono"
-              style={{ fontSize: '14px' }}
+              className="w-full h-full bg-gray-900 text-gray-100 p-4 text-sm resize-vertical overflow-auto outline-none border-none font-mono"
+              style={{ fontSize: '14px', minHeight: '200px' }}
               spellCheck="false"
             ></textarea>
           </div>
