@@ -81,73 +81,6 @@ export function CircuitBuilder() {
     });
   }, [circuitComponents, components, addComponent]);
   
-  // Handle pin click events to establish connections between components
-  useEffect(() => {
-    let firstPinData: any = null;
-    
-    const handlePinClicked = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      
-      if (!firstPinData) {
-        // Store the first pin clicked
-        firstPinData = detail;
-      } else {
-        // Second pin clicked - create connection if compatible
-        const secondPinData = detail;
-        
-        // Don't allow connecting pins from the same component
-        if (firstPinData.componentId === secondPinData.componentId) {
-          firstPinData = secondPinData; // Replace with the new pin
-          return;
-        }
-        
-        // Determine which is the Arduino board pin
-        let boardPin = null;
-        let componentPin = null;
-        let componentId = null;
-        
-        // Check which is the board and which is the component
-        if (firstPinData.componentType === 'arduinoboard') {
-          boardPin = firstPinData.pinId;
-          componentPin = secondPinData.pinId;
-          componentId = secondPinData.componentId;
-        } else if (secondPinData.componentType === 'arduinoboard') {
-          boardPin = secondPinData.pinId;
-          componentPin = firstPinData.pinId;
-          componentId = firstPinData.componentId;
-        }
-        
-        // If we have a valid board pin and component pin
-        if (boardPin && componentPin && componentId) {
-          // Dispatch an event to let the component know which pins to connect
-          document.dispatchEvent(new CustomEvent('pinToConnect', {
-            detail: {
-              boardPin,
-              componentPin,
-              componentId
-            }
-          }));
-          
-          // Update the connection in the circuit builder state
-          handleConnectPin(componentId, componentPin, boardPin);
-          
-          // TODO: Wire visualization between pins will be added here
-          console.log(`Connected ${componentId}.${componentPin} to Arduino.${boardPin}`);
-        }
-        
-        // Reset for next connection
-        firstPinData = null;
-      }
-    };
-    
-    // Listen for pin clicks
-    document.addEventListener('pinClicked', handlePinClicked);
-    
-    return () => {
-      document.removeEventListener('pinClicked', handlePinClicked);
-    };
-  }, [handleConnectPin]);
-  
   // Add a new component to the circuit with proper positioning
   const handleAddComponent = (type: string) => {
     const id = `${type}-${Date.now()}`;
@@ -286,6 +219,73 @@ export function CircuitBuilder() {
   const selectedComponentData = selectedComponent 
     ? circuitComponents.find(c => c.id === selectedComponent) 
     : null;
+    
+  // Handle pin click events to establish connections between components
+  useEffect(() => {
+    let firstPinData: any = null;
+    
+    const handlePinClicked = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      
+      if (!firstPinData) {
+        // Store the first pin clicked
+        firstPinData = detail;
+      } else {
+        // Second pin clicked - create connection if compatible
+        const secondPinData = detail;
+        
+        // Don't allow connecting pins from the same component
+        if (firstPinData.componentId === secondPinData.componentId) {
+          firstPinData = secondPinData; // Replace with the new pin
+          return;
+        }
+        
+        // Determine which is the Arduino board pin
+        let boardPin = null;
+        let componentPin = null;
+        let componentId = null;
+        
+        // Check which is the board and which is the component
+        if (firstPinData.componentType === 'arduinoboard') {
+          boardPin = firstPinData.pinId;
+          componentPin = secondPinData.pinId;
+          componentId = secondPinData.componentId;
+        } else if (secondPinData.componentType === 'arduinoboard') {
+          boardPin = secondPinData.pinId;
+          componentPin = firstPinData.pinId;
+          componentId = firstPinData.componentId;
+        }
+        
+        // If we have a valid board pin and component pin
+        if (boardPin && componentPin && componentId) {
+          // Dispatch an event to let the component know which pins to connect
+          document.dispatchEvent(new CustomEvent('pinToConnect', {
+            detail: {
+              boardPin,
+              componentPin,
+              componentId
+            }
+          }));
+          
+          // Update the connection in the circuit builder state
+          handleConnectPin(componentId, componentPin, boardPin);
+          
+          // TODO: Wire visualization between pins will be added here
+          console.log(`Connected ${componentId}.${componentPin} to Arduino.${boardPin}`);
+        }
+        
+        // Reset for next connection
+        firstPinData = null;
+      }
+    };
+    
+    // Listen for pin clicks
+    document.addEventListener('pinClicked', handlePinClicked);
+    
+    return () => {
+      document.removeEventListener('pinClicked', handlePinClicked);
+    };
+  }, [handleConnectPin]);
   
   return (
     <div className="h-full w-full flex flex-col relative">
