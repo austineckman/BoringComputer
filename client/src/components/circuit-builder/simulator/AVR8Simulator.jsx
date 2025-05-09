@@ -423,39 +423,40 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
           // Check what type of connection this is - handle different pin naming schemes
           console.log(`OLED pin connection check: ${oledPin} → ${otherPin}`);
           
-          // Handle the ACTUAL pin labels as shown in the tooltips
-          // Pin order from left to right is: VCC, GND, SCK, SDA
+          // We need to handle BOTH the actual pin labels users see and the internal pin names
           
-          // Handle the first pin (VCC)
-          if (oledPin === 'vcc') { 
-            // VCC pin should be connected to 5V or 3.3V
-            if (otherPin === '5v' || otherPin === '3v3' || otherPin === '3.3v' || otherPin === 'vcc') {
-              hasVCC = true;
-              console.log("✓ First pin (VCC) correctly connected to power");
-            }
-          } 
-          // Handle the second pin (GND)
-          else if (oledPin === 'gnd') {
-            // GND pin should be connected to GND (any of the GND pins)
-            if (otherPin.includes('gnd')) {
+          // Create normalized versions of the pin names to make matching easier
+          const pinLower = oledPin.toLowerCase();
+          const otherLower = otherPin.toLowerCase();
+          
+          console.log(`OLED wire connection: ${pinLower} → ${otherLower}`);
+          
+          // Check for ground connection - many possible names
+          if (pinLower === 'gnd' || pinLower.includes('ground')) {
+            if (otherLower.includes('gnd') || otherLower.includes('ground')) {
               hasGND = true;
-              console.log("✓ Second pin (GND) correctly connected to ground");
+              console.log("✓ GND pin correctly connected to ground");
             }
-          } 
-          // Handle the third pin (SCK/SCL) 
-          else if (oledPin === 'sck' || oledPin === 'scl') {
-            // SCK pin should be connected to A5 on Arduino
-            if (otherPin === 'a5' || otherPin === 'scl') {
+          }
+          // Check for power connection - VCC, 5V, 3.3V
+          else if (pinLower === 'vcc' || pinLower.includes('v') || pinLower.includes('power')) {
+            if (otherLower === '5v' || otherLower === '3v3' || otherLower.includes('vcc') || otherLower.includes('power')) {
+              hasVCC = true;
+              console.log("✓ VCC/Power pin correctly connected to power source");
+            }
+          }
+          // Check for SCL/SCK connection (clock line)
+          else if (pinLower === 'scl' || pinLower === 'sck' || pinLower.includes('clock')) {
+            if (otherLower === 'a5' || otherLower === 'scl' || otherLower === 'sck' || otherLower.includes('clock')) {
               hasSCL = true;
-              console.log("✓ Third pin (SCK) correctly connected to A5");
+              console.log("✓ SCL/Clock pin correctly connected to A5/SCL");
             }
-          } 
-          // Handle the fourth pin (SDA)
-          else if (oledPin === 'sda') {
-            // SDA pin should be connected to A4 on Arduino
-            if (otherPin === 'a4' || otherPin === 'sda') {
+          }
+          // Check for SDA connection (data line)
+          else if (pinLower === 'sda' || pinLower.includes('data')) {
+            if (otherLower === 'a4' || otherLower === 'sda' || otherLower.includes('data')) {
               hasSDA = true;
-              console.log("✓ Fourth pin (SDA) correctly connected to A4");
+              console.log("✓ SDA/Data pin correctly connected to A4/SDA");
             }
           }
           
@@ -463,15 +464,15 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
           if (isSourceOLED || isTargetOLED) {
             setTimeout(() => {
               console.log("\nOLED CONNECTION STATUS:");
-              console.log(`➤ Pin 1 (VCC) to Arduino 5V/3.3V: ${hasVCC ? '✓ Connected' : '✗ Missing'}`);
-              console.log(`➤ Pin 2 (GND) to Arduino GND: ${hasGND ? '✓ Connected' : '✗ Missing'}`);
-              console.log(`➤ Pin 3 (SCK) to Arduino A5: ${hasSCL ? '✓ Connected' : '✗ Missing'}`); 
-              console.log(`➤ Pin 4 (SDA) to Arduino A4: ${hasSDA ? '✓ Connected' : '✗ Missing'}`);
-              console.log("\nFollow the actual pin labels on the OLED component:");
-              console.log("• VCC (1st pin) → 5V or 3.3V on Arduino");
-              console.log("• GND (2nd pin) → Any GND pin on Arduino");
-              console.log("• SCK (3rd pin) → A5 on Arduino"); 
-              console.log("• SDA (4th pin) → A4 on Arduino");
+              console.log(`➤ VCC to Arduino 5V/3.3V: ${hasVCC ? '✓ Connected' : '✗ Missing'}`);
+              console.log(`➤ GND to Arduino GND: ${hasGND ? '✓ Connected' : '✗ Missing'}`);
+              console.log(`➤ SCL/SCK to Arduino A5: ${hasSCL ? '✓ Connected' : '✗ Missing'}`); 
+              console.log(`➤ SDA to Arduino A4: ${hasSDA ? '✓ Connected' : '✗ Missing'}`);
+              console.log("\nWiring Guide - REGARDLESS of what tooltip labels show, connect:");
+              console.log("• 1st pin (shows VCC but actually GND) → Any GND pin on Arduino");
+              console.log("• 2nd pin (shows GND but actually VCC) → 5V or 3.3V on Arduino");
+              console.log("• 3rd pin (shows SCK but actually SCL) → A5 on Arduino"); 
+              console.log("• 4th pin (shows SDA correctly) → A4 on Arduino");
             }, 500);
           }
         }
