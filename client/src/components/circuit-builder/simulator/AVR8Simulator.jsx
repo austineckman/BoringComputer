@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSimulator } from './SimulatorContext';
 import { useLibraryManager } from './LibraryManager';
 import { validateArduinoCode } from './ArduinoCompiler';
+import { parseAnalogWrites, parseDigitalWrites } from './SimulatorUtils';
 
 /**
  * AVR8 Arduino Simulator Component
@@ -191,6 +192,9 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     const pinsUsed = detectPinsUsed(code);
     const avgDelay = detectDelays(code);
     
+    // Extract analog write values for PWM (used for RGB LEDs)
+    const analogValues = parseAnalogWrites(code);
+    
     // Set detected libraries
     setDetectedLibraries(libraries);
     
@@ -216,6 +220,7 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     return {
       libraries,
       pinsUsed,
+      analogValues,
       delay: avgDelay,
       errors: errors && errors.length > 0 ? errors : null
     };
@@ -320,9 +325,21 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
                 if (pinToColorMap[pin]) {
                   const color = pinToColorMap[pin];
                   // Use analogWrite value for more precision if available
-                  const value = state ? 255 : 0; // Binary value for now, could be PWM analog later
+                  let value = 0;
+
+                  // Check if we have analog values for this pin
+                  if (compiledCode.analogValues && compiledCode.analogValues[pin] && compiledCode.analogValues[pin].length > 0) {
+                    // Use the first analog value in the array (could be improved to cycle through values)
+                    value = compiledCode.analogValues[pin][0];
+                    console.log(`Using analog value ${value} for pin ${pin} (${color})`);
+                  } else {
+                    // Fallback to binary HIGH/LOW
+                    value = state ? 255 : 0;
+                  }
+                  
+                  // Normalize to 0-1 range for the LED component
                   window.updateRGBLED[rgbLedId](color, value / 255);
-                  console.log(`Updated RGB LED ${rgbLedId} ${color} to ${value}`);
+                  console.log(`Updated RGB LED ${rgbLedId} ${color} to ${value} (normalized: ${value/255})`);
                 }
               }
             });
