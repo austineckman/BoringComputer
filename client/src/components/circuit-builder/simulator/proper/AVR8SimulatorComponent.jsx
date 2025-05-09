@@ -62,10 +62,34 @@ const AVR8SimulatorComponent = ({
   }, [onLog]);
   
   // Update components connected to a pin
-  const updateConnectedComponents = useCallback((pin, isHigh) => {
+  const updateConnectedComponents = useCallback((pin, isHigh, options = {}) => {
+    // Get the analog value if provided (for PWM pins)
+    const analogValue = options?.analogValue !== undefined ? options.analogValue : (isHigh ? 255 : 0);
+    
     if (typeof pin === 'string' && pin.startsWith('A')) {
       // Handle analog pins (A0-A5)
-      if (onLog) onLog(`Pin ${pin} changed: ${isHigh}`);
+      if (onLog) onLog(`Analog pin ${pin} changed: value=${analogValue}`);
+      
+      // Update Arduino board pins with analog values
+      // Find all Arduino/hero board components
+      const heroboardIds = Object.keys(componentStates || {}).filter(id => 
+        id === 'heroboard' || 
+        id.includes('heroboard') || 
+        id.includes('arduino')
+      );
+      
+      // Update each board with analog pin state
+      if (heroboardIds.length > 0) {
+        heroboardIds.forEach(boardId => {
+          // Create pin update object with analog value
+          const pinUpdate = {};
+          pinUpdate[pin] = { isHigh, analogValue };
+          
+          // Update the component's pins
+          updateComponentPins(boardId, pinUpdate);
+        });
+      }
+      
       return;
     }
     
@@ -75,7 +99,7 @@ const AVR8SimulatorComponent = ({
     // Skip if pin is not valid
     if (isNaN(pinNumber)) return;
     
-    // Update Arduino board pins
+    // Update Arduino board pins - this is the ONLY place where we update pin states
     // Find all Arduino/hero board components
     const heroboardIds = Object.keys(componentStates || {}).filter(id => 
       id === 'heroboard' || 
@@ -90,86 +114,51 @@ const AVR8SimulatorComponent = ({
         const pinUpdate = {};
         pinUpdate[pinNumber] = isHigh;
         
+        // If we have an analog value, include it
+        if (options?.analogValue !== undefined) {
+          pinUpdate[pinNumber] = { isHigh, analogValue };
+        }
+        
         // Update the component's pins
         updateComponentPins(boardId, pinUpdate);
-        if (onLog) onLog(`Pin ${pinNumber} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+        if (onLog) {
+          const logMsg = options?.analogValue !== undefined
+            ? `Pin ${pinNumber} changed to ${isHigh ? 'HIGH' : 'LOW'} (analog: ${analogValue})`
+            : `Pin ${pinNumber} changed to ${isHigh ? 'HIGH' : 'LOW'}`;
+          onLog(logMsg);
+        }
       });
     } else {
       // Fallback to update a generic heroboard
       const pinUpdate = {};
-      pinUpdate[pinNumber] = isHigh;
+      
+      // If we have an analog value, include it
+      if (options?.analogValue !== undefined) {
+        pinUpdate[pinNumber] = { isHigh, analogValue };
+      } else {
+        pinUpdate[pinNumber] = isHigh;
+      }
+      
       updateComponentPins('heroboard', pinUpdate);
-      if (onLog) onLog(`Pin ${pinNumber} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
-    }
-    
-    // Handle special component updates
-    
-    // Pin 13 is the built-in LED
-    if (pinNumber === 13) {
-      // Force updates to all LED components connected to pin 13
-      const ledIds = Object.keys(componentStates || {}).filter(id => {
-        const component = componentStates[id];
-        return component && (
-          component.type === 'led' || 
-          id.includes('led') || 
-          id.includes('LED')
-        );
-      });
       
-      ledIds.forEach(ledId => {
-        if (componentStates[ledId]?.connectedPin === 13) {
-          updateComponentState(ledId, { isLit: isHigh });
-        }
-      });
-    }
-    
-    // Handle RGB LEDs (pins 9-11 typically)
-    if ([9, 10, 11].includes(pinNumber)) {
-      const rgbLedIds = Object.keys(componentStates || {}).filter(id => {
-        const component = componentStates[id];
-        return component && (
-          component.type === 'rgbled' || 
-          component.type === 'rgb-led' || 
-          id.includes('rgb') || 
-          id.includes('RGB')
-        );
-      });
-      
-      // Standard pin mapping for RGB LEDs
-      const pinToColorMap = {
-        9: 'red',
-        10: 'green',
-        11: 'blue'
-      };
-      
-      const color = pinToColorMap[pinNumber];
-      
-      // Only update if this is a color pin and we have RGB LEDs
-      if (color && rgbLedIds.length > 0) {
-        // Set analog value (0-255) based on digital state for now
-        // In a full implementation, we'd get this from the PWM
-        const value = isHigh ? 255 : 0;
-        
-        // Update each RGB LED component
-        rgbLedIds.forEach(ledId => {
-          // Use global update function if available (legacy support)
-          if (typeof window !== 'undefined' && window.updateRGBLED && window.updateRGBLED[ledId]) {
-            window.updateRGBLED[ledId](color, value);
-          } else {
-            // Use our context update mechanism
-            // Create RGB state object with just this color updated
-            const rgbState = { 
-              [color]: value 
-            };
-            
-            updateComponentState(ledId, rgbState);
-          }
-        });
+      if (onLog) {
+        const logMsg = options?.analogValue !== undefined
+          ? `Pin ${pinNumber} changed to ${isHigh ? 'HIGH' : 'LOW'} (analog: ${analogValue})`
+          : `Pin ${pinNumber} changed to ${isHigh ? 'HIGH' : 'LOW'}`;
+        onLog(logMsg);
       }
     }
     
-    // TODO: Handle other component types (OLED, 7-segment, etc.)
-  }, [componentStates, updateComponentState, updateComponentPins, onLog]);
+    // DO NOT handle special component updates directly here.
+    // All components should listen to pin signal changes and update themselves.
+    // This ensures proper emulation where components only respond to signals,
+    // not to hardcoded behavior or code keyword detection.
+    
+    // Note: If components need to be associated with specific pins, this should
+    // be done through proper pin connection configuration, not through hardcoded
+    // pin assignments or ID pattern matching.
+    
+  }, [componentStates, updateComponentPins, onLog]);
   
   // Render the connector component
   return (

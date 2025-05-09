@@ -52,7 +52,7 @@ const LED = ({
   
   // Check if this LED has been updated by the simulation
   useEffect(() => {
-    console.log(`LED ${id} checking for state updates, isSimulationRunning=${isSimulationRunning}`);
+    console.log(`LED ${id} checking for true emulator pin signal updates, isSimulationRunning=${isSimulationRunning}`);
     
     // Turn off LED when simulation stops
     if (!isSimulationRunning) {
@@ -60,21 +60,15 @@ const LED = ({
       return;
     }
     
-    // First check if this LED has direct state data from a resistor component
-    if (componentStates[id]) {
-      const myState = componentStates[id];
-      if (myState.isConnectedToHeroboard && myState.connectedPinState !== undefined) {
-        console.log(`LED ${id} has direct state data: connectedPinState=${myState.connectedPinState}`);
-        setIsLit(myState.connectedPinState);
-        return;
-      }
-    }
+    // This implementation ensures the LED only responds to actual pin signals from
+    // the emulator, not shortcuts or keyword detection.
     
-    // Keep track of LED connections to pins and their values
+    // Track pin connections and values from emulator
     let connectedToPin = false;
     let pinValue = false;
+    let analogValue = 0;
     
-    // Trace LED connections through wires and other components
+    // Trace LED connections through wires to find emulator signal sources
     const traceConnections = () => {
       // Find all wires directly connected to this LED
       const connectedWires = Array.isArray(connectionWires) ? 
@@ -82,9 +76,14 @@ const LED = ({
           wire.sourceComponent === id || wire.targetComponent === id
         ) : [];
       
+      if (connectedWires.length === 0) {
+        console.log(`LED ${id} has no connected wires`);
+        return;
+      }
+      
       console.log(`LED ${id} found ${connectedWires.length} connected wires`);
       
-      // Check if any of these wires connects to a heroboard pin
+      // Process each wire connection
       connectedWires.forEach(wire => {
         // Determine if this LED is the source or target of the wire
         const isLedSource = wire.sourceComponent === id;
@@ -93,154 +92,108 @@ const LED = ({
         const otherComponentId = isLedSource ? wire.targetComponent : wire.sourceComponent;
         const otherPinName = isLedSource ? wire.targetName : wire.sourceName;
         
-        // If connected directly to a heroboard
-        if (otherComponentId && otherComponentId.includes('heroboard')) {
-          // Get the pin name/number
+        if (!otherComponentId) return;
+        
+        // If directly connected to a pin source (heroboard/Arduino)
+        if (otherComponentId.includes('heroboard') || otherComponentId.includes('arduino')) {
           const pinNumber = otherPinName;
-          
-          // Search for the pin state in multiple places
-          const findPinState = () => {
-            // 1. First try the specific heroboard component's state
-            if (componentStates[otherComponentId] && 
-                componentStates[otherComponentId].pins && 
-                componentStates[otherComponentId].pins[pinNumber] !== undefined) {
-              
-              connectedToPin = true;
-              // If connected to multiple pins, any HIGH value will light the LED
-              pinValue = pinValue || componentStates[otherComponentId].pins[pinNumber] === true;
-              
-              console.log(`LED ${id} is connected to ${otherComponentId} pin ${pinNumber} with value=${pinValue}`);
-              return true;
-            } 
-            
-            // 2. Then try the generic 'heroboard' object (fallback for pin state updates)
-            if (componentStates.heroboard && 
-                componentStates.heroboard.pins && 
-                componentStates.heroboard.pins[pinNumber] !== undefined) {
-              
-              connectedToPin = true;
-              // If connected to multiple pins, any HIGH value will light the LED
-              pinValue = pinValue || componentStates.heroboard.pins[pinNumber] === true;
-              
-              console.log(`LED ${id} is connected to heroboard generic pin ${pinNumber} with value=${pinValue}`);
-              return true;
-            }
-            
-            // 3. Look through ALL component states for ANY heroboard with this pin (most aggressive fallback)
-            const heroboardComponents = Object.keys(componentStates).filter(key => 
-              key.includes('heroboard') && 
-              componentStates[key].pins && 
-              componentStates[key].pins[pinNumber] !== undefined
-            );
-            
-            if (heroboardComponents.length > 0) {
-              const firstHeroboard = heroboardComponents[0];
-              connectedToPin = true;
-              pinValue = pinValue || componentStates[firstHeroboard].pins[pinNumber] === true;
-              
-              console.log(`LED ${id} found fallback connection to ${firstHeroboard} pin ${pinNumber} with value=${pinValue}`);
-              return true;
-            }
-            
-            return false;
-          };
-          
-          // Search for pin state
-          findPinState();
+          traceEmulatorPinSource(otherComponentId, pinNumber);
         }
-        // If connected to a resistor (trace connections through resistors)
-        else if (otherComponentId && otherComponentId.includes('resistor')) {
-          console.log(`LED ${id} is connected to resistor ${otherComponentId} at pin ${otherPinName}`);
-          
-          // Find all wires connected to this resistor (except the one to this LED)
-          const resistorWires = Array.isArray(connectionWires) ?
-            connectionWires.filter(w => 
-              (w.sourceComponent === otherComponentId || w.targetComponent === otherComponentId) &&
-              w.id !== wire.id // Not the wire we just followed
-            ) : [];
-          
-          console.log(`Found ${resistorWires.length} wires connected to resistor ${otherComponentId}`);
-          
-          // Follow each wire from the resistor
-          resistorWires.forEach(resistorWire => {
-            // Determine if the resistor is source or target of this wire
-            const isResistorSource = resistorWire.sourceComponent === otherComponentId;
-            
-            // Find the component the resistor connects to
-            const nextComponentId = isResistorSource ? resistorWire.targetComponent : resistorWire.sourceComponent;
-            const nextPinName = isResistorSource ? resistorWire.targetName : resistorWire.sourceName;
-            
-            console.log(`Resistor ${otherComponentId} connects to ${nextComponentId} at pin ${nextPinName}`);
-            
-            // If the resistor connects to a heroboard
-            if (nextComponentId && nextComponentId.includes('heroboard')) {
-              // Get the pin name/number from the heroboard
-              const pinNumber = nextPinName;
-              
-              console.log(`LED ${id} is following connection through resistor to heroboard pin ${pinNumber}`);
-              
-              // Now we need to check the state of this pin
-              // First, try the specific heroboard ID
-              if (componentStates[nextComponentId] && 
-                  componentStates[nextComponentId].pins && 
-                  componentStates[nextComponentId].pins[pinNumber] !== undefined) {
-                
-                connectedToPin = true;
-                // If connected to multiple pins, any HIGH value will light the LED
-                pinValue = pinValue || componentStates[nextComponentId].pins[pinNumber] === true;
-                
-                console.log(`LED ${id} is connected through resistor to ${nextComponentId} pin ${pinNumber} with value=${pinValue}`);
-              } 
-              // Then try the generic 'heroboard' object (fallback for pin state updates)
-              else if (componentStates.heroboard && 
-                  componentStates.heroboard.pins && 
-                  componentStates.heroboard.pins[pinNumber] !== undefined) {
-                
-                connectedToPin = true;
-                // If connected to multiple pins, any HIGH value will light the LED
-                pinValue = pinValue || componentStates.heroboard.pins[pinNumber] === true;
-                
-                console.log(`LED ${id} is connected through resistor to heroboard generic pin ${pinNumber} with value=${pinValue}`);
-              }
-              // Look through all component states for any heroboard with this pin
-              else {
-                console.log(`LED ${id} is searching all component states for a heroboard with pin ${pinNumber}`);
-                
-                // Log available component states for debugging
-                console.log("Available component states:", Object.keys(componentStates));
-                
-                const heroboardComponents = Object.keys(componentStates).filter(key => 
-                  key.includes('heroboard') && 
-                  componentStates[key].pins && 
-                  componentStates[key].pins[pinNumber] !== undefined
-                );
-                
-                console.log(`Found ${heroboardComponents.length} heroboard components with pin ${pinNumber}`);
-                
-                if (heroboardComponents.length > 0) {
-                  const firstHeroboard = heroboardComponents[0];
-                  connectedToPin = true;
-                  pinValue = pinValue || componentStates[firstHeroboard].pins[pinNumber] === true;
-                  
-                  console.log(`LED ${id} found fallback connection through resistor to ${firstHeroboard} pin ${pinNumber} with value=${pinValue}`);
-                }
-              }
-            }
-          });
+        // If connected to a resistor or other passive component, follow the connection through
+        else if (otherComponentId.includes('resistor')) {
+          traceConnectionThroughComponent(wire, otherComponentId);
         }
       });
     };
     
-    // Execute the connection tracing
+    // Trace emulator pin source (Arduino pins or board pins)
+    const traceEmulatorPinSource = (boardId, pinNumber) => {
+      // First try the specific board's pin state
+      if (componentStates[boardId]?.pins?.[pinNumber] !== undefined) {
+        updatePinState(boardId, pinNumber, componentStates[boardId].pins[pinNumber]);
+        return true;
+      }
+      
+      // Then try generic 'heroboard' as fallback
+      if (componentStates.heroboard?.pins?.[pinNumber] !== undefined) {
+        updatePinState('heroboard', pinNumber, componentStates.heroboard.pins[pinNumber]);
+        return true;
+      }
+      
+      // Last resort - search all component states
+      const boardKeys = Object.keys(componentStates).filter(key => 
+        (key.includes('heroboard') || key.includes('arduino')) && 
+        componentStates[key]?.pins?.[pinNumber] !== undefined
+      );
+      
+      if (boardKeys.length > 0) {
+        const firstBoard = boardKeys[0];
+        updatePinState(firstBoard, pinNumber, componentStates[firstBoard].pins[pinNumber]);
+        return true;
+      }
+      
+      return false;
+    };
+    
+    // Trace connection through a component (like a resistor)
+    const traceConnectionThroughComponent = (originalWire, componentId) => {
+      // Find all wires connected to this component (except the one to this LED)
+      const componentWires = Array.isArray(connectionWires) ?
+        connectionWires.filter(w => 
+          (w.sourceComponent === componentId || w.targetComponent === componentId) &&
+          w.id !== originalWire.id
+        ) : [];
+      
+      // Follow each wire from the component
+      componentWires.forEach(componentWire => {
+        const isComponentSource = componentWire.sourceComponent === componentId;
+        const nextComponentId = isComponentSource ? componentWire.targetComponent : componentWire.sourceComponent;
+        const nextPinName = isComponentSource ? componentWire.targetName : componentWire.sourceName;
+        
+        if (!nextComponentId) return;
+        
+        // If this component connects to a pin source
+        if (nextComponentId.includes('heroboard') || nextComponentId.includes('arduino')) {
+          const pinNumber = nextPinName;
+          traceEmulatorPinSource(nextComponentId, pinNumber);
+        }
+      });
+    };
+    
+    // Update pin state with proper analog value handling
+    const updatePinState = (boardId, pinNumber, pinState) => {
+      connectedToPin = true;
+      
+      // Handle different pin state formats
+      if (typeof pinState === 'object' && pinState !== null) {
+        // Object format with isHigh and analogValue properties
+        const isHigh = !!pinState.isHigh;
+        const pinAnalogValue = pinState.analogValue || 0;
+        
+        // For LEDs, any non-zero analog value will light them
+        // For RGB LEDs we would use the actual analogValue to control brightness
+        pinValue = pinValue || isHigh || (pinAnalogValue > 0);
+        analogValue = Math.max(analogValue, pinAnalogValue);
+        
+        console.log(`LED ${id} connected to ${boardId} pin ${pinNumber} with analog value ${pinAnalogValue}`);
+      } else {
+        // Boolean format (standard digital pin)
+        pinValue = pinValue || !!pinState;
+        
+        // Use full brightness for digital HIGH
+        if (!!pinState) {
+          analogValue = 255;
+        }
+        
+        console.log(`LED ${id} connected to ${boardId} pin ${pinNumber} with value ${!!pinState}`);
+      }
+    };
+    
+    // Execute the connection tracing to find pin signals
     traceConnections();
     
     // Update LED state based on connection and pin value
-    if (connectedToPin) {
-      setIsLit(pinValue);
-    } else {
-      // Not connected to any pin, keep LED off
-      setIsLit(false);
-    }
+    setIsLit(connectedToPin && pinValue);
     
   }, [componentStates, id, isSimulationRunning, connectionWires]);
   

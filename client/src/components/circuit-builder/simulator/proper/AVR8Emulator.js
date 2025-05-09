@@ -141,34 +141,24 @@ export class AVR8Emulator {
    * @returns {boolean} - Success
    */
   executeUserProgram(userProgram) {
-    // First, set pinMode based on detected pinModes
-    for (const [pinStr, mode] of Object.entries(userProgram.pinModes)) {
-      const pin = parseInt(pinStr, 10);
-      console.log(`[AVR8] Setting pin ${pin} mode to ${mode}`);
-      // Not much to do here in the simulation except log it
+    console.warn(
+      'DEPRECATION WARNING: Direct program execution via executeUserProgram ' +
+      'should not be used. This bypasses proper CPU emulation. ' +
+      'All execution must come from the avr8js CPU emulator.'
+    );
+    
+    // Create an error to notify any parts of the application still using this method
+    if (this.onError) {
+      this.onError(
+        'Direct program execution is not supported in hardware emulation mode. ' +
+        'Use proper CPU emulation through avr8js instead.'
+      );
     }
     
-    // Execute setup operations
-    console.log(`[AVR8] Executing setup with ${userProgram.setup.length} operations`);
-    this.executeOperations(userProgram.setup, false);
-    
-    // If there are loop operations, set up interval to execute them
-    if (userProgram.loop.length > 0) {
-      console.log(`[AVR8] Setting up loop with ${userProgram.loop.length} operations`);
-      
-      // Find the longest delay in the loop for reasonable timing
-      const maxDelay = userProgram.loop
-        .filter(op => op.delay)
-        .map(op => op.delay)
-        .reduce((max, delay) => Math.max(max, delay), 100);
-      
-      // Execute loop operations on an interval
-      this.intervalId = setInterval(() => {
-        this.executeOperations(userProgram.loop, true);
-      }, maxDelay);
-    }
-    
-    return true;
+    // We intentionally don't implement direct execution to ensure
+    // we only use the proper emulator path. Return false to indicate
+    // this operation is intentionally non-functional.
+    return false;
   }
   
   /**
@@ -177,31 +167,23 @@ export class AVR8Emulator {
    * @param {boolean} isLoop - Whether these are loop operations
    */
   executeOperations(operations, isLoop) {
-    if (!operations || operations.length === 0) {
-      return;
+    console.warn(
+      'DEPRECATION WARNING: Direct operation execution via executeOperations ' +
+      'should not be used. This bypasses proper CPU emulation. ' +
+      'All operations must come from the avr8js CPU emulator.'
+    );
+    
+    // Create an error to notify any parts of the application still using this method
+    if (this.onError) {
+      this.onError(
+        'Direct operation execution is not supported in hardware emulation mode. ' +
+        'Use proper CPU emulation through avr8js instead.'
+      );
     }
     
-    // For setup operations, execute sequentially with delays
-    if (!isLoop) {
-      let delay = 0;
-      
-      operations.forEach((op, index) => {
-        // Schedule each operation with its accumulated delay
-        setTimeout(() => {
-          this.executeOperation(op);
-        }, delay);
-        
-        // Add this operation's delay to the accumulated delay
-        delay += (op.delay || 50); // Default small delay if none specified
-      });
-      
-      return;
-    }
-    
-    // For loop operations, execute all at once per loop iteration
-    operations.forEach(op => {
-      this.executeOperation(op);
-    });
+    // We intentionally don't implement direct operation execution to ensure
+    // we only use the proper emulator path.
+    return;
   }
   
   /**
@@ -209,30 +191,24 @@ export class AVR8Emulator {
    * @param {Object} operation - The pin operation to execute
    */
   executeOperation(operation) {
-    const { pin, operation: opType, value } = operation;
+    console.warn(
+      'DEPRECATION WARNING: Direct operation execution via executeOperation ' +
+      'should not be used. This bypasses proper CPU emulation. ' +
+      'All operations must come from the avr8js CPU emulator.'
+    );
     
-    // Skip operations in conditional blocks (simplification, can't evaluate conditions)
-    if (operation.conditional) {
-      console.log(`[AVR8] Skipping conditional operation: ${operation.sourceCode}`);
-      return;
+    // Create an error to notify any parts of the application still using this method
+    if (this.onError) {
+      this.onError(
+        'Direct operation execution is not supported in hardware emulation mode. ' +
+        'Use proper CPU emulation through avr8js instead.'
+      );
     }
     
-    console.log(`[AVR8] Executing ${opType} on pin ${pin} with value ${value}`);
-    
-    // Execute the appropriate operation type
-    switch (opType) {
-      case 'digitalWrite':
-        this.setDigitalOutput(pin, !!value);
-        break;
-        
-      case 'analogWrite':
-        this.setPWMOutput(pin, value);
-        break;
-        
-      // Add more operation types as needed
-    }
-    
-    return true;
+    // We intentionally don't implement direct operation execution to ensure
+    // we only use the proper emulator path. Return false to indicate
+    // this operation is intentionally non-functional.
+    return false;
   }
   
   /**
