@@ -175,17 +175,28 @@ const OLEDDisplayRenderer = ({ componentId }) => {
     }
   }, [displayState]);
   
-  // Show demonstration animation only if the OLED is properly configured
+  // Clean up any animation intervals when the component unmounts or simulation stops
   useEffect(() => {
-    if (!isRunning) return;
-    
-    // Clear any existing animation intervals
-    return () => {
+    // Only set up cleanup when simulation is running
+    if (isRunning) {
+      // No setup needed here, setup happens in the other useEffect
+      
+      // Return cleanup function
+      return () => {
+        if (animationInterval.current) {
+          console.log("Cleaning up OLED animation interval");
+          clearInterval(animationInterval.current);
+          animationInterval.current = null;
+        }
+      };
+    } else {
+      // If simulation is not running, immediately clean up any existing intervals
       if (animationInterval.current) {
+        console.log("Cleaning up OLED animation interval (simulation stopped)");
         clearInterval(animationInterval.current);
         animationInterval.current = null;
       }
-    };
+    }
   }, [isRunning]);
   
   // Reference to store animation interval
@@ -233,13 +244,31 @@ const OLEDDisplayRenderer = ({ componentId }) => {
       
       // Show different messages based on the error condition
       if (displayState) {
+        // Get the error code based on state
+        let errorCode = "";
+        if (!displayState.hasRequiredLibraries) errorCode = "E01";
+        else if (!displayState.hasOLEDCode) errorCode = "E02";
+        else if (!displayState.isProperlyWired) errorCode = "E03";
+        
+        // Draw error code in top-right if there's an error
+        if (errorCode) {
+          let codeX = displayWidth - 30;
+          for (let i = 0; i < errorCode.length; i++) {
+            drawChar(errorBuffer, errorCode.charAt(i), codeX, 8);
+            codeX += 7;
+          }
+        }
+        
+        // Display specific error messages
         if (!displayState.hasRequiredLibraries) {
           // Draw "Missing Libraries" message
           const messages = [
             "Missing Library:",
             "Include one of:",
             "#include <U8g2lib.h>",
-            "#include <Adafruit_SSD1306.h>"
+            "#include <Adafruit_SSD1306.h>",
+            "",
+            "Error: E01-LIB"
           ];
           
           for (let msgIdx = 0; msgIdx < messages.length; msgIdx++) {
@@ -250,13 +279,19 @@ const OLEDDisplayRenderer = ({ componentId }) => {
               xPos += 6;
             }
           }
+          
+          // Log the error for easier debugging
+          console.error("OLED Error E01: Missing required libraries");
+          
         } else if (!displayState.hasOLEDCode) {
           // Draw "No OLED Code" message with more details
           const messages = [
             "No OLED Display Code",
             "Need to initialize and",
             "use display functions:",
-            "u8g2.drawStr() or display.print()"
+            "u8g2.drawStr() or",
+            "display.print()",
+            "Error: E02-CODE"
           ];
           
           for (let msgIdx = 0; msgIdx < messages.length; msgIdx++) {
@@ -267,13 +302,19 @@ const OLEDDisplayRenderer = ({ componentId }) => {
               xPos += 6;
             }
           }
+          
+          // Log the error for easier debugging
+          console.error("OLED Error E02: No display code detected");
+          
         } else if (!displayState.isProperlyWired) {
           // Draw "Check Wiring" message with pin details
           const messages = [
             "Check Wiring:",
             "Connect SDA to Arduino A4",
             "Connect SCL to Arduino A5",
-            "Connect VCC to 5V and GND"
+            "Connect VCC to 5V",
+            "Connect GND to GND",
+            "Error: E03-WIRE"
           ];
           
           for (let msgIdx = 0; msgIdx < messages.length; msgIdx++) {
@@ -283,6 +324,14 @@ const OLEDDisplayRenderer = ({ componentId }) => {
               drawChar(errorBuffer, message.charAt(i), xPos, 22 + msgIdx * 10);
               xPos += 6;
             }
+          }
+          
+          // Log the error for easier debugging
+          console.error("OLED Error E03: Display not properly wired");
+          
+          // Show more debugging info about wires
+          if (window.simulatorContext && window.simulatorContext.wires) {
+            console.log("Current circuit wires:", window.simulatorContext.wires.length);
           }
         }
       }
@@ -513,6 +562,250 @@ const OLEDDisplayRenderer = ({ componentId }) => {
         [0,0,0,0],
         [0,0,0,0],
         [0,0,0,0],
+        [0,0,0,0]
+      ],
+      // Additional characters for error messages
+      'E': [
+        [1,1,1,1],
+        [1,0,0,0],
+        [1,0,0,0],
+        [1,1,1,0],
+        [1,0,0,0],
+        [1,0,0,0],
+        [1,1,1,1]
+      ],
+      'L': [
+        [1,0,0,0],
+        [1,0,0,0],
+        [1,0,0,0],
+        [1,0,0,0],
+        [1,0,0,0],
+        [1,0,0,0],
+        [1,1,1,1]
+      ],
+      'I': [
+        [1,1,1,0],
+        [0,1,0,0],
+        [0,1,0,0],
+        [0,1,0,0],
+        [0,1,0,0],
+        [0,1,0,0],
+        [1,1,1,0]
+      ],
+      'B': [
+        [1,1,1,0],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,1,1,0],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,1,1,0]
+      ],
+      'W': [
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,1,1],
+        [0,1,0,0]
+      ],
+      'R': [
+        [1,1,1,0],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,1,1,0],
+        [1,0,1,0],
+        [1,0,0,1],
+        [1,0,0,1]
+      ],
+      'C': [
+        [0,1,1,0],
+        [1,0,0,1],
+        [1,0,0,0],
+        [1,0,0,0],
+        [1,0,0,0],
+        [1,0,0,1],
+        [0,1,1,0]
+      ],
+      'D': [
+        [1,1,1,0],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,1,1,0]
+      ],
+      'O': [
+        [0,1,1,0],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [0,1,1,0]
+      ],
+      'G': [
+        [0,1,1,0],
+        [1,0,0,1],
+        [1,0,0,0],
+        [1,0,1,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [0,1,1,0]
+      ],
+      'N': [
+        [1,0,0,1],
+        [1,1,0,1],
+        [1,0,1,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1]
+      ],
+      'h': [
+        [1,0,0,0],
+        [1,0,0,0],
+        [1,1,1,0],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1]
+      ],
+      'k': [
+        [1,0,0,0],
+        [1,0,0,0],
+        [1,0,1,0],
+        [1,1,0,0],
+        [1,1,0,0],
+        [1,0,1,0],
+        [1,0,0,1]
+      ],
+      'd': [
+        [0,0,0,1],
+        [0,0,0,1],
+        [0,1,1,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [0,1,1,1]
+      ],
+      'w': [
+        [0,0,0,0],
+        [0,0,0,0],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,1,1],
+        [0,1,0,1]
+      ],
+      'l': [
+        [1,0,0,0],
+        [1,0,0,0],
+        [1,0,0,0],
+        [1,0,0,0],
+        [1,0,0,0],
+        [1,0,0,0],
+        [0,1,1,0]
+      ],
+      'i': [
+        [0,1,0,0],
+        [0,0,0,0],
+        [1,1,0,0],
+        [0,1,0,0],
+        [0,1,0,0],
+        [0,1,0,0],
+        [1,1,1,0]
+      ],
+      'p': [
+        [0,0,0,0],
+        [0,0,0,0],
+        [1,1,1,0],
+        [1,0,0,1],
+        [1,1,1,0],
+        [1,0,0,0],
+        [1,0,0,0]
+      ],
+      'u': [
+        [0,0,0,0],
+        [0,0,0,0],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [0,1,1,1]
+      ],
+      'b': [
+        [1,0,0,0],
+        [1,0,0,0],
+        [1,1,1,0],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,1,1,0]
+      ],
+      'y': [
+        [0,0,0,0],
+        [0,0,0,0],
+        [1,0,0,1],
+        [1,0,0,1],
+        [0,1,1,1],
+        [0,0,0,1],
+        [1,1,1,0]
+      ],
+      '-': [
+        [0,0,0,0],
+        [0,0,0,0],
+        [0,0,0,0],
+        [1,1,1,1],
+        [0,0,0,0],
+        [0,0,0,0],
+        [0,0,0,0]
+      ],
+      '<': [
+        [0,0,0,1],
+        [0,0,1,0],
+        [0,1,0,0],
+        [1,0,0,0],
+        [0,1,0,0],
+        [0,0,1,0],
+        [0,0,0,1]
+      ],
+      '>': [
+        [1,0,0,0],
+        [0,1,0,0],
+        [0,0,1,0],
+        [0,0,0,1],
+        [0,0,1,0],
+        [0,1,0,0],
+        [1,0,0,0]
+      ],
+      '/': [
+        [0,0,0,1],
+        [0,0,1,0],
+        [0,0,1,0],
+        [0,1,0,0],
+        [0,1,0,0],
+        [1,0,0,0],
+        [1,0,0,0]
+      ],
+      '#': [
+        [0,1,0,1],
+        [0,1,0,1],
+        [1,1,1,1],
+        [0,1,0,1],
+        [1,1,1,1],
+        [0,1,0,1],
+        [0,1,0,1]
+      ],
+      'V': [
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [0,1,1,0],
         [0,0,0,0]
       ]
     };
