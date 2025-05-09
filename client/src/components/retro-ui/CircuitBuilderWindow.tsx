@@ -28,8 +28,8 @@ import CircuitBuilder from '../circuit-builder/CircuitBuilder';
 
 // Import simulator components
 import { SimulatorProvider, useSimulator } from '../circuit-builder/simulator/SimulatorContext';
-// Import the legacy simulator
-import AVR8Simulator from '../circuit-builder/simulator/AVR8Simulator';
+// Import only the proper simulator - legacy simulator removed to enforce hardware emulation
+// import AVR8Simulator from '../circuit-builder/simulator/AVR8Simulator'; // REMOVED - uses keyword-based shortcuts
 // Import our proper AVR8 simulator 
 import ProperAVR8Simulator from '../circuit-builder/simulator/ProperAVR8Simulator';
 import SimulationLogPanel from '../circuit-builder/simulator/SimulationLogPanel';
