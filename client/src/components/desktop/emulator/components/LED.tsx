@@ -14,12 +14,21 @@ interface LEDProps {
   onRemove: () => void;
 }
 
+// Type definition for pin positions (matching CircuitComponent)
+interface PinConfig {
+  id: string;
+  type: 'input' | 'output' | 'bidirectional';
+  label?: string;
+}
+
 /**
  * LED Component
  * 
  * Renders an LED that lights up based on the connected pin state
  * from the emulator. This demonstrates proper signal-driven component
  * behavior rather than hardcoded visuals.
+ * 
+ * Follows the same styling as the circuit-builder/components/CircuitComponent.jsx
  */
 export function LED({
   id,
@@ -32,11 +41,21 @@ export function LED({
   onConnect,
   onRemove
 }: LEDProps) {
-  const [dragStart, setDragStart] = useState<{ x: number, y: number } | null>(null);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [rotation, setRotation] = useState(0);
   const [connecting, setConnecting] = useState<string | null>(null);
   const ledRef = useRef<HTMLDivElement>(null);
+  const width = 100;
+  const height = 100;
   
+  // Define pins in the same format as CircuitComponent
+  const pins: PinConfig[] = [
+    { id: 'anode', type: 'input', label: 'Anode (+)' },
+    { id: 'cathode', type: 'output', label: 'Cathode (-)' }
+  ];
+
   // Determine if LED is lit based on connected pin state
   const isLit = React.useMemo(() => {
     // Get the anode connection (pin where positive voltage is applied)
@@ -48,63 +67,180 @@ export function LED({
     const connectedPinState = pinStates[anodeConnection];
     return connectedPinState?.isHigh || false;
   }, [connections, pinStates]);
-  
-  // Handle mouse down for dragging
-  const handleMouseDown = (e: React.MouseEvent) => {
-    // Only allow dragging from the LED body, not pins or controls
-    if (
-      (e.target as HTMLElement).classList.contains('pin') ||
-      (e.target as HTMLElement).classList.contains('control')
-    ) {
-      return;
-    }
-    
-    setDragStart({
-      x: e.clientX,
-      y: e.clientY
-    });
-    
+
+  // Handle click on component
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     onSelect();
   };
   
-  // Handle mouse move for dragging
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!dragStart) return;
+  // Handle mouse down on component for dragging
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (e.button === 0) { // Left mouse button
+      const rect = ledRef.current?.getBoundingClientRect();
+      if (rect) {
+        setDragOffset({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        });
+        setIsDragging(true);
+      }
+    }
+  };
+
+  // Generate a pin position based on its ID
+  const generatePinPosition = (pinId: string) => {
+    // Default position (center)
+    let x = 0.5; 
+    let y = 0.5;
     
-    const dx = e.clientX - dragStart.x;
-    const dy = e.clientY - dragStart.y;
-    
-    // Calculate new position based on current position and drag offset
-    if (ledRef.current) {
-      const rect = ledRef.current.getBoundingClientRect();
-      onMove(rect.left + dx, rect.top + dy);
+    // Set positions for LED pins
+    if (pinId === 'anode') {
+      x = 0.5; 
+      y = 0.1;
+    } else if (pinId === 'cathode') {
+      x = 0.5; 
+      y = 0.9;
     }
     
-    setDragStart({
-      x: e.clientX,
-      y: e.clientY
+    return { x, y };
+  };
+  
+  // Calculate pin position
+  const getPinPosition = (pin: PinConfig) => {
+    const pinPosition = generatePinPosition(pin.id);
+    
+    // Create a new position that's relative to the component
+    const newPosition = {
+      x: position.x + pinPosition.x * width,
+      y: position.y + pinPosition.y * height
+    };
+    
+    // Store the pin position in the global cache for wire connections
+    if (!window.pinPositionCache) {
+      window.pinPositionCache = new Map();
+    }
+    
+    const formattedPinId = `pt-led-${id.replace(/ /g, '')}-${pin.id}`;
+    
+    window.pinPositionCache.set(formattedPinId, {
+      x: newPosition.x,
+      y: newPosition.y,
+      origComponentX: position.x,
+      origComponentY: position.y,
+      component: id,
+      pin: pin.id
     });
-  };
-  
-  // Handle mouse up to stop dragging
-  const handleMouseUp = () => {
-    setDragStart(null);
-  };
-  
-  // Add and remove event listeners for dragging
-  useEffect(() => {
-    if (dragStart) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-      
-      return () => {
-        window.removeEventListener('mousemove', handleMouseMove);
-        window.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
     
-    return undefined;
-  }, [dragStart]);
+    return newPosition;
+  };
+  
+  // Handle pin click for connecting
+  const handlePinClick = (pinId: string, pinType: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    setConnecting(pinId);
+    
+    // Calculate exact pin position
+    const pinConfig = pins.find(p => p.id === pinId);
+    if (pinConfig) {
+      const pinPosition = getPinPosition(pinConfig);
+      
+      // Create pin ID with consistent format
+      const formattedPinId = `pt-led-${id.replace(/ /g, '')}-${pinId}`;
+      
+      // Create a detailed event with stable position data
+      const clickEvent = new CustomEvent('pinClicked', {
+        detail: {
+          id: formattedPinId,
+          pinId,
+          componentId: id,
+          pinType,
+          clientX: pinPosition.x,
+          clientY: pinPosition.y,
+          componentType: 'led',
+          pinData: JSON.stringify({
+            x: pinPosition.x,
+            y: pinPosition.y,
+            origComponentX: position.x,
+            origComponentY: position.y,
+            pinId: pinId,
+            componentId: id,
+            formattedId: formattedPinId,
+            type: pinType
+          })
+        },
+        bubbles: true
+      });
+      
+      // Dispatch the detailed event
+      document.dispatchEvent(clickEvent);
+      
+      // Call the connect function
+      onConnect(pinId, 'pin13'); // Default to pin13 for simple testing, this should be replaced with proper pin selection
+    }
+  };
+  
+  // Handle mouse move for dragging
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      // Calculate the new position based on mouse position and drag offset
+      const newX = e.clientX - dragOffset.x;
+      const newY = e.clientY - dragOffset.y;
+      
+      // Update component position
+      setPosition({ x: newX, y: newY });
+      
+      // Also update using the callback for parent component tracking
+      onMove(newX, newY);
+      
+      // After position update, dispatch custom event for wire updates
+      document.dispatchEvent(new CustomEvent('componentMoved', {
+        detail: { 
+          componentId: id,
+          x: newX,
+          y: newY
+        }
+      }));
+    };
+    
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      
+      // Final position update event
+      const pinPositions: Record<string, {x: number, y: number}> = {};
+      
+      // Update all pin positions after movement
+      pins.forEach(pin => {
+        const pinPos = getPinPosition(pin);
+        const formattedPinId = `pt-led-${id.replace(/ /g, '')}-${pin.id}`;
+        
+        pinPositions[formattedPinId] = {
+          x: pinPos.x,
+          y: pinPos.y
+        };
+      });
+      
+      // Dispatch final move event to update wires
+      document.dispatchEvent(new CustomEvent('componentMovedFinal', {
+        detail: { 
+          componentId: id,
+          pinPositions
+        }
+      }));
+    };
+    
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset, id, onMove]);
   
   // Handle rotation
   const handleRotate = () => {
@@ -112,68 +248,110 @@ export function LED({
     setRotation(newRotation);
     onRotate(newRotation);
   };
-  
-  // Handle pin click for connecting
-  const handlePinClick = (pin: string) => {
-    setConnecting(pin);
-  };
-  
-  // Connect to a board pin
-  const connectToBoardPin = (boardPin: string) => {
-    if (connecting) {
-      onConnect(connecting, boardPin);
-      setConnecting(null);
-    }
-  };
-  
+
+  // Register pins for wire connections
+  useEffect(() => {
+    pins.forEach(pin => {
+      const pinPosition = getPinPosition(pin);
+      const formattedPinId = `pt-led-${id.replace(/ /g, '')}-${pin.id}`;
+      
+      // Dispatch event to register this pin for wire connections
+      const event = new CustomEvent('registerPin', {
+        detail: {
+          id: formattedPinId,
+          componentId: id,
+          pinId: pin.id,
+          pinType: pin.type,
+          x: pinPosition.x,
+          y: pinPosition.y
+        },
+        bubbles: true
+      });
+      
+      document.dispatchEvent(event);
+    });
+  }, [id, position]);
+
   return (
     <div
       ref={ledRef}
-      className={`relative flex flex-col items-center w-16 h-20 ${
-        isSelected ? 'ring-2 ring-blue-500 ring-offset-2' : ''
-      }`}
-      style={{ transform: `rotate(${rotation}deg)` }}
+      id={`component-${id}`}
+      className="circuit-component absolute select-none"
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        width: `${width}px`,
+        height: `${height}px`,
+        transform: `rotate(${rotation}deg)`,
+        cursor: isDragging ? 'grabbing' : 'grab',
+        border: isSelected ? '2px solid #3b82f6' : 'none',
+        borderRadius: '4px'
+      }}
+      onClick={handleClick}
       onMouseDown={handleMouseDown}
     >
       {/* LED Body */}
-      <div 
-        className={`w-8 h-8 rounded-full ${
-          isLit ? 'bg-red-500 shadow-lg shadow-red-500/50' : 'bg-red-200'
-        } border border-gray-300`}
-      />
-      
-      {/* LED Legs/Pins */}
-      <div className="flex gap-4 mt-1">
+      <div className="absolute inset-0 flex items-center justify-center p-2">
         <div 
-          className="pin h-8 w-1 bg-gray-400 cursor-pointer hover:bg-blue-500"
-          onClick={() => handlePinClick('anode')}
-          title="Anode (+)"
-        />
-        <div 
-          className="pin h-8 w-1 bg-gray-400 cursor-pointer hover:bg-blue-500"
-          onClick={() => handlePinClick('cathode')}
-          title="Cathode (-)"
-        />
+          className={`w-16 h-16 rounded-full ${
+            isLit ? 'bg-red-500 shadow-lg shadow-red-500/50' : 'bg-red-200'
+          } border-2 border-gray-400 flex items-center justify-center`}
+        >
+          <span className="text-xs font-mono text-gray-800">LED</span>
+        </div>
       </div>
       
-      {/* Connection Labels */}
-      <div className="flex gap-2 mt-1 text-xs">
-        <div>+</div>
-        <div>-</div>
+      {/* Component pins - using the exact same style as CircuitComponent */}
+      {pins.map(pin => {
+        const pinPos = getPinPosition(pin);
+        const pinRelativeX = (pinPos.x - position.x) / width;
+        const pinRelativeY = (pinPos.y - position.y) / height;
+        
+        return (
+          <div
+            key={pin.id}
+            id={`${id}-${pin.id}`}
+            data-pin-id={pin.id}
+            className={`circuit-pin pin-point absolute w-5 h-5 rounded-full transform -translate-x-1/2 -translate-y-1/2 cursor-crosshair border-2 shadow-md ${
+              pin.type === 'input' ? 'bg-green-500 border-green-700' : 
+              pin.type === 'output' ? 'bg-red-500 border-red-700' : 
+              'bg-blue-500 border-blue-700' // bidirectional
+            }`}
+            style={{
+              left: `${pinRelativeX * 100}%`,
+              top: `${pinRelativeY * 100}%`,
+              zIndex: 20
+            }}
+            onClick={(e) => handlePinClick(pin.id, pin.type, e)}
+            title={pin.label || pin.id}
+          >
+            {/* Pin hover tooltip */}
+            <div className="pin-tooltip absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-1 py-0.5 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">
+              {pin.label || pin.id}
+            </div>
+          </div>
+        );
+      })}
+      
+      {/* Component label */}
+      <div 
+        className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-center whitespace-nowrap bg-gray-800 text-white px-1 rounded"
+      >
+        LED
       </div>
       
       {/* Controls (only visible when selected) */}
       {isSelected && (
         <div className="absolute -top-8 right-0 flex gap-1">
           <button
-            className="control p-1 bg-white rounded-full shadow hover:bg-gray-100"
+            className="control p-1 bg-gray-700 rounded-full shadow hover:bg-gray-600 text-white"
             onClick={handleRotate}
             title="Rotate"
           >
             <RotateCw className="h-4 w-4" />
           </button>
           <button
-            className="control p-1 bg-white rounded-full shadow hover:bg-red-100"
+            className="control p-1 bg-red-700 rounded-full shadow hover:bg-red-600 text-white"
             onClick={onRemove}
             title="Remove"
           >
@@ -182,16 +360,9 @@ export function LED({
         </div>
       )}
       
-      {/* Component ID label */}
-      {isSelected && (
-        <div className="absolute -bottom-5 left-0 text-xs">
-          {id}
-        </div>
-      )}
-      
       {/* Connection Status */}
       {connecting && (
-        <div className="absolute -top-8 left-0 text-xs bg-blue-100 p-1 rounded">
+        <div className="absolute -top-8 left-0 text-xs bg-blue-100 text-blue-800 p-1 rounded">
           Connecting {connecting}...
         </div>
       )}
