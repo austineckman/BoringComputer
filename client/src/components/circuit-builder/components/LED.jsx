@@ -47,26 +47,66 @@ const LED = ({
   const [initPosLeft, setInitPosLeft] = useState(initialX);
   const [isLit, setIsLit] = useState(false); // Track LED state for simulation
   
+  // Access the wires from the simulator context
+  const { wires: connectionWires } = useSimulator();
+  
   // Check if this LED has been updated by the simulation
   useEffect(() => {
-    // Log to see if we're even getting component state updates
     console.log(`LED ${id} checking for state updates, isSimulationRunning=${isSimulationRunning}`);
     
-    // Only check LED state when simulation is running
+    // Turn off LED when simulation stops
     if (!isSimulationRunning) {
-      // Turn off LED when simulation stops
       setIsLit(false);
       return;
     }
     
-    // For now, simply turn LEDs off to fix the blinking issue
-    // This is a temporary fix until we implement proper wire-based logic
-    setIsLit(false);
+    let connectedToPin = false;
+    let pinValue = false;
     
-    // The proper solution would check for wire connections between the LED and heroboard
-    // and then check if the specific heroboard pin is HIGH
+    // Find all wires connected to this LED
+    const connectedWires = Array.isArray(connectionWires) ? 
+      connectionWires.filter(wire => 
+        wire.sourceComponent === id || wire.targetComponent === id
+      ) : [];
     
-  }, [componentStates, id, isSimulationRunning]);
+    console.log(`LED ${id} found ${connectedWires.length} connected wires`);
+    
+    // Check if any of these wires connects to a heroboard pin
+    connectedWires.forEach(wire => {
+      // Determine if this LED is the source or target of the wire
+      const isLedSource = wire.sourceComponent === id;
+      
+      // Find the other component this wire connects to
+      const otherComponentId = isLedSource ? wire.targetComponent : wire.sourceComponent;
+      const otherPinName = isLedSource ? wire.targetName : wire.sourceName;
+      
+      // Check if connected to a heroboard
+      if (otherComponentId && otherComponentId.includes('heroboard')) {
+        // Get the pin name/number
+        const pinNumber = otherPinName;
+        
+        // Check the heroboard's pin state
+        if (componentStates?.heroboard?.pins && 
+            componentStates.heroboard.pins[pinNumber] !== undefined) {
+          
+          connectedToPin = true;
+          // If connected to multiple pins, any HIGH value will light the LED
+          pinValue = pinValue || componentStates.heroboard.pins[pinNumber] === true;
+          
+          console.log(`LED ${id} is connected to heroboard pin ${pinNumber} with value=${pinValue}`);
+        }
+      }
+    });
+    
+    // Update LED state based on connection and pin value
+    if (connectedToPin) {
+      setIsLit(pinValue);
+    } else {
+      // Not connected to any pin, keep LED off
+      setIsLit(false);
+    }
+    
+  }, [componentStates, id, isSimulationRunning, connectionWires]);
   
   // Create a component data structure that matches what the original code expects
   const componentData = {
