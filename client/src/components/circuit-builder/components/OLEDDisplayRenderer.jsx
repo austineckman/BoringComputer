@@ -322,10 +322,12 @@ const OLEDDisplayRenderer = ({ componentId }) => {
         border: '1px solid #444',
         position: 'absolute',
         top: '22px',
-        left: '22px',
-        width: '128px',
-        height: '64px',
-        backgroundColor: '#000'
+        left: '20px',
+        width: '114px',
+        height: '35px',
+        backgroundColor: '#000',
+        zIndex: 20,
+        boxShadow: '0 0 6px rgba(0, 200, 255, 0.5)'
       }}
     />
   );
