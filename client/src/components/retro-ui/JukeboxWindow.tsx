@@ -202,29 +202,13 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
             <img 
               src={jukeboxImage} 
               alt="Vintage Jukebox" 
-              className={`w-full h-auto max-w-[320px] mx-auto image-rendering-pixelated ${isPlaying ? 'jukebox-playing' : ''}`}
+              className="w-full h-auto max-w-[320px] mx-auto image-rendering-pixelated"
               style={{ imageRendering: 'pixelated' }}
             />
             
-            {/* Top display visualizer (golden area) */}
-            {isPlaying && (
-              <div className="absolute top-[16%] left-1/2 transform -translate-x-1/2 w-[40%] h-[5%] flex items-center justify-center">
-                <div className="flex space-x-1">
-                  {[...Array(4)].map((_, i) => (
-                    <div 
-                      key={i} 
-                      className="w-1 bg-orange-300 rounded-full animate-visualizer"
-                      style={{ 
-                        height: `${Math.random() * 8 + 2}px`,
-                        animationDelay: `${i * 0.15}s`
-                      }}
-                    ></div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* No glow effect */}
             
-            {/* Middle display visualizer */}
+            {/* Visualizer effect on jukebox display */}
             <div className="absolute top-[35%] left-1/2 transform -translate-x-1/2 w-[40%] h-[8%] flex items-center justify-center">
               <div className={`flex space-x-1 ${isPlaying ? 'animate-pulse' : ''}`}>
                 {[...Array(6)].map((_, i) => (
@@ -241,48 +225,6 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
                 ))}
               </div>
             </div>
-            
-            {/* Green tube pulsing effects (left) */}
-            {isPlaying && (
-              <div className="absolute top-[35%] left-[14%] w-[4%] h-[28%] opacity-20 bg-green-400 rounded-full animate-slow-pulse"></div>
-            )}
-            
-            {/* Green tube pulsing effects (right) */}
-            {isPlaying && (
-              <div className="absolute top-[35%] right-[14%] w-[4%] h-[28%] opacity-20 bg-green-400 rounded-full animate-slow-pulse-delayed"></div>
-            )}
-            
-            {/* Record spinning effect */}
-            {isPlaying && (
-              <div className="absolute top-[66%] left-1/2 transform -translate-x-1/2 w-[26%] h-[14%] overflow-hidden">
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className="w-[18px] h-[18px] rounded-full border-2 border-gray-700 bg-gray-800 animate-spin-slow relative">
-                    <div className="absolute top-1/2 left-0 w-full h-[2px] bg-gray-600"></div>
-                    <div className="absolute top-0 left-1/2 w-[2px] h-full bg-gray-600"></div>
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[4px] h-[4px] rounded-full bg-gray-600"></div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Pixel dust effect */}
-            {isPlaying && (
-              <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                {[...Array(5)].map((_, i) => (
-                  <div 
-                    key={i}
-                    className="absolute w-[2px] h-[2px] bg-orange-300 rounded-full animate-float-up"
-                    style={{
-                      left: `${30 + Math.random() * 40}%`,
-                      bottom: `${10 + Math.random() * 60}%`,
-                      opacity: 0.6 + Math.random() * 0.4,
-                      animationDelay: `${i * 2 + Math.random() * 5}s`,
-                      animationDuration: `${4 + Math.random() * 6}s`
-                    }}
-                  ></div>
-                ))}
-              </div>
-            )}
           </div>
           
           {/* Controls below jukebox */}
