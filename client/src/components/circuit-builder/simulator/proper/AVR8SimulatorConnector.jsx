@@ -142,8 +142,8 @@ const AVR8SimulatorConnector = ({
                   });
                 }
                 
-                // Start the emulator
-                emulatorRef.current.start();
+                // Start the emulator with the parsed user program
+                emulatorRef.current.start(result.userProgram);
               } else {
                 logInfo('Failed to load program');
                 
