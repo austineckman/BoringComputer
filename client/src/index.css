@@ -4,6 +4,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* OLED Display Canvas Styles */
+.oled-display-canvas {
+  border-radius: 3px;
+  box-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+}
+
 /* Custom animation for LED pulse effect */
 @keyframes pulse {
   0% {

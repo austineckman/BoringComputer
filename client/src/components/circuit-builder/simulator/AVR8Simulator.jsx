@@ -202,6 +202,39 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     }
   }, [loadedLibraries]);
   
+  // Find and initialize OLED displays in the circuit
+  useEffect(() => {
+    if (!isRunning) return;
+    
+    // Get components from simulator context
+    const { components } = simulatorContext;
+    
+    // Find all OLED display components by type/class
+    const oledComponents = Object.values(components).filter(component => 
+      component.type === 'oled-display'
+    );
+    
+    // Initialize OLED components in the simulator
+    if (oledComponents.length > 0) {
+      logInfo(`Initializing ${oledComponents.length} OLED display(s)`);
+      
+      oledComponents.forEach(oled => {
+        // Create an empty display buffer (128x64 pixels for SSD1306)
+        const displayBuffer = new Array(64).fill(0).map(() => 
+          new Array(128).fill(0)
+        );
+        
+        // Update component state with the buffer
+        updateComponentState(oled.id, {
+          buffer: displayBuffer,
+          initialized: true
+        });
+        
+        logInfo(`OLED display ${oled.id} initialized`);
+      });
+    }
+  }, [isRunning, simulatorContext.components]);
+  
   // The component doesn't render anything
   return null;
 };
