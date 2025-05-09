@@ -229,6 +229,25 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     if (code) {
       const compiled = compileCode(code);
       setCompiledCode(compiled);
+      
+      // Detect libraries used in the code
+      const libraries = detectLibraries(code);
+      setDetectedLibraries(libraries);
+      logInfo(`Detected libraries: ${libraries.join(', ')}`);
+      
+      // Also share code with the global window object for non-React components
+      if (window) {
+        if (!window.simulatorContext) {
+          window.simulatorContext = {};
+        }
+        window.simulatorContext.code = code;
+        console.log("AVR8Simulator updated code globally:", code ? 
+          (code.length > 100 ? code.substring(0, 100) + "..." : code) : "empty code");
+      }
+      
+      // Parse and log OLED commands for debugging
+      const oledCommands = parseOLEDCommands(code);
+      console.log("Parsed OLED commands in AVR8Simulator:", oledCommands);
     }
   }, [code]);
   
