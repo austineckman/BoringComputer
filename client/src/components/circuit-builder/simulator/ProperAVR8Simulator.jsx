@@ -1,7 +1,6 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { CPU, AVRTimer, AVRIOPort, AVRSPI, AVRUSART } from 'avr8js';
+import React, { useState, useEffect, useCallback } from 'react';
+import AVR8SimulatorComponent from './proper/AVR8SimulatorComponent';
 import { useSimulator } from './SimulatorContext';
-import { compileArduino, extractUsedPins } from './proper/ArduinoCompilerService';
 
 /**
  * ProperAVR8Simulator Component
@@ -10,147 +9,78 @@ import { compileArduino, extractUsedPins } from './proper/ArduinoCompilerService
  * simulation of an Arduino microcontroller running compiled machine code.
  */
 const ProperAVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
-  // Compiled program
-  const [compiledProgram, setCompiledProgram] = useState(null);
-  // Simulation state
-  const [simulationState, setSimulationState] = useState({
-    running: false,
-    pins: {},
-    serialOutput: ''
-  });
-  // CPU & microcontroller references
-  const cpuRef = useRef(null);
-  const portsRef = useRef({});
-  const timersRef = useRef([]);
-  // Animation frame for CPU execution
-  const rafRef = useRef(null);
-  // CPU frequency in Hz (16MHz for Arduino Uno)
-  const cpuFrequency = 16000000;
-  // Pins used in the program
-  const [usedPins, setUsedPins] = useState([]);
+  // Serial output from the simulation
+  const [serialOutput, setSerialOutput] = useState('');
+  // Used to track pins that are currently HIGH (active)
+  const [activePins, setActivePins] = useState({});
   
   // Access simulator context
-  const { updateComponentState } = useSimulator();
+  const { updateComponentState, updateComponentPins } = useSimulator();
   
   // Log to console and pass to parent
-  const logInfo = (message) => {
+  const handleLog = useCallback((message) => {
     console.log(`[AVR8] ${message}`);
     if (onLog) {
       onLog(message);
     }
-  };
+  }, [onLog]);
   
-  // Arduino Uno pin mapping to AVR ports
-  const PIN_MAPPING = {
-    // Digital pins
-    0: { port: 'D', bit: 0 }, // RX
-    1: { port: 'D', bit: 1 }, // TX
-    2: { port: 'D', bit: 2 },
-    3: { port: 'D', bit: 3 }, // PWM
-    4: { port: 'D', bit: 4 },
-    5: { port: 'D', bit: 5 }, // PWM
-    6: { port: 'D', bit: 6 }, // PWM
-    7: { port: 'D', bit: 7 },
-    8: { port: 'B', bit: 0 },
-    9: { port: 'B', bit: 1 }, // PWM
-    10: { port: 'B', bit: 2 }, // PWM
-    11: { port: 'B', bit: 3 }, // PWM
-    12: { port: 'B', bit: 4 },
-    13: { port: 'B', bit: 5 }, // LED_BUILTIN
-    // Analog pins
-    'A0': { port: 'C', bit: 0 },
-    'A1': { port: 'C', bit: 1 },
-    'A2': { port: 'C', bit: 2 },
-    'A3': { port: 'C', bit: 3 },
-    'A4': { port: 'C', bit: 4 }, // SDA
-    'A5': { port: 'C', bit: 5 }, // SCL
-  };
+  // Handle pin change from the simulator
+  const handlePinChange = useCallback((pin, isHigh) => {
+    // Update active pins state
+    setActivePins(prev => ({
+      ...prev,
+      [pin]: isHigh
+    }));
+    
+    // Call the parent callback if provided
+    if (onPinChange) {
+      onPinChange(pin, isHigh);
+    }
+    
+    // Log the pin change
+    handleLog(`Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+  }, [onPinChange, handleLog]);
   
-  // Port address mapping for AVR ATmega328P
-  const PORT_ADDR = {
-    'B': { data: 0x25, ddr: 0x24, pin: 0x23 }, // PORTB, DDRB, PINB
-    'C': { data: 0x28, ddr: 0x27, pin: 0x26 }, // PORTC, DDRC, PINC
-    'D': { data: 0x2B, ddr: 0x2A, pin: 0x29 }, // PORTD, DDRD, PIND
-  };
-
-  // Compile the Arduino code
-  const compileCode = async () => {
-    if (!code) return;
-    
-    logInfo('Compiling Arduino code...');
-    
-    try {
-      // Call the compiler service
-      const result = await compileArduino(code);
+  // Handle serial data from simulator
+  const handleSerialData = useCallback((value, char) => {
+    setSerialOutput(prev => {
+      const newOutput = prev + char;
       
-      if (result.success) {
-        logInfo(`Compilation successful. Program size: ${result.size} bytes.`);
-        setCompiledProgram(result.program);
-        
-        // Extract pins used in the program
-        const pins = extractUsedPins(result.program);
-        setUsedPins(pins);
-        
-        return result.program;
-      } else {
-        logInfo(`Compilation failed: ${result.error}`);
-        return null;
+      // If we get a newline, log it
+      if (char === '\n') {
+        const line = newOutput.trim();
+        if (line) {
+          handleLog(`Serial: ${line}`);
+        }
+        return '';
       }
-    } catch (error) {
-      logInfo(`Error compiling code: ${error.message}`);
-      return null;
-    }
-  };
+      
+      return newOutput;
+    });
+  }, [handleLog]);
+
+  // Clean up resources when component unmounts
+  useEffect(() => {
+    return () => {
+      // Reset state
+      setSerialOutput('');
+      setActivePins({});
+      
+      handleLog('AVR8 simulator cleaned up');
+    };
+  }, [handleLog]);
   
-  // Initialize the AVR simulation
-  const initializeAVR = (program) => {
-    if (!program) return false;
-    
-    logInfo('Initializing AVR microcontroller simulation...');
-    
-    try {
-      // Create a new CPU with the compiled program
-      const cpu = new CPU(program);
-      cpuRef.current = cpu;
-      
-      // Initialize I/O ports (B, C, D for ATmega328P)
-      const ports = {};
-      ['B', 'C', 'D'].forEach(portName => {
-        const addr = PORT_ADDR[portName];
-        ports[portName] = new AVRIOPort(cpu, addr.data, addr.ddr, addr.pin);
-        
-        // Add listener for port changes
-        ports[portName].addPortListener(() => {
-          handlePortChange(portName, ports[portName]);
-        });
-      });
-      portsRef.current = ports;
-      
-      // Initialize timers
-      const timers = [];
-      // Timer 0 (8-bit) - Controls PWM on pins 5 & 6
-      timers[0] = new AVRTimer(cpu, 0);
-      // Timer 1 (16-bit) - Controls PWM on pins 9 & 10
-      timers[1] = new AVRTimer(cpu, 1);
-      // Timer 2 (8-bit) - Controls PWM on pins 3 & 11
-      timers[2] = new AVRTimer(cpu, 2);
-      timersRef.current = timers;
-      
-      // Initialize USART for serial communication
-      const usart = new AVRUSART(cpu, { 
-        onByte: handleSerialByte 
-      });
-      
-      // Initialize SPI (optional)
-      const spi = new AVRSPI(cpu);
-      
-      logInfo('AVR microcontroller initialized successfully');
-      return true;
-    } catch (error) {
-      logInfo(`Error initializing AVR: ${error.message}`);
-      return false;
-    }
-  };
+  // Render the proper AVR8 simulator
+  return (
+    <AVR8SimulatorComponent
+      code={code}
+      isRunning={isRunning}
+      onPinChange={handlePinChange}
+      onSerialData={handleSerialData}
+      onLog={handleLog}
+    />
+  );
   
   // Handle changes to port values (pin states)
   const handlePortChange = (portName, port) => {

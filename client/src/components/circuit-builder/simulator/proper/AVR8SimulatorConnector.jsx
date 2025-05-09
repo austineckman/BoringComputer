@@ -1,121 +1,174 @@
-import React, { useState, useEffect } from 'react';
-import AVR8SimulatorComponent from './AVR8SimulatorComponent';
-import { useSimulator } from '../SimulatorContext';
+import React, { useEffect, useRef } from 'react';
+import { AVR8Emulator } from './AVR8Emulator';
+import { compileArduino } from './ArduinoCompilerService';
 
 /**
  * AVR8SimulatorConnector
  * 
- * This component bridges the existing circuit builder interface with
- * our proper AVR8 simulator implementation.
- * 
- * It handles the transition from the regex-based simulator to the
- * actual AVR microcontroller emulation.
+ * This component connects the AVR8Emulator to React components.
+ * It handles the lifecycle of the emulator and provides callbacks
+ * for React components to interact with the emulation.
  */
-const AVR8SimulatorConnector = ({
+const AVR8SimulatorConnector = ({ 
   code,
-  isRunning,
-  onLog
+  isRunning = false,
+  onPinChange,
+  onSerialData,
+  onLog,
+  setCompilationStatus
 }) => {
-  // Compilation errors
-  const [compileErrors, setCompileErrors] = useState([]);
-  // Pin change log
-  const [pinChanges, setPinChanges] = useState([]);
+  // Reference to our emulator instance
+  const emulatorRef = useRef(null);
   
-  // Access the simulator context
-  const { updateComponentState } = useSimulator();
+  // Keep track of our current code
+  const codeRef = useRef(code);
   
-  // Log information to the console
+  // Initialize the emulator
+  useEffect(() => {
+    // Create a new emulator instance
+    const emulator = new AVR8Emulator();
+    emulatorRef.current = emulator;
+    
+    // Set up event handlers
+    if (onPinChange) {
+      emulator.onPinChange(onPinChange);
+    }
+    
+    if (onSerialData) {
+      emulator.onSerialData(onSerialData);
+    }
+    
+    if (onLog) {
+      emulator.onLog(onLog);
+    }
+    
+    // Log setup complete
+    logInfo('AVR8 simulator initialized');
+    
+    // Cleanup on unmount
+    return () => {
+      if (emulatorRef.current) {
+        logInfo('Cleaning up simulator');
+        emulatorRef.current.cleanup();
+        emulatorRef.current = null;
+      }
+    };
+  }, []);
+  
+  // Utility for logging
   const logInfo = (message) => {
-    console.log(`[AVR8Connector] ${message}`);
+    console.log(`[AVR8] ${message}`);
     if (onLog) {
       onLog(message);
     }
   };
   
-  // Handle pin state changes from the emulator
-  const handlePinChange = (pin, isHigh, details = {}) => {
-    // Log the pin change
-    const timestamp = new Date().toLocaleTimeString();
-    const message = `Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`;
-    setPinChanges(prev => [...prev, { timestamp, pin, state: isHigh, message }]);
-    
-    logInfo(message);
-    
-    // The simulator component itself will handle updating connected components
-  };
-  
-  // Handle compilation errors
-  const handleCompileError = (error) => {
-    setCompileErrors(prev => [...prev, error]);
-    logInfo(`Compilation error: ${error.message}`);
-  };
-  
-  // Connect to the window's simulation context when running
+  // Effect to handle code changes
   useEffect(() => {
+    codeRef.current = code;
+    
+    if (!code || !emulatorRef.current) return;
+    
+    // Stop the emulator if it's running
+    if (emulatorRef.current.running) {
+      emulatorRef.current.stop();
+    }
+    
+    // Compile the new code
+    logInfo('Compiling code...');
+    
+    // Set compilation status to loading
+    if (setCompilationStatus) {
+      setCompilationStatus({
+        status: 'compiling',
+        message: 'Compiling Arduino code...'
+      });
+    }
+    
+    const compileAndLoad = async () => {
+      try {
+        // Compile the Arduino code
+        const result = await compileArduino(code);
+        
+        if (result.success) {
+          logInfo(`Compilation successful. Program size: ${result.program.length * 2} bytes`);
+          
+          // Load the program into the emulator
+          const loaded = emulatorRef.current.loadProgram(result.program);
+          
+          if (loaded) {
+            logInfo('Program loaded successfully');
+            
+            // Update compilation status
+            if (setCompilationStatus) {
+              setCompilationStatus({
+                status: 'ready',
+                message: 'Compilation successful'
+              });
+            }
+            
+            // Start the emulator if isRunning is true
+            if (isRunning) {
+              emulatorRef.current.start();
+            }
+          } else {
+            logInfo('Failed to load program');
+            
+            // Update compilation status
+            if (setCompilationStatus) {
+              setCompilationStatus({
+                status: 'error',
+                message: 'Failed to load program'
+              });
+            }
+          }
+        } else {
+          logInfo(`Compilation failed: ${result.error}`);
+          
+          // Update compilation status
+          if (setCompilationStatus) {
+            setCompilationStatus({
+              status: 'error',
+              message: `Compilation failed: ${result.error}`
+            });
+          }
+        }
+      } catch (error) {
+        logInfo(`Error during compilation: ${error.message}`);
+        
+        // Update compilation status
+        if (setCompilationStatus) {
+          setCompilationStatus({
+            status: 'error',
+            message: `Error: ${error.message}`
+          });
+        }
+      }
+    };
+    
+    // Run the compilation process
+    compileAndLoad();
+  }, [code]);
+  
+  // Effect to handle running state changes
+  useEffect(() => {
+    if (!emulatorRef.current) return;
+    
     if (isRunning) {
-      logInfo('Starting proper AVR8 emulation');
-      if (window.simulatorContext) {
-        window.isSimulationRunning = true;
+      if (!emulatorRef.current.running) {
+        logInfo('Starting emulator');
+        emulatorRef.current.start();
       }
     } else {
-      logInfo('Stopping AVR8 emulation');
-      if (window.simulatorContext) {
-        window.isSimulationRunning = false;
+      if (emulatorRef.current.running) {
+        logInfo('Stopping emulator');
+        emulatorRef.current.stop();
       }
     }
   }, [isRunning]);
   
-  useEffect(() => {
-    // Inform the user about the proper simulator
-    logInfo('Loaded proper AVR8 simulator - cycle-accurate Arduino emulation');
-    
-    // Cleanup on unmount
-    return () => {
-      logInfo('Shutting down proper AVR8 simulator');
-    };
-  }, []);
-
-  return (
-    <div className="avr8-simulator-connector">
-      {/* The actual simulator component */}
-      <AVR8SimulatorComponent
-        code={code}
-        isRunning={isRunning}
-        onPinChange={handlePinChange}
-        onLog={logInfo}
-        onCompileError={handleCompileError}
-      />
-      
-      {/* Debug UI - can be shown/hidden as needed */}
-      {false && (
-        <div className="debug-panel">
-          <h3>AVR8 Simulator Debug</h3>
-          
-          {compileErrors.length > 0 && (
-            <div className="compile-errors">
-              <h4>Compilation Errors</h4>
-              <ul>
-                {compileErrors.map((error, index) => (
-                  <li key={index}>{error.message}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          
-          <div className="pin-changes">
-            <h4>Recent Pin Changes</h4>
-            <ul>
-              {pinChanges.slice(-10).map((change, index) => (
-                <li key={index}>
-                  {change.timestamp} - {change.message}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  // This is a non-visual component
+  return null;
 };
 
 export default AVR8SimulatorConnector;

@@ -784,8 +784,8 @@ void loop() {
         <div className="w-full bg-gray-900 overflow-hidden relative">
           <CircuitBuilder />
           
-          {/* Simulation overlay - hidden in the UI but active when simulation is running */}
-          <AVR8Simulator 
+          {/* Proper simulator implementation with real execution */}
+          <ProperAVR8Simulator 
             code={code}
             isRunning={isSimulationRunning}
             onPinChange={(pinOrComponent: any, isHigh: any) => {
