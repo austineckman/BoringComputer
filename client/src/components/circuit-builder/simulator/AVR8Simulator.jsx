@@ -206,34 +206,30 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
   useEffect(() => {
     if (!isRunning) return;
     
-    // Get components from simulator context
-    const { components } = simulatorContext;
+    // Find all OLED components in the DOM
+    const oledElements = document.querySelectorAll('[id^="oled-display-"]');
     
-    // Find all OLED display components by type/class
-    const oledComponents = Object.values(components).filter(component => 
-      component.type === 'oled-display'
-    );
-    
-    // Initialize OLED components in the simulator
-    if (oledComponents.length > 0) {
-      logInfo(`Initializing ${oledComponents.length} OLED display(s)`);
+    if (oledElements.length > 0) {
+      logInfo(`Initializing ${oledElements.length} OLED display(s)`);
       
-      oledComponents.forEach(oled => {
+      oledElements.forEach(element => {
+        const oledId = element.id;
+        
         // Create an empty display buffer (128x64 pixels for SSD1306)
         const displayBuffer = new Array(64).fill(0).map(() => 
           new Array(128).fill(0)
         );
         
         // Update component state with the buffer
-        updateComponentState(oled.id, {
+        updateComponentState(oledId, {
           buffer: displayBuffer,
           initialized: true
         });
         
-        logInfo(`OLED display ${oled.id} initialized`);
+        logInfo(`OLED display ${oledId} initialized`);
       });
     }
-  }, [isRunning, simulatorContext.components]);
+  }, [isRunning]);
   
   // The component doesn't render anything
   return null;
