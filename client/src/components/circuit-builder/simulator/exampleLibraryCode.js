@@ -436,10 +436,239 @@ void updateSegDisplay() {
 }
 `;
 
+// RGB LED Example - demonstrates how to control a RGB LED
+export const rgbLedExample = `
+// RGB LED Example
+// This example shows how to control a common cathode RGB LED
+// For common anode RGB LEDs, use HIGH to turn OFF and LOW to turn ON
+
+// Define the RGB LED pins
+#define RED_PIN 9    // Red pin is connected to digital pin 9
+#define GREEN_PIN 10 // Green pin is connected to digital pin 10
+#define BLUE_PIN 11  // Blue pin is connected to digital pin 11
+
+void setup() {
+  // Initialize the pins as outputs
+  pinMode(RED_PIN, OUTPUT);
+  pinMode(GREEN_PIN, OUTPUT);
+  pinMode(BLUE_PIN, OUTPUT);
+  
+  // Initially turn off all colors
+  digitalWrite(RED_PIN, LOW);
+  digitalWrite(GREEN_PIN, LOW);
+  digitalWrite(BLUE_PIN, LOW);
+}
+
+void loop() {
+  // Display different colors
+  
+  // Red
+  setColor(255, 0, 0);
+  delay(1000);
+  
+  // Green
+  setColor(0, 255, 0);
+  delay(1000);
+  
+  // Blue
+  setColor(0, 0, 255);
+  delay(1000);
+  
+  // Yellow (Red + Green)
+  setColor(255, 255, 0);
+  delay(1000);
+  
+  // Purple (Red + Blue)
+  setColor(255, 0, 255);
+  delay(1000);
+  
+  // Cyan (Green + Blue)
+  setColor(0, 255, 255);
+  delay(1000);
+  
+  // White (Red + Green + Blue)
+  setColor(255, 255, 255);
+  delay(1000);
+  
+  // Fade through rainbow colors
+  fadeRainbow();
+}
+
+// Function to set the RGB LED color
+void setColor(int red, int green, int blue) {
+  // For common cathode RGB LEDs:
+  analogWrite(RED_PIN, red);
+  analogWrite(GREEN_PIN, green);
+  analogWrite(BLUE_PIN, blue);
+  
+  // For common anode RGB LEDs, uncomment these lines instead:
+  // analogWrite(RED_PIN, 255 - red);
+  // analogWrite(GREEN_PIN, 255 - green);
+  // analogWrite(BLUE_PIN, 255 - blue);
+}
+
+// Create a rainbow fade effect
+void fadeRainbow() {
+  // Fade from red to yellow
+  for (int i = 0; i < 255; i++) {
+    setColor(255, i, 0);
+    delay(5);
+  }
+  
+  // Fade from yellow to green
+  for (int i = 0; i < 255; i++) {
+    setColor(255 - i, 255, 0);
+    delay(5);
+  }
+  
+  // Fade from green to cyan
+  for (int i = 0; i < 255; i++) {
+    setColor(0, 255, i);
+    delay(5);
+  }
+  
+  // Fade from cyan to blue
+  for (int i = 0; i < 255; i++) {
+    setColor(0, 255 - i, 255);
+    delay(5);
+  }
+  
+  // Fade from blue to purple
+  for (int i = 0; i < 255; i++) {
+    setColor(i, 0, 255);
+    delay(5);
+  }
+  
+  // Fade from purple to red
+  for (int i = 0; i < 255; i++) {
+    setColor(255, 0, 255 - i);
+    delay(5);
+  }
+}
+`;
+
+// Buzzer Example - demonstrates both passive and active buzzers
+export const buzzerExample = `
+// Buzzer Example
+// This example shows how to use a buzzer to play tones
+// Works with both passive and active buzzers
+
+// Define the buzzer pin
+#define BUZZER_PIN 8
+
+// Define musical notes (frequencies in Hz)
+#define NOTE_C4  262
+#define NOTE_D4  294
+#define NOTE_E4  330
+#define NOTE_F4  349
+#define NOTE_G4  392
+#define NOTE_A4  440
+#define NOTE_B4  494
+#define NOTE_C5  523
+
+void setup() {
+  // For passive buzzers, no need to set pinMode
+  // For active buzzers, uncomment the line below:
+  // pinMode(BUZZER_PIN, OUTPUT);
+  
+  Serial.begin(9600);
+  Serial.println("Buzzer example started");
+}
+
+void loop() {
+  // Play a simple scale with a passive buzzer
+  playScale();
+  delay(1000);
+  
+  // Play a simple melody
+  playMelody();
+  delay(2000);
+  
+  // For active buzzers (uncomment for active buzzers)
+  // playActivePattern();
+  // delay(2000);
+}
+
+// Play a musical scale
+void playScale() {
+  // Play each note for 200ms
+  tone(BUZZER_PIN, NOTE_C4); delay(200);
+  tone(BUZZER_PIN, NOTE_D4); delay(200);
+  tone(BUZZER_PIN, NOTE_E4); delay(200);
+  tone(BUZZER_PIN, NOTE_F4); delay(200);
+  tone(BUZZER_PIN, NOTE_G4); delay(200);
+  tone(BUZZER_PIN, NOTE_A4); delay(200);
+  tone(BUZZER_PIN, NOTE_B4); delay(200);
+  tone(BUZZER_PIN, NOTE_C5); delay(200);
+  
+  // Stop the tone
+  noTone(BUZZER_PIN);
+}
+
+// Play a simple melody (Twinkle Twinkle Little Star)
+void playMelody() {
+  // Melody notes
+  int melody[] = {
+    NOTE_C4, NOTE_C4, NOTE_G4, NOTE_G4, NOTE_A4, NOTE_A4, NOTE_G4,
+    NOTE_F4, NOTE_F4, NOTE_E4, NOTE_E4, NOTE_D4, NOTE_D4, NOTE_C4
+  };
+  
+  // Note durations (1 = quarter note)
+  int noteDurations[] = {
+    1, 1, 1, 1, 1, 1, 2,
+    1, 1, 1, 1, 1, 1, 2
+  };
+  
+  // Play each note
+  for (int i = 0; i < 14; i++) {
+    // Calculate the note duration. Quarter note = 1000 / 4 = 250ms
+    int noteDuration = 250 * noteDurations[i];
+    
+    tone(BUZZER_PIN, melody[i], noteDuration);
+    
+    // Add a small pause between notes (30% of note duration)
+    delay(noteDuration * 1.3);
+    
+    // Stop the tone to separate notes
+    noTone(BUZZER_PIN);
+  }
+}
+
+// For active buzzers (they can only be on/off, not play tones)
+void playActivePattern() {
+  // Short beeps
+  for (int i = 0; i < 5; i++) {
+    digitalWrite(BUZZER_PIN, HIGH);
+    delay(100);
+    digitalWrite(BUZZER_PIN, LOW);
+    delay(100);
+  }
+  
+  delay(500);
+  
+  // Medium beeps
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(BUZZER_PIN, HIGH);
+    delay(300);
+    digitalWrite(BUZZER_PIN, LOW);
+    delay(300);
+  }
+  
+  delay(500);
+  
+  // Long beep
+  digitalWrite(BUZZER_PIN, HIGH);
+  delay(1000);
+  digitalWrite(BUZZER_PIN, LOW);
+}
+`;
+
 export default {
   oledDisplayExample,
   sevenSegmentExample,
   keypadExample,
   rotaryEncoderExample,
-  multiLibraryExample
+  multiLibraryExample,
+  rgbLedExample,
+  buzzerExample
 };
