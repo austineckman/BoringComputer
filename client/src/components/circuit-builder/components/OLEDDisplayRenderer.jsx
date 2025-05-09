@@ -175,10 +175,55 @@ const OLEDDisplayRenderer = ({ componentId }) => {
     }
   }, [displayState]);
   
-  // Mock data for demonstration - this will create a bouncing ball animation
+  // Show demonstration animation only if the OLED is properly configured
   useEffect(() => {
     if (!isRunning) return;
     
+    // Check if the component state indicates we should display content
+    const shouldDisplay = displayState && displayState.shouldDisplay;
+    
+    // Don't show the demo if the OLED is not properly configured
+    if (!shouldDisplay) {
+      // Create a message buffer to show error message
+      const errorBuffer = new Array(displayHeight).fill(0).map(() => 
+        new Array(displayWidth).fill(0)
+      );
+      
+      // Show different messages based on the error condition
+      if (displayState) {
+        if (!displayState.hasRequiredLibraries) {
+          // Draw "No Library" message
+          const message = "No Library";
+          let xPos = 10;
+          for (let i = 0; i < message.length; i++) {
+            drawChar(errorBuffer, message.charAt(i), xPos, 28);
+            xPos += 7;
+          }
+        } else if (!displayState.hasOLEDCode) {
+          // Draw "No OLED Code" message
+          const message = "No OLED Code";
+          let xPos = 10;
+          for (let i = 0; i < message.length; i++) {
+            drawChar(errorBuffer, message.charAt(i), xPos, 28);
+            xPos += 7;
+          }
+        } else if (!displayState.isProperlyWired) {
+          // Draw "Check Wiring" message
+          const message = "Check Wiring";
+          let xPos = 10;
+          for (let i = 0; i < message.length; i++) {
+            drawChar(errorBuffer, message.charAt(i), xPos, 28);
+            xPos += 7;
+          }
+        }
+      }
+      
+      // Set the error buffer
+      setDisplayBuffer(errorBuffer);
+      return;
+    }
+    
+    // If we get here, we should display a demo animation
     // Create a bouncing ball animation to demonstrate OLED functionality
     let x = 44;
     let y = 24;
@@ -239,7 +284,7 @@ const OLEDDisplayRenderer = ({ componentId }) => {
     return () => {
       clearInterval(animationInterval);
     };
-  }, [isRunning]);
+  }, [isRunning, displayState]);
   
   // Helper function to draw a character (simple 5x7 font)
   const drawChar = (buffer, char, x, y) => {

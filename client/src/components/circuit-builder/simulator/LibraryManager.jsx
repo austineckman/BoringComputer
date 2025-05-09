@@ -27,6 +27,12 @@ export const LibraryManagerProvider = ({ children }) => {
     'Keypad': '/attached_assets/4x4-Keypad-HERO-1 (2).zip',
     'BasicEncoder': '/attached_assets/BasicEncoder-1.1.4-1.zip',
     
+    // OLED related libraries
+    'SSD1306': '/attached_assets/OLED-U8g2-HERO-1 (2).zip',
+    'Adafruit_SSD1306': '/attached_assets/OLED-U8g2-HERO-1 (2).zip',
+    'Adafruit_GFX': '/attached_assets/OLED-U8g2-HERO-1 (2).zip',
+    'U8glib': '/attached_assets/OLED-U8g2-HERO-1 (2).zip',
+    
     // Additional common libraries that might be included
     'Wire': '/attached_assets/OLED-U8g2-HERO-1 (2).zip', // Wire is usually included with Arduino core
     'SPI': '/attached_assets/OLED-U8g2-HERO-1 (2).zip'   // SPI is usually included with Arduino core

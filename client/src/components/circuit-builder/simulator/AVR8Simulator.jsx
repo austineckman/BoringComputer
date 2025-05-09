@@ -45,6 +45,18 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     return libraries;
   };
   
+  // Check if OLED libraries are included
+  const hasOLEDLibrary = (libraries) => {
+    // Check for common OLED libraries
+    return libraries.some(lib => 
+      lib.includes('SSD1306') || 
+      lib.includes('U8g2') || 
+      lib.includes('Adafruit_GFX') || 
+      lib.includes('Adafruit_SSD1306') ||
+      lib.includes('U8glib')
+    );
+  };
+  
   // Detect any digitalWrite calls to identify which pins are being used
   const detectPinsUsed = (code) => {
     const digitalWriteRegex = /digitalWrite\s*\(\s*(\d+|LED_BUILTIN)\s*,\s*(HIGH|LOW)\s*\)/g;
@@ -205,9 +217,71 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     }
   }, [loadedLibraries]);
   
+  // Detect OLED display commands and patterns in the code
+  const parseOLEDCommands = (code) => {
+    // Check if this is OLED-related code
+    const isOLEDCode = code.includes('SSD1306') || 
+                       code.includes('U8G2') || 
+                       code.includes('U8g2') ||
+                       code.includes('Adafruit_GFX') || 
+                       code.includes('Adafruit_SSD1306') ||
+                       code.includes('U8glib');
+                       
+    if (!isOLEDCode) return null;
+    
+    // Extract OLED initialization
+    const oledInitRegex = /(SSD1306|Adafruit_SSD1306|U8G2|U8g2|U8GLIB)[\s\w]*\([\s\w,]*\)/g;
+    const initMatches = [...code.matchAll(oledInitRegex)];
+    
+    // Extract drawing commands
+    const drawCommands = [];
+    
+    // U8g2 drawing commands
+    if (code.includes('U8g2') || code.includes('U8g2lib')) {
+      const u8g2DrawRegex = /\.(drawStr|drawLine|drawCircle|drawBox|drawFrame|drawPixel|drawXBM|drawBitmap)\(/g;
+      const u8g2Matches = [...code.matchAll(u8g2DrawRegex)];
+      drawCommands.push(...u8g2Matches);
+    }
+    
+    // Adafruit drawing commands
+    if (code.includes('Adafruit_SSD1306') || code.includes('Adafruit_GFX')) {
+      const adafruitDrawRegex = /\.(drawPixel|drawLine|drawRect|fillRect|drawCircle|fillCircle|drawTriangle|fillTriangle|drawRoundRect|fillRoundRect|print|println|setTextSize|setTextColor|setTextWrap|setCursor)\(/g;
+      const adafruitMatches = [...code.matchAll(adafruitDrawRegex)];
+      drawCommands.push(...adafruitMatches);
+    }
+    
+    // SSD1306 direct commands - these are low-level commands that might be used
+    if (code.includes('SSD1306')) {
+      const ssd1306CommandRegex = /\.(ssd1306_command|ssd1306_data|command|data)\(/g;
+      const ssd1306Matches = [...code.matchAll(ssd1306CommandRegex)];
+      drawCommands.push(...ssd1306Matches);
+    }
+    
+    // Text display commands - these are very common
+    const textRegex = /\.(print|println|drawString|drawStr|setCursor|setTextSize|write)\(/g;
+    const textMatches = [...code.matchAll(textRegex)];
+    drawCommands.push(...textMatches);
+
+    // Return the parsing results
+    return {
+      hasOLEDCode: isOLEDCode,
+      initCommands: initMatches.map(match => match[0]),
+      drawCommands: drawCommands.map(match => match[0]),
+      requiresLibrary: true
+    };
+  };
+
+  // Function to check for correct OLED wiring in the circuit
+  const checkOLEDWiring = (oledId) => {
+    // In a real implementation, we would check if the OLED is correctly wired
+    // with SDA, SCL, VCC, and GND pins connected to the Arduino
+    // For now, we'll assume it's correctly wired if it exists in the DOM
+    return document.getElementById(oledId) !== null;
+  };
+
   // Find and initialize OLED displays in the circuit
   useEffect(() => {
-    if (!isRunning) return;
+    if (!isRunning || !compiledCode) return;
     
     // Find all OLED components in the DOM
     const oledElements = document.querySelectorAll('[id^="oled-display-"]');
@@ -215,24 +289,36 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     if (oledElements.length > 0) {
       logInfo(`Initializing ${oledElements.length} OLED display(s)`);
       
+      // Check if we have required OLED libraries
+      const hasRequiredLibraries = hasOLEDLibrary(compiledCode.libraries);
+      
+      // Parse OLED commands from the code
+      const oledCommands = parseOLEDCommands(code);
+      const hasOLEDCode = oledCommands && oledCommands.hasOLEDCode;
+      
       oledElements.forEach(element => {
         const oledId = element.id;
+        const isProperlyWired = checkOLEDWiring(oledId);
         
         // Create an empty display buffer (128x64 pixels for SSD1306)
         const displayBuffer = new Array(64).fill(0).map(() => 
           new Array(128).fill(0)
         );
         
-        // Update component state with the buffer
+        // Update component state with the buffer and library status
         updateComponentState(oledId, {
           buffer: displayBuffer,
-          initialized: true
+          initialized: true,
+          hasRequiredLibraries,
+          hasOLEDCode,
+          isProperlyWired,
+          shouldDisplay: hasRequiredLibraries && hasOLEDCode && isProperlyWired
         });
         
         logInfo(`OLED display ${oledId} initialized`);
       });
     }
-  }, [isRunning]);
+  }, [isRunning, code, compiledCode]);
   
   // The component doesn't render anything
   return null;
