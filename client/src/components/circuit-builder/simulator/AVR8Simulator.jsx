@@ -370,47 +370,80 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
       }
       
       try {
-        const [startCompId, startPin] = (wire.start.id || "").split('-', 3);
-        const [endCompId, endPin] = (wire.end.id || "").split('-', 3);
+        // Get the wire details from either the newer or older format
+        let sourceId, targetId, sourceComponent, targetComponent, sourceName, targetName;
         
-        // Additional defensive checks
-        if (!startCompId || !endCompId) {
-          continue; // Skip wires with invalid component IDs
+        // Check for newer wire format
+        if (wire.sourceId && wire.targetId) {
+          console.log("Checking OLED wire with new format:", wire);
+          
+          // New format - using sourceId/targetId
+          sourceId = wire.sourceId;
+          targetId = wire.targetId;
+          sourceComponent = wire.sourceComponent;
+          targetComponent = wire.targetComponent;
+          sourceName = wire.sourceName;
+          targetName = wire.targetName;
+        } else {
+          // Old format - using start/end
+          const [startCompId, startPin] = (wire.start?.id || "").split('-', 3);
+          const [endCompId, endPin] = (wire.end?.id || "").split('-', 3);
+          
+          sourceId = wire.start?.id;
+          targetId = wire.end?.id;
+          sourceComponent = startCompId;
+          targetComponent = endCompId;
+          sourceName = startPin;
+          targetName = endPin;
         }
         
+        // Defensive check for missing wire data
+        if (!sourceComponent || !targetComponent) {
+          console.warn("Missing component identifiers in wire:", wire);
+          continue;
+        }
+        
+        // Convert pin names to lowercase for case-insensitive comparison
+        const sourceNameLower = (sourceName || "").toLowerCase();
+        const targetNameLower = (targetName || "").toLowerCase();
+        
         // Check if this wire is connected to our OLED
-        if (startCompId.includes(oledBaseId) || endCompId.includes(oledBaseId)) {
+        const isSourceOLED = (sourceComponent || "").includes(oledBaseId);
+        const isTargetOLED = (targetComponent || "").includes(oledBaseId);
+        
+        if (isSourceOLED || isTargetOLED) {
           // This wire is connected to our OLED component
           
-          // Check the pins at both ends
-          const oledPin = startCompId.includes(oledBaseId) ? startPin : endPin;
-          const otherPin = startCompId.includes(oledBaseId) ? endPin : startPin;
+          // Determine which pins are on the OLED and which are on the other component
+          const oledPin = isSourceOLED ? sourceNameLower : targetNameLower;
+          const otherPin = isSourceOLED ? targetNameLower : sourceNameLower;
           
-          // More defensive checks
-          if (!oledPin || !otherPin) {
-            continue; // Skip if we can't determine the pins
-          }
+          console.log(`OLED pin connection found: ${oledPin} → ${otherPin}`);
           
-          // Check what type of connection this is
+          // Check what type of connection this is - adding SCK as alternative name for SCL
           if (oledPin === 'sda' || oledPin === 'data') {
             // SDA pin should be connected to A4 on Arduino
             if (otherPin === 'a4' || otherPin === 'sda') {
               hasSDA = true;
+              console.log("✓ SDA pin correctly connected to A4");
             }
-          } else if (oledPin === 'scl' || oledPin === 'clock') {
-            // SCL pin should be connected to A5 on Arduino
+          } else if (oledPin === 'scl' || oledPin === 'sck' || oledPin === 'clock') {
+            // SCL/SCK pin should be connected to A5 on Arduino
             if (otherPin === 'a5' || otherPin === 'scl') {
               hasSCL = true;
+              console.log("✓ SCL/SCK pin correctly connected to A5");
             }
-          } else if (oledPin === 'vcc' || oledPin === '5v' || oledPin === '3v3') {
+          } else if (oledPin === 'vcc' || oledPin === '5v' || oledPin === '3v3' || oledPin === '3.3v') {
             // VCC pin should be connected to 5V or 3.3V
-            if (otherPin === '5v' || otherPin === '3v3' || otherPin === 'vcc') {
+            if (otherPin === '5v' || otherPin === '3v3' || otherPin === '3.3v' || otherPin === 'vcc') {
               hasVCC = true;
+              console.log("✓ VCC pin correctly connected to power");
             }
           } else if (oledPin === 'gnd') {
-            // GND pin should be connected to GND
-            if (otherPin === 'gnd') {
+            // GND pin should be connected to GND (any of the GND pins)
+            if (otherPin.includes('gnd')) {
               hasGND = true;
+              console.log("✓ GND pin correctly connected to ground");
             }
           }
         }
