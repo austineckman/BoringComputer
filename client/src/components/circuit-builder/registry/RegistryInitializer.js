@@ -7,7 +7,7 @@ import './OLEDHandlers';
 /**
  * Initialize the component registry and freeze stable components
  */
-export function initializeRegistry() {
+function initializeRegistry() {
   console.log('Initializing component registry...');
   
   // Freeze components that are working properly
@@ -26,7 +26,7 @@ export function initializeRegistry() {
  * 
  * @param {string} componentType - The component type to unfreeze
  */
-export function unfreezeForDevelopment(componentType) {
+function unfreezeForDevelopment(componentType) {
   console.log(`Unfreezing component ${componentType} for development`);
   unfreezeComponent(componentType);
   return getRegistryStatus();
@@ -35,15 +35,8 @@ export function unfreezeForDevelopment(componentType) {
 // Automatically initialize the registry when imported
 initializeRegistry();
 
-// Export named functions
+// Export all functions
 export {
-  initializeRegistry,
-  unfreezeForDevelopment,
-  getRegistryStatus
-};
-
-// Also export as default
-export default {
   initializeRegistry,
   unfreezeForDevelopment,
   getRegistryStatus
