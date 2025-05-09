@@ -293,12 +293,27 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
       if (hasValidCode) {
         // EXECUTE THE USER'S CODE: Parse and execute the actual commands from the Arduino code
         try {
-          newBuffer = executeOLEDCommands(parsedCommands, displayWidth, displayHeight);
+          // Get the actual Arduino code from the simulation context
+          const arduinoCode = window.simulatorContext?.code || '';
           
-          // Add a small indicator in the corner to show this is rendered from actual code
+          // Parse the OLED commands fresh each time
+          const freshParsedCommands = parseOLEDCommands(arduinoCode);
+          console.log("Executing OLED commands:", freshParsedCommands);
+          
+          // Execute the parsed commands to render a buffer
+          newBuffer = executeOLEDCommands(freshParsedCommands, displayWidth, displayHeight);
+          
+          // Add a small indicator in the corner to show this is running real live code
           const codeText = "LIVE";
           for (let i = 0; i < codeText.length; i++) {
             drawChar(newBuffer, codeText.charAt(i), displayWidth - 25 + (i * 5), 2, true);
+          }
+          
+          // Show the command count in the other corner
+          const commandCount = freshParsedCommands.commands ? freshParsedCommands.commands.length : 0;
+          const countText = `CMD:${commandCount}`;
+          for (let i = 0; i < countText.length; i++) {
+            drawChar(newBuffer, countText.charAt(i), 5 + (i * 5), 2, true);
           }
           
         } catch (error) {
