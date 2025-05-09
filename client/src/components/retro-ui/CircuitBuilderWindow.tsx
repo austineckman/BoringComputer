@@ -13,6 +13,7 @@ import SimulationLogPanel from '../circuit-builder/simulator/SimulationLogPanel'
 import SimulationVisualizer from '../circuit-builder/simulator/SimulationVisualizer';
 import { defaultSketch, parseLibraryImports, parseDigitalWrites } from '../circuit-builder/simulator/SimulatorUtils';
 import { LibraryManagerProvider } from '../circuit-builder/simulator/LibraryManager';
+import { validateArduinoCode } from '../circuit-builder/simulator/ArduinoCompiler';
 
 // Legacy imports (keeping for compatibility with existing code)
 import { 
@@ -527,7 +528,28 @@ void loop() {
       }
       addSimulationLog('Simulation stopped');
     } else {
-      // Start the simulation with current code
+      // Get the current code from the editor
+      const currentCode = getCode();
+      
+      // Validate the Arduino code using the imported validateArduinoCode function
+      const errors = validateArduinoCode(currentCode);
+      
+      if (errors && errors.length > 0) {
+        // Show compilation errors in the log
+        addSimulationLog('Compilation failed with errors:');
+        errors.forEach(error => {
+          addSimulationLog(`Line ${error.line}: ${error.message}`);
+        });
+        
+        // Show an error notification
+        showNotification('Compilation failed! Check the logs for details.', 'error');
+        return;
+      }
+      
+      // Code is valid, start the simulation
+      addSimulationLog('Compilation successful!');
+      
+      // Now start the simulation with current code
       setIsSimulationRunning(true);
       if (typeof window !== 'undefined') {
         window.isSimulationRunning = true; // Set global flag for components
@@ -893,7 +915,11 @@ void loop() {
       {/* Notification popup */}
       {notification && (
         <div 
-          className="fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50 animate-pulse"
+          className={`fixed bottom-4 right-4 px-4 py-2 rounded shadow-lg z-50 animate-pulse ${
+            notification.type === 'error' 
+              ? 'bg-red-600 text-white border border-red-300' 
+              : 'bg-green-600 text-white'
+          }`}
         >
           {notification.message}
         </div>
