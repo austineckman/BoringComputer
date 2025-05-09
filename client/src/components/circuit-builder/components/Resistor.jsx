@@ -3,7 +3,7 @@ import {
   ReactResistorComponent
 } from "../lib/inventr-component-lib.es.js";
 import Moveable from "react-moveable";
-import { createPortal } from "react-dom";
+import { useSimulator } from "../simulator/SimulatorContext";
 
 // Define MOVE_SETTINGS to match what the original code expects
 const MOVE_SETTINGS = {
@@ -37,10 +37,17 @@ const Resistor = ({
 }) => {
   const targetRef = useRef();
   const moveableRef = useRef();
-  const oldDataRef = useRef();
+  
+  // Access the simulator context
+  const { 
+    isRunning: isSimulationRunning, 
+    wires, 
+    componentStates, 
+    updateComponentState 
+  } = useSimulator();
 
   // Parse the initial value
-  const initialValueNum = parseInt(value.replace(/[^\d]/g, ''));
+  const initialValueNum = parseInt(value.replace(/[^\d]/g, '')) || 220;
 
   const [isComponentMenuShowing, setIsComponentMenuShowing] = useState(false);
   const [resistorValue, setResistorValue] = useState(initialValueNum / 1000); // In ohms for the component
@@ -55,161 +62,158 @@ const Resistor = ({
   const [initPosLeft, setInitPosLeft] = useState(initialX);
   const [r1PinValue, setR1PinValue] = useState(false);
   const [r2PinValue, setR2PinValue] = useState(false);
-  
-  // Shared simulation state
-  const isSimulationRunning = window.isSimulationRunning;
 
   // Track connected wires and propagate signal changes
   useEffect(() => {
+    // Only run when simulation is active
     if (!isSimulationRunning) return;
     
-    // Check if the simulator context is available
-    if (!window.simulatorContext) return;
-    
-    // Get all wires in the circuit from the simulator context
-    const { wires, componentStates } = window.simulatorContext;
+    // Safety check for wires array
     if (!wires || !Array.isArray(wires) || wires.length === 0) return;
     
-    // Find wires connected to this resistor
-    const connectedWires = wires.filter(wire => 
-      (wire.sourceComponent === id || wire.targetComponent === id)
-    );
-    
-    if (connectedWires.length < 2) return; // Resistor needs at least 2 connections to work
-    
-    // For each pin, check what's connected to it and the state
-    const r1Connections = connectedWires.filter(wire => 
-      (wire.sourceComponent === id && wire.sourceName === 'r1') || 
-      (wire.targetComponent === id && wire.targetName === 'r1')
-    );
-    
-    const r2Connections = connectedWires.filter(wire => 
-      (wire.sourceComponent === id && wire.sourceName === 'r2') || 
-      (wire.targetComponent === id && wire.targetName === 'r2')
-    );
-    
-    console.log(`Resistor ${id} has ${r1Connections.length} r1 connections and ${r2Connections.length} r2 connections`);
-    
-    // Variables to track connected components and their states
-    let r1PinStateFound = false;
-    let r2PinStateFound = false;
-    let r1ConnectedLEDs = [];
-    let r2ConnectedLEDs = [];
-    let r1ConnectedToHeroboard = false;
-    let r2ConnectedToHeroboard = false;
-    let heroboardR1Pin = null;
-    let heroboardR2Pin = null;
-    let heroboardR1Id = null;
-    let heroboardR2Id = null;
-    let heroboardR1PinState = false;
-    let heroboardR2PinState = false;
-    
-    // Check r1 connections
-    r1Connections.forEach(wire => {
-      const otherComponentId = wire.sourceComponent === id ? wire.targetComponent : wire.sourceComponent;
-      const otherPinName = wire.sourceComponent === id ? wire.targetName : wire.sourceName;
+    try {      
+      // Find wires connected to this resistor
+      const connectedWires = wires.filter(wire => 
+        (wire.sourceComponent === id || wire.targetComponent === id)
+      );
       
-      // If r1 is connected to a heroboard
-      if (otherComponentId && otherComponentId.includes('heroboard')) {
-        heroboardR1Id = otherComponentId;
-        heroboardR1Pin = otherPinName;
-        r1ConnectedToHeroboard = true;
-        
-        // Check if pin has a known state
-        if (componentStates[otherComponentId]?.pins?.[otherPinName] !== undefined) {
-          heroboardR1PinState = componentStates[otherComponentId].pins[otherPinName];
-          r1PinStateFound = true;
-          setR1PinValue(heroboardR1PinState);
-          console.log(`Resistor ${id} r1 connected to heroboard ${otherComponentId} pin ${otherPinName} with state ${heroboardR1PinState}`);
-        } else if (componentStates.heroboard?.pins?.[otherPinName] !== undefined) {
-          heroboardR1PinState = componentStates.heroboard.pins[otherPinName];
-          r1PinStateFound = true;
-          setR1PinValue(heroboardR1PinState);
-          console.log(`Resistor ${id} r1 connected to generic heroboard pin ${otherPinName} with state ${heroboardR1PinState}`);
-        }
-      }
-      // If r1 is connected to an LED
-      else if (otherComponentId && otherComponentId.includes('led')) {
-        r1ConnectedLEDs.push(otherComponentId);
-        console.log(`Resistor ${id} r1 connected to LED ${otherComponentId}`);
-      }
-    });
-    
-    // Check r2 connections
-    r2Connections.forEach(wire => {
-      const otherComponentId = wire.sourceComponent === id ? wire.targetComponent : wire.sourceComponent;
-      const otherPinName = wire.sourceComponent === id ? wire.targetName : wire.sourceName;
+      if (connectedWires.length < 2) return; // Resistor needs at least 2 connections to work
       
-      // If r2 is connected to a heroboard
-      if (otherComponentId && otherComponentId.includes('heroboard')) {
-        heroboardR2Id = otherComponentId;
-        heroboardR2Pin = otherPinName;
-        r2ConnectedToHeroboard = true;
+      // For each pin, check what's connected to it and the state
+      const r1Connections = connectedWires.filter(wire => 
+        (wire.sourceComponent === id && wire.sourceName === 'r1') || 
+        (wire.targetComponent === id && wire.targetName === 'r1')
+      );
+      
+      const r2Connections = connectedWires.filter(wire => 
+        (wire.sourceComponent === id && wire.sourceName === 'r2') || 
+        (wire.targetComponent === id && wire.targetName === 'r2')
+      );
+      
+      console.log(`Resistor ${id} has ${r1Connections.length} r1 connections and ${r2Connections.length} r2 connections`);
+      
+      // Variables to track connected components and their states
+      let r1PinStateFound = false;
+      let r2PinStateFound = false;
+      let r1ConnectedLEDs = [];
+      let r2ConnectedLEDs = [];
+      let r1ConnectedToHeroboard = false;
+      let r2ConnectedToHeroboard = false;
+      let heroboardR1Pin = null;
+      let heroboardR2Pin = null;
+      let heroboardR1Id = null;
+      let heroboardR2Id = null;
+      let heroboardR1PinState = false;
+      let heroboardR2PinState = false;
+      
+      // Check r1 connections
+      r1Connections.forEach(wire => {
+        const otherComponentId = wire.sourceComponent === id ? wire.targetComponent : wire.sourceComponent;
+        const otherPinName = wire.sourceComponent === id ? wire.targetName : wire.sourceName;
         
-        // Check if pin has a known state
-        if (componentStates[otherComponentId]?.pins?.[otherPinName] !== undefined) {
-          heroboardR2PinState = componentStates[otherComponentId].pins[otherPinName];
-          r2PinStateFound = true;
-          setR2PinValue(heroboardR2PinState);
-          console.log(`Resistor ${id} r2 connected to heroboard ${otherComponentId} pin ${otherPinName} with state ${heroboardR2PinState}`);
-        } else if (componentStates.heroboard?.pins?.[otherPinName] !== undefined) {
-          heroboardR2PinState = componentStates.heroboard.pins[otherPinName];
-          r2PinStateFound = true;
-          setR2PinValue(heroboardR2PinState);
-          console.log(`Resistor ${id} r2 connected to generic heroboard pin ${otherPinName} with state ${heroboardR2PinState}`);
+        // If r1 is connected to a heroboard
+        if (otherComponentId && otherComponentId.includes('heroboard')) {
+          heroboardR1Id = otherComponentId;
+          heroboardR1Pin = otherPinName;
+          r1ConnectedToHeroboard = true;
+          
+          // Check if pin has a known state
+          if (componentStates && componentStates[otherComponentId]?.pins?.[otherPinName] !== undefined) {
+            heroboardR1PinState = componentStates[otherComponentId].pins[otherPinName];
+            r1PinStateFound = true;
+            setR1PinValue(heroboardR1PinState);
+            console.log(`Resistor ${id} r1 connected to heroboard ${otherComponentId} pin ${otherPinName} with state ${heroboardR1PinState}`);
+          } else if (componentStates && componentStates.heroboard?.pins?.[otherPinName] !== undefined) {
+            heroboardR1PinState = componentStates.heroboard.pins[otherPinName];
+            r1PinStateFound = true;
+            setR1PinValue(heroboardR1PinState);
+            console.log(`Resistor ${id} r1 connected to generic heroboard pin ${otherPinName} with state ${heroboardR1PinState}`);
+          }
         }
+        // If r1 is connected to an LED
+        else if (otherComponentId && otherComponentId.includes('led')) {
+          r1ConnectedLEDs.push(otherComponentId);
+          console.log(`Resistor ${id} r1 connected to LED ${otherComponentId}`);
+        }
+      });
+      
+      // Check r2 connections
+      r2Connections.forEach(wire => {
+        const otherComponentId = wire.sourceComponent === id ? wire.targetComponent : wire.sourceComponent;
+        const otherPinName = wire.sourceComponent === id ? wire.targetName : wire.sourceName;
+        
+        // If r2 is connected to a heroboard
+        if (otherComponentId && otherComponentId.includes('heroboard')) {
+          heroboardR2Id = otherComponentId;
+          heroboardR2Pin = otherPinName;
+          r2ConnectedToHeroboard = true;
+          
+          // Check if pin has a known state
+          if (componentStates && componentStates[otherComponentId]?.pins?.[otherPinName] !== undefined) {
+            heroboardR2PinState = componentStates[otherComponentId].pins[otherPinName];
+            r2PinStateFound = true;
+            setR2PinValue(heroboardR2PinState);
+            console.log(`Resistor ${id} r2 connected to heroboard ${otherComponentId} pin ${otherPinName} with state ${heroboardR2PinState}`);
+          } else if (componentStates && componentStates.heroboard?.pins?.[otherPinName] !== undefined) {
+            heroboardR2PinState = componentStates.heroboard.pins[otherPinName];
+            r2PinStateFound = true;
+            setR2PinValue(heroboardR2PinState);
+            console.log(`Resistor ${id} r2 connected to generic heroboard pin ${otherPinName} with state ${heroboardR2PinState}`);
+          }
+        }
+        // If r2 is connected to an LED
+        else if (otherComponentId && otherComponentId.includes('led')) {
+          r2ConnectedLEDs.push(otherComponentId);
+          console.log(`Resistor ${id} r2 connected to LED ${otherComponentId}`);
+        }
+      });
+      
+      // Update resistor's own state for LED trace algorithm
+      if (updateComponentState) {
+        updateComponentState(id, {
+          r1PinValue: r1PinStateFound ? heroboardR1PinState : false,
+          r2PinValue: r2PinStateFound ? heroboardR2PinState : false
+        });
       }
-      // If r2 is connected to an LED
-      else if (otherComponentId && otherComponentId.includes('led')) {
-        r2ConnectedLEDs.push(otherComponentId);
-        console.log(`Resistor ${id} r2 connected to LED ${otherComponentId}`);
+      
+      // Propagate pin state through the resistor to connected LEDs
+      // If r1 is connected to heroboard, propagate its state to LEDs connected to r2
+      if (r1ConnectedToHeroboard && r1PinStateFound && r2ConnectedLEDs.length > 0) {
+        r2ConnectedLEDs.forEach(ledId => {
+          console.log(`Resistor ${id} propagating state ${heroboardR1PinState} from r1 (pin ${heroboardR1Pin}) to LED ${ledId} through r2`);
+          
+          if (updateComponentState) {
+            updateComponentState(ledId, { 
+              connectedPinState: heroboardR1PinState,
+              isConnectedToHeroboard: true,
+              connectedThroughResistor: true,
+              connectedHeroboardPin: heroboardR1Pin,
+              connectedHeroboardId: heroboardR1Id
+            });
+          }
+        });
       }
-    });
-    
-    // Update resistor's own state for LED trace algorithm
-    if (window.simulatorContext && window.simulatorContext.updateComponentState) {
-      window.simulatorContext.updateComponentState(id, {
-        r1PinValue: r1PinStateFound ? heroboardR1PinState : false,
-        r2PinValue: r2PinStateFound ? heroboardR2PinState : false
-      });
+      
+      // If r2 is connected to heroboard, propagate its state to LEDs connected to r1
+      if (r2ConnectedToHeroboard && r2PinStateFound && r1ConnectedLEDs.length > 0) {
+        r1ConnectedLEDs.forEach(ledId => {
+          console.log(`Resistor ${id} propagating state ${heroboardR2PinState} from r2 (pin ${heroboardR2Pin}) to LED ${ledId} through r1`);
+          
+          if (updateComponentState) {
+            updateComponentState(ledId, { 
+              connectedPinState: heroboardR2PinState,
+              isConnectedToHeroboard: true,
+              connectedThroughResistor: true,
+              connectedHeroboardPin: heroboardR2Pin,
+              connectedHeroboardId: heroboardR2Id
+            });
+          }
+        });
+      }
+    } catch (error) {
+      console.error(`Error in Resistor ${id} simulation:`, error);
     }
-    
-    // Propagate pin state through the resistor to connected LEDs
-    // If r1 is connected to heroboard, propagate its state to LEDs connected to r2
-    if (r1ConnectedToHeroboard && r1PinStateFound && r2ConnectedLEDs.length > 0) {
-      r2ConnectedLEDs.forEach(ledId => {
-        console.log(`Resistor ${id} propagating state ${heroboardR1PinState} from r1 (pin ${heroboardR1Pin}) to LED ${ledId} through r2`);
-        
-        if (window.simulatorContext && window.simulatorContext.updateComponentState) {
-          window.simulatorContext.updateComponentState(ledId, { 
-            connectedPinState: heroboardR1PinState,
-            isConnectedToHeroboard: true,
-            connectedThroughResistor: true,
-            connectedHeroboardPin: heroboardR1Pin,
-            connectedHeroboardId: heroboardR1Id
-          });
-        }
-      });
-    }
-    
-    // If r2 is connected to heroboard, propagate its state to LEDs connected to r1
-    if (r2ConnectedToHeroboard && r2PinStateFound && r1ConnectedLEDs.length > 0) {
-      r1ConnectedLEDs.forEach(ledId => {
-        console.log(`Resistor ${id} propagating state ${heroboardR2PinState} from r2 (pin ${heroboardR2Pin}) to LED ${ledId} through r1`);
-        
-        if (window.simulatorContext && window.simulatorContext.updateComponentState) {
-          window.simulatorContext.updateComponentState(ledId, { 
-            connectedPinState: heroboardR2PinState,
-            isConnectedToHeroboard: true,
-            connectedThroughResistor: true,
-            connectedHeroboardPin: heroboardR2Pin,
-            connectedHeroboardId: heroboardR2Id
-          });
-        }
-      });
-    }
-    
-  }, [id, isSimulationRunning, componentStates]);
+  }, [id, isSimulationRunning, wires, componentStates, updateComponentState]);
 
   // Handle drag or rotate
   const onDragOrRotate = ({ target, beforeTranslate, beforeRotate }) => {
@@ -293,17 +297,6 @@ const Resistor = ({
   const onResistorUnitsChange = (newVal) => {
     setResistorValueUnit(newVal);
   };
-
-  // Create context menu portal target if it doesn't exist
-  useEffect(() => {
-    if (!document.querySelector('#component-context-menu')) {
-      const menuDiv = document.createElement('div');
-      menuDiv.id = 'component-context-menu';
-      menuDiv.style.position = 'absolute';
-      menuDiv.style.zIndex = '9999';
-      document.body.appendChild(menuDiv);
-    }
-  }, []);
 
   return (
     <>
