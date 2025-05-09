@@ -4,6 +4,8 @@ import {
 } from "../lib/inventr-component-lib.es.js";
 import Moveable from "react-moveable";
 import { createPortal } from "react-dom";
+import OLEDDisplayRenderer from './OLEDDisplayRenderer';
+import { useSimulator } from '../simulator/SimulatorContext';
 
 // Define MOVE_SETTINGS to match what the original code expects
 const MOVE_SETTINGS = {
@@ -172,6 +174,9 @@ const OLEDDisplay = ({
     }
   }, []);
 
+  // Access the simulator context to detect if simulation is running
+  const { isRunning } = useSimulator();
+
   return (
     <>
       {isSelected && (
@@ -189,24 +194,31 @@ const OLEDDisplay = ({
         ></Moveable>
       )}
       
-      <ReactOLEDDisplay
-        id={id}
-        className="min-w-min cursor-pointer absolute"
+      <div 
+        className="relative min-w-min cursor-pointer absolute"
         ref={targetRef}
-        isActive={isSelected}
-        isDragged={isDragged}
-        onPinClicked={handlePinClicked}
-        onPininfoChange={(e) => onPinInfoChange(e)}
-        rotationTransform={rotationAngle}
-        onMouseDown={(e) => {
-          e.stopPropagation();
-          if (onSelect) onSelect(id);
-        }}
         style={{
           transform: `translate(${initPosLeft}px, ${initPosTop}px) scale(${scale})`,
           zIndex: isDragged ? 99999 : 10
         }}
-      ></ReactOLEDDisplay>
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          if (onSelect) onSelect(id);
+        }}
+      >
+        <ReactOLEDDisplay
+          id={id}
+          className="min-w-min cursor-pointer"
+          isActive={isSelected}
+          isDragged={isDragged}
+          onPinClicked={handlePinClicked}
+          onPininfoChange={(e) => onPinInfoChange(e)}
+          rotationTransform={rotationAngle}
+        />
+        
+        {/* Add the OLED display renderer for simulation */}
+        {isRunning && <OLEDDisplayRenderer componentId={id} />}
+      </div>
 
       {/* Removed component menu - settings now in the properties panel */}
     </>
