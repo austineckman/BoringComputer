@@ -85,15 +85,43 @@ const LED = ({
         // Get the pin name/number
         const pinNumber = otherPinName;
         
-        // Check the heroboard's pin state
-        if (componentStates?.heroboard?.pins && 
+        // First, try with the specific heroboard ID
+        if (componentStates[otherComponentId] && 
+            componentStates[otherComponentId].pins && 
+            componentStates[otherComponentId].pins[pinNumber] !== undefined) {
+          
+          connectedToPin = true;
+          // If connected to multiple pins, any HIGH value will light the LED
+          pinValue = pinValue || componentStates[otherComponentId].pins[pinNumber] === true;
+          
+          console.log(`LED ${id} is connected to ${otherComponentId} pin ${pinNumber} with value=${pinValue}`);
+        } 
+        // Then try the generic 'heroboard' object (fallback for pin state updates)
+        else if (componentStates?.heroboard?.pins && 
             componentStates.heroboard.pins[pinNumber] !== undefined) {
           
           connectedToPin = true;
           // If connected to multiple pins, any HIGH value will light the LED
           pinValue = pinValue || componentStates.heroboard.pins[pinNumber] === true;
           
-          console.log(`LED ${id} is connected to heroboard pin ${pinNumber} with value=${pinValue}`);
+          console.log(`LED ${id} is connected to heroboard generic pin ${pinNumber} with value=${pinValue}`);
+        }
+        // Look through all component states for any heroboard with this pin (most aggressive fallback)
+        else {
+          // Find the first heroboard component with the pin state
+          const heroboardComponents = Object.keys(componentStates).filter(key => 
+            key.includes('heroboard') && 
+            componentStates[key].pins && 
+            componentStates[key].pins[pinNumber] !== undefined
+          );
+          
+          if (heroboardComponents.length > 0) {
+            const firstHeroboard = heroboardComponents[0];
+            connectedToPin = true;
+            pinValue = pinValue || componentStates[firstHeroboard].pins[pinNumber] === true;
+            
+            console.log(`LED ${id} found fallback connection to ${firstHeroboard} pin ${pinNumber} with value=${pinValue}`);
+          }
         }
       }
     });
