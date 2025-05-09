@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.tooltip:before {
+    z-index: 20 !important;
+}
+
+.moveable-control.moveable-rotation-control,
+.moveable-control.moveable-origin {
+    display: none;
+}
+.moveable-control-box {
+    --moveable-color: none !important;
+}
+
+.css-ccs {
+    --c: 50;
+    --cx: 5;
+    --cy: 5;
+    --dsize: 10;
+    --dcolor: #369;
+    --size: 100%;
+    /*position: relative;*/
+    width: var(--size);
+    height: 0;
+    padding-top: var(--size);
+    box-sizing: border-box;
+    aspect-ratio: 1/1;
+    background-image:
+        /*linear-gradient(#0000 calc(var(--cy) * 100% / var(--c) - 1px), #0008 0 calc(var(--cy) * 100% / var(--c) + 1px), transparent 0),*/
+        /*linear-gradient(to right, #0000 calc(var(--cx) * 100% / var(--c) - 1px), #0008 0 calc(var(--cx) * 100% / var(--c) + 1px), transparent 0),*/
+        repeating-linear-gradient(#0002 0 0.5px, #0000 0 calc(100% / var(--c) - 0.5px), #0002 0 calc(100% / var(--c))),
+        repeating-linear-gradient(to right, #0002 0 0.5px, #0000 0 calc(100% / var(--c) - 0.5px), #0002 0 calc(100% / var(--c)));
+}
+
+.mPath {
+    z-index: 8999;
+}
+
+.z-top {
+    z-index: 9999;
+}
+
+.max-h-64 {
+    max-height: 16rem;
+}
+
+.space-bg {
+    background-image: url('/images/ezgif-4-0937a0f3e2-scaled.webp');
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}

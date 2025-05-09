@@ -1,52 +1,42 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { PinState } from '../EmulatorContext';
 
-// SVG representation of an Arduino UNO board
-const ARDUINO_BOARD_SVG = `
-<svg width="300" height="200" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
-  <rect x="10" y="10" width="280" height="180" rx="10" fill="#00979D" />
-  <rect x="20" y="140" width="260" height="40" rx="5" fill="#E6E6E6" />
-  <rect x="20" y="20" width="40" height="110" rx="5" fill="#E6E6E6" />
-  <rect x="240" y="20" width="40" height="110" rx="5" fill="#E6E6E6" />
-  <rect x="70" y="20" width="160" height="40" rx="5" fill="#E6E6E6" />
-  <circle cx="250" cy="40" r="7" fill="#000000" />
-  <text x="150" y="100" font-family="Arial" font-size="16" fill="#FFFFFF" text-anchor="middle">Arduino UNO</text>
-</svg>
-`;
+// HERO board component image path (uses the exact same image from sandbox)
+const heroBoardImage = '/attached_assets/hero-board.icon.png';
 
-// Pin definitions for Arduino UNO with type that matches CircuitComponent
+// Pin definitions for HERO board (matching sandbox configuration)
 const ARDUINO_PINS = [
   // Digital pins
-  { id: '0', x: 270, y: 30, label: 'D0', type: 'bidirectional' },
-  { id: '1', x: 270, y: 45, label: 'D1', type: 'bidirectional' },
-  { id: '2', x: 270, y: 60, label: 'D2', type: 'bidirectional' },
-  { id: '3', x: 270, y: 75, label: 'D3', type: 'bidirectional' },
-  { id: '4', x: 270, y: 90, label: 'D4', type: 'bidirectional' },
-  { id: '5', x: 270, y: 105, label: 'D5', type: 'bidirectional' },
-  { id: '6', x: 270, y: 120, label: 'D6', type: 'bidirectional' },
-  { id: '7', x: 270, y: 135, label: 'D7', type: 'bidirectional' },
-  { id: '8', x: 270, y: 150, label: 'D8', type: 'bidirectional' },
-  { id: '9', x: 270, y: 165, label: 'D9', type: 'bidirectional' },
-  { id: '10', x: 240, y: 165, label: 'D10', type: 'bidirectional' },
-  { id: '11', x: 210, y: 165, label: 'D11', type: 'bidirectional' },
-  { id: '12', x: 180, y: 165, label: 'D12', type: 'bidirectional' },
-  { id: '13', x: 150, y: 165, label: 'D13', type: 'bidirectional' },
+  { id: '0', x: 265, y: 40, label: 'D0', type: 'bidirectional' },
+  { id: '1', x: 265, y: 55, label: 'D1', type: 'bidirectional' },
+  { id: '2', x: 265, y: 70, label: 'D2', type: 'bidirectional' },
+  { id: '3', x: 265, y: 85, label: 'D3', type: 'bidirectional' },
+  { id: '4', x: 265, y: 100, label: 'D4', type: 'bidirectional' },
+  { id: '5', x: 265, y: 115, label: 'D5', type: 'bidirectional' },
+  { id: '6', x: 265, y: 130, label: 'D6', type: 'bidirectional' },
+  { id: '7', x: 265, y: 145, label: 'D7', type: 'bidirectional' },
+  { id: '8', x: 265, y: 160, label: 'D8', type: 'bidirectional' },
+  { id: '9', x: 245, y: 175, label: 'D9', type: 'bidirectional' },
+  { id: '10', x: 230, y: 175, label: 'D10', type: 'bidirectional' },
+  { id: '11', x: 215, y: 175, label: 'D11', type: 'bidirectional' },
+  { id: '12', x: 200, y: 175, label: 'D12', type: 'bidirectional' },
+  { id: '13', x: 185, y: 175, label: 'D13', type: 'bidirectional' },
   
   // Analog pins
-  { id: 'A0', x: 30, y: 165, label: 'A0', type: 'input' },
-  { id: 'A1', x: 45, y: 165, label: 'A1', type: 'input' },
-  { id: 'A2', x: 60, y: 165, label: 'A2', type: 'input' },
-  { id: 'A3', x: 75, y: 165, label: 'A3', type: 'input' },
-  { id: 'A4', x: 90, y: 165, label: 'A4', type: 'input' },
-  { id: 'A5', x: 105, y: 165, label: 'A5', type: 'input' },
+  { id: 'A0', x: 125, y: 175, label: 'A0', type: 'input' },
+  { id: 'A1', x: 110, y: 175, label: 'A1', type: 'input' },
+  { id: 'A2', x: 95, y: 175, label: 'A2', type: 'input' },
+  { id: 'A3', x: 80, y: 175, label: 'A3', type: 'input' },
+  { id: 'A4', x: 65, y: 175, label: 'A4', type: 'input' },
+  { id: 'A5', x: 50, y: 175, label: 'A5', type: 'input' },
   
   // Power pins
-  { id: 'GND', x: 30, y: 30, label: 'GND', type: 'output' },
-  { id: '5V', x: 30, y: 45, label: '5V', type: 'output' },
-  { id: '3V3', x: 30, y: 60, label: '3.3V', type: 'output' },
+  { id: 'GND', x: 35, y: 40, label: 'GND', type: 'output' },
+  { id: '5V', x: 35, y: 55, label: '5V', type: 'output' },
+  { id: '3V3', x: 35, y: 70, label: '3.3V', type: 'output' },
   
   // Built-in LED at pin 13
-  { id: 'LED_BUILTIN', x: 150, y: 120, label: 'LED', type: 'output' }
+  { id: 'LED_BUILTIN', x: 145, y: 105, label: 'LED', type: 'output' }
 ];
 
 interface ArduinoBoardProps {
@@ -379,11 +369,18 @@ export function ArduinoBoard({
       onClick={handleClick}
       onMouseDown={handleMouseDown}
     >
-      {/* Arduino Board Image */}
-      <div 
-        className="absolute inset-0 flex items-center justify-center"
-        dangerouslySetInnerHTML={{ __html: ARDUINO_BOARD_SVG }}
-      />
+      {/* HERO Board Image - Using the exact same image from 30 Days Lost in Space sandbox */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <img 
+          src={heroBoardImage} 
+          alt="HERO Board" 
+          className="w-full h-full object-contain"
+          style={{
+            filter: isSelected ? 'brightness(1.2)' : 'none',
+            transition: 'filter 0.2s'
+          }}
+        />
+      </div>
       
       {/* Component pins - using the exact same style as CircuitComponent */}
       {ARDUINO_PINS.map(pin => {
@@ -397,7 +394,7 @@ export function ArduinoBoard({
             key={pin.id}
             id={`${id}-${pin.id}`}
             data-pin-id={pin.id}
-            className={`circuit-pin pin-point absolute w-5 h-5 rounded-full transform -translate-x-1/2 -translate-y-1/2 cursor-crosshair border-2 shadow-md ${
+            className={`circuit-pin pin-point absolute w-4 h-4 rounded-full transform -translate-x-1/2 -translate-y-1/2 cursor-crosshair border-2 shadow-md ${
               pin.type === 'input' ? 'bg-green-500 border-green-700' : 
               pin.type === 'output' ? 'bg-red-500 border-red-700' : 
               'bg-blue-500 border-blue-700' // bidirectional
@@ -411,7 +408,7 @@ export function ArduinoBoard({
             title={`${pin.label} (${pin.id}): ${isActive ? 'HIGH' : 'LOW'}`}
           >
             {/* Pin hover tooltip */}
-            <div className="pin-tooltip absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-1 py-0.5 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">
+            <div className="pin-tooltip absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-1 py-0.5 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">
               {pin.label} ({isActive ? 'HIGH' : 'LOW'})
             </div>
           </div>
@@ -422,7 +419,7 @@ export function ArduinoBoard({
       <div 
         className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-center whitespace-nowrap bg-gray-800 text-white px-1 rounded"
       >
-        Arduino UNO
+        HERO Board
       </div>
     </div>
   );
