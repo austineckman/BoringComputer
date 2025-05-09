@@ -61,6 +61,19 @@ const LED = ({
       console.log(`LED ${id} updated from simulation: isLit=${newLitState}`);
       setIsLit(newLitState);
     } 
+    // Check for heroboard pin states which control the LED
+    else if (componentStates && componentStates.heroboard && componentStates.heroboard.pins) {
+      console.log(`Refreshing component states after pin update`);
+      // Check for pin connections (pin 13 is commonly used for onboard LED)
+      // This will need to be updated to check the actual pin this LED is connected to
+      const connectedPin = '13'; // Default to pin 13 - ideally this would be dynamically determined
+      
+      if (componentStates.heroboard.pins[connectedPin] !== undefined) {
+        const newLitState = componentStates.heroboard.pins[connectedPin] === true;
+        console.log(`LED ${id} updated from heroboard pin ${connectedPin}: isLit=${newLitState}`);
+        setIsLit(newLitState);
+      }
+    }
     // Fallback: try alternative ID formats
     else if (componentStates) {
       // Try finding this LED's state using any key that contains this ID
