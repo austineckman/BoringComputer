@@ -388,15 +388,15 @@ const RGBLED = ({
               className="absolute rounded-full w-10 h-10 opacity-70"
               style={{
                 backgroundColor: `rgb(
-                  ${redOn ? Math.round(ledRed * 255) : 0}, 
-                  ${greenOn ? Math.round(ledGreen * 255) : 0}, 
-                  ${blueOn ? Math.round(ledBlue * 255) : 0}
+                  ${redOn ? (commonPin === 'anode' ? 255 - Math.round(ledRed * 255) : Math.round(ledRed * 255)) : 0}, 
+                  ${greenOn ? (commonPin === 'anode' ? 255 - Math.round(ledGreen * 255) : Math.round(ledGreen * 255)) : 0}, 
+                  ${blueOn ? (commonPin === 'anode' ? 255 - Math.round(ledBlue * 255) : Math.round(ledBlue * 255)) : 0}
                 )`,
                 transform: 'translate(5px, 10px)',
                 boxShadow: `0 0 20px 8px rgb(
-                  ${redOn ? Math.round(ledRed * 255) : 0}, 
-                  ${greenOn ? Math.round(ledGreen * 255) : 0}, 
-                  ${blueOn ? Math.round(ledBlue * 255) : 0}
+                  ${redOn ? (commonPin === 'anode' ? 255 - Math.round(ledRed * 255) : Math.round(ledRed * 255)) : 0}, 
+                  ${greenOn ? (commonPin === 'anode' ? 255 - Math.round(ledGreen * 255) : Math.round(ledGreen * 255)) : 0}, 
+                  ${blueOn ? (commonPin === 'anode' ? 255 - Math.round(ledBlue * 255) : Math.round(ledBlue * 255)) : 0}
                 )`,
                 filter: 'blur(5px)',
                 animation: 'pulse 1.2s infinite alternate',
