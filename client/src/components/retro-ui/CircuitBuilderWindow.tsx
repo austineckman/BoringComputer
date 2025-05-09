@@ -13,7 +13,15 @@ import 'ace-builds/src-noconflict/mode-c_cpp';
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
 
-import { oledDisplayExample, sevenSegmentExample, keypadExample, rotaryEncoderExample, multiLibraryExample } from '../circuit-builder/simulator/exampleLibraryCode';
+import { 
+  oledDisplayExample, 
+  sevenSegmentExample, 
+  keypadExample, 
+  rotaryEncoderExample, 
+  multiLibraryExample,
+  rgbLedExample,
+  buzzerExample
+} from '../circuit-builder/simulator/exampleLibraryCode';
 
 // Import our CircuitBuilder component
 import CircuitBuilder from '../circuit-builder/CircuitBuilder';
