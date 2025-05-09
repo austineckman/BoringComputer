@@ -208,7 +208,7 @@ const JukeboxWindow: React.FC<JukeboxWindowProps> = ({ onClose }) => {
             
             {/* Light glow effect when playing */}
             {isPlaying && (
-              <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-orange-500 rounded-full opacity-10 animate-pulse blur-lg"></div>
+              <div className="absolute top-[45%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-orange-500 rounded-full opacity-10 animate-pulse blur-lg"></div>
             )}
             
             {/* Visualizer effect on jukebox display */}
