@@ -123,51 +123,57 @@ const RGBLED = ({
     }
   };
 
-  // Handle pin click with improved pin details for the new wire manager
+  // Handle pin click - IDENTICAL to LED component
   const handlePinClicked = (e) => {
+    console.log("Pin clicked on RGB LED:", e.detail);
+    
+    // Extract pin information from the event
     if (onPinConnect) {
-      // Get details from the event
-      const pinId = e.detail.pinId;
-      const pinName = e.detail.pinName || (pinId ? pinId.split('-').pop() : '');
-      const pinType = e.detail.pinType || 'bidirectional';
-      
-      console.log(`Pin clicked on RGB LED:`, e.detail);
-      
-      // Get the position of the pin within the canvas if available
-      const targetRect = targetRef.current?.getBoundingClientRect();
-      const canvasRect = canvasRef?.current?.getBoundingClientRect();
-      
-      let pinPosition = null;
-      if (e.detail.clientX && e.detail.clientY && canvasRect) {
-        pinPosition = {
-          x: e.detail.clientX - canvasRect.left,
-          y: e.detail.clientY - canvasRect.top
-        };
-      }
-      
-      // Create a custom event with enhanced details for the wire manager
-      const pinClickEvent = new CustomEvent('pinClicked', {
-        bubbles: true,
-        detail: {
-          id: pinId,
-          pinId,
-          pinName,
-          pinType,
-          parentId: id,
-          parentComponentId: id,
-          clientX: e.detail.clientX,
-          clientY: e.detail.clientY,
-          pinPosition
+      try {
+        // The data is a JSON string inside the detail object
+        const pinDataJson = e.detail.data;
+        const pinData = JSON.parse(pinDataJson);
+        
+        // Get pin ID and type from the parsed data
+        const pinId = pinData.name;
+        
+        // Determine pin type based on name
+        let pinType = 'bidirectional';
+        if (pinId === 'common') {
+          pinType = 'power';
+        } else if (pinId === 'red' || pinId === 'green' || pinId === 'blue') {
+          pinType = 'digital';
         }
-      });
-      
-      // Dispatch the event to be caught by the wire manager
-      document.dispatchEvent(pinClickEvent);
-      
-      // Also call the provided callback for backward compatibility
-      onPinConnect(pinId, pinType, id, pinPosition);
-      
-      console.log(`Pin ${pinName} (${pinType}) of component ${id} clicked`, pinPosition);
+        
+        // Get position information
+        const clientX = e.detail.clientX || 0;
+        const clientY = e.detail.clientY || 0;
+        
+        console.log(`Pin clicked: ${pinId} (${pinType})`);
+        
+        // Call the parent's onPinConnect handler
+        onPinConnect(pinId, pinType, id);
+        
+        // Send another event with the formatted pin ID to match our wire manager
+        const formattedPinId = `pt-${id.toLowerCase().split('-')[0]}-${id}-${pinId}`;
+        
+        // Create a custom pin click event to trigger the wire manager
+        const pinClickEvent = new CustomEvent('pinClicked', {
+          detail: {
+            id: formattedPinId,
+            pinData: pinDataJson,
+            pinType: pinType,
+            parentId: id,
+            clientX,
+            clientY
+          }
+        });
+        
+        // Dispatch the event to be captured by the wire manager
+        document.dispatchEvent(pinClickEvent);
+      } catch (err) {
+        console.error("Error parsing pin data:", err);
+      }
     }
   };
 
