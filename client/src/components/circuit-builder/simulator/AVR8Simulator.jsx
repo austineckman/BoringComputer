@@ -1,10 +1,62 @@
 import React, { useEffect } from 'react';
 import { useSimulator } from './SimulatorContext';
+import { useLibraryManager } from './LibraryManager';
 
 /**
  * AVR8Simulator - Uses AVR8js to simulate Arduino code
  * This component interacts with the SimulatorContext to update component states
+ * and uses LibraryManager to handle Arduino libraries
  */
+/**
+ * Detects included libraries in Arduino code
+ * @param {string} code - The Arduino code to analyze
+ * @returns {string[]} - Array of detected library names
+ */
+const detectIncludedLibraries = (code) => {
+  const libraries = [];
+  
+  // Regular expression to find #include statements
+  // This will match both #include <Library.h> and #include "Library.h" forms
+  const includeRegex = /#include\s*[<"]([^>"]+)[>"]/g;
+  let match;
+  
+  while ((match = includeRegex.exec(code)) !== null) {
+    const includePath = match[1];
+    
+    // Extract the library name from the include path
+    let libraryName = includePath;
+    
+    // If it's a path with directories, get just the first part
+    if (includePath.includes('/')) {
+      libraryName = includePath.split('/')[0];
+    }
+    
+    // Remove file extension if present
+    if (libraryName.endsWith('.h')) {
+      libraryName = libraryName.substring(0, libraryName.length - 2);
+    }
+    
+    // Map library files to their library names
+    const libraryMap = {
+      'U8g2lib': 'U8g2',
+      'U8x8lib': 'U8g2',
+      'TM1637Display': 'TM1637Display',
+      'Keypad': 'Keypad',
+      'BasicEncoder': 'BasicEncoder'
+    };
+    
+    // Get the actual library name from our map
+    const mappedName = libraryMap[libraryName] || libraryName;
+    
+    // Add to libraries array if not already present
+    if (!libraries.includes(mappedName)) {
+      libraries.push(mappedName);
+    }
+  }
+  
+  return libraries;
+};
+
 const AVR8Simulator = ({ 
   code, 
   isRunning, 
@@ -21,12 +73,22 @@ const AVR8Simulator = ({
     wires       // Get wires from context
   } = useSimulator();
   
+  // Get library manager state and functions
+  const {
+    libraries,
+    isLibraryLoaded,
+    librariesLoaded
+  } = useLibraryManager();
+  
   // NEW APPROACH:
   // Parse Arduino code to extract a sequence of pin states and timing operations
   // This better simulates how Arduino actually executes code sequentially
   const parseArduinoCode = (code) => {
     try {
-      // First, clean the Arduino code for better parsing
+      // First, save the original code for library detection
+      const originalCode = code;
+      
+      // Clean the Arduino code for better parsing
       // Remove comments and extra whitespace
       const cleanedCode = code
         .replace(/\/\/.*$/gm, '') // Remove single-line comments
@@ -35,6 +97,26 @@ const AVR8Simulator = ({
         .trim();
       
       console.log('Parsing Arduino code...');
+      
+      // Detect included libraries
+      const includedLibraries = detectIncludedLibraries(originalCode);
+      
+      // Log detected libraries
+      if (includedLibraries.length > 0) {
+        console.log('Detected libraries:', includedLibraries);
+        addLog(`Detected libraries: ${includedLibraries.join(', ')}`);
+        
+        // Check if libraries are loaded
+        includedLibraries.forEach(lib => {
+          if (isLibraryLoaded(lib)) {
+            console.log(`Library ${lib} is loaded and available`);
+            addLog(`Library ${lib} is available`);
+          } else {
+            console.warn(`Library ${lib} is referenced but not available in simulator`);
+            addLog(`Warning: Library ${lib} is not available in simulator`);
+          }
+        });
+      }
       
       // We'll analyze the loop() function to extract our state sequence
       const loopMatch = cleanedCode.match(/void\s+loop\s*\(\s*\)\s*\{([^}]*)\}/);
