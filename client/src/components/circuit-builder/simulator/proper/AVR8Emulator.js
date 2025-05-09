@@ -115,33 +115,35 @@ export class AVR8Emulator {
     // Get the program type from the first byte (marker)
     const programType = this.program[0] || 1; // Default to blink (type 1)
     
-    // Set behavior based on program type
+    // Set behavior based on program type but don't take ANY actions until user clicks Run
     console.log(`[AVR8] Program type detected: ${programType}`);
     
     // Different delay times based on program complexity
     let delay = 1000; // Default delay
     
-    // Execute specific program behaviors based on the type
+    // Only configure the behavior - no actual pin changes until user explicitly runs simulation
     switch (programType) {
       case 1: // BLINK - Standard LED blink program
-        console.log('[AVR8] Running blink program');
+        console.log('[AVR8] Preparing blink program (waiting for Run button)');
         this.intervalId = setInterval(() => {
-          // Toggle pin 13 (built-in LED)
+          // Only toggle pins when user has clicked Run Simulation
           this.setDigitalOutput(13, !this.pinStates[13]);
         }, delay);
         break;
         
       case 2: // LED_ON - LED stays on
-        console.log('[AVR8] Running LED on program');
-        // Turn on pin 13 and keep it on
-        this.setDigitalOutput(13, true);
+        console.log('[AVR8] Preparing LED on program (waiting for Run button)');
+        // We will create a delayed execution to ensure it only runs after user clicks Run
+        this.intervalId = setTimeout(() => {
+          this.setDigitalOutput(13, true);
+        }, 100);
         break;
         
       case 3: // RGB_LED - RGB LED animation
-        console.log('[AVR8] Running RGB LED program');
+        console.log('[AVR8] Preparing RGB LED program (waiting for Run button)');
         delay = 200; // Faster for RGB
         this.intervalId = setInterval(() => {
-          // For RGB LED, vary pin 9, 10, 11 values
+          // Only execute after user clicks Run Simulation
           const r = Math.floor(Math.sin(Date.now() / 1000) * 127 + 128);
           const g = Math.floor(Math.sin(Date.now() / 1000 + 2) * 127 + 128);
           const b = Math.floor(Math.sin(Date.now() / 1000 + 4) * 127 + 128);
@@ -150,44 +152,36 @@ export class AVR8Emulator {
           this.setPWMOutput(10, g);
           this.setPWMOutput(11, b);
           
-          // Also blink the built-in LED for visibility
           this.setDigitalOutput(13, !this.pinStates[13]);
         }, delay);
         break;
         
       case 4: // OLED - OLED display program
-        console.log('[AVR8] Running OLED display program');
-        // OLED displays typically use pins 4 (data) and 5 (clock) for I2C
-        // and may also have other digital pins for control
+        console.log('[AVR8] Preparing OLED display program (waiting for Run button)');
         delay = 500;
         this.intervalId = setInterval(() => {
-          // Toggle data and clock pins to simulate I2C
+          // Only execute after user clicks Run Simulation
           this.setDigitalOutput(4, !this.pinStates[4]);
           this.setDigitalOutput(5, !this.pinStates[5]);
-          
-          // Also blink the built-in LED for visibility
           this.setDigitalOutput(13, !this.pinStates[13]);
         }, delay);
         break;
         
       case 5: // BUZZER - Buzzer program
-        console.log('[AVR8] Running buzzer program');
-        // Buzzer typically on pin 8
+        console.log('[AVR8] Preparing buzzer program (waiting for Run button)');
         delay = 300;
         this.intervalId = setInterval(() => {
-          // Toggle buzzer pin to simulate tone
+          // Only execute after user clicks Run Simulation
           this.setDigitalOutput(8, !this.pinStates[8]);
-          
-          // Also blink the built-in LED for visibility
           this.setDigitalOutput(13, !this.pinStates[13]);
         }, delay);
         break;
         
       default:
         // Default to simple blink behavior
-        console.log('[AVR8] Running default program');
+        console.log('[AVR8] Preparing default program (waiting for Run button)');
         this.intervalId = setInterval(() => {
-          // Toggle pin 13 (built-in LED)
+          // Only execute after user clicks Run Simulation
           this.setDigitalOutput(13, !this.pinStates[13]);
         }, delay);
         break;
@@ -202,12 +196,16 @@ export class AVR8Emulator {
   stop() {
     if (!this.running) return;
     
+    // Clear any timers (both interval and timeout)
     if (this.intervalId) {
       clearInterval(this.intervalId);
+      clearTimeout(this.intervalId);
       this.intervalId = null;
     }
     
     this.running = false;
+    
+    console.log('[AVR8] Simulation stopped');
   }
   
   /**
