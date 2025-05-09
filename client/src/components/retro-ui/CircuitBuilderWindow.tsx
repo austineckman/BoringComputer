@@ -41,6 +41,11 @@ interface CircuitBuilderWindowProps {
   onClose: () => void;
 }
 
+interface NotificationType {
+  message: string;
+  type: string;
+}
+
 const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) => {
   // State for components and wires
   const [components, setComponents] = useState<ComponentData[]>([]);
@@ -439,10 +444,10 @@ void loop() {
   };
 
   // Notification system
-  const [notification, setNotification] = useState(null);
+  const [notification, setNotification] = useState<NotificationType | null>(null);
   
   // Show a notification in the bottom right corner
-  const showNotification = (message, type = 'success') => {
+  const showNotification = (message: string, type = 'success') => {
     setNotification({ message, type });
     
     // Auto-hide the notification after 2 seconds
@@ -466,10 +471,13 @@ void loop() {
     // In a real app, you'd save this to a database or file
     console.log('Saving project:', projectData);
     
-    // Update the code in the simulator context
+    // Update the local code state
     setCode(currentCode);
     
     // Update the simulator context with the latest code
+    // This is crucial for the simulator to use the latest code
+    updateSimulatorCode(currentCode);
+    
     if (typeof window !== 'undefined') {
       // Store in localStorage for persistence
       try {
@@ -504,12 +512,16 @@ void loop() {
       // Stop the simulation
       stopSimulation();
       setIsSimulationRunning(false);
-      window.isSimulationRunning = false; // Set global flag for components
+      if (typeof window !== 'undefined') {
+        window.isSimulationRunning = false; // Set global flag for components
+      }
       addSimulationLog('Simulation stopped');
     } else {
       // Start the simulation with current code
       setIsSimulationRunning(true);
-      window.isSimulationRunning = true; // Set global flag for components
+      if (typeof window !== 'undefined') {
+        window.isSimulationRunning = true; // Set global flag for components
+      }
       startSimulation();
       addSimulationLog('Simulation started');
     }
@@ -518,11 +530,15 @@ void loop() {
   // Set global simulation state when component mounts/unmounts
   useEffect(() => {
     // Initialize global state
-    window.isSimulationRunning = isSimulationRunning;
+    if (typeof window !== 'undefined') {
+      window.isSimulationRunning = isSimulationRunning;
+    }
     
     // Cleanup when component unmounts
     return () => {
-      window.isSimulationRunning = false;
+      if (typeof window !== 'undefined') {
+        window.isSimulationRunning = false;
+      }
     };
   }, [isSimulationRunning]);
   
@@ -531,6 +547,21 @@ void loop() {
     addSimulatorLog(message);
     console.log(`[Simulator] ${message}`);
   };
+
+  // Update the Save Code button to also save the project
+  useEffect(() => {
+    // Get the Save Code button
+    const saveCodeBtn = document.querySelector('button.bg-green-600.hover\\:bg-green-700');
+    if (saveCodeBtn) {
+      // Add a click handler to save the project
+      saveCodeBtn.addEventListener('click', saveProject);
+      
+      // Clean up when component unmounts
+      return () => {
+        saveCodeBtn.removeEventListener('click', saveProject);
+      };
+    }
+  }, [saveProject]);
 
   return (
     <div className="flex flex-col w-full h-full bg-gray-800 text-white overflow-hidden">
@@ -624,7 +655,7 @@ void loop() {
           <AVR8Simulator 
             code={code}
             isRunning={isSimulationRunning}
-            onPinChange={(pinOrComponent, isHigh) => {
+            onPinChange={(pinOrComponent: any, isHigh: any) => {
               // Handle pin change events from the simulator
               if (typeof pinOrComponent === 'number') {
                 // This is a pin change event
@@ -664,7 +695,7 @@ void loop() {
                 // Different handling based on component type
                 if (type === 'rgbled') {
                   // Use the global update method for RGB LEDs
-                  if (window.updateRGBLED && window.updateRGBLED[componentId]) {
+                  if (typeof window !== 'undefined' && window.updateRGBLED && window.updateRGBLED[componentId]) {
                     console.log(`Updating RGB LED ${componentId} ${color} channel to ${isHigh ? 'ON' : 'OFF'}`);
                     window.updateRGBLED[componentId](color, isHigh);
                     
@@ -732,6 +763,15 @@ void loop() {
           </div>
         </div>
       </div>
+      
+      {/* Notification popup */}
+      {notification && (
+        <div 
+          className="fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50 animate-pulse"
+        >
+          {notification.message}
+        </div>
+      )}
     </div>
   );
 };
