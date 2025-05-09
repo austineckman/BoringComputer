@@ -19,6 +19,7 @@ export function parseArduinoCode(code) {
     setup: '',
     loop: '',
     pinModes: {}, // { pin: 'OUTPUT' | 'INPUT' | 'INPUT_PULLUP' }
+    analogValues: {}, // { pin: [value1, value2, ...] }
     errors: []
   };
 
