@@ -24,6 +24,8 @@ import adventureLinesRoutes from './routes/adventure-lines';
 import oracleRoutes from './routes/oracle';
 import lootboxesRoutes from './routes/lootboxes';
 import lootboxRewardsRoutes from './routes/lootboxRewards';
+import circuitProjectsRoutes from './routes/circuit-projects';
+import arduinoComponentsRoutes from './routes/arduino-components';
 import { authenticate, hashPassword } from './auth';
 import { conditionalCsrfProtection, getCsrfToken, handleCsrfError } from './middleware/csrf';
 import { addSecurityHeaders } from './middleware/security-headers';
@@ -100,6 +102,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register the auth routes
   app.use("/api/auth", authRoutes);
+  
+  // Register circuit projects routes
+  app.use("/api/circuit-projects", circuitProjectsRoutes);
+  
+  // Register Arduino components routes
+  app.use("/api/arduino-components", arduinoComponentsRoutes);
   
   // Auth routes have been moved to separate files
   // Using passport authentication with proper session handling
