@@ -589,62 +589,88 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
             
             {/* Component-specific properties */}
             {selectedComponent.type === 'led' && (
-              <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-700">
-                  LED Color
-                </label>
-                <div className="mt-1 flex items-center gap-2">
-                  {['red', 'green', 'blue', 'yellow', 'white'].map(color => (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => {
-                        setComponents(prev => 
-                          prev.map(c => 
-                            c.id === selectedComponent.id 
-                              ? { ...c, props: { ...c.props, color } } 
-                              : c
-                          )
-                        );
-                      }}
-                      className={`w-6 h-6 rounded-full border ${
-                        selectedComponent.props?.color === color ? 'ring-2 ring-offset-2 ring-blue-500' : ''
-                      }`}
-                      style={{ backgroundColor: color }}
-                      aria-label={`Set color to ${color}`}
-                    />
-                  ))}
+              <>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    LED Color
+                  </label>
+                  <div className="mt-1 flex items-center gap-2">
+                    {['red', 'green', 'blue', 'yellow', 'white'].map(color => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => {
+                          setComponents(prev => 
+                            prev.map(c => 
+                              c.id === selectedComponent.id 
+                                ? { ...c, props: { ...c.props, color } } 
+                                : c
+                            )
+                          );
+                        }}
+                        className={`w-6 h-6 rounded-full border ${
+                          selectedComponent.props?.color === color ? 'ring-2 ring-offset-2 ring-blue-500' : ''
+                        }`}
+                        style={{ backgroundColor: color }}
+                        aria-label={`Set color to ${color}`}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
+                
+                {/* Wiring instructions */}
+                <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+                  <h4 className="font-medium text-sm text-gray-800 mb-2">Wiring Instructions:</h4>
+                  <ul className="text-xs text-gray-600 space-y-1 list-disc pl-4">
+                    <li><span className="font-medium">Anode (+):</span> Connect to digital pin (with resistor)</li>
+                    <li><span className="font-medium">Cathode (-):</span> Connect to GND</li>
+                    <li>Always use a resistor (220Ω-1kΩ) with LEDs to limit current</li>
+                    <li>Pin 13 has a built-in LED on many Arduino boards</li>
+                  </ul>
+                </div>
+              </>
             )}
             
             {selectedComponent.type === 'resistor' && (
-              <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-700">
-                  Resistance Value
-                </label>
-                <select 
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                  value={selectedComponent.props?.value || '220Ω'}
-                  onChange={(e) => {
-                    setComponents(prev => 
-                      prev.map(c => 
-                        c.id === selectedComponent.id 
-                          ? { ...c, props: { ...c.props, value: e.target.value } } 
-                          : c
-                      )
-                    );
-                  }}
-                >
-                  <option value="100Ω">100Ω</option>
-                  <option value="220Ω">220Ω</option>
-                  <option value="330Ω">330Ω</option>
-                  <option value="470Ω">470Ω</option>
-                  <option value="1kΩ">1kΩ</option>
-                  <option value="4.7kΩ">4.7kΩ</option>
-                  <option value="10kΩ">10kΩ</option>
-                </select>
-              </div>
+              <>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Resistance Value
+                  </label>
+                  <select 
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                    value={selectedComponent.props?.value || '220Ω'}
+                    onChange={(e) => {
+                      setComponents(prev => 
+                        prev.map(c => 
+                          c.id === selectedComponent.id 
+                            ? { ...c, props: { ...c.props, value: e.target.value } } 
+                            : c
+                        )
+                      );
+                    }}
+                  >
+                    <option value="100Ω">100Ω</option>
+                    <option value="220Ω">220Ω</option>
+                    <option value="330Ω">330Ω</option>
+                    <option value="470Ω">470Ω</option>
+                    <option value="1kΩ">1kΩ</option>
+                    <option value="4.7kΩ">4.7kΩ</option>
+                    <option value="10kΩ">10kΩ</option>
+                  </select>
+                </div>
+                
+                {/* Wiring instructions */}
+                <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+                  <h4 className="font-medium text-sm text-gray-800 mb-2">Wiring Instructions:</h4>
+                  <ul className="text-xs text-gray-600 space-y-1 list-disc pl-4">
+                    <li><span className="font-medium">Connect between:</span> Digital pin and LED anode</li>
+                    <li>For LEDs, 220Ω to 1kΩ is typically appropriate</li>
+                    <li>Resistors have no polarity - can be connected in either direction</li>
+                    <li>Higher resistance = less current = dimmer LED</li>
+                  </ul>
+                </div>
+              </>
             )}
             
             {selectedComponent.type === 'photoresistor' && (
@@ -710,6 +736,18 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
                       <option value="anode">Common Anode</option>
                     </select>
                   </div>
+                </div>
+                
+                {/* Wiring instructions */}
+                <div className="mb-3 p-3 bg-gray-50 rounded-md border border-gray-200">
+                  <h4 className="font-medium text-sm text-gray-800 mb-2">Wiring Instructions:</h4>
+                  <ul className="text-xs text-gray-600 space-y-1 list-disc pl-4">
+                    <li><span className="font-medium">Red Pin:</span> Connect to digital pin (via resistor)</li>
+                    <li><span className="font-medium">Green Pin:</span> Connect to digital pin (via resistor)</li>
+                    <li><span className="font-medium">Blue Pin:</span> Connect to digital pin (via resistor)</li>
+                    <li><span className="font-medium">Common Pin:</span> Connect to GND (cathode) or 5V (anode)</li>
+                    <li>Always use resistors (220Ω-1kΩ) with each color channel</li>
+                  </ul>
                 </div>
                 
                 {/* Red control */}
