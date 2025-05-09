@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSimulator } from '../simulator/SimulatorContext';
+import { findRectangleWithCache } from '../utils/imageAnalysis';
 
 /**
  * Component for rendering OLED display content based on simulator state
@@ -7,8 +8,10 @@ import { useSimulator } from '../simulator/SimulatorContext';
  */
 const OLEDDisplayRenderer = ({ componentId }) => {
   const canvasRef = useRef(null);
+  const containerRef = useRef(null);
   const { componentStates, isRunning } = useSimulator();
   const [displayBuffer, setDisplayBuffer] = useState(null);
+  const [displayRect, setDisplayRect] = useState(null);
   
   // Canvas dimensions to match SSD1306 OLED dimensions (128x64 pixels)
   const displayWidth = 128;
@@ -17,7 +20,7 @@ const OLEDDisplayRenderer = ({ componentId }) => {
   // Get the current state of this specific OLED display
   const displayState = componentStates[componentId];
   
-  // Create an empty display buffer initially
+  // Initialize display buffer on mount
   useEffect(() => {
     // Create empty buffer (all pixels off)
     const emptyBuffer = new Array(displayHeight).fill(0).map(() => 
@@ -25,6 +28,84 @@ const OLEDDisplayRenderer = ({ componentId }) => {
     );
     setDisplayBuffer(emptyBuffer);
   }, []);
+
+  // Find the black rectangle in the component image
+  useEffect(() => {
+    // Function to find the component image
+    const findComponentImage = () => {
+      // First try to find the parent component with the image
+      let currentElement = canvasRef.current;
+      if (!currentElement) return null;
+      
+      // Walk up the DOM to find the component container
+      let parent = currentElement.parentElement;
+      while (parent) {
+        // Check for component container classes or data attributes
+        if (parent.classList.contains('circuit-component') || 
+            parent.dataset.componentId ||
+            parent.id === componentId) {
+          
+          // Look for the image within the component
+          const img = parent.querySelector('img');
+          if (img && img.src) {
+            console.log("Found component image:", img.src);
+            return img.src;
+          }
+          break;
+        }
+        parent = parent.parentElement;
+      }
+
+      // If we couldn't find it directly, try a more general approach
+      // This handles cases where the component structure might differ
+      const oledComponents = document.querySelectorAll('img[src*="oled-display"]');
+      if (oledComponents.length > 0) {
+        console.log("Found OLED image via selector:", oledComponents[0].src);
+        return oledComponents[0].src;
+      }
+
+      // Fallback to a hardcoded path if everything else fails
+      console.log("Using fallback image path");
+      return '/attached_assets/oled-display.icon.png';
+    };
+
+    // Analyze the component image to find the black rectangle
+    const analyzeComponentImage = async () => {
+      try {
+        const imageSrc = findComponentImage();
+        if (imageSrc) {
+          console.log("Analyzing image:", imageSrc);
+          const rect = await findRectangleWithCache(imageSrc);
+          console.log("Found black rectangle:", rect);
+          setDisplayRect(rect);
+        } else {
+          console.error("Could not find component image");
+          // Use fallback values
+          setDisplayRect({
+            x: 20,
+            y: 25,
+            width: 90,
+            height: 40
+          });
+        }
+      } catch (error) {
+        console.error("Error in image analysis:", error);
+        // Use fallback values
+        setDisplayRect({
+          x: 20,
+          y: 25,
+          width: 90,
+          height: 40
+        });
+      }
+    };
+
+    // Wait for the canvas to be mounted before running the analysis
+    if (canvasRef.current) {
+      // Give a slight delay to ensure component is fully rendered
+      setTimeout(analyzeComponentImage, 100);
+    }
+  }, [componentId]); // Only run when componentId changes
   
   // Update canvas when display buffer changes
   useEffect(() => {
@@ -310,23 +391,69 @@ const OLEDDisplayRenderer = ({ componentId }) => {
     }
   };
   
+  // If we haven't found the display rectangle yet, render a loading state with default position
+  if (!displayRect) {
+    return (
+      <div
+        ref={containerRef}
+        className="oled-display-glow"
+        style={{
+          position: 'absolute',
+          top: '25px',
+          left: '25px',
+          width: '80px',
+          height: '30px',
+          backgroundColor: '#000',
+          borderRadius: '2px',
+          boxShadow: '0 0 10px 2px rgba(0, 150, 255, 0.6)',
+          overflow: 'hidden',
+          zIndex: 10
+        }}
+      >
+        <canvas
+          ref={canvasRef}
+          className="oled-display-canvas"
+          width={displayWidth}
+          height={displayHeight}
+          style={{
+            width: '100%',
+            height: '100%'
+          }}
+        />
+      </div>
+    );
+  }
+  
+  // Render with the analyzed rectangle coordinates
   return (
-    <canvas
-      ref={canvasRef}
-      className="oled-display-canvas"
-      width={displayWidth}
-      height={displayHeight}
+    <div
+      ref={containerRef}
+      className="oled-display-glow"
       style={{
         position: 'absolute',
-        top: '38px',     // Precise position targeting the black rectangle area
-        left: '32px',    // Precise position targeting the black rectangle area
-        width: '64px',   // Standard SSD1306 OLED width
-        height: '32px',  // Standard SSD1306 OLED height
+        top: `${displayRect.y}px`,
+        left: `${displayRect.x}px`,
+        width: `${displayRect.width}px`,
+        height: `${displayRect.height}px`,
         backgroundColor: '#000',
-        borderRadius: '0px',
+        borderRadius: '2px',
+        boxShadow: '0 0 10px 2px rgba(0, 150, 255, 0.6)',
+        animation: 'oled-glow 2s infinite ease-in-out',
+        overflow: 'hidden',
         zIndex: 10
       }}
-    />
+    >
+      <canvas
+        ref={canvasRef}
+        className="oled-display-canvas"
+        width={displayWidth}
+        height={displayHeight}
+        style={{
+          width: '100%',
+          height: '100%'
+        }}
+      />
+    </div>
   );
 };
 
