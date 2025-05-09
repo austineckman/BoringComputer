@@ -81,37 +81,78 @@ function checkBasicSyntaxErrors(code, errors) {
     });
   }
   
-  // Check for missing semicolons in statements (improved check)
-  const lines = code.split('\n');
-  lines.forEach((line, index) => {
-    // Ignore empty lines or comment-only lines
-    if (!line.trim()) return;
-    if (line.trim().startsWith('//')) return;
-    if (line.trim().startsWith('/*')) return;
-    if (line.trim().endsWith('*/')) return;
+  // Preprocess the code to handle comments properly
+  let inMultilineComment = false;
+  const processedLines = code.split('\n').map((line, index) => {
+    // Process the line to handle comments
+    let processedLine = line;
+    
+    // If we're inside a multiline comment
+    if (inMultilineComment) {
+      const endCommentIndex = line.indexOf('*/');
+      if (endCommentIndex !== -1) {
+        // End of multiline comment found
+        inMultilineComment = false;
+        processedLine = line.substring(endCommentIndex + 2);
+      } else {
+        // Still inside multiline comment
+        return { line: '', isCommentLine: true, lineNumber: index + 1 };
+      }
+    }
+    
+    // Check for start of multiline comment
+    const startCommentIndex = processedLine.indexOf('/*');
+    if (startCommentIndex !== -1) {
+      const endCommentIndex = processedLine.indexOf('*/', startCommentIndex);
+      if (endCommentIndex !== -1) {
+        // Comment begins and ends on same line
+        processedLine = 
+          processedLine.substring(0, startCommentIndex) + 
+          processedLine.substring(endCommentIndex + 2);
+      } else {
+        // Comment starts but doesn't end on this line
+        inMultilineComment = true;
+        processedLine = processedLine.substring(0, startCommentIndex);
+      }
+    }
+    
+    // Handle single-line comments
+    const lineCommentIndex = processedLine.indexOf('//');
+    if (lineCommentIndex !== -1) {
+      processedLine = processedLine.substring(0, lineCommentIndex);
+    }
+    
+    return { 
+      line: processedLine.trim(), 
+      isCommentLine: processedLine.trim() === '',
+      lineNumber: index + 1 
+    };
+  });
+  
+  // Now check for missing semicolons in the processed lines
+  processedLines.forEach(({ line, isCommentLine, lineNumber }) => {
+    // Skip empty lines or lines that were completely comments
+    if (!line || isCommentLine) return;
     
     // Skip lines that shouldn't end with semicolons
-    if (line.trim().endsWith('{')) return;
-    if (line.trim().endsWith('}')) return;
-    if (line.trim().endsWith(';')) return;
-    if (line.trim().endsWith(',')) return; // Handle comma-separated lists
-    if (line.trim().match(/^\s*#include/)) return; // Preprocessor directives
-    if (line.trim().match(/^\s*#define/)) return; // Preprocessor directives
+    if (line.endsWith('{')) return;
+    if (line.endsWith('}')) return;
+    if (line.endsWith(';')) return;
+    if (line.endsWith(',')) return; // Handle comma-separated lists
+    if (line.match(/^\s*#include/)) return; // Preprocessor directives
+    if (line.match(/^\s*#define/)) return; // Preprocessor directives
     
     // Skip control structures that don't need semicolons
-    if (line.trim().match(/^\s*(if|for|while|switch|else)\s*\(/)) return;
-    if (line.trim().match(/^\s*else\s*$/)) return;
+    if (line.match(/^\s*(if|for|while|switch|else)\s*\(/)) return;
+    if (line.match(/^\s*else\s*$/)) return;
     
     // Skip class/function declarations
-    if (line.trim().match(/^\s*(class|struct|enum)\s+\w+/)) return;
-    if (line.trim().match(/^\s*(void|int|bool|char|float|double|unsigned|long|short|byte|String|size_t)\s+\w+\s*\(/)) return;
+    if (line.match(/^\s*(class|struct|enum)\s+\w+/)) return;
+    if (line.match(/^\s*(void|int|bool|char|float|double|unsigned|long|short|byte|String|size_t)\s+\w+\s*\(/)) return;
     
-    // Skip multiline comments
-    if (line.includes('/*') && !line.includes('*/')) return;
-    
-    // This is still a simple check but with fewer false positives
+    // This is a much more robust check with fewer false positives
     errors.push({ 
-      line: index + 1, 
+      line: lineNumber, 
       message: 'Missing semicolon' 
     });
   });
