@@ -1,49 +1,44 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useSimulator } from './SimulatorContext';
-import { FileTerminal, Trash2 } from 'lucide-react';
 
 /**
- * SimulationLogPanel - Display simulation logs in a scrollable panel
+ * SimulationLogPanel Component
+ * 
+ * This component displays the simulation logs in a scrollable panel.
  */
 const SimulationLogPanel = () => {
-  const { logs: simulatorLogs, clearLogs: clearSimulatorLogs, isRunning: isSimulationRunning } = useSimulator();
+  const { logs } = useSimulator();
+  const logContainerRef = useRef(null);
+  
+  // Auto-scroll to the bottom when logs update
+  useEffect(() => {
+    if (logContainerRef.current) {
+      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+    }
+  }, [logs]);
   
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-md p-2 flex flex-col" style={{ maxHeight: '25vh' }}>
-      <div className="flex items-center justify-between mb-2 flex-shrink-0">
-        <div className="flex items-center">
-          <FileTerminal size={14} className="text-blue-400 mr-1" />
-          <span className="text-xs font-medium">Simulation Logs</span>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <button 
-            onClick={clearSimulatorLogs}
-            className="text-gray-400 hover:text-white"
-            title="Clear Logs"
-          >
-            <Trash2 size={14} />
-          </button>
-          
-          <div className="flex items-center">
-            <div className={`w-2 h-2 rounded-full ${isSimulationRunning ? 'bg-green-500' : 'bg-red-500'} mr-1`}></div>
-            <span className="text-xs text-gray-400">{isSimulationRunning ? 'Running' : 'Stopped'}</span>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col h-full">
+      <h3 className="text-sm font-bold text-white mb-2 flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        Simulation Logs
+      </h3>
       
-      <div className="flex-1 overflow-y-auto text-xs font-mono" style={{ scrollbarWidth: 'thin' }}>
-        {simulatorLogs.length === 0 ? (
-          <div className="text-gray-500 italic p-2">No simulation logs yet</div>
+      <div
+        ref={logContainerRef}
+        className="flex-1 bg-gray-900 font-mono text-xs overflow-y-auto p-2 rounded"
+        style={{ maxHeight: 'calc(100% - 30px)' }}
+      >
+        {logs.length === 0 ? (
+          <div className="text-gray-500 italic">No logs yet. Run the simulation to see logs.</div>
         ) : (
-          <div className="space-y-1">
-            {simulatorLogs.map((log, index) => (
-              <div key={index} className="flex">
-                <span className="text-gray-500 mr-2">[{log.timestamp}]</span>
-                <span className="text-gray-300 break-words">{log.message}</span>
-              </div>
-            ))}
-          </div>
+          logs.map((log, index) => (
+            <div key={index} className="text-green-400 mb-1 break-words">
+              {log}
+            </div>
+          ))
         )}
       </div>
     </div>

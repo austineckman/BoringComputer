@@ -1,737 +1,208 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSimulator } from './SimulatorContext';
 import { useLibraryManager } from './LibraryManager';
 
 /**
- * AVR8Simulator - Uses AVR8js to simulate Arduino code
- * This component interacts with the SimulatorContext to update component states
- * and uses LibraryManager to handle Arduino libraries
+ * AVR8 Arduino Simulator Component
+ * 
+ * This component is responsible for simulating Arduino code execution
+ * using the avr8js library. It detects pin changes and library usage.
  */
-/**
- * Detects included libraries in Arduino code
- * @param {string} code - The Arduino code to analyze
- * @returns {string[]} - Array of detected library names
- */
-const detectIncludedLibraries = (code) => {
-  const libraries = [];
+const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
+  const [compiledCode, setCompiledCode] = useState(null);
+  const [detectedLibraries, setDetectedLibraries] = useState([]);
+  const [intervalId, setIntervalId] = useState(null);
+  const [pins, setPins] = useState({});
+  const [delay, setDelay] = useState(1000); // Default delay 1000ms
   
-  // Regular expression to find #include statements
-  // This will match both #include <Library.h> and #include "Library.h" forms
-  const includeRegex = /#include\s*[<"]([^>"]+)[>"]/g;
-  let match;
+  // Get library manager context
+  const { loadLibrary, isLibraryLoaded, loadedLibraries } = useLibraryManager();
   
-  while ((match = includeRegex.exec(code)) !== null) {
-    const includePath = match[1];
+  // Log information to the simulator console
+  const logInfo = (message) => {
+    if (onLog) {
+      onLog(message);
+    }
+  };
+  
+  // Detect libraries used in the code
+  const detectLibraries = (code) => {
+    const includeRegex = /#include\s*<([^>]+)>/g;
+    const libraries = [];
+    let match;
     
-    // Extract the library name from the include path
-    let libraryName = includePath;
-    
-    // If it's a path with directories, get just the first part
-    if (includePath.includes('/')) {
-      libraryName = includePath.split('/')[0];
+    // Find all #include statements
+    while ((match = includeRegex.exec(code)) !== null) {
+      const libraryName = match[1].replace('.h', '');
+      if (!libraries.includes(libraryName)) {
+        libraries.push(libraryName);
+      }
     }
     
-    // Remove file extension if present
-    if (libraryName.endsWith('.h')) {
-      libraryName = libraryName.substring(0, libraryName.length - 2);
+    return libraries;
+  };
+  
+  // Detect any digitalWrite calls to identify which pins are being used
+  const detectPinsUsed = (code) => {
+    const digitalWriteRegex = /digitalWrite\s*\(\s*(\d+|LED_BUILTIN)\s*,\s*(HIGH|LOW)\s*\)/g;
+    const pins = new Set();
+    let match;
+    
+    // LED_BUILTIN is usually pin 13
+    const LED_BUILTIN = 13;
+    
+    // Find all digitalWrite calls
+    while ((match = digitalWriteRegex.exec(code)) !== null) {
+      let pin = match[1];
+      // Replace LED_BUILTIN with the actual pin number
+      if (pin === 'LED_BUILTIN') {
+        pin = LED_BUILTIN;
+      } else {
+        pin = parseInt(pin, 10);
+      }
+      pins.add(pin);
     }
     
-    // Map library files to their library names
-    const libraryMap = {
-      'U8g2lib': 'U8g2',
-      'U8x8lib': 'U8g2',
-      'TM1637Display': 'TM1637Display',
-      'Keypad': 'Keypad',
-      'BasicEncoder': 'BasicEncoder'
+    return Array.from(pins);
+  };
+  
+  // Detect delay values used in the code
+  const detectDelays = (code) => {
+    const delayRegex = /delay\s*\(\s*(\d+)\s*\)/g;
+    const delays = [];
+    let match;
+    
+    // Find all delay calls
+    while ((match = delayRegex.exec(code)) !== null) {
+      const delayTime = parseInt(match[1], 10);
+      delays.push(delayTime);
+    }
+    
+    // If we have delays, return the average
+    if (delays.length > 0) {
+      const averageDelay = delays.reduce((a, b) => a + b, 0) / delays.length;
+      return averageDelay;
+    }
+    
+    // Default delay
+    return 1000;
+  };
+  
+  // Compile the Arduino code
+  const compileCode = (code) => {
+    // For now, we don't actually compile the code, we just detect the libraries and pins
+    const libraries = detectLibraries(code);
+    const pinsUsed = detectPinsUsed(code);
+    const avgDelay = detectDelays(code);
+    
+    // Set detected libraries
+    setDetectedLibraries(libraries);
+    
+    // Set the delay value
+    setDelay(avgDelay);
+    
+    // Log information
+    logInfo(`Detected libraries: ${libraries.length > 0 ? libraries.join(', ') : 'None'}`);
+    logInfo(`Detected pins: ${pinsUsed.length > 0 ? pinsUsed.join(', ') : 'None'}`);
+    
+    // Return a simple "compiled" object for demo purposes
+    return {
+      libraries,
+      pinsUsed,
+      delay: avgDelay
     };
+  };
+  
+  // Load required libraries
+  const loadRequiredLibraries = async () => {
+    if (detectedLibraries.length === 0) return;
     
-    // Get the actual library name from our map
-    const mappedName = libraryMap[libraryName] || libraryName;
-    
-    // Add to libraries array if not already present
-    if (!libraries.includes(mappedName)) {
-      libraries.push(mappedName);
+    for (const lib of detectedLibraries) {
+      if (!isLibraryLoaded(lib)) {
+        logInfo(`Loading library: ${lib}`);
+        await loadLibrary(lib);
+      }
     }
-  }
+  };
   
-  return libraries;
-};
-
-const AVR8Simulator = ({ 
-  code, 
-  isRunning, 
-  onPinChange = () => {},
-  addLog = () => {}
-}) => {
-  // Get simulator context state and functions
-  const { 
-    updatePinState, 
-    pinStates, 
-    updateComponentPins,
-    updateComponentState,
-    components, // Get components from context
-    wires       // Get wires from context
-  } = useSimulator();
-  
-  // Get library manager state and functions
-  const {
-    libraries,
-    isLibraryLoaded,
-    librariesLoaded
-  } = useLibraryManager();
-  
-  // NEW APPROACH:
-  // Parse Arduino code to extract a sequence of pin states and timing operations
-  // This better simulates how Arduino actually executes code sequentially
-  const parseArduinoCode = (code) => {
-    try {
-      // First, save the original code for library detection
-      const originalCode = code;
+  // Start the simulation
+  const startSimulation = () => {
+    if (!compiledCode) return;
+    
+    // Start a timer to simulate pin changes for the pins used in the code
+    const id = setInterval(() => {
+      // Get the pins used in the code
+      const { pinsUsed } = compiledCode;
       
-      // Clean the Arduino code for better parsing
-      // Remove comments and extra whitespace
-      const cleanedCode = code
-        .replace(/\/\/.*$/gm, '') // Remove single-line comments
-        .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
-        .replace(/\s+/g, ' ') // Normalize whitespace
-        .trim();
-      
-      console.log('Parsing Arduino code...');
-      
-      // Detect included libraries
-      const includedLibraries = detectIncludedLibraries(originalCode);
-      
-      // Log detected libraries
-      if (includedLibraries.length > 0) {
-        console.log('Detected libraries:', includedLibraries);
-        addLog(`Detected libraries: ${includedLibraries.join(', ')}`);
+      // Update pin states
+      const newPins = { ...pins };
+      for (const pin of pinsUsed) {
+        // Toggle the pin state
+        newPins[pin] = !newPins[pin];
         
-        // Check if libraries are loaded
-        includedLibraries.forEach(lib => {
-          if (isLibraryLoaded(lib)) {
-            console.log(`Library ${lib} is loaded and available`);
-            addLog(`Library ${lib} is available`);
-          } else {
-            console.warn(`Library ${lib} is referenced but not available in simulator`);
-            addLog(`Warning: Library ${lib} is not available in simulator`);
-          }
-        });
-      }
-      
-      // We'll analyze the loop() function to extract our state sequence
-      const loopMatch = cleanedCode.match(/void\s+loop\s*\(\s*\)\s*\{([^}]*)\}/);
-      if (!loopMatch || !loopMatch[1]) {
-        console.log('Could not find loop() function in code or loop is empty');
-        // Default to blinking pin 13
-        return {
-          sequence: [
-            { action: 'digitalWrite', pin: '13', state: 'HIGH' },
-            { action: 'delay', ms: 1000 },
-            { action: 'digitalWrite', pin: '13', state: 'LOW' },
-            { action: 'delay', ms: 1000 }
-          ],
-          pins: ['13']
-        };
-      }
-      
-      // Loop content
-      const loopContent = loopMatch[1].trim();
-      console.log('Loop content:', loopContent);
-      
-      // Extract digitalWrite and delay operations
-      // We need to maintain their order in the sequence
-      const sequence = [];
-      const pins = new Set();
-      
-      // Match digitalWrite(pin, state) calls
-      const digitalWriteRegex = /digitalWrite\s*\(\s*(\w+|\d+)\s*,\s*(HIGH|LOW)\s*\)/g;
-      // Match delay(ms) calls
-      const delayRegex = /delay\s*\(\s*(\d+)\s*\)/g;
-      
-      // Combined regex that matches both calls while preserving their order
-      const combinedRegex = /digitalWrite\s*\(\s*(\w+|\d+)\s*,\s*(HIGH|LOW)\s*\)|delay\s*\(\s*(\d+)\s*\)/g;
-      
-      // Extract operations in sequence
-      let opMatch;
-      while ((opMatch = combinedRegex.exec(loopContent)) !== null) {
-        if (opMatch[1] !== undefined && opMatch[2] !== undefined) {
-          // This is a digitalWrite operation
-          let pin = opMatch[1];
-          const state = opMatch[2];
-          
-          // Handle LED_BUILTIN constant
-          if (pin === 'LED_BUILTIN') {
-            pin = '13';
-          } else if (isNaN(parseInt(pin, 10))) {
-            console.log(`Warning: Found non-numeric pin reference "${pin}" in code, using pin 13 as fallback`);
-            pin = '13';
-          }
-          
-          pins.add(pin.toString());
-          sequence.push({
-            action: 'digitalWrite',
-            pin: pin.toString(),
-            state
-          });
-          
-          console.log(`Found digitalWrite: pin ${pin}, state ${state}`);
-        } else if (opMatch[3] !== undefined) {
-          // This is a delay operation
-          const ms = parseInt(opMatch[3], 10);
-          
-          sequence.push({
-            action: 'delay',
-            ms
-          });
-          
-          console.log(`Found delay: ${ms}ms`);
+        // Call the onPinChange callback
+        if (onPinChange) {
+          onPinChange(pin, newPins[pin]);
         }
       }
       
-      // If we couldn't find any meaningful operations, default to basic blink
-      if (sequence.length === 0) {
-        console.log('No operations found in loop, using default blink sequence');
-        sequence.push({ action: 'digitalWrite', pin: '13', state: 'HIGH' });
-        sequence.push({ action: 'delay', ms: 1000 });
-        sequence.push({ action: 'digitalWrite', pin: '13', state: 'LOW' });
-        sequence.push({ action: 'delay', ms: 1000 });
-        pins.add('13');
-      }
+      // Update pins state
+      setPins(newPins);
+    }, delay); // Use the detected delay value
+    
+    // Save the interval ID for cleanup
+    setIntervalId(id);
+    
+    // Log information
+    logInfo('Simulation started');
+  };
+  
+  // Stop the simulation
+  const stopSimulation = () => {
+    if (intervalId) {
+      clearInterval(intervalId);
+      setIntervalId(null);
       
-      console.log('Parsed sequence:', sequence);
-      
-      return {
-        sequence,
-        pins: Array.from(pins)
-      };
-    } catch (error) {
-      console.error('Error parsing Arduino code:', error);
-      // Return default sequence if parsing fails
-      return {
-        sequence: [
-          { action: 'digitalWrite', pin: '13', state: 'HIGH' },
-          { action: 'delay', ms: 1000 },
-          { action: 'digitalWrite', pin: '13', state: 'LOW' },
-          { action: 'delay', ms: 1000 }
-        ],
-        pins: ['13']
-      };
+      // Log information
+      logInfo('Simulation stopped');
     }
   };
-
-  // Start/stop simulation based on props
+  
+  // Compile code when it changes
+  useEffect(() => {
+    if (code) {
+      const compiled = compileCode(code);
+      setCompiledCode(compiled);
+    }
+  }, [code]);
+  
+  // Load libraries when detected
+  useEffect(() => {
+    loadRequiredLibraries();
+  }, [detectedLibraries]);
+  
+  // Start/stop simulation when isRunning changes
   useEffect(() => {
     if (isRunning) {
-      try {
-        console.log('AVR8 simulator initialized');
-        
-        // Parse the Arduino code into a sequence of operations
-        const { sequence, pins: activePins } = parseArduinoCode(code);
-        
-        console.log('Detected active pins:', activePins);
-        console.log('Operations sequence:', sequence);
-        
-        // Current position in the sequence
-        let currentStep = 0;
-        let timeoutId = null;
-        
-        // Function to update pin state based on digitalWrite action
-        const setPinState = (pin, state) => {
-          try {
-            const isHigh = state === 'HIGH';
-            console.log(`Executing digitalWrite: pin ${pin} -> ${state}`);
-            
-            // Update pin state in the simulator context
-            updatePinState(`D${pin}`, isHigh);
-            
-            // Create a function to update components to avoid React update issues
-            const updateComponents = () => {
-              try {
-                // Find the HERO board component
-                const heroBoard = components?.find(c => c?.type === 'heroboard');
-                if (heroBoard) {
-                  // Update the pin state in our component state tracking
-                  updateComponentPins(heroBoard.id, { [pin]: isHigh });
-                  
-                  // Also notify the parent component
-                  onPinChange(parseInt(pin), isHigh);
-                }
-                
-                // Update any connected components (LEDs, etc.)
-                updateConnectedComponents(parseInt(pin), isHigh);
-              } catch (err) {
-                console.error('Error in updateComponents:', err);
-              }
-            };
-            
-            // Execute component updates outside React cycle
-            setTimeout(updateComponents, 0);
-            
-            // Add log entry
-            if (typeof addLog === 'function') {
-              addLog(`Pin ${pin} set to ${state}`);
-            }
-          } catch (err) {
-            console.error('Error in setPinState:', err);
-          }
-        };
-        
-        // Function to execute each step in sequence
-        const executeNextStep = () => {
-          try {
-            if (!isRunning) return; // Safety check
-            
-            // Get the current operation
-            const operation = sequence[currentStep];
-            
-            // Execute the current operation
-            if (operation.action === 'digitalWrite') {
-              setPinState(operation.pin, operation.state);
-            } else if (operation.action === 'delay') {
-              console.log(`Executing delay: ${operation.ms}ms`);
-              
-              // Log the delay action
-              if (typeof addLog === 'function') {
-                addLog(`Delay for ${operation.ms}ms`);
-              }
-            }
-            
-            // Move to the next step (or loop back to beginning)
-            currentStep = (currentStep + 1) % sequence.length;
-            
-            // Schedule the next operation
-            const nextDelay = operation.action === 'delay' ? operation.ms : 0;
-            timeoutId = setTimeout(executeNextStep, nextDelay);
-          } catch (err) {
-            console.error('Error in executeNextStep:', err);
-            // Try to recover by scheduling the next step
-            timeoutId = setTimeout(executeNextStep, 1000);
-          }
-        };
-        
-        // Start the simulation
-        timeoutId = setTimeout(executeNextStep, 10); // Start immediately
-        
-        // Store the timeout ID for cleanup
-        return () => {
-          if (timeoutId) {
-            clearTimeout(timeoutId);
-          }
-          console.log('AVR8 simulator stopped');
-        };
-      } catch (error) {
-        console.error('Error in simulation setup:', error);
-        return () => {
-          console.log('Error cleanup');
-        };
-      }
+      startSimulation();
+    } else {
+      stopSimulation();
     }
     
+    // Cleanup on unmount
     return () => {
-      // Cleanup on unmount
-      if (isRunning) {
-        // Don't call stopSimulation() here to avoid update loops
-        console.log('Simulator cleanup on unmount');
-      }
+      stopSimulation();
     };
-  }, [isRunning, code]); // Only depend on these two variables to prevent update loops
+  }, [isRunning, compiledCode, delay]);
   
-  // When pin states change, notify parent component
+  // For debugging - display the list of loaded libraries
   useEffect(() => {
-    try {
-      if (!isRunning) return; // Only process pin changes when simulation is running
-      
-      // For example, when pin D13 (LED_BUILTIN) changes state
-      const pinD13State = pinStates.D13;
-      if (pinD13State !== undefined) {
-        // Only call this directly for pin 13 (our standard example)
-        // Use a stable reference to avoid dependency loops
-        const pin13Value = !!pinD13State; // Convert to boolean
-        console.log(`Processing pin D13 state change to ${pin13Value}`);
-        updateComponentPins('heroboard', { '13': pin13Value });
-      }
-      
-      // Process all digital pins - using a copy to avoid dependency issues
-      const pinStateEntries = Object.entries(pinStates || {})
-        .filter(([pin]) => pin.startsWith('D'));
-      
-      if (pinStateEntries.length > 0) {
-        // Isolate this in a separate function to avoid dependency loop
-        setTimeout(() => {
-          try {
-            pinStateEntries.forEach(([pin, state]) => {
-              const pinNumber = parseInt(pin.substring(1), 10);
-              // Store in local variables to break circular dependencies
-              const currentPin = pinNumber;
-              const currentState = !!state; // Convert to boolean
-              
-              // Call the update function directly
-              if (updateComponentPins && typeof updateComponentPins === 'function') {
-                // Find connected components and update them using a more stable method
-                components.forEach(comp => {
-                  if (comp && comp.type === 'heroboard') {
-                    updateComponentPins(comp.id, { [currentPin]: currentState });
-                  }
-                });
-              }
-            });
-          } catch (err) {
-            console.error('Error processing pin states:', err);
-          }
-        }, 0);
-      }
-    } catch (error) {
-      console.error('Error in pin state effect:', error);
+    if (loadedLibraries.length > 0) {
+      console.log('Currently loaded libraries:', loadedLibraries);
     }
-  }, [pinStates, isRunning]); // Remove onPinChange from dependencies
+  }, [loadedLibraries]);
   
-  // Find components connected to the given pin and update their state
-  const updateConnectedComponents = (pinNumber, isHigh) => {
-    try {
-      // Log the pin change for debugging
-      console.log(`Checking components connected to pin ${pinNumber}, state=${isHigh}`);
-      
-      // SPECIAL CASE: For pin 13, ALWAYS update the built-in LED on all heroboards
-      if (pinNumber === 13) {
-        // Find all HERO boards
-        const heroBoards = components?.filter(c => c?.type?.toLowerCase() === 'heroboard') || [];
-        
-        // Update each HERO board's pin 13 LED
-        heroBoards.forEach(board => {
-          if (board && board.id) {
-            console.log(`Directly updating HERO board ${board.id} pin 13 LED to ${isHigh ? 'HIGH' : 'LOW'}`);
-            updateComponentPins(board.id, { '13': isHigh });
-          }
-        });
-      }
-      
-      // Process pin updates for all pins
-      // Now handling all pins, not just 9-13
-      if (pinNumber >= 0 && pinNumber <= 19) {
-        // First, try to find regular LEDs connected through wires (directly or through resistors)
-        const connectedLEDs = findConnectedComponents('led', pinNumber, true);
-        
-        // Also check for RGB LEDs connected to this pin
-        const connectedRGBLEDs = findConnectedComponents('rgbled', pinNumber, true);
-        
-        let componentsUpdated = false;
-        
-        // Update regular LEDs
-        if (connectedLEDs && connectedLEDs.length > 0) {
-          console.log(`Found ${connectedLEDs.length} LEDs connected to pin ${pinNumber}`);
-          componentsUpdated = true;
-          
-          // Update each connected LED
-          connectedLEDs.forEach(led => {
-            if (led && led.id) {
-              console.log(`Updating LED ${led.id} to ${isHigh ? 'ON' : 'OFF'}`);
-              
-              // Update the LED state via onPinChange callback
-              onPinChange(
-                { componentId: led.id, type: 'led' },
-                isHigh
-              );
-            }
-          });
-        }
-        
-        // Update RGB LEDs
-        if (connectedRGBLEDs && connectedRGBLEDs.length > 0) {
-          console.log(`Found ${connectedRGBLEDs.length} RGB LEDs connected to pin ${pinNumber}`);
-          componentsUpdated = true;
-          
-          // Update each connected RGB LED
-          // For RGB LED, we need to determine which color channel to update based on pin
-          connectedRGBLEDs.forEach(rgbled => {
-            if (rgbled && rgbled.id) {
-              console.log(`Updating RGB LED ${rgbled.id} pin ${pinNumber} to ${isHigh ? 'ON' : 'OFF'}`);
-              
-              // Map pins to RGB colors (simplified mapping)
-              // In a real project, this would use the actual pin mapping from the component
-              const colorMap = {
-                9: 'red',
-                10: 'green',
-                11: 'blue',
-                12: 'red',   // Fallback
-                13: 'green'  // Fallback
-              };
-              
-              const color = colorMap[pinNumber] || 'all';
-              
-              // Update the RGB LED state via onPinChange callback
-              onPinChange(
-                { 
-                  componentId: rgbled.id, 
-                  type: 'rgbled',
-                  color: color  // Pass which color channel should be updated
-                },
-                isHigh
-              );
-            }
-          });
-        }
-        
-        // Only update connected components - remove fallback mechanism
-        if (!componentsUpdated) {
-          console.log(`No components connected to pin ${pinNumber} found - nothing to update`);
-          
-          // Log information about what we were looking for
-          console.log(`Was looking for components connected to pin ${pinNumber} with state=${isHigh}`);
-          console.log(`Available components: ${components?.length || 0}`);
-          console.log(`Available wires: ${wires?.length || 0}`);
-          
-          // SPECIAL CASE: For pin 13 on the HERO board itself (built-in LED)
-          if (pinNumber === 13) {
-            // Always update the heroboard's pin 13 LED directly
-            const heroBoards = components?.filter(c => c?.type?.toLowerCase() === 'heroboard') || [];
-            if (heroBoards.length > 0) {
-              heroBoards.forEach(board => {
-                if (board && board.id) {
-                  console.log(`Directly updating HERO board ${board.id} built-in pin 13 LED to ${isHigh ? 'ON' : 'OFF'}`);
-                  updateComponentPins(board.id, { '13': isHigh });
-                }
-              });
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error in updateConnectedComponents:', error);
-    }
-  };
-  
-  // Helper to find components of a given type connected to a pin (directly or through resistors)
-  const findConnectedComponents = (componentType, pinNumber, checkPassiveComponents = false) => {
-    try {
-      // Find the HERO board (Arduino) component
-      const heroBoard = components?.find(c => c?.type === 'heroboard');
-      if (!heroBoard) {
-        console.log('No HERO board found in components');
-        return [];
-      }
-      
-      // Add null check for heroBoard.id
-      if (!heroBoard.id) {
-        console.log('HERO board found but has no ID');
-        return [];
-      }
-      
-      // Log wire connection check for any pin (to debug the connection issue)
-      console.log(`Looking for ${componentType} components connected to pin ${pinNumber} (with passive component check: ${checkPassiveComponents})`);
-      console.log(`HERO board ID: ${heroBoard.id}`);
-      console.log(`Available wires from context: ${wires?.length || 0}`);
-      console.log(`Available components: ${components?.length || 0}`);
-      
-      // Try multiple formats of pin IDs to handle different naming patterns
-      const possiblePinFormats = [
-        `pt-heroboard-${heroBoard.id}-${pinNumber}`,        // Standard format
-        `pt-heroboard-heroboard-${heroBoard.id}-${pinNumber}`, // Expanded format
-        `pt-heroboard-${heroBoard.id}-D${pinNumber}`,       // Digital pin format
-        `pt-heroboard-heroboard-${heroBoard.id}-D${pinNumber}`, // Expanded digital format
-        `pt-heroboard-${heroBoard.id}-digital-${pinNumber}`, // Alternate digital pin format
-        `pt-heroboard-${heroBoard.id}-${pinNumber}`,        // Standard format as string
-        `${pinNumber}`,                                     // Just the pin number
-        pinNumber.toString()                               // Pin number as string
-      ];
-      
-      // Log potential pin formats
-      console.log("Possible pin formats:", possiblePinFormats);
-      
-      if (!Array.isArray(wires)) {
-        console.log('Wires is not an array, returning empty result');
-        return [];
-      }
-      
-      // More detailed wire checking - log each wire's source and target for easier debugging
-      wires.forEach(wire => {
-        if (wire && wire.sourceId && wire.targetId) {
-          console.log(`Wire: ${wire.sourceName || 'unknown'} (${wire.sourceId}) -> ${wire.targetName || 'unknown'} (${wire.targetId})`);
-        }
-      });
-      
-      // Find wires connected to any of these pin formats
-      const connectedWires = wires.filter(wire => {
-        if (!wire || !wire.sourceId || !wire.targetId) return false;
-        
-        // Check if the source or target contains any of the pin formats
-        return possiblePinFormats.some(pinFormat => 
-          wire.sourceId?.includes(pinFormat) || 
-          wire.targetId?.includes(pinFormat)
-        );
-      });
-      
-      console.log(`Found ${connectedWires.length} wires connected to pin ${pinNumber}`);
-      
-      // Set to track visited component IDs for cycle detection
-      const visitedComponents = new Set();
-      
-      // Find connected components
-      const connectedComponents = [];
-      
-      // Helper function to recursively trace connections through components
-      const traceConnections = (wire, targetType, visitedWires = new Set()) => {
-        try {
-          // Don't process the same wire twice (prevents cycles)
-          if (!wire || !wire.id || visitedWires.has(wire.id)) return [];
-          visitedWires.add(wire.id);
-          
-          // Determine which end is connected to the source we're tracing from
-          const isSourceHeroBoard = possiblePinFormats.some(format => wire.sourceId?.includes(format));
-          const isSourceVisited = Array.from(visitedComponents).some(id => wire.sourceId?.includes(id));
-          
-          // Get the other end ID (either source or target depending on context)
-          let otherEndId;
-          if (isSourceHeroBoard || isSourceVisited) {
-            otherEndId = wire.targetId;
-          } else {
-            otherEndId = wire.sourceId;
-          }
-          
-          console.log(`Tracing from wire ${wire.id}: ${wire.sourceId} -> ${wire.targetId}`);
-          console.log(`Other end ID: ${otherEndId}`);
-          
-          // If no other end, skip this wire
-          if (!otherEndId) return [];
-          
-          const otherEndParts = otherEndId.split('-');
-          if (otherEndParts.length < 3) return [];
-          
-          // Direct lookup in the components list first - most reliable method
-          const directMatch = components?.find(comp => 
-            comp && comp.id && otherEndId.includes(comp.id) && 
-            comp.type?.toLowerCase() === targetType.toLowerCase()
-          );
-          
-          if (directMatch) {
-            console.log(`Found direct component match: ${directMatch.type} ${directMatch.id}`);
-            return [directMatch];
-          }
-          
-          // If no direct match, extract type and ID from the pin ID
-          let compType = '';
-          let compId = '';
-          
-          if (otherEndId.includes('led-')) {
-            compType = 'led';
-            // Try to extract the full LED ID
-            const matches = otherEndId.match(/led-[a-z0-9]+/);
-            if (matches && matches.length > 0) {
-              compId = matches[0];
-            }
-          } else if (otherEndId.includes('rgbled-')) {
-            compType = 'rgbled';
-            const matches = otherEndId.match(/rgbled-[a-z0-9]+/);
-            if (matches && matches.length > 0) {
-              compId = matches[0];
-            }
-          } else {
-            // Standard format extraction
-            compType = otherEndParts[1]?.toLowerCase();
-            compId = otherEndParts[2];
-          }
-          
-          console.log(`Extracted: type=${compType}, id=${compId}`);
-          
-          // Add to visited components
-          if (compId) {
-            visitedComponents.add(compId);
-          }
-          
-          // If this matches our target type, look for the component
-          if (compType === targetType.toLowerCase()) {
-            const foundComponent = components?.find(c => c && c.id === compId);
-            if (foundComponent) {
-              console.log(`Found target component: ${foundComponent.type} ${foundComponent.id}`);
-              return [foundComponent];
-            }
-          }
-          
-          // Last resort for LED components - just try to find ANY LED
-          if (targetType.toLowerCase() === 'led' && compType === 'led') {
-            const anyLed = components?.find(c => c && c.type?.toLowerCase() === 'led');
-            if (anyLed) {
-              console.log(`Last resort: Using available LED ${anyLed.id}`);
-              return [anyLed];
-            }
-          }
-          
-          // If this is a passive component, trace through it
-          const isPassiveComponent = 
-            compType === 'resistor' || 
-            compType === 'capacitor' || 
-            compType === 'jumper';
-          
-          if (checkPassiveComponents && isPassiveComponent) {
-            console.log(`Found passive component ${compType}, tracing through it...`);
-            
-            // Get all other wires connected to this passive component
-            const connectedPassiveWires = wires.filter(w => 
-              w && w.id !== wire.id && // Skip the wire we came from
-              (w.sourceId?.includes(compId) || w.targetId?.includes(compId))
-            );
-            
-            console.log(`Found ${connectedPassiveWires.length} other wires connected to ${compType}`);
-            
-            // Recursively trace through each connected wire
-            const foundComponents = [];
-            
-            connectedPassiveWires.forEach(nextWire => {
-              if (nextWire && nextWire.id && !visitedWires.has(nextWire.id)) {
-                const traced = traceConnections(nextWire, targetType, visitedWires);
-                if (traced && traced.length > 0) {
-                  foundComponents.push(...traced);
-                }
-              }
-            });
-            
-            return foundComponents;
-          }
-          
-          return [];
-        } catch (err) {
-          console.error('Error in traceConnections:', err);
-          return [];
-        }
-      };
-      
-      // Make sure each wire has a unique ID for tracing
-      const wiresWithIds = connectedWires.map((wire, index) => {
-        if (!wire.id) {
-          return { ...wire, id: `wire-${index}` };
-        }
-        return wire;
-      });
-      
-      // Trace connections from each wire connected to the pin
-      wiresWithIds.forEach(wire => {
-        if (wire) {
-          const found = traceConnections(wire, componentType);
-          if (found && found.length > 0) {
-            connectedComponents.push(...found);
-          }
-        }
-      });
-      
-      // Remove duplicates
-      const uniqueComponents = [];
-      const addedIds = new Set();
-      
-      connectedComponents.forEach(comp => {
-        if (comp && comp.id && !addedIds.has(comp.id)) {
-          addedIds.add(comp.id);
-          uniqueComponents.push(comp);
-        }
-      });
-      
-      console.log(`Returning ${uniqueComponents.length} ${componentType} components`);
-      return uniqueComponents;
-    } catch (error) {
-      console.error('Error in findConnectedComponents:', error);
-      return [];
-    }
-  };
-  
-  // This component doesn't render anything visible
+  // The component doesn't render anything
   return null;
 };
 
