@@ -2,6 +2,7 @@ import { Route, Switch } from "wouter";
 import { useEffect, useState } from "react";
 import Home from "@/pages/home";
 import DesktopHome from "@/pages/desktop-home";
+import Desktop from "@/pages/desktop"; // Import the new Desktop page
 import AuthPage from "@/pages/auth-page";
 import Quests from "@/pages/quests";
 import QuestDetail from "@/pages/quest-detail";
