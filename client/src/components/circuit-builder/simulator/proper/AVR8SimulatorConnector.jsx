@@ -37,35 +37,49 @@ const AVR8SimulatorConnector = ({
   
   // Initialize the emulator
   useEffect(() => {
-    // Create a new emulator instance with callbacks
-    const emulator = new AVR8Emulator({
-      onPinChange: (pin, isHigh) => {
-        if (onPinChange) {
-          onPinChange(pin, isHigh);
+    try {
+      // Create a new emulator instance with callbacks
+      const emulator = new AVR8Emulator({
+        onPinChange: (pin, isHigh) => {
+          if (onPinChange) {
+            onPinChange(pin, isHigh);
+          }
+        },
+        onSerialByte: (value, char) => {
+          if (onSerialData) {
+            onSerialData(value, char);
+          }
+        },
+        onError: (message) => {
+          logInfo(message);
         }
-      },
-      onSerialByte: (value, char) => {
-        if (onSerialData) {
-          onSerialData(value, char);
+      });
+      
+      emulatorRef.current = emulator;
+      
+      // Log setup complete
+      logInfo('AVR8 simulator initialized');
+      
+      // Load a test program right away
+      const testProgram = new Uint16Array([
+        0x2411, 0x2400, 0xBE1F, 0x2482, 0xBB12, 0x2C00, 0xBC12, 0x2EE2,
+        0xBF27, 0x95E8, 0xCFFE, 0x95E8, 0xCFFE, 0x94F0
+      ]);
+      
+      // Attempt to load the program
+      emulator.loadProgram(testProgram);
+      
+      // Cleanup on unmount
+      return () => {
+        if (emulatorRef.current) {
+          emulatorRef.current.stop();
+          emulatorRef.current = null;
         }
-      },
-      onError: (message) => {
-        logInfo(message);
-      }
-    });
-    
-    emulatorRef.current = emulator;
-    
-    // Log setup complete
-    logInfo('AVR8 simulator initialized');
-    
-    // Cleanup on unmount
-    return () => {
-      if (emulatorRef.current) {
-        emulatorRef.current.stop();
-        emulatorRef.current = null;
-      }
-    };
+      };
+    } catch (error) {
+      console.error('Error initializing AVR8 emulator:', error);
+      logInfo(`Error initializing emulator: ${error.message}`);
+    }
   }, []);
   
   // Effect to handle code changes
