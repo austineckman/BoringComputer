@@ -64,9 +64,11 @@ const OLEDDisplayRenderer = ({ componentId }) => {
         return oledComponents[0].src;
       }
 
-      // Fallback to a hardcoded path if everything else fails
-      console.log("Using fallback image path");
-      return '/attached_assets/oled-display.icon.png';
+      // Direct fallback to a known OLED image path
+      console.log("Using fallback image path for OLED display");
+      // Try to use a path relative to the current page
+      const oledPath = '/attached_assets/oled-display.icon.png';
+      return oledPath;
     };
 
     // Analyze the component image to find the black rectangle
@@ -74,28 +76,52 @@ const OLEDDisplayRenderer = ({ componentId }) => {
       try {
         const imageSrc = findComponentImage();
         if (imageSrc) {
-          console.log("Analyzing image:", imageSrc);
+          console.log("Analyzing OLED image:", imageSrc);
           const rect = await findRectangleWithCache(imageSrc);
-          console.log("Found black rectangle:", rect);
-          setDisplayRect(rect);
+          console.log("Found black rectangle in OLED:", rect);
+          
+          // Verify that the detected rectangle is reasonable
+          // Avoid results that are too large (whole component) or too small
+          if (rect.width < 15 || rect.height < 15) {
+            console.warn("Detected rectangle is too small, using manual values");
+            // For OLED display, the black rectangle is typically in the center
+            // and takes up about 60-70% of the width, positioned about 1/3 down from the top
+            setDisplayRect({
+              x: 20,
+              y: 35,
+              width: 88,
+              height: 30
+            });
+          } else if (rect.width > 110 || rect.height > 110) {
+            console.warn("Detected rectangle is too large, using manual values");
+            setDisplayRect({
+              x: 20,
+              y: 35,
+              width: 88,
+              height: 30
+            });
+          } else {
+            // Use detected values
+            setDisplayRect(rect);
+          }
         } else {
-          console.error("Could not find component image");
-          // Use fallback values
+          console.error("Could not find OLED component image");
+          // Use hardcoded values based on known OLED component structure
           setDisplayRect({
             x: 20,
-            y: 25,
-            width: 90,
-            height: 40
+            y: 35,
+            width: 88,
+            height: 30
           });
         }
       } catch (error) {
-        console.error("Error in image analysis:", error);
-        // Use fallback values
+        console.error("Error in OLED image analysis:", error);
+        // Use hardcoded values
         setDisplayRect({
           x: 20,
-          y: 25,
-          width: 90,
-          height: 40
+          y: 35,
+          width: 88,
+          height: 30
         });
       }
     };
@@ -103,7 +129,7 @@ const OLEDDisplayRenderer = ({ componentId }) => {
     // Wait for the canvas to be mounted before running the analysis
     if (canvasRef.current) {
       // Give a slight delay to ensure component is fully rendered
-      setTimeout(analyzeComponentImage, 100);
+      setTimeout(analyzeComponentImage, 200);
     }
   }, [componentId]); // Only run when componentId changes
   
@@ -399,13 +425,14 @@ const OLEDDisplayRenderer = ({ componentId }) => {
         className="oled-display-glow"
         style={{
           position: 'absolute',
-          top: '25px',
-          left: '25px',
-          width: '80px',
+          top: '35px',
+          left: '20px',
+          width: '88px',
           height: '30px',
           backgroundColor: '#000',
           borderRadius: '2px',
           boxShadow: '0 0 10px 2px rgba(0, 150, 255, 0.6)',
+          animation: 'oled-glow 2s infinite ease-in-out',
           overflow: 'hidden',
           zIndex: 10
         }}
