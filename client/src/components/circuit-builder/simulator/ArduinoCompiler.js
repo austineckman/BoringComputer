@@ -81,26 +81,39 @@ function checkBasicSyntaxErrors(code, errors) {
     });
   }
   
-  // Check for missing semicolons in statements (simple check)
+  // Check for missing semicolons in statements (improved check)
   const lines = code.split('\n');
   lines.forEach((line, index) => {
-    const trimmed = line.trim();
-    if (trimmed && 
-        !trimmed.startsWith('//') && 
-        !trimmed.startsWith('/*') && 
-        !trimmed.endsWith('*/') && 
-        !trimmed.endsWith('{') && 
-        !trimmed.endsWith('}') && 
-        !trimmed.endsWith(';')) {
-      
-      // This is a very simple check and will have false positives
-      if (!trimmed.includes('for') && !trimmed.includes('if') && !trimmed.includes('while')) {
-        errors.push({ 
-          line: index + 1, 
-          message: 'Possible missing semicolon' 
-        });
-      }
-    }
+    // Ignore empty lines or comment-only lines
+    if (!line.trim()) return;
+    if (line.trim().startsWith('//')) return;
+    if (line.trim().startsWith('/*')) return;
+    if (line.trim().endsWith('*/')) return;
+    
+    // Skip lines that shouldn't end with semicolons
+    if (line.trim().endsWith('{')) return;
+    if (line.trim().endsWith('}')) return;
+    if (line.trim().endsWith(';')) return;
+    if (line.trim().endsWith(',')) return; // Handle comma-separated lists
+    if (line.trim().match(/^\s*#include/)) return; // Preprocessor directives
+    if (line.trim().match(/^\s*#define/)) return; // Preprocessor directives
+    
+    // Skip control structures that don't need semicolons
+    if (line.trim().match(/^\s*(if|for|while|switch|else)\s*\(/)) return;
+    if (line.trim().match(/^\s*else\s*$/)) return;
+    
+    // Skip class/function declarations
+    if (line.trim().match(/^\s*(class|struct|enum)\s+\w+/)) return;
+    if (line.trim().match(/^\s*(void|int|bool|char|float|double|unsigned|long|short|byte|String|size_t)\s+\w+\s*\(/)) return;
+    
+    // Skip multiline comments
+    if (line.includes('/*') && !line.includes('*/')) return;
+    
+    // This is still a simple check but with fewer false positives
+    errors.push({ 
+      line: index + 1, 
+      message: 'Missing semicolon' 
+    });
   });
   
   // Check for common Arduino-specific errors

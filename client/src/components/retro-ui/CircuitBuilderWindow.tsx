@@ -1,6 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, RotateCcw, Trash2, ZoomIn, ZoomOut, Move, Play, Save, FileCode, Download } from 'lucide-react';
-import ace from 'ace-builds';
+import AceEditor from 'react-ace';
+
+// Import Arduino syntax highlighting and theme
+import 'ace-builds/src-noconflict/mode-c_cpp';
+import 'ace-builds/src-noconflict/theme-monokai';
+import 'ace-builds/src-noconflict/ext-language_tools';
+
 import { oledDisplayExample, sevenSegmentExample, keypadExample, rotaryEncoderExample, multiLibraryExample } from '../circuit-builder/simulator/exampleLibraryCode';
 
 // Import our CircuitBuilder component
@@ -903,14 +909,32 @@ void loop() {
         
         <div className="flex-1 flex">
           <div className="flex-1">
-            <textarea 
-              ref={editorRef}
+            <AceEditor
+              mode="c_cpp"
+              theme="monokai"
+              name="arduino-code-editor"
               value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="w-full h-full bg-gray-900 text-gray-100 p-4 text-sm resize-vertical overflow-auto outline-none border-none font-mono"
-              style={{ fontSize: '14px', minHeight: '200px' }}
-              spellCheck="false"
-            ></textarea>
+              onChange={(newCode) => setCode(newCode)}
+              width="100%"
+              height="100%"
+              fontSize={14}
+              showPrintMargin={true}
+              showGutter={true}
+              highlightActiveLine={true}
+              wrapEnabled={false}
+              setOptions={{
+                enableBasicAutocompletion: true,
+                enableLiveAutocompletion: true,
+                enableSnippets: true,
+                showLineNumbers: true,
+                tabSize: 2,
+              }}
+              style={{
+                fontFamily: "'Source Code Pro', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace",
+                backgroundColor: "#1E1E1E",
+                minHeight: '200px'
+              }}
+            />
           </div>
           
           <div className="w-1/3 p-2">
