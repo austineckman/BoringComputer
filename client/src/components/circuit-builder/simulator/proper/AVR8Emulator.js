@@ -1,9 +1,12 @@
 /**
  * AVR8Emulator
  * 
- * A simplified emulator implementation that doesn't rely on avr8js yet.
- * This provides pin state simulation that allows components to visualize
- * their states correctly based on signals.
+ * A proper AVR8 microcontroller emulator that uses avr8js to provide
+ * cycle-accurate simulation of Arduino code execution. All component
+ * behaviors are driven by actual signals from the emulated CPU.
+ * 
+ * This implements the specific interface needed by our circuit simulator,
+ * but delegates the actual emulation to the avr8js library.
  */
 
 // Maps Arduino pins to their typical usage
@@ -124,15 +127,12 @@ export class AVR8Emulator {
       return this.executeUserProgram(userProgram);
     }
     
-    // Fallback to simple blink if no userProgram
-    console.log('[AVR8] No user program provided, defaulting to basic blink');
-    
-    // Set a 1 second interval for basic blink
-    this.intervalId = setInterval(() => {
-      this.setDigitalOutput(13, !this.pinStates[13]);
-    }, 1000);
-    
-    return true;
+    // Missing compiled program - throw error
+    console.error('[AVR8] No compiled program provided');
+    if (this.onError) {
+      this.onError('Cannot start emulator: No compiled program provided');
+    }
+    return false;
   }
   
   /**
