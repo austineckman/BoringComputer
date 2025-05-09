@@ -114,6 +114,28 @@ export const SimulatorProvider = ({ children }) => {
     setWires
   };
   
+  // Also expose the context to the window for non-React components
+  useEffect(() => {
+    window.simulatorContext = {
+      code,
+      logs,
+      isRunning,
+      components,
+      wires,
+      componentStates,
+      startSimulation,
+      stopSimulation,
+      addLog
+    };
+    
+    console.log("Simulator context updated with code:", code);
+    
+    return () => {
+      // Clean up when unmounted
+      window.simulatorContext = undefined;
+    };
+  }, [code, logs, isRunning, components, wires, componentStates]);
+  
   return (
     <SimulatorContext.Provider value={contextValue}>
       {children}
