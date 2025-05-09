@@ -22,13 +22,12 @@ import adminQuestGeneratorRoutes from './routes/admin-quest-generator';
 import adminQuestsSaveRoutes from './routes/admin-quests-save';
 import adventureLinesRoutes from './routes/adventure-lines';
 import oracleRoutes from './routes/oracle';
-// Temporarily disabled while updating schema
-// import lootboxesRoutes from './routes/lootboxes';
-// import lootboxRewardsRoutes from './routes/lootboxRewards';
+import lootboxesRoutes from './routes/lootboxes';
+import lootboxRewardsRoutes from './routes/lootboxRewards';
 import { authenticate, hashPassword } from './auth';
 import { conditionalCsrfProtection, getCsrfToken, handleCsrfError } from './middleware/csrf';
 import { addSecurityHeaders } from './middleware/security-headers';
-import { components } from '@shared/schema';
+import { componentKits, items } from '@shared/schema';
 import { itemDatabase } from './itemDatabase';
 import { eq } from 'drizzle-orm';
 
@@ -1480,8 +1479,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/crafting/recipes/:id', authenticate, adminAuth, craftingRecipeRoutes.deleteCraftingRecipe);
   app.post('/api/crafting/craft', authenticate, craftingRecipeRoutes.craftItem);
   
-  // Character equipment routes - temporarily disabled while updating schema
-  // app.use('/api/character', authenticate, characterRoutes);
+  // Character equipment routes
+  app.use('/api/character', authenticate, characterRoutes);
   
   // Title management routes
   // This route is now defined below
@@ -1659,9 +1658,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Public component kits endpoint - available to all users without authentication
   app.get('/api/kits', async (req, res) => {
     try {
-      // Temporarily commenting this out while we update schema
-      // const allKits = await db.select().from(componentKits);
-      const allKits = [];
+      const allKits = await db.select().from(componentKits);
       res.json(allKits);
     } catch (error) {
       console.error('Error fetching component kits:', error);
@@ -1675,16 +1672,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the basic items from the item database
       const allItems = Object.values(itemDatabase);
       
-      // Temporarily commented out while we update schema
-      // try {
-      //   const adminItems = await db.select().from(items);
-      //   if (adminItems && adminItems.length > 0) {
-      //     allItems.push(...adminItems);
-      //   }
-      // } catch (dbError) {
-      //   console.error('Could not fetch admin items:', dbError);
-      //   // Continue with basic items only
-      // }
+      // Add custom items from the database if available
+      try {
+        const adminItems = await db.select().from(items);
+        if (adminItems && adminItems.length > 0) {
+          allItems.push(...adminItems);
+        }
+      } catch (dbError) {
+        console.error('Could not fetch admin items:', dbError);
+        // Continue with basic items only
+      }
       
       res.json(allItems);
     } catch (error) {
@@ -1729,40 +1726,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const itemRemoved = removeItem(itemId);
       console.log(`Item removed from itemDatabase: ${itemRemoved}`);
       
-      // Temporarily commented out database deletion while updating schema
-      // try {
-      //   const deletedItems = await db
-      //     .delete(items)
-      //     .where(eq(items.id, itemId))
-      //     .returning();
-      //   
-      //   console.log(`Items deleted from database: ${deletedItems.length}`);
-      //   
-      //   // Return success if either operation was successful
-      //   if (itemRemoved || deletedItems.length > 0) {
-      //     return res.json({ 
-      //       success: true, 
-      //       message: 'Item deleted successfully'
-      //     });
-      //   }
-      // } catch (dbError) {
-      //   console.error('Error deleting item from database:', dbError);
-      //   // If we deleted from itemDatabase but failed with the DB, still return success
-      //   if (itemRemoved) {
-      //     return res.json({ 
-      //       success: true, 
-      //       message: 'Item deleted from memory but encountered database error',
-      //       error: dbError.message
-      //     });
-      //   }
-      // }
-      
-      // Just handle the success case directly for now
-      if (itemRemoved) {
-        return res.json({ 
-          success: true, 
-          message: 'Item deleted successfully'
-        });
+      // Also try to delete from the database if it exists there
+      try {
+        const deletedItems = await db
+          .delete(items)
+          .where(eq(items.id, itemId))
+          .returning();
+        
+        console.log(`Items deleted from database: ${deletedItems.length}`);
+        
+        // Return success if either operation was successful
+        if (itemRemoved || deletedItems.length > 0) {
+          return res.json({ 
+            success: true, 
+            message: 'Item deleted successfully'
+          });
+        }
+      } catch (dbError) {
+        console.error('Error deleting item from database:', dbError);
+        // If we deleted from itemDatabase but failed with the DB, still return success
+        if (itemRemoved) {
+          return res.json({ 
+            success: true, 
+            message: 'Item deleted from memory but encountered database error',
+            error: dbError.message
+          });
+        }
       }
       
       // If we reached here, both operations failed or found no items
@@ -1781,24 +1770,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin routes
-  // Temporarily disable admin routes while we update the schema
-  // app.use('/api/admin', authenticate, adminRoutes);
+  app.use('/api/admin', authenticate, adminRoutes);
   
-  // Temporarily disable admin routes while we update the schema
   // Admin upload routes
-  // app.use('/api/admin/upload', authenticate, adminUploadRoutes);
+  app.use('/api/admin/upload', authenticate, adminUploadRoutes);
   
   // Admin kits routes
-  // app.use('/api/admin', authenticate, adminKitsRoutes);
+  app.use('/api/admin', authenticate, adminKitsRoutes);
   
-  // Admin recipes routes
-  // app.use('/api/admin/recipes', authenticate, adminAuth, adminRecipesRoutes);
+  // Admin recipes routes - ensure we also apply admin authorization
+  app.use('/api/admin/recipes', authenticate, adminAuth, adminRecipesRoutes);
   
-  // Quest generator routes
-  // app.use('/api/admin/quest-generator', authenticate, adminAuth, adminQuestGeneratorRoutes);
+  // Register the admin routes for quest generator with specific path prefix
+  app.use('/api/admin/quest-generator', authenticate, adminAuth, adminQuestGeneratorRoutes);
   
-  // Quest save routes
-  // app.use('/api/admin/quest-save', authenticate, adminAuth, adminQuestsSaveRoutes);
+  // Register the admin routes for saving quests with specific path prefix
+  app.use('/api/admin/quest-save', authenticate, adminAuth, adminQuestsSaveRoutes);
   
   // Register adventure lines routes with specific path prefix
   app.use('/api/adventure-lines', adventureLinesRoutes);
@@ -1806,9 +1793,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register Oracle routes (with full CRUD access to database)
   app.use('/api/oracle', authenticate, oracleRoutes);
   
-  // Lootboxes routes - temporarily disabled while updating schema
-  // app.use('/api/lootboxes', authenticate, lootboxesRoutes);
-  // app.use('/api/lootbox-rewards', authenticate, lootboxRewardsRoutes);
+  // Lootboxes routes
+  app.use('/api/lootboxes', authenticate, lootboxesRoutes);
+  app.use('/api/lootbox-rewards', authenticate, lootboxRewardsRoutes);
   
   // Routes for admin recipes and crafting were already registered above
   
