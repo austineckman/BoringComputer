@@ -78,53 +78,9 @@ const BasicWireManager = ({ canvasRef }) => {
         pinNumber = parts[parts.length - 1];
       }
       
-      console.log(`Adjusting heroboard pin position for pin ${pinNumber}`);
-      
-      // Default offset - adjusted based on the scaled values in the SVG
-      let OFFSET_X = 0;
-      let OFFSET_Y = 0;
-      
-      // Pin-specific adjustments
-      if (pinNumber === 'GND' || pinNumber === 'gnd') {
-        // Ground pins - typically on left side
-        OFFSET_X = -15;
-        OFFSET_Y = 0; 
-      } else if (pinNumber === '5V' || pinNumber === '5v') {
-        // Power pins - typically on left side
-        OFFSET_X = -15;
-        OFFSET_Y = 0;
-      } else if (pinNumber === '13') {
-        // Digital pin 13 (LED) - right side
-        OFFSET_X = 25;
-        OFFSET_Y = -20;
-      } else if (pinNumber?.startsWith('A')) {
-        // Analog pins - top side
-        OFFSET_X = 0;
-        OFFSET_Y = -25;
-      } else {
-        // Digital pins - right side
-        const pin = parseInt(pinNumber, 10);
-        if (!isNaN(pin)) {
-          // Calculate offsets with more precise values
-          if (pin >= 0 && pin <= 7) {
-            // Lower digital pins (right side, pins 0-7)
-            OFFSET_X = 25;
-            // Precise spacing between pins
-            OFFSET_Y = pin * 4 - 3; 
-          } else if (pin >= 8 && pin <= 13) {
-            // Upper digital pins (right side, pins 8-13)
-            OFFSET_X = 25;
-            // Precise spacing for upper pins
-            OFFSET_Y = pin * 4 - 10;
-          }
-        }
-      }
-      
-      // Apply the offset
-      return {
-        x: position.x + OFFSET_X,
-        y: position.y + OFFSET_Y
-      };
+      // Return position unmodified - don't apply any transformations
+      // The clicked position from the HeroBoard component is already correct
+      return position;
     }
     
     return position;
@@ -206,100 +162,64 @@ const BasicWireManager = ({ canvasRef }) => {
       const detail = event.detail;
       if (!detail) return;
       
-      // Extract basic pin data - prefer pinName field if available, then pinId
+      // Extract basic pin data - support both LED and other component formats
+      // LED format has "id", other components use "pinId"
       const pinId = detail.id || detail.pinId;
       const pinType = detail.pinType || 'bidirectional';
+      
+      // Support both LED format (parentId) and HeroBoard format (parentComponentId)
       const parentComponentId = detail.parentId || detail.parentComponentId;
       
-      // Get actual pin name - use the explicit pinName field if available
-      // This is an important fix to handle custom component pins correctly
-      const pinName = detail.pinName || (detail.pinId ? detail.pinId : pinId.split('-').pop() || '');
+      // Get the actual pin name - LED component passes this in pinData
+      // Other components may use pinName or we extract from pinId
+      let pinName;
+      
+      // If we have pinData (LED format), extract the name from there
+      if (detail.pinData) {
+        try {
+          const pinData = JSON.parse(detail.pinData);
+          pinName = pinData.name;
+        } catch (e) {
+          // Fallback to extracting from pinId if parsing fails
+          pinName = detail.pinName || (pinId ? pinId.split('-').pop() : '');
+        }
+      } else {
+        // Use the explicit pinName or extract from pinId
+        pinName = detail.pinName || (pinId ? pinId.split('-').pop() : '');
+      }
       
       // Get canvas element to calculate relative position
       const canvas = canvasRef?.current;
       const canvasRect = canvas ? canvas.getBoundingClientRect() : null;
       
-      // Get pin position - take the highest priority source of coordinates
+      // Get pin position directly from the click event - this is what works for LED
       let pinPosition;
       
-      // Find the actual pin element in the DOM to get its position
-      // Try multiple selectors to increase our chances of finding the pin
-      let pinElement = document.getElementById(pinId);
-      
-      // If not found by ID, try by data-pin-id attribute or custom attributes
-      if (!pinElement) {
-        pinElement = document.querySelector(`[data-pin-id="${pinName}"][data-parent-id="${parentComponentId}"]`);
-      }
-      
-      // Try a more specific selector for HERO board pins
-      if (!pinElement && parentComponentId?.includes('heroboard')) {
-        pinElement = document.querySelector(`[data-formatted-id="${pinId}"]`);
-        
-        // Also try simplified pin name for numbered pins
-        if (!pinElement && !isNaN(parseInt(pinName, 10))) {
-          const simplePinSelector = `[data-pin-id="${pinName}"][data-parent-id*="heroboard"]`;
-          pinElement = document.querySelector(simplePinSelector);
+      // Use clientX/Y directly (LED approach) which works
+      if (detail.clientX !== undefined && detail.clientY !== undefined) {
+        // Get the position directly from the click event
+        if (canvasRect) {
+          pinPosition = {
+            x: detail.clientX - canvasRect.left,
+            y: detail.clientY - canvasRect.top
+          };
+        } else {
+          // Fallback to raw client coordinates
+          pinPosition = {
+            x: detail.clientX,
+            y: detail.clientY
+          };
         }
-      }
-      
-      // If still not found, try with compound selectors
-      if (!pinElement) {
-        pinElement = document.querySelector(`[data-component-id="${parentComponentId}"] [data-pin-id="${pinName}"]`);
-      }
-      
-      // If we found the element, get its true position
-      if (pinElement) {
-        pinPosition = getTrueElementPosition(pinElement);
-        
-        // Log that we found the pin element in the DOM
-        console.log(`Found pin element for ${pinId} at position:`, pinPosition);
-      } else {
-        // If we couldn't find the element, use the coordinates from the event
-        console.log(`Couldn't find pin element for ${pinId}, using event coordinates`);
-        
-        if (detail.clientX !== undefined && detail.clientY !== undefined) {
-          // Convert client coordinates to canvas-relative coordinates
-          if (canvasRect) {
-            pinPosition = {
-              x: detail.clientX - canvasRect.left,
-              y: detail.clientY - canvasRect.top
-            };
-          } else {
-            // Fallback to raw client coordinates
-            pinPosition = {
-              x: detail.clientX,
-              y: detail.clientY
-            };
-          }
-        } else if (detail.pinData) {
-          // Try to parse pinData if available
-          try {
-            const pinData = JSON.parse(detail.pinData);
-            if (pinData.x !== undefined && pinData.y !== undefined) {
-              pinPosition = {
-                x: pinData.x,
-                y: pinData.y
-              };
-            }
-          } catch (e) {
-            console.error('Error parsing pinData:', e);
-          }
-        }
-      }
-      
-      // If we still don't have a position, use mouse position as last resort
-      if (!pinPosition) {
+      } 
+      // Use coordinates if provided (HeroBoard format)
+      else if (detail.coordinates) {
+        pinPosition = detail.coordinates;
+      } 
+      // If no position is available, fall back to mouse position
+      else {
         console.log(`No position data for pin ${pinId}, using mouse position`);
         pinPosition = mousePosition;
       }
-      
-      // Adjust the pin position based on component-specific offsets
-      
-      // For HERO board pins
-      pinPosition = adjustHeroboardPosition(pinId, pinPosition, parentComponentId);
-      
-      // For RGB LED pins
-      pinPosition = adjustRgbLedPosition(pinId, pinPosition, parentComponentId);
       
       // Log the event for debugging
       console.log('Pin click event:', {
@@ -307,10 +227,7 @@ const BasicWireManager = ({ canvasRef }) => {
         pinName,
         pinType,
         parentComponentId,
-        coordinates: pinPosition ? {
-          x: pinPosition.x,
-          y: pinPosition.y
-        } : null
+        coordinates: pinPosition
       });
       
       // If no pending connection, start a new one

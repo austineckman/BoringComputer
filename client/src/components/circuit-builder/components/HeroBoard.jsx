@@ -148,7 +148,7 @@ const HeroBoard = ({
     }
   };
 
-  // Handle pin click with position correction for HERO board
+  // Handle pin click - identical to the LED component approach
   const handlePinClicked = (e) => {
     console.log("Pin clicked on HeroBoard:", e.detail);
     
@@ -174,87 +174,29 @@ const HeroBoard = ({
           }
         }
         
-        // Get position information from the click event
+        // Get position information
         const clientX = e.detail.clientX || 0;
         const clientY = e.detail.clientY || 0;
         
         console.log(`Pin clicked: ${pinId} (${pinType})`);
         
-        // Calculate the board's DOM element position
-        const targetElement = targetRef.current;
-        const componentRect = targetElement ? targetElement.getBoundingClientRect() : { left: 0, top: 0, width: 0, height: 0 };
-        
-        // Calculate accurate pin position - CRITICAL FIX FOR HERO BOARD
-        // The HERO board internally offsets pins but reports global coordinates
-        // We need to convert these to the actual canvas coordinates
-        const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
-        
-        // Calculate the ACTUAL pin position based on the click coordinates
-        const pinPosition = {
-          x: clientX - canvasRect.left,
-          y: clientY - canvasRect.top
-        };
+        // Call the parent's onPinConnect handler
+        onPinConnect(pinId, pinType, id);
         
         // Send another event with the formatted pin ID to match our wire manager
-        // Format MUST match the format in CircuitComponent.jsx
-        const formattedPinId = `pt-heroboard-${id.replace(/ /g, '')}-${pinId}`;
+        // Use the exact same format as the LED component
+        const formattedPinId = `pt-heroboard-${id}-${pinId}`;
         
-        // Call the parent's onPinConnect handler
-        onPinConnect(pinId, pinType, id, pinPosition);
-        
-        console.log(`Pin ${pinId} (${pinType}) of component ${id} clicked`, pinPosition);
-        console.log(`Using pin position: (${pinPosition.x}, ${pinPosition.y})`);
-        
-        // First dispatch an adjustment event to notify about heroboard specific pin position
-        console.log(`Adjusting heroboard pin position for pin ${pinId}`);
-        
-        // Create a pin position adjustment specific to the HERO board pins
-        // This creates the corrected coordinate that the wire endpoint should use
-        let adjustedPinPosition = { ...pinPosition };
-        
-        // Adjustments for digital pins (0-13) on right side
-        if (/^\d+$/.test(pinId)) {
-          const pinNum = parseInt(pinId, 10);
-          if (pinNum >= 0 && pinNum <= 13) {
-            // Apply specific adjustments for digital pins
-            adjustedPinPosition = {
-              x: pinPosition.x + 25, // Move right for digital pins
-              y: pinPosition.y + (pinNum <= 7 ? (pinNum * 4 - 3) : (pinNum * 4 - 10))
-            };
-          }
-        }
-        // Adjustments for power pins (5V, GND, etc.) on left side  
-        else if (pinId === "5V" || pinId === "GND" || pinId === "GND.1" || pinId === "GND.2") {
-          adjustedPinPosition = {
-            x: pinPosition.x - 15, // Move left for power pins
-            y: pinPosition.y
-          };
-        }
-        
-        // Dispatch a pre-adjustment event so the BasicWireManager can see the raw position
-        const pinPreAdjustEvent = new CustomEvent('pinClicked', {
-          detail: {
-            pinId: formattedPinId,
-            pinName: pinId,
-            pinType: pinType,
-            parentComponentId: id,
-            coordinates: pinPosition
-          }
-        });
-        document.dispatchEvent(pinPreAdjustEvent);
-        
-        // Create the final pin click event with the adjusted position
+        // Create a custom pin click event to trigger the wire manager
+        // Use the EXACT same event structure as the LED component
         const pinClickEvent = new CustomEvent('pinClicked', {
           detail: {
-            pinId: formattedPinId,
-            pinName: pinId,
+            id: formattedPinId,
+            pinData: pinDataJson,
             pinType: pinType,
-            parentComponentId: id,
-            // Using the precisely adjusted position for this exact pin
-            coordinates: adjustedPinPosition,
-            // Also include the raw client coordinates for fallback
-            clientX: clientX,
-            clientY: clientY
+            parentId: id,
+            clientX,
+            clientY
           }
         });
         
