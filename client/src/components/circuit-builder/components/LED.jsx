@@ -6,8 +6,6 @@ import Moveable from "react-moveable";
 
 // Import simulator context if needed for simulation integration
 import { useSimulator } from "../simulator/SimulatorContext";
-// Import the registry initialization to ensure handlers are registered
-import "../registry/RegistryInitializer";
 
 // Define MOVE_SETTINGS to match what the original code expects
 const MOVE_SETTINGS = {
@@ -37,12 +35,7 @@ const LED = ({
   const oldDataRef = useRef();
 
   // Access simulator context for simulation state
-  const { 
-    isRunning: isSimulationRunning, 
-    componentStates, 
-    updateComponentWithRegistry,
-    checkComponentWiring
-  } = useSimulator();
+  const { isRunning: isSimulationRunning, componentStates } = useSimulator();
   
   const [ledColor, setLedColor] = useState(color);
   const [rotationAngle, setRotationAngle] = useState(initialRotation);
@@ -54,55 +47,11 @@ const LED = ({
   const [initPosLeft, setInitPosLeft] = useState(initialX);
   const [isLit, setIsLit] = useState(false); // Track LED state for simulation
   
-  // Check for proper wiring using the registry system
-  const [isProperlyWired, setIsProperlyWired] = useState(false);
-  
-  // Check wiring status when component or wires change
-  useEffect(() => {
-    if (!isSimulationRunning) return;
-    
-    // Use the registry system to check wiring
-    try {
-      if (checkComponentWiring) {
-        const isWired = checkComponentWiring(id);
-        console.log(`LED ${id} wiring check: ${isWired ? 'PROPERLY WIRED' : 'NOT PROPERLY WIRED'}`);
-        setIsProperlyWired(isWired);
-      }
-    } catch (err) {
-      console.error(`Error checking LED wiring via registry:`, err);
-    }
-  }, [id, isSimulationRunning, checkComponentWiring]);
-  
   // Check if this LED has been updated by the simulation
   useEffect(() => {
-    // Only process updates when simulation is running
-    if (!isSimulationRunning) {
-      setIsLit(false);
-      return;
-    }
-    
-    console.log(`LED ${id} checking for state updates via registry`);
-    
-    // Try using the registry system first
-    try {
-      if (updateComponentWithRegistry) {
-        // Update this LED using the registry handlers
-        // The pinValues contain Arduino pin states that the LED might be connected to
-        const pinValues = window.simulatorContext?.pinValues || {};
-        const updatedState = updateComponentWithRegistry(id, pinValues);
-        
-        if (updatedState) {
-          console.log(`LED ${id} updated via registry:`, updatedState);
-          setIsLit(updatedState.isLit || false);
-          return;
-        }
-      }
-    } catch (err) {
-      console.warn(`Error updating LED via registry:`, err);
-    }
-    
-    // Fallback to direct component state access if registry update failed
-    console.log(`Falling back to direct component state for LED ${id}`);
+    // Log to see if we're even getting component state updates
+    console.log(`LED ${id} checking for state updates, isSimulationRunning=${isSimulationRunning}`);
+    console.log(`Available component states:`, componentStates);
     
     // Check if there's a direct state update for this component ID
     if (componentStates && componentStates[id]) {
@@ -126,7 +75,7 @@ const LED = ({
         setIsLit(newLitState);
       }
     }
-  }, [componentStates, id, isSimulationRunning, updateComponentWithRegistry]);
+  }, [componentStates, id, isSimulationRunning]);
   
   // Create a component data structure that matches what the original code expects
   const componentData = {
@@ -296,32 +245,19 @@ const LED = ({
         {/* Simulation state indicator */}
         {isSimulationRunning && (
           <>
-            {/* Wiring status indicator */}
-            <div 
-              className={`absolute rounded-full w-3 h-3 ${isProperlyWired ? 'bg-blue-500' : 'bg-orange-500'}`}
-              style={{
-                transform: `translate(${initPosLeft + 35}px, ${initPosTop - 5}px)`,
-                boxShadow: isProperlyWired ? '0 0 5px 1px #3b82f6' : 'none',
-                transition: 'background-color 0.2s, box-shadow 0.2s',
-                zIndex: 100
-              }}
-              title={isProperlyWired ? "LED is properly wired" : "LED is not properly wired"}
-            ></div>
-            
-            {/* Power status indicator dot */}
+            {/* Status indicator dot */}
             <div 
               className={`absolute rounded-full w-3 h-3 ${isLit ? 'bg-green-500' : 'bg-red-500'}`}
               style={{
-                transform: `translate(${initPosLeft + 35}px, ${initPosTop + 5}px)`,
+                transform: `translate(${initPosLeft + 35}px, ${initPosTop}px)`,
                 boxShadow: isLit ? '0 0 8px 2px #4ade80' : 'none',
                 transition: 'background-color 0.2s, box-shadow 0.2s',
                 zIndex: 100
               }}
-              title={isLit ? "LED is lit" : "LED is off"}
             ></div>
             
             {/* Glow effect when LED is on */}
-            {isLit && isProperlyWired && (
+            {isLit && (
               <div 
                 className="absolute rounded-full w-10 h-10 opacity-50"
                 style={{

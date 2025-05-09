@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSimulator } from './SimulatorContext';
 import { useLibraryManager } from './LibraryManager';
-import { parseOLEDCommands } from './OLEDCommandParser';
 
 /**
  * AVR8 Arduino Simulator Component
@@ -229,25 +228,6 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     if (code) {
       const compiled = compileCode(code);
       setCompiledCode(compiled);
-      
-      // Detect libraries used in the code
-      const libraries = detectLibraries(code);
-      setDetectedLibraries(libraries);
-      logInfo(`Detected libraries: ${libraries.join(', ')}`);
-      
-      // Also share code with the global window object for non-React components
-      if (window) {
-        if (!window.simulatorContext) {
-          window.simulatorContext = {};
-        }
-        window.simulatorContext.code = code;
-        console.log("AVR8Simulator updated code globally:", code ? 
-          (code.length > 100 ? code.substring(0, 100) + "..." : code) : "empty code");
-      }
-      
-      // Parse and log OLED commands for debugging
-      const oledCommands = parseOLEDCommands(code);
-      console.log("Parsed OLED commands in AVR8Simulator:", oledCommands);
     }
   }, [code]);
   
@@ -360,10 +340,6 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
   const checkOLEDWiring = (oledId) => {
     // Get all wires in the circuit
     const { wires } = window.simulatorContext || { wires: [] };
-    
-    // Debug output to see what wires are actually detected
-    console.log("Raw wires data in simulator context:", JSON.stringify(window.simulatorContext?.wires));
-    
     if (!wires || wires.length === 0) {
       // No wires found, so the OLED can't be properly wired
       console.log("No wires found in the circuit");
@@ -376,14 +352,8 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     // 3. VCC (5V or 3.3V)
     // 4. GND
     
-    // Extract the component ID without the pin part - More flexible approach
-    // This handles both formats oled-display-123 and other possible ID formats
-    const oledBaseId = oledId.includes('oled-display') ? 
-        oledId.substring(0, oledId.lastIndexOf('-')) : 
-        oledId.split('-').slice(0, 3).join('-');
-
-    console.log(`OLED ID being checked: ${oledId}`);
-    console.log(`Base OLED ID: ${oledBaseId}`);
+    // Extract the component ID without the pin part
+    const oledBaseId = oledId.split('-').slice(0, 2).join('-');
     
     // Check if the required pins are connected
     let hasSDA = false;
@@ -391,158 +361,61 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     let hasVCC = false;
     let hasGND = false;
     
-    // DEBUG: Log the actual wire structure for easier debugging
-    console.log("Checking wires for OLED:", wires);
-    
     // Go through all wires to check connections
     for (const wire of wires) {
       // Add defensive checks to prevent crashes
-      if (!wire || !wire.sourceId || !wire.targetId) {
+      if (!wire || !wire.start || !wire.end || !wire.start.id || !wire.end.id) {
         console.warn("Wire with incomplete data found:", wire);
         continue; // Skip this wire
       }
       
       try {
-        // First approach: Use sourceName and targetName from the wire object
-        if (wire.sourceName && wire.targetName && wire.sourceComponent && wire.targetComponent) {
-          const oledSourceMatched = wire.sourceComponent.includes('oled-display');
-          const oledTargetMatched = wire.targetComponent.includes('oled-display');
-          
-          // Make sure this wire is connected to the specific OLED we're checking
-          const isThisOledSource = oledSourceMatched && wire.sourceComponent.includes(oledBaseId);
-          const isThisOledTarget = oledTargetMatched && wire.targetComponent.includes(oledBaseId);
-          
-          if (isThisOledSource || isThisOledTarget) {
-            // This wire is connected to our specific OLED
-            const oledPinName = isThisOledSource ? wire.sourceName.toLowerCase() : wire.targetName.toLowerCase();
-            const otherPinName = isThisOledSource ? wire.targetName.toLowerCase() : wire.sourceName.toLowerCase();
-            
-            console.log(`OLED wire detected: ${oledPinName} to ${otherPinName}`);
-            
-            // More flexible SDA connection check
-            if (oledPinName.includes('sda') || oledPinName.includes('data')) {
-              // Check connection to Arduino A4 or another SDA pin
-              if (otherPinName === 'a4' || otherPinName.includes('sda') || 
-                  otherPinName.includes('data') || otherPinName === '4') {
-                hasSDA = true;
-                console.log("SDA connection verified");
-              }
-            } 
-            // More flexible SCL connection check
-            else if (oledPinName.includes('scl') || oledPinName.includes('clock')) {
-              // Check connection to Arduino A5 or another SCL pin
-              if (otherPinName === 'a5' || otherPinName.includes('scl') || 
-                  otherPinName.includes('clock') || otherPinName === '5') {
-                hasSCL = true;
-                console.log("SCL connection verified");
-              }
-            } 
-            // More flexible VCC connection check
-            else if (oledPinName.includes('vcc') || oledPinName.includes('pwr') || 
-                     oledPinName.includes('power') || oledPinName.includes('vdd') ||
-                     oledPinName === '+') {
-              // Check connection to power
-              if (otherPinName.includes('5v') || otherPinName.includes('3.3v') || 
-                  otherPinName.includes('vcc') || otherPinName.includes('power') || 
-                  otherPinName.includes('pwr') || otherPinName.includes('vdd') ||
-                  otherPinName === '+') {
-                hasVCC = true;
-                console.log("VCC connection verified");
-              }
-            } 
-            // More flexible GND connection check
-            else if (oledPinName.includes('gnd') || oledPinName.includes('ground') || 
-                     oledPinName === '-') {
-              // Check connection to ground
-              if (otherPinName.includes('gnd') || otherPinName.includes('ground') || 
-                  otherPinName === '-') {
-                hasGND = true;
-                console.log("GND connection verified");
-              }
-            }
-          }
+        const [startCompId, startPin] = (wire.start.id || "").split('-', 3);
+        const [endCompId, endPin] = (wire.end.id || "").split('-', 3);
+        
+        // Additional defensive checks
+        if (!startCompId || !endCompId) {
+          continue; // Skip wires with invalid component IDs
         }
-        // Fallback to the older method if sourceName/targetName not available
-        else {
-          // Extract component ID and pin name from ids - with extensive logging for debugging
-          const sourceIdParts = wire.sourceId.split('-');
-          const targetIdParts = wire.targetId.split('-');
+        
+        // Check if this wire is connected to our OLED
+        if (startCompId.includes(oledBaseId) || endCompId.includes(oledBaseId)) {
+          // This wire is connected to our OLED component
           
-          console.log(`Wire sourceId: ${wire.sourceId}, parts:`, sourceIdParts);
-          console.log(`Wire targetId: ${wire.targetId}, parts:`, targetIdParts);
+          // Check the pins at both ends
+          const oledPin = startCompId.includes(oledBaseId) ? startPin : endPin;
+          const otherPin = startCompId.includes(oledBaseId) ? endPin : startPin;
           
-          // Get the component ids and pin names - ensure we extract correctly
-          const sourceCompId = sourceIdParts.length >= 3 ? 
-              `${sourceIdParts[0]}-${sourceIdParts[1]}-${sourceIdParts[2]}` : 
-              sourceIdParts.join('-');
+          // More defensive checks
+          if (!oledPin || !otherPin) {
+            continue; // Skip if we can't determine the pins
+          }
           
-          const targetCompId = targetIdParts.length >= 3 ? 
-              `${targetIdParts[0]}-${targetIdParts[1]}-${targetIdParts[2]}` : 
-              targetIdParts.join('-');
-          
-          // The pin name is the last part of the id
-          const sourcePin = sourceIdParts[sourceIdParts.length - 1].toLowerCase();
-          const targetPin = targetIdParts[targetIdParts.length - 1].toLowerCase();
-          
-          console.log(`Extracted IDs - Source: ${sourceCompId}, Target: ${targetCompId}`);
-          console.log(`Extracted Pins - Source: ${sourcePin}, Target: ${targetPin}`);
-          
-          // Check if OLED is involved in this wire
-          const isSourceOLED = sourceCompId.includes('oled-display');
-          const isTargetOLED = targetCompId.includes('oled-display');
-          
-          if (isSourceOLED || isTargetOLED) {
-            // OLED is involved in this wire
-            const oledPin = isSourceOLED ? sourcePin : targetPin;
-            const otherPin = isSourceOLED ? targetPin : sourcePin;
-            
-            console.log(`OLED wire detected (fallback method): ${oledPin} to ${otherPin}`);
-            
-            // More flexible SDA connection check
-            if (oledPin.includes('sda') || oledPin.includes('data')) {
-              // Check connection to Arduino A4 or another SDA pin
-              if (otherPin === 'a4' || otherPin.includes('sda') || 
-                  otherPin.includes('data') || otherPin === '4') {
-                hasSDA = true;
-                console.log("SDA connection verified (fallback)");
-              }
-            } 
-            // More flexible SCL connection check
-            else if (oledPin.includes('scl') || oledPin.includes('clock')) {
-              // Check connection to Arduino A5 or another SCL pin
-              if (otherPin === 'a5' || otherPin.includes('scl') || 
-                  otherPin.includes('clock') || otherPin === '5') {
-                hasSCL = true;
-                console.log("SCL connection verified (fallback)");
-              }
-            } 
-            // More flexible VCC connection check
-            else if (oledPin.includes('vcc') || oledPin.includes('pwr') || 
-                     oledPin.includes('power') || oledPin.includes('vdd') ||
-                     oledPin === 'v' || oledPin === '+') {
-              // Check connection to power
-              if (otherPin.includes('5v') || otherPin.includes('3.3v') || 
-                  otherPin.includes('vcc') || otherPin.includes('power') || 
-                  otherPin.includes('pwr') || otherPin.includes('vdd') ||
-                  otherPin === 'v' || otherPin === '+') {
-                hasVCC = true;
-                console.log("VCC connection verified (fallback)");
-              }
-            } 
-            // More flexible GND connection check
-            else if (oledPin.includes('gnd') || oledPin.includes('ground') || 
-                     oledPin === 'g' || oledPin === '-') {
-              // Check connection to ground
-              if (otherPin.includes('gnd') || otherPin.includes('ground') || 
-                  otherPin === 'g' || otherPin === '-') {
-                hasGND = true;
-                console.log("GND connection verified (fallback)");
-              }
+          // Check what type of connection this is
+          if (oledPin === 'sda' || oledPin === 'data') {
+            // SDA pin should be connected to A4 on Arduino
+            if (otherPin === 'a4' || otherPin === 'sda') {
+              hasSDA = true;
+            }
+          } else if (oledPin === 'scl' || oledPin === 'clock') {
+            // SCL pin should be connected to A5 on Arduino
+            if (otherPin === 'a5' || otherPin === 'scl') {
+              hasSCL = true;
+            }
+          } else if (oledPin === 'vcc' || oledPin === '5v' || oledPin === '3v3') {
+            // VCC pin should be connected to 5V or 3.3V
+            if (otherPin === '5v' || otherPin === '3v3' || otherPin === 'vcc') {
+              hasVCC = true;
+            }
+          } else if (oledPin === 'gnd') {
+            // GND pin should be connected to GND
+            if (otherPin === 'gnd') {
+              hasGND = true;
             }
           }
         }
       } catch (error) {
-        console.error("Error processing wire:", error, wire);
+        console.error("Error processing wire:", error);
         // Continue with the next wire rather than crashing
         continue;
       }
@@ -551,8 +424,11 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
     // For demonstration purposes, log the wiring status
     console.log(`OLED wiring status for ${oledId}:`, { hasSDA, hasSCL, hasVCC, hasGND });
     
-    // No temporary fixes or bypasses - we need accurate simulation
-    // All connections must be properly detected and verified
+    // For now, we'll temporarily bypass the wiring check for easier testing
+    // return true;
+    
+    // In a real implementation, we would require all connections
+    // return hasSDA && hasSCL && hasVCC && hasGND;
     
     // Require essential connections for OLED to work properly
     // SDA and SCL are absolutely required for I2C communication
@@ -585,11 +461,9 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
         // Check if we have required OLED libraries
         const hasRequiredLibraries = hasOLEDLibrary(compiledCode.libraries);
         
-        // Parse OLED commands from the code using our new parser
-        // This will get a more detailed analysis of OLED commands
+        // Parse OLED commands from the code
         const oledCommands = parseOLEDCommands(code);
-        const hasOLEDCode = oledCommands && (oledCommands.hasOLEDCode || 
-                               (oledCommands.commands && oledCommands.commands.length > 0));
+        const hasOLEDCode = oledCommands && oledCommands.hasOLEDCode;
         
         oledElements.forEach(element => {
           if (!element || !element.id) {
@@ -616,16 +490,7 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
               shouldDisplay: hasRequiredLibraries && hasOLEDCode && isProperlyWired
             });
             
-            // Detailed logging for debugging
-            if (!hasRequiredLibraries) {
-              logInfo(`OLED display ${oledId} missing required libraries. Include #include <Wire.h> and either #include <Adafruit_SSD1306.h> or #include <U8g2lib.h>`);
-            } else if (!hasOLEDCode) {
-              logInfo(`OLED display ${oledId} initialized but no OLED code detected. Add OLED initialization and draw commands.`);
-            } else if (!isProperlyWired) {
-              logInfo(`OLED display ${oledId} not properly wired. Connect SDA→A4, SCL→A5, VCC→5V, GND→GND`);
-            } else {
-              logInfo(`OLED display ${oledId} successfully initialized and ready`);
-            }
+            logInfo(`OLED display ${oledId} initialized`);
           } catch (error) {
             console.error("Error initializing OLED display:", error);
           }

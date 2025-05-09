@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSimulator } from '../simulator/SimulatorContext';
 import { findRectangleWithCache } from '../utils/imageAnalysis';
-import { parseOLEDCommands, executeOLEDCommands } from '../simulator/OLEDCommandParser';
 
 /**
  * Component for rendering OLED display content based on simulator state
@@ -262,154 +261,58 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
       return;
     }
     
-    // Actually parse and execute the OLED commands from the user's Arduino code
-    // Access the Arduino code from the window.simulatorContext
-    const code = window.simulatorContext?.code || '';
-    
-    // Parse the OLED commands
-    const parsedCommands = parseOLEDCommands(code);
-    
-    console.log("Parsed OLED commands:", parsedCommands);
-    
-    // Check if we have a valid Arduino sketch with OLED commands
-    const hasValidCode = parsedCommands && 
-                        // Check for presence of commands
-                        ((parsedCommands.commands && parsedCommands.commands.length > 0) ||
-                        // Alternative ways to detect valid OLED code patterns
-                        parsedCommands.hasPageLoop || 
-                        parsedCommands.hasDisplayMethod ||
-                        parsedCommands.hasBufferMethod ||
-                        // Also check library style flags from our enhanced parser
-                        parsedCommands.isAdafruitStyle ||
-                        parsedCommands.isU8g2Style);
-                         
-    // Track animation state
-    let frameCount = 0;
-    
-    // Initialize animation variables for fallback mode
+    // If we get here, we should display a demo animation
+    // Create a bouncing ball animation to demonstrate OLED functionality
     let x = 44;
     let y = 24;
     let dx = 1;
     let dy = 1;
+    let frameCount = 0;
     
     animationInterval.current = setInterval(() => {
-      // Create a new buffer for this frame
-      let newBuffer;
+      // Create new empty buffer
+      const newBuffer = new Array(displayHeight).fill(0).map(() => 
+        new Array(displayWidth).fill(0)
+      );
       
-      if (hasValidCode) {
-        // EXECUTE THE USER'S CODE: Parse and execute the actual commands from the Arduino code
-        try {
-          // Get the actual Arduino code from the simulation context
-          const arduinoCode = window.simulatorContext?.code || '';
-          
-          // Parse the OLED commands fresh each time
-          const freshParsedCommands = parseOLEDCommands(arduinoCode);
-          console.log("Executing OLED commands:", freshParsedCommands);
-          
-          // Execute the parsed commands to render a buffer
-          newBuffer = executeOLEDCommands(freshParsedCommands, displayWidth, displayHeight);
-          
-          // Add debugging info if needed 
-          if (window.simulatorContext?.debugMode) {
-            // Add a small indicator in the corner to show this is running real live code
-            const codeText = "LIVE";
-            for (let i = 0; i < codeText.length; i++) {
-              drawChar(newBuffer, codeText.charAt(i), displayWidth - 25 + (i * 5), 2, true);
-            }
+      // Move the ball
+      x += dx;
+      y += dy;
+      
+      // Bounce off edges
+      if (x <= 4 || x >= displayWidth - 4) dx = -dx;
+      if (y <= 4 || y >= displayHeight - 4) dy = -dy;
+      
+      // Draw a circle (ball)
+      for (let yy = -3; yy <= 3; yy++) {
+        for (let xx = -3; xx <= 3; xx++) {
+          if (xx*xx + yy*yy <= 9) { // Circle equation - smaller circle
+            const drawX = Math.floor(x + xx);
+            const drawY = Math.floor(y + yy);
             
-            // Show the command count in the other corner
-            const commandCount = freshParsedCommands.commands ? freshParsedCommands.commands.length : 0;
-            const countText = `CMD:${commandCount}`;
-            for (let i = 0; i < countText.length; i++) {
-              drawChar(newBuffer, countText.charAt(i), 5 + (i * 5), 2, true);
-            }
-            
-            // Also show library style detected
-            const libStyle = freshParsedCommands.isAdafruitStyle ? "ADA" : 
-                            freshParsedCommands.isU8g2Style ? "U8G2" : "??";
-            const libText = `LIB:${libStyle}`;
-            for (let i = 0; i < libText.length; i++) {
-              drawChar(newBuffer, libText.charAt(i), 5 + (i * 5), displayHeight - 10, true);
+            // Make sure we're within bounds
+            if (drawX >= 0 && drawX < displayWidth && 
+                drawY >= 0 && drawY < displayHeight) {
+              newBuffer[drawY][drawX] = 1;
             }
           }
-          
-        } catch (error) {
-          console.error("Error executing OLED commands:", error);
-          // Fall back to a blank screen with error message
-          newBuffer = new Array(displayHeight).fill(0).map(() => 
-            new Array(displayWidth).fill(0)
-          );
-          
-          // Show error message
-          const errorText = "ERROR: " + (error.message || "Unknown error");
-          for (let i = 0; i < Math.min(errorText.length, 20); i++) {
-            drawChar(newBuffer, errorText.charAt(i), 5 + (i * 6), 10);
-          }
-          
-          if (errorText.length > 20) {
-            for (let i = 0; i < Math.min(errorText.length - 20, 20); i++) {
-              drawChar(newBuffer, errorText.charAt(i + 20), 5 + (i * 6), 20);
-            }
-          }
-        }
-      } else {
-        // FALLBACK MODE: If no valid OLED code is found, display a demo animation
-        // with an informative message explaining that no OLED code was detected
-        newBuffer = new Array(displayHeight).fill(0).map(() => 
-          new Array(displayWidth).fill(0)
-        );
-        
-        // Show a bouncing ball animation as a demo
-        // Move the ball
-        x += dx;
-        y += dy;
-        
-        // Bounce off edges
-        if (x <= 4 || x >= displayWidth - 4) dx = -dx;
-        if (y <= 4 || y >= displayHeight - 4) dy = -dy;
-        
-        // Draw a circle (ball)
-        for (let yy = -3; yy <= 3; yy++) {
-          for (let xx = -3; xx <= 3; xx++) {
-            if (xx*xx + yy*yy <= 9) { // Circle equation - smaller circle
-              const drawX = Math.floor(x + xx);
-              const drawY = Math.floor(y + yy);
-              
-              // Make sure we're within bounds
-              if (drawX >= 0 && drawX < displayWidth && 
-                  drawY >= 0 && drawY < displayHeight) {
-                newBuffer[drawY][drawX] = 1;
-              }
-            }
-          }
-        }
-        
-        // Draw message explaining this is a fallback animation
-        const missingText = "NO OLED COMMANDS";
-        for (let i = 0; i < missingText.length; i++) {
-          drawChar(newBuffer, missingText.charAt(i), 10 + (i * 6), 5);
-        }
-        
-        const helpText = "ADD U8G2 OR ADAFRUIT";
-        for (let i = 0; i < helpText.length; i++) {
-          drawChar(newBuffer, helpText.charAt(i), 5 + (i * 6), 15);
-        }
-        
-        const helpText2 = "OLED CODE TO ARDUINO";
-        for (let i = 0; i < helpText2.length; i++) {
-          drawChar(newBuffer, helpText2.charAt(i), 5 + (i * 6), 25);
         }
       }
       
-      // Only show frame counter in debug mode
-      if (window.simulatorContext?.debugMode) {
-        const frameText = `F:${frameCount++}`;
-        for (let i = 0; i < frameText.length; i++) {
-          drawChar(newBuffer, frameText.charAt(i), displayWidth - 25 + (i * 5), displayHeight - 10, true);
-        }
-      } else {
-        // Just increment the frame counter for internal tracking
-        frameCount++;
+      // Draw text in corner
+      const text = `OLED`;
+      for (let i = 0; i < text.length; i++) {
+        const charX = 3 + i * 6;
+        const charY = 2;
+        drawChar(newBuffer, text.charAt(i), charX, charY);
+      }
+      
+      // Draw a frame count at the bottom
+      const countText = `${frameCount++}`;
+      for (let i = 0; i < countText.length; i++) {
+        const charX = 5 + i * 6;
+        const charY = 55;
+        drawChar(newBuffer, countText.charAt(i), charX, charY);
       }
       
       // Update the display buffer
@@ -425,7 +328,7 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
   }, [isRunning, displayState]);
   
   // Helper function to draw a character (simple 5x7 font)
-  const drawChar = (buffer, char, x, y, smallFont = false) => {
+  const drawChar = (buffer, char, x, y) => {
     // Simple 5x7 font for digits and basic characters
     const fontData = {
       '0': [
