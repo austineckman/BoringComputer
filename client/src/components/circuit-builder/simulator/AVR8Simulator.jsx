@@ -370,110 +370,48 @@ const AVR8Simulator = ({ code, isRunning, onPinChange, onLog }) => {
       }
       
       try {
-        // Get the wire details from either the newer or older format
-        let sourceId, targetId, sourceComponent, targetComponent, sourceName, targetName;
+        const [startCompId, startPin] = (wire.start.id || "").split('-', 3);
+        const [endCompId, endPin] = (wire.end.id || "").split('-', 3);
         
-        // Check for newer wire format
-        if (wire.sourceId && wire.targetId) {
-          console.log("Checking OLED wire with new format:", wire);
-          
-          // New format - using sourceId/targetId
-          sourceId = wire.sourceId;
-          targetId = wire.targetId;
-          sourceComponent = wire.sourceComponent;
-          targetComponent = wire.targetComponent;
-          sourceName = wire.sourceName;
-          targetName = wire.targetName;
-        } else {
-          // Old format - using start/end
-          const [startCompId, startPin] = (wire.start?.id || "").split('-', 3);
-          const [endCompId, endPin] = (wire.end?.id || "").split('-', 3);
-          
-          sourceId = wire.start?.id;
-          targetId = wire.end?.id;
-          sourceComponent = startCompId;
-          targetComponent = endCompId;
-          sourceName = startPin;
-          targetName = endPin;
+        // Additional defensive checks
+        if (!startCompId || !endCompId) {
+          continue; // Skip wires with invalid component IDs
         }
-        
-        // Defensive check for missing wire data
-        if (!sourceComponent || !targetComponent) {
-          console.warn("Missing component identifiers in wire:", wire);
-          continue;
-        }
-        
-        // Convert pin names to lowercase for case-insensitive comparison
-        const sourceNameLower = (sourceName || "").toLowerCase();
-        const targetNameLower = (targetName || "").toLowerCase();
         
         // Check if this wire is connected to our OLED
-        const isSourceOLED = (sourceComponent || "").includes(oledBaseId);
-        const isTargetOLED = (targetComponent || "").includes(oledBaseId);
-        
-        if (isSourceOLED || isTargetOLED) {
+        if (startCompId.includes(oledBaseId) || endCompId.includes(oledBaseId)) {
           // This wire is connected to our OLED component
           
-          // Determine which pins are on the OLED and which are on the other component
-          const oledPin = isSourceOLED ? sourceNameLower : targetNameLower;
-          const otherPin = isSourceOLED ? targetNameLower : sourceNameLower;
+          // Check the pins at both ends
+          const oledPin = startCompId.includes(oledBaseId) ? startPin : endPin;
+          const otherPin = startCompId.includes(oledBaseId) ? endPin : startPin;
           
-          console.log(`OLED pin connection found: ${oledPin} → ${otherPin}`);
-          
-          // Check what type of connection this is - handle different pin naming schemes
-          console.log(`OLED pin connection check: ${oledPin} → ${otherPin}`);
-          
-          // We need to handle BOTH the actual pin labels users see and the internal pin names
-          
-          // Create normalized versions of the pin names to make matching easier
-          const pinLower = oledPin.toLowerCase();
-          const otherLower = otherPin.toLowerCase();
-          
-          console.log(`OLED wire connection: ${pinLower} → ${otherLower}`);
-          
-          // Check for ground connection - many possible names
-          if (pinLower === 'gnd' || pinLower.includes('ground')) {
-            if (otherLower.includes('gnd') || otherLower.includes('ground')) {
-              hasGND = true;
-              console.log("✓ GND pin correctly connected to ground");
-            }
+          // More defensive checks
+          if (!oledPin || !otherPin) {
+            continue; // Skip if we can't determine the pins
           }
-          // Check for power connection - VCC, 5V, 3.3V
-          else if (pinLower === 'vcc' || pinLower.includes('v') || pinLower.includes('power')) {
-            if (otherLower === '5v' || otherLower === '3v3' || otherLower.includes('vcc') || otherLower.includes('power')) {
-              hasVCC = true;
-              console.log("✓ VCC/Power pin correctly connected to power source");
-            }
-          }
-          // Check for SCL/SCK connection (clock line)
-          else if (pinLower === 'scl' || pinLower === 'sck' || pinLower.includes('clock')) {
-            if (otherLower === 'a5' || otherLower === 'scl' || otherLower === 'sck' || otherLower.includes('clock')) {
-              hasSCL = true;
-              console.log("✓ SCL/Clock pin correctly connected to A5/SCL");
-            }
-          }
-          // Check for SDA connection (data line)
-          else if (pinLower === 'sda' || pinLower.includes('data')) {
-            if (otherLower === 'a4' || otherLower === 'sda' || otherLower.includes('data')) {
+          
+          // Check what type of connection this is
+          if (oledPin === 'sda' || oledPin === 'data') {
+            // SDA pin should be connected to A4 on Arduino
+            if (otherPin === 'a4' || otherPin === 'sda') {
               hasSDA = true;
-              console.log("✓ SDA/Data pin correctly connected to A4/SDA");
             }
-          }
-          
-          // Generate a detailed status report after all connections are checked
-          if (isSourceOLED || isTargetOLED) {
-            setTimeout(() => {
-              console.log("\nOLED CONNECTION STATUS:");
-              console.log(`➤ VCC to Arduino 5V/3.3V: ${hasVCC ? '✓ Connected' : '✗ Missing'}`);
-              console.log(`➤ GND to Arduino GND: ${hasGND ? '✓ Connected' : '✗ Missing'}`);
-              console.log(`➤ SCL/SCK to Arduino A5: ${hasSCL ? '✓ Connected' : '✗ Missing'}`); 
-              console.log(`➤ SDA to Arduino A4: ${hasSDA ? '✓ Connected' : '✗ Missing'}`);
-              console.log("\nWiring Guide - REGARDLESS of what tooltip labels show, connect:");
-              console.log("• 1st pin (shows VCC but actually GND) → Any GND pin on Arduino");
-              console.log("• 2nd pin (shows GND but actually VCC) → 5V or 3.3V on Arduino");
-              console.log("• 3rd pin (shows SCK but actually SCL) → A5 on Arduino"); 
-              console.log("• 4th pin (shows SDA correctly) → A4 on Arduino");
-            }, 500);
+          } else if (oledPin === 'scl' || oledPin === 'clock') {
+            // SCL pin should be connected to A5 on Arduino
+            if (otherPin === 'a5' || otherPin === 'scl') {
+              hasSCL = true;
+            }
+          } else if (oledPin === 'vcc' || oledPin === '5v' || oledPin === '3v3') {
+            // VCC pin should be connected to 5V or 3.3V
+            if (otherPin === '5v' || otherPin === '3v3' || otherPin === 'vcc') {
+              hasVCC = true;
+            }
+          } else if (oledPin === 'gnd') {
+            // GND pin should be connected to GND
+            if (otherPin === 'gnd') {
+              hasGND = true;
+            }
           }
         }
       } catch (error) {
