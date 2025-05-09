@@ -417,51 +417,18 @@ const OLEDDisplayRenderer = ({ componentId }) => {
     }
   };
   
-  // If we haven't found the display rectangle yet, render a loading state with default position
-  if (!displayRect) {
-    return (
-      <div
-        ref={containerRef}
-        className="oled-display-glow"
-        style={{
-          position: 'absolute',
-          top: '35px',
-          left: '20px',
-          width: '88px',
-          height: '30px',
-          backgroundColor: '#000',
-          borderRadius: '2px',
-          boxShadow: '0 0 10px 2px rgba(0, 150, 255, 0.6)',
-          animation: 'oled-glow 2s infinite ease-in-out',
-          overflow: 'hidden',
-          zIndex: 10
-        }}
-      >
-        <canvas
-          ref={canvasRef}
-          className="oled-display-canvas"
-          width={displayWidth}
-          height={displayHeight}
-          style={{
-            width: '100%',
-            height: '100%'
-          }}
-        />
-      </div>
-    );
-  }
-  
-  // Render with the analyzed rectangle coordinates
+  // Per user request, use specific manual positioning instead of image analysis
+  // Double the size and adjust position (lower 10px, right 3px)
   return (
     <div
       ref={containerRef}
       className="oled-display-glow"
       style={{
         position: 'absolute',
-        top: `${displayRect.y}px`,
-        left: `${displayRect.x}px`,
-        width: `${displayRect.width}px`,
-        height: `${displayRect.height}px`,
+        top: '48px',     // 38px + 10px = 48px (lowered by 10px)
+        left: '35px',    // 32px + 3px = 35px (moved right by 3px)
+        width: '128px',  // Double the original width
+        height: '64px',  // Double the original height
         backgroundColor: '#000',
         borderRadius: '2px',
         boxShadow: '0 0 10px 2px rgba(0, 150, 255, 0.6)',
