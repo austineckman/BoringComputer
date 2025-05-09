@@ -90,7 +90,7 @@ const SimpleWireManager = ({ canvasRef }) => {
   // Use a ref to store wire position cache to avoid unnecessary recalculations
   const wirePosCache = useRef({});
   
-  // Get path for wire with direct straight lines or through anchor points
+  // Get path for wire with vertical-then-horizontal routing through waypoints
   const getWirePath = (start, end, wireId) => {
     // Validate input coordinates
     if (!start || !end || start.x === undefined || end.x === undefined) {
@@ -98,25 +98,42 @@ const SimpleWireManager = ({ canvasRef }) => {
       return ''; // Return empty path if coordinates are invalid
     }
     
-    // For all wires, check if they have anchor points
+    // For wires with anchor points
     if (wireId && wireAnchorPoints[wireId] && wireAnchorPoints[wireId].length > 0) {
-      // Draw path through user-defined anchor points
+      // Get anchor points for this wire
       const anchorPoints = wireAnchorPoints[wireId];
-      let path = `M ${start.x} ${start.y}`;
       
-      // Add line segments through each anchor point
-      anchorPoints.forEach(point => {
-        path += ` L ${point.x} ${point.y}`;
+      // Start the path at the source pin
+      let path = `M ${start.x} ${start.y}`;
+      let lastPoint = start;
+      
+      // Process each anchor point
+      anchorPoints.forEach(anchorPoint => {
+        // Add vertical segment first (going up/down)
+        path += ` L ${lastPoint.x} ${anchorPoint.y}`;
+        
+        // Then add horizontal segment (going left/right)
+        path += ` L ${anchorPoint.x} ${anchorPoint.y}`;
+        
+        // Update the last point
+        lastPoint = anchorPoint;
       });
       
-      // Complete the path to the end point
+      // Finally, connect from the last anchor point to the end point
+      // First go vertical
+      path += ` L ${lastPoint.x} ${end.y}`;
+      // Then go horizontal 
       path += ` L ${end.x} ${end.y}`;
       
+      console.log(`Generated orthogonal path with ${anchorPoints.length} waypoints:`, path);
       return path;
     }
     
-    // No anchor points - draw a direct straight line
-    return `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+    // For wires without anchor points, create a single vertical-then-horizontal route
+    // This creates a 90-degree bend in the wire
+    const path = `M ${start.x} ${start.y} L ${start.x} ${end.y} L ${end.x} ${end.y}`;
+    console.log('Generated orthogonal path with no waypoints:', path);
+    return path;
   };
 
   // Get style for wire based on type and color
@@ -1561,7 +1578,9 @@ const SimpleWireManager = ({ canvasRef }) => {
               <>
                 {/* First segment: source to first waypoint */}
                 <path
-                  d={`M ${pendingWire.sourcePos.x} ${pendingWire.sourcePos.y} L ${pendingWire.waypoints[0].x} ${pendingWire.waypoints[0].y}`}
+                  d={`M ${pendingWire.sourcePos.x} ${pendingWire.sourcePos.y}
+                      L ${pendingWire.sourcePos.x} ${pendingWire.waypoints[0].y}
+                      L ${pendingWire.waypoints[0].x} ${pendingWire.waypoints[0].y}`}
                   stroke="#3b82f6"
                   strokeWidth={2.5}
                   fill="none"
