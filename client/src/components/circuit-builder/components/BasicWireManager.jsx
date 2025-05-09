@@ -498,9 +498,22 @@ const BasicWireManager = ({ canvasRef }) => {
         }));
         
         setSimulatorWires(wiresWithDebug);
+        
+        // Also share with the global window.simulatorContext for non-React components
+        if (window.simulatorContext) {
+          window.simulatorContext.wires = wiresWithDebug;
+          console.log("Shared wires with global simulator context:", wiresWithDebug.length);
+        }
+        
         console.log("Shared wires with simulator context:", wiresWithDebug.length);
       } else {
         console.warn("Could not share wires with simulator: setSimulatorWires not available");
+        
+        // Even if React context is not available, try to share with global object
+        if (window.simulatorContext) {
+          window.simulatorContext.wires = safeWires;
+          console.log("Shared wires with global simulator context only:", safeWires.length);
+        }
       }
     } catch (error) {
       console.error("Error sharing wires with simulator:", error);
