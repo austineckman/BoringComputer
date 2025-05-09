@@ -90,7 +90,7 @@ const SimpleWireManager = ({ canvasRef }) => {
   // Use a ref to store wire position cache to avoid unnecessary recalculations
   const wirePosCache = useRef({});
   
-  // Get path for wire with direct straight lines
+  // Get path for wire with direct straight lines or through anchor points
   const getWirePath = (start, end, wireId) => {
     // Validate input coordinates
     if (!start || !end || start.x === undefined || end.x === undefined) {
@@ -98,26 +98,25 @@ const SimpleWireManager = ({ canvasRef }) => {
       return ''; // Return empty path if coordinates are invalid
     }
     
-    // Check if this wire has any user-defined anchor points
-    const anchorPoints = wireAnchorPoints[wireId] || [];
-    
-    // If no anchor points, draw a direct straight line
-    if (anchorPoints.length === 0) {
-      return `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+    // For all wires, check if they have anchor points
+    if (wireId && wireAnchorPoints[wireId] && wireAnchorPoints[wireId].length > 0) {
+      // Draw path through user-defined anchor points
+      const anchorPoints = wireAnchorPoints[wireId];
+      let path = `M ${start.x} ${start.y}`;
+      
+      // Add line segments through each anchor point
+      anchorPoints.forEach(point => {
+        path += ` L ${point.x} ${point.y}`;
+      });
+      
+      // Complete the path to the end point
+      path += ` L ${end.x} ${end.y}`;
+      
+      return path;
     }
     
-    // If there are anchor points, draw a path through each point
-    let path = `M ${start.x} ${start.y}`;
-    
-    // Add line segments through each anchor point
-    anchorPoints.forEach(point => {
-      path += ` L ${point.x} ${point.y}`;
-    });
-    
-    // Complete the path to the end point
-    path += ` L ${end.x} ${end.y}`;
-    
-    return path;
+    // No anchor points - draw a direct straight line
+    return `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
   };
 
   // Get style for wire based on type and color
@@ -366,7 +365,8 @@ const SimpleWireManager = ({ canvasRef }) => {
         sourceType: pinType,
         sourceParentId: parentId,
         sourcePos: position,
-        sourceName: pinName
+        sourceName: pinName,
+        waypoints: [] // Initialize empty waypoints array
       });
       
       // Add visual indication if element exists
@@ -461,7 +461,19 @@ const SimpleWireManager = ({ canvasRef }) => {
         color: wireColor
       };
       
+      // Add the new wire
       setWires(prev => [...prev, newWire]);
+      
+      // If the pending wire has waypoints, store them as anchor points for this wire
+      if (pendingWire.waypoints && pendingWire.waypoints.length > 0) {
+        console.log(`Adding ${pendingWire.waypoints.length} waypoints to new wire ${wireId}`);
+        setWireAnchorPoints(prev => ({
+          ...prev,
+          [wireId]: [...pendingWire.waypoints]
+        }));
+      }
+      
+      // Reset the pending wire
       setPendingWire(null);
       
       // Log connected pins for simulation
@@ -1546,26 +1558,88 @@ const SimpleWireManager = ({ canvasRef }) => {
         {/* Draw pending wire */}
         {pendingWire && pendingWire.sourcePos && (
           <g className="pending-wire-group">
-            {/* Shadow for pending wire */}
-            <PathLine
-              points={[pendingWire.sourcePos, mousePosition]}
-              stroke="rgba(0,0,0,0.15)"
-              strokeWidth={4.5}
-              fill="none"
-              r={10}  // Curve radius
-              className="pending-wire-shadow"
-              style={{ filter: 'blur(1.5px)' }}
-            />
-            {/* Animated dashed line */}
-            <PathLine
-              points={[pendingWire.sourcePos, mousePosition]}
-              stroke="#3b82f6"
-              strokeWidth={2.5}
-              fill="none"
-              r={10}  // Curve radius
-              style={{ strokeDasharray: '6,4' }}
-              className="pending-wire"
-            />
+            {/* Check if there are waypoints */}
+            {pendingWire.waypoints && pendingWire.waypoints.length > 0 ? (
+              // Draw wire with waypoints
+              <>
+                {/* First segment: source to first waypoint */}
+                <path
+                  d={`M ${pendingWire.sourcePos.x} ${pendingWire.sourcePos.y} L ${pendingWire.waypoints[0].x} ${pendingWire.waypoints[0].y}`}
+                  stroke="#3b82f6"
+                  strokeWidth={2.5}
+                  fill="none"
+                  strokeDasharray="6,4"
+                  className="pending-wire"
+                />
+                
+                {/* Middle segments: between waypoints */}
+                {pendingWire.waypoints.map((waypoint, index) => {
+                  // If this is the last waypoint, connect to mouse position
+                  if (index === pendingWire.waypoints.length - 1) {
+                    return (
+                      <path
+                        key={`pending-segment-${index}`}
+                        d={`M ${waypoint.x} ${waypoint.y} L ${mousePosition.x} ${mousePosition.y}`}
+                        stroke="#3b82f6"
+                        strokeWidth={2.5}
+                        fill="none"
+                        strokeDasharray="6,4"
+                        className="pending-wire"
+                      />
+                    );
+                  }
+                  
+                  // Otherwise connect to next waypoint
+                  const nextWaypoint = pendingWire.waypoints[index + 1];
+                  return (
+                    <path
+                      key={`pending-segment-${index}`}
+                      d={`M ${waypoint.x} ${waypoint.y} L ${nextWaypoint.x} ${nextWaypoint.y}`}
+                      stroke="#3b82f6"
+                      strokeWidth={2.5}
+                      fill="none"
+                      strokeDasharray="6,4"
+                      className="pending-wire"
+                    />
+                  );
+                })}
+                
+                {/* Draw waypoint markers */}
+                {pendingWire.waypoints.map((waypoint, index) => (
+                  <circle
+                    key={`waypoint-marker-${index}`}
+                    cx={waypoint.x}
+                    cy={waypoint.y}
+                    r={4}
+                    fill="#3b82f6"
+                    stroke="#ffffff"
+                    strokeWidth={1}
+                  />
+                ))}
+              </>
+            ) : (
+              // Draw direct line if no waypoints
+              <>
+                {/* Shadow for pending wire */}
+                <path
+                  d={`M ${pendingWire.sourcePos.x} ${pendingWire.sourcePos.y} L ${mousePosition.x} ${mousePosition.y}`}
+                  stroke="rgba(0,0,0,0.15)"
+                  strokeWidth={4.5}
+                  fill="none"
+                  className="pending-wire-shadow"
+                  style={{ filter: 'blur(1.5px)' }}
+                />
+                {/* Animated dashed line */}
+                <path
+                  d={`M ${pendingWire.sourcePos.x} ${pendingWire.sourcePos.y} L ${mousePosition.x} ${mousePosition.y}`}
+                  stroke="#3b82f6"
+                  strokeWidth={2.5}
+                  fill="none"
+                  strokeDasharray="6,4"
+                  className="pending-wire"
+                />
+              </>
+            )}
           </g>
         )}
       </svg>
