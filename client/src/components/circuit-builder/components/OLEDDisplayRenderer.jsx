@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSimulator } from '../simulator/SimulatorContext';
 import { findRectangleWithCache } from '../utils/imageAnalysis';
+import { parseOLEDCommands, executeOLEDCommands } from '../simulator/OLEDCommandParser';
 
 /**
  * Component for rendering OLED display content based on simulator state
@@ -261,24 +262,72 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
       return;
     }
     
-    // Parse the user's OLED code and execute it to create actual output
-    // For now, we'll show both a demo animation and a note about custom code
+    // Actually parse and execute the OLED commands from the user's Arduino code
+    // Access the Arduino code from the window.simulatorContext
+    const code = window.simulatorContext?.code || '';
+    
+    // Parse the OLED commands
+    const parsedCommands = parseOLEDCommands(code);
+    
+    console.log("Parsed OLED commands:", parsedCommands);
+    
+    // Check if we have a valid Arduino sketch with OLED commands
+    const hasValidCode = parsedCommands && 
+                        (parsedCommands.commands.length > 0 || 
+                         parsedCommands.hasPageLoop || 
+                         parsedCommands.hasDisplayMethod);
+                         
+    // Track animation state
+    let frameCount = 0;
+    
+    // Initialize animation variables for fallback mode
     let x = 44;
     let y = 24;
     let dx = 1;
     let dy = 1;
-    let frameCount = 0;
     
     animationInterval.current = setInterval(() => {
-      // Create new empty buffer
-      const newBuffer = new Array(displayHeight).fill(0).map(() => 
-        new Array(displayWidth).fill(0)
-      );
+      // Create a new buffer for this frame
+      let newBuffer;
       
-      // Check for interactive/animation mode (default to true for demo)
-      const isInteractiveMode = true;
-      
-      if (isInteractiveMode) {
+      if (hasValidCode) {
+        // EXECUTE THE USER'S CODE: Parse and execute the actual commands from the Arduino code
+        try {
+          newBuffer = executeOLEDCommands(parsedCommands, displayWidth, displayHeight);
+          
+          // Add a small indicator in the corner to show this is rendered from actual code
+          const codeText = "LIVE";
+          for (let i = 0; i < codeText.length; i++) {
+            drawChar(newBuffer, codeText.charAt(i), displayWidth - 25 + (i * 5), 2, true);
+          }
+          
+        } catch (error) {
+          console.error("Error executing OLED commands:", error);
+          // Fall back to a blank screen with error message
+          newBuffer = new Array(displayHeight).fill(0).map(() => 
+            new Array(displayWidth).fill(0)
+          );
+          
+          // Show error message
+          const errorText = "ERROR: " + (error.message || "Unknown error");
+          for (let i = 0; i < Math.min(errorText.length, 20); i++) {
+            drawChar(newBuffer, errorText.charAt(i), 5 + (i * 6), 10);
+          }
+          
+          if (errorText.length > 20) {
+            for (let i = 0; i < Math.min(errorText.length - 20, 20); i++) {
+              drawChar(newBuffer, errorText.charAt(i + 20), 5 + (i * 6), 20);
+            }
+          }
+        }
+      } else {
+        // FALLBACK MODE: If no valid OLED code is found, display a demo animation
+        // with an informative message explaining that no OLED code was detected
+        newBuffer = new Array(displayHeight).fill(0).map(() => 
+          new Array(displayWidth).fill(0)
+        );
+        
+        // Show a bouncing ball animation as a demo
         // Move the ball
         x += dx;
         y += dy;
@@ -302,38 +351,28 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
             }
           }
         }
+        
+        // Draw message explaining this is a fallback animation
+        const missingText = "NO OLED COMMANDS";
+        for (let i = 0; i < missingText.length; i++) {
+          drawChar(newBuffer, missingText.charAt(i), 10 + (i * 6), 5);
+        }
+        
+        const helpText = "ADD U8G2 OR ADAFRUIT";
+        for (let i = 0; i < helpText.length; i++) {
+          drawChar(newBuffer, helpText.charAt(i), 5 + (i * 6), 15);
+        }
+        
+        const helpText2 = "OLED CODE TO ARDUINO";
+        for (let i = 0; i < helpText2.length; i++) {
+          drawChar(newBuffer, helpText2.charAt(i), 5 + (i * 6), 25);
+        }
       }
       
-      // Always draw the note about custom code
-      // Draw a header showing this is a simulation
-      const headerText = "YOUR CODE IS RUNNING";
-      for (let i = 0; i < headerText.length; i++) {
-        const charX = 2 + i * 6;
-        const charY = 2;
-        drawChar(newBuffer, headerText.charAt(i), charX, charY);
-      }
-      
-      // Draw a note about actual code
-      const customText = "ACTUAL OLED API";
-      for (let i = 0; i < customText.length; i++) {
-        const charX = 5 + i * 7;
-        const charY = 15;
-        drawChar(newBuffer, customText.charAt(i), charX, charY);
-      }
-      
-      const customText2 = "CALLS DETECTED";
-      for (let i = 0; i < customText2.length; i++) {
-        const charX = 15 + i * 7;
-        const charY = 25;
-        drawChar(newBuffer, customText2.charAt(i), charX, charY);
-      }
-      
-      // Draw a frame count at the bottom
-      const countText = `FRAME ${frameCount++}`;
-      for (let i = 0; i < countText.length; i++) {
-        const charX = 5 + i * 6;
-        const charY = 55;
-        drawChar(newBuffer, countText.charAt(i), charX, charY);
+      // Always show a small frame counter in the bottom corner for reference
+      const frameText = `F:${frameCount++}`;
+      for (let i = 0; i < frameText.length; i++) {
+        drawChar(newBuffer, frameText.charAt(i), displayWidth - 25 + (i * 5), displayHeight - 10, true);
       }
       
       // Update the display buffer
@@ -349,7 +388,7 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
   }, [isRunning, displayState]);
   
   // Helper function to draw a character (simple 5x7 font)
-  const drawChar = (buffer, char, x, y) => {
+  const drawChar = (buffer, char, x, y, smallFont = false) => {
     // Simple 5x7 font for digits and basic characters
     const fontData = {
       '0': [
