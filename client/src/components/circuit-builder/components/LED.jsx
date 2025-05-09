@@ -52,8 +52,6 @@ const LED = ({
   
   // Check if this LED has been updated by the simulation
   useEffect(() => {
-    console.log(`LED ${id} checking for true emulator pin signal updates, isSimulationRunning=${isSimulationRunning}`);
-    
     // Turn off LED when simulation stops
     if (!isSimulationRunning) {
       setIsLit(false);
@@ -77,11 +75,8 @@ const LED = ({
         ) : [];
       
       if (connectedWires.length === 0) {
-        console.log(`LED ${id} has no connected wires`);
         return;
       }
-      
-      console.log(`LED ${id} found ${connectedWires.length} connected wires`);
       
       // Process each wire connection
       connectedWires.forEach(wire => {
@@ -174,8 +169,6 @@ const LED = ({
         // For RGB LEDs we would use the actual analogValue to control brightness
         pinValue = pinValue || isHigh || (pinAnalogValue > 0);
         analogValue = Math.max(analogValue, pinAnalogValue);
-        
-        console.log(`LED ${id} connected to ${boardId} pin ${pinNumber} with analog value ${pinAnalogValue}`);
       } else {
         // Boolean format (standard digital pin)
         pinValue = pinValue || !!pinState;
@@ -184,8 +177,6 @@ const LED = ({
         if (!!pinState) {
           analogValue = 255;
         }
-        
-        console.log(`LED ${id} connected to ${boardId} pin ${pinNumber} with value ${!!pinState}`);
       }
     };
     

@@ -61,7 +61,8 @@ const AVR8SimulatorComponent = ({
     }
   }, [onLog]);
   
-  // Update components connected to a pin
+  // Update components connected to a pin - ONLY update the pin state
+  // Components will listen for these changes and respond accordingly
   const updateConnectedComponents = useCallback((pin, isHigh, options = {}) => {
     // Get the analog value if provided (for PWM pins)
     const analogValue = options?.analogValue !== undefined ? options.analogValue : (isHigh ? 255 : 0);
@@ -110,21 +111,20 @@ const AVR8SimulatorComponent = ({
     // Update each board
     if (heroboardIds.length > 0) {
       heroboardIds.forEach(boardId => {
-        // Create pin update object
+        // Create pin update object with consistent format
         const pinUpdate = {};
-        pinUpdate[pinNumber] = isHigh;
         
-        // If we have an analog value, include it
-        if (options?.analogValue !== undefined) {
-          pinUpdate[pinNumber] = { isHigh, analogValue };
-        }
+        // Always use object format for consistency
+        pinUpdate[pinNumber] = { 
+          isHigh, 
+          analogValue: options?.analogValue !== undefined ? analogValue : (isHigh ? 255 : 0) 
+        };
         
         // Update the component's pins
         updateComponentPins(boardId, pinUpdate);
+        
         if (onLog) {
-          const logMsg = options?.analogValue !== undefined
-            ? `Pin ${pinNumber} changed to ${isHigh ? 'HIGH' : 'LOW'} (analog: ${analogValue})`
-            : `Pin ${pinNumber} changed to ${isHigh ? 'HIGH' : 'LOW'}`;
+          const logMsg = `Pin ${pinNumber} changed to ${isHigh ? 'HIGH' : 'LOW'} (analog: ${analogValue})`;
           onLog(logMsg);
         }
       });
@@ -132,31 +132,27 @@ const AVR8SimulatorComponent = ({
       // Fallback to update a generic heroboard
       const pinUpdate = {};
       
-      // If we have an analog value, include it
-      if (options?.analogValue !== undefined) {
-        pinUpdate[pinNumber] = { isHigh, analogValue };
-      } else {
-        pinUpdate[pinNumber] = isHigh;
-      }
+      // Always use object format for consistency 
+      pinUpdate[pinNumber] = { 
+        isHigh, 
+        analogValue: options?.analogValue !== undefined ? analogValue : (isHigh ? 255 : 0) 
+      };
       
       updateComponentPins('heroboard', pinUpdate);
       
       if (onLog) {
-        const logMsg = options?.analogValue !== undefined
-          ? `Pin ${pinNumber} changed to ${isHigh ? 'HIGH' : 'LOW'} (analog: ${analogValue})`
-          : `Pin ${pinNumber} changed to ${isHigh ? 'HIGH' : 'LOW'}`;
+        const logMsg = `Pin ${pinNumber} changed to ${isHigh ? 'HIGH' : 'LOW'} (analog: ${analogValue})`;
         onLog(logMsg);
       }
     }
     
-    // DO NOT handle special component updates directly here.
-    // All components should listen to pin signal changes and update themselves.
-    // This ensures proper emulation where components only respond to signals,
-    // not to hardcoded behavior or code keyword detection.
-    
-    // Note: If components need to be associated with specific pins, this should
-    // be done through proper pin connection configuration, not through hardcoded
-    // pin assignments or ID pattern matching.
+    // NO DIRECT COMPONENT MANIPULATION:
+    // This function ONLY updates pin states on the Arduino/heroboard
+    // All other components will observe these pin state changes through their connections
+    // and update their own state accordingly.
+    //
+    // This ensures true hardware emulation where components only respond to actual signals
+    // coming through properly connected pins, not through shortcuts or pattern matching.
     
   }, [componentStates, updateComponentPins, onLog]);
   

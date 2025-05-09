@@ -142,8 +142,9 @@ const AVR8SimulatorConnector = ({
                   });
                 }
                 
-                // Start the emulator with the parsed user program
-                emulatorRef.current.start(result.userProgram);
+                // Start the emulator with ONLY the compiled code (no userProgram)
+                // This ensures we use ONLY the CPU emulator and not any shortcuts
+                emulatorRef.current.start();
               } else {
                 logInfo('Failed to load program');
                 
