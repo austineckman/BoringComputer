@@ -194,7 +194,17 @@ const RGBLED = ({
     // Convert to 0-1 range for the component
     normalizedValue = clampedValue / 255;
     
-    console.log(`RGB LED ${id}: Setting ${color} to raw=${clampedValue}, normalized=${normalizedValue}`);
+    // Handle common anode vs cathode
+    // For common anode: HIGH (255) turns LED OFF, LOW (0) turns LED ON
+    // For common cathode: HIGH (255) turns LED ON, LOW (0) turns LED OFF
+    if (commonPin === 'anode') {
+      // For common anode, we need to invert the value (255 becomes 0, 0 becomes 255)
+      // This ensures correct visual representation in the component
+      normalizedValue = 1 - normalizedValue;
+      console.log(`RGB LED ${id}: Setting ${color} to raw=${clampedValue}, inverted normalized=${normalizedValue} (common ANODE)`);
+    } else {
+      console.log(`RGB LED ${id}: Setting ${color} to raw=${clampedValue}, normalized=${normalizedValue} (common CATHODE)`);
+    }
     
     switch(color) {
       case 'red':
@@ -257,9 +267,36 @@ const RGBLED = ({
 
   // Check if any LED is on for simulation feedback
   const isSimulationRunning = window.isSimulationRunning;
-  const redOn = ledRed > 0.1;
-  const greenOn = ledGreen > 0.1;
-  const blueOn = ledBlue > 0.1;
+  
+  // Calculate if a color is "on" - we need to handle common anode vs cathode differently
+  // For common anode: a color is ON when its value is LOWER
+  // For common cathode: a color is ON when its value is HIGHER
+  const threshold = 0.1; // Threshold for detecting if a color is on
+  
+  // Clearer detection logic that works for both common anode and cathode
+  const redOn = commonPin === 'anode' 
+    ? ledRed < (1 - threshold) // For anode, light is ON when value is LOW
+    : ledRed > threshold;      // For cathode, light is ON when value is HIGH
+    
+  const greenOn = commonPin === 'anode'
+    ? ledGreen < (1 - threshold)
+    : ledGreen > threshold;
+    
+  const blueOn = commonPin === 'anode'
+    ? ledBlue < (1 - threshold)
+    : ledBlue > threshold;
+    
+  // Debug information about color states
+  useEffect(() => {
+    if (isSimulationRunning) {
+      console.log(`RGB LED ${id} state:`, {
+        red: { value: ledRed, isOn: redOn },
+        green: { value: ledGreen, isOn: greenOn },
+        blue: { value: ledBlue, isOn: blueOn },
+        mode: commonPin
+      });
+    }
+  }, [ledRed, ledGreen, ledBlue, redOn, greenOn, blueOn, isSimulationRunning, id, commonPin]);
 
   return (
     <>
@@ -318,9 +355,24 @@ const RGBLED = ({
           controlPin={commonPin}
         />
         
-        {/* Simulation state indicators and glow effects */}
+        {/* Simulation state indicators and unified glow effect */}
         {isSimulationRunning && (
           <div className="absolute" style={{ transform: `translate(${initPosLeft}px, ${initPosTop}px)` }}>
+            {/* Debug values */}
+            <div 
+              className="absolute bg-black bg-opacity-75 text-white text-xs p-1 rounded"
+              style={{
+                top: '-40px',
+                left: '0px',
+                zIndex: 200,
+                display: isSelected ? 'block' : 'none'
+              }}
+            >
+              R:{Math.round(ledRed * 255)} G:{Math.round(ledGreen * 255)} B:{Math.round(ledBlue * 255)}
+              <br/>
+              Mode: {commonPin === 'anode' ? 'Common Anode' : 'Common Cathode'}
+            </div>
+            
             {/* Status indicator dot */}
             <div 
               className={`rounded-full w-3 h-3 absolute top-2 right-2 ${redOn || greenOn || blueOn ? 'bg-green-500' : 'bg-red-500'}`}
@@ -331,71 +383,55 @@ const RGBLED = ({
               }}
             ></div>
             
-            {/* RGB Glow effects for each color when on */}
-            {redOn && (
-              <div 
-                className="absolute rounded-full w-8 h-8 opacity-60"
-                style={{
-                  backgroundColor: `rgba(255, 0, 0, ${ledRed})`,
-                  transform: 'translate(5px, 10px)',
-                  boxShadow: `0 0 15px 5px rgba(255, 0, 0, ${ledRed})`,
-                  filter: 'blur(4px)',
-                  animation: 'pulse 1s infinite alternate',
-                  zIndex: 99
-                }}
-              ></div>
-            )}
+            {/* Unified RGB glow effect based on all values */}
+            <div 
+              className="absolute rounded-full w-10 h-10 opacity-70"
+              style={{
+                backgroundColor: `rgb(
+                  ${redOn ? Math.round(ledRed * 255) : 0}, 
+                  ${greenOn ? Math.round(ledGreen * 255) : 0}, 
+                  ${blueOn ? Math.round(ledBlue * 255) : 0}
+                )`,
+                transform: 'translate(5px, 10px)',
+                boxShadow: `0 0 20px 8px rgb(
+                  ${redOn ? Math.round(ledRed * 255) : 0}, 
+                  ${greenOn ? Math.round(ledGreen * 255) : 0}, 
+                  ${blueOn ? Math.round(ledBlue * 255) : 0}
+                )`,
+                filter: 'blur(5px)',
+                animation: 'pulse 1.2s infinite alternate',
+                zIndex: 99,
+                display: (redOn || greenOn || blueOn) ? 'block' : 'none'
+              }}
+            ></div>
             
-            {greenOn && (
+            {/* Individual color indicators (small dots) for debugging */}
+            <div className="absolute" style={{ bottom: '-25px', left: '0px', display: 'flex', gap: '2px' }}>
               <div 
-                className="absolute rounded-full w-8 h-8 opacity-60"
-                style={{
-                  backgroundColor: `rgba(0, 255, 0, ${ledGreen})`,
-                  transform: 'translate(5px, 10px)',
-                  boxShadow: `0 0 15px 5px rgba(0, 255, 0, ${ledGreen})`,
-                  filter: 'blur(4px)',
-                  animation: 'pulse 1s infinite alternate',
-                  zIndex: 99
+                className="rounded-full w-2 h-2" 
+                style={{ 
+                  backgroundColor: redOn ? 'red' : 'darkred',
+                  opacity: redOn ? 1 : 0.3,
+                  zIndex: 200
                 }}
               ></div>
-            )}
-            
-            {blueOn && (
               <div 
-                className="absolute rounded-full w-8 h-8 opacity-60"
-                style={{
-                  backgroundColor: `rgba(0, 0, 255, ${ledBlue})`,
-                  transform: 'translate(5px, 10px)',
-                  boxShadow: `0 0 15px 5px rgba(0, 0, 255, ${ledBlue})`,
-                  filter: 'blur(4px)',
-                  animation: 'pulse 1s infinite alternate',
-                  zIndex: 99
+                className="rounded-full w-2 h-2" 
+                style={{ 
+                  backgroundColor: greenOn ? 'lime' : 'darkgreen',
+                  opacity: greenOn ? 1 : 0.3, 
+                  zIndex: 200
                 }}
               ></div>
-            )}
-            
-            {/* Mixed color effect if multiple colors are on */}
-            {((redOn && greenOn) || (redOn && blueOn) || (greenOn && blueOn)) && (
               <div 
-                className="absolute rounded-full w-10 h-10 opacity-60"
-                style={{
-                  backgroundColor: `rgb(
-                    ${Math.round(ledRed * 255)}, 
-                    ${Math.round(ledGreen * 255)}, 
-                    ${Math.round(ledBlue * 255)}
-                  )`,
-                  transform: 'translate(5px, 10px)',
-                  boxShadow: `0 0 20px 8px rgb(
-                    ${Math.round(ledRed * 255)}, 
-                    ${Math.round(ledGreen * 255)}, 
-                    ${Math.round(ledBlue * 255)}
-                  )`,
-                  filter: 'blur(6px)',
-                  animation: 'pulse 1.5s infinite alternate',
-                  zIndex: 98
+                className="rounded-full w-2 h-2" 
+                style={{ 
+                  backgroundColor: blueOn ? 'blue' : 'darkblue',
+                  opacity: blueOn ? 1 : 0.3, 
+                  zIndex: 200
                 }}
               ></div>
-            )}
+            </div>
           </div>
         )}
       </div>
