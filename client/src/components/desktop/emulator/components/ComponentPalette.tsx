@@ -10,7 +10,7 @@ const oledDisplayIcon = '/attached_assets/oled-display.icon.png';
 const resistorIcon = '/attached_assets/resistor.icon.png';
 const photoresistorIcon = '/attached_assets/photoresistor.icon.png';
 const buzzerIcon = '/attached_assets/buzzer.icon.png';
-const heroBoardIcon = '/attached_assets/hero-board.icon.png';
+const heroBoardIcon = '/attached_assets/circuit board.png';
 const rotaryEncoderIcon = '/attached_assets/rotary-encoder.icon.png';
 const segmentedDisplayIcon = '/attached_assets/segmented-display.icon.png';
 const dipSwitchIcon = '/attached_assets/dip-switch-3.icon.png';
@@ -102,7 +102,7 @@ const COMPONENT_CATEGORIES = [
       {
         id: 'hero-board',
         name: 'HERO Board',
-        icon: <img src={heroBoardIcon} className="h-8 w-8" alt="HERO Board" style={{ imageRendering: 'crisp-edges' }} />,
+        icon: <img src={heroBoardIcon} className="h-12 w-12" alt="HERO Board" style={{ imageRendering: 'auto', objectFit: 'cover' }} />,
         description: 'Main microcontroller board',
         rarity: 'legendary',
       },
