@@ -1,42 +1,42 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { PinState } from '../EmulatorContext';
 
-// HERO board component image path (higher resolution image for better quality)
-const heroBoardImage = '/attached_assets/circuit board.png';
+// HERO board component image path (uses the exact same image from the original sandbox)
+const heroBoardImage = '/attached_assets/hero-board.icon.png';
 
-// Pin definitions for HERO board (adjusted for the larger component size)
+// Pin definitions for HERO board (matching sandbox configuration)
 const ARDUINO_PINS = [
   // Digital pins
-  { id: '0', x: 395, y: 60, label: 'D0', type: 'bidirectional' },
-  { id: '1', x: 395, y: 82, label: 'D1', type: 'bidirectional' },
-  { id: '2', x: 395, y: 105, label: 'D2', type: 'bidirectional' },
-  { id: '3', x: 395, y: 128, label: 'D3', type: 'bidirectional' },
-  { id: '4', x: 395, y: 150, label: 'D4', type: 'bidirectional' },
-  { id: '5', x: 395, y: 173, label: 'D5', type: 'bidirectional' },
-  { id: '6', x: 395, y: 195, label: 'D6', type: 'bidirectional' },
-  { id: '7', x: 395, y: 218, label: 'D7', type: 'bidirectional' },
-  { id: '8', x: 395, y: 240, label: 'D8', type: 'bidirectional' },
-  { id: '9', x: 368, y: 262, label: 'D9', type: 'bidirectional' },
-  { id: '10', x: 345, y: 262, label: 'D10', type: 'bidirectional' },
-  { id: '11', x: 322, y: 262, label: 'D11', type: 'bidirectional' },
-  { id: '12', x: 300, y: 262, label: 'D12', type: 'bidirectional' },
-  { id: '13', x: 277, y: 262, label: 'D13', type: 'bidirectional' },
+  { id: '0', x: 265, y: 40, label: 'D0', type: 'bidirectional' },
+  { id: '1', x: 265, y: 55, label: 'D1', type: 'bidirectional' },
+  { id: '2', x: 265, y: 70, label: 'D2', type: 'bidirectional' },
+  { id: '3', x: 265, y: 85, label: 'D3', type: 'bidirectional' },
+  { id: '4', x: 265, y: 100, label: 'D4', type: 'bidirectional' },
+  { id: '5', x: 265, y: 115, label: 'D5', type: 'bidirectional' },
+  { id: '6', x: 265, y: 130, label: 'D6', type: 'bidirectional' },
+  { id: '7', x: 265, y: 145, label: 'D7', type: 'bidirectional' },
+  { id: '8', x: 265, y: 160, label: 'D8', type: 'bidirectional' },
+  { id: '9', x: 245, y: 175, label: 'D9', type: 'bidirectional' },
+  { id: '10', x: 230, y: 175, label: 'D10', type: 'bidirectional' },
+  { id: '11', x: 215, y: 175, label: 'D11', type: 'bidirectional' },
+  { id: '12', x: 200, y: 175, label: 'D12', type: 'bidirectional' },
+  { id: '13', x: 185, y: 175, label: 'D13', type: 'bidirectional' },
   
   // Analog pins
-  { id: 'A0', x: 187, y: 262, label: 'A0', type: 'input' },
-  { id: 'A1', x: 165, y: 262, label: 'A1', type: 'input' },
-  { id: 'A2', x: 142, y: 262, label: 'A2', type: 'input' },
-  { id: 'A3', x: 120, y: 262, label: 'A3', type: 'input' },
-  { id: 'A4', x: 97, y: 262, label: 'A4', type: 'input' },
-  { id: 'A5', x: 75, y: 262, label: 'A5', type: 'input' },
+  { id: 'A0', x: 125, y: 175, label: 'A0', type: 'input' },
+  { id: 'A1', x: 110, y: 175, label: 'A1', type: 'input' },
+  { id: 'A2', x: 95, y: 175, label: 'A2', type: 'input' },
+  { id: 'A3', x: 80, y: 175, label: 'A3', type: 'input' },
+  { id: 'A4', x: 65, y: 175, label: 'A4', type: 'input' },
+  { id: 'A5', x: 50, y: 175, label: 'A5', type: 'input' },
   
   // Power pins
-  { id: 'GND', x: 52, y: 60, label: 'GND', type: 'output' },
-  { id: '5V', x: 52, y: 82, label: '5V', type: 'output' },
-  { id: '3V3', x: 52, y: 105, label: '3.3V', type: 'output' },
+  { id: 'GND', x: 35, y: 40, label: 'GND', type: 'output' },
+  { id: '5V', x: 35, y: 55, label: '5V', type: 'output' },
+  { id: '3V3', x: 35, y: 70, label: '3.3V', type: 'output' },
   
   // Built-in LED at pin 13
-  { id: 'LED_BUILTIN', x: 217, y: 158, label: 'LED', type: 'output' }
+  { id: 'LED_BUILTIN', x: 145, y: 105, label: 'LED', type: 'output' }
 ];
 
 interface ArduinoBoardProps {
@@ -77,9 +77,9 @@ export function ArduinoBoard({
   // Refs
   const componentRef = useRef<HTMLDivElement>(null);
   
-  // Component dimensions - increased for high-resolution image
-  const width = 450;
-  const height = 300;
+  // Component dimensions
+  const width = 300;
+  const height = 200;
   
   // Handle click on component
   const handleClick = (e: React.MouseEvent) => {
@@ -378,7 +378,7 @@ export function ArduinoBoard({
           style={{
             filter: isSelected ? 'brightness(1.2)' : 'none',
             transition: 'filter 0.2s',
-            imageRendering: 'auto', // Use auto for photographic images
+            imageRendering: 'crisp-edges',
             maxWidth: '100%',
             maxHeight: '100%'
           }}
