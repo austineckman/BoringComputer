@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Background -->
+  <rect x="0" y="0" width="64" height="64" fill="#1e1e1e" rx="6" ry="6"/>
+  
+  <!-- Resistor Body -->
+  <rect x="17" y="22" width="30" height="20" fill="#d2a67a" rx="3" ry="3"/>
+  
+  <!-- Color Bands -->
+  <rect x="22" y="22" width="3" height="20" fill="#a52a2a"/>
+  <rect x="28" y="22" width="3" height="20" fill="#ff0000"/>
+  <rect x="34" y="22" width="3" height="20" fill="#ffa500"/>
+  <rect x="40" y="22" width="3" height="20" fill="#ddaa33"/>
+  
+  <!-- Wire Leads -->
+  <line x1="5" y1="32" x2="17" y2="32" stroke="#cccccc" stroke-width="2"/>
+  <line x1="47" y1="32" x2="59" y2="32" stroke="#cccccc" stroke-width="2"/>
+  
+  <!-- Pin Connectors -->
+  <circle cx="5" cy="32" r="2" fill="#ffcc00"/>
+  <circle cx="59" cy="32" r="2" fill="#ffcc00"/>
+</svg>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Background -->
+  <rect x="0" y="0" width="64" height="64" fill="#1e1e1e" rx="6" ry="6"/>
+  
+  <!-- Photoresistor Body -->
+  <rect x="24" y="22" width="16" height="20" fill="#b89052" rx="2" ry="2"/>
+  
+  <!-- Light Sensor Window -->
+  <circle cx="32" cy="32" r="5" fill="#5d5a50"/>
+  <circle cx="32" cy="32" r="4" fill="#333"/>
+  <circle cx="32" cy="32" r="3" fill="#222"/>
+  <path d="M30,30 L34,34 M30,34 L34,30" stroke="#444" stroke-width="0.5"/>
+  
+  <!-- Light rays -->
+  <line x1="32" y1="20" x2="32" y2="23" stroke="#ffc107" stroke-width="1"/>
+  <line x1="27" y1="22" x2="29" y2="25" stroke="#ffc107" stroke-width="1"/>
+  <line x1="23" y1="26" x2="26" y2="28" stroke="#ffc107" stroke-width="1"/>
+  <line x1="37" y1="22" x2="35" y2="25" stroke="#ffc107" stroke-width="1"/>
+  <line x1="41" y1="26" x2="38" y2="28" stroke="#ffc107" stroke-width="1"/>
+  
+  <!-- Wire Leads -->
+  <line x1="10" y1="32" x2="24" y2="32" stroke="#cccccc" stroke-width="2"/>
+  <line x1="40" y1="32" x2="54" y2="32" stroke="#cccccc" stroke-width="2"/>
+  
+  <!-- Pin Connectors -->
+  <circle cx="10" cy="32" r="2" fill="#ffcc00"/>
+  <circle cx="54" cy="32" r="2" fill="#ffcc00"/>
+</svg>

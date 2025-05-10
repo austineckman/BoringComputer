@@ -2,18 +2,19 @@
  * Available circuit component options for the circuit builder
  */
 
-// Import component images directly
-import heroboardImg from '@assets/hero-board.icon.png';
-import ledImg from '@assets/led.icon.png';
-import rgbLedImg from '@assets/rgb-led.icon.png';
-import resistorImg from '@assets/resistor.icon.png';
-import photoresistorImg from '@assets/photoresistor.icon.png';
-import oledDisplayImg from '@assets/oled-display.icon.png';
+// Import component images directly - using SVG when available
+import heroboardImg from '@assets/hero-board.icon.svg';
+import ledImg from '@assets/led.icon.svg';
+import rgbLedImg from '@assets/rgb-led.icon.svg';
+import resistorImg from '@assets/resistor.icon.svg';
+import photoresistorImg from '@assets/photoresistor.icon.svg';
+import oledDisplayImg from '@assets/oled-display.icon.png'; // PNG for OLED display
 import segmentedDisplayImg from '@assets/segmented-display.icon.png';
 import customKeypadImg from '@assets/custom-keypad.icon.png';
 import rotaryEncoderImg from '@assets/rotary-encoder.icon.png';
 import dipSwitchImg from '@assets/dip-switch-3.icon.png';
 import buzzerImg from '@assets/buzzer.icon.svg';
+import breadboardMiniImg from '@assets/breadboard-mini.icon.svg';
 
 // List of available components with their properties and pin configurations
 export const componentOptions = [
@@ -192,6 +193,27 @@ export const componentOptions = [
       { id: 'out2', type: 'bidirectional', label: 'Output 2' },
       { id: 'in3', type: 'bidirectional', label: 'Input 3' },
       { id: 'out3', type: 'bidirectional', label: 'Output 3' }
+    ]
+  },
+  // Add breadboard mini component
+  {
+    name: 'breadboard-mini',
+    displayName: 'Mini Breadboard',
+    description: 'Miniature solderless breadboard',
+    category: 'passives',
+    imagePath: breadboardMiniImg,
+    pinConfig: [
+      // Nodes for the mini breadboard (simplified)
+      { id: 'row1-1', type: 'bidirectional', label: 'Node 1' },
+      { id: 'row1-2', type: 'bidirectional', label: 'Node 2' },
+      { id: 'row1-3', type: 'bidirectional', label: 'Node 3' },
+      { id: 'row1-4', type: 'bidirectional', label: 'Node 4' },
+      { id: 'row1-5', type: 'bidirectional', label: 'Node 5' },
+      { id: 'row2-1', type: 'bidirectional', label: 'Node 6' },
+      { id: 'row2-2', type: 'bidirectional', label: 'Node 7' },
+      { id: 'row2-3', type: 'bidirectional', label: 'Node 8' },
+      { id: 'row2-4', type: 'bidirectional', label: 'Node 9' },
+      { id: 'row2-5', type: 'bidirectional', label: 'Node 10' }
     ]
   }
 ];
