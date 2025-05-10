@@ -76,8 +76,8 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
 
       // Direct fallback to a known OLED image path
       console.log("Using fallback image path for OLED display");
-      // Use path from our properly served images directory
-      const oledPath = '/images/oled-display.icon.png';
+      // Use the original image from the sandbox
+      const oledPath = '/attached_assets/oled-display.icon.png';
       return oledPath;
     };
 

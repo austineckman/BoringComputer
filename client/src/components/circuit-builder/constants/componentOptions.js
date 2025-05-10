@@ -2,19 +2,19 @@
  * Available circuit component options for the circuit builder
  */
 
-// Import component images directly - using SVG when available
-import heroboardImg from '@assets/hero-board.icon.svg';
-import ledImg from '@assets/led.icon.svg';
-import rgbLedImg from '@assets/rgb-led.icon.svg';
-import resistorImg from '@assets/resistor.icon.svg';
-import photoresistorImg from '@assets/photoresistor.icon.svg';
-import oledDisplayImg from '@assets/oled-display.icon.png'; // PNG for OLED display
+// Import component images directly from the original sandbox
+import heroboardImg from '@assets/hero-board.icon.png';
+import ledImg from '@assets/led.icon.png';
+import rgbLedImg from '@assets/rgb-led.icon.png';
+import resistorImg from '@assets/resistor.icon.png';
+import photoresistorImg from '@assets/photoresistor.icon.png';
+import oledDisplayImg from '@assets/oled-display.icon.png';
 import segmentedDisplayImg from '@assets/segmented-display.icon.png';
 import customKeypadImg from '@assets/custom-keypad.icon.png';
 import rotaryEncoderImg from '@assets/rotary-encoder.icon.png';
 import dipSwitchImg from '@assets/dip-switch-3.icon.png';
-import buzzerImg from '@assets/buzzer.icon.svg';
-import breadboardMiniImg from '@assets/breadboard-mini.icon.svg';
+import buzzerImg from '@assets/buzzer.icon.png';
+import breadboardMiniImg from '@assets/breadboard-mini.icon.png';
 
 // List of available components with their properties and pin configurations
 export const componentOptions = [
