@@ -15,6 +15,17 @@ app.use(express.urlencoded({ extended: false }));
 // Serve static files from the 'public' directory
 app.use(express.static('public'));
 
+// Serve static files from the 'attached_assets' directory
+app.use('/attached_assets', express.static('attached_assets', {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.png')) {
+      res.set('Content-Type', 'image/png');
+    } else if (path.endsWith('.svg')) {
+      res.set('Content-Type', 'image/svg+xml');
+    }
+  }
+}));
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
