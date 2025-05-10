@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { PinState } from '../EmulatorContext';
 
-// HERO board component image path (uses the exact same image from Inventr Share)
-const heroBoardImage = '/images/hero-board.icon.svg';
+// HERO board component image path (uses the exact same image from the original sandbox)
+const heroBoardImage = '/attached_assets/hero-board.icon.png';
 
 // Pin definitions for HERO board (matching sandbox configuration)
 const ARDUINO_PINS = [
