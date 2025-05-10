@@ -4,6 +4,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global component image styles */
+.component-image, img[alt*="Board"], img[alt*="LED"], img[alt*="Display"], img[alt*="Buzzer"], 
+img[alt*="Breadboard"], img[alt*="Resistor"], img[alt*="Encoder"], img[alt*="Switch"], img[alt*="Keypad"] {
+  image-rendering: pixelated !important;
+  image-rendering: crisp-edges !important;
+}
+
 /* OLED Display Canvas Styles */
 .oled-display-canvas {
   border-radius: 2px;

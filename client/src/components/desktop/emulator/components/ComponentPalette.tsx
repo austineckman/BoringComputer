@@ -68,28 +68,28 @@ const COMPONENT_CATEGORIES = [
       {
         id: 'rotary-encoder',
         name: 'Rotary Encoder',
-        icon: <img src={rotaryEncoderIcon} className="h-6 w-6" alt="Rotary Encoder" />,
+        icon: <img src={rotaryEncoderIcon} className="h-8 w-8" alt="Rotary Encoder" style={{ imageRendering: 'crisp-edges' }} />,
         description: 'Rotational input device',
         rarity: 'uncommon',
       },
       {
         id: 'photoresistor',
         name: 'Photoresistor',
-        icon: <img src={photoresistorIcon} className="h-6 w-6" alt="Photoresistor" />,
+        icon: <img src={photoresistorIcon} className="h-8 w-8" alt="Photoresistor" style={{ imageRendering: 'crisp-edges' }} />,
         description: 'Light-sensitive resistor',
         rarity: 'uncommon',
       },
       {
         id: 'dip-switch',
         name: 'DIP Switch',
-        icon: <img src={dipSwitchIcon} className="h-6 w-6" alt="DIP Switch" />,
+        icon: <img src={dipSwitchIcon} className="h-8 w-8" alt="DIP Switch" style={{ imageRendering: 'crisp-edges' }} />,
         description: 'Multiple toggle switches',
         rarity: 'uncommon',
       },
       {
         id: 'custom-keypad',
         name: 'Custom Keypad',
-        icon: <img src={customKeypadIcon} className="h-6 w-6" alt="Custom Keypad" />,
+        icon: <img src={customKeypadIcon} className="h-8 w-8" alt="Custom Keypad" style={{ imageRendering: 'crisp-edges' }} />,
         description: 'Matrix keypad for input',
         rarity: 'rare',
       }
@@ -102,21 +102,21 @@ const COMPONENT_CATEGORIES = [
       {
         id: 'hero-board',
         name: 'HERO Board',
-        icon: <img src={heroBoardIcon} className="h-6 w-6" alt="HERO Board" />,
+        icon: <img src={heroBoardIcon} className="h-8 w-8" alt="HERO Board" style={{ imageRendering: 'crisp-edges' }} />,
         description: 'Main microcontroller board',
         rarity: 'legendary',
       },
       {
         id: 'resistor',
         name: 'Resistor',
-        icon: <img src={resistorIcon} className="h-6 w-6" alt="Resistor" />,
+        icon: <img src={resistorIcon} className="h-8 w-8" alt="Resistor" style={{ imageRendering: 'crisp-edges' }} />,
         description: 'Limits current flow',
         rarity: 'common',
       },
       {
         id: 'breadboard-mini',
         name: 'Mini Breadboard',
-        icon: <img src={breadboardMiniIcon} className="h-6 w-6" alt="Mini Breadboard" />,
+        icon: <img src={breadboardMiniIcon} className="h-8 w-8" alt="Mini Breadboard" style={{ imageRendering: 'crisp-edges' }} />,
         description: 'For connecting components',
         rarity: 'uncommon',
       }
@@ -186,7 +186,7 @@ export function ComponentPalette({ onAddComponent }: ComponentPaletteProps) {
                     className={`p-2 flex items-center gap-2 border ${RARITY_COLORS[component.rarity as keyof typeof RARITY_COLORS]} rounded hover:bg-gray-700/50 cursor-pointer transition-colors`}
                     onClick={() => onAddComponent(component.id)}
                   >
-                    <div className="flex-shrink-0 w-8 h-8 bg-gray-900 rounded flex items-center justify-center">
+                    <div className="flex-shrink-0 w-10 h-10 bg-gray-900 rounded flex items-center justify-center p-1">
                       {component.icon}
                     </div>
                     <div className="flex-1 min-w-0">
