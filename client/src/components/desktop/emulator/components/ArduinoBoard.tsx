@@ -377,7 +377,10 @@ export function ArduinoBoard({
           className="w-full h-full object-contain"
           style={{
             filter: isSelected ? 'brightness(1.2)' : 'none',
-            transition: 'filter 0.2s'
+            transition: 'filter 0.2s',
+            imageRendering: 'crisp-edges',
+            maxWidth: '100%',
+            maxHeight: '100%'
           }}
         />
       </div>
