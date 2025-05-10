@@ -3,19 +3,19 @@ import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
 // Import component icons from the Inventr Share repository
-// These are the exact same images used in the sandbox
-const ledIcon = '/images/led.icon.png';
-const rgbLedIcon = '/images/rgb-led.icon.png';
+// Use SVG when available for better rendering, fallback to PNG
+const ledIcon = '/images/led.icon.svg';
+const rgbLedIcon = '/images/rgb-led.icon.svg';
 const oledDisplayIcon = '/images/oled-display.icon.png';
-const resistorIcon = '/images/resistor.icon.png';
-const photoresistorIcon = '/images/photoresistor.icon.png';
-const buzzerIcon = '/images/buzzer.icon.png';
-const heroBoardIcon = '/images/hero-board.icon.png';
+const resistorIcon = '/images/resistor.icon.svg';
+const photoresistorIcon = '/images/photoresistor.icon.svg';
+const buzzerIcon = '/images/buzzer.icon.svg';
+const heroBoardIcon = '/images/hero-board.icon.svg';
 const rotaryEncoderIcon = '/images/rotary-encoder.icon.png';
 const segmentedDisplayIcon = '/images/segmented-display.icon.png';
 const dipSwitchIcon = '/images/dip-switch-3.icon.png';
 const customKeypadIcon = '/images/custom-keypad.icon.png';
-const breadboardMiniIcon = '/images/breadboard-mini.icon.png';
+const breadboardMiniIcon = '/images/breadboard-mini.icon.svg';
 
 // Define the component types and their metadata with category grouping
 // Matching the 30 Days Lost in Space sandbox component organization
