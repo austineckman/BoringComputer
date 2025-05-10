@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Background -->
+  <rect x="0" y="0" width="64" height="64" fill="#1e1e1e" rx="6" ry="6"/>
+  
+  <!-- Board Body -->
+  <rect x="5" y="10" width="54" height="44" fill="#1a365d" rx="3" ry="3"/>
+  
+  <!-- USB Connector -->
+  <rect x="23" y="7" width="18" height="6" fill="#666" rx="1" ry="1"/>
+  
+  <!-- Board details -->
+  <rect x="10" y="15" width="44" height="34" fill="#173156" rx="2" ry="2"/>
+  
+  <!-- Power LED -->
+  <circle cx="15" cy="20" r="2" fill="#5f0"/>
+  
+  <!-- Pin Headers Left Side -->
+  <rect x="8" y="15" width="3" height="34" fill="#222"/>
+  <rect x="8" y="15" width="3" height="2" fill="#ffcc00"/>
+  <rect x="8" y="19" width="3" height="2" fill="#ffcc00"/>
+  <rect x="8" y="23" width="3" height="2" fill="#ffcc00"/>
+  <rect x="8" y="27" width="3" height="2" fill="#ffcc00"/>
+  <rect x="8" y="31" width="3" height="2" fill="#ffcc00"/>
+  <rect x="8" y="35" width="3" height="2" fill="#ffcc00"/>
+  <rect x="8" y="39" width="3" height="2" fill="#ffcc00"/>
+  <rect x="8" y="43" width="3" height="2" fill="#ffcc00"/>
+  <rect x="8" y="47" width="3" height="2" fill="#ffcc00"/>
+  
+  <!-- Pin Headers Right Side -->
+  <rect x="53" y="15" width="3" height="34" fill="#222"/>
+  <rect x="53" y="15" width="3" height="2" fill="#ffcc00"/>
+  <rect x="53" y="19" width="3" height="2" fill="#ffcc00"/>
+  <rect x="53" y="23" width="3" height="2" fill="#ffcc00"/>
+  <rect x="53" y="27" width="3" height="2" fill="#ffcc00"/>
+  <rect x="53" y="31" width="3" height="2" fill="#ffcc00"/>
+  <rect x="53" y="35" width="3" height="2" fill="#ffcc00"/>
+  <rect x="53" y="39" width="3" height="2" fill="#ffcc00"/>
+  <rect x="53" y="43" width="3" height="2" fill="#ffcc00"/>
+  <rect x="53" y="47" width="3" height="2" fill="#ffcc00"/>
+  
+  <!-- Circuit Traces -->
+  <line x1="18" y1="20" x2="25" y2="20" stroke="#ccc" stroke-width="0.5"/>
+  <line x1="38" y1="20" x2="45" y2="20" stroke="#ccc" stroke-width="0.5"/>
+  <line x1="18" y1="30" x2="25" y2="30" stroke="#ccc" stroke-width="0.5"/>
+  <line x1="38" y1="30" x2="45" y2="30" stroke="#ccc" stroke-width="0.5"/>
+  <line x1="18" y1="40" x2="25" y2="40" stroke="#ccc" stroke-width="0.5"/>
+  <line x1="38" y1="40" x2="45" y2="40" stroke="#ccc" stroke-width="0.5"/>
+  
+  <!-- Chip -->
+  <rect x="25" y="25" width="14" height="14" fill="#000" rx="1" ry="1"/>
+  <line x1="27" y1="25" x2="27" y2="39" stroke="#555" stroke-width="0.5"/>
+  <line x1="29" y1="25" x2="29" y2="39" stroke="#555" stroke-width="0.5"/>
+  <line x1="31" y1="25" x2="31" y2="39" stroke="#555" stroke-width="0.5"/>
+  <line x1="33" y1="25" x2="33" y2="39" stroke="#555" stroke-width="0.5"/>
+  <line x1="35" y1="25" x2="35" y2="39" stroke="#555" stroke-width="0.5"/>
+  <line x1="37" y1="25" x2="37" y2="39" stroke="#555" stroke-width="0.5"/>
+</svg>

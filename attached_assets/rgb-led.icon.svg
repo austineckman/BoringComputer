@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Background -->
+  <rect x="0" y="0" width="64" height="64" fill="#1e1e1e" rx="6" ry="6"/>
+  
+  <!-- RGB LED Body -->
+  <circle cx="32" cy="32" r="15" fill="#333"/>
+  
+  <!-- RGB sections -->
+  <path d="M32,32 L32,17 A15,15 0 0,1 47,32 z" fill="#ff3333" opacity="0.9"/>
+  <path d="M32,32 L47,32 A15,15 0 0,1 32,47 z" fill="#33ff33" opacity="0.9"/>
+  <path d="M32,32 L32,47 A15,15 0 0,1 17,32 z" fill="#3333ff" opacity="0.9"/>
+  <path d="M32,32 L17,32 A15,15 0 0,1 32,17 z" fill="#cccccc" opacity="0.6"/>
+  
+  <!-- Center highlight -->
+  <circle cx="32" cy="32" r="5" fill="#ffffff" opacity="0.5"/>
+  
+  <!-- Wire Leads - 4 pins for RGB + common -->
+  <line x1="22" y1="10" x2="22" y2="20" stroke="#cccccc" stroke-width="2"/>
+  <line x1="32" y1="10" x2="32" y2="20" stroke="#cccccc" stroke-width="2"/>
+  <line x1="42" y1="10" x2="42" y2="20" stroke="#cccccc" stroke-width="2"/>
+  <line x1="32" y1="47" x2="32" y2="54" stroke="#cccccc" stroke-width="2"/>
+  
+  <!-- Pin Connectors -->
+  <circle cx="22" cy="10" r="2" fill="#ffcc00"/>
+  <circle cx="32" cy="10" r="2" fill="#ffcc00"/>
+  <circle cx="42" cy="10" r="2" fill="#ffcc00"/>
+  <circle cx="32" cy="54" r="2" fill="#ffcc00"/>
+</svg>
