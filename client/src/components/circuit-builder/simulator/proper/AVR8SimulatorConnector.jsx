@@ -234,12 +234,20 @@ const AVR8SimulatorConnector = ({
                 
                 // Extract pin information from the compilation result
                 const pinsUsed = result.pinsUsed || [];
+                const hasRGBLED = result.hasRGBLED || false;
                 
                 // Store which pins are used in the emulator for debugging
                 emulatorRef.current.pinsInUse = pinsUsed;
                 
                 if (pinsUsed.length > 0) {
                   logInfo(`Found pins used in code: ${pinsUsed.join(', ')}`);
+                  
+                  // Log specific information about RGB LED pins if they are used
+                  if (hasRGBLED) {
+                    const rgbPins = pinsUsed.filter(pin => [9, 10, 11].includes(pin));
+                    logInfo(`RGB LED pins detected: ${rgbPins.join(', ')}`);
+                    logInfo(`Note: Pin 9=Red, Pin 10=Green, Pin 11=Blue`);
+                  }
                 }
                 
                 if (delayValues.length > 0) {
