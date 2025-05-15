@@ -11,7 +11,7 @@ import { X, ZoomIn, ZoomOut, Play, Square, Save, FileCode, Download } from 'luci
 import { CircuitComponentPalette } from './CircuitComponentPalette';
 import { ArduinoCodeEditor } from './ArduinoCodeEditor';
 import { CircuitBuilder } from './CircuitBuilder';
-import HeroEmulatorConnector from './HeroEmulatorConnector';
+import RealAVR8EmulatorConnector from './RealAVR8EmulatorConnector';
 import EmulatedLEDComponent from './EmulatedLEDComponent';
 import { EmulatedComponent } from './HeroEmulator';
 
@@ -351,8 +351,8 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
         />
       </div>
       
-      {/* Emulator connector - invisible but handles the emulation */}
-      <HeroEmulatorConnector
+      {/* Real AVR8 Emulator connector - invisible but handles the emulation */}
+      <RealAVR8EmulatorConnector
         code={code}
         isRunning={isRunning}
         onSerialData={handleSerialData}
