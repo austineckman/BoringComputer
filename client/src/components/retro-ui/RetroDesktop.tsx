@@ -17,7 +17,6 @@ import FullscreenQuestsApp from "./FullscreenQuestsApp";
 import FullscreenOracleApp from "./FullscreenOracleApp";
 import FullscreenCircuitBuilderApp from "./FullscreenCircuitBuilderApp";
 import FullscreenLockpickingApp from "./FullscreenLockpickingApp";
-import FullscreenUniversalEmulatorApp from "./FullscreenUniversalEmulatorApp";
 import RecycleBinWindow from "./RecycleBinWindow";
 import SettingsWindow from "./SettingsWindow";
 import QuestLoadingScreen from "./QuestLoadingScreen";
@@ -43,8 +42,6 @@ import oracleIconImage from "@assets/hooded-figure.png";
 import picklockImage from "@assets/Untitled design - 2025-04-26T171551.402.png";
 import craftingImage from "@assets/Untitled design - 2025-04-26T171858.770.png";
 import bughuntIconImage from "@assets/Untitled design - 2025-05-01T164432.025.png";
-// Import circuit board icon for emulator
-import circuitBoardImage from "@assets/circuit board.png";
 
 // Type definitions
 interface Position {
@@ -92,8 +89,6 @@ const RetroDesktop: React.FC = () => {
   const [circuitBuilderAppState, setCircuitBuilderAppState] = useState<'closed' | 'open'>('closed');
   // State to manage PickLock.exe app: 'closed' or 'open'
   const [lockpickingAppState, setLockpickingAppState] = useState<'closed' | 'open'>('closed');
-  // State to manage Universal Emulator app: 'closed' or 'open'
-  const [universalEmulatorState, setUniversalEmulatorState] = useState<'closed' | 'open'>('closed');
   // Use global audio player context
   const { isPlaying: isMusicPlaying, toggleMute } = useAudioPlayer();
   
@@ -928,14 +923,6 @@ const RetroDesktop: React.FC = () => {
         <FullscreenLockpickingApp onClose={() => {
           // Reset app state to closed
           setLockpickingAppState('closed');
-        }} />
-      )}
-
-      {/* Fullscreen Universal Emulator Application */}
-      {universalEmulatorState === 'open' && (
-        <FullscreenUniversalEmulatorApp onClose={() => {
-          // Reset app state to closed
-          setUniversalEmulatorState('closed');
         }} />
       )}
       {/* Desktop Icons */}
