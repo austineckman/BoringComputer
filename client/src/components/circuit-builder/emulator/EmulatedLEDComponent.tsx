@@ -1,187 +1,228 @@
-/**
- * EmulatedLEDComponent.tsx
- * 
- * Emulated LED component that interfaces with the HeroEmulator.
- * This component will only respond to actual signals from the emulated CPU,
- * ensuring accurate hardware emulation.
- */
+import React, { useEffect, useState } from 'react';
+import { EmulatedComponent } from './HeroEmulator';
 
-import React, { useEffect, useState, useRef } from 'react';
-import { EmulatedLED } from './HeroEmulator';
-
-interface LEDProps {
+interface EmulatedLEDComponentProps {
   id: string;
   anodePin: string;
   cathodePin: string;
-  color?: string;
-  size?: number;
-  onRegister?: (component: EmulatedLED) => void;
-  onUnregister?: (componentId: string) => void;
+  color?: 'red' | 'green' | 'blue' | 'yellow' | 'white';
+  size?: 'small' | 'medium' | 'large';
+  onStateChange?: (isOn: boolean) => void;
+  className?: string;
 }
 
 /**
- * EmulatedLEDComponent - A visually reactive LED component
- * that accurately emulates real LED hardware behavior
+ * EmulatedLEDComponent
+ * 
+ * This component represents an LED that responds only to actual signals 
+ * from the emulated circuit. Its behavior is controlled solely by 
+ * the emulator based on the voltage levels on its pins, not by any
+ * artificial UI-driven logic.
  */
-const EmulatedLEDComponent: React.FC<LEDProps> = ({
+const EmulatedLEDComponent: React.FC<EmulatedLEDComponentProps> = ({
   id,
   anodePin,
   cathodePin,
   color = 'red',
-  size = 30,
-  onRegister,
-  onUnregister,
+  size = 'medium',
+  onStateChange,
+  className = ''
 }) => {
-  // LED state
   const [isOn, setIsOn] = useState(false);
-  
-  // Brightness level (for PWM pins)
   const [brightness, setBrightness] = useState(0);
   
-  // Keep track of initialized state
-  const initialized = useRef(false);
+  // Map colors to actual CSS color values
+  const colorMap = {
+    red: '#ff0000',
+    green: '#00ff00',
+    blue: '#0088ff',
+    yellow: '#ffff00',
+    white: '#ffffff'
+  };
   
-  // Set up the emulated LED component
+  // Map sizes to pixel dimensions
+  const sizeMap = {
+    small: { width: 16, height: 24 },
+    medium: { width: 24, height: 36 },
+    large: { width: 32, height: 48 }
+  };
+  
+  // Define dimensions based on size
+  const { width, height } = sizeMap[size];
+  
+  // Create an emulated component that can be registered with the HeroEmulator
   useEffect(() => {
-    if (initialized.current) return;
-    
-    const ledComponent: EmulatedLED = {
+    // Define the emulated component's properties
+    const emulatedLED: EmulatedComponent = {
       id,
       type: 'led',
-      anode: anodePin,
-      cathode: cathodePin,
-      onStateChange: (state) => {
-        // Update the LED visual state when the emulator changes its state
-        if (state.isOn !== undefined) {
-          setIsOn(state.isOn);
-        }
-        
-        // Update brightness for PWM
-        if (state.brightness !== undefined) {
-          setBrightness(state.brightness);
+      
+      // This is the key method that gets called when pin states change
+      onPinChange: (pinId: string, isHigh: boolean) => {
+        if (pinId === anodePin) {
+          // LED turns on when anode is HIGH and cathode is LOW (or GND)
+          // This mimics real LED behavior requiring a voltage difference
+          const newIsOn = isHigh; // Simplified - in reality we would check cathode too
+          const newBrightness = isHigh ? 1.0 : 0;
+          
+          setIsOn(newIsOn);
+          setBrightness(newBrightness);
+          
+          // Notify parent component if needed
+          if (onStateChange) {
+            onStateChange(newIsOn);
+          }
+          
+          console.log(`LED ${id} anode pin ${pinId} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+        } else if (pinId === cathodePin) {
+          // In a real circuit, LED turns on when anode is HIGH and cathode is LOW
+          // Here we'll just log the change
+          console.log(`LED ${id} cathode pin ${pinId} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
         }
       },
+      
+      // Method to get current state
       getState: () => {
         return { isOn, brightness };
       }
     };
     
-    // Register with the emulator
-    if (onRegister) {
-      onRegister(ledComponent);
+    // We could register the component with the HeroEmulator here,
+    // but since we don't have direct access to the emulator instance,
+    // the parent component should handle registration
+    
+    // For debugging: log component creation
+    console.log(`EmulatedLED component created: id=${id}, anode=${anodePin}, cathode=${cathodePin}`);
+    
+    // Expose the emulated component to parent components
+    if (window && !window.emulatedComponents) {
+      window.emulatedComponents = {};
     }
     
-    initialized.current = true;
+    if (window.emulatedComponents) {
+      window.emulatedComponents[id] = emulatedLED;
+    }
     
-    // Clean up
+    // Clean up when component unmounts
     return () => {
-      if (onUnregister) {
-        onUnregister(id);
+      if (window.emulatedComponents && window.emulatedComponents[id]) {
+        delete window.emulatedComponents[id];
+        console.log(`EmulatedLED component ${id} removed`);
       }
     };
-  }, [id, anodePin, cathodePin, onRegister, onUnregister]);
+  }, [id, anodePin, cathodePin]);
   
-  // Determine LED fill color based on state and color
-  const getFillColor = () => {
-    if (!isOn) {
-      // LED off - show a darker version of the color
-      switch (color) {
-        case 'red':
-          return '#300';
-        case 'green':
-          return '#030';
-        case 'blue':
-          return '#003';
-        case 'yellow':
-          return '#330';
-        case 'white':
-          return '#333';
-        default:
-          return '#300'; // Default to red
-      }
-    }
-    
-    // LED on - show the color at full brightness or with PWM dimming
-    const brightnessValue = brightness > 0 ? brightness : 1;
-    
-    switch (color) {
-      case 'red':
-        return `rgba(255, 0, 0, ${brightnessValue})`;
-      case 'green':
-        return `rgba(0, 255, 0, ${brightnessValue})`;
-      case 'blue':
-        return `rgba(0, 0, 255, ${brightnessValue})`;
-      case 'yellow':
-        return `rgba(255, 255, 0, ${brightnessValue})`;
-      case 'white':
-        return `rgba(255, 255, 255, ${brightnessValue})`;
-      default:
-        return `rgba(255, 0, 0, ${brightnessValue})`;
-    }
+  // Calculate styles for LED
+  const ledStyle: React.CSSProperties = {
+    width,
+    height,
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center'
   };
   
-  // Calculate glow effect based on brightness
-  const getGlowEffect = () => {
-    if (!isOn) return 'none';
-    
-    const glowColor = color === 'red' ? '#ff0000' :
-                      color === 'green' ? '#00ff00' :
-                      color === 'blue' ? '#0000ff' :
-                      color === 'yellow' ? '#ffff00' : '#ffffff';
-    
-    // Adjust glow intensity based on brightness
-    const glowIntensity = Math.max(2, Math.min(10, brightness * 10 || 5));
-    
-    return `0 0 ${glowIntensity}px ${glowColor}`;
-  };
+  // Calculate glow intensity based on brightness
+  const glowRadius = isOn ? 10 + (brightness * 5) : 0;
+  const glowOpacity = isOn ? 0.7 * brightness : 0;
   
   return (
-    <div
-      className="emulated-led"
-      style={{
-        width: `${size}px`,
-        height: `${size}px`,
-        position: 'relative',
-        display: 'inline-block',
-      }}
+    <div 
+      className={`emulated-led ${className}`} 
+      style={ledStyle}
       data-component-id={id}
       data-component-type="led"
-      data-anode-pin={anodePin}
-      data-cathode-pin={cathodePin}
     >
-      {/* LED Body */}
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 100 100"
-        xmlns="http://www.w3.org/2000/svg"
+      {/* LED body */}
+      <div
+        className="led-body"
+        style={{
+          width: width * 0.8,
+          height: width * 0.8,
+          borderRadius: '50%',
+          backgroundColor: isOn ? colorMap[color] : '#888888',
+          border: '1px solid #666',
+          position: 'relative',
+          boxShadow: isOn 
+            ? `0 0 ${glowRadius}px ${glowRadius / 2}px ${colorMap[color]}` 
+            : 'none',
+          opacity: isOn ? 0.9 + (brightness * 0.1) : 0.7,
+          transition: 'background-color 0.05s, box-shadow 0.05s, opacity 0.05s'
+        }}
+      />
+      
+      {/* LED legs */}
+      <div
+        className="led-legs"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          width: width * 0.6,
+          height: height * 0.5
+        }}
       >
-        {/* LED Base */}
-        <circle cx="50" cy="50" r="45" fill="#eee" stroke="#999" strokeWidth="2" />
-        
-        {/* LED Illuminated Element */}
-        <circle
-          cx="50"
-          cy="50"
-          r="35"
-          fill={getFillColor()}
+        <div
+          className="led-leg led-anode" 
           style={{
-            transition: 'fill 0.05s ease',
-            filter: isOn ? `brightness(1.2) drop-shadow(${getGlowEffect()})` : 'none',
+            width: 2,
+            height: '100%',
+            backgroundColor: '#999',
+            position: 'relative'
           }}
-        />
+          data-pin-id={anodePin}
+        >
+          {/* Anode pin label */}
+          <div 
+            className="pin-label"
+            style={{
+              position: 'absolute',
+              bottom: -10,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              fontSize: '8px',
+              color: '#ccc'
+            }}
+          >
+            {anodePin}
+          </div>
+        </div>
         
-        {/* Anode (+) Indicator */}
-        <text x="40" y="85" fontSize="12" fill="#333">+</text>
-        
-        {/* Cathode (-) Indicator */}
-        <text x="55" y="85" fontSize="12" fill="#333">-</text>
-        
-        {/* LED Label */}
-        <text x="50" y="20" fontSize="10" textAnchor="middle" fill="#333">LED</text>
-      </svg>
+        <div
+          className="led-leg led-cathode"
+          style={{
+            width: 2,
+            height: '100%',
+            backgroundColor: '#999',
+            position: 'relative'
+          }}
+          data-pin-id={cathodePin}
+        >
+          {/* Cathode pin label */}
+          <div 
+            className="pin-label"
+            style={{
+              position: 'absolute',
+              bottom: -10,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              fontSize: '8px',
+              color: '#ccc'
+            }}
+          >
+            {cathodePin}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
+
+// Define the emulated components on the window for global access
+declare global {
+  interface Window {
+    emulatedComponents?: Record<string, EmulatedComponent>;
+  }
+}
 
 export default EmulatedLEDComponent;

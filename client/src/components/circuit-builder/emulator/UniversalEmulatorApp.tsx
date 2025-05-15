@@ -13,6 +13,14 @@ import { ArduinoCodeEditor } from './ArduinoCodeEditor';
 import { CircuitBuilder } from './CircuitBuilder';
 import HeroEmulatorConnector from './HeroEmulatorConnector';
 import EmulatedLEDComponent from './EmulatedLEDComponent';
+import { EmulatedComponent } from './HeroEmulator';
+
+// Define the emulated components on the window for global access
+declare global {
+  interface Window {
+    emulatedComponents?: Record<string, EmulatedComponent>;
+  }
+}
 
 // Default Arduino sketch for new projects
 const DEFAULT_SKETCH = `// Universal Emulator - Arduino Sketch
@@ -347,10 +355,15 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
       <HeroEmulatorConnector
         code={code}
         isRunning={isRunning}
-        onPinChange={handlePinChange}
         onSerialData={handleSerialData}
-        onLog={addLog}
-        onError={handleError}
+        onLogMessage={addLog}
+        onEmulationError={handleError}
+        components={Object.fromEntries(
+          Object.entries(window.emulatedComponents || {})
+            .filter(([id, _]) => 
+              components.some(c => c.id === id)
+            )
+        )}
       />
     </div>
   );
