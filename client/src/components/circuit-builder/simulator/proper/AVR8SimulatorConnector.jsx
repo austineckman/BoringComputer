@@ -128,6 +128,23 @@ const AVR8SimulatorConnector = ({
             if (result.success) {
               logInfo(`Compilation successful. Program size: ${result.program.length * 2} bytes`);
               
+              // Check if the compiled program exists before loading
+              if (!result.program || result.program.length === 0) {
+                logInfo('Compiled program is empty or invalid');
+                
+                // Update compilation status
+                if (setCompilationStatus) {
+                  setCompilationStatus({
+                    status: 'error',
+                    message: 'Compiled program is empty or invalid'
+                  });
+                }
+                return;
+              }
+              
+              // Log the program contents for debugging
+              logInfo(`Program bytes: ${result.program.slice(0, 10).join(', ')}... (${result.program.length} words total)`);
+              
               // Load the program into the emulator
               const loaded = emulatorRef.current.loadProgram(result.program);
               
@@ -144,7 +161,11 @@ const AVR8SimulatorConnector = ({
                 
                 // Start the emulator with ONLY the compiled code (no userProgram)
                 // This ensures we use ONLY the CPU emulator and not any shortcuts
-                emulatorRef.current.start();
+                const started = emulatorRef.current.start();
+                
+                if (!started) {
+                  logInfo('Failed to start emulator after loading program');
+                }
               } else {
                 logInfo('Failed to load program');
                 
