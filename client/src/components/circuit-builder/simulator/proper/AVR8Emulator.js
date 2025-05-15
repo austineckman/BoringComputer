@@ -264,11 +264,35 @@ export class AVR8Emulator {
   }
   
   /**
+   * Set the delay timing from the user's Arduino code
+   * @param {number[]} delayValues - Array of delay values in milliseconds 
+   */
+  setDelayTiming(delayValues) {
+    if (!delayValues || delayValues.length === 0) {
+      console.log('[AVR8] No delay values provided, using default (1000ms)');
+      this.highDelayMs = 1000;
+      this.lowDelayMs = 1000;
+      return;
+    }
+    
+    // Extract the high and low delay values
+    this.highDelayMs = delayValues[0] || 1000; // Default to 1000ms if not found
+    this.lowDelayMs = delayValues[1] || this.highDelayMs; // Use the same value for both if only one is provided
+    
+    console.log(`[AVR8] Setting delay timing to HIGH: ${this.highDelayMs}ms, LOW: ${this.lowDelayMs}ms`);
+  }
+
+  /**
    * Start the blink loop using proper async/await pattern with real delays
    * This replaces the setInterval approach with one that properly respects
    * the delay() timing and demonstrates actual Arduino execution
    */
   async startBlinkLoop() {
+    // Initialize delay values if not set
+    if (!this.highDelayMs || !this.lowDelayMs) {
+      this.setDelayTiming([1000, 1000]); // Default values
+    }
+    
     // This will loop until the emulator is stopped
     while (this.running) {
       try {
@@ -279,16 +303,16 @@ export class AVR8Emulator {
         console.log('[AVR8] Executing: digitalWrite(LED_BUILTIN, HIGH)');
         console.log('[AVR8] Emulation cycle - pin 13 is now HIGH');
         
-        // Wait for 1 second (1000ms) using proper delay
-        await this.delay(1000);
+        // Wait using the HIGH delay value from the code
+        await this.delay(this.highDelayMs);
         
         // Set pin 13 LOW (turn LED off)
         this.setDigitalOutput(13, false);
         console.log('[AVR8] Executing: digitalWrite(LED_BUILTIN, LOW)');
         console.log('[AVR8] Emulation cycle - pin 13 is now LOW');
         
-        // Wait for 1 second (1000ms) using proper delay
-        await this.delay(1000);
+        // Wait using the LOW delay value from the code
+        await this.delay(this.lowDelayMs);
       } catch (error) {
         console.error('[AVR8] Error in simulation loop:', error);
         
