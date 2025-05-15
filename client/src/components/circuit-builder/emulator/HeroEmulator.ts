@@ -16,7 +16,6 @@ import {
   AVRTWI,
   AVRUSART,
   AVRTimer,
-  AVRTimer16,
   portBConfig,
   portCConfig,
   portDConfig,
@@ -108,7 +107,7 @@ export class HeroEmulator {
   private portC: AVRIOPort | null = null;
   private portD: AVRIOPort | null = null;
   private timer0: AVRTimer | null = null;
-  private timer1: AVRTimer16 | null = null;
+  private timer1: AVRTimer | null = null;
   private timer2: AVRTimer | null = null;
   private usart: AVRUSART | null = null;
   private spi: AVRSPI | null = null;
@@ -175,33 +174,38 @@ export class HeroEmulator {
     
     // Create timers
     this.timer0 = new AVRTimer(this.cpu, timer0Config);
-    this.timer1 = new AVRTimer16(this.cpu, timer1Config);
+    this.timer1 = new AVRTimer(this.cpu, timer1Config);  // Use AVRTimer for timer1 as well
     this.timer2 = new AVRTimer(this.cpu, timer2Config);
     
     // Create USART for serial communication
-    this.usart = new AVRUSART(this.cpu, usart0Config, (value) => {
-      if (this.onSerialDataCallback) {
-        const char = String.fromCharCode(value);
-        this.onSerialDataCallback(value, char);
-      }
-    });
+    this.usart = new AVRUSART(this.cpu, usart0Config);
+    
+    // Set up USART serial output callback
+    if (this.usart) {
+      this.usart.onByteTransmit = (value: number) => {
+        if (this.onSerialDataCallback) {
+          const char = String.fromCharCode(value);
+          this.onSerialDataCallback(value, char);
+        }
+      };
+    }
     
     // Create SPI interface
-    this.spi = new AVRSPI(this.cpu, spiConfig);
+    this.spi = new AVRSPI(this.cpu, spiConfig, this.portB as AVRIOPort);
     
     // Create I2C/TWI interface for OLED displays and other I2C devices
-    this.twi = new AVRTWI(this.cpu, twiConfig);
+    this.twi = new AVRTWI(this.cpu, twiConfig, this.portC as AVRIOPort);
     
     // Set up port change listeners
-    this.portB?.addPortListener((value, oldValue) => {
+    this.portB?.addListener((value: number, oldValue: number) => {
       this.handlePortChange('B', value, oldValue);
     });
     
-    this.portC?.addPortListener((value, oldValue) => {
+    this.portC?.addListener((value: number, oldValue: number) => {
       this.handlePortChange('C', value, oldValue);
     });
     
-    this.portD?.addPortListener((value, oldValue) => {
+    this.portD?.addListener((value: number, oldValue: number) => {
       this.handlePortChange('D', value, oldValue);
     });
     
@@ -280,9 +284,9 @@ export class HeroEmulator {
     if (!connectedComponentIds) return;
     
     // Update each connected component
-    for (const componentId of connectedComponentIds) {
+    connectedComponentIds.forEach(componentId => {
       const component = this.components.get(componentId);
-      if (!component) continue;
+      if (!component) return;
       
       // Handle specific component types
       if (component.type === 'led') {
@@ -457,12 +461,12 @@ export class HeroEmulator {
     this.components.delete(componentId);
     
     // Remove from pin-to-component map
-    for (const [pin, componentIds] of this.pinToComponentMap.entries()) {
+    Array.from(this.pinToComponentMap.entries()).forEach(([pin, componentIds]) => {
       componentIds.delete(componentId);
       if (componentIds.size === 0) {
         this.pinToComponentMap.delete(pin);
       }
-    }
+    });
     
     this.log(`Unregistered component: ${componentId}`);
   }
@@ -493,12 +497,16 @@ export class HeroEmulator {
     if (!port) return;
     
     // Set the pin value in the hardware emulator
-    if (isHigh) {
-      port.overrideInputMask |= (1 << mapping.bit);
-      port.overrideInput |= (1 << mapping.bit);
-    } else {
-      port.overrideInputMask |= (1 << mapping.bit);
-      port.overrideInput &= ~(1 << mapping.bit);
+    // Note: These method calls may depend on the specific version of avr8js library
+    // If your version has different methods, use those instead
+    try {
+      if (isHigh) {
+        port.setPin(mapping.bit, true);
+      } else {
+        port.setPin(mapping.bit, false);
+      }
+    } catch (e) {
+      this.error(`Failed to set digital input on pin ${pin}: ${e instanceof Error ? e.message : String(e)}`);
     }
     
     this.log(`Set digital input on pin ${pin}: ${isHigh ? 'HIGH' : 'LOW'}`);
