@@ -558,7 +558,7 @@ export class HeroEmulator {
       
       return success;
     } catch (error) {
-      this.error(`Error loading program: ${error.message}`);
+      this.error(`Error loading program: ${error instanceof Error ? error.message : String(error)}`);
       return false;
     }
   }
@@ -602,7 +602,7 @@ export class HeroEmulator {
       
       return true;
     } catch (error) {
-      this.error(`Error parsing hex file: ${error.message}`);
+      this.error(`Error parsing hex file: ${error instanceof Error ? error.message : String(error)}`);
       return false;
     }
   }
