@@ -1,6 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { EmulatedComponent } from './HeroEmulator';
 
+// Extend the EmulatedComponent interface for LED components
+// Declare global window extensions
+declare global {
+  interface Window {
+    emulatedComponents?: Record<string, EmulatedLEDComponentType>;
+  }
+}
+
+interface EmulatedLEDComponentType extends EmulatedComponent {
+  anode?: string;
+  cathode?: string;
+  isOn?: boolean;
+}
+
 interface EmulatedLEDComponentProps {
   id: string;
   anodePin: string;
@@ -51,11 +65,36 @@ const EmulatedLEDComponent: React.FC<EmulatedLEDComponentProps> = ({
   const { width, height } = sizeMap[size];
   
   // Create an emulated component that can be registered with the HeroEmulator
+  // Check global state periodically to sync component state
+  useEffect(() => {
+    // Function to check if we need to update the local state
+    const syncStateWithGlobal = () => {
+      if (window.emulatedComponents && window.emulatedComponents[id]) {
+        const component = window.emulatedComponents[id];
+        if (component.isOn !== undefined && component.isOn !== isOn) {
+          console.log(`Syncing LED ${id} state from global: ${component.isOn}`);
+          setIsOn(component.isOn);
+          setBrightness(component.isOn ? 1.0 : 0);
+        }
+      }
+    };
+    
+    // Check periodically
+    const intervalId = setInterval(syncStateWithGlobal, 250);
+    
+    // Clean up interval on unmount
+    return () => clearInterval(intervalId);
+  }, [id, isOn]);
+  
+  // Create and register emulated component
   useEffect(() => {
     // Define the emulated component's properties
-    const emulatedLED: EmulatedComponent = {
+    const emulatedLED: EmulatedLEDComponentType = {
       id,
       type: 'led',
+      anode: anodePin,
+      cathode: cathodePin,
+      isOn: false, // Track the LED state directly in the component object
       
       // This is the key method that gets called when pin states change
       onPinChange: (pinId: string, isHigh: boolean) => {
@@ -65,8 +104,12 @@ const EmulatedLEDComponent: React.FC<EmulatedLEDComponentProps> = ({
           const newIsOn = isHigh; // Simplified - in reality we would check cathode too
           const newBrightness = isHigh ? 1.0 : 0;
           
+          // Update the React component state
           setIsOn(newIsOn);
           setBrightness(newBrightness);
+          
+          // Also update the emulated component state
+          emulatedLED.isOn = newIsOn;
           
           // Notify parent component if needed
           if (onStateChange) {
@@ -87,6 +130,27 @@ const EmulatedLEDComponent: React.FC<EmulatedLEDComponentProps> = ({
       }
     };
     
+    // Add a custom event listener to manually handle pin changes
+    const handleComponentStateChange = (event: any) => {
+      const { detail } = event;
+      if (detail && detail.componentId === id) {
+        console.log(`LED ${id} received state change event for pin ${detail.pinId}, state=${detail.isHigh}`);
+        // Only respond to our anode pin
+        if (detail.pinId === anodePin) {
+          const newIsOn = detail.isHigh;
+          setIsOn(newIsOn);
+          setBrightness(newIsOn ? 1.0 : 0);
+          // Update the emulated component's state too
+          if (window.emulatedComponents && window.emulatedComponents[id]) {
+            window.emulatedComponents[id].isOn = newIsOn;
+          }
+        }
+      }
+    };
+    
+    // Add our direct event listener
+    document.addEventListener('component-state-changed', handleComponentStateChange);
+    
     // We could register the component with the HeroEmulator here,
     // but since we don't have direct access to the emulator instance,
     // the parent component should handle registration
@@ -105,10 +169,14 @@ const EmulatedLEDComponent: React.FC<EmulatedLEDComponentProps> = ({
     
     // Clean up when component unmounts
     return () => {
+      // Remove the component from the registry
       if (window.emulatedComponents && window.emulatedComponents[id]) {
         delete window.emulatedComponents[id];
         console.log(`EmulatedLED component ${id} removed`);
       }
+      
+      // Remove the event listener
+      document.removeEventListener('component-state-changed', handleComponentStateChange);
     };
   }, [id, anodePin, cathodePin]);
   
