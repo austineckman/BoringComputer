@@ -364,16 +364,32 @@ void loop() {
               console.log('About to load program into emulator');
               onLogMessage?.(`Loading program into emulator...`);
               
-              // Call loadProgram with the hex data
-              const loadSuccess = emulatorRef.current.loadProgram(hexData);
-              
-              if (loadSuccess) {
-                console.log('PROGRAM LOADED SUCCESSFULLY');
-                setCompilationSuccess(true);
-                onLogMessage?.(`Program loaded into emulator successfully. Ready to run!`);
-              } else {
-                console.error('Failed to load program - internal emulator error');
-                throw new Error('Failed to load program');
+              try {
+                // Process the hex data to ensure it's in the right format
+                // Some Intel HEX formats have linebreaks, some don't. Make sure we handle both.
+                const cleanedHexData = hexData.replace(/\s+/g, '');
+                
+                // Add a marker to each record
+                const processedHexData = cleanedHexData
+                  .match(/:[0-9A-F]{8}[0-9A-F]*/gi)
+                  ?.join('\n') || '';
+                
+                console.log('Processed HEX data format:', processedHexData.substring(0, 40) + '...');
+                
+                // Call loadProgram with properly formatted hex data  
+                const loadSuccess = emulatorRef.current.loadProgram(processedHexData);
+                
+                if (loadSuccess) {
+                  console.log('PROGRAM LOADED SUCCESSFULLY');
+                  setCompilationSuccess(true);
+                  onLogMessage?.(`Program loaded into emulator successfully. Ready to run!`);
+                } else {
+                  console.error('Failed to load program - internal emulator error');
+                  throw new Error('Failed to load program');
+                }
+              } catch (error) {
+                console.error('Exception during program loading:', error);
+                throw error;
               }
             } else {
               console.error('Emulator does not have loadProgram method!');
