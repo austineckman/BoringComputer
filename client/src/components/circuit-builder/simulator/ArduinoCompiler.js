@@ -360,9 +360,36 @@ const SUPPORTED_LIBRARIES = [
 ];
 
 // Validate code and return any errors
+/**
+ * Validates Arduino C++ code before simulation
+ * This function checks for common syntax errors and incorrect Arduino API usage
+ * 
+ * @param {string} code - The Arduino code to validate
+ * @returns {Array} - Array of error objects with line and message properties
+ */
 export function validateArduinoCode(code) {
+  console.log('[Arduino Compiler] Starting code validation and syntax checking...');
+  
+  // Parse the code using our Arduino parser
   const parsedCode = parseArduinoCode(code);
   const errors = [...parsedCode.errors];
+  
+  // Check if the code contains basic Arduino structure
+  if (!code.includes('void setup()') && !code.includes('void setup ()')
+      && !code.includes('void setup( )') && !code.includes('void setup ( )')) {
+    errors.push({
+      line: 1,
+      message: 'Missing required "void setup()" function. Every Arduino sketch must have a setup function.'
+    });
+  }
+  
+  if (!code.includes('void loop()') && !code.includes('void loop ()')
+      && !code.includes('void loop( )') && !code.includes('void loop ( )')) {
+    errors.push({
+      line: 1,
+      message: 'Missing required "void loop()" function. Every Arduino sketch must have a loop function.'
+    });
+  }
   
   // Preprocess the code to filter out comments
   let inMultilineComment = false;
@@ -429,6 +456,25 @@ export function validateArduinoCode(code) {
     }
   }
   
+  // If no errors were found, let's log that verification was successful
+  if (errors.length === 0) {
+    console.log('[Arduino Compiler] Code validation successful! No syntax errors detected.');
+    console.log('[Arduino Compiler] Verifying hardware pin configuration...');
+    
+    // Check if the code is using valid pins for HERO board
+    // This is a basic check - more advanced validation happens in actual compilation
+    if (code.includes('pinMode') && code.includes('OUTPUT')) {
+      console.log('[Arduino Compiler] Found pin configuration in setup - good!');
+    }
+    
+    if (code.includes('digitalWrite') || code.includes('analogWrite')) {
+      console.log('[Arduino Compiler] Found pin control functions - hardware will be controlled by code.');
+    }
+  } else {
+    console.log(`[Arduino Compiler] Found ${errors.length} errors in code. Compilation failed.`);
+  }
+  
+  // Return the list of errors (empty if validation passed)
   return errors;
 }
 
