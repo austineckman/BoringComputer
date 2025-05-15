@@ -393,6 +393,7 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
         onSerialData={handleSerialData}
         onLogMessage={addLog}
         onEmulationError={handleError}
+        onPinStateChange={handlePinChange}
         components={Object.fromEntries(
           Object.entries(window.emulatedComponents || {})
             .filter(([id, _]) => 
