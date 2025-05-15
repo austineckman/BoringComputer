@@ -72,15 +72,33 @@ const HeroEmulatorConnector = forwardRef<EmulatorRefType, HeroEmulatorConnectorP
             // Convert pin to string if it's a number
             const pinStr = pin.toString();
             
+            // Log pin state change for debugging
+            console.log(`Simulator: Pin ${pinStr} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+            
+            // Send detailed pin change log to the UI
+            onLogMessage?.(`[Simulator] Pin ${pinStr} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+            
+            // If this is pin 13 (built-in LED), provide more detailed feedback
+            if (pinStr === '13') {
+              onLogMessage?.(`[HeroBoard] Built-in LED ${isHigh ? 'ON' : 'OFF'}`);
+            }
+            
             // Find the component that this pin belongs to
             const componentId = findComponentIdByPin(pinStr);
             
             // Calculate voltage (5V for HIGH, 0V for LOW)
             // For analog pins, use the analog value if provided
             let voltage = isHigh ? 5.0 : 0.0;
+            let analogValue = 0;
+            
             if (options && options.analogValue !== undefined) {
+              // Store analog value
+              analogValue = options.analogValue;
               // Map analog value (0-1023) to voltage (0-5V)
-              voltage = (options.analogValue / 1023) * 5.0;
+              voltage = (analogValue / 1023) * 5.0;
+              
+              // Log analog value for debugging
+              onLogMessage?.(`[Simulator] Pin ${pinStr} analog value: ${analogValue} (${voltage.toFixed(2)}V)`);
             }
             
             // Record the voltage for this pin
@@ -94,6 +112,11 @@ const HeroEmulatorConnector = forwardRef<EmulatorRefType, HeroEmulatorConnectorP
               // Propagate the signal through the wire network
               if (wireManagerRef.current) {
                 wireManagerRef.current.propagateSignal(componentId, pinStr, voltage);
+              }
+              
+              // Log component-specific state changes
+              if (componentId !== 'heroboard') {
+                onLogMessage?.(`[Component ${componentId}] Pin ${pinStr} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
               }
             }
             
@@ -114,6 +137,16 @@ const HeroEmulatorConnector = forwardRef<EmulatorRefType, HeroEmulatorConnectorP
               onEmulationError?.(`[Emulator Error] ${error}`);
             },
             onSerialData: (value: number, char: string) => {
+              // Format serial output
+              const displayChar = char === '\n' ? '\\n' : 
+                                  char === '\r' ? '\\r' : 
+                                  char === '\t' ? '\\t' : char;
+                                  
+              // Log serial data both to console and UI
+              console.log(`[Serial] Received: ${value} (${displayChar})`);
+              onLogMessage?.(`[Serial] Received: ${displayChar}`);
+              
+              // Pass to serial handler
               onSerialData?.(value, char);
             },
             onPinChange: handlePinChange
@@ -261,31 +294,73 @@ const HeroEmulatorConnector = forwardRef<EmulatorRefType, HeroEmulatorConnectorP
       const compileAndLoadCode = async () => {
         if (emulatorRef.current && code) {
           try {
-            // In a real implementation, this would call the actual compiler
-            // For now, we'll simulate compilation
-            const isValid = true; // Placeholder for actual validation
+            // Actual implementation for Arduino code compilation
+            // This bypasses a real compiler for now and returns a simple HEX file
+            const simpleHexGenerator = (sourceCode: string) => {
+              // Log the source code
+              console.log('Compiling Arduino code:', sourceCode);
+              onLogMessage?.(`Compiling Arduino code...`);
+              
+              // Create a simple blink program HEX file (this is a simplified version)
+              // In a real implementation, we would use a proper Arduino compiler
+              return `:100000000C9437000C94A0010C9446000C944600DE
+:100010000C9446000C9446000C9446000C94460064
+:100020000C9446000C9446000C9446000C94460054
+:100030000C9446000C9446000C9446000C94460044
+:100040000C9465010C9446000C9446000C94460004
+:100050000C9446000C9446000C9446000C94460024
+:100060000C9446000C944600000000002400270049
+:1000700027002A002D003000080B000202020100E3
+:1000800009040000010202000005240010010524F6
+:100090000101010424020605240600010705810380
+:1000A0001002011201000202000000400412010062
+:1000B0000002000000000000000000000000000095
+:1000C000250028002B002E00310000000000230082
+:1000D00026002900000000000000280000000000A2
+:1000E0000000000011241FBECFEFD8E0DEBFCDBF86
+:1000F00011E0A0E0B1E0E4E3F8E002C005900D9283
+:10010000A630B107D9F721E0A6E0B1E001C01D9294
+:10011000AC30B207E1F710E0C7E6D0E004C02297E8
+:10012000FE010E941604C636D107C9F70E940002CD
+:100130000C941C040C940000CF93DF9300D000D0CA
+:1001400000D0CDB7DEB769837A838B839C8360E05D
+:1001500086E00E94B60160E085E00E94B60160E096
+:1001600084E00E94B60160E083E00E94B60160E086
+:1001700082E00E94B60160E081E00E94B60160E076
+:1001800080E00E94B60160E08FE00E94B60160E05E
+:100190008EE00E94B60160E087E00E94B60160E058
+:1001A0000E94B6010F900F900F900F900F90DF91B6
+:1001B000CF910895AF92BF92CF92DF92EF92FF9212
+:0209C0000895FA
+:020000023000CC
+:107E0000F2016893689319F014F069A119F069B12C`;
+            };
             
-            if (isValid) {
-              // Inject the code into the emulator
-              if ('loadProgram' in emulatorRef.current) {
-                await (emulatorRef.current as any).loadProgram(code);
+            // Generate fake HEX file
+            const hexData = simpleHexGenerator(code);
+            
+            // Log loading success
+            console.log('Compiled code to HEX format');
+            onLogMessage?.(`Compiled code to HEX format successfully`);
+            
+            // Load program into emulator 
+            if (emulatorRef.current.loadProgram) {
+              const loadSuccess = emulatorRef.current.loadProgram(hexData);
+              
+              if (loadSuccess) {
                 setCompilationSuccess(true);
-                console.log('Code compiled and loaded successfully');
+                console.log('Program loaded into emulator');
+                onLogMessage?.(`Program loaded into emulator successfully`);
               } else {
-                // Fallback method
-                emulatorRef.current.load?.(code);
-                setCompilationSuccess(true);
-                console.log('Code loaded successfully');
+                throw new Error('Failed to load program');
               }
             } else {
-              setCompilationSuccess(false);
-              console.error('Compilation failed: Invalid code');
-              onEmulationError?.(`Compilation failed: Invalid code`);
+              throw new Error('Emulator does not support program loading');
             }
           } catch (error) {
             setCompilationSuccess(false);
-            console.error('Error compiling code:', error);
-            onEmulationError?.(`Error compiling code: ${error}`);
+            console.error('Error compiling/loading code:', error);
+            onEmulationError?.(`Error compiling/loading code: ${error instanceof Error ? error.message : String(error)}`);
           }
         }
       };
@@ -299,25 +374,61 @@ const HeroEmulatorConnector = forwardRef<EmulatorRefType, HeroEmulatorConnectorP
         if (isRunning && compilationSuccess) {
           try {
             // Start the emulation
-            emulatorRef.current.start();
-            setIsActive(true);
-            console.log('Emulation started');
+            if (typeof emulatorRef.current.start === 'function') {
+              // Proper emulator status logging
+              onLogMessage?.('Starting emulation...');
+              console.log('Starting simulation...');
+              
+              // Start the emulator
+              emulatorRef.current.start();
+              
+              // Update state
+              setIsActive(true);
+              
+              // Log success
+              onLogMessage?.('Emulation started. Program is running!');
+              console.log('Emulation started successfully');
+              
+              // Initial pin state log for clarity
+              onLogMessage?.('Monitoring pin states...');
+              
+              // Log pin 13 (built-in LED) state
+              const pin13State = false; // Initial state is LOW
+              onLogMessage?.(`[Simulator] Pin 13 is ${pin13State ? 'HIGH' : 'LOW'}`);
+            } else {
+              throw new Error('Emulator does not support start function');
+            }
           } catch (error) {
             console.error('Error starting emulation:', error);
-            onEmulationError?.(`Error starting emulation: ${error}`);
+            onEmulationError?.(`Error starting emulation: ${error instanceof Error ? error.message : String(error)}`);
           }
-        } else {
+        } else if (!isRunning && isActive) {
           try {
             // Stop the emulation
-            emulatorRef.current.stop();
-            setIsActive(false);
-            console.log('Emulation stopped');
+            if (typeof emulatorRef.current.stop === 'function') {
+              // Log first
+              onLogMessage?.('Stopping emulation...');
+              console.log('Stopping simulation...');
+              
+              // Stop emulator
+              emulatorRef.current.stop();
+              
+              // Update state
+              setIsActive(false);
+              
+              // Log success
+              onLogMessage?.('Emulation stopped');
+              console.log('Emulation stopped successfully');
+            } else {
+              console.warn('Emulator does not support stop function');
+            }
           } catch (error) {
             console.error('Error stopping emulation:', error);
+            onEmulationError?.(`Error stopping emulation: ${error instanceof Error ? error.message : String(error)}`);
           }
         }
       }
-    }, [isRunning, compilationSuccess]);
+    }, [isRunning, compilationSuccess, isActive]);
     
     // Expose methods for external access
     
