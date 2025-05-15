@@ -132,14 +132,33 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
           style={{
             left: '135px',
             top: '75px',
-            width: '5px',
-            height: '5px',
-            backgroundColor: pin13IsHigh ? '#ff6600' : 'transparent',
+            width: '8px',
+            height: '8px',
+            backgroundColor: pin13IsHigh ? '#ff3300' : '#330000',
             borderRadius: '50%',
-            boxShadow: pin13IsHigh ? '0 0 8px #ff6600' : 'none',
-            transition: 'background-color 0.1s, box-shadow 0.1s',
+            boxShadow: pin13IsHigh ? '0 0 10px 2px rgba(255, 50, 0, 0.8)' : 'none',
+            transition: 'background-color 0.05s, box-shadow 0.05s',
+            border: '1px solid #661100',
+            zIndex: 999,
           }}
         />
+        
+        {/* Debug info overlay to show pin 13 state */}
+        <div 
+          className="absolute text-xs font-mono"
+          style={{
+            right: '5px',
+            bottom: '5px',
+            fontSize: '8px',
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            color: pin13IsHigh ? '#ff3300' : '#aaaaaa',
+            padding: '2px 4px',
+            borderRadius: '2px',
+            pointerEvents: 'none',
+          }}
+        >
+          PIN 13: {pin13IsHigh ? 'HIGH' : 'LOW'}
+        </div>
       </div>
       
       {/* Pins */}
