@@ -64,7 +64,7 @@ export interface EmulatedOLEDDisplay extends EmulatedComponent {
 }
 
 // Constants for HERO board pin mapping (matching Arduino UNO)
-const PIN_TO_PORT_BIT = {
+const PIN_TO_PORT_BIT: Record<string, {port: string, bit: number}> = {
   0: { port: 'D', bit: 0 }, // RX
   1: { port: 'D', bit: 1 }, // TX
   2: { port: 'D', bit: 2 }, // D2
@@ -190,11 +190,11 @@ export class HeroEmulator {
       };
     }
     
-    // Create SPI interface
-    this.spi = new AVRSPI(this.cpu, spiConfig, this.portB as AVRIOPort);
+    // Create SPI interface (providing port B for SPI pins)
+    this.spi = new AVRSPI(this.cpu, spiConfig, this.portB);
     
-    // Create I2C/TWI interface for OLED displays and other I2C devices
-    this.twi = new AVRTWI(this.cpu, twiConfig, this.portC as AVRIOPort);
+    // Create I2C/TWI interface for OLED displays and other I2C devices (providing port C for I2C pins)
+    this.twi = new AVRTWI(this.cpu, twiConfig, this.portC);
     
     // Set up port change listeners
     this.portB?.addListener((value: number, oldValue: number) => {
@@ -232,16 +232,16 @@ export class HeroEmulator {
         
         if (pin !== null) {
           // Update internal pin state
-          this.pinStates[pin] = isHigh;
+          this.pinStates[pin.toString()] = isHigh;
           
           // Calculate analog value for PWM pins
           let analogValue = isHigh ? 255 : 0;
-          if (PWM_PINS.includes(Number(pin))) {
+          if (typeof pin === 'number' && PWM_PINS.includes(pin)) {
             // For PWM pins, we need to get the duty cycle from the timer
             // This is a simplification - in a full implementation, we would
             // get the actual PWM duty cycle from the timer
             analogValue = isHigh ? 255 : 0;
-            this.analogValues[pin] = analogValue;
+            this.analogValues[pin.toString()] = analogValue;
           }
           
           // Notify global listener
@@ -305,7 +305,7 @@ export class HeroEmulator {
           component.onPinChange(pin, isHigh, { analogValue });
         }
       }
-    }
+    });
   }
   
   /**
