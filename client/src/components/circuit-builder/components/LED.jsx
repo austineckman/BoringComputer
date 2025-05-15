@@ -356,22 +356,23 @@ const LED = ({
         {/* Simulation state indicator */}
         {isSimulationRunning && (
           <>
-            {/* Glow effect when LED is on */}
+            {/* Glow effect when LED is on - directly inside the component */}
             {isLit && (
               <div 
-                className="absolute rounded-full w-10 h-10 opacity-50"
+                className="absolute rounded-full w-6 h-6 opacity-40"
                 style={{
                   backgroundColor: ledColor === 'red' ? '#ff0000' : 
                                    ledColor === 'green' ? '#00ff00' : 
                                    ledColor === 'blue' ? '#0000ff' : '#ff0000',
-                  // Positioning relative to the current LED position
-                  transform: `translate(${posLeft + 10}px, ${posTop + 10}px)`,
-                  boxShadow: `0 0 15px 5px ${
+                  // Positioning fixed relative to component
+                  top: '7px',
+                  left: '7px',
+                  boxShadow: `0 0 8px 2px ${
                     ledColor === 'red' ? '#ff0000' : 
                     ledColor === 'green' ? '#00ff00' : 
                     ledColor === 'blue' ? '#0000ff' : '#ff0000'
                   }`,
-                  filter: 'blur(5px)',
+                  filter: 'blur(3px)',
                   animation: 'pulse 1s infinite alternate',
                   zIndex: 99
                 }}
