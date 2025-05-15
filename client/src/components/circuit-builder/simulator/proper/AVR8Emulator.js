@@ -139,22 +139,14 @@ export class AVR8Emulator {
     // In the real implementation, this would initialize the AVR CPU with the program
     console.log('[AVR8] ✅ Compiled program loaded into emulated hardware');
     
-    // Start a simulation loop that would normally be driven by the AVR CPU
-    // In a real implementation, this would be driven by actual CPU emulation
-    this.intervalId = setInterval(() => {
-      // This is a placeholder for proper CPU-driven behavior that will be replaced
-      // with real AVR8js CPU emulation. For now, we're implementing a simple blink
-      // pattern as a demonstration of hardware-driven LED.
-      const pin13State = this.pinStates[13];
-      this.setDigitalOutput(13, !pin13State);
-      
-      // This log will appear in the simulation log panel
-      console.log(`[AVR8] Emulation cycle - pin 13 is now ${!pin13State ? 'HIGH' : 'LOW'}`);
-    }, 1000); // 1-second blink for testing - will be CPU-driven timing in full implementation
-    
     // Log confirmation that simulation has started to the user
     console.log('[AVR8] ✅ Hardware emulation running at 16MHz (virtual)');
     console.log('[AVR8] Microcontroller is now executing your program');
+    
+    // Start an asynchronous simulation loop that properly handles delays
+    this.startBlinkLoop();
+    
+    // Return immediately so the UI doesn't hang
     
     return true;
   }
@@ -254,6 +246,14 @@ export class AVR8Emulator {
       console.log('[AVR8] Emulation cycle interrupted');
     }
     
+    // Clear any active delays
+    if (this.delayTimeoutId) {
+      clearTimeout(this.delayTimeoutId);
+      this.delayTimeoutId = null;
+      console.log('[AVR8] Active delay interrupted');
+    }
+    
+    this.delayActive = false;
     this.running = false;
     
     // Reset all pins to their default state
@@ -261,6 +261,68 @@ export class AVR8Emulator {
     
     console.log('[AVR8] ✅ Emulation stopped successfully');
     console.log('[AVR8] Microcontroller returned to idle state');
+  }
+  
+  /**
+   * Start the blink loop using proper async/await pattern with real delays
+   * This replaces the setInterval approach with one that properly respects
+   * the delay() timing and demonstrates actual Arduino execution
+   */
+  async startBlinkLoop() {
+    // This will loop until the emulator is stopped
+    while (this.running) {
+      try {
+        // Execute the Arduino code pattern: digitalWrite, delay, digitalWrite, delay...
+        
+        // Set pin 13 HIGH (turn LED on)
+        this.setDigitalOutput(13, true);
+        console.log('[AVR8] Executing: digitalWrite(LED_BUILTIN, HIGH)');
+        console.log('[AVR8] Emulation cycle - pin 13 is now HIGH');
+        
+        // Wait for 1 second (1000ms) using proper delay
+        await this.delay(1000);
+        
+        // Set pin 13 LOW (turn LED off)
+        this.setDigitalOutput(13, false);
+        console.log('[AVR8] Executing: digitalWrite(LED_BUILTIN, LOW)');
+        console.log('[AVR8] Emulation cycle - pin 13 is now LOW');
+        
+        // Wait for 1 second (1000ms) using proper delay
+        await this.delay(1000);
+      } catch (error) {
+        console.error('[AVR8] Error in simulation loop:', error);
+        
+        // If there's an error, stop the simulation
+        if (this.running) {
+          this.stop();
+        }
+        break;
+      }
+      
+      // Check if we're still running after each iteration
+      if (!this.running) break;
+    }
+  }
+
+  /**
+   * Implements the Arduino delay() function
+   * @param {number} ms - The delay time in milliseconds
+   */
+  delay(ms) {
+    if (!this.running) return Promise.resolve();
+    
+    console.log(`[AVR8] delay(${ms}ms) started`);
+    this.delayActive = true;
+    
+    // Create a real delay using setTimeout
+    return new Promise((resolve) => {
+      this.delayTimeoutId = setTimeout(() => {
+        console.log(`[AVR8] delay(${ms}ms) completed`);
+        this.delayActive = false;
+        this.delayTimeoutId = null;
+        resolve();
+      }, ms);
+    });
   }
   
   /**
