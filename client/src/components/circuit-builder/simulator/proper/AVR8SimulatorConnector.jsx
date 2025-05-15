@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { AVR8Emulator } from './AVR8Emulator';
 import { compileArduino } from './ArduinoCompilerService';
 
@@ -53,21 +53,73 @@ const AVR8SimulatorConnector = ({
     }
   };
   
+  // Custom pin change handler that supports proper RGB LED operation
+  const handlePinChange = useCallback((pin, isHigh, options = {}) => {
+    // Handle ALL pin changes
+    const { analogValue } = options;
+    const stateLabel = isHigh ? 'HIGH' : 'LOW';
+    const pwmValue = analogValue !== undefined ? analogValue : (isHigh ? 255 : 0);
+    
+    // Log all pin changes
+    console.log(`[AVR8] Pin ${pin} changed to ${stateLabel} (analog: ${pwmValue})`);
+    
+    // Pass the pin change to our parent component
+    if (onPinChange) {
+      if (options && typeof options.analogValue === 'number') {
+        onPinChange(pin, isHigh, { analogValue: options.analogValue });
+      } else {
+        onPinChange(pin, isHigh);
+      }
+    }
+    
+    // Special handling for RGB LED pins
+    if (pin === 9 || pin === 10 || pin === 11) {
+      const pinColorMap = {
+        9: 'red',
+        10: 'green',
+        11: 'blue'
+      };
+      
+      const color = pinColorMap[pin];
+      if (color) {
+        console.log(`[AVR8] Updating RGB LED ${color} channel to ${pwmValue}`);
+        
+        // Update all RGB LEDs with this pin change
+        if (window.simulatorContext) {
+          const rgbLedIds = Object.keys(window.simulatorContext.componentStates || {})
+            .filter(id => id.includes('rgb-led') || 
+                          (window.simulatorContext.componentStates[id] && 
+                           window.simulatorContext.componentStates[id].type === 'rgb-led'));
+          
+          // Update each RGB LED component with the pin change
+          rgbLedIds.forEach(componentId => {
+            console.log(`[AVR8] Updating RGB LED component ${componentId} ${color} channel to ${pwmValue}`);
+            
+            // Try the global update function if it exists
+            if (window.updateRGBLED && window.updateRGBLED[componentId]) {
+              window.updateRGBLED[componentId](color, pwmValue);
+            }
+            
+            // Also update through the simulator context
+            window.simulatorContext.updateComponentState(componentId, {
+              [`${color}Value`]: pwmValue,
+              pins: {
+                ...(window.simulatorContext.componentStates[componentId]?.pins || {}),
+                [color]: pwmValue
+              }
+            });
+          });
+        }
+      }
+    }
+  }, [onPinChange]);
+
   // Initialize the emulator
   useEffect(() => {
     try {
       // Create a new emulator instance with callbacks
       const emulator = new AVR8Emulator({
-        onPinChange: (pin, isHigh, options) => {
-          if (onPinChange) {
-            // Pass analog value if available (for PWM pins)
-            if (options && typeof options.analogValue === 'number') {
-              onPinChange(pin, isHigh, { analogValue: options.analogValue });
-            } else {
-              onPinChange(pin, isHigh);
-            }
-          }
-        },
+        onPinChange: handlePinChange,
         onSerialByte: (value, char) => {
           if (onSerialData) {
             onSerialData(value, char);

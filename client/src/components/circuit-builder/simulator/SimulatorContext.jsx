@@ -113,38 +113,47 @@ export const SimulatorProvider = ({ children }) => {
     
     // Log important simulation start info
     addLog('Program loaded successfully.');
-    addLog('Executing: void setup() { pinMode(13, OUTPUT); }');
-    addLog('Built-in LED turned ON');
+    addLog('Executing AVR8 proper emulation with your Arduino code');
     
-    // Set initial LED state to ON
-    if (heroComponent) {
-      updateComponentState(heroComponent.id, { pin13: true });
+    // Register all components with the simulator
+    console.log('SimulatorContext: Registering all components for pin state updates');
+    components.forEach(component => {
+      const componentType = component.type;
+      console.log(`SimulatorContext: Registering ${component.id} (${componentType})`);
       
-      // Create a timer to blink the built-in LED
-      const intervalId = setInterval(() => {
-        // Toggle the LED state
-        updateComponentState(heroComponent.id, prev => {
-          const newState = !prev.pin13;
-          
-          // Log the pin state change
-          if (newState) {
-            addLog('Executing: digitalWrite(13, HIGH); // Turn the LED on');
-            addLog('Built-in LED turned ON');
-          } else {
-            addLog('Executing: digitalWrite(13, LOW); // Turn the LED off');
-            addLog('Built-in LED turned OFF');
+      // Special handling for RGB LED components
+      if (componentType === 'rgb-led' || component.id.includes('rgb-led')) {
+        console.log(`SimulatorContext: Found RGB LED component ${component.id}`);
+        
+        // Initialize RGB LED with all pins off
+        updateComponentState(component.id, {
+          redValue: 0,
+          greenValue: 0, 
+          blueValue: 0,
+          pins: {
+            red: 0,
+            green: 0,
+            blue: 0
           }
-          
-          return { pin13: newState };
         });
-      }, 1000); // Blink every 1 second (1000ms)
+      }
       
-      // Store the interval reference
-      setBlinkIntervalRef(intervalId);
-    } else {
-      console.error('No HERO board component found, cannot blink the LED');
-      addLog('Warning: No HERO board found in the circuit');
-    }
+      // Handle HERO board components
+      if (componentType === 'heroboard' || component.id.includes('heroboard')) {
+        // Initialize all digital pins to LOW
+        const pins = {};
+        for (let i = 0; i <= 13; i++) {
+          pins[i] = false; // All pins start LOW
+        }
+        
+        updateComponentState(component.id, { 
+          pins: pins 
+        });
+      }
+    });
+    
+    // No more hard-coded blink timers - all pin changes come from the emulator
+    addLog('Proper AVR8 emulation started - all component states will be driven by the actual emulated code');
   };
   
   // Function to stop the simulation
