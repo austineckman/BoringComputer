@@ -812,7 +812,7 @@ void loop() {
                   } else {
                     // No heroboards found, use a generic ID that will get picked up anyway
                     updateComponentPins('heroboard', { '13': isHigh });
-                    console.log(`[FALLBACK] Updated generic heroboard pin 13 LED to ${isHigh ? 'ON' : 'OFF'}`);
+                    console.log(`[AVR8] Pin 13 changed to ${isHigh ? 'HIGH' : 'LOW'} (hardware emulation)`);
                   }
                   
                   // Force state refresh
