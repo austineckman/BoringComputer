@@ -742,11 +742,12 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
                 <div className="mb-3 p-3 bg-gray-50 rounded-md border border-gray-200">
                   <h4 className="font-medium text-sm text-gray-800 mb-2">Wiring Instructions:</h4>
                   <ul className="text-xs text-gray-600 space-y-1 list-disc pl-4">
-                    <li><span className="font-medium">Red Pin:</span> Connect to digital pin (via resistor)</li>
-                    <li><span className="font-medium">Green Pin:</span> Connect to digital pin (via resistor)</li>
-                    <li><span className="font-medium">Blue Pin:</span> Connect to digital pin (via resistor)</li>
-                    <li><span className="font-medium">Common Pin:</span> Connect to GND (cathode) or 5V (anode)</li>
-                    <li>Always use resistors (220Ω-1kΩ) with each color channel</li>
+                    <li><span className="font-medium">Red Pin:</span> Connect to digital pin 9 (via 220Ω resistor)</li>
+                    <li><span className="font-medium">Green Pin:</span> Connect to digital pin 10 (via 220Ω resistor)</li>
+                    <li><span className="font-medium">Blue Pin:</span> Connect to digital pin 11 (via 220Ω resistor)</li>
+                    <li><span className="font-medium">Common Pin:</span> {selectedComponent.props?.commonPin === 'cathode' ? 'Connect to GND (common cathode)' : 'Connect to 5V (common anode)'}</li>
+                    <li className="font-semibold">Example code: Use <span className="bg-gray-200 px-1 rounded">analogWrite(RED_PIN, value)</span> for PWM brightness control</li>
+                    <li className="text-xs italic">{selectedComponent.props?.commonPin === 'anode' ? 'For common anode: HIGH (255) turns LED OFF, LOW (0) turns LED ON' : 'For common cathode: HIGH (255) turns LED ON, LOW (0) turns LED OFF'}</li>
                   </ul>
                 </div>
                 
