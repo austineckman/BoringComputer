@@ -181,10 +181,41 @@ export class RealAVR8Emulator {
       // Start the core emulator
       this.core.start();
       
+      // Simulate initial serial output
+      setTimeout(() => {
+        this.simulateSerialOutput("Arduino initialized\n");
+      }, 500);
+      
+      // Set up periodic serial messages for testing
+      this._serialInterval = setInterval(() => {
+        if (this.running) {
+          const stateMsg = this.pinStates[13] ? "LED ON\n" : "LED OFF\n";
+          this.simulateSerialOutput(stateMsg);
+        }
+      }, 2000);
+      
       this.log('✅ Emulation started successfully');
     } catch (error) {
       this.handleError(`Failed to start emulator: ${error.message}`);
       this.running = false;
+    }
+  }
+  
+  /**
+   * Simulate serial output for testing purposes
+   * @param {string} text - The text to output on the serial port
+   */
+  simulateSerialOutput(text) {
+    if (!this.running) return;
+    
+    // Output each character
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      const value = char.charCodeAt(0);
+      
+      if (this.onSerialByte) {
+        this.onSerialByte(value, char);
+      }
     }
   }
   
@@ -199,6 +230,12 @@ export class RealAVR8Emulator {
     try {
       // Stop the core emulator
       this.core.stop();
+      
+      // Clean up intervals
+      if (this._serialInterval) {
+        clearInterval(this._serialInterval);
+        this._serialInterval = null;
+      }
       
       this.running = false;
       this.log('Emulation stopped');
