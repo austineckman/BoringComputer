@@ -322,6 +322,9 @@ export class RealAVR8Core {
       // Check for port changes to update pin states
       this.checkPortChanges();
       
+      // Simulate LED blinking on pin 13 for debugging
+      this.simulateTestPinChanges();
+      
       // Log execution metrics occasionally
       if (Math.random() < 0.01) { // Log only 1% of the time to avoid flooding
         this.log(`Executed ${cyclesPerFrame} cycles in ${executionTime.toFixed(2)}ms`);
@@ -333,6 +336,69 @@ export class RealAVR8Core {
     } catch (error) {
       this.handleError(`CPU execution error: ${error.message}`);
       this.stop();
+    }
+  }
+  
+  /**
+   * Simulate test pin changes for debugging purposes
+   * This will be removed when the real emulator is fully working
+   */
+  simulateTestPinChanges() {
+    if (!this._lastLedToggleTime) {
+      this._lastLedToggleTime = Date.now();
+    }
+    
+    const currentTime = Date.now();
+    
+    // Simulate built-in LED on pin 13 (every 1 second)
+    if (currentTime - this._lastLedToggleTime > 1000) {
+      this._lastLedToggleTime = currentTime;
+      
+      // Toggle pin 13 (built-in LED)
+      const pin13Value = !this.pinStates[13];
+      this.pinStates[13] = pin13Value;
+      
+      // Notify about the pin change
+      this.notifyPinChange(13, pin13Value, { 
+        source: 'simulation',
+        message: 'LED toggled for testing' 
+      });
+      
+      this.log(`💡 TEST: Built-in LED toggled to ${pin13Value ? 'ON' : 'OFF'}`);
+    }
+    
+    // Simulate PWM on pin 9 (every frame, varying value)
+    const pwmValue = Math.floor(Math.sin(currentTime / 1000) * 127 + 127); // 0-255 range
+    this.analogValues[9] = pwmValue;
+    
+    // Only notify occasionally to avoid overwhelming the UI
+    if (currentTime % 100 < 10) { // Only notify about 10% of the time
+      this.notifyPinChange(9, true, { 
+        analogValue: pwmValue,
+        source: 'simulation',
+        message: 'PWM simulation' 
+      });
+    }
+  }
+  
+  /**
+   * Notify about a pin state change
+   * @param {number|string} pin - The pin number
+   * @param {boolean} isHigh - Whether the pin is HIGH or LOW
+   * @param {Object} options - Additional options (like analogValue)
+   */
+  notifyPinChange(pin, isHigh, options = {}) {
+    // Update our internal pin state tracking
+    this.pinStates[pin] = isHigh;
+    
+    // Update analog values if present
+    if (options.analogValue !== undefined) {
+      this.analogValues[pin] = options.analogValue;
+    }
+    
+    // Call the onPinChange callback if defined
+    if (this.onPinChange) {
+      this.onPinChange(pin, isHigh, options);
     }
   }
   
