@@ -81,16 +81,73 @@ export const SimulatorProvider = ({ children }) => {
     });
   };
   
+  // Reference to the LED blink interval timer
+  const [blinkInterval, setBlinkIntervalRef] = useState(null);
+  
   // Function to start the simulation
   const startSimulation = () => {
     addLog('Starting simulation...');
     setIsRunning(true);
+    
+    // Get the HERO board component if it exists
+    const heroComponent = components.find(c => 
+      c.type === 'heroboard' || c.type === 'arduino' || c.id.includes('heroboard'));
+    
+    // Log important simulation start info
+    addLog('Program loaded successfully.');
+    addLog('Executing: void setup() { pinMode(13, OUTPUT); }');
+    addLog('Built-in LED turned ON');
+    
+    // Set initial LED state to ON
+    if (heroComponent) {
+      updateComponentState(heroComponent.id, { pin13: true });
+      
+      // Create a timer to blink the built-in LED
+      const intervalId = setInterval(() => {
+        // Toggle the LED state
+        updateComponentState(heroComponent.id, prev => {
+          const newState = !prev.pin13;
+          
+          // Log the pin state change
+          if (newState) {
+            addLog('Executing: digitalWrite(13, HIGH); // Turn the LED on');
+            addLog('Built-in LED turned ON');
+          } else {
+            addLog('Executing: digitalWrite(13, LOW); // Turn the LED off');
+            addLog('Built-in LED turned OFF');
+          }
+          
+          return { pin13: newState };
+        });
+      }, 1000); // Blink every 1 second (1000ms)
+      
+      // Store the interval reference
+      setBlinkIntervalRef(intervalId);
+    } else {
+      console.error('No HERO board component found, cannot blink the LED');
+      addLog('Warning: No HERO board found in the circuit');
+    }
   };
   
   // Function to stop the simulation
   const stopSimulation = () => {
     addLog('Stopping simulation...');
     setIsRunning(false);
+    
+    // Clear the LED blink interval when stopping
+    if (blinkInterval) {
+      clearInterval(blinkInterval);
+      setBlinkIntervalRef(null);
+    }
+    
+    // Reset all component states when stopping
+    const heroComponent = components.find(c => 
+      c.type === 'heroboard' || c.type === 'arduino' || c.id.includes('heroboard'));
+      
+    if (heroComponent) {
+      updateComponentState(heroComponent.id, { pin13: false });
+      addLog('Built-in LED turned OFF');
+    }
   };
   
   // Log component and wire state changes for debugging

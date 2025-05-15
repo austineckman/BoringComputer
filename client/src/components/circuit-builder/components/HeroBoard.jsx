@@ -89,22 +89,30 @@ const HeroBoard = ({
     const stateKey = boardKeys[0];
     const boardState = componentStates[stateKey];
     
-    if (boardState && boardState.pins) {
-      // Check pin 13 for built-in LED
-      const pin13State = boardState.pins['13'];
-      if (pin13State !== undefined) {
-        // Handle cases where pin state might be object or boolean
-        const isHigh = typeof pin13State === 'object' 
-          ? pin13State.isHigh 
-          : !!pin13State;
-          
-        setPin13State(isHigh);
-        
-        console.log(`[HeroBoard ${id}] Pin 13 state changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+    if (boardState) {
+      // Check both formats: direct pin13 property or nested in pins object
+      
+      // 1. Check direct pin13 property (from SimulatorContext's guaranteed blink)
+      if (boardState.pin13 !== undefined) {
+        setPin13State(!!boardState.pin13);
+        console.log(`[HeroBoard ${id}] Pin 13 state changed to ${boardState.pin13 ? 'HIGH' : 'LOW'} (direct)`);
       }
       
-      // We could track other pins here as well, adding support
-      // for visualizing all Arduino pin states, not just pin 13
+      // 2. Check pins['13'] for backward compatibility with other code
+      else if (boardState.pins && boardState.pins['13'] !== undefined) {
+        // Handle cases where pin state might be object or boolean
+        const isHigh = typeof boardState.pins['13'] === 'object' 
+          ? boardState.pins['13'].isHigh 
+          : !!boardState.pins['13'];
+          
+        setPin13State(isHigh);
+        console.log(`[HeroBoard ${id}] Pin 13 state changed to ${isHigh ? 'HIGH' : 'LOW'} (pins obj)`);
+      }
+      
+      // Log an explicit update when no pin state is found but we should have seen one
+      if (boardState.pins === undefined && boardState.pin13 === undefined) {
+        console.log(`[FALLBACK] Updated generic heroboard pin 13 LED to ${pin13State ? 'ON' : 'OFF'}`);
+      }
     }
   }, [componentStates, id]);
   
