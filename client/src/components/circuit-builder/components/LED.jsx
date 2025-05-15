@@ -341,7 +341,7 @@ const LED = ({
           onPinClicked={handlePinClicked}
           onPininfoChange={(e) => onPinInfoChange(e)}
           style={{
-            transform: `translate(${initPosLeft}px, ${initPosTop}px)`,
+            transform: `translate(${posLeft}px, ${posTop}px)`,
             zIndex: isDragged ? 99999 : 10
           }}
           color={ledColor}
@@ -356,17 +356,6 @@ const LED = ({
         {/* Simulation state indicator */}
         {isSimulationRunning && (
           <>
-            {/* Status indicator dot */}
-            <div 
-              className={`absolute rounded-full w-3 h-3 ${isLit ? 'bg-green-500' : 'bg-red-500'}`}
-              style={{
-                transform: `translate(${initPosLeft + 35}px, ${initPosTop}px)`,
-                boxShadow: isLit ? '0 0 8px 2px #4ade80' : 'none',
-                transition: 'background-color 0.2s, box-shadow 0.2s',
-                zIndex: 100
-              }}
-            ></div>
-            
             {/* Glow effect when LED is on */}
             {isLit && (
               <div 
@@ -375,7 +364,8 @@ const LED = ({
                   backgroundColor: ledColor === 'red' ? '#ff0000' : 
                                    ledColor === 'green' ? '#00ff00' : 
                                    ledColor === 'blue' ? '#0000ff' : '#ff0000',
-                  transform: `translate(${initPosLeft + 10}px, ${initPosTop + 10}px)`,
+                  // Positioning relative to the current LED position
+                  transform: `translate(${posLeft + 10}px, ${posTop + 10}px)`,
                   boxShadow: `0 0 15px 5px ${
                     ledColor === 'red' ? '#ff0000' : 
                     ledColor === 'green' ? '#00ff00' : 
