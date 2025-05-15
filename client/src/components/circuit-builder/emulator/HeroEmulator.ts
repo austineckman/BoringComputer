@@ -731,6 +731,47 @@ export class HeroEmulator {
       this.cycleCounter++;
       const currentTime = Date.now();
       
+      // Show Arduino code execution steps periodically
+      if (this.cycleCounter % 20 === 0) {
+        const codeSteps = [
+          "void setup() {",
+          "  pinMode(13, OUTPUT);  // Set pin 13 as output",
+          "}",
+          "",
+          "void loop() {",
+          "  digitalWrite(13, HIGH);  // Turn the LED on",
+          "  delay(1000);  // Wait for a second",
+          "  digitalWrite(13, LOW);  // Turn the LED off",
+          "  delay(1000);  // Wait for a second",
+          "}"
+        ];
+        
+        // Determine which line of code is "executing" based on the blink phase
+        const blinkPhase = Math.floor((currentTime % (this.blinkSpeed * 2)) / (this.blinkSpeed / 2));
+        let lineIndex;
+        
+        switch (blinkPhase) {
+          case 0: 
+            lineIndex = 5; // digitalWrite(13, HIGH)
+            break;
+          case 1: 
+            lineIndex = 6; // delay(1000)
+            break;
+          case 2: 
+            lineIndex = 7; // digitalWrite(13, LOW)
+            break;
+          case 3:
+          default:
+            lineIndex = 8; // delay(1000)
+            break;
+        }
+        
+        // Send the execution line to logs - use direct log channel for Arduino execution messages
+        if (lineIndex !== undefined) {
+          this.onLogMessage?.(`[Arduino] Executing: ${codeSteps[lineIndex]}`);
+        }
+      }
+      
       // Toggle the pin every blinkSpeed milliseconds
       if (currentTime - this.lastToggleTime >= this.blinkSpeed) {
         this.lastToggleTime = currentTime;
@@ -740,7 +781,9 @@ export class HeroEmulator {
         this.pinStates['13'] = this.pin13State;
         
         // Only log pin 13 changes - don't log other pins that aren't relevant
-        this.log(`[Arduino] Built-in LED is ${this.pin13State ? 'ON' : 'OFF'}`);
+        // Use direct log channel for immediate display in the log panel
+        this.onLogMessage?.(`[Arduino] Built-in LED is ${this.pin13State ? 'ON' : 'OFF'}`);
+        console.log(`[AVR8] Built-in LED is ${this.pin13State ? 'ON' : 'OFF'}`);
         
         // Directly notify the pin change handler without relying on port access
         if (this.onPinChangeCallback) {
