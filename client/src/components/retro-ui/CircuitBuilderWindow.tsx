@@ -546,46 +546,60 @@ void loop() {
   const runSimulation = () => {
     if (isSimulationRunning) {
       // Stop the simulation
+      addSimulationLog('Stopping simulation...');
       stopSimulation();
       setIsSimulationRunning(false);
       if (typeof window !== 'undefined') {
         window.isSimulationRunning = false; // Set global flag for components
       }
       addSimulationLog('Simulation stopped');
+      showNotification('Simulation stopped successfully', 'info');
     } else {
+      // Show a notification that we're starting compilation
+      showNotification('Compiling Arduino code...', 'info');
+      addSimulationLog('Starting compilation process...');
+      
       // Get the current code from the editor
       const currentCode = getCode();
       
       // Validate the Arduino code using the imported validateArduinoCode function
+      addSimulationLog('Verifying C++ syntax and Arduino libraries...');
       const errors = validateArduinoCode(currentCode);
       
       if (errors && errors.length > 0) {
         // Show compilation errors in the log
-        addSimulationLog('Compilation failed with errors:');
+        addSimulationLog('⚠️ Compilation failed with errors:');
         errors.forEach(error => {
-          addSimulationLog(`Line ${error.line}: ${error.message}`);
+          addSimulationLog(`Error on line ${error.line}: ${error.message}`);
         });
         
         // Show an error notification with specific first error
         const firstError = errors[0];
         if (firstError) {
-          showNotification(`Compilation error on line ${firstError.line}: ${firstError.message}. Check logs for more.`, 'error');
+          showNotification(`C++ error on line ${firstError.line}: ${firstError.message}. Check logs for details.`, 'error');
         } else {
           showNotification('Compilation failed! Check the logs for details.', 'error');
         }
         return;
       }
       
-      // Code is valid, start the simulation
-      addSimulationLog('Compilation successful!');
+      // Code is valid, show success notification
+      addSimulationLog('✅ C++ Code verification successful!');
+      showNotification('Code compilation successful! Starting simulation...', 'success');
       
-      // Now start the simulation with current code
-      setIsSimulationRunning(true);
-      if (typeof window !== 'undefined') {
-        window.isSimulationRunning = true; // Set global flag for components
-      }
-      startSimulation();
-      addSimulationLog('Simulation started');
+      // Add a short delay for the user to see the compilation success message
+      setTimeout(() => {
+        // Now start the simulation with current code
+        addSimulationLog('Initializing microcontroller emulation...');
+        setIsSimulationRunning(true);
+        if (typeof window !== 'undefined') {
+          window.isSimulationRunning = true; // Set global flag for components
+        }
+        
+        startSimulation();
+        addSimulationLog('✅ Simulation started successfully');
+        addSimulationLog('Hardware emulation is now running on the virtual circuit');
+      }, 500); // 500ms delay for better user feedback
     }
   };
   
