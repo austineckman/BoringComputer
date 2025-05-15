@@ -357,7 +357,7 @@ const RGBLED = ({
         
         {/* Simulation state indicators and unified glow effect */}
         {isSimulationRunning && (
-          <div className="absolute" style={{ transform: `translate(${initPosLeft}px, ${initPosTop}px)` }}>
+          <div className="absolute" style={{ transform: `translate(${posLeft}px, ${posTop}px)` }}>
             {/* Debug values */}
             <div 
               className="absolute bg-black bg-opacity-75 text-white text-xs p-1 rounded"
