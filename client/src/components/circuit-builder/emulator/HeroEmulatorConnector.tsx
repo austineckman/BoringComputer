@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
-import { SimpleEmulator, EmulatedComponent } from './SimpleEmulator';
+import { HeroEmulator, EmulatedComponent } from './HeroEmulator';
 import { WireManager, Wire } from './WireManager';
 
 interface HeroEmulatorConnectorProps {
