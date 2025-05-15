@@ -312,6 +312,17 @@ const LED = ({
 
   // No longer need the component context menu
 
+  // Generate glowing effect CSS
+  const ledGlowStyle = {
+    filter: isLit ? `drop-shadow(0 0 5px ${
+      ledColor === 'red' ? '#ff0000' : 
+      ledColor === 'green' ? '#00ff00' : 
+      ledColor === 'blue' ? '#0000ff' : '#ff0000'
+    })` : 'none',
+    opacity: isLit ? 1 : 0.8,
+    transition: 'filter 0.2s, opacity 0.2s'
+  };
+
   return (
     <>
       {isSelected && (
@@ -329,10 +340,18 @@ const LED = ({
         ></Moveable>
       )}
       
-      <div className="relative">
+      <div 
+        className="relative"
+        style={{
+          transform: `translate(${posLeft}px, ${posTop}px)`,
+          transition: 'transform 0.1s',
+          zIndex: isDragged ? 99999 : 10
+        }}
+      >
+        {/* LED component with glow effect directly on the element */}
         <ReactLEDElement
           id={id}
-          className="min-w-min cursor-pointer absolute"
+          className="min-w-min cursor-pointer"
           ref={targetRef}
           onMouseDown={(e) => {
             e.stopPropagation();
@@ -341,8 +360,8 @@ const LED = ({
           onPinClicked={handlePinClicked}
           onPininfoChange={(e) => onPinInfoChange(e)}
           style={{
-            transform: `translate(${posLeft}px, ${posTop}px)`,
-            zIndex: isDragged ? 99999 : 10
+            ...ledGlowStyle,
+            transform: `rotate(${rotationAngle}deg)`,
           }}
           color={ledColor}
           flip={false}
@@ -352,34 +371,6 @@ const LED = ({
           brightness={componentData.attrs.brightness}
           value={componentData.attrs.value}
         ></ReactLEDElement>
-        
-        {/* Simulation state indicator */}
-        {isSimulationRunning && (
-          <>
-            {/* Glow effect when LED is on - directly inside the component */}
-            {isLit && (
-              <div 
-                className="absolute rounded-full w-6 h-6 opacity-40"
-                style={{
-                  backgroundColor: ledColor === 'red' ? '#ff0000' : 
-                                   ledColor === 'green' ? '#00ff00' : 
-                                   ledColor === 'blue' ? '#0000ff' : '#ff0000',
-                  // Positioning fixed relative to component
-                  top: '7px',
-                  left: '7px',
-                  boxShadow: `0 0 8px 2px ${
-                    ledColor === 'red' ? '#ff0000' : 
-                    ledColor === 'green' ? '#00ff00' : 
-                    ledColor === 'blue' ? '#0000ff' : '#ff0000'
-                  }`,
-                  filter: 'blur(3px)',
-                  animation: 'pulse 1s infinite alternate',
-                  zIndex: 99
-                }}
-              ></div>
-            )}
-          </>
-        )}
       </div>
     </>
   );
