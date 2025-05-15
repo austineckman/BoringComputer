@@ -110,8 +110,8 @@ export class AVR8EmulatorCore {
    */
   initializeComponents() {
     try {
-      // Create CPU
-      this.cpu = new CPU(this.program);
+      // Create CPU with frequency
+      this.cpu = new CPU(this.cpuFrequency);
       
       // Create I/O ports
       this.portB = new AVRIOPort(this.cpu, portBConfig);
@@ -127,9 +127,21 @@ export class AVR8EmulatorCore {
       this.usart = new AVRUSART(this.cpu, usart0Config, this.handleSerialByte.bind(this));
       
       // Set up listeners for port changes
-      this.portB.addPortListener(this.handlePortBChange.bind(this));
-      this.portC.addPortListener(this.handlePortCChange.bind(this));
-      this.portD.addPortListener(this.handlePortDChange.bind(this));
+      // Note: In avr8js, we need to check which method is available
+      if (typeof this.portB.addEventListener === 'function') {
+        // New API
+        this.portB.addEventListener('valueChanged', this.handlePortBChange.bind(this));
+        this.portC.addEventListener('valueChanged', this.handlePortCChange.bind(this));
+        this.portD.addEventListener('valueChanged', this.handlePortDChange.bind(this));
+      } else if (typeof this.portB.addValueListener === 'function') {
+        // Alternative API
+        this.portB.addValueListener(this.handlePortBChange.bind(this));
+        this.portC.addValueListener(this.handlePortCChange.bind(this));
+        this.portD.addValueListener(this.handlePortDChange.bind(this));
+      } else {
+        // Try direct port access by manually checking port values in checkPortChanges
+        this.log('Using manual port monitoring - no listener API available');
+      }
       
       this.log('AVR8js components initialized successfully');
     } catch (error) {
@@ -457,7 +469,7 @@ export class AVR8EmulatorCore {
   log(message) {
     console.log(`[AVR8Core] ${message}`);
     
-    if (this.options.onLogMessage) {
+    if (this.options && this.options.onLogMessage) {
       this.options.onLogMessage(message);
     }
   }
