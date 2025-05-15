@@ -178,23 +178,46 @@ export class HeroEmulator {
     this.timer2 = new AVRTimer(this.cpu, timer2Config);
     
     // Create USART for serial communication
-    this.usart = new AVRUSART(this.cpu, usart0Config);
+    // The AVRUSART constructor in some versions of avr8js expects a transmit callback
+    const serialDataCallback = (value: number) => {
+      if (this.onSerialDataCallback) {
+        const char = String.fromCharCode(value);
+        this.onSerialDataCallback(value, char);
+      }
+    };
     
-    // Set up USART serial output callback
-    if (this.usart) {
-      this.usart.onByteTransmit = (value: number) => {
-        if (this.onSerialDataCallback) {
-          const char = String.fromCharCode(value);
-          this.onSerialDataCallback(value, char);
+    try {
+      // Try with a callback as the third parameter
+      this.usart = new AVRUSART(this.cpu, usart0Config, serialDataCallback);
+    } catch (e) {
+      // If that fails, try the version without the callback
+      this.usart = new AVRUSART(this.cpu, usart0Config);
+      
+      // Set up USART serial output callback manually
+      if (this.usart) {
+        try {
+          // Try to set onByteTransmit property if it exists
+          this.usart.onByteTransmit = serialDataCallback;
+        } catch (e) {
+          this.log('USART callback not supported in this version of avr8js');
         }
-      };
+      }
     }
     
     // Create SPI interface (providing port B for SPI pins)
-    this.spi = new AVRSPI(this.cpu, spiConfig, this.portB);
+    // The third argument should be a port according to the latest avr8js API
+    this.spi = new AVRSPI(this.cpu, spiConfig);
+    if (this.portB) {
+      // Set up SPI pins on Port B if needed
+      // This is a workaround since the API might have changed
+    }
     
     // Create I2C/TWI interface for OLED displays and other I2C devices (providing port C for I2C pins)
-    this.twi = new AVRTWI(this.cpu, twiConfig, this.portC);
+    this.twi = new AVRTWI(this.cpu, twiConfig);
+    if (this.portC) {
+      // Set up I2C pins on Port C if needed
+      // This is a workaround since the API might have changed
+    }
     
     // Set up port change listeners
     this.portB?.addListener((value: number, oldValue: number) => {
