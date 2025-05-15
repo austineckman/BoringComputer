@@ -536,7 +536,7 @@ export class AVR8EmulatorCore {
     this.log(`Setting digital output on pin ${pin} to ${value ? 'HIGH' : 'LOW'}`);
     
     // Notify about pin change
-    if (this.options.onPinChange) {
+    if (this.options && this.options.onPinChange) {
       this.options.onPinChange(pin, value);
     }
   }
