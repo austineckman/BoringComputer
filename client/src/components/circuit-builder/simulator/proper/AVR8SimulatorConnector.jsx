@@ -229,8 +229,19 @@ const AVR8SimulatorConnector = ({
                   });
                 }
                 
-                // Parse the delay values from Arduino code
+                // Parse pin usage and delay values from Arduino code
                 const delayValues = parseDelaysFromCode(codeRef.current);
+                
+                // Extract pin information from the compilation result
+                const pinsUsed = result.pinsUsed || [];
+                
+                // Store which pins are used in the emulator for debugging
+                emulatorRef.current.pinsInUse = pinsUsed;
+                
+                if (pinsUsed.length > 0) {
+                  logInfo(`Found pins used in code: ${pinsUsed.join(', ')}`);
+                }
+                
                 if (delayValues.length > 0) {
                   logInfo(`Found delay values in code: ${delayValues.join(', ')} ms`);
                   
@@ -240,7 +251,7 @@ const AVR8SimulatorConnector = ({
                   logInfo('No delay values found in code. Using default delay timing.');
                 }
                 
-                // Start the emulator with ONLY the compiled code (no userProgram)
+                // Start the emulator with ONLY the compiled code
                 // This ensures we use ONLY the CPU emulator and not any shortcuts
                 const started = emulatorRef.current.start();
                 
