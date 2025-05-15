@@ -1,9 +1,5 @@
 import React from 'react';
-import { X, ZoomIn, ZoomOut, Move, RotateCcw, Trash2, Play, Save, FileCode, Download } from 'lucide-react';
-import { EmulatorProvider } from '../desktop/emulator/EmulatorContext';
-import { CodeEditor } from '../desktop/emulator/CodeEditor';
-import { CircuitBuilder } from '../desktop/emulator/CircuitBuilder';
-import { ComponentPalette } from '../desktop/emulator/components/ComponentPalette';
+import UniversalEmulatorApp from '../circuit-builder/emulator/UniversalEmulatorApp';
 
 interface FullscreenUniversalEmulatorAppProps {
   onClose: () => void;
