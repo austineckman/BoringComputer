@@ -10,6 +10,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { X, ZoomIn, ZoomOut, Play, Square, Save, FileCode, Download } from 'lucide-react';
 import { CircuitComponentPalette } from './CircuitComponentPalette';
 import { ArduinoCodeEditor } from './ArduinoCodeEditor';
+import { CircuitBuilder } from './CircuitBuilder';
 import HeroEmulatorConnector from './HeroEmulatorConnector';
 import EmulatedLEDComponent from './EmulatedLEDComponent';
 
@@ -249,37 +250,49 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
         </div>
         
         {/* Main circuit canvas */}
-        <div 
-          className="flex-1 bg-gray-900 overflow-auto"
-          style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}
-        >
-          {/* Circuit components go here */}
-          {components.map(component => {
-            // Render different component types
-            if (component.type === 'led') {
-              return (
-                <div 
-                  key={component.id}
-                  style={{ position: 'absolute', left: component.x, top: component.y }}
-                >
-                  <EmulatedLEDComponent
-                    id={component.id}
-                    anodePin={component.anodePin || '5'}
-                    cathodePin={component.cathodePin || 'GND'}
-                    color={component.color || 'red'}
-                  />
-                </div>
-              );
-            }
+        <CircuitBuilder
+          components={components}
+          wires={wires}
+          onComponentMove={(componentId, x, y) => {
+            setComponents(prev => 
+              prev.map(c => c.id === componentId ? { ...c, x, y } : c)
+            );
+          }}
+          onComponentSelect={(componentId) => {
+            // Handle component selection
+            console.log(`Selected component: ${componentId}`);
+          }}
+          onWireCreate={(wire) => {
+            // Create a new wire
+            const newWire = {
+              id: `wire-${Date.now()}`,
+              sourcePinId: wire.sourcePinId || '',
+              targetPinId: wire.targetPinId || '',
+              sourceComponentId: wire.sourceComponentId || '',
+              targetComponentId: wire.targetComponentId || '',
+              points: wire.points || []
+            };
             
-            // Add other component types here
+            setWires(prev => [...prev, newWire]);
+          }}
+          onWireDelete={(wireId) => {
+            // Delete a wire
+            setWires(prev => prev.filter(w => w.id !== wireId));
+          }}
+          onDeleteComponent={(componentId) => {
+            // Delete a component
+            setComponents(prev => prev.filter(c => c.id !== componentId));
             
-            return null;
-          })}
-          
-          {/* Wires go here */}
-          {/* TODO: Implement wire rendering */}
-        </div>
+            // Also delete any wires connected to this component
+            setWires(prev => 
+              prev.filter(w => 
+                w.sourceComponentId !== componentId && 
+                w.targetComponentId !== componentId
+              )
+            );
+          }}
+          zoom={zoom}
+        />
         
         {/* Right sidebar - Logs and Serial Output */}
         <div className="w-64 bg-gray-900 border-l border-gray-700 overflow-hidden flex flex-col">
@@ -323,9 +336,10 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
       
       {/* Bottom code editor */}
       <div className="h-1/3 bg-gray-800 border-t border-gray-700">
-        <CodeEditor
-          initialCode={code}
+        <ArduinoCodeEditor
+          code={code}
           onChange={setCode}
+          isRunning={isRunning}
         />
       </div>
       
