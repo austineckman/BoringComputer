@@ -6,32 +6,10 @@
  * behaviors are driven by actual signals from the emulated CPU.
  * 
  * This implements the specific interface needed by our circuit simulator,
- * but delegates the actual emulation to the avr8js library.
+ * but delegates the actual emulation to the AVR8EmulatorCore.
  */
 
-// Maps Arduino pins to their typical usage
-const PIN_MAPPING = {
-  0: { name: 'D0', usage: 'RXD' },
-  1: { name: 'D1', usage: 'TXD' },
-  2: { name: 'D2', usage: 'INT0' },
-  3: { name: 'D3', usage: 'INT1/PWM' },
-  4: { name: 'D4', usage: 'Digital IO' },
-  5: { name: 'D5', usage: 'PWM' },
-  6: { name: 'D6', usage: 'PWM' },
-  7: { name: 'D7', usage: 'Digital IO' },
-  8: { name: 'D8', usage: 'Digital IO' },
-  9: { name: 'D9', usage: 'PWM' },
-  10: { name: 'D10', usage: 'PWM/SS' },
-  11: { name: 'D11', usage: 'PWM/MOSI' },
-  12: { name: 'D12', usage: 'MISO' },
-  13: { name: 'D13', usage: 'SCK/LED' },
-  'A0': { name: 'A0', usage: 'Analog Input' },
-  'A1': { name: 'A1', usage: 'Analog Input' },
-  'A2': { name: 'A2', usage: 'Analog Input' },
-  'A3': { name: 'A3', usage: 'Analog Input' },
-  'A4': { name: 'A4', usage: 'SDA/Analog Input' },
-  'A5': { name: 'A5', usage: 'SCL/Analog Input' }
-};
+import { AVR8EmulatorCore } from './AVR8EmulatorCore';
 
 // Arduino digital pins
 const DIGITAL_PINS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
@@ -43,8 +21,8 @@ const PWM_PINS = [3, 5, 6, 9, 10, 11];
 const ANALOG_PINS = ['A0', 'A1', 'A2', 'A3', 'A4', 'A5'];
 
 /**
- * A simplified AVR8Emulator class that handles pin state changes and other
- * basic functions needed for the circuit simulator.
+ * AVR8Emulator class that wraps the AVR8EmulatorCore to provide the API
+ * needed by the circuit simulator.
  */
 export class AVR8Emulator {
   constructor(options = {}) {
@@ -52,30 +30,164 @@ export class AVR8Emulator {
     this.onSerialByte = options.onSerialByte || null;
     this.onError = options.onError || null;
     
+    // Configure callbacks for the core emulator
+    const emulatorOptions = {
+      onPinChange: this.handlePinChange.bind(this),
+      onSerialByte: this.handleSerialByte.bind(this),
+      onError: this.handleError.bind(this),
+      onLogMessage: this.handleLogMessage.bind(this)
+    };
+    
+    // Create the core emulator
+    this.core = new AVR8EmulatorCore(emulatorOptions);
+    
     // Internal state
     this.running = false;
-    this.intervalId = null;
     this.delayActive = false;
     this.delayTimeoutId = null;
-    this.pinStates = {}; // Tracks current state of all pins
-    this.analogValues = {}; // Tracks analog values (0-255) for PWM pins
+    this.pinStates = this.core.pinStates;
+    this.analogValues = this.core.analogValues;
     this.program = null;
     
-    // Initialize pin states to LOW
-    DIGITAL_PINS.forEach(pin => {
-      this.pinStates[pin] = false; 
-    });
+    // Store which pins are used in the program
+    this.pinsInUse = [];
+  }
+  
+  /**
+   * Handle pin state changes from the emulator core
+   */
+  handlePinChange(pin, isHigh, options = {}) {
+    const analogValue = options.analogValue !== undefined ? options.analogValue : (isHigh ? 255 : 0);
     
-    // Initialize analog pins to 0
-    ANALOG_PINS.forEach(pin => {
-      this.pinStates[pin] = false;
-      this.analogValues[pin] = 0;
-    });
+    // Forward the pin change to the circuit simulator
+    if (this.onPinChange) {
+      this.onPinChange(pin, isHigh, options);
+    }
+  }
+  
+  /**
+   * Handle serial data from the emulator core
+   */
+  handleSerialByte(value, char) {
+    if (this.onSerialByte) {
+      this.onSerialByte(value, char);
+    }
+  }
+  
+  /**
+   * Handle errors from the emulator core
+   */
+  handleError(message) {
+    if (this.onError) {
+      this.onError(message);
+    }
+  }
+  
+  /**
+   * Handle log messages from the emulator core
+   */
+  handleLogMessage(message) {
+    // We don't need to do anything here, as the core already logs to console
+  }
+  
+  /**
+   * Load a compiled program
+   * @param {Uint16Array} program - The program bytes
+   * @param {Object} options - Additional options
+   * @returns {boolean} - Success status
+   */
+  loadProgram(program, options = {}) {
+    console.log('[AVR8] Program type:', program ? program[0] : 'none', 'initializing emulation...');
     
-    // Initialize PWM values to 0
-    PWM_PINS.forEach(pin => {
-      this.analogValues[pin] = 0;
+    // Record which pins are used by this program
+    if (options.pinsUsed) {
+      this.pinsInUse = options.pinsUsed;
+      this.core.pinsInUse = options.pinsUsed;
+    }
+    
+    // Store program reference
+    this.program = program;
+    
+    // Load the program into the core emulator
+    return this.core.loadProgram(program, this.pinsInUse);
+  }
+  
+  /**
+   * Start the emulator
+   */
+  start() {
+    if (this.running) return;
+    
+    this.running = true;
+    this.core.start();
+  }
+  
+  /**
+   * Stop the emulator
+   */
+  stop() {
+    if (!this.running) return;
+    
+    this.running = false;
+    this.core.stop();
+  }
+  
+  /**
+   * Implements the Arduino delay() function
+   * @param {number} ms - The delay time in milliseconds
+   * @returns {Promise} - Resolves after the delay
+   */
+  async delay(ms) {
+    console.log(`[AVR8] delay(${ms}ms) started`);
+    this.delayActive = true;
+    
+    return new Promise(resolve => {
+      this.delayTimeoutId = setTimeout(() => {
+        console.log(`[AVR8] delay(${ms}ms) completed`);
+        this.delayActive = false;
+        this.delayTimeoutId = null;
+        resolve();
+      }, ms);
     });
+  }
+  
+  /**
+   * Reset the emulator
+   */
+  reset() {
+    // Stop emulation if it's running
+    if (this.running) {
+      this.stop();
+    }
+    
+    // Cancel any active delay
+    if (this.delayTimeoutId) {
+      clearTimeout(this.delayTimeoutId);
+      this.delayTimeoutId = null;
+      this.delayActive = false;
+    }
+    
+    // Reset the core emulator
+    this.core.resetComponents();
+  }
+  
+  /**
+   * Set the delay timing parameters
+   * @param {number} highTime - Time in HIGH state (ms)
+   * @param {number} lowTime - Time in LOW state (ms)
+   */
+  setDelayTiming(highTime, lowTime) {
+    console.log(`[AVR8] Setting delay timing to HIGH: ${highTime}ms, LOW: ${lowTime}ms`);
+  }
+  
+  /**
+   * Start the emulation loop
+   */
+  async startBlinkLoop() {
+    if (this.running) return;
+    
+    // Start the emulation
+    this.start();
   }
 
   /**
