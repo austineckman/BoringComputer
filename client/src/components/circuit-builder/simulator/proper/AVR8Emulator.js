@@ -493,18 +493,8 @@ export class AVR8Emulator {
    * @param {boolean} value - true for HIGH, false for LOW
    */
   setDigitalOutput(pin, value) {
-    // Update pin state
-    this.pinStates[pin] = value;
-    
-    // For PWM pins, update analog value accordingly
-    if (PWM_PINS.includes(Number(pin))) {
-      this.analogValues[pin] = value ? 255 : 0;
-    }
-    
-    // Notify about pin change
-    if (this.onPinChange) {
-      this.onPinChange(pin, value);
-    }
+    // Update pin state via the core emulator
+    this.core.setDigitalOutput(pin, value);
   }
   
   /**
@@ -513,25 +503,8 @@ export class AVR8Emulator {
    * @param {number} value - Value between 0-255
    */
   setPWMOutput(pin, value) {
-    if (!PWM_PINS.includes(Number(pin))) {
-      return; // Not a PWM pin
-    }
-    
-    // Clamp value to 0-255 range
-    const analogValue = Math.max(0, Math.min(255, value));
-    
-    // Update analog value
-    this.analogValues[pin] = analogValue;
-    
-    // Update digital state (HIGH if value > 0)
-    const digitalValue = analogValue > 0;
-    const stateChanged = this.pinStates[pin] !== digitalValue;
-    this.pinStates[pin] = digitalValue;
-    
-    // Notify about pin change
-    if (this.onPinChange) {
-      this.onPinChange(pin, digitalValue, { analogValue });
-    }
+    // Update via the core emulator
+    this.core.setPWMOutput(pin, value);
   }
   
   /**

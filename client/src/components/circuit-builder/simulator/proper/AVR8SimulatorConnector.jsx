@@ -215,11 +215,13 @@ const AVR8SimulatorConnector = ({
               // Log the program contents for debugging
               logInfo(`Program bytes: ${result.program.slice(0, 10).join(', ')}... (${result.program.length} words total)`);
               
-              // Load the program into the emulator
-              const loaded = emulatorRef.current.loadProgram(result.program);
+              // Load the program into the emulator with pins detected from code
+              const loaded = emulatorRef.current.loadProgram(result.program, {
+                pinsUsed: result.pinsUsed || []
+              });
               
               if (loaded) {
-                logInfo('Program loaded successfully');
+                logInfo('Program loaded successfully with pin detection');
                 
                 // Update compilation status
                 if (setCompilationStatus) {
