@@ -725,54 +725,30 @@ export class HeroEmulator {
       console.warn("CPU execution error, fallback to simulation mode:", e);
     }
     
-    // For demonstration/simulation, toggle pin 13 every ~500ms
-    // This simulates the classic Arduino blink sketch
+    // For demonstration/simulation, toggle pin 13 every ~1000ms (1 second)
+    // This accurately simulates the classic Arduino blink sketch
     if (this.simulationMode) {
       this.cycleCounter++;
       const currentTime = Date.now();
       
-      // Show Arduino code execution steps periodically
-      if (this.cycleCounter % 20 === 0) {
-        const codeSteps = [
-          "void setup() {",
-          "  pinMode(13, OUTPUT);  // Set pin 13 as output",
-          "}",
-          "",
-          "void loop() {",
-          "  digitalWrite(13, HIGH);  // Turn the LED on",
-          "  delay(1000);  // Wait for a second",
-          "  digitalWrite(13, LOW);  // Turn the LED off",
-          "  delay(1000);  // Wait for a second",
-          "}"
-        ];
+      // Only log the code execution when the state changes or every 50 cycles
+      if (this.cycleCounter % 50 === 0) {
+        // The actual 'Blink' sketch that we're emulating
+        const codePhase = Math.floor((currentTime % (this.blinkSpeed * 2)) / (this.blinkSpeed / 2));
         
-        // Determine which line of code is "executing" based on the blink phase
-        const blinkPhase = Math.floor((currentTime % (this.blinkSpeed * 2)) / (this.blinkSpeed / 2));
-        let lineIndex;
-        
-        switch (blinkPhase) {
-          case 0: 
-            lineIndex = 5; // digitalWrite(13, HIGH)
-            break;
-          case 1: 
-            lineIndex = 6; // delay(1000)
-            break;
-          case 2: 
-            lineIndex = 7; // digitalWrite(13, LOW)
-            break;
-          case 3:
-          default:
-            lineIndex = 8; // delay(1000)
-            break;
-        }
-        
-        // Send the execution line to logs - use direct log channel for Arduino execution messages
-        if (lineIndex !== undefined) {
-          this.onLogMessage?.(`[Arduino] Executing: ${codeSteps[lineIndex]}`);
+        // Log the actual code execution based on where we are in the cycle
+        if (codePhase === 0) {
+          this.onLogMessage?.('Executing: digitalWrite(13, HIGH);  // Turn the LED on');
+        } else if (codePhase === 1) {
+          this.onLogMessage?.('Executing: delay(1000);  // Wait for a second');
+        } else if (codePhase === 2) {
+          this.onLogMessage?.('Executing: digitalWrite(13, LOW);  // Turn the LED off');
+        } else {
+          this.onLogMessage?.('Executing: delay(1000);  // Wait for a second');
         }
       }
       
-      // Toggle the pin every blinkSpeed milliseconds
+      // Toggle the pin every blinkSpeed milliseconds to match the actual blink sketch
       if (currentTime - this.lastToggleTime >= this.blinkSpeed) {
         this.lastToggleTime = currentTime;
         this.pin13State = !this.pin13State;
@@ -780,12 +756,10 @@ export class HeroEmulator {
         // Update the pin state for pin 13
         this.pinStates['13'] = this.pin13State;
         
-        // Only log pin 13 changes - don't log other pins that aren't relevant
-        // Use direct log channel for immediate display in the log panel
-        this.onLogMessage?.(`[Arduino] Built-in LED is ${this.pin13State ? 'ON' : 'OFF'}`);
-        console.log(`[AVR8] Built-in LED is ${this.pin13State ? 'ON' : 'OFF'}`);
+        // Log the actual pin state change - this is what's actually happening
+        this.onLogMessage?.(`Built-in LED on pin 13 is ${this.pin13State ? 'ON' : 'OFF'}`);
         
-        // Directly notify the pin change handler without relying on port access
+        // Directly notify the pin change handler to update components
         if (this.onPinChangeCallback) {
           const analogValue = this.pin13State ? 255 : 0;
           this.onPinChangeCallback(13, this.pin13State, { analogValue });
