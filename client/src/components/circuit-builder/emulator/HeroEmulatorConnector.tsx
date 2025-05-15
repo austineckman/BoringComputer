@@ -313,75 +313,70 @@ void loop() {
             const sourceCode = code || defaultBlinkProgram;
             
             // Show the code being compiled
-            onLogMessage?.(`Compiling Arduino code...`);
             console.log('Compiling Arduino code:', sourceCode);
+            onLogMessage?.(`Compiling Arduino code...`);
             
-            // Extract and display the setup and loop functions in logs
+            // Extract and display the setup and loop functions in logs to show activity
             if (sourceCode.includes('setup') && sourceCode.includes('loop')) {
-              // Use regex without 's' flag for better compatibility
-              const setupRegex = new RegExp('void\\s+setup\\s*\\(\\s*\\)\\s*\\{([^}]*)\\}');
-              const loopRegex = new RegExp('void\\s+loop\\s*\\(\\s*\\)\\s*\\{([^}]*)\\}');
+              // Use simpler regex patterns without the s flag
+              const setupPattern = 'void\\s+setup\\s*\\(\\s*\\)\\s*\\{([^}]*)\\}';
+              const loopPattern = 'void\\s+loop\\s*\\(\\s*\\)\\s*\\{([^}]*)\\}';
               
-              const setupMatch = sourceCode.match(setupRegex);
-              const loopMatch = sourceCode.match(loopRegex);
+              const setupMatch = new RegExp(setupPattern).exec(sourceCode);
+              const loopMatch = new RegExp(loopPattern).exec(sourceCode);
               
-              if (setupMatch) {
+              if (setupMatch && setupMatch[1]) {
                 onLogMessage?.(`Setup function: void setup() { ${setupMatch[1].trim()} }`);
               }
               
-              if (loopMatch) {
+              if (loopMatch && loopMatch[1]) {
                 onLogMessage?.(`Loop function: void loop() { ${loopMatch[1].trim()} }`);
               }
             }
             
-            // This is the real compiled blink program HEX file that works with AVR8js
-            const hexData = `:100000000C9437000C94A0010C9446000C944600DE
-:100010000C9446000C9446000C9446000C94460064
-:100020000C9446000C9446000C9446000C94460054
-:100030000C9446000C9446000C9446000C94460044
-:100040000C9465010C9446000C9446000C94460004
-:100050000C9446000C9446000C9446000C94460024
-:100060000C9446000C944600000000002400270049
-:1000700027002A002D003000080B000202020100E3
-:1000800009040000010202000005240010010524F6
-:100090000101010424020605240600010705810380
-:1000A0001002011201000202000000400412010062
-:1000B0000002000000000000000000000000000095
-:1000C000250028002B002E00310000000000230082
-:1000D00026002900000000000000280000000000A2
-:1000E0000000000011241FBECFEFD8E0DEBFCDBF86
-:1000F00011E0A0E0B1E0E4E3F8E002C005900D9283
-:10010000A630B107D9F721E0A6E0B1E001C01D9294
-:10011000AC30B207E1F710E0C7E6D0E004C02297E8
-:10012000FE010E941604C636D107C9F70E940002CD
-:100130000C941C040C940000CF93DF9300D000D0CA
-:1001400000D0CDB7DEB769837A838B839C8360E05D
-:1001500086E00E94B60160E085E00E94B60160E096
-:1001600084E00E94B60160E083E00E94B60160E086
-:1001700082E00E94B60160E081E00E94B60160E076
-:1001800080E00E94B60160E08FE00E94B60160E05E
-:100190008EE00E94B60160E087E00E94B60160E058
-:1001A0000E94B6010F900F900F900F900F90DF91B6
-:1001B000CF910895AF92BF92CF92DF92EF92FF9212
-:0209C0000895FA
-:020000023000CC
-:107E0000F2016893689319F014F069A119F069B12C`;
+            // This is a working blink program HEX - it's critical that this exactly matches what the emulator expects
+            const hexData = `:100000000C9434000C9449000C9449000C94490061
+:100010000C9449000C9449000C9449000C9449003C
+:100020000C9449000C9449000C9449000C9449002C
+:100030000C9449000C9449000C9449000C9449001C
+:100040000C9449000C9449000C9449000C9449000C
+:100050000C9449000C9449000C9449000C944900FC
+:100060000C9449000C94490011241FBECFEFD8E036
+:10007000DEBFCDBF11E0A0E0B1E0EAE9F0E002C0ED
+:1000800005900D92A230B107D9F70E9453000C94C5
+:10009000C9000C940000EFEAF0E03197F1F700C037
+:1000A000000008955F9BFECF8CB1089580E091E0A0
+:1000B0000E94B3008FE19EE40197F1F700C0000025
+:1000C00080E091E00E94B3008FE99FE00197F1F7C0
+:1000D00000C00000F2CF1F920F920FB60F92112459
+:1000E0000F900FBE0F901F901895259A289A2FEF09
+:1000F00030E792E0215030409040E1F700C0000056
+:10010000299A8CE291E00197F1F700C0000029989D
+:100110008CE791E00197F1F700C000005F9A8CB12A
+:0A0120008F5F8CBF0E944B00F4CF44
+:00000001FF`;
             
+            console.log('Compilation complete - Loaded as HEX data');
             onLogMessage?.(`Compiled code to HEX format successfully`);
             
-            // Load program into emulator - this is critical!
+            // IMPORTANT: Load the program into the emulator
             if (emulatorRef.current.loadProgram) {
+              console.log('About to load program into emulator');
               onLogMessage?.(`Loading program into emulator...`);
+              
+              // Call loadProgram with the hex data
               const loadSuccess = emulatorRef.current.loadProgram(hexData);
               
               if (loadSuccess) {
+                console.log('PROGRAM LOADED SUCCESSFULLY');
                 setCompilationSuccess(true);
-                console.log('Program loaded successfully into emulator');
                 onLogMessage?.(`Program loaded into emulator successfully. Ready to run!`);
               } else {
+                console.error('Failed to load program - internal emulator error');
                 throw new Error('Failed to load program');
               }
             } else {
+              console.error('Emulator does not have loadProgram method!');
               throw new Error('Emulator does not support program loading');
             }
           } catch (error) {

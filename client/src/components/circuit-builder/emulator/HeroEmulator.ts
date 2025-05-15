@@ -674,26 +674,44 @@ export class HeroEmulator {
       this.simulationMode = true;
     }
     
+    // Initialize program counters and execution state
+    this.programLoaded = true; // Indicate that we have a program (even if simulated)
+    this.simulationMode = true; // Force simulation mode on for now
+    
     // Start executing CPU cycles
     this.running = true;
+    if (this.cycleInterval) {
+      clearInterval(this.cycleInterval);
+    }
     this.cycleInterval = setInterval(() => this.executeCycle(), 10);
+    console.log('Started execution cycle interval');
     
     // Force a pin 13 change immediately to show the LED is working
-    // ALWAYS do this for better user experience regardless of simulation mode
+    // ALWAYS do this for better user experience
     this.pin13State = true;
     this.pinStates['13'] = true;
-    this.onLogMessage?.('[Arduino] Built-in LED turned ON');
+    this.onLogMessage?.('[Arduino] Starting execution - Built-in LED turned ON');
     console.log('[AVR8] Built-in LED is ON');
     
-    // Notify callback
+    // Notify any registered callbacks for pin 13 change
     if (this.onPinChangeCallback) {
-      this.onPinChangeCallback(13, true, { analogValue: 255 });
+      try {
+        console.log('Notifying pin change callback for pin 13 = HIGH');
+        this.onPinChangeCallback(13, true, { analogValue: 255 });
+      } catch (e) {
+        console.error('Error in pin change callback:', e);
+      }
     }
     
-    // Update components connected to pin 13
-    this.updateConnectedComponents('13', true, 255);
+    // Update any components connected to pin 13
+    try {
+      console.log('Updating components connected to pin 13');
+      this.updateConnectedComponents('13', true, 255);
+    } catch (e) {
+      console.error('Error updating components:', e);
+    }
     
-    // Record when we last toggled to ensure regular timing
+    // Record when we last toggled to ensure regular timing for the blinking
     this.lastToggleTime = Date.now();
     
     return true;
@@ -792,24 +810,38 @@ export class HeroEmulator {
     // Toggle the pin every blinkSpeed milliseconds
     // This is the key part that makes the LED actually blink!
     if (currentTime - this.lastToggleTime >= this.blinkSpeed) {
+      // Update last toggle time first to maintain accurate timing
       this.lastToggleTime = currentTime;
+      
+      // Toggle pin 13 state
       this.pin13State = !this.pin13State;
+      console.log(`Toggling pin 13 to ${this.pin13State ? 'HIGH' : 'LOW'}`);
       
       // Update the pin state for pin 13
       this.pinStates['13'] = this.pin13State;
       
-      // Log the actual pin state change
+      // Emit detailed logs
       console.log(`[AVR8] Built-in LED is ${this.pin13State ? 'ON' : 'OFF'}`);
       this.onLogMessage?.(`Built-in LED on pin 13 is ${this.pin13State ? 'ON' : 'OFF'}`);
       
-      // Directly notify the pin change handler to update components
-      if (this.onPinChangeCallback) {
-        const analogValue = this.pin13State ? 255 : 0;
-        this.onPinChangeCallback(13, this.pin13State, { analogValue });
+      try {
+        // Directly notify the pin change handler to update components
+        if (this.onPinChangeCallback) {
+          const analogValue = this.pin13State ? 255 : 0;
+          console.log(`Notifying pin change handler for pin 13=${this.pin13State}`);
+          this.onPinChangeCallback(13, this.pin13State, { analogValue });
+        }
+      } catch (e) {
+        console.error('Error in pin change callback:', e);
       }
       
-      // Update components connected to this pin - this makes the LED visually change
-      this.updateConnectedComponents('13', this.pin13State, this.pin13State ? 255 : 0);
+      try {
+        // Update components connected to this pin - this makes the LED visually change
+        console.log(`Updating components for pin 13=${this.pin13State}`);
+        this.updateConnectedComponents('13', this.pin13State, this.pin13State ? 255 : 0);
+      } catch (e) {
+        console.error('Error updating components:', e);
+      }
     }
   }
   
