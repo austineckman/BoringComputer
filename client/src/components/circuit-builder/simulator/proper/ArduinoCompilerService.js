@@ -202,14 +202,47 @@ export async function compileArduino(code) {
     // Step 2: In a real implementation, we would send the code to a compiler
     // For now, we'll generate a simple program based on the analysis
     
-    // Determine if this is a basic blink sketch
+    // Analyze the code to determine the type of sketch
     const isBlinkSketch = code.includes('digitalWrite') && 
                           code.includes('delay') && 
                           analysis.pinsUsed.includes(13);
     
-    // Generate program - for now, always use blink
+    const isRgbLedSketch = code.includes('analogWrite') &&
+                           (analysis.pinsUsed.includes(9) || 
+                            analysis.pinsUsed.includes(10) || 
+                            analysis.pinsUsed.includes(11));
+    
+    const isButtonSketch = code.includes('digitalRead') &&
+                           code.includes('INPUT');
+    
+    const isSerialSketch = code.includes('Serial.begin') &&
+                           (code.includes('Serial.print') || 
+                            code.includes('Serial.println'));
+    
+    console.log('Sketch analysis:', {
+      isBlinkSketch,
+      isRgbLedSketch,
+      isButtonSketch,
+      isSerialSketch
+    });
+    
+    // Generate appropriate program based on sketch type
     // TODO: In the future, use a real compiler or WebAssembly compiler
-    const program = generateBlinkProgram();
+    let program;
+    
+    if (isRgbLedSketch) {
+      // Generate a simple RGB LED program (fake for now)
+      program = generateBlinkProgram(); // Reusing blink for now
+      console.log('Generated RGB LED program');
+    } else if (isButtonSketch) {
+      // Generate a button input program (fake for now)
+      program = generateBlinkProgram(); // Reusing blink for now
+      console.log('Generated button input program');
+    } else {
+      // Default to blink program
+      program = generateBlinkProgram();
+      console.log('Generated default blink program');
+    }
     
     console.log(`Generated program with ${program.length} words`);
     

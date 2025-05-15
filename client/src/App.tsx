@@ -27,6 +27,7 @@ import AdminStats from "@/pages/admin-stats";
 import AdminSettings from "@/pages/admin-settings";
 import AdminQuestGenerator from "@/pages/admin-quest-generator";
 import LootBoxPreview from "@/pages/loot-box-preview";
+import EmulatorTest from "@/pages/emulator-test";
 import NotFound from "@/pages/not-found";
 import MainLayout from "@/components/layout/MainLayout";
 import FullscreenUniversalEmulatorApp from "@/components/retro-ui/FullscreenUniversalEmulatorApp";
@@ -271,6 +272,11 @@ function App() {
           component={() => (
             <FullscreenUniversalEmulatorApp onClose={() => window.location.href = '/'} />
           )}
+        />
+        
+        <Route
+          path="/emulator-test"
+          component={EmulatorTest}
         />
         
         <Route>
