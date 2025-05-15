@@ -398,7 +398,8 @@ const RGBLED = ({
               />
             )}
             
-            {/* Status indicator dots have been removed per user request */}
+            {/* Empty div for spacing - status indicator dots were removed */}
+            <div></div>
           </div>
         )}
       </div>
