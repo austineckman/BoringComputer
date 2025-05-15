@@ -8,8 +8,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, ZoomIn, ZoomOut, Play, Square, Save, FileCode, Download } from 'lucide-react';
-import { ComponentPalette } from '../../desktop/emulator/components/ComponentPalette';
-import { CodeEditor } from '../../desktop/emulator/CodeEditor';
+import { CircuitComponentPalette } from './CircuitComponentPalette';
+import { ArduinoCodeEditor } from './ArduinoCodeEditor';
 import HeroEmulatorConnector from './HeroEmulatorConnector';
 import EmulatedLEDComponent from './EmulatedLEDComponent';
 
@@ -237,7 +237,14 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
             <h3 className="text-sm font-bold">Components</h3>
           </div>
           <div className="p-2">
-            <ComponentPalette onAddComponent={handleAddComponent} />
+            <CircuitComponentPalette 
+              onAddComponent={(type) => {
+                // Get default position at center of canvas
+                const x = window.innerWidth / 2;
+                const y = window.innerHeight / 3;
+                handleAddComponent(type, x, y);
+              }} 
+            />
           </div>
         </div>
         
