@@ -602,7 +602,8 @@ export class HeroEmulator {
   public start(): boolean {
     if (this.running) return true;
     if (!this.cpu) {
-      this.error('Emulator not initialized');
+      this.onLogMessage?.('[Arduino] Error: Emulator not initialized');
+      console.error('Emulator not initialized');
       return false;
     }
     
@@ -613,7 +614,8 @@ export class HeroEmulator {
     // Default to simulation mode if no program is loaded
     const hasProgram = this.program.some(word => word !== 0);
     if (!hasProgram) {
-      this.log('[Arduino] Using built-in Blink program');
+      this.onLogMessage?.('[Arduino] Using built-in Blink program');
+      console.log('[AVR8] Using built-in Blink program');
       this.simulationMode = true;
       
       // Force initial state of pins to LOW to ensure clean start
@@ -623,7 +625,8 @@ export class HeroEmulator {
       }
     } else {
       this.simulationMode = false;
-      this.log('[Arduino] Starting emulation with uploaded program');
+      this.onLogMessage?.('[Arduino] Starting program execution');
+      console.log('[AVR8] Starting emulation with uploaded program');
     }
     
     // Start executing CPU cycles
@@ -634,7 +637,8 @@ export class HeroEmulator {
     // ALWAYS do this for better user experience regardless of simulation mode
     this.pin13State = true;
     this.pinStates['13'] = true;
-    this.log(`[Arduino] Built-in LED is ON`);
+    this.onLogMessage?.('[Arduino] Built-in LED turned ON');
+    console.log('[AVR8] Built-in LED is ON');
     
     // Notify callback
     if (this.onPinChangeCallback) {
@@ -663,7 +667,8 @@ export class HeroEmulator {
     }
     
     this.running = false;
-    this.log('[Arduino] Program stopped');
+    this.onLogMessage?.('[Arduino] Program stopped');
+    console.log('[AVR8] Program stopped');
     
     // Reset all pins to LOW
     for (let i = 0; i <= 13; i++) {
@@ -680,7 +685,8 @@ export class HeroEmulator {
         
         // Special handling for pin 13 (built-in LED)
         if (i === 13) {
-          this.log(`[Arduino] Built-in LED is OFF`);
+          this.onLogMessage?.('[Arduino] Built-in LED turned OFF');
+          console.log('[AVR8] Built-in LED is OFF');
         }
         
         // Update components
