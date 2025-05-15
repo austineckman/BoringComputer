@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
-import { HeroEmulator, EmulatedComponent } from './HeroEmulator';
+import { SimpleEmulator, EmulatedComponent } from './SimpleEmulator';
 import { WireManager, Wire } from './WireManager';
 
 interface HeroEmulatorConnectorProps {
@@ -72,12 +72,12 @@ const HeroEmulatorConnector = forwardRef<EmulatorRefType, HeroEmulatorConnectorP
             // Convert pin to string if it's a number
             const pinStr = pin.toString();
             
-            // Only log pin changes for important pins (like 13) or debugging
-            console.log(`Pin ${pinStr} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+            // Only log changes that would actually be seen from real Arduino code
+            // console.log(`Pin ${pinStr} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
             
             // For pin 13 (built-in LED), provide more detailed user-facing feedback
             if (pinStr === '13') {
-              onLogMessage?.(`[HERO Board] Built-in LED is now ${isHigh ? 'ON' : 'OFF'}`);
+              onLogMessage?.(`[Arduino] Built-in LED is ${isHigh ? 'ON' : 'OFF'}`);
             }
             
             // Find the component that this pin belongs to
