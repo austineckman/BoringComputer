@@ -301,13 +301,31 @@ export class RealAVR8Core {
     if (!this.running) return;
     
     try {
+      // Get the start time
+      const startTime = performance.now();
+      
       // Execute a batch of CPU cycles
       for (let i = 0; i < cyclesPerFrame; i++) {
         this.cpu.tick();
+        
+        // Check for delay() function calls by monitoring program counter changes
+        // This approach monitors when execution might be in a delay function
+        if (i % 1000 === 0) { // Check every 1000 cycles to save performance
+          this.checkForDelayFunction();
+        }
       }
+      
+      // Calculate execution time
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
       
       // Check for port changes to update pin states
       this.checkPortChanges();
+      
+      // Log execution metrics occasionally
+      if (Math.random() < 0.01) { // Log only 1% of the time to avoid flooding
+        this.log(`Executed ${cyclesPerFrame} cycles in ${executionTime.toFixed(2)}ms`);
+      }
       
       // Schedule next batch of cycles
       this.cycleInterval = requestAnimationFrame(() => this.executeCycles(cyclesPerFrame));
@@ -315,6 +333,35 @@ export class RealAVR8Core {
     } catch (error) {
       this.handleError(`CPU execution error: ${error.message}`);
       this.stop();
+    }
+  }
+  
+  /**
+   * Check if the CPU is executing a delay() function
+   * This is a heuristic approach - a complete implementation would track the actual
+   * delay function calls in the program by analyzing the compiled code
+   */
+  checkForDelayFunction() {
+    try {
+      // In a real implementation, we would check the program counter and stack
+      // to see if we're in the delay function code
+      // For now, we'll just check if Timer0 is running, as delay() uses Timer0
+      
+      // Get Timer0 status
+      const timer0Running = this.timer0 && this.timer0.enabled;
+      
+      if (timer0Running) {
+        // Calculate the approximate time spent in delay
+        const timerValue = this.timer0.counter;
+        
+        // Log periodically to show delay progress
+        if (Math.random() < 0.1) { // Log only 10% of the time
+          this.log(`Timer0 active (delay in progress): counter=${timerValue}`);
+        }
+      }
+    } catch (error) {
+      // Just log errors, don't stop execution
+      this.log(`Error checking delay function: ${error.message}`);
     }
   }
   
