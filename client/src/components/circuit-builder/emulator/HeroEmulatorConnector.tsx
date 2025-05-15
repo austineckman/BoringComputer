@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { HeroEmulator, EmulatedComponent } from './HeroEmulator';
+import { WireManager } from './WireManager';
 
 interface HeroEmulatorConnectorProps {
   code: string;
@@ -7,7 +8,16 @@ interface HeroEmulatorConnectorProps {
   onLogMessage?: (message: string) => void;
   onSerialData?: (value: number, char: string) => void;
   onEmulationError?: (error: string) => void;
+  onPinStateChange?: (pin: string, isHigh: boolean) => void;
   components?: Record<string, EmulatedComponent>;
+  wires?: Array<{
+    id: string;
+    sourceComponentId: string;
+    targetComponentId: string;
+    sourcePin: string;
+    targetPin: string;
+    path?: Array<{x: number, y: number}>;
+  }>;
 }
 
 /**
@@ -23,10 +33,15 @@ const HeroEmulatorConnector: React.FC<HeroEmulatorConnectorProps> = ({
   onLogMessage,
   onSerialData,
   onEmulationError,
-  components = {}
+  onPinStateChange,
+  components = {},
+  wires = []
 }) => {
   // Reference to the emulator instance
   const emulatorRef = useRef<HeroEmulator | null>(null);
+  
+  // Reference to the wire manager
+  const wireManagerRef = useRef<WireManager | null>(null);
   
   // State to track whether emulation is active
   const [isActive, setIsActive] = useState(false);
@@ -39,6 +54,26 @@ const HeroEmulatorConnector: React.FC<HeroEmulatorConnectorProps> = ({
     // Create a new emulator instance if it doesn't exist
     if (!emulatorRef.current) {
       try {
+        // Set up the pin change handler to propagate signals
+        const handlePinChange = (pin: string, isHigh: boolean, options?: any) => {
+          // Propagate the signal through the wire network
+          if (wireManagerRef.current) {
+            // Find the component that this pin belongs to
+            const componentId = findComponentIdByPin(pin);
+            if (componentId) {
+              // Propagate the signal with voltage (5V for HIGH, 0V for LOW)
+              const voltage = isHigh ? 5.0 : 0.0;
+              wireManagerRef.current.propagateSignal(componentId, pin, voltage);
+            }
+          }
+          
+          // Call the pin state change callback
+          if (onPinStateChange) {
+            onPinStateChange(pin, isHigh);
+          }
+        };
+        
+        // Create the emulator with callbacks
         emulatorRef.current = new HeroEmulator({
           onLog: (message: string) => {
             console.log(`[Emulator] ${message}`);
@@ -50,10 +85,30 @@ const HeroEmulatorConnector: React.FC<HeroEmulatorConnectorProps> = ({
           },
           onSerialData: (value: number, char: string) => {
             onSerialData?.(value, char);
+          },
+          onPinChange: handlePinChange
+        });
+        
+        // Add to window for global access (useful for debugging)
+        if (window) {
+          window.heroEmulator = emulatorRef.current;
+        }
+        
+        // Create the wire manager
+        wireManagerRef.current = new WireManager({
+          detectShorts: true,
+          onShortCircuit: (wireId, sourcePinId, targetPinId) => {
+            console.error(`Short circuit detected: ${sourcePinId} -> ${targetPinId}`);
+            onEmulationError?.(`Short circuit detected between ${sourcePinId} and ${targetPinId}`);
           }
         });
         
-        console.log('HeroEmulator initialized successfully');
+        // Connect the wire manager to the emulator
+        if (wireManagerRef.current) {
+          wireManagerRef.current.setEmulator(emulatorRef.current);
+        }
+        
+        console.log('HeroEmulator and WireManager initialized successfully');
       } catch (error) {
         console.error('Failed to initialize HeroEmulator:', error);
         onEmulationError?.(`Failed to initialize emulator: ${error}`);
@@ -66,6 +121,10 @@ const HeroEmulatorConnector: React.FC<HeroEmulatorConnectorProps> = ({
         try {
           emulatorRef.current.stop();
           emulatorRef.current = null;
+          wireManagerRef.current = null;
+          if (window) {
+            window.heroEmulator = undefined;
+          }
           console.log('HeroEmulator cleaned up');
         } catch (error) {
           console.error('Error cleaning up emulator:', error);
@@ -73,6 +132,36 @@ const HeroEmulatorConnector: React.FC<HeroEmulatorConnectorProps> = ({
       }
     };
   }, []);
+  
+  // Helper function to find which component owns a pin
+  const findComponentIdByPin = (pinId: string): string | null => {
+    // Check each component for this pin
+    for (const [componentId, component] of Object.entries(components)) {
+      // The logic here depends on how pins are stored in components
+      // This is a simple example - adjust based on your component data structure
+      if (component.type === 'led') {
+        const ledComponent = component as any;
+        if (ledComponent.anode === pinId || ledComponent.cathode === pinId) {
+          return componentId;
+        }
+      } else if (component.type === 'button') {
+        const buttonComponent = component as any;
+        if (buttonComponent.pin === pinId || buttonComponent.groundPin === pinId) {
+          return componentId;
+        }
+      } else if (component.type === 'oled') {
+        const oledComponent = component as any;
+        if (oledComponent.sclPin === pinId || oledComponent.sdaPin === pinId || 
+            (oledComponent.resetPin && oledComponent.resetPin === pinId)) {
+          return componentId;
+        }
+      }
+      // Add more component types as needed
+    }
+    
+    // If the pin doesn't belong to any component, it might be a direct microcontroller pin
+    return 'heroboard';
+  };
   
   // Register components with the emulator
   useEffect(() => {
@@ -88,6 +177,37 @@ const HeroEmulatorConnector: React.FC<HeroEmulatorConnectorProps> = ({
       });
     }
   }, [components]);
+  
+  // Manage wires with the wire manager
+  useEffect(() => {
+    if (wireManagerRef.current) {
+      // First, clear all existing wires
+      wireManagerRef.current.clearAllWires();
+      
+      // Then, add each wire from props
+      wires.forEach(wire => {
+        try {
+          // Convert path array if it exists
+          const wirePath = wire.path || [];
+          
+          // Add the wire to the manager
+          wireManagerRef.current?.addWire(
+            wire.sourceComponentId,
+            wire.sourcePin,
+            wire.targetComponentId,
+            wire.targetPin,
+            wirePath
+          );
+          
+          console.log(`Added wire ${wire.id} to wire manager`);
+        } catch (error) {
+          console.error(`Failed to add wire ${wire.id}:`, error);
+        }
+      });
+      
+      console.log(`Updated wire manager with ${wires.length} wires`);
+    }
+  }, [wires]);
   
   // Handle code compilation and loading
   useEffect(() => {
