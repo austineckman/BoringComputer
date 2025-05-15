@@ -455,10 +455,123 @@ export class AVR8EmulatorCore {
    * @param {string} message - The log message
    */
   log(message) {
-    console.log(`[AVR8] ${message}`);
+    console.log(`[AVR8Core] ${message}`);
     
-    if (this.onLogMessage) {
-      this.onLogMessage(message);
+    if (this.options.onLogMessage) {
+      this.options.onLogMessage(message);
+    }
+  }
+  
+  /**
+   * Set digital output on a pin
+   * @param {number|string} pin - The pin number (0-13) or analog pin name ('A0'-'A5')
+   * @param {boolean} value - true for HIGH, false for LOW
+   */
+  setDigitalOutput(pin, value) {
+    const pinInfo = PIN_TO_PORT_BIT[pin];
+    
+    if (!pinInfo) {
+      this.log(`Warning: Invalid pin ${pin} for digital output`);
+      return;
+    }
+    
+    // Update internal pin state tracking
+    this.pinStates[pin] = value;
+    
+    // For PWM pins, update analog value accordingly
+    if (PWM_PINS.includes(Number(pin))) {
+      this.analogValues[pin] = value ? 255 : 0;
+    }
+    
+    // In a real implementation, this would set the appropriate bit in the PORT register
+    this.log(`Setting digital output on pin ${pin} to ${value ? 'HIGH' : 'LOW'}`);
+    
+    // Notify about pin change
+    if (this.options.onPinChange) {
+      this.options.onPinChange(pin, value);
+    }
+  }
+  
+  /**
+   * Set PWM output on a pin
+   * @param {number} pin - The pin number (must be a PWM pin: 3, 5, 6, 9, 10, 11)
+   * @param {number} value - Value between 0-255
+   */
+  setPWMOutput(pin, value) {
+    if (!PWM_PINS.includes(Number(pin))) {
+      this.log(`Warning: Pin ${pin} is not a PWM pin`);
+      return;
+    }
+    
+    // Clamp value to 0-255 range
+    const analogValue = Math.max(0, Math.min(255, value));
+    
+    // Update analog value
+    this.analogValues[pin] = analogValue;
+    
+    // Update digital state (HIGH if value > 0)
+    const digitalValue = analogValue > 0;
+    this.pinStates[pin] = digitalValue;
+    
+    this.log(`Setting PWM output on pin ${pin} to ${analogValue}`);
+    
+    // Notify about pin change
+    if (this.options.onPinChange) {
+      this.options.onPinChange(pin, digitalValue, { analogValue });
+    }
+  }
+  
+  /**
+   * Set input on a digital pin
+   * @param {number|string} pin - The pin number (0-13) or analog pin name ('A0'-'A5')
+   * @param {boolean} value - true for HIGH, false for LOW
+   */
+  setDigitalInput(pin, value) {
+    const pinInfo = PIN_TO_PORT_BIT[pin];
+    
+    if (!pinInfo) {
+      this.log(`Warning: Invalid pin ${pin} for digital input`);
+      return;
+    }
+    
+    // In a real microcontroller, setting an input would involve:
+    // 1. Setting the DDR bit to 0 (input mode)
+    // 2. Setting the PORT bit to value (for pull-up resistor if value is true)
+    // 3. Reading the PIN register would return the external signal
+    
+    // For now, we'll just track the state
+    this.log(`Setting digital input on pin ${pin} to ${value ? 'HIGH' : 'LOW'}`);
+    
+    // Update internal state
+    this.pinStates[pin] = value;
+  }
+  
+  /**
+   * Set an analog input value
+   * @param {string} pin - The analog pin name ('A0'-'A5')
+   * @param {number} value - Value between 0-1023 (10-bit ADC value)
+   */
+  setAnalogInput(pin, value) {
+    if (!ANALOG_PINS.includes(pin)) {
+      this.log(`Warning: ${pin} is not an analog pin`);
+      return;
+    }
+    
+    // Clamp value to 0-1023 range
+    const analogValue = Math.max(0, Math.min(1023, value));
+    
+    // Store the analog value
+    this.analogValues[pin] = analogValue;
+    
+    // Determine digital value (HIGH if > 512)
+    const digitalValue = analogValue > 512;
+    this.pinStates[pin] = digitalValue;
+    
+    this.log(`Setting analog input on pin ${pin} to ${analogValue}`);
+    
+    // Notify about pin change
+    if (this.options.onPinChange) {
+      this.options.onPinChange(pin, digitalValue, { analogValue });
     }
   }
 }
