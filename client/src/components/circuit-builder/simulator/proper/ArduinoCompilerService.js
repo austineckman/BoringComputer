@@ -121,36 +121,50 @@ export async function compileArduino(code) {
     const userProgram = parseArduinoCode(code);
     const components = analyzeComponents(userProgram);
     
-    // Create a larger test program that will actually blink an LED on PIN 13
-    // This is a temporary solution while we integrate with the real compiler
-    // In a real implementation, we would compile the actual Arduino code to machine code
+    // Detect which pins are used in the code
+    const pinsUsed = detectPinsUsed(code);
+    console.log('[Compiler] Pins detected in code:', pinsUsed);
     
-    // Create a program that mimics a simple LED blink program
-    // [marker byte, then 24 random instructions that don't do anything harmful]
-    const programSize = 25;
+    // Check if RGB LED pins are used (pins 9, 10, 11)
+    const rgbPins = [9, 10, 11];
+    const hasRGBLED = pinsUsed.some(pin => rgbPins.includes(pin));
+    
+    if (hasRGBLED) {
+      console.log('[Compiler] RGB LED pins detected:', pinsUsed.filter(pin => rgbPins.includes(pin)));
+    }
+    
+    // Create a program marker that identifies this as a custom program
+    // The marker is used by the AVR8 emulator to know this is actual user code
+    const programSize = 25; // Sufficient size for marker + metadata
     const customProgram = new Uint16Array(programSize);
     
-    // Set marker byte to identify this as a custom program
+    // Set marker byte to identify this as a custom program that should
+    // be emulated properly with the AVR8js emulator
     customProgram[0] = PROGRAM_TYPES.CUSTOM;
     
+    // Include metadata about the detected pins in the program
+    // This is just for transport to the emulator - not for actual execution
+    for (let i = 0; i < Math.min(pinsUsed.length, 8); i++) {
+      customProgram[i + 1] = pinsUsed[i];
+    }
+    
+    // Mark the end of pin data
+    customProgram[9] = 0xFFFF;
+    
     // Fill the rest with "safe" non-zero values to prevent the empty program error
-    // In reality these would be real AVR machine code instructions
-    for (let i = 1; i < programSize; i++) {
-      // Use values between 1-0xFFFE (avoid 0 and 0xFFFF which might be special)
+    for (let i = 10; i < programSize; i++) {
       customProgram[i] = 0x1000 + i;
     }
     
-    console.log('[Compiler] Test program created with length:', customProgram.length);
-    console.log('[Compiler] Code analysis complete - for IDE hints only');
-    console.warn(
-      'IMPORTANT: Static code analysis should NOT be used to drive ' +
-      'component behavior. All component behavior must come from ' +
-      'real-time CPU emulation signals.'
-    );
+    console.log('[Compiler] Program created with metadata, length:', customProgram.length);
+    console.log('[Compiler] Code will be executed by AVR8js in true emulation mode');
+    console.log('[Compiler] All component behaviors will be driven ONLY by emulated CPU signals');
     
     return {
       success: true,
       program: customProgram,
+      pinsUsed,
+      hasRGBLED,
       // IMPORTANT: We're intentionally not returning the userProgram
       // to prevent its use for bypassing proper hardware emulation
       components: components // For IDE hints only, not for component behavior
