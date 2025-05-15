@@ -187,59 +187,42 @@ export class HeroEmulator {
     };
     
     try {
-      // First try with the callback as the third parameter and port index as the fourth
-      this.usart = new AVRUSART(this.cpu, usart0Config, serialDataCallback, 0);
-    } catch (e) {
-      try {
-        // Try with the callback but without port index
-        this.usart = new AVRUSART(this.cpu, usart0Config, serialDataCallback);
-      } catch (e2) {
-        try {
-          // Try without callback (older version of avr8js)
-          this.usart = new AVRUSART(this.cpu, usart0Config);
-          
-          // Set up USART serial output callback manually if supported
-          if (this.usart && typeof this.usart.onByteTransmit !== 'undefined') {
-            this.usart.onByteTransmit = serialDataCallback;
-          }
-        } catch (e3) {
-          this.log('Failed to initialize USART: ' + e3);
-          // Create a dummy USART to prevent null references
-          this.usart = {
-            onByteTransmit: serialDataCallback
-          } as any;
+      // Try with callback as first argument, config as second 
+      // (compatibility with different avr8js versions)
+      this.usart = new AVRUSART(this.cpu, usart0Config) as any;
+      
+      // Set up USART serial output callback manually
+      if (this.usart) {
+        if (typeof this.usart.onByteTransmit !== 'undefined') {
+          this.usart.onByteTransmit = serialDataCallback;
         }
       }
+    } catch (error) {
+      this.log('Failed to initialize USART: ' + error);
+      // Create a dummy USART to prevent null references
+      this.usart = {
+        onByteTransmit: serialDataCallback
+      } as any;
     }
     
     // Create SPI interface
     try {
-      // Try with port B as the third parameter (newer version of avr8js)
-      this.spi = new AVRSPI(this.cpu, spiConfig, this.portB);
-    } catch (e) {
-      try {
-        // Try without port parameter (older version of avr8js)
-        this.spi = new AVRSPI(this.cpu, spiConfig);
-      } catch (e2) {
-        this.log('Failed to initialize SPI: ' + e2);
-        // Create a dummy SPI to prevent null references
-        this.spi = {} as any;
-      }
+      // Simple initialization without extra parameters
+      this.spi = new AVRSPI(this.cpu, spiConfig) as any;
+    } catch (error) {
+      this.log('Failed to initialize SPI: ' + error);
+      // Create a dummy SPI to prevent null references
+      this.spi = {} as any;
     }
     
     // Create I2C/TWI interface for OLED displays and other I2C devices
     try {
-      // Try with port C as the third parameter (newer version of avr8js)
-      this.twi = new AVRTWI(this.cpu, twiConfig, this.portC);
-    } catch (e) {
-      try {
-        // Try without port parameter (older version of avr8js)
-        this.twi = new AVRTWI(this.cpu, twiConfig);
-      } catch (e2) {
-        this.log('Failed to initialize TWI: ' + e2);
-        // Create a dummy TWI to prevent null references
-        this.twi = {} as any;
-      }
+      // Simple initialization without extra parameters
+      this.twi = new AVRTWI(this.cpu, twiConfig) as any;
+    } catch (error) {
+      this.log('Failed to initialize TWI: ' + error);
+      // Create a dummy TWI to prevent null references
+      this.twi = {} as any;
     }
     
     // Set up port change listeners
@@ -337,31 +320,59 @@ export class HeroEmulator {
    * Update components connected to a specific pin
    */
   private updateConnectedComponents(pin: string, isHigh: boolean, analogValue: number) {
-    // Get all components connected to this pin
+    // Find components connected to this pin
     const connectedComponentIds = this.pinToComponentMap.get(pin);
     if (!connectedComponentIds) return;
+    
+    // Log component updates
+    console.log(`Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}, updating ${connectedComponentIds.size} connected components`);
     
     // Update each connected component
     connectedComponentIds.forEach(componentId => {
       const component = this.components.get(componentId);
       if (!component) return;
       
-      // Handle specific component types
-      if (component.type === 'led') {
-        this.updateLEDComponent(component as EmulatedLED, pin, isHigh);
-      } else if (component.type === 'rgb-led') {
-        this.updateRGBLEDComponent(component as EmulatedRGBLED, pin, isHigh, analogValue);
-      } else if (component.type === 'oled-display') {
-        this.updateOLEDComponent(component as EmulatedOLEDDisplay, pin, isHigh);
-      } else if (component.type === 'buzzer') {
-        this.updateBuzzerComponent(component, pin, isHigh, analogValue);
-      } else if (component.type === 'servo') {
-        this.updateServoComponent(component, pin, analogValue);
-      } else {
-        // Generic component update
-        if (component.onPinChange) {
-          component.onPinChange(pin, isHigh, { analogValue });
+      // Log component update details for debugging
+      console.log(`Updating component ${componentId} (${component.type}) with pin ${pin}=${isHigh ? 'HIGH' : 'LOW'}`);
+      
+      try {
+        // Handle specific component types
+        if (component.type === 'led') {
+          this.updateLEDComponent(component as EmulatedLED, pin, isHigh);
+          this.log(`[Component] LED ${componentId} updated from pin ${pin}`);
+        } else if (component.type === 'rgb-led') {
+          this.updateRGBLEDComponent(component as EmulatedRGBLED, pin, isHigh, analogValue);
+          this.log(`[Component] RGB LED ${componentId} updated from pin ${pin}`);
+        } else if (component.type === 'oled-display') {
+          this.updateOLEDComponent(component as EmulatedOLEDDisplay, pin, isHigh);
+          this.log(`[Component] OLED Display ${componentId} updated from pin ${pin}`);
+        } else if (component.type === 'buzzer') {
+          this.updateBuzzerComponent(component, pin, isHigh, analogValue);
+          this.log(`[Component] Buzzer ${componentId} updated from pin ${pin}`);
+        } else if (component.type === 'servo') {
+          this.updateServoComponent(component, pin, analogValue);
+          this.log(`[Component] Servo ${componentId} updated from pin ${pin}`);
+        } else {
+          // Generic component update
+          if (component.onPinChange) {
+            component.onPinChange(pin, isHigh, { analogValue });
+            this.log(`[Component] ${component.type} ${componentId} updated from pin ${pin}`);
+          }
         }
+        
+        // Additional state update for any component
+        if (component.onStateChange) {
+          const state = {
+            pin,
+            isHigh,
+            analogValue, 
+            timestamp: Date.now()
+          };
+          component.onStateChange(state);
+        }
+      } catch (error) {
+        console.error(`Error updating component ${componentId}:`, error);
+        this.error(`Failed to update component ${componentId}: ${error}`);
       }
     });
   }
@@ -372,6 +383,7 @@ export class HeroEmulator {
   private updateLEDComponent(led: EmulatedLED, changedPin: string, isHigh: boolean) {
     // For a simple LED, we need to check if the pin that changed is connected
     // to either the anode or cathode
+    console.log(`LED update for pin ${changedPin} = ${isHigh ? 'HIGH' : 'LOW'}, LED:`, led);
     if (changedPin === led.anode) {
       // Anode pin changed - LED is on when anode is HIGH and cathode is connected to ground
       const isOn = isHigh; // Simplified - in reality we need to check if cathode is LOW
@@ -772,9 +784,11 @@ export class HeroEmulator {
   /**
    * Execute a cycle of the CPU
    */
-  // Cycle counter for simulation
+  // Cycle counter and state for simulation
   private cycleCounter: number = 0;
   private pin13State: boolean = false;
+  private lastToggleTime: number = 0;
+  private blinkSpeed: number = 500; // milliseconds between toggles
   private simulationMode: boolean = true; // Set to true to use simulated blink instead of actual code
 
   private executeCycle(): void {
@@ -796,9 +810,11 @@ export class HeroEmulator {
     // This simulates the classic Arduino blink sketch
     if (this.simulationMode) {
       this.cycleCounter++;
+      const currentTime = Date.now();
       
-      // Toggle the pin every 50 cycles (with 10ms interval = ~500ms)
-      if (this.cycleCounter % 50 === 0) {
+      // Toggle the pin every blinkSpeed milliseconds
+      if (currentTime - this.lastToggleTime >= this.blinkSpeed) {
+        this.lastToggleTime = currentTime;
         this.pin13State = !this.pin13State;
         
         // Update the pin state for pin 13
