@@ -190,35 +190,12 @@ export class AVR8Emulator {
     this.start();
   }
 
-  /**
-   * Load a compiled program
-   * @param {Uint16Array} program - The program bytes
-   * @returns {boolean} - Whether loading was successful
-   */
-  loadProgram(program) {
-    try {
-      this.stop();
-      this.program = program;
-      
-      // Reset pin states
-      this.reset();
-      
-      return true;
-    } catch (err) {
-      if (this.onError) {
-        this.onError(`Failed to load program: ${err.message}`);
-      } else {
-        console.error('AVR8Emulator load error:', err);
-      }
-      return false;
-    }
-  }
+  // This method was duplicated - the implementation above is the correct one
   
   /**
-   * Start the emulator by executing the user's program
-   * @param {Object} [userProgram] - Optional user program structure from parsed Arduino code
+   * Start the emulator 
    */
-  start(userProgram) {
+  start() {
     if (!this.program) {
       if (this.onError) {
         this.onError('Cannot start emulator: No program loaded');
@@ -232,7 +209,6 @@ export class AVR8Emulator {
     }
     
     console.log('[AVR8] 🚀 Starting hardware emulation...');
-    this.running = true;
     
     // Get the program type from the first byte (marker)
     const programType = this.program ? this.program[0] : 'unknown';
@@ -240,18 +216,12 @@ export class AVR8Emulator {
     console.log(`[AVR8] ✅ Program verified and accepted by microcontroller`);
     console.log(`[AVR8] Program type: ${programType}, initializing emulation...`);
     
-    // If we have a parsed user program, use that for simulation
-    if (userProgram) {
-      console.log('[AVR8] ✅ Compilation successful - code loaded into virtual MCU');
-      return this.executeUserProgram(userProgram);
-    }
-    
-    // Use the compiled program we already loaded
-    // This is a placeholder for where the real AVR8js initialization would happen
-    // In the real implementation, this would initialize the AVR CPU with the program
-    console.log('[AVR8] ✅ Compiled program loaded into emulated hardware');
+    // Call the base start method to start the core emulation
+    this.running = true;
+    this.core.start();
     
     // Log confirmation that simulation has started to the user
+    console.log('[AVR8] ✅ Compiled program loaded into emulated hardware');
     console.log('[AVR8] ✅ Hardware emulation running at 16MHz (virtual)');
     console.log('[AVR8] Microcontroller is now executing your program');
     
@@ -259,7 +229,6 @@ export class AVR8Emulator {
     this.startBlinkLoop();
     
     // Return immediately so the UI doesn't hang
-    
     return true;
   }
   
