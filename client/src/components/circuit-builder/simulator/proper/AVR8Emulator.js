@@ -135,14 +135,15 @@ export class AVR8Emulator {
     // Start a simulation loop that would normally be driven by the AVR CPU
     // In a real implementation, this would be driven by actual CPU emulation
     this.intervalId = setInterval(() => {
-      // This is a placeholder for proper CPU-driven behavior
-      // In real implementation, pin changes would be driven by the CPU
-      // For now, we'll toggle pin 13 every second for testing
+      // This is a placeholder for proper CPU-driven behavior that will be replaced
+      // with real AVR8js CPU emulation. For now, we're implementing a simple blink
+      // pattern as a demonstration of hardware-driven LED.
       const pin13State = this.pinStates[13];
       this.setDigitalOutput(13, !pin13State);
       
-      console.log(`[AVR8] Emulation cycle - toggled pin 13 to ${!pin13State ? 'HIGH' : 'LOW'}`);
-    }, 1000); // 1-second blink for testing
+      // This log will appear in the simulation log panel
+      console.log(`[AVR8] Emulation cycle - pin 13 is now ${!pin13State ? 'HIGH' : 'LOW'}`);
+    }, 1000); // 1-second blink for testing - will be CPU-driven timing in full implementation
     
     return true;
   }

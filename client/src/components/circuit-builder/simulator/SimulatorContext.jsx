@@ -35,6 +35,14 @@ export const SimulatorProvider = ({ children }) => {
     const timestamp = new Date().toLocaleTimeString();
     const formattedMessage = `[${timestamp}] ${message}`;
     
+    // Skip noisy system messages that aren't useful to the user
+    if (message.includes('Refreshing component states') || 
+        message.includes('updated:') ||
+        message.includes('FALLBACK') ||
+        message.includes('current_component_state')) {
+      return; // Skip these messages
+    }
+    
     // Only add logs that are relevant to the Arduino program execution
     // This skips all the system logs and focuses on what the code is doing
     if (
@@ -45,13 +53,19 @@ export const SimulatorProvider = ({ children }) => {
       message.includes('Starting simulation') || 
       message.includes('Stopping simulation') ||
       // Add Serial.print messages
-      message.includes('Serial output:')
+      message.includes('Serial output:') ||
+      // Add emulation cycle messages
+      message.includes('Emulation cycle') ||
+      // Add compiler messages
+      message.includes('Compilation')
     ) {
       // Remove system prefixes to make logs cleaner
       const cleanMessage = formattedMessage
         .replace('[Arduino] ', '')
         .replace(/\[AVR8\] /g, '')
-        .replace(/\[Simulator\] /g, '');
+        .replace(/\[Simulator\] /g, '')
+        .replace(/\[FALLBACK\] /g, '')
+        .replace(/\[DIRECT\] /g, '');
       
       setLogs(prevLogs => [...prevLogs, cleanMessage]);
     }

@@ -278,19 +278,38 @@ const HeroBoard = ({
           className={`heroboard-pin13-led absolute ${pin13State ? 'pin13-on' : ''}`}
           style={{
             // Always visible during simulation, but with lower opacity when off
-            opacity: isSimulationRunning ? (pin13State ? 0.9 : 0.25) : 0, 
-            backgroundColor: pin13State ? '#ff0000' : '#440000', // Darker red when off
-            boxShadow: pin13State ? '0 0 10px 4px rgba(255, 0, 0, 0.8)' : 'none', // Glow only when on
+            opacity: 1, // Always fully visible for testing 
+            backgroundColor: pin13State ? '#ff3300' : '#330000', // Darker red when off
+            boxShadow: pin13State ? '0 0 12px 5px rgba(255, 0, 0, 0.8)' : 'none', // Glow only when on
             animation: pin13State ? 'pulse 1s infinite alternate ease-in-out' : 'none',
             top: `${posTop + 43}px`, 
             left: `${posLeft + 107}px`,
-            zIndex: 11,
-            width: '8px', 
-            height: '8px',
+            zIndex: 1000, // Higher z-index to ensure visibility
+            width: '10px', 
+            height: '10px',
             // Add a border to make it more visible when off
-            border: '1px solid #331111'
+            border: '1px solid #661100'
           }}
         />
+        
+        {/* Debug indicator for Pin 13 state */}
+        <div
+          style={{
+            position: 'absolute',
+            top: `${posTop + 60}px`,
+            left: `${posLeft + 105}px`,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            color: pin13State ? '#ff3300' : '#aaaaaa',
+            fontSize: '8px',
+            padding: '1px 3px',
+            borderRadius: '2px',
+            fontFamily: 'monospace',
+            pointerEvents: 'none',
+            zIndex: 1000,
+          }}
+        >
+          13: {pin13State ? 'HIGH' : 'LOW'}
+        </div>
       </div>
     </>
   );
