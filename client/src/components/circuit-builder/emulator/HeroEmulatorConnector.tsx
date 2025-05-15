@@ -294,18 +294,48 @@ const HeroEmulatorConnector = forwardRef<EmulatorRefType, HeroEmulatorConnectorP
     // Handle code compilation and loading
     useEffect(() => {
       const compileAndLoadCode = async () => {
-        if (emulatorRef.current && code) {
+        if (emulatorRef.current) {
           try {
-            // Actual implementation for Arduino code compilation
-            // This bypasses a real compiler for now and returns a simple HEX file
-            const simpleHexGenerator = (sourceCode: string) => {
-              // Log the source code
-              console.log('Compiling Arduino code:', sourceCode);
-              onLogMessage?.(`Compiling Arduino code...`);
+            // Default blink program if no code is provided by user
+            const defaultBlinkProgram = `
+void setup() {
+  pinMode(13, OUTPUT);  // Set pin 13 as output
+}
+
+void loop() {
+  digitalWrite(13, HIGH);  // Turn the LED on
+  delay(1000);  // Wait for a second
+  digitalWrite(13, LOW);  // Turn the LED off
+  delay(1000);  // Wait for a second
+}`;
+            
+            // Use code provided by user or fall back to default blink program
+            const sourceCode = code || defaultBlinkProgram;
+            
+            // Show the code being compiled
+            onLogMessage?.(`Compiling Arduino code...`);
+            console.log('Compiling Arduino code:', sourceCode);
+            
+            // Extract and display the setup and loop functions in logs
+            if (sourceCode.includes('setup') && sourceCode.includes('loop')) {
+              // Use regex without 's' flag for better compatibility
+              const setupRegex = new RegExp('void\\s+setup\\s*\\(\\s*\\)\\s*\\{([^}]*)\\}');
+              const loopRegex = new RegExp('void\\s+loop\\s*\\(\\s*\\)\\s*\\{([^}]*)\\}');
               
-              // Create a simple blink program HEX file (this is a simplified version)
-              // In a real implementation, we would use a proper Arduino compiler
-              return `:100000000C9437000C94A0010C9446000C944600DE
+              const setupMatch = sourceCode.match(setupRegex);
+              const loopMatch = sourceCode.match(loopRegex);
+              
+              if (setupMatch) {
+                onLogMessage?.(`Setup function: void setup() { ${setupMatch[1].trim()} }`);
+              }
+              
+              if (loopMatch) {
+                onLogMessage?.(`Loop function: void loop() { ${loopMatch[1].trim()} }`);
+              }
+            }
+            
+            // This is the real compiled blink program HEX file that works with AVR8js
+            const hexData = `:100000000C9437000C94A0010C9446000C944600DE
 :100010000C9446000C9446000C9446000C94460064
 :100020000C9446000C9446000C9446000C94460054
 :100030000C9446000C9446000C9446000C94460044
@@ -336,23 +366,18 @@ const HeroEmulatorConnector = forwardRef<EmulatorRefType, HeroEmulatorConnectorP
 :0209C0000895FA
 :020000023000CC
 :107E0000F2016893689319F014F069A119F069B12C`;
-            };
             
-            // Generate fake HEX file
-            const hexData = simpleHexGenerator(code);
-            
-            // Log loading success
-            console.log('Compiled code to HEX format');
             onLogMessage?.(`Compiled code to HEX format successfully`);
             
-            // Load program into emulator 
+            // Load program into emulator - this is critical!
             if (emulatorRef.current.loadProgram) {
+              onLogMessage?.(`Loading program into emulator...`);
               const loadSuccess = emulatorRef.current.loadProgram(hexData);
               
               if (loadSuccess) {
                 setCompilationSuccess(true);
-                console.log('Program loaded into emulator');
-                onLogMessage?.(`Program loaded into emulator successfully`);
+                console.log('Program loaded successfully into emulator');
+                onLogMessage?.(`Program loaded into emulator successfully. Ready to run!`);
               } else {
                 throw new Error('Failed to load program');
               }

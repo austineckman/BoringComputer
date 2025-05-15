@@ -560,43 +560,96 @@ export class HeroEmulator {
    */
   public loadProgram(hexData: string): boolean {
     this.log('[Arduino] Loading program...');
+    if (this.onLogMessage) {
+      this.onLogMessage('Loading Arduino program...');
+    }
     
     try {
+      if (!hexData || hexData.trim() === '') {
+        throw new Error('No program data provided');
+      }
+      
       // Parse Intel HEX format
       const lines = hexData.split('\n');
+      this.program = new Uint16Array(FLASH_MEMORY_SIZE); // Reset program memory
       
-      for (const line of lines) {
-        if (line.trim() === '') continue;
+      // Try loading via AVR8js's loadHex function first
+      try {
+        const progMem = new Uint16Array(FLASH_MEMORY_SIZE);
+        loadHex(hexData, new Uint8Array(progMem.buffer));
+        this.program = progMem;
         
-        if (line.startsWith(':')) {
-          const byteCount = parseInt(line.substr(1, 2), 16);
-          const address = parseInt(line.substr(3, 4), 16);
-          const recordType = parseInt(line.substr(7, 2), 16);
+        // Initialize CPU with loaded program
+        this.cpu = new CPU(this.program);
+        this.cpuClock = new AVRClock(this.frequency || MHZ16);
+        this.timer0 = new AVRTimer(this.cpu, this.cpuClock, 0);
+        this.timer1 = new AVRTimer(this.cpu, this.cpuClock, 1);
+        
+        // Setup ports and peripherals
+        this.setupPortsAndPeripherals();
+        
+        console.log('[AVR8] Program successfully loaded with AVR8js loader');
+        if (this.onLogMessage) {
+          this.onLogMessage('Program loaded successfully and ready to run!');
+        }
+        return true;
+      } catch (loadError) {
+        console.warn('[AVR8] Failed to load program with AVR8js loader, falling back to manual parsing');
+        
+        // Fallback to manual HEX parsing
+        for (const line of lines) {
+          if (line.trim() === '') continue;
           
-          if (recordType === 0) {
-            const data = line.substr(9, byteCount * 2);
-            const bytes = [];
+          if (line.startsWith(':')) {
+            const byteCount = parseInt(line.substr(1, 2), 16);
+            const address = parseInt(line.substr(3, 4), 16);
+            const recordType = parseInt(line.substr(7, 2), 16);
             
-            // Parse hex bytes
-            for (let i = 0; i < data.length; i += 2) {
-              bytes.push(parseInt(data.substr(i, 2), 16));
-            }
-            
-            // Write program memory
-            for (let i = 0; i < bytes.length; i += 2) {
-              if (i + 1 < bytes.length) {
-                const word = bytes[i] | (bytes[i + 1] << 8);
-                this.program[address / 2 + i / 2] = word;
+            if (recordType === 0) {
+              const data = line.substr(9, byteCount * 2);
+              const bytes = [];
+              
+              // Parse hex bytes
+              for (let i = 0; i < data.length; i += 2) {
+                bytes.push(parseInt(data.substr(i, 2), 16));
+              }
+              
+              // Write program memory
+              for (let i = 0; i < bytes.length; i += 2) {
+                if (i + 1 < bytes.length) {
+                  const word = bytes[i] | (bytes[i + 1] << 8);
+                  this.program[address / 2 + i / 2] = word;
+                }
               }
             }
           }
         }
+        
+        // Initialize CPU with loaded program
+        this.cpu = new CPU(this.program);
+        this.cpuClock = new AVRClock(this.frequency || MHZ16);
+        this.timer0 = new AVRTimer(this.cpu, this.cpuClock, 0);
+        this.timer1 = new AVRTimer(this.cpu, this.cpuClock, 1);
+        
+        // Setup ports and peripherals
+        this.setupPortsAndPeripherals();
       }
       
       this.log('[Arduino] Program loaded successfully');
+      console.log('[AVR8] Program loaded successfully');
+      if (this.onLogMessage) {
+        this.onLogMessage('Program loaded successfully. Ready to start simulation!');
+      }
       return true;
     } catch (error) {
       this.error(`Failed to load program: ${error}`);
+      console.error('[AVR8] Failed to load program:', error);
+      if (this.onLogMessage) {
+        this.onLogMessage(`Error loading program: ${error instanceof Error ? error.message : String(error)}`);
+      }
+      
+      // Force into simulation mode on error
+      this.simulationMode = true;
       return false;
     }
   }
