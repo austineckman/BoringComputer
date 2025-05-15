@@ -84,7 +84,15 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
   
   // Add a log message
   const addLog = useCallback((message: string) => {
-    setLogs(prevLogs => [...prevLogs, message]);
+    console.log(`UI Log: ${message}`); // Also log to console for debugging
+    setLogs(prevLogs => {
+      // Keep only the most recent 100 logs to prevent memory issues
+      const newLogs = [...prevLogs, message];
+      if (newLogs.length > 100) {
+        return newLogs.slice(-100);
+      }
+      return newLogs;
+    });
   }, []);
   
   // Clear all logs
