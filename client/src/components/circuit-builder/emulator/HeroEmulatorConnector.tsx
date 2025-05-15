@@ -384,20 +384,24 @@ const HeroEmulatorConnector = forwardRef<EmulatorRefType, HeroEmulatorConnectorP
                 // Let this propagate
                 setTimeout(() => {
                   // Start the emulator (which will start the blink cycle)
-                  emulatorRef.current.start();
-                  
-                  // Update state
-                  setIsActive(true);
-                  
-                  // Log success
-                  onLogMessage?.('Arduino program is now running');
-                  console.log('Emulation started successfully');
+                  if (emulatorRef.current) {
+                    emulatorRef.current.start();
+                    
+                    // Update state
+                    setIsActive(true);
+                    
+                    // Log success
+                    onLogMessage?.('Arduino program is now running');
+                    console.log('Emulation started successfully');
+                  }
                 }, 100);
               } else {
                 // Fallback if setDigitalInput isn't available
-                emulatorRef.current.start();
-                setIsActive(true);
-                onLogMessage?.('Arduino program is now running');
+                if (emulatorRef.current) {
+                  emulatorRef.current.start();
+                  setIsActive(true);
+                  onLogMessage?.('Arduino program is now running');
+                }
               }
             } else {
               throw new Error('Emulator does not support start function');

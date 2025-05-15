@@ -187,42 +187,59 @@ export class HeroEmulator {
     };
     
     try {
-      // Try with callback as first argument, config as second 
-      // (compatibility with different avr8js versions)
-      this.usart = new AVRUSART(this.cpu, usart0Config) as any;
+      // Try with compatible constructor version
+      this.usart = new AVRUSART(this.cpu as any, serialDataCallback, usart0Config);
       
-      // Set up USART serial output callback manually
+      // Set up USART serial output callback manually if needed
       if (this.usart) {
         if (typeof this.usart.onByteTransmit !== 'undefined') {
           this.usart.onByteTransmit = serialDataCallback;
         }
       }
     } catch (error) {
-      this.log('Failed to initialize USART: ' + error);
-      // Create a dummy USART to prevent null references
-      this.usart = {
-        onByteTransmit: serialDataCallback
-      } as any;
+      try {
+        // Alternative constructor pattern
+        this.usart = new AVRUSART(this.cpu as any, usart0Config) as any;
+        if (this.usart && typeof this.usart.onByteTransmit !== 'undefined') {
+          this.usart.onByteTransmit = serialDataCallback;
+        }
+      } catch (innerError) {
+        this.log('Failed to initialize USART: ' + error);
+        // Create a dummy USART to prevent null references
+        this.usart = {
+          onByteTransmit: serialDataCallback
+        } as any;
+      }
     }
     
     // Create SPI interface
     try {
-      // Simple initialization without extra parameters
-      this.spi = new AVRSPI(this.cpu, spiConfig) as any;
+      // Try with additional null parameter for compatibility
+      this.spi = new AVRSPI(this.cpu as any, null as any, spiConfig);
     } catch (error) {
-      this.log('Failed to initialize SPI: ' + error);
-      // Create a dummy SPI to prevent null references
-      this.spi = {} as any;
+      try {
+        // Alternative constructor pattern
+        this.spi = new AVRSPI(this.cpu as any, spiConfig) as any;
+      } catch (innerError) {
+        this.log('Failed to initialize SPI: ' + error);
+        // Create a dummy SPI to prevent null references
+        this.spi = {} as any;
+      }
     }
     
     // Create I2C/TWI interface for OLED displays and other I2C devices
     try {
-      // Simple initialization without extra parameters
-      this.twi = new AVRTWI(this.cpu, twiConfig) as any;
+      // Try with additional null parameter for compatibility
+      this.twi = new AVRTWI(this.cpu as any, null as any, twiConfig);
     } catch (error) {
-      this.log('Failed to initialize TWI: ' + error);
-      // Create a dummy TWI to prevent null references
-      this.twi = {} as any;
+      try {
+        // Alternative constructor pattern
+        this.twi = new AVRTWI(this.cpu as any, twiConfig) as any;
+      } catch (innerError) {
+        this.log('Failed to initialize TWI: ' + error);
+        // Create a dummy TWI to prevent null references
+        this.twi = {} as any;
+      }
     }
     
     // Set up port change listeners
@@ -238,7 +255,7 @@ export class HeroEmulator {
       this.handlePortChange('D', value, oldValue);
     });
     
-    this.log('HERO Board emulator initialized');
+    this.log('[Arduino] HERO Board initialized');
   }
   
   /**
@@ -262,16 +279,12 @@ export class HeroEmulator {
         if (pin !== null) {
           // Log pin changes in a standard format for better UI/analysis
           const pinStr = String(pin);
-          this.log(`Pin ${pinStr} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
           
           // Special case for pin 13 (built-in LED)
           if (pin === 13 || pinStr === '13') {
-            if (isHigh) {
-              this.log(`Built-in LED ON`);
-            } else {
-              this.log(`Built-in LED OFF`);
-            }
+            this.log(`[Arduino] Built-in LED is ${isHigh ? 'ON' : 'OFF'}`);
           }
+          
           // Update internal pin state
           this.pinStates[pin.toString()] = isHigh;
           
@@ -324,39 +337,31 @@ export class HeroEmulator {
     const connectedComponentIds = this.pinToComponentMap.get(pin);
     if (!connectedComponentIds) return;
     
-    // Log component updates
-    console.log(`Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}, updating ${connectedComponentIds.size} connected components`);
-    
-    // Update each connected component
-    connectedComponentIds.forEach(componentId => {
+    // Update each connected component - use Array.from for compatibility
+    Array.from(connectedComponentIds).forEach(componentId => {
       const component = this.components.get(componentId);
       if (!component) return;
-      
-      // Log component update details for debugging
-      console.log(`Updating component ${componentId} (${component.type}) with pin ${pin}=${isHigh ? 'HIGH' : 'LOW'}`);
       
       try {
         // Handle specific component types
         if (component.type === 'led') {
           this.updateLEDComponent(component as EmulatedLED, pin, isHigh);
-          this.log(`[Component] LED ${componentId} updated from pin ${pin}`);
+          // Only log LED state changes for pin 13
+          if (pin === '13') {
+            this.log(`[Arduino] LED component updated`);
+          }
         } else if (component.type === 'rgb-led') {
           this.updateRGBLEDComponent(component as EmulatedRGBLED, pin, isHigh, analogValue);
-          this.log(`[Component] RGB LED ${componentId} updated from pin ${pin}`);
         } else if (component.type === 'oled-display') {
           this.updateOLEDComponent(component as EmulatedOLEDDisplay, pin, isHigh);
-          this.log(`[Component] OLED Display ${componentId} updated from pin ${pin}`);
         } else if (component.type === 'buzzer') {
           this.updateBuzzerComponent(component, pin, isHigh, analogValue);
-          this.log(`[Component] Buzzer ${componentId} updated from pin ${pin}`);
         } else if (component.type === 'servo') {
           this.updateServoComponent(component, pin, analogValue);
-          this.log(`[Component] Servo ${componentId} updated from pin ${pin}`);
         } else {
           // Generic component update
           if (component.onPinChange) {
             component.onPinChange(pin, isHigh, { analogValue });
-            this.log(`[Component] ${component.type} ${componentId} updated from pin ${pin}`);
           }
         }
         
@@ -383,7 +388,6 @@ export class HeroEmulator {
   private updateLEDComponent(led: EmulatedLED, changedPin: string, isHigh: boolean) {
     // For a simple LED, we need to check if the pin that changed is connected
     // to either the anode or cathode
-    console.log(`LED update for pin ${changedPin} = ${isHigh ? 'HIGH' : 'LOW'}, LED:`, led);
     if (changedPin === led.anode) {
       // Anode pin changed - LED is on when anode is HIGH and cathode is connected to ground
       const isOn = isHigh; // Simplified - in reality we need to check if cathode is LOW
@@ -459,32 +463,23 @@ export class HeroEmulator {
    * Update buzzer component state based on pin change
    */
   private updateBuzzerComponent(buzzer: EmulatedComponent, changedPin: string, isHigh: boolean, analogValue: number) {
-    // A buzzer's tone changes based on PWM frequency
-    if (buzzer.onStateChange) {
-      buzzer.onStateChange({ isOn: isHigh, intensity: analogValue });
-    }
-    
+    // For a buzzer, we just need to pass the pin change through to the component
     if (buzzer.onPinChange) {
       buzzer.onPinChange(changedPin, isHigh, { analogValue });
     }
+    
+    // For a PWM-controlled buzzer, the frequency would be determined by the timer configuration
+    // For now, we just pass the analog value which can be used to control volume
   }
   
   /**
    * Update servo component state based on pin change
    */
   private updateServoComponent(servo: EmulatedComponent, changedPin: string, analogValue: number) {
-    // Servos use PWM to control position
-    // The angle is proportional to the duty cycle
-    
-    // Map analogValue (0-255) to angle (0-180)
-    const angle = Math.round(analogValue / 255 * 180);
-    
-    if (servo.onStateChange) {
-      servo.onStateChange({ angle });
-    }
-    
+    // For a servo, the position is determined by the pulse width
+    // We just pass the analog value (0-255) which can be mapped to servo position (0-180 degrees)
     if (servo.onPinChange) {
-      servo.onPinChange(changedPin, true, { angle, analogValue });
+      servo.onPinChange(changedPin, true, { analogValue });
     }
   }
   
@@ -494,57 +489,36 @@ export class HeroEmulator {
   public registerComponent(component: EmulatedComponent): void {
     this.components.set(component.id, component);
     
-    // Map pins to components for efficient lookup
+    // Map pins to components based on component type
     if (component.type === 'led') {
       const led = component as EmulatedLED;
-      this.addPinToComponentMap(led.anode, component.id);
-      this.addPinToComponentMap(led.cathode, component.id);
+      this.addPinMapping(led.anode, component.id);
+      this.addPinMapping(led.cathode, component.id);
     } else if (component.type === 'rgb-led') {
       const rgbLed = component as EmulatedRGBLED;
-      this.addPinToComponentMap(rgbLed.redPin, component.id);
-      this.addPinToComponentMap(rgbLed.greenPin, component.id);
-      this.addPinToComponentMap(rgbLed.bluePin, component.id);
-      this.addPinToComponentMap(rgbLed.commonPin, component.id);
+      this.addPinMapping(rgbLed.redPin, component.id);
+      this.addPinMapping(rgbLed.greenPin, component.id);
+      this.addPinMapping(rgbLed.bluePin, component.id);
+      this.addPinMapping(rgbLed.commonPin, component.id);
     } else if (component.type === 'button') {
       const button = component as EmulatedButton;
-      this.addPinToComponentMap(button.pin, component.id);
+      this.addPinMapping(button.pin, component.id);
     } else if (component.type === 'oled-display') {
       const oled = component as EmulatedOLEDDisplay;
-      this.addPinToComponentMap(oled.sclPin, component.id);
-      this.addPinToComponentMap(oled.sdaPin, component.id);
+      this.addPinMapping(oled.sclPin, component.id);
+      this.addPinMapping(oled.sdaPin, component.id);
       if (oled.resetPin) {
-        this.addPinToComponentMap(oled.resetPin, component.id);
+        this.addPinMapping(oled.resetPin, component.id);
       }
     }
     
-    this.log(`Registered component: ${component.id} (${component.type})`);
-  }
-  
-  /**
-   * Unregister a component from the emulator
-   */
-  public unregisterComponent(componentId: string): void {
-    const component = this.components.get(componentId);
-    if (!component) return;
-    
-    // Remove from components map
-    this.components.delete(componentId);
-    
-    // Remove from pin-to-component map
-    Array.from(this.pinToComponentMap.entries()).forEach(([pin, componentIds]) => {
-      componentIds.delete(componentId);
-      if (componentIds.size === 0) {
-        this.pinToComponentMap.delete(pin);
-      }
-    });
-    
-    this.log(`Unregistered component: ${componentId}`);
+    this.log(`[Arduino] Component ${component.id} (${component.type}) registered`);
   }
   
   /**
    * Helper method to add a pin-to-component mapping
    */
-  private addPinToComponentMap(pin: string, componentId: string): void {
+  private addPinMapping(pin: string, componentId: string): void {
     if (!this.pinToComponentMap.has(pin)) {
       this.pinToComponentMap.set(pin, new Set<string>());
     }
@@ -552,92 +526,38 @@ export class HeroEmulator {
   }
   
   /**
-   * Set input for a button or other input device
+   * Unregister a component from the emulator
    */
-  public setDigitalInput(pin: string | number, isHigh: boolean): void {
-    const mapping = this.getPortBitFromArduinoPin(pin);
-    if (!mapping || !this.cpu) return;
-    
-    // Get the appropriate port
-    let port: AVRIOPort | null = null;
-    if (mapping.port === 'B') port = this.portB;
-    else if (mapping.port === 'C') port = this.portC;
-    else if (mapping.port === 'D') port = this.portD;
-    
-    if (!port) return;
-    
-    // Set the pin value in the hardware emulator
-    // Note: These method calls may depend on the specific version of avr8js library
-    // If your version has different methods, use those instead
-    try {
-      if (isHigh) {
-        port.setPin(mapping.bit, true);
-      } else {
-        port.setPin(mapping.bit, false);
-      }
-    } catch (e) {
-      this.error(`Failed to set digital input on pin ${pin}: ${e instanceof Error ? e.message : String(e)}`);
-    }
-    
-    this.log(`Set digital input on pin ${pin}: ${isHigh ? 'HIGH' : 'LOW'}`);
-  }
-  
-  /**
-   * Set analog input for a sensor or other analog device
-   */
-  public setAnalogInput(pin: string, value: number): void {
-    if (!ANALOG_PINS.includes(pin)) {
-      this.error(`Invalid analog pin: ${pin}`);
+  public unregisterComponent(componentId: string): void {
+    const component = this.components.get(componentId);
+    if (!component) {
+      this.error(`Component ${componentId} not found`);
       return;
     }
     
-    // Clamp value to 0-1023 range (10-bit ADC)
-    const analogValue = Math.max(0, Math.min(1023, value));
+    // Remove from component map
+    this.components.delete(componentId);
     
-    // Update internal state
-    this.analogValues[pin] = analogValue;
+    // Remove from pin-to-component mappings
+    for (const [pin, components] of this.pinToComponentMap.entries()) {
+      components.delete(componentId);
+      // If set is empty, remove the pin entry
+      if (components.size === 0) {
+        this.pinToComponentMap.delete(pin);
+      }
+    }
     
-    // In a real implementation, this would update the ADC register
-    // For now, just log the change
-    this.log(`Set analog input on pin ${pin}: ${analogValue}`);
-    
-    // Notify connected components
-    const isHigh = analogValue > 512; // Simple digital threshold
-    this.updateConnectedComponents(pin, isHigh, analogValue);
+    this.log(`[Arduino] Component ${componentId} unregistered`);
   }
   
   /**
-   * Load compiled program into the emulator
+   * Load a program into the emulator
    */
   public loadProgram(hexData: string): boolean {
+    this.log('[Arduino] Loading program...');
+    
     try {
-      // Stop the emulator if it's running
-      this.stop();
-      
-      // Clear the program memory
-      this.program = new Uint16Array(0x8000);
-      
-      // Parse the hex file and load it into program memory
-      const success = this.loadHexFile(hexData);
-      
-      if (success) {
-        this.log('Program loaded successfully');
-      } else {
-        this.error('Failed to load program');
-      }
-      
-      return success;
-    } catch (error) {
-      this.error(`Error loading program: ${error instanceof Error ? error.message : String(error)}`);
-      return false;
-    }
-  }
-  
-  /**
-   * Parse a hex file and load it into program memory
-   */
-  private loadHexFile(hexData: string): boolean {
-    try {
+      // Parse Intel HEX format
       const lines = hexData.split('\n');
       
       for (const line of lines) {
@@ -649,30 +569,29 @@ export class HeroEmulator {
           const recordType = parseInt(line.substr(7, 2), 16);
           
           if (recordType === 0) {
-            // Data record
-            for (let i = 0; i < byteCount; i += 2) {
-              const byteIndex = 9 + i * 2;
-              const byte1 = parseInt(line.substr(byteIndex, 2), 16);
-              const byte2 = i + 1 < byteCount ? parseInt(line.substr(byteIndex + 2, 2), 16) : 0;
-              
-              const wordValue = byte1 | (byte2 << 8);
-              const wordAddress = (address + i) / 2;
-              
-              if (wordAddress < this.program.length) {
-                this.program[wordAddress] = wordValue;
-              } else {
-                this.error(`Program address out of range: ${wordAddress}`);
+            const data = line.substr(9, byteCount * 2);
+            const bytes = [];
+            
+            // Parse hex bytes
+            for (let i = 0; i < data.length; i += 2) {
+              bytes.push(parseInt(data.substr(i, 2), 16));
+            }
+            
+            // Write program memory
+            for (let i = 0; i < bytes.length; i += 2) {
+              if (i + 1 < bytes.length) {
+                const word = bytes[i] | (bytes[i + 1] << 8);
+                this.program[address / 2 + i / 2] = word;
               }
             }
           }
-        } else {
-          this.error(`Invalid hex file line: ${line}`);
         }
       }
       
+      this.log('[Arduino] Program loaded successfully');
       return true;
     } catch (error) {
-      this.error(`Error parsing hex file: ${error instanceof Error ? error.message : String(error)}`);
+      this.error(`Failed to load program: ${error}`);
       return false;
     }
   }
@@ -694,34 +613,27 @@ export class HeroEmulator {
     // Default to simulation mode if no program is loaded
     const hasProgram = this.program.some(word => word !== 0);
     if (!hasProgram) {
-      this.log('[AVR8] No compiled program provided, using simulation mode');
+      this.log('[Arduino] Using built-in Blink program');
       this.simulationMode = true;
       
       // Force initial state of pins to LOW to ensure clean start
       for (let i = 0; i <= 13; i++) {
         this.pinStates[i.toString()] = false;
         this.analogValues[i.toString()] = 0;
-        // Log initial state
-        this.log(`Pin ${i} changed to LOW`);
       }
-      
-      // Special message for simulation mode
-      this.log('[AVR8] Starting simulation with program type: 255');
-      this.log('[Simulator] Using built-in Arduino Blink demo');
     } else {
       this.simulationMode = false;
-      this.log('[AVR8] Starting emulation with uploaded program');
+      this.log('[Arduino] Starting emulation with uploaded program');
     }
     
     // Start executing CPU cycles
     this.running = true;
     this.cycleInterval = setInterval(() => this.executeCycle(), 10);
     
-    // Force a pin 13 change immediately to show the LED is working 
+    // Force a pin 13 change immediately to show the LED is working
     // ALWAYS do this for better user experience regardless of simulation mode
     this.pin13State = true;
     this.pinStates['13'] = true;
-    this.log(`[Arduino] Pin 13 is HIGH`);
     this.log(`[Arduino] Built-in LED is ON`);
     
     // Notify callback
@@ -751,36 +663,30 @@ export class HeroEmulator {
     }
     
     this.running = false;
-    this.log('Emulation stopped');
-  }
-  
-  /**
-   * Reset the emulator
-   */
-  public reset(): void {
-    // Stop execution
-    this.stop();
+    this.log('[Arduino] Program stopped');
     
-    // Reset all pin states
-    DIGITAL_PINS.forEach(pin => {
-      this.pinStates[pin] = false;
-    });
-    
-    ANALOG_PINS.forEach(pin => {
-      this.pinStates[pin] = false;
-      this.analogValues[pin] = 0;
-    });
-    
-    PWM_PINS.forEach(pin => {
-      this.analogValues[pin] = 0;
-    });
-    
-    // Reset CPU and peripherals
-    if (this.cpu) {
-      this.cpu.reset();
+    // Reset all pins to LOW
+    for (let i = 0; i <= 13; i++) {
+      const pinStr = i.toString();
+      const wasHigh = this.pinStates[pinStr];
+      this.pinStates[pinStr] = false;
+      this.analogValues[pinStr] = 0;
+      
+      // If pin was HIGH, notify of change to LOW
+      if (wasHigh) {
+        if (this.onPinChangeCallback) {
+          this.onPinChangeCallback(i, false, { analogValue: 0 });
+        }
+        
+        // Special handling for pin 13 (built-in LED)
+        if (i === 13) {
+          this.log(`[Arduino] Built-in LED is OFF`);
+        }
+        
+        // Update components
+        this.updateConnectedComponents(pinStr, false, 0);
+      }
     }
-    
-    this.log('Emulator reset');
   }
   
   /**
@@ -822,21 +728,13 @@ export class HeroEmulator {
         // Update the pin state for pin 13
         this.pinStates['13'] = this.pin13State;
         
-        // Log pin state change
         // Only log pin 13 changes - don't log other pins that aren't relevant
-        this.log(`[Arduino] Pin 13 changed to ${this.pin13State ? 'HIGH' : 'LOW'}`);
+        this.log(`[Arduino] Built-in LED is ${this.pin13State ? 'ON' : 'OFF'}`);
         
         // Directly notify the pin change handler without relying on port access
         if (this.onPinChangeCallback) {
           const analogValue = this.pin13State ? 255 : 0;
           this.onPinChangeCallback(13, this.pin13State, { analogValue });
-        }
-        
-        // Also log built-in LED state - this is what the user will actually see
-        if (this.pin13State) {
-          this.log(`[Arduino] Built-in LED is ON`);
-        } else {
-          this.log(`[Arduino] Built-in LED is OFF`);
         }
         
         // Update components connected to this pin
@@ -846,73 +744,119 @@ export class HeroEmulator {
   }
   
   /**
+   * Set the state of an input pin - standard name for compatibility
+   */
+  public setDigitalInput(pin: string | number, isHigh: boolean): void {
+    this.setInputState(pin, isHigh);
+  }
+  
+  /**
+   * Set the state of an input pin
+   */
+  public setInputState(pin: string | number, isHigh: boolean): void {
+    const pinMapping = this.getPortBitFromArduinoPin(pin);
+    if (!pinMapping) {
+      this.error(`Invalid pin: ${pin}`);
+      return;
+    }
+    
+    // Set pin state in our internal state
+    this.pinStates[pin.toString()] = isHigh;
+    
+    // Log pin state change
+    this.log(`[Arduino] Pin ${pin} set to ${isHigh ? 'HIGH' : 'LOW'}`);
+    
+    // Notify callback
+    if (this.onPinChangeCallback) {
+      this.onPinChangeCallback(pin, isHigh, { 
+        analogValue: isHigh ? 255 : 0,
+        isInput: true
+      });
+    }
+    
+    // Update components connected to this pin
+    this.updateConnectedComponents(pin.toString(), isHigh, isHigh ? 255 : 0);
+  }
+  
+  /**
+   * Set the value of an analog input pin
+   */
+  public setAnalogValue(pin: string | number, value: number): void {
+    // Ensure value is in range 0-1023
+    value = Math.max(0, Math.min(1023, value));
+    
+    const pinStr = pin.toString();
+    this.analogValues[pinStr] = value;
+    
+    // Calculate if the pin should be HIGH or LOW based on threshold
+    const isHigh = value > 512;
+    const oldIsHigh = this.pinStates[pinStr] || false;
+    
+    // If the digital state changed, update it
+    if (isHigh !== oldIsHigh) {
+      this.pinStates[pinStr] = isHigh;
+      this.log(`[Arduino] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'} (analog: ${value})`);
+    }
+    
+    // Notify callback
+    if (this.onPinChangeCallback) {
+      this.onPinChangeCallback(pin, isHigh, { 
+        analogValue: value,
+        isAnalog: true
+      });
+    }
+    
+    // Update components connected to this pin
+    this.updateConnectedComponents(pinStr, isHigh, value);
+  }
+  
+  /**
    * Log a message
    */
   private log(message: string): void {
-    // Format messages to match expected simulation log format
+    // Only show important, clean user-facing messages
     
-    // Special case for pin change messages
-    if (message.startsWith('Pin ') && message.includes('changed to')) {
-      // Extract pin number and state
-      const pinMatch = message.match(/Pin (\d+)/);
-      const isHigh = message.includes('HIGH');
-      const pin = pinMatch ? pinMatch[1] : '?';
-      const analogValue = isHigh ? 255 : 0;
-      
-      // Multiple log formats for better compatibility
-      const logMessages = [
-        `Simulator: Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`,
-        `[Simulator] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`,
-        `[AVR8] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`,
-        `[AVR8] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'} (analog: ${analogValue})`,
-        `[Simulator] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'} (analog: ${analogValue})`
-      ];
-      
-      // Log to console and callback
-      logMessages.forEach(msg => {
-        console.log(msg);
-        if (this.onLogCallback) {
-          this.onLogCallback(msg);
-        }
-      });
-      
-      // Special case for pin 13 (built-in LED)
-      if (pin === '13') {
-        const ledMessages = [
-          `[FALLBACK] Updated generic heroboard pin 13 LED to ${isHigh ? 'ON' : 'OFF'}`,
-          `[HeroBoard heroboard-${Math.random().toString(36).substring(2, 10)}] Pin 13 state changed to ${isHigh ? 'HIGH' : 'LOW'}`
-        ];
-        
-        ledMessages.forEach(msg => {
-          console.log(msg);
-          if (this.onLogCallback) {
-            this.onLogCallback(msg);
-          }
-        });
+    // If the message already starts with [Arduino], it's one we added deliberately
+    if (message.startsWith('[Arduino]')) {
+      console.log(message);
+      if (this.onLogCallback) {
+        this.onLogCallback(message);
       }
+      return;
+    }
+    
+    // Special case for pin change messages - only show pin 13 changes
+    if (message.startsWith('Pin ') && message.includes('changed to')) {
+      const pinMatch = message.match(/Pin (\d+)/);
+      if (pinMatch && pinMatch[1] === '13') {
+        const isHigh = message.includes('HIGH');
+        const cleanMessage = `[Arduino] Built-in LED is ${isHigh ? 'ON' : 'OFF'}`;
+        
+        console.log(cleanMessage);
+        if (this.onLogCallback) {
+          this.onLogCallback(cleanMessage);
+        }
+      } else {
+        // Just log to console for debugging, but don't display to user
+        console.log("Debug:", message);
+      }
+      return;
     } 
-    // Built-in LED status messages
+    
+    // For built-in LED status messages, provide clean output
     else if (message.includes('Built-in LED')) {
       const isOn = message.includes('ON');
-      const ledMessages = [
-        `[FALLBACK] Updated generic heroboard pin 13 LED to ${isOn ? 'ON' : 'OFF'}`,
-        `[HeroBoard heroboard-${Math.random().toString(36).substring(2, 10)}] Pin 13 state changed to ${isOn ? 'HIGH' : 'LOW'}`
-      ];
+      const cleanMessage = `[Arduino] Built-in LED is ${isOn ? 'ON' : 'OFF'}`;
       
-      ledMessages.forEach(msg => {
-        console.log(msg);
-        if (this.onLogCallback) {
-          this.onLogCallback(msg);
-        }
-      });
-    }
-    // Default format for other messages
-    else {
-      console.log(`[Emulator] ${message}`);
+      console.log(cleanMessage);
       if (this.onLogCallback) {
-        this.onLogCallback(`[Emulator] ${message}`);
+        this.onLogCallback(cleanMessage);
       }
+      return;
     }
+    
+    // For all other messages, just log to console for debugging
+    console.log("Debug message:", message);
   }
   
   /**
@@ -920,7 +864,7 @@ export class HeroEmulator {
    */
   private error(message: string): void {
     // Format error messages to match simulation format
-    const errorMsg = `[AVR8 Error] ${message}`;
+    const errorMsg = `[Arduino Error] ${message}`;
     
     // Log to console
     console.error(errorMsg);
