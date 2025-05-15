@@ -34,7 +34,27 @@ export const SimulatorProvider = ({ children }) => {
   const addLog = (message) => {
     const timestamp = new Date().toLocaleTimeString();
     const formattedMessage = `[${timestamp}] ${message}`;
-    setLogs(prevLogs => [...prevLogs, formattedMessage]);
+    
+    // Only add logs that are relevant to the Arduino program execution
+    // This skips all the system logs and focuses on what the code is doing
+    if (
+      // Add program execution messages
+      message.startsWith('[Arduino]') || 
+      message.includes('Program started') || 
+      message.includes('Program stopped') ||
+      message.includes('Starting simulation') || 
+      message.includes('Stopping simulation') ||
+      // Add Serial.print messages
+      message.includes('Serial output:')
+    ) {
+      // Remove system prefixes to make logs cleaner
+      const cleanMessage = formattedMessage
+        .replace('[Arduino] ', '')
+        .replace(/\[AVR8\] /g, '')
+        .replace(/\[Simulator\] /g, '');
+      
+      setLogs(prevLogs => [...prevLogs, cleanMessage]);
+    }
   };
   
   // Function to update the state of a component

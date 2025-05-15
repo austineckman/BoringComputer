@@ -126,6 +126,7 @@ const HeroEmulatorConnector = forwardRef<EmulatorRefType, HeroEmulatorConnectorP
           emulatorRef.current = new HeroEmulator({
             onLog: (message: string) => {
               console.log(`[Emulator] ${message}`);
+              // Using standard log callback - these are filtered in SimulatorContext
               onLogMessage?.(`[Emulator] ${message}`);
             },
             onError: (error: string) => {
@@ -140,12 +141,17 @@ const HeroEmulatorConnector = forwardRef<EmulatorRefType, HeroEmulatorConnectorP
                                   
               // Log serial data both to console and UI
               console.log(`[Serial] Received: ${value} (${displayChar})`);
-              onLogMessage?.(`[Serial] Received: ${displayChar}`);
+              // Serial output should always be visible in logs
+              onLogMessage?.(`[Arduino] Serial output: "${displayChar}"`);
               
               // Pass to serial handler
               onSerialData?.(value, char);
             },
-            onPinChange: handlePinChange
+            onPinChange: handlePinChange,
+            // Add direct logMessage handler for Arduino program execution logs
+            onLogMessage: (message: string) => {
+              onLogMessage?.(message);
+            }
           });
           
           // Add to window for global access (useful for debugging)
