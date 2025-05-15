@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useSimulator } from './SimulatorContext';
 
 /**
@@ -6,18 +6,39 @@ import { useSimulator } from './SimulatorContext';
  * 
  * This component displays the simulation logs in a scrollable panel.
  * It includes auto-scrolling functionality that can be toggled on/off.
+ * It filters logs to only show relevant Arduino program execution.
  */
 const SimulationLogPanel = () => {
   const { logs } = useSimulator();
   const logContainerRef = useRef(null);
   const [autoScroll, setAutoScroll] = useState(true);
   
+  // Filter logs to only show relevant Arduino program execution
+  const filteredLogs = useMemo(() => {
+    return logs.filter(log => {
+      // Remove timestamp to check the actual message
+      const messageWithoutTimestamp = log.replace(/\[\d{1,2}:\d{2}:\d{2}(?: [AP]M)?\] /, '');
+      
+      // Include important Arduino code execution logs
+      return (
+        // Only show Arduino program logs - not system logs
+        messageWithoutTimestamp.includes('[Arduino]') ||
+        // Include high-level program execution messages
+        messageWithoutTimestamp.includes('Program started') ||
+        messageWithoutTimestamp.includes('Program loaded') ||
+        messageWithoutTimestamp.includes('Program stopped') ||
+        messageWithoutTimestamp.includes('Starting simulation') ||
+        messageWithoutTimestamp.includes('Stopping simulation')
+      );
+    });
+  }, [logs]);
+  
   // Auto-scroll to the bottom when logs update (only if autoScroll is enabled)
   useEffect(() => {
     if (autoScroll && logContainerRef.current) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
     }
-  }, [logs, autoScroll]);
+  }, [filteredLogs, autoScroll]);
   
   // Handle scroll events to disable auto-scroll if user manually scrolls up
   const handleScroll = () => {
@@ -62,11 +83,11 @@ const SimulationLogPanel = () => {
         }}
         onScroll={handleScroll}
       >
-        {logs.length === 0 ? (
-          <div className="text-gray-500 italic">No logs yet. Run the simulation to see logs.</div>
+        {filteredLogs.length === 0 ? (
+          <div className="text-gray-500 italic">No program logs yet. Run your Arduino code to see execution output.</div>
         ) : (
           <div className="pb-1"> {/* Extra padding at bottom for better scrolling */}
-            {logs.map((log, index) => (
+            {filteredLogs.map((log, index) => (
               <div key={index} className="text-green-400 mb-1 break-words">
                 {log}
               </div>
