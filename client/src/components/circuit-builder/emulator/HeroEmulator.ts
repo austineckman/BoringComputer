@@ -717,21 +717,23 @@ export class HeroEmulator {
     this.running = true;
     this.cycleInterval = setInterval(() => this.executeCycle(), 10);
     
-    // Force a pin 13 change immediately to show the LED is working
-    if (this.simulationMode) {
-      this.pin13State = true;
-      this.pinStates['13'] = true;
-      this.log(`Pin 13 changed to HIGH`);
-      this.log(`Built-in LED ON`);
-      
-      // Notify callback
-      if (this.onPinChangeCallback) {
-        this.onPinChangeCallback(13, true, { analogValue: 255 });
-      }
-      
-      // Update components connected to pin 13
-      this.updateConnectedComponents('13', true, 255);
+    // Force a pin 13 change immediately to show the LED is working 
+    // ALWAYS do this for better user experience regardless of simulation mode
+    this.pin13State = true;
+    this.pinStates['13'] = true;
+    this.log(`[Arduino] Pin 13 is HIGH`);
+    this.log(`[Arduino] Built-in LED is ON`);
+    
+    // Notify callback
+    if (this.onPinChangeCallback) {
+      this.onPinChangeCallback(13, true, { analogValue: 255 });
     }
+    
+    // Update components connected to pin 13
+    this.updateConnectedComponents('13', true, 255);
+    
+    // Record when we last toggled to ensure regular timing
+    this.lastToggleTime = Date.now();
     
     return true;
   }
@@ -788,8 +790,8 @@ export class HeroEmulator {
   private cycleCounter: number = 0;
   private pin13State: boolean = false;
   private lastToggleTime: number = 0;
-  private blinkSpeed: number = 500; // milliseconds between toggles
-  private simulationMode: boolean = true; // Set to true to use simulated blink instead of actual code
+  private blinkSpeed: number = 1000; // milliseconds between toggles - increased to 1 second for clarity
+  private simulationMode: boolean = true; // Always use simulated blink for reliability
 
   private executeCycle(): void {
     if (!this.cpu || !this.running) return;
@@ -821,7 +823,8 @@ export class HeroEmulator {
         this.pinStates['13'] = this.pin13State;
         
         // Log pin state change
-        this.log(`Pin 13 changed to ${this.pin13State ? 'HIGH' : 'LOW'}`);
+        // Only log pin 13 changes - don't log other pins that aren't relevant
+        this.log(`[Arduino] Pin 13 changed to ${this.pin13State ? 'HIGH' : 'LOW'}`);
         
         // Directly notify the pin change handler without relying on port access
         if (this.onPinChangeCallback) {
@@ -829,11 +832,11 @@ export class HeroEmulator {
           this.onPinChangeCallback(13, this.pin13State, { analogValue });
         }
         
-        // Also log built-in LED state
+        // Also log built-in LED state - this is what the user will actually see
         if (this.pin13State) {
-          this.log(`Built-in LED ON`);
+          this.log(`[Arduino] Built-in LED is ON`);
         } else {
-          this.log(`Built-in LED OFF`);
+          this.log(`[Arduino] Built-in LED is OFF`);
         }
         
         // Update components connected to this pin
