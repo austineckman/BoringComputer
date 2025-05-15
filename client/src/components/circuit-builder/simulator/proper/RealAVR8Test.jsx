@@ -64,20 +64,69 @@ const EmulatorTestUI = () => {
     setCode(DEFAULT_CODE);
   }, [setCode]);
   
+  // Auto-scroll logs to bottom when new logs arrive
+  useEffect(() => {
+    const logConsole = document.getElementById('log-console');
+    if (logConsole) {
+      logConsole.scrollTop = logConsole.scrollHeight;
+    }
+  }, [logs]);
+  
   // Format pin states for display
   const formatPinStates = useCallback(() => {
-    return Object.entries(pinStates).map(([pin, state]) => {
-      const { isHigh, analogValue } = state;
-      return (
-        <div key={pin} className="pin-state">
-          <span className="pin-number">Pin {pin}:</span>
-          <span className={`pin-value ${isHigh ? 'high' : 'low'}`}>
-            {isHigh ? 'HIGH' : 'LOW'}
-            {analogValue !== undefined && ` (${analogValue})`}
-          </span>
-        </div>
-      );
+    // Initialize with default state for commonly used pins if they're not set
+    const defaultPins = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 'A0', 'A1', 'A2', 'A3', 'A4', 'A5'];
+    const allPinStates = { ...pinStates };
+    
+    // Add default state for pins that are not in the state
+    defaultPins.forEach(pin => {
+      if (!allPinStates[pin]) {
+        allPinStates[pin] = { isHigh: false };
+      }
     });
+    
+    // Sort pins numerically/alphabetically
+    return Object.entries(allPinStates)
+      .sort((a, b) => {
+        // Convert pins to sortable values (numeric pins first, then analog pins)
+        const pinA = isNaN(parseInt(a[0])) ? a[0] : parseInt(a[0]);
+        const pinB = isNaN(parseInt(b[0])) ? b[0] : parseInt(b[0]);
+        
+        if (typeof pinA === 'number' && typeof pinB === 'number') {
+          return pinA - pinB;
+        } else if (typeof pinA === 'number') {
+          return -1;
+        } else if (typeof pinB === 'number') {
+          return 1;
+        } else {
+          return pinA.localeCompare(pinB);
+        }
+      })
+      .map(([pin, state]) => {
+        const isHigh = state.isHigh || false;
+        const analogValue = state.analogValue;
+        
+        // Create a special visualization for certain pins
+        let extraInfo = '';
+        if (pin === '13') {
+          extraInfo = isHigh ? ' (LED ON)' : ' (LED OFF)';
+        } else if (analogValue !== undefined) {
+          extraInfo = ` (PWM: ${analogValue})`;
+        }
+        
+        return (
+          <div key={pin} className="pin-state">
+            <span className="pin-number">Pin {pin}:</span>
+            <span 
+              className={`pin-value ${isHigh ? 'high' : 'low'}`}
+              data-pin={pin}
+            >
+              {isHigh ? 'HIGH' : 'LOW'}
+              {extraInfo}
+            </span>
+          </div>
+        );
+      });
   }, [pinStates]);
   
   return (
@@ -123,22 +172,51 @@ const EmulatorTestUI = () => {
           <div className="serial-output">
             <h3>Serial Output:</h3>
             <div className="serial-console">
-              {serialOutput.map((item, index) => (
-                <div key={index} className="serial-line">
-                  {item.char}
+              {serialOutput.length > 0 ? (
+                // Group serial output by lines for better readability
+                serialOutput
+                  .reduce((lines, item) => {
+                    // If the char is a newline or the first character, start a new line
+                    if (item.char === '\n' || lines.length === 0) {
+                      lines.push([]);
+                    }
+                    // Add the character to the current line (unless it's a newline)
+                    if (item.char !== '\n') {
+                      lines[lines.length - 1].push(item);
+                    }
+                    return lines;
+                  }, [])
+                  .map((line, lineIndex) => (
+                    <div key={`line-${lineIndex}`} className="serial-line">
+                      {line.map((item, charIndex) => (
+                        <span key={`char-${lineIndex}-${charIndex}`}>
+                          {item.char}
+                        </span>
+                      ))}
+                    </div>
+                  ))
+              ) : (
+                <div className="serial-line empty">
+                  No serial output yet...
                 </div>
-              ))}
+              )}
             </div>
           </div>
           
           <div className="logs">
             <h3>Logs:</h3>
-            <div className="log-console">
-              {logs.map((log) => (
-                <div key={log.id} className="log-line">
-                  {log.message}
+            <div className="log-console" id="log-console">
+              {logs.length > 0 ? (
+                logs.map((log) => (
+                  <div key={log.id} className="log-line">
+                    {log.message}
+                  </div>
+                ))
+              ) : (
+                <div className="log-line empty">
+                  No logs yet...
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
