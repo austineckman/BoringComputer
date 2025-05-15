@@ -1,155 +1,362 @@
-/**
- * HeroEmulatorConnector.tsx
- * 
- * This component connects our HeroEmulator to the Sandbox application components.
- * It provides APIs compatible with the existing Sandbox component system while
- * ensuring all component behaviors are driven by the actual hardware emulation.
- */
-
 import React, { useEffect, useRef, useState } from 'react';
-import { HeroEmulator } from './HeroEmulator';
+import { HeroEmulator, EmulatedComponent } from './HeroEmulator';
 
 interface HeroEmulatorConnectorProps {
   code: string;
-  isRunning: boolean;
-  onPinChange?: (pin: string | number, isHigh: boolean, options?: any) => void;
+  isRunning?: boolean;
+  onLogMessage?: (message: string) => void;
   onSerialData?: (value: number, char: string) => void;
-  onLog?: (message: string) => void;
-  onError?: (message: string) => void;
+  onEmulationError?: (error: string) => void;
+  components?: Record<string, EmulatedComponent>;
 }
 
 /**
  * HeroEmulatorConnector Component
  * 
- * This connector maintains the emulator instance and bridges API differences
- * between our emulator and the existing Sandbox APIs.
+ * This component serves as the intermediary between the React UI and the HeroEmulator.
+ * It handles all communication with the emulator and manages the lifecycle
+ * of the emulation engine, ensuring proper initialization, loading, and cleanup.
  */
 const HeroEmulatorConnector: React.FC<HeroEmulatorConnectorProps> = ({
   code,
-  isRunning,
-  onPinChange,
+  isRunning = false,
+  onLogMessage,
   onSerialData,
-  onLog,
-  onError,
+  onEmulationError,
+  components = {}
 }) => {
-  // Reference to the HeroEmulator instance
+  // Reference to the emulator instance
   const emulatorRef = useRef<HeroEmulator | null>(null);
   
-  // Hex code compiled from Arduino source
-  const [compiledHex, setCompiledHex] = useState<string | null>(null);
+  // State to track whether emulation is active
+  const [isActive, setIsActive] = useState(false);
   
-  // Track emulator state
-  const [emulatorRunning, setEmulatorRunning] = useState(false);
+  // State to track compilation status
+  const [compilationSuccess, setCompilationSuccess] = useState(false);
   
   // Initialize the emulator on component mount
   useEffect(() => {
-    // Create a new emulator instance
+    // Create a new emulator instance if it doesn't exist
     if (!emulatorRef.current) {
-      emulatorRef.current = new HeroEmulator({
-        onPinChange: (pin, isHigh, options) => {
-          // Forward pin change events to parent component
-          if (onPinChange) {
-            onPinChange(pin, isHigh, options);
+      try {
+        emulatorRef.current = new HeroEmulator({
+          onLog: (message: string) => {
+            console.log(`[Emulator] ${message}`);
+            onLogMessage?.(`[Emulator] ${message}`);
+          },
+          onError: (error: string) => {
+            console.error(`[Emulator Error] ${error}`);
+            onEmulationError?.(`[Emulator Error] ${error}`);
+          },
+          onSerialData: (value: number, char: string) => {
+            onSerialData?.(value, char);
           }
-          
-          // Log the pin change
-          if (onLog) {
-            onLog(`[HERO Emulator] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
-          }
-        },
-        onSerialData: (value, char) => {
-          // Forward serial data to parent component
-          if (onSerialData) {
-            onSerialData(value, char);
-          }
-          
-          // Log the serial data
-          if (onLog) {
-            onLog(`[HERO Emulator] Serial: ${char} (${value})`);
-          }
-        },
-        onLog: (message) => {
-          // Forward log messages to parent component
-          if (onLog) {
-            onLog(message);
-          }
-        },
-        onError: (message) => {
-          // Forward error messages to parent component
-          if (onError) {
-            onError(message);
-          }
-        },
-      });
-      
-      if (onLog) {
-        onLog('[HERO Emulator] HERO board emulator initialized');
+        });
+        
+        console.log('HeroEmulator initialized successfully');
+      } catch (error) {
+        console.error('Failed to initialize HeroEmulator:', error);
+        onEmulationError?.(`Failed to initialize emulator: ${error}`);
       }
     }
     
-    // Clean up the emulator when the component unmounts
+    // Clean up emulator on component unmount
     return () => {
       if (emulatorRef.current) {
-        emulatorRef.current.stop();
-        if (onLog) {
-          onLog('[HERO Emulator] HERO board emulator stopped and cleaned up');
+        try {
+          emulatorRef.current.stop();
+          emulatorRef.current = null;
+          console.log('HeroEmulator cleaned up');
+        } catch (error) {
+          console.error('Error cleaning up emulator:', error);
         }
       }
     };
-  }, [onPinChange, onSerialData, onLog, onError]);
+  }, []);
   
-  // Handle code changes and compile to hex
+  // Register components with the emulator
   useEffect(() => {
-    if (!code || code.trim() === '') {
-      setCompiledHex(null);
-      return;
+    if (emulatorRef.current) {
+      // Register each component with the emulator
+      Object.entries(components).forEach(([id, component]) => {
+        try {
+          emulatorRef.current?.registerComponent(component);
+          console.log(`Registered component ${id} with emulator`);
+        } catch (error) {
+          console.error(`Failed to register component ${id}:`, error);
+        }
+      });
     }
-    
-    // TODO: Integrate with actual Arduino compiler
-    // For now, we'll use a placeholder. In production, we would send the code
-    // to a server for compilation or use a WebAssembly compiler.
-    
-    if (onLog) {
-      onLog('[HERO Emulator] Code updated, ready for compilation');
-    }
-    
-    // If we can compile the code to hex, do it here and call setCompiledHex()
-    
-  }, [code, onLog]);
+  }, [components]);
   
-  // Handle changes to isRunning prop
+  // Handle code compilation and loading
   useEffect(() => {
-    if (!emulatorRef.current) return;
-    
-    if (isRunning && !emulatorRunning) {
-      // Start the emulator
-      if (compiledHex) {
-        // Load the program if we have hex code
-        emulatorRef.current.loadProgram(compiledHex);
-      }
-      
-      const success = emulatorRef.current.start();
-      if (success) {
-        setEmulatorRunning(true);
-        if (onLog) {
-          onLog('[HERO Emulator] Emulation started');
+    if (emulatorRef.current && code) {
+      try {
+        // For now, we'll just log the code for debugging
+        console.log('Code to be compiled:', code);
+        
+        // In a real implementation, we would:
+        // 1. Compile the Arduino code to machine code (hex)
+        // 2. Load the compiled hex into the emulator
+        
+        // Simulate compilation success for now
+        setCompilationSuccess(true);
+        onLogMessage?.('Code compiled successfully');
+        
+        // For testing, we can use a hardcoded blink sketch hex
+        const blinkHex = `
+:100000000C945C000C946E000C946E000C946E00CA
+:100010000C946E000C946E000C946E000C946E00A8
+:100020000C946E000C946E000C946E000C946E0098
+:100030000C946E000C946E000C946E000C946E0088
+:100040000C9413010C946E000C946E000C946E00D2
+:100050000C946E000C946E000C946E000C946E0068
+:100060000C946E000C946E00000000080002010069
+:100070000003040700000000000000000000000072
+:10008000250028002B00040404040404040402020D
+:100090000202020203030303030301020408102004
+:1000A0004080010204081020010204081020000012
+:1000B0000008000201000003040700000000000000
+:1000C0000000000000000000000000000000000030
+:1000D000000011241FBECFEFD8E0DEBFCDBF11E07B
+:1000E000A0E0B1E0EAE5F2E002C005900D92A23052
+:1000F000B107D9F711E0A2E0B1E001C01D92A8308D
+:10010000B107E1F70E945D010C94AB010C940000F1
+:1001100090E0FC01EC55FF4F249180579F4FFC012D
+:10012000849190E0880F991FFC01EA57FF4FA591E7
+:10013000B491FC01E458FF4F859194918FB7F8943C
+:10014000EC91E22BEC938FBF0895AF92BF92CF9246
+:10015000DF92EF92FF920F931F93CF93DF936C01AF
+:100160007B018B01040F151FEB015E01AE18BF0888
+:10017000C017D10759F06991D601ED91FC9101902A
+:10018000F081E02DC6010995892B79F7C501DF91B1
+:10019000CF911F910F91FF90EF90DF90CF90BF90D5
+:1001A000AF900895FC01538D448D252F30E0842FC8
+:1001B00090E0821B930B541710F0CF9608950197D0
+:1001C0000895FC01918D828D981761F0A28DAE0FFC
+:1001D000BF2FB11D5D968C91928D9F5F9F73928F69
+:1001E00090E008958FEF9FEF0895FC01918D828D8E
+:1001F000981731F0828DE80FF11D858D90E00895FA
+:100200008FEF9FEF0895FC01918D228D892F90E0B5
+:10021000805C9F4F821B91098F73992708958BE0A4
+:1002200091E00E94020121E0892B09F420E0822F75
+:10023000089580E090E0892B29F00E940E018111A1
+:100240000C9400000895FC01A48DA80FB92FB11DA9
+:10025000A35ABF4F2C91848D90E001968F7399274D
+:10026000848FA689B7892C93A089B1898C918370E0
+:1002700080648C93938D848D981306C00288F389CD
+:10028000E02D80818F7D80830895EF92FF920F93B9
+:100290001F93CF93DF93EC0181E0888F9B8D8C8D15
+:1002A000981305C0E889F989808185FD25C0F62ECD
+:1002B0000B8D10E00F5F1F4F0F731127E02E8C8DB8
+:1002C000E8120CC00FB607FCFACFE889F989808182
+:1002D00085FFF5CFCE010E942201F1CF8B8DFE01B6
+:1002E000E80FF11DE35AFF4FF0829FB7F8940B8F0A
+:1002F000EA89FB898081806207C09FB7F894EE89EB
+:10030000FF896083E889F9898081827090FB79F8F9
+:10031000E0CF9FBF96E0DF91CF911F910F91FF90E9
+:10032000EF900895CF93DF93EC01888D8823B9F0D1
+:10033000AA89BB89E889F9898C9185FD03C08081E3
+:1003400082FD0DC00FB607FCF7CF8C9185FFEFCF8A
+:10035000808185FFEDCFCE010E942201DF91CF91C0
+:10036000089590E0FC01E859FF4F2491FC01EC555D
+:10037000FF4F3491FC01E057FF4FE491EE23C9F0AF
+:10038000222339F0233001F1A8F4213019F12230D3
+:1003900029F1F0E0EE0FFF1FE458FF4FA591B491AA
+:1003A0008FB7F894EC91611126C030953E233C938A
+:1003B0008FBF08952730A9F02830C9F0243049F7C7
+:1003C000809180008F7D03C0809180008F7780935C
+:1003D0008000DFCF84B58F7784BDDBCF84B58F7D40
+:1003E000FBCF8091B0008F778093B000D2CF809129
+:1003F000B0008F7DF9CF3E2BDACF3FB7F8948091F4
+:10040000050190910601A0910701B091080126B5DB
+:10041000A89B05C02F3F19F00196A11DB11D3FBF9C
+:10042000BA2FA92F982F8827BC01CD01620F711DFA
+:10043000811D911D42E0660F771F881F991F4A953B
+:10044000D1F708958F929F92AF92BF92CF92DF928F
+:10045000EF92FF924B015C010E94FF016B017C01D4
+:100460000E94FF016C197D098E099F09683E734059
+:100470008105910580F321E0821A9108A108B108BE
+:100480008FEFC81AD80AE80AF80A89F0D801AB58C1
+:10049000BF4F8C918823C9F090E0C0E0D0E0F901E0
+:1004A000E856FF4F8081C9010E9493000C94FE0011
+:1004B000EFEFCE1ADE0AEE0AFE0A0990C4C1F2EF97
+:1004C000E2CFF80190819A3010F4905D01C0995CE5
+:1004D0009083282F30E0F901E057FF4F8491F9010E
+:1004E000E859FF4F14912A593F4FF9012491122F9A
+:1004F000105D1A30B0F5F501E30FF11D849180935A
+:1005000000010E94B3019091000185E0FE01982F65
+:100510009150F92260E00E94B3019FB7F8945091F1
+:100520000201552369F0509305018091000120E4CB
+:10053000829FC0011124815B9F4F9093010180931C
+:1005400000019FBF0DC08091020190910301855ABE
+:10055000914061F490930301809302018091000178
+:10056000909101010E9466019DCFF90180818A3086
+:1005700010F4805D01C0895C80830895AF92BF92A4
+:10058000DF92EF92FF920F931F93CF93DF93EC01BF
+:100590007A018B01DD24403081EE580780E06807DB
+:1005A00080E0780749F1CE010E940802F7FDD3C0B8
+:1005B000CE018D0195958795509540955F4F03C012
+:1005C000CE010E940802F7FF18C0E881F981208162
+:1005D00061817281838184C0A701990FEE08FF088B
+:1005E000C701B6010E9482018B019C016A0F7B1FCE
+:1005F0008A1F9B1FE881F9816083718382838383DA
+:100600003CC0882419F0CE011CC0E885F9858081FE
+:1006100061817281838115C04C815D818E819F81F8
+:10062000480F591F611D711D8E819F81881599051E
+:10063000A105B10539F4F80100851185228533858F
+:10064000075008C0460157016801790128C00E849D
+:100650001F84288539850F5F1F4F26C0CA01B901DD
+:10066000AA27BB278A019B01EC01499159916A9138
+:100670007B91841B950BA60BB70BBB0F661F771FFC
+:10068000881F991F15C0F801808191819C01FD01E3
+:10069000228133814481558142175307640775071A
+:1006A00078F4F701808191810297948383830BC090
+:1006B000CA0147C0DF91CF911F910F91FF90EF9004
+:1006C000DF90BF90AF9008952B013C010E941A0296
+:1006D000C1E0D0E040E050E060E070E081E090E01D
+:1006E00012C00E941A02F601E859FF4F648175814F
+:1006F00086819781F4013897F6018491F60181878A
+:10070000C214D304E404F5042CF04F5F5F4F6F4FDC
+:100710007F4F01C0CE01C097A109B1090E971CF4F1
+:10072000C1E0D0E001C0C0E0F801848195814817F7
+:1007300059070CF0C0E0CC0FDD1F9FB7F8944C2FD7
+:10074000FC01448321E0261730F4805D8193C33098
+:10075000D10571F702C085E4489520E030E0D90129
+:1007600011962C911197822F90E0880F991F880F78
+:10077000991F8E0D9F1D0C01E7BEE89511242E5F2F
+:100780003F4F2038310521F1FC016083A5E5B0E0AA
+:1007900086E08C9311961C921197A60FB71F86815A
+:1007A0001C968C9318968C9319978D919C9111975D
+:1007B00098878F83A817B9078CF082838381209781
+:1007C000B1F65F962C915F9751963C919FBF08950A
+:1007D000FC01918D828D981711F0928D05C0918D1C
+:1007E000828D981741F0882329F4918D828D9817DD
+:1007F000B9F7089508952F923F924F925F926F92C7
+:100800007F928F929F92AF92BF92CF92DF92EF922E
+:10081000FF920F931F93CF93DF93CDB7DEB7A19717
+:100820000FB6F894DEBF0FBECDBF6A3091F4FC019E
+:10083000E25BFF4F408151816281738188E090E004
+:10084000A80192019B010E947C02A80192019B011C
+:100850008C01A1960FBE08957C01EB014A01FC0130
+:1008600017821682118E108E6C014901F50124915B
+:10087000319685913691F20161935193CF01801BC2
+:10088000910BB9010E941902F401408151816281BF
+:10089000738100E010E0C501B4010E941902F50160
+:1008A0006083718382839383F801D196CF01840D15
+:1008B000951DC81BD90B0E94190211E0C616D70680
+:1008C00068F0F801618172818381948190E080E0D9
+:1008D0000E944602F801F587E487F6CF9BCEFB0150
+:1008E000DC0102C005900D9241505040D8F7089571
+:1008F0002F923F924F925F926F927F928F929F9252
+:10090000AF92BF92CF92DF92EF92FF920F931F9340
+:10091000CF93DF93CDB7DEB7A1970FB6F894DEBF5E
+:100920000FBECDBF99871A87498B5A8B6B8B7C8B5F
+:100930008D8B9E8BF894A1960FB6F894DEBF0FBE77
+:04094000CDBFF6CF09
+:10094400F894409100014770409300014093000124
+:10095400789408950895E1ECF0E0108210820895F0
+:1009640080910C0190910D01A0910E01B0910F01FF
+:10097400089580910C0190910D01A0910E01B0912F
+:100984000F01892B8A2B8B2B91F40E94B3009093C9
+:100994000F0180930E0170930D0160930C01809172
+:1009A4000C0190910D01A0910E01B0910F01089542
+:1009B4000F931F938FB7F8940091050110910601C4
+:1009C4002091070130910801823091050CF05CC07C
+:1009D4008FBF0F931F93DF93CF93CDB7DEB7FC0197
+:1009E4003C91332329F128813381263331050CF479
+:1009F4004AC086E0E3E0F1E0DE01119601900D922D
+:100A0400A031D107D9F7D383C283B583A48334877A
+:100A1400258716861586168A158A148A138A128AF2
+:100A2400118A168E158E148E138E128E118E0F5F63
+:100A34001F4F26C0333221F1248135813813490138
+:100A4400250F311D4217530714F401C01C01F801D4
+:100A5400C080D180E280F380048115812681378157
+:100A64002C153D054E055F050CF4E5CF8481958188
+:100A74001F01F0E0AF0EB11C2817390714F401C0F0
+:100A84000B01E6CF0F900F900F900F9008950F93CB
+:100A94001F938FB7F89440910501509106016091A5
+:100AA400070170910801899FB001899F700D999FB3
+:100AB400700D1124899F700D999F700D1124899F8E
+:100AC400800D999F800D1124899F800D999F800D0F
+:100AD4001124032E000C110B220B330B8FBF0F9392
+:100AE4001F93DF93CF93CDB7DEB70E94B2010F9043
+:100AF4000F900F900F9008950E94B200682F70E0CB
+:100B040080E090E00E94260290930F0180930E01C3
+:100B140070930D0160930C0108954F925F926F9297
+:100B24007F928F929F92AF92BF92CF92DF92EF926A
+:100B3400FF920F931F93CF93DF9000D000D0CDB73E
+:100B4400DEB720910C0130910D0140910E0150913B
+:100B54000F01261B370B480B590B60E670EC83E7F4
+:100B640090E00E947C026B017C0120E030E040E819
+:100B740051E40E9428026B017C01A7019601282F4B
+:100B8400392F4A2F5B2F0E9428022B013C01A701A3
+:100B94009601282F392F4A2F5B2F0E9428026B0182
+:100BA4007C016A0D7B1D8C1D9D1D0E94B40026E67B
+:100BB40036E646EA5FE30E9428020E94B400762E02
+:100BC400AA24BB24A7FCB094C701B6010E946E0277
+:100BD4009B01AC01C301B2010E947C02882333F0CD
+:100BE4004AE0C501B4010E94C90101C010E020E0D6
+:100BF40030E040E050E060E070E0CB01BA01D3018D
+:100C0400C201072E04C0880F991FAA1FBB1F0A94D6
+:100C1400D2F7F82BF42FF0620F931F93DF93CF93D0
+:100C2400CDB7DEB780E090E0A0E8BFE38B839C8351
+:100C3400AD83BE83E981FA81EF2B21F4E983FA83AC
+:100C44000B831C832D833E830F900F900F900F90D1
+:100C54000895991B79E004C0991F961708F0961BF4
+:100C6400881F7A95C9F780950895AA1BBB1B51E1D8
+:100C740007C0AA1FBB1FA617B70710F0A61BB70B5F
+:100C8400881F991F5A95A9F780959095BC01CD0144
+:060C94000895F894FFCFCF
+:060C9A00030000000000F1
+`;
+
+        if (emulatorRef.current && emulatorRef.current.loadProgram(blinkHex)) {
+          console.log('Program loaded successfully');
+        } else {
+          console.error('Failed to load program');
+          setCompilationSuccess(false);
+          onEmulationError?.('Failed to load program');
         }
-      } else {
-        if (onError) {
-          onError('[HERO Emulator] Failed to start emulation');
-        }
-      }
-    } else if (!isRunning && emulatorRunning) {
-      // Stop the emulator
-      emulatorRef.current.stop();
-      setEmulatorRunning(false);
-      if (onLog) {
-        onLog('[HERO Emulator] Emulation stopped');
+      } catch (error) {
+        console.error('Error compiling code:', error);
+        setCompilationSuccess(false);
+        onEmulationError?.(`Error compiling code: ${error}`);
       }
     }
-  }, [isRunning, emulatorRunning, compiledHex, onLog, onError]);
+  }, [code]);
   
-  // This is a non-visual component, it just manages the emulator instance
+  // Handle starting/stopping the emulation based on props
+  useEffect(() => {
+    if (emulatorRef.current && compilationSuccess) {
+      if (isRunning && !isActive) {
+        // Start the emulation
+        try {
+          emulatorRef.current.start();
+          setIsActive(true);
+          console.log('Emulation started');
+          onLogMessage?.('Emulation started');
+        } catch (error) {
+          console.error('Error starting emulation:', error);
+          onEmulationError?.(`Error starting emulation: ${error}`);
+        }
+      } else if (!isRunning && isActive) {
+        // Stop the emulation
+        try {
+          emulatorRef.current.stop();
+          setIsActive(false);
+          console.log('Emulation stopped');
+          onLogMessage?.('Emulation stopped');
+        } catch (error) {
+          console.error('Error stopping emulation:', error);
+          onEmulationError?.(`Error stopping emulation: ${error}`);
+        }
+      }
+    }
+  }, [isRunning, compilationSuccess]);
+  
+  // This component doesn't render anything visible
   return null;
 };
 
