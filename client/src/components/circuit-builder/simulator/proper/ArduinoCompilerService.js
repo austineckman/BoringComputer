@@ -39,15 +39,79 @@ const PROGRAM_TYPES = {
 };
 
 /**
+ * Detect pins used in Arduino code
+ * @param {string} code - The Arduino code to analyze
+ * @returns {number[]} - Array of pin numbers used in the code
+ */
+export function detectPinsUsed(code) {
+  const pins = new Set();
+  
+  // Check for digitalWrite, digitalRead, analogWrite, and pinMode
+  const pinRegexes = [
+    // Match digitalWrite(pin, value)
+    /digitalWrite\s*\(\s*(\d+|LED_BUILTIN|[A-Za-z_][A-Za-z0-9_]*)\s*,/g,
+    // Match digitalRead(pin)
+    /digitalRead\s*\(\s*(\d+|[A-Za-z_][A-Za-z0-9_]*)\s*\)/g,
+    // Match analogWrite(pin, value)
+    /analogWrite\s*\(\s*(\d+|[A-Za-z_][A-Za-z0-9_]*)\s*,/g,
+    // Match analogRead(pin)
+    /analogRead\s*\(\s*(\d+|A\d+|[A-Za-z_][A-Za-z0-9_]*)\s*\)/g,
+    // Match pinMode(pin, mode)
+    /pinMode\s*\(\s*(\d+|LED_BUILTIN|[A-Za-z_][A-Za-z0-9_]*)\s*,/g
+  ];
+  
+  // Common constants
+  const constants = {
+    'LED_BUILTIN': 13,
+    'RED_PIN': 9,
+    'GREEN_PIN': 10,
+    'BLUE_PIN': 11
+  };
+  
+  // Scan the code for pin constant definitions
+  const defineRegex = /#define\s+([A-Za-z_][A-Za-z0-9_]*)\s+(\d+)/g;
+  let defineMatch;
+  while ((defineMatch = defineRegex.exec(code)) !== null) {
+    const constName = defineMatch[1];
+    const pinNumber = parseInt(defineMatch[2], 10);
+    constants[constName] = pinNumber;
+  }
+  
+  // Process all regexes
+  for (const regex of pinRegexes) {
+    let match;
+    while ((match = regex.exec(code)) !== null) {
+      let pin = match[1];
+      
+      // If it's a number, add it directly
+      if (/^\d+$/.test(pin)) {
+        pins.add(parseInt(pin, 10));
+      } 
+      // If it's a constant, resolve it if possible
+      else if (constants[pin] !== undefined) {
+        pins.add(constants[pin]);
+      }
+      // If it starts with 'A', it's probably an analog pin
+      else if (pin.startsWith('A') && /^\d+$/.test(pin.substring(1))) {
+        // Just log analog pins for now - we'd map these differently later
+        console.log(`Found analog pin: ${pin}`);
+      }
+    }
+  }
+  
+  return Array.from(pins).sort((a, b) => a - b);
+}
+
+/**
  * Compile Arduino code to a simulatable program structure
  * @param {string} code - The Arduino code to compile
- * @returns {Promise<{success: boolean, program?: Uint16Array, error?: string}>} - Compilation result
+ * @returns {Promise<{success: boolean, program?: Uint16Array, error?: string, pinsUsed?: number[]}>} - Compilation result
  */
 export async function compileArduino(code) {
   try {
-    // NOTE: This function now only performs a basic syntactic check
-    // of the Arduino code and returns a marker program that tells the
-    // system to run proper hardware emulation.
+    // NOTE: This function now performs a basic syntactic check of the Arduino code
+    // and also analyzes which pins are used, returning this information with
+    // a marker program that tells the system to run proper hardware emulation.
     //
     // The actual simulation of components happens in the AVR8 CPU emulator,
     // not through static code analysis.

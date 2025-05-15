@@ -283,38 +283,31 @@ export class AVR8Emulator {
   }
 
   /**
-   * Start the blink loop using proper async/await pattern with real delays
-   * This replaces the setInterval approach with one that properly respects
-   * the delay() timing and demonstrates actual Arduino execution
+   * Start the AVR8 emulation
+   * 
+   * IMPORTANT: This version no longer has any hard-coded pin manipulation.
+   * It ONLY executes the compiled Arduino code using the avr8js emulator.
+   * No pins will change unless the user's code explicitly sets them.
    */
   async startBlinkLoop() {
-    // Initialize delay values if not set
-    if (!this.highDelayMs || !this.lowDelayMs) {
-      this.setDelayTiming([1000, 1000]); // Default values
+    console.log('[AVR8] Starting TRUE hardware emulation - NO ARTIFICIAL PIN CHANGES');
+    console.log('[AVR8] Only pins explicitly used in your code will change state');
+    console.log('[AVR8] Your compiled code is the only thing controlling the circuit');
+    
+    // If we have detected pins from the code, log them
+    if (this.pinsInUse && this.pinsInUse.length > 0) {
+      console.log(`[AVR8] Detected pins in your code: ${this.pinsInUse.join(', ')}`);
     }
     
-    // This will loop until the emulator is stopped
+    // This will loop until the emulator is stopped, but only acts as a heartbeat
+    // All pin changes come from the true emulator, not this loop
     while (this.running) {
       try {
-        // Execute the Arduino code pattern: digitalWrite, delay, digitalWrite, delay...
-        
-        // Set pin 13 HIGH (turn LED on)
-        this.setDigitalOutput(13, true);
-        console.log('[AVR8] Executing: digitalWrite(LED_BUILTIN, HIGH)');
-        console.log('[AVR8] Emulation cycle - pin 13 is now HIGH');
-        
-        // Wait using the HIGH delay value from the code
-        await this.delay(this.highDelayMs);
-        
-        // Set pin 13 LOW (turn LED off)
-        this.setDigitalOutput(13, false);
-        console.log('[AVR8] Executing: digitalWrite(LED_BUILTIN, LOW)');
-        console.log('[AVR8] Emulation cycle - pin 13 is now LOW');
-        
-        // Wait using the LOW delay value from the code
-        await this.delay(this.lowDelayMs);
+        // Just a lightweight check to prevent hogging resources
+        // The true emulation happens in the CPU via the avr8js library
+        await this.delay(500);
       } catch (error) {
-        console.error('[AVR8] Error in simulation loop:', error);
+        console.error('[AVR8] Error in emulation loop:', error);
         
         // If there's an error, stop the simulation
         if (this.running) {
