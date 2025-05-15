@@ -398,33 +398,7 @@ const RGBLED = ({
               />
             )}
             
-            {/* Individual color indicators for debugging */}
-            <div className="absolute" style={{ bottom: '-25px', left: '0px', display: 'flex', gap: '2px' }}>
-              <div 
-                className="rounded-full w-2 h-2" 
-                style={{ 
-                  backgroundColor: redOn ? 'red' : 'darkred',
-                  opacity: redOn ? 1 : 0.3,
-                  zIndex: 200
-                }}
-              />
-              <div 
-                className="rounded-full w-2 h-2" 
-                style={{ 
-                  backgroundColor: greenOn ? 'lime' : 'darkgreen',
-                  opacity: greenOn ? 1 : 0.3, 
-                  zIndex: 200
-                }}
-              />
-              <div 
-                className="rounded-full w-2 h-2" 
-                style={{ 
-                  backgroundColor: blueOn ? 'blue' : 'darkblue',
-                  opacity: blueOn ? 1 : 0.3, 
-                  zIndex: 200
-                }}
-              />
-            </div>
+            {/* Status indicator dots have been removed per user request */}
           </div>
         )}
       </div>
