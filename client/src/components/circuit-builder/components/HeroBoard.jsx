@@ -109,10 +109,8 @@ const HeroBoard = ({
         console.log(`[HeroBoard ${id}] Pin 13 state changed to ${isHigh ? 'HIGH' : 'LOW'} (pins obj)`);
       }
       
-      // Log an explicit update when no pin state is found but we should have seen one
-      if (boardState.pins === undefined && boardState.pin13 === undefined) {
-        console.log(`[FALLBACK] Updated generic heroboard pin 13 LED to ${pin13State ? 'ON' : 'OFF'}`);
-      }
+      // No need to log anything when pin state is missing
+      // The hardware emulator is driving pin updates now, so we don't need fallbacks
     }
   }, [componentStates, id]);
   

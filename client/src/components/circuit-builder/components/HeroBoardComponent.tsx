@@ -3,6 +3,7 @@ import BaseComponent from '../components/BaseComponent';
 import CircuitPin from '../CircuitPin';
 import { ComponentProps } from '../ComponentGenerator';
 import heroBoardIconPath from '../../../assets/components/hero-board.icon.png';
+import { useSimulator } from '../simulator/SimulatorContext';
 
 interface PinDefinition {
   id: string;
@@ -24,6 +25,15 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
 }) => {
   const { id, attrs } = componentData;
   const { rotate = 0, top, left, ledPower = true } = attrs;
+  
+  // Access simulator context to get the pin states
+  const { componentStates } = useSimulator();
+  
+  // Get pin states from simulator context
+  const pinStates = componentStates[id]?.pins || {};
+  
+  // Check if pin 13 is HIGH
+  const pin13IsHigh = pinStates['13']?.isHigh || pinStates['d13']?.isHigh || false;
   
   // Define pins based on Arduino layout
   const basePins: PinDefinition[] = [
@@ -80,6 +90,8 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
     }
   };
   
+  console.log(`HeroBoardComponent ${id} rendering. Pin 13 state:`, pin13IsHigh ? 'HIGH' : 'LOW');
+  
   return (
     <BaseComponent
       id={id}
@@ -111,6 +123,21 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
             backgroundColor: ledPower ? '#5fea00' : 'transparent',
             borderRadius: '50%',
             boxShadow: ledPower ? '0 0 4px #5fea00' : 'none',
+          }}
+        />
+        
+        {/* Pin 13 LED overlay - responds to actual signals from simulation */}
+        <div 
+          className="absolute"
+          style={{
+            left: '135px',
+            top: '75px',
+            width: '5px',
+            height: '5px',
+            backgroundColor: pin13IsHigh ? '#ff6600' : 'transparent',
+            borderRadius: '50%',
+            boxShadow: pin13IsHigh ? '0 0 8px #ff6600' : 'none',
+            transition: 'background-color 0.1s, box-shadow 0.1s',
           }}
         />
       </div>
