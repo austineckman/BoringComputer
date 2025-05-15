@@ -54,10 +54,14 @@ export const SimulatorProvider = ({ children }) => {
       message.includes('Stopping simulation') ||
       // Add Serial.print messages
       message.includes('Serial output:') ||
+      // Add pin state change messages
+      message.includes('Pin') && (message.includes('changed to HIGH') || message.includes('changed to LOW')) ||
       // Add emulation cycle messages
       message.includes('Emulation cycle') ||
       // Add compiler messages
-      message.includes('Compilation')
+      message.includes('Compilation') ||
+      // Include delay messages
+      message.includes('delay(')
     ) {
       // Remove system prefixes to make logs cleaner
       const cleanMessage = formattedMessage

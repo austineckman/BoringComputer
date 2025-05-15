@@ -55,6 +55,8 @@ export class AVR8Emulator {
     // Internal state
     this.running = false;
     this.intervalId = null;
+    this.delayActive = false;
+    this.delayTimeoutId = null;
     this.pinStates = {}; // Tracks current state of all pins
     this.analogValues = {}; // Tracks analog values (0-255) for PWM pins
     this.program = null;
