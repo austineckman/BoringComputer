@@ -204,6 +204,23 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
               {isRunning ? 'Stop' : 'Run'}
             </button>
             
+            {/* Simulation Status */}
+            <div className="px-2 py-1 bg-gray-800 rounded flex items-center ml-2">
+              <div className={`w-3 h-3 rounded-full mr-2 ${isRunning ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
+              <span className="text-xs">
+                {isRunning ? 'Running' : 'Stopped'}
+              </span>
+            </div>
+            
+            {/* Active Pin Counter */}
+            {Object.keys(debugPins).length > 0 && (
+              <div className="px-2 py-1 bg-gray-800 rounded flex items-center ml-2">
+                <span className="text-xs font-mono">
+                  {Object.keys(debugPins).length} active pin{Object.keys(debugPins).length !== 1 ? 's' : ''}
+                </span>
+              </div>
+            )}
+            
             {/* Zoom controls */}
             <button
               onClick={zoomOut}
@@ -326,6 +343,35 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
         
         {/* Right sidebar - Logs and Serial Output */}
         <div className="w-64 bg-gray-900 border-l border-gray-700 overflow-hidden flex flex-col">
+          {/* Pin States Panel */}
+          {Object.keys(debugPins).length > 0 && (
+            <div className="border-b border-gray-700 overflow-hidden">
+              <div className="p-2 border-b border-gray-700 flex justify-between items-center bg-gray-800">
+                <h3 className="text-sm font-bold text-white">Active Pin States</h3>
+                <div className="text-xs bg-gray-700 px-2 py-0.5 rounded">
+                  {Object.keys(debugPins).length} pin{Object.keys(debugPins).length !== 1 ? 's' : ''}
+                </div>
+              </div>
+              <div className="p-2 grid grid-cols-2 gap-2">
+                {Object.entries(debugPins).map(([pin, isHigh]) => (
+                  <div 
+                    key={pin} 
+                    className={`flex items-center p-1 rounded border ${
+                      isHigh ? 'border-green-500 bg-green-900/30' : 'border-red-500 bg-red-900/30'
+                    }`}
+                  >
+                    <div className={`w-3 h-3 rounded-full mr-2 ${
+                      isHigh ? 'bg-green-400 animate-pulse' : 'bg-red-400'
+                    }`}></div>
+                    <span className="text-xs font-mono">
+                      Pin {pin}: {isHigh ? 'HIGH' : 'LOW'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
           {/* Logs */}
           <div className="flex-1 overflow-hidden flex flex-col">
             <div className="p-2 border-b border-gray-700 flex justify-between items-center">
@@ -343,19 +389,6 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
                   {log}
                 </div>
               ))}
-              
-              {/* Debug Pin States */}
-              {Object.keys(debugPins).length > 0 && (
-                <div className="mt-4 p-2 bg-gray-800 rounded border border-gray-700">
-                  <div className="font-bold mb-1 text-white">Active Pin States:</div>
-                  {Object.entries(debugPins).map(([pin, isHigh]) => (
-                    <div key={pin} className={`flex items-center mb-1 ${isHigh ? 'text-green-400' : 'text-red-400'}`}>
-                      <div className={`w-3 h-3 rounded-full mr-2 ${isHigh ? 'bg-green-400' : 'bg-red-400'}`}></div>
-                      Pin {pin}: {isHigh ? 'HIGH' : 'LOW'}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
           

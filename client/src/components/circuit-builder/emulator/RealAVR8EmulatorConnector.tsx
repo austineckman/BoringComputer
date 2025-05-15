@@ -171,6 +171,10 @@ const RealAVR8EmulatorConnector = forwardRef<EmulatorRefType, RealAVR8EmulatorCo
               }
             }
             
+            // Always add to simulation logs for any pin changes we see,
+            // ensuring that activity is visible in the UI
+            onLogMessage?.(`[AVR8] Pin ${pinStr} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+            
             // Call the pin state change callback
             if (onPinStateChange) {
               onPinStateChange(pinStr, isHigh);
