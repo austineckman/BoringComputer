@@ -131,16 +131,21 @@ export class HeroEmulator {
   private onLogCallback: ((message: string) => void) | null = null;
   private onErrorCallback: ((message: string) => void) | null = null;
   
+  // Direct log message handler - used for Arduino program logs
+  public onLogMessage: ((message: string) => void) | null = null;
+  
   constructor(options: {
     onPinChange?: (pin: string | number, isHigh: boolean, options?: any) => void;
     onSerialData?: (value: number, char: string) => void;
     onLog?: (message: string) => void;
     onError?: (message: string) => void;
+    onLogMessage?: (message: string) => void;
   } = {}) {
     this.onPinChangeCallback = options.onPinChange || null;
     this.onSerialDataCallback = options.onSerialData || null;
     this.onLogCallback = options.onLog || null;
     this.onErrorCallback = options.onError || null;
+    this.onLogMessage = options.onLogMessage || null;
     
     // Initialize pin states
     DIGITAL_PINS.forEach(pin => {
