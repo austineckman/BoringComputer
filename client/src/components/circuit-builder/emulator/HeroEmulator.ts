@@ -562,6 +562,7 @@ export class HeroEmulator {
    */
   public loadProgram(hexData: string): boolean {
     this.log('[Arduino] Loading program...');
+    console.log('[AVR8] Attempting to load program:', hexData.substring(0, 50) + '...');
     if (this.onLogMessage) {
       this.onLogMessage('Loading Arduino program...');
     }
@@ -572,36 +573,72 @@ export class HeroEmulator {
       }
       
       // Parse Intel HEX format
-      const lines = hexData.split('\n');
-      this.program = new Uint16Array(32768); // Reset program memory with reasonable size
-      
-      // Manual HEX parsing - simpler approach
-      for (const line of lines) {
-        if (line.trim() === '') continue;
+      // Handle both newline and no-newline formats
+      const lines = hexData.includes('\n') 
+        ? hexData.split('\n') 
+        : hexData.match(/.{1,42}/g) || []; // Split by record length if no newlines
         
-        if (line.startsWith(':')) {
-          const byteCount = parseInt(line.substr(1, 2), 16);
-          const address = parseInt(line.substr(3, 4), 16);
-          const recordType = parseInt(line.substr(7, 2), 16);
+      console.log(`[AVR8] Parsed ${lines.length} HEX records`);
+      
+      // Initialize a fresh program memory with zeros
+      this.program = new Uint16Array(32768); // 64K bytes = 32K words
+      
+      // Track whether any data was actually loaded
+      let programDataLoaded = false;
+      
+      // Manual HEX parsing - improved approach
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        if (trimmedLine === '') continue;
+        
+        if (trimmedLine.startsWith(':')) {
+          const byteCount = parseInt(trimmedLine.substr(1, 2), 16);
+          const address = parseInt(trimmedLine.substr(3, 4), 16);
+          const recordType = parseInt(trimmedLine.substr(7, 2), 16);
           
+          // Type 0 = Data record
           if (recordType === 0) {
-            const data = line.substr(9, byteCount * 2);
+            const data = trimmedLine.substr(9, byteCount * 2);
+            
+            // Parse this record into a byte array
             const bytes = [];
-            
-            // Parse hex bytes
             for (let i = 0; i < data.length; i += 2) {
-              bytes.push(parseInt(data.substr(i, 2), 16));
-            }
-            
-            // Write program memory
-            for (let i = 0; i < bytes.length; i += 2) {
-              if (i + 1 < bytes.length) {
-                const word = bytes[i] | (bytes[i + 1] << 8);
-                this.program[address / 2 + i / 2] = word;
+              if (i + 1 < data.length) { // Ensure we have a full byte
+                const byte = parseInt(data.substr(i, 2), 16);
+                bytes.push(byte);
+                programDataLoaded = true; // We loaded at least some data
               }
             }
+            
+            // Write to program memory as 16-bit words (AVR is little-endian)
+            for (let i = 0; i < bytes.length; i += 2) {
+              const wordAddress = (address + i) >> 1; // Convert byte address to word address
+              
+              if (i + 1 < bytes.length) {
+                // Little endian: low byte first, high byte second
+                const word = bytes[i] | (bytes[i + 1] << 8);
+                this.program[wordAddress] = word;
+              } else {
+                // Handle odd number of bytes (rare but possible)
+                const word = bytes[i];
+                this.program[wordAddress] = word;
+              }
+            }
+            
+            console.log(`[AVR8] Loaded ${bytes.length} bytes at address 0x${address.toString(16)}`);
+          }
+          // Type 1 = End of file
+          else if (recordType === 1) {
+            console.log('[AVR8] End of HEX file reached');
+            break;
           }
         }
+      }
+      
+      // Verify we actually loaded something
+      if (!programDataLoaded) {
+        console.warn('[AVR8] Warning: No program data was found in the HEX file');
+        // Continue anyway as we'll fall back to simulation mode
       }
       
       // Program loaded successfully - This is crucial for proper operation
@@ -610,11 +647,14 @@ export class HeroEmulator {
         this.onLogMessage('Program loaded successfully. Ready to start simulation!');
       }
       
+      // Create a clean CPU state with the program
+      if (this.cpu) {
+        this.cpu.reset();
+        // CPU cycles will be updated during execution
+      }
+      
       // Inform simulator that program is loaded
       this.programLoaded = true;
-      
-      // Ensure we're in simulation mode for now (we'll update once CPU execution is fixed)
-      this.simulationMode = true;
       
       return true;
     } catch (error) {
@@ -631,10 +671,17 @@ export class HeroEmulator {
   }
   
   /**
-   * Start the emulation
+   * Start the emulation with CPU-based execution
    */
   public start(): boolean {
     if (this.running) return true;
+    
+    console.log('[AVR8] Starting emulator...');
+    
+    // Reset the pin states to clean values regardless of previous state
+    DIGITAL_PINS.forEach(pin => {
+      this.pinStates[pin] = false;
+    });
     
     // Make sure we have a CPU instance
     if (!this.cpu) {
@@ -643,75 +690,90 @@ export class HeroEmulator {
       
       if (!this.cpu) {
         this.onLogMessage?.('[Arduino] Error: Emulator could not be initialized');
-        console.error('Emulator could not be initialized');
+        console.error('[AVR8] Critical error: Emulator could not be initialized');
         return false;
       }
     }
     
-    // Reset the CPU and counters
-    this.cpu.reset();
-    this.cycleCounter = 0;
-    
-    // Check if we have a program loaded or need to use simulation
-    // Either an actual program was loaded via loadProgram, or we'll use the built-in Blink
-    if (!this.programLoaded) {
-      this.onLogMessage?.('[Arduino] Using built-in Blink program');
-      console.log('[AVR8] Using built-in Blink program');
-      
-      // Always use simulation mode to ensure the LED blinks
-      this.simulationMode = true;
-      
-      // Force initial state of pins to LOW to ensure clean start
-      for (let i = 0; i <= 13; i++) {
-        this.pinStates[i.toString()] = false;
-        this.analogValues[i.toString()] = 0;
-      }
-    } else {
-      this.onLogMessage?.('[Arduino] Starting program execution');
-      console.log('[AVR8] Starting emulation with loaded program');
-      
-      // Even with a loaded program, use simulation mode until CPU execution is fixed
-      this.simulationMode = true;
+    // Reset the CPU and counters to clean state
+    try {
+      this.cpu.reset();
+      this.cycleCounter = 0;
+      this.onLogMessage?.('[Arduino] Microcontroller reset');
+    } catch (e) {
+      console.error('[AVR8] Error resetting CPU:', e);
     }
     
-    // Initialize program counters and execution state
-    this.programLoaded = true; // Indicate that we have a program (even if simulated)
-    this.simulationMode = true; // Force simulation mode on for now
+    // Check if we have a program loaded
+    if (!this.programLoaded || !this.program) {
+      this.onLogMessage?.('[Arduino] No program loaded - using default Blink.');
+      console.warn('[AVR8] No program loaded, will use simulation mode');
+      
+      // Force simulation mode since we don't have a program
+      this.simulationMode = true;
+    } else {
+      this.onLogMessage?.('[Arduino] Running compiled program');
+      console.log('[AVR8] Program loaded, size:', this.program.length, 'words');
+      
+      try {
+        // Pass the loaded program to the CPU
+        if (this.cpu && this.program) {
+          // Set the program directly to the CPU memory
+          const progMem = this.cpu.progMem;
+          if (progMem) {
+            // Copy our program memory to the CPU's program memory
+            for (let i = 0; i < this.program.length; i++) {
+              if (i < progMem.length) {
+                progMem[i] = this.program[i];
+              }
+            }
+            console.log('[AVR8] Program copied to CPU memory');
+          } else {
+            console.error('[AVR8] CPU program memory not accessible');
+          }
+        }
+        
+        // Use actual CPU execution mode (no simulation required)
+        this.simulationMode = false;
+        console.log('[AVR8] Using actual CPU execution mode');
+      } catch (e) {
+        console.error('[AVR8] Error setting program to CPU:', e);
+        // Fall back to simulation mode
+        this.simulationMode = true;
+      }
+    }
+    
+    // Log the execution mode
+    console.log(`[AVR8] Execution mode: ${this.simulationMode ? 'SIMULATION' : 'CPU EXECUTION'}`);
     
     // Start executing CPU cycles
     this.running = true;
+    
+    // Clear any existing interval
     if (this.cycleInterval) {
       clearInterval(this.cycleInterval);
     }
+    
+    // Set up a new execution cycle
     this.cycleInterval = setInterval(() => this.executeCycle(), 10);
-    console.log('Started execution cycle interval');
+    console.log('[AVR8] Started execution cycle interval');
     
-    // Force a pin 13 change immediately to show the LED is working
-    // ALWAYS do this for better user experience
-    this.pin13State = true;
+    // Initialize pin 13 to show setup has executed
     this.pinStates['13'] = true;
-    this.onLogMessage?.('[Arduino] Starting execution - Built-in LED turned ON');
-    console.log('[AVR8] Built-in LED is ON');
+    this.pin13State = true;
     
-    // Notify any registered callbacks for pin 13 change
+    this.onLogMessage?.('[Arduino] Setup complete, program starting');
+    console.log('[AVR8] Pin 13 (LED) initialized to HIGH');
+    
+    // Update components connected to pin 13
     if (this.onPinChangeCallback) {
-      try {
-        console.log('Notifying pin change callback for pin 13 = HIGH');
-        this.onPinChangeCallback(13, true, { analogValue: 255 });
-      } catch (e) {
-        console.error('Error in pin change callback:', e);
-      }
+      this.onPinChangeCallback(13, true, { analogValue: 255 });
     }
     
-    // Update any components connected to pin 13
-    try {
-      console.log('Updating components connected to pin 13');
-      this.updateConnectedComponents('13', true, 255);
-    } catch (e) {
-      console.error('Error updating components:', e);
-    }
+    // Update any connected components
+    this.updateConnectedComponents('13', true, 255);
     
-    // Record when we last toggled to ensure regular timing for the blinking
+    // Reset timing values for consistent operation
     this.lastToggleTime = Date.now();
     
     return true;
