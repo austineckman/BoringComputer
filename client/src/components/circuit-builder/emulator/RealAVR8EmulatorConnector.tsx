@@ -129,6 +129,48 @@ const RealAVR8EmulatorConnector = forwardRef<EmulatorRefType, RealAVR8EmulatorCo
               }
             }
             
+            // DIRECT COMPONENT UPDATE: Update component state directly in window.emulatedComponents
+            if (window.emulatedComponents && componentId && window.emulatedComponents[componentId]) {
+              const component = window.emulatedComponents[componentId];
+              
+              // Check component type and update accordingly
+              if (component.type === 'led') {
+                if (component.anode?.toString() === pinStr) {
+                  component.isOn = isHigh;
+                  console.log(`🔌 DIRECT UPDATE: LED ${componentId} set to ${isHigh ? 'ON' : 'OFF'}`);
+                  onLogMessage?.(`💡 LED ${componentId} directly set to ${isHigh ? 'ON' : 'OFF'}`);
+                }
+              }
+              
+              // Force a DOM update by triggering a custom event
+              document.dispatchEvent(new CustomEvent('component-state-changed', { 
+                detail: { componentId, pinId: pinStr, isHigh } 
+              }));
+            }
+            
+            // Always update built-in LED on pin 13 (standard Arduino behavior)
+            if (pinStr === '13' && window.emulatedComponents) {
+              // Find the HERO board component
+              const heroComponent = Object.entries(window.emulatedComponents)
+                .find(([_, comp]) => comp.type === 'heroboard' || comp.type === 'arduino');
+                
+              if (heroComponent) {
+                const [heroId, hero] = heroComponent;
+                // @ts-ignore - Update the built-in LED state
+                if (hero.builtInLed !== undefined) {
+                  // @ts-ignore - TypeScript doesn't know about this property
+                  hero.builtInLed = isHigh;
+                  console.log(`🔌 DIRECT UPDATE: Built-in LED on ${heroId} set to ${isHigh ? 'ON' : 'OFF'}`);
+                  onLogMessage?.(`💡 Built-in LED directly set to ${isHigh ? 'ON' : 'OFF'}`);
+                  
+                  // Force a DOM update
+                  document.dispatchEvent(new CustomEvent('component-state-changed', { 
+                    detail: { componentId: heroId, pinId: '13', isHigh } 
+                  }));
+                }
+              }
+            }
+            
             // Call the pin state change callback
             if (onPinStateChange) {
               onPinStateChange(pinStr, isHigh);

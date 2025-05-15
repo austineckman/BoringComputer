@@ -48,6 +48,26 @@ export function CircuitBuilder({
   // Reference to the canvas element
   const canvasRef = useRef<HTMLDivElement>(null);
   
+  // State to force component updates
+  const [updateTrigger, setUpdateTrigger] = useState(0);
+  
+  // Listen for component state change events
+  useEffect(() => {
+    const handleComponentStateChange = (event: any) => {
+      // Force a re-render when component states change
+      setUpdateTrigger(prev => prev + 1);
+      console.log(`CircuitBuilder received component state change for: ${event.detail?.componentId}`);
+    };
+    
+    // Add event listener
+    document.addEventListener('component-state-changed', handleComponentStateChange);
+    
+    // Clean up
+    return () => {
+      document.removeEventListener('component-state-changed', handleComponentStateChange);
+    };
+  }, []);
+  
   // State for dragging components
   const [draggingComponent, setDraggingComponent] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
