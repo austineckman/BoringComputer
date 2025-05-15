@@ -72,15 +72,12 @@ const HeroEmulatorConnector = forwardRef<EmulatorRefType, HeroEmulatorConnectorP
             // Convert pin to string if it's a number
             const pinStr = pin.toString();
             
-            // Log pin state change for debugging
-            console.log(`Simulator: Pin ${pinStr} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+            // Only log pin changes for important pins (like 13) or debugging
+            console.log(`Pin ${pinStr} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
             
-            // Send detailed pin change log to the UI
-            onLogMessage?.(`[Simulator] Pin ${pinStr} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
-            
-            // If this is pin 13 (built-in LED), provide more detailed feedback
+            // For pin 13 (built-in LED), provide more detailed user-facing feedback
             if (pinStr === '13') {
-              onLogMessage?.(`[HeroBoard] Built-in LED ${isHigh ? 'ON' : 'OFF'}`);
+              onLogMessage?.(`[HERO Board] Built-in LED is now ${isHigh ? 'ON' : 'OFF'}`);
             }
             
             // Find the component that this pin belongs to
@@ -96,9 +93,6 @@ const HeroEmulatorConnector = forwardRef<EmulatorRefType, HeroEmulatorConnectorP
               analogValue = options.analogValue;
               // Map analog value (0-1023) to voltage (0-5V)
               voltage = (analogValue / 1023) * 5.0;
-              
-              // Log analog value for debugging
-              onLogMessage?.(`[Simulator] Pin ${pinStr} analog value: ${analogValue} (${voltage.toFixed(2)}V)`);
             }
             
             // Record the voltage for this pin
@@ -114,9 +108,11 @@ const HeroEmulatorConnector = forwardRef<EmulatorRefType, HeroEmulatorConnectorP
                 wireManagerRef.current.propagateSignal(componentId, pinStr, voltage);
               }
               
-              // Log component-specific state changes
-              if (componentId !== 'heroboard') {
-                onLogMessage?.(`[Component ${componentId}] Pin ${pinStr} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+              // Only log component-specific changes for non-HERO components and only for important state changes
+              if (componentId !== 'heroboard' && 
+                  (pinStr === '13' || // always log pin 13 (LED)
+                   isHigh)) { // only log HIGH states for most pins to reduce noise
+                onLogMessage?.(`[${componentId}] Received signal: ${isHigh ? 'ON' : 'OFF'}`);
               }
             }
             
@@ -376,25 +372,33 @@ const HeroEmulatorConnector = forwardRef<EmulatorRefType, HeroEmulatorConnectorP
             // Start the emulation
             if (typeof emulatorRef.current.start === 'function') {
               // Proper emulator status logging
-              onLogMessage?.('Starting emulation...');
+              onLogMessage?.('Starting Arduino simulation...');
               console.log('Starting simulation...');
               
-              // Start the emulator
-              emulatorRef.current.start();
-              
-              // Update state
-              setIsActive(true);
-              
-              // Log success
-              onLogMessage?.('Emulation started. Program is running!');
-              console.log('Emulation started successfully');
-              
-              // Initial pin state log for clarity
-              onLogMessage?.('Monitoring pin states...');
-              
-              // Log pin 13 (built-in LED) state
-              const pin13State = false; // Initial state is LOW
-              onLogMessage?.(`[Simulator] Pin 13 is ${pin13State ? 'HIGH' : 'LOW'}`);
+              // Force pin 13 HIGH before starting to ensure immediate LED feedback
+              if (emulatorRef.current.setDigitalInput) {
+                // First set 13 HIGH to show immediate feedback
+                emulatorRef.current.setDigitalInput('13', true);
+                onLogMessage?.('[HERO Board] Built-in LED is now ON');
+                
+                // Let this propagate
+                setTimeout(() => {
+                  // Start the emulator (which will start the blink cycle)
+                  emulatorRef.current.start();
+                  
+                  // Update state
+                  setIsActive(true);
+                  
+                  // Log success
+                  onLogMessage?.('Arduino program is now running');
+                  console.log('Emulation started successfully');
+                }, 100);
+              } else {
+                // Fallback if setDigitalInput isn't available
+                emulatorRef.current.start();
+                setIsActive(true);
+                onLogMessage?.('Arduino program is now running');
+              }
             } else {
               throw new Error('Emulator does not support start function');
             }
