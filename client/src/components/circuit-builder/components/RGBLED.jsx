@@ -85,6 +85,8 @@ const RGBLED = ({
   const [isDragged, setIsDragged] = useState(false);
   const [posTop, setPosTop] = useState(initialY);
   const [posLeft, setPosLeft] = useState(initialX);
+  const [initPosTop, setInitPosTop] = useState(initialY);
+  const [initPosLeft, setInitPosLeft] = useState(initialX);
 
   // Create a component data structure that matches what the original code expects
   const componentData = {
@@ -296,19 +298,6 @@ const RGBLED = ({
     }
   }, [ledRed, ledGreen, ledBlue, redOn, greenOn, blueOn, isSimulationRunning, id, commonPin]);
 
-  // Calculate RGB glow color for displaying the current LED state
-  const rgbColor = `rgb(
-    ${redOn ? (commonPin === 'anode' ? 255 - Math.round(ledRed * 255) : Math.round(ledRed * 255)) : 0}, 
-    ${greenOn ? (commonPin === 'anode' ? 255 - Math.round(ledGreen * 255) : Math.round(ledGreen * 255)) : 0}, 
-    ${blueOn ? (commonPin === 'anode' ? 255 - Math.round(ledBlue * 255) : Math.round(ledBlue * 255)) : 0}
-  )`;
-
-  // Generate glowing effect CSS
-  const rgbGlowStyle = {
-    filter: (redOn || greenOn || blueOn) ? `drop-shadow(0 0 6px ${rgbColor})` : 'none',
-    transition: 'filter 0.3s'
-  };
-
   return (
     <>
       {isSelected && (
@@ -327,36 +316,26 @@ const RGBLED = ({
         ></Moveable>
       )}
       
-      <div 
-        className="relative"
-        style={{
-          transform: `translate(${posLeft}px, ${posTop}px)`,
-          transition: 'transform 0.1s',
-          zIndex: isDragged ? 99999 : 10
-        }}
-      >
-        {/* Debug info when selected */}
+      <div className="relative">
+        {/* Add debug info when selected */}
         {isSelected && isSimulationRunning && (
           <div 
             className="absolute bg-black bg-opacity-70 text-white text-xs p-1 rounded"
             style={{ 
-              top: -40, 
-              left: 0, 
+              top: posTop - 40, 
+              left: posLeft, 
               zIndex: 1000 
             }}
           >
-            R:{Math.round(ledRed * 255)} G:{Math.round(ledGreen * 255)} B:{Math.round(ledBlue * 255)}
-            <br/>
-            Mode: {commonPin === 'anode' ? 'Common Anode' : 'Common Cathode'}
+            Raw: [R:{redRaw} G:{greenRaw} B:{blueRaw}]
           </div>
         )}
         
-        {/* RGB LED component with glow effect directly on the element */}
         <ReactRGBLEDComponent
           id={id}
-          className="min-w-min cursor-pointer"
+          className="min-w-min cursor-pointer absolute"
           ref={targetRef}
-          isActive={isSelected} // Only show active state when selected
+          isActive={false} // Explicitly set to false to remove blue outline
           isDragged={isDragged}
           onPinClicked={handlePinClicked}
           onPininfoChange={(e) => onPinInfoChange(e)}
@@ -366,7 +345,8 @@ const RGBLED = ({
             if (onSelect) onSelect(id);
           }}
           style={{
-            ...rgbGlowStyle,
+            transform: `translate(${initPosLeft}px, ${initPosTop}px)`,
+            zIndex: isDragged ? 99999 : 10,
             outline: isSelected ? '1px solid #3b82f6' : 'none' // Apply a single outline when selected
           }}
           ledRed={ledRed}
@@ -375,33 +355,76 @@ const RGBLED = ({
           controlPin={commonPin}
         />
         
-        {/* Debug color indicators below component - only visible when selected */}
-        {isSelected && isSimulationRunning && (
-          <div className="absolute" style={{ bottom: '-20px', left: '0px', display: 'flex', gap: '2px' }}>
-            <div 
-              className="rounded-full w-2 h-2" 
-              style={{ 
-                backgroundColor: redOn ? 'red' : 'darkred',
-                opacity: redOn ? 1 : 0.3,
-                zIndex: 200
-              }}
-            />
-            <div 
-              className="rounded-full w-2 h-2" 
-              style={{ 
-                backgroundColor: greenOn ? 'lime' : 'darkgreen',
-                opacity: greenOn ? 1 : 0.3, 
-                zIndex: 200
-              }}
-            />
-            <div 
-              className="rounded-full w-2 h-2" 
-              style={{ 
-                backgroundColor: blueOn ? 'blue' : 'darkblue',
-                opacity: blueOn ? 1 : 0.3, 
-                zIndex: 200
-              }}
-            />
+        {/* Simulation state indicators and unified glow effect */}
+        {isSimulationRunning && (
+          <div className="absolute" style={{ transform: `translate(${posLeft}px, ${posTop}px)` }}>
+            {/* Debug values */}
+            {isSelected && (
+              <div 
+                className="absolute bg-black bg-opacity-75 text-white text-xs p-1 rounded"
+                style={{
+                  top: '-40px',
+                  left: '0px',
+                  zIndex: 200
+                }}
+              >
+                R:{Math.round(ledRed * 255)} G:{Math.round(ledGreen * 255)} B:{Math.round(ledBlue * 255)}
+                <br/>
+                Mode: {commonPin === 'anode' ? 'Common Anode' : 'Common Cathode'}
+              </div>
+            )}
+            
+            {/* Unified RGB glow effect - properly positioned */}
+            {(redOn || greenOn || blueOn) && (
+              <div 
+                className="absolute rounded-full w-8 h-8 opacity-50"
+                style={{
+                  backgroundColor: `rgb(
+                    ${redOn ? (commonPin === 'anode' ? 255 - Math.round(ledRed * 255) : Math.round(ledRed * 255)) : 0}, 
+                    ${greenOn ? (commonPin === 'anode' ? 255 - Math.round(ledGreen * 255) : Math.round(ledGreen * 255)) : 0}, 
+                    ${blueOn ? (commonPin === 'anode' ? 255 - Math.round(ledBlue * 255) : Math.round(ledBlue * 255)) : 0}
+                  )`,
+                  top: '6px',
+                  left: '6px',
+                  boxShadow: `0 0 10px 4px rgb(
+                    ${redOn ? (commonPin === 'anode' ? 255 - Math.round(ledRed * 255) : Math.round(ledRed * 255)) : 0}, 
+                    ${greenOn ? (commonPin === 'anode' ? 255 - Math.round(ledGreen * 255) : Math.round(ledGreen * 255)) : 0}, 
+                    ${blueOn ? (commonPin === 'anode' ? 255 - Math.round(ledBlue * 255) : Math.round(ledBlue * 255)) : 0}
+                  )`,
+                  filter: 'blur(3px)',
+                  animation: 'pulse 1.2s infinite alternate',
+                  zIndex: 99
+                }}
+              />
+            )}
+            
+            {/* Individual color indicators for debugging */}
+            <div className="absolute" style={{ bottom: '-25px', left: '0px', display: 'flex', gap: '2px' }}>
+              <div 
+                className="rounded-full w-2 h-2" 
+                style={{ 
+                  backgroundColor: redOn ? 'red' : 'darkred',
+                  opacity: redOn ? 1 : 0.3,
+                  zIndex: 200
+                }}
+              />
+              <div 
+                className="rounded-full w-2 h-2" 
+                style={{ 
+                  backgroundColor: greenOn ? 'lime' : 'darkgreen',
+                  opacity: greenOn ? 1 : 0.3, 
+                  zIndex: 200
+                }}
+              />
+              <div 
+                className="rounded-full w-2 h-2" 
+                style={{ 
+                  backgroundColor: blueOn ? 'blue' : 'darkblue',
+                  opacity: blueOn ? 1 : 0.3, 
+                  zIndex: 200
+                }}
+              />
+            </div>
           </div>
         )}
       </div>
