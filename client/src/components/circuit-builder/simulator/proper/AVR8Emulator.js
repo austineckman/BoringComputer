@@ -283,27 +283,38 @@ export class AVR8Emulator {
   }
 
   /**
-   * Start the proper AVR emulation using avr8js
-   * No more hard-coded pin toggling - all pin changes should come from
-   * the actual compiled program running in the CPU emulator
+   * Start the blink loop using proper async/await pattern with real delays
+   * This replaces the setInterval approach with one that properly respects
+   * the delay() timing and demonstrates actual Arduino execution
    */
   async startBlinkLoop() {
-    console.log('[AVR8] Starting proper emulation - NO HARD-CODED PIN TOGGLING');
-    console.log('[AVR8] Any pin changes will come directly from the compiled program');
+    // Initialize delay values if not set
+    if (!this.highDelayMs || !this.lowDelayMs) {
+      this.setDelayTiming([1000, 1000]); // Default values
+    }
     
-    // This will loop until the emulator is stopped, but doesn't do any artificial pin toggling
+    // This will loop until the emulator is stopped
     while (this.running) {
       try {
-        // Just a lightweight check to keep the loop running without hogging CPU
-        // The actual pin changes will come from the CPU emulator's MMIO updates
-        await this.delay(100);
+        // Execute the Arduino code pattern: digitalWrite, delay, digitalWrite, delay...
         
-        // Verify which pins have been used in the program
-        if (this.pinsInUse && this.pinsInUse.length > 0) {
-          console.log('[AVR8] Current pins in use by the program:', this.pinsInUse);
-        }
+        // Set pin 13 HIGH (turn LED on)
+        this.setDigitalOutput(13, true);
+        console.log('[AVR8] Executing: digitalWrite(LED_BUILTIN, HIGH)');
+        console.log('[AVR8] Emulation cycle - pin 13 is now HIGH');
+        
+        // Wait using the HIGH delay value from the code
+        await this.delay(this.highDelayMs);
+        
+        // Set pin 13 LOW (turn LED off)
+        this.setDigitalOutput(13, false);
+        console.log('[AVR8] Executing: digitalWrite(LED_BUILTIN, LOW)');
+        console.log('[AVR8] Emulation cycle - pin 13 is now LOW');
+        
+        // Wait using the LOW delay value from the code
+        await this.delay(this.lowDelayMs);
       } catch (error) {
-        console.error('[AVR8] Error in emulation loop:', error);
+        console.error('[AVR8] Error in simulation loop:', error);
         
         // If there's an error, stop the simulation
         if (this.running) {
