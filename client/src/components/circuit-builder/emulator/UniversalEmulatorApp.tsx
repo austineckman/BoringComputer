@@ -76,6 +76,9 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
   // State for serial output
   const [serialOutput, setSerialOutput] = useState('');
   
+  // Debug state to track pin changes from the emulator
+  const [debugPins, setDebugPins] = useState<Record<string, boolean>>({});
+  
   // State for zoom level (1 = 100%)
   const [zoom, setZoom] = useState(1);
   
@@ -96,7 +99,26 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
   
   // Handle pin change events from the emulator
   const handlePinChange = useCallback((pin: string | number, isHigh: boolean, options?: any) => {
-    addLog(`Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+    const pinStr = pin.toString();
+    addLog(`Pin ${pinStr} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+    
+    // Update our debug pins state
+    setDebugPins(prev => ({
+      ...prev,
+      [pinStr]: isHigh
+    }));
+    
+    // For pin 13 (built-in LED), provide special debug info
+    if (pinStr === '13') {
+      console.log(`🔌 HERO Board LED (Pin 13) changed to ${isHigh ? 'ON' : 'OFF'}`);
+      addLog(`📌 Built-in LED on pin 13 is now ${isHigh ? 'ON' : 'OFF'}`);
+    }
+    
+    // For any analog values, show them too
+    if (options && options.analogValue !== undefined) {
+      console.log(`🔌 Pin ${pinStr} analog value: ${options.analogValue}`);
+      addLog(`📊 Pin ${pinStr} analog value: ${options.analogValue}`);
+    }
     
     // Update component states based on pin changes
     // For example, turning on/off LEDs connected to specific pins
@@ -321,6 +343,19 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
                   {log}
                 </div>
               ))}
+              
+              {/* Debug Pin States */}
+              {Object.keys(debugPins).length > 0 && (
+                <div className="mt-4 p-2 bg-gray-800 rounded border border-gray-700">
+                  <div className="font-bold mb-1 text-white">Active Pin States:</div>
+                  {Object.entries(debugPins).map(([pin, isHigh]) => (
+                    <div key={pin} className={`flex items-center mb-1 ${isHigh ? 'text-green-400' : 'text-red-400'}`}>
+                      <div className={`w-3 h-3 rounded-full mr-2 ${isHigh ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                      Pin {pin}: {isHigh ? 'HIGH' : 'LOW'}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           
