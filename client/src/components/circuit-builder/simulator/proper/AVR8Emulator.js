@@ -513,9 +513,8 @@ export class AVR8Emulator {
    * @param {boolean} value - true for HIGH, false for LOW
    */
   setDigitalInput(pin, value) {
-    // In a real implementation, this would actually set the input on the AVR port
-    // For our simplified version, we'll just log it
-    console.log(`[AVR8] Digital input on pin ${pin}: ${value ? 'HIGH' : 'LOW'}`);
+    // Update via the core emulator
+    this.core.setDigitalInput(pin, value);
   }
   
   /**
@@ -524,21 +523,7 @@ export class AVR8Emulator {
    * @param {number} value - Value between 0-1023 (10-bit ADC value)
    */
   setAnalogInput(pin, value) {
-    if (!ANALOG_PINS.includes(pin)) {
-      return; // Not an analog pin
-    }
-    
-    // Clamp value to 0-1023 range
-    const analogValue = Math.max(0, Math.min(1023, value));
-    
-    // Update analog value
-    this.analogValues[pin] = analogValue;
-    
-    // Update digital state (HIGH if value > 512)
-    const digitalValue = analogValue > 512;
-    this.pinStates[pin] = digitalValue;
-    
-    // In a real implementation, this would feed into the ADC
-    console.log(`[AVR8] Analog input on pin ${pin}: ${analogValue}`);
+    // Update via the core emulator
+    this.core.setAnalogInput(pin, value);
   }
 }
