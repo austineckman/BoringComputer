@@ -125,8 +125,7 @@ const RetroDesktop: React.FC = () => {
       { id: "circuitbuilder", name: "Sandbox", icon: "circuitbuilder", position: { x: 140, y: 220 } },
       { id: "discord", name: "Discord", icon: "discord", position: { x: 140, y: 320 } },
       
-      // Third column - add Universal Emulator icon
-      { id: "universal-emulator", name: "Universal Emulator", icon: "emulator", position: { x: 260, y: 20 } },
+      // Third column - Universal Emulator icon removed
     ];
     
     // Only add Oracle icon for admin users
@@ -537,11 +536,6 @@ const RetroDesktop: React.FC = () => {
       // Open the HackLock app if it's currently closed
       if (lockpickingAppState === 'closed') {
         setLockpickingAppState('open');
-      }
-    } else if (iconId === "universal-emulator") {
-      // Open the Universal Emulator app if it's currently closed
-      if (universalEmulatorState === 'closed') {
-        setUniversalEmulatorState('open');
       }
     } else if (iconId === "discord") {
       // Open Discord link in a new tab
