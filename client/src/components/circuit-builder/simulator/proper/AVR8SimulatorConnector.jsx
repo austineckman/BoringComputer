@@ -3,6 +3,24 @@ import { AVR8Emulator } from './AVR8Emulator';
 import { compileArduino } from './ArduinoCompilerService';
 
 /**
+ * Parse delay values from the Arduino code
+ * @param {string} code - The Arduino code to parse
+ * @returns {number[]} - Array of delay values in milliseconds
+ */
+function parseDelaysFromCode(code) {
+  const delays = [];
+  const delayRegex = /delay\s*\(\s*(\d+)\s*\)/g;
+  
+  let match;
+  while ((match = delayRegex.exec(code)) !== null) {
+    const delayMs = parseInt(match[1], 10);
+    delays.push(delayMs);
+  }
+  
+  return delays;
+}
+
+/**
  * AVR8SimulatorConnector
  * 
  * This component connects the AVR8Emulator to React components.
@@ -157,6 +175,17 @@ const AVR8SimulatorConnector = ({
                     status: 'ready',
                     message: 'Compilation successful'
                   });
+                }
+                
+                // Parse the delay values from Arduino code
+                const delayValues = parseDelaysFromCode(codeRef.current);
+                if (delayValues.length > 0) {
+                  logInfo(`Found delay values in code: ${delayValues.join(', ')} ms`);
+                  
+                  // Set the delay values in the emulator for accurate timing
+                  emulatorRef.current.setDelayTiming(delayValues);
+                } else {
+                  logInfo('No delay values found in code. Using default delay timing.');
                 }
                 
                 // Start the emulator with ONLY the compiled code (no userProgram)
