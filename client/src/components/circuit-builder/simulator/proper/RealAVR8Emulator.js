@@ -111,9 +111,31 @@ export class RealAVR8Emulator {
       this.analogValues[pin] = options.analogValue;
     }
     
+    // Always log pin changes regardless of notification
+    this.log(`📌 Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}${options.analogValue !== undefined ? ` (analog: ${options.analogValue})` : ''}`);
+    
+    // Add special logs for important pins
+    if (pin === 13) {
+      this.log(`💡 Built-in LED on pin ${pin} is now ${isHigh ? 'ON' : 'OFF'}`);
+    }
+    
     // Notify the circuit simulator
     if (this.onPinChange) {
+      // First try with a direct call
       this.onPinChange(pin, isHigh, options);
+      
+      // Also dispatch a custom event for any listeners
+      if (typeof window !== 'undefined') {
+        try {
+          const event = new CustomEvent('emulator-pin-change', {
+            detail: { pin, isHigh, options }
+          });
+          window.dispatchEvent(event);
+          console.log(`📡 Dispatched pin change event for pin ${pin}`);
+        } catch (error) {
+          console.error('Failed to dispatch custom event:', error);
+        }
+      }
     }
   }
   

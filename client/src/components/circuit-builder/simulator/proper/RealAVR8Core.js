@@ -341,44 +341,90 @@ export class RealAVR8Core {
   
   /**
    * Simulate test pin changes for debugging purposes
-   * This will be removed when the real emulator is fully working
+   * This function FORCES pin changes for development testing
    */
   simulateTestPinChanges() {
-    if (!this._lastLedToggleTime) {
-      this._lastLedToggleTime = Date.now();
-    }
-    
+    // Current time reference
     const currentTime = Date.now();
     
-    // Simulate built-in LED on pin 13 (every 1 second)
+    // Initialize last toggle time if not set
+    if (!this._lastLedToggleTime) {
+      this._lastLedToggleTime = currentTime;
+      this._lastPinToggles = {};
+      this._testMode = true; // Enable test mode for development
+      
+      // Log that we're in test mode
+      this.log('🧪 TEST MODE ENABLED - Forcing pin changes for debugging');
+    }
+    
+    // FORCE VISIBLE PIN CHANGES - Toggle pin 13 (built-in LED) every 1 second
     if (currentTime - this._lastLedToggleTime > 1000) {
       this._lastLedToggleTime = currentTime;
       
-      // Toggle pin 13 (built-in LED)
+      // Toggle LED state
       const pin13Value = !this.pinStates[13];
+      
+      // Directly set the pin state and notify
       this.pinStates[13] = pin13Value;
       
-      // Notify about the pin change
-      this.notifyPinChange(13, pin13Value, { 
-        source: 'simulation',
-        message: 'LED toggled for testing' 
-      });
+      // EXPLICITLY notify about the change with debug info
+      this.log(`💡 FORCE TEST: Pin 13 (LED) set to ${pin13Value ? 'HIGH/ON' : 'LOW/OFF'}`);
       
-      this.log(`💡 TEST: Built-in LED toggled to ${pin13Value ? 'ON' : 'OFF'}`);
-    }
-    
-    // Simulate PWM on pin 9 (every frame, varying value)
-    const pwmValue = Math.floor(Math.sin(currentTime / 1000) * 127 + 127); // 0-255 range
-    this.analogValues[9] = pwmValue;
-    
-    // Only notify occasionally to avoid overwhelming the UI
-    if (currentTime % 100 < 10) { // Only notify about 10% of the time
-      this.notifyPinChange(9, true, { 
-        analogValue: pwmValue,
-        source: 'simulation',
-        message: 'PWM simulation' 
+      // Call notification with extra debug info
+      this.notifyPinChange(13, pin13Value, { 
+        source: 'TEST_SIMULATION',
+        forced: true,
+        timestamp: currentTime
       });
     }
+    
+    // Toggle a few more pins for testing
+    [2, 4, 6, 8].forEach(pin => {
+      if (!this._lastPinToggles[pin]) {
+        this._lastPinToggles[pin] = currentTime;
+      }
+      
+      // Stagger pin toggles (different intervals for each pin)
+      const interval = 500 + (pin * 100); // Different timing for each pin
+      
+      if (currentTime - this._lastPinToggles[pin] > interval) {
+        this._lastPinToggles[pin] = currentTime;
+        
+        // Toggle the pin
+        const pinValue = !this.pinStates[pin];
+        this.pinStates[pin] = pinValue;
+        
+        // Notify with extra debug info
+        this.log(`📌 FORCE TEST: Pin ${pin} set to ${pinValue ? 'HIGH' : 'LOW'}`);
+        this.notifyPinChange(pin, pinValue, {
+          source: 'TEST_SIMULATION',
+          forced: true,
+          timestamp: currentTime
+        });
+      }
+    });
+    
+    // FORCE PWM values on analog pins for testing
+    const pins = [3, 5, 9, 10, 11];
+    pins.forEach((pin, index) => {
+      // Generate different patterns for each pin
+      const phase = index * 0.5;
+      const pwmValue = Math.floor(Math.sin((currentTime / 1000) + phase) * 127 + 127);
+      
+      // Update the analog value
+      this.analogValues[pin] = pwmValue;
+      
+      // Only notify occasionally to avoid overwhelming the UI
+      if (currentTime % 300 < 20) {
+        this.log(`📊 FORCE TEST: Pin ${pin} PWM set to ${pwmValue}`);
+        this.notifyPinChange(pin, true, {
+          source: 'TEST_SIMULATION',
+          analogValue: pwmValue,
+          forced: true,
+          timestamp: currentTime
+        });
+      }
+    });
   }
   
   /**
