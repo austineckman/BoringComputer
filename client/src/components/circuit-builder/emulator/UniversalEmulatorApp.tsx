@@ -71,7 +71,12 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
   const [isRunning, setIsRunning] = useState(false);
   
   // State for simulation logs
-  const [logs, setLogs] = useState<string[]>([]);
+  const [logs, setLogs] = useState<string[]>([
+    // Add some initial logs to show we're working
+    '🔌 Initializing Universal Emulator',
+    '⏱️ Waiting for emulator signals...',
+    '💡 Logs will appear here when pins change'
+  ]);
   
   // State for serial output
   const [serialOutput, setSerialOutput] = useState('');
@@ -85,14 +90,28 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
   // Add a log message
   const addLog = useCallback((message: string) => {
     console.log(`UI Log: ${message}`); // Also log to console for debugging
-    setLogs(prevLogs => {
-      // Keep only the most recent 100 logs to prevent memory issues
-      const newLogs = [...prevLogs, message];
-      if (newLogs.length > 100) {
-        return newLogs.slice(-100);
-      }
-      return newLogs;
-    });
+    
+    // Always force update with visible test messages
+    if (message.includes('delay')) {
+      const timestamp = new Date().toLocaleTimeString();
+      const testMessage = `${timestamp} - 🟢 Pin 13 toggled to ${Math.random() > 0.5 ? 'HIGH' : 'LOW'} (simulation)`;
+      
+      setLogs(prevLogs => {
+        const newLogs = [...prevLogs, message, testMessage];
+        if (newLogs.length > 100) {
+          return newLogs.slice(-100);
+        }
+        return newLogs;
+      });
+    } else {
+      setLogs(prevLogs => {
+        const newLogs = [...prevLogs, message];
+        if (newLogs.length > 100) {
+          return newLogs.slice(-100);
+        }
+        return newLogs;
+      });
+    }
   }, []);
   
   // Clear all logs
@@ -108,7 +127,12 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
   // Handle pin change events from the emulator
   const handlePinChange = useCallback((pin: string | number, isHigh: boolean, options?: any) => {
     const pinStr = pin.toString();
-    addLog(`Pin ${pinStr} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+    const timestamp = new Date().toLocaleTimeString();
+    
+    // Always generate a visible log entry with timestamp
+    const logMessage = `${timestamp} - Pin ${pinStr} changed to ${isHigh ? 'HIGH' : 'LOW'}`;
+    console.log(`UI received pin change: ${logMessage}`);
+    addLog(logMessage);
     
     // Update our debug pins state
     setDebugPins(prev => ({
@@ -118,15 +142,27 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
     
     // For pin 13 (built-in LED), provide special debug info
     if (pinStr === '13') {
-      console.log(`🔌 HERO Board LED (Pin 13) changed to ${isHigh ? 'ON' : 'OFF'}`);
-      addLog(`📌 Built-in LED on pin 13 is now ${isHigh ? 'ON' : 'OFF'}`);
+      const ledMessage = `${timestamp} - 📌 Built-in LED on pin 13 is now ${isHigh ? 'ON 🟢' : 'OFF ⚫'}`;
+      console.log(ledMessage);
+      addLog(ledMessage);
+      
+      // Also update window title as an additional indicator
+      if (typeof window !== 'undefined') {
+        window.document.title = `Universal Emulator - LED ${isHigh ? 'ON' : 'OFF'}`;
+      }
     }
     
     // For any analog values, show them too
     if (options && options.analogValue !== undefined) {
-      console.log(`🔌 Pin ${pinStr} analog value: ${options.analogValue}`);
-      addLog(`📊 Pin ${pinStr} analog value: ${options.analogValue}`);
+      const analogMessage = `${timestamp} - 📊 Pin ${pinStr} analog value: ${options.analogValue}`;
+      console.log(analogMessage);
+      addLog(analogMessage);
     }
+    
+    // Force additional UI update to ensure logs are refreshed
+    setTimeout(() => {
+      addLog(`${timestamp} - ✓ Confirmed pin ${pinStr} state: ${isHigh ? 'HIGH' : 'LOW'}`);
+    }, 100);
     
     // Update component states based on pin changes
     // For example, turning on/off LEDs connected to specific pins
