@@ -388,6 +388,9 @@ export class RealAVR8Core {
    * @param {Object} options - Additional options (like analogValue)
    */
   notifyPinChange(pin, isHigh, options = {}) {
+    // Log the pin change
+    this.log(`Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}${options.analogValue ? ` (analog: ${options.analogValue})` : ''}`);
+    
     // Update our internal pin state tracking
     this.pinStates[pin] = isHigh;
     
@@ -396,9 +399,22 @@ export class RealAVR8Core {
       this.analogValues[pin] = options.analogValue;
     }
     
-    // Call the onPinChange callback if defined
+    // Call the internal onPinChange callback if defined
     if (this.onPinChange) {
       this.onPinChange(pin, isHigh, options);
+    }
+    
+    // Also call the external callback through options for compatibility
+    if (this.options && this.options.onPinChange) {
+      this.options.onPinChange(pin, isHigh, options);
+    }
+    
+    // Dispatch a custom event for components to listen to
+    if (typeof window !== 'undefined') {
+      const event = new CustomEvent('avr8-pin-change', { 
+        detail: { pin, isHigh, options, source: 'emulator' }
+      });
+      window.dispatchEvent(event);
     }
   }
   
@@ -515,23 +531,7 @@ export class RealAVR8Core {
     return null;
   }
   
-  /**
-   * Notify about a pin change
-   * @param {number|string} pin - The Arduino pin number
-   * @param {boolean} isHigh - Whether the pin is HIGH
-   * @param {Object} options - Additional options (like analogValue)
-   */
-  notifyPinChange(pin, isHigh, options = {}) {
-    // Internal callback
-    if (this.onPinChange) {
-      this.onPinChange(pin, isHigh, options);
-    }
-    
-    // External callback through options
-    if (this.options && this.options.onPinChange) {
-      this.options.onPinChange(pin, isHigh, options);
-    }
-  }
+  // Removed duplicate notifyPinChange - using implementation above
   
   /**
    * Stop the emulator
