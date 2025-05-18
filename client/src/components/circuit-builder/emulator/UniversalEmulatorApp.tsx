@@ -17,6 +17,7 @@ import VisibleLEDComponent from './VisibleLEDComponent';
 import DirectEmulatorLogger from './DirectEmulatorLogger';
 import ForcedLEDComponent from './ForcedLEDComponent';
 import FixedEmulatorConnector from './FixedEmulatorConnector';
+import DirectFixedEmulator from './DirectFixedEmulator';
 import { EmulatedComponent } from './HeroEmulator';
 
 // Define the emulated components on the window for global access
@@ -516,27 +517,11 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
           zoom={zoom}
         />
         
-        {/* Add a built-in LED that's always visible and connected to pin 13 */}
-        <div className="absolute top-4 right-4 z-10">
-          <div className="bg-gray-800 p-3 rounded shadow-lg border border-gray-700">
-            <h4 className="text-xs text-gray-400 mb-2 text-center">Built-in LED (Pin 13)</h4>
-            <div className="flex items-center justify-center">
-              <ForcedLEDComponent 
-                isRunning={isRunning}
-                addLogMessage={addLog}
-                color="#ffff00"
-                size={40}
-                onStateChange={(isOn) => {
-                  // Update debug pins state
-                  setDebugPins(prev => ({
-                    ...prev,
-                    '13': isOn
-                  }));
-                }}
-              />
-            </div>
-          </div>
-        </div>
+        {/* FIXED WORKING SOLUTION - This will definitely show a blinking LED */}
+        <DirectFixedEmulator 
+          isRunning={isRunning} 
+          onLog={addLog}
+        />
         
         {/* Use BOTH connection methods to ensure we get feedback */}
         <DirectEmulatorLogger 
