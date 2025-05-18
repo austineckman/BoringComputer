@@ -1,0 +1,236 @@
+/**
+ * AVR8Core.ts - Core AVR8 microcontroller emulation
+ * 
+ * This provides direct hardware emulation of an AVR microcontroller
+ * using avr8js library.
+ */
+
+import {
+  CPU,
+  AVRIOPort,
+  portBConfig,
+  portCConfig,
+  portDConfig,
+  PinState,
+  AVRTimer,
+  timer0Config
+} from 'avr8js';
+
+export interface IAVR8Core {
+  /**
+   * Initialize the emulator with compiled program bytes
+   */
+  loadProgram(program: Uint16Array): void;
+  
+  /**
+   * Run the AVR emulation for the specified number of cycles
+   */
+  execute(cycles: number): void;
+  
+  /**
+   * Register a callback for when pin state changes
+   */
+  onPinChange(port: string, pin: number, callback: (state: boolean) => void): void;
+  
+  /**
+   * Register a callback for when serial data is available
+   */
+  onSerialData(callback: (data: number) => void): void;
+  
+  /**
+   * Get the current state of all pins
+   */
+  getPinStates(): {[portPin: string]: boolean};
+  
+  /**
+   * Stop the emulation
+   */
+  stop(): void;
+}
+
+// 16 MHz clock frequency (16 million cycles per second)
+const CLOCK_FREQUENCY = 16000000;
+
+/**
+ * Core AVR8 emulator implementation
+ */
+export class AVR8Core implements IAVR8Core {
+  private cpu: CPU;
+  private portB: AVRIOPort;
+  private portC: AVRIOPort;
+  private portD: AVRIOPort;
+  private timer0: AVRTimer;
+  private pinStateCallbacks: {[portPin: string]: ((state: boolean) => void)[]} = {};
+  private serialCallback: ((data: number) => void) | null = null;
+  private pinStates: {[portPin: string]: boolean} = {};
+  private clockFrequency: number;
+  
+  constructor(clockFrequency: number = CLOCK_FREQUENCY) {
+    this.clockFrequency = clockFrequency;
+    // Create the CPU
+    this.cpu = new CPU(new Uint16Array(0x8000));
+    
+    // Create IO ports
+    this.portB = new AVRIOPort(this.cpu, portBConfig);
+    this.portC = new AVRIOPort(this.cpu, portCConfig);
+    this.portD = new AVRIOPort(this.cpu, portDConfig);
+    
+    // Create timers
+    this.timer0 = new AVRTimer(this.cpu, timer0Config);
+    
+    // Initialize pin states
+    this.initializePinStates();
+    
+    // Set up pin change listeners for all ports
+    this.setupPinChangeListeners();
+  }
+  
+  /**
+   * Initialize all pin states to LOW
+   */
+  private initializePinStates(): void {
+    // Set all pins to LOW initially
+    for (let port of ['B', 'C', 'D']) {
+      for (let pin = 0; pin < 8; pin++) {
+        const pinKey = `${port}${pin}`;
+        this.pinStates[pinKey] = false;
+      }
+    }
+  }
+  
+  /**
+   * Set up pin change listeners for all ports
+   */
+  private setupPinChangeListeners(): void {
+    // Monitor port B pins
+    this.portB.addListener((portState) => {
+      for (let pin = 0; pin < 8; pin++) {
+        this.handlePinChange('B', pin, portState.pins[pin] === PinState.High);
+      }
+    });
+    
+    // Monitor port C pins
+    this.portC.addListener((portState) => {
+      for (let pin = 0; pin < 8; pin++) {
+        this.handlePinChange('C', pin, portState.pins[pin] === PinState.High);
+      }
+    });
+    
+    // Monitor port D pins
+    this.portD.addListener((portState) => {
+      for (let pin = 0; pin < 8; pin++) {
+        this.handlePinChange('D', pin, portState.pins[pin] === PinState.High);
+      }
+    });
+  }
+  
+  /**
+   * Handle a pin state change
+   */
+  private handlePinChange(port: string, pin: number, isHigh: boolean): void {
+    const pinKey = `${port}${pin}`;
+    
+    // Only proceed if the state has actually changed
+    if (this.pinStates[pinKey] !== isHigh) {
+      // Update our stored pin state
+      this.pinStates[pinKey] = isHigh;
+      
+      // Call any registered callbacks for this pin
+      if (this.pinStateCallbacks[pinKey]) {
+        for (const callback of this.pinStateCallbacks[pinKey]) {
+          callback(isHigh);
+        }
+      }
+      
+      // Log pin change
+      console.log(`[AVR8Core] Pin ${port}${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+    }
+  }
+  
+  /**
+   * Load compiled program bytes into the emulator
+   */
+  public loadProgram(program: Uint16Array): void {
+    // Reset the CPU and load the program
+    this.cpu.reset();
+    this.cpu.loadProgram(program);
+    console.log(`[AVR8Core] Program loaded (${program.length} words)`);
+  }
+  
+  /**
+   * Execute a certain number of CPU cycles
+   */
+  public execute(cycles: number): void {
+    // Run the CPU for the specified number of cycles
+    this.cpu.execute(cycles);
+  }
+  
+  /**
+   * Register a callback for pin state changes
+   */
+  public onPinChange(port: string, pin: number, callback: (state: boolean) => void): void {
+    const pinKey = `${port}${pin}`;
+    
+    // Initialize the array if it doesn't exist
+    if (!this.pinStateCallbacks[pinKey]) {
+      this.pinStateCallbacks[pinKey] = [];
+    }
+    
+    // Add the callback
+    this.pinStateCallbacks[pinKey].push(callback);
+  }
+  
+  /**
+   * Register a callback for serial data
+   */
+  public onSerialData(callback: (data: number) => void): void {
+    this.serialCallback = callback;
+  }
+  
+  /**
+   * Get the current state of all pins
+   */
+  public getPinStates(): {[portPin: string]: boolean} {
+    return { ...this.pinStates };
+  }
+  
+  /**
+   * Stop the emulation
+   */
+  public stop(): void {
+    // Clear our pin state callbacks
+    this.pinStateCallbacks = {};
+    this.serialCallback = null;
+  }
+  
+  /**
+   * Map Arduino pin number to AVR port and pin
+   */
+  public static mapArduinoPin(pin: number): { port: string, pin: number } | null {
+    // Map Arduino pin numbers to ATmega328P ports and pins
+    const pinMap: {[pin: number]: { port: string, pin: number }} = {
+      0: { port: 'D', pin: 0 },  // RXD
+      1: { port: 'D', pin: 1 },  // TXD
+      2: { port: 'D', pin: 2 },  // INT0
+      3: { port: 'D', pin: 3 },  // INT1/PWM
+      4: { port: 'D', pin: 4 },
+      5: { port: 'D', pin: 5 },  // PWM
+      6: { port: 'D', pin: 6 },  // PWM
+      7: { port: 'D', pin: 7 },
+      8: { port: 'B', pin: 0 },
+      9: { port: 'B', pin: 1 },  // PWM
+      10: { port: 'B', pin: 2 }, // PWM/SS
+      11: { port: 'B', pin: 3 }, // PWM/MOSI
+      12: { port: 'B', pin: 4 }, // MISO
+      13: { port: 'B', pin: 5 }, // SCK/LED
+      14: { port: 'C', pin: 0 }, // A0
+      15: { port: 'C', pin: 1 }, // A1
+      16: { port: 'C', pin: 2 }, // A2
+      17: { port: 'C', pin: 3 }, // A3
+      18: { port: 'C', pin: 4 }, // A4/SDA
+      19: { port: 'C', pin: 5 }, // A5/SCL
+    };
+    
+    return pinMap[pin] || null;
+  }
+}
