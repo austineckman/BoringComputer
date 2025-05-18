@@ -28,6 +28,7 @@ import AdminSettings from "@/pages/admin-settings";
 import AdminQuestGenerator from "@/pages/admin-quest-generator";
 import LootBoxPreview from "@/pages/loot-box-preview";
 import EmulatorTest from "@/pages/emulator-test";
+import CleanEmulator from "@/pages/clean-emulator";
 import NotFound from "@/pages/not-found";
 import MainLayout from "@/components/layout/MainLayout";
 import FullscreenUniversalEmulatorApp from "@/components/retro-ui/FullscreenUniversalEmulatorApp";
@@ -277,6 +278,11 @@ function App() {
         <Route
           path="/emulator-test"
           component={EmulatorTest}
+        />
+        
+        <Route
+          path="/clean-emulator"
+          component={CleanEmulator}
         />
         
         <Route>
