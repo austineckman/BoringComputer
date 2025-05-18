@@ -434,6 +434,25 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
           zoom={zoom}
         />
         
+        {/* Add a built-in LED that's always visible and connected to pin 13 */}
+        <div className="absolute top-4 right-4 z-10">
+          <div className="bg-gray-800 p-2 rounded shadow-lg border border-gray-700">
+            <h4 className="text-xs text-gray-400 mb-1">Built-in LED (Pin 13)</h4>
+            <div className="flex items-center justify-center">
+              <EmulatedLEDComponent 
+                id="built-in-led"
+                anodePin="13"
+                cathodePin="GND"
+                color="yellow"
+                size="medium"
+                onStateChange={(isOn) => {
+                  console.log(`Built-in LED state changed to ${isOn ? 'ON' : 'OFF'}`);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+        
         {/* Right sidebar - Logs and Serial Output */}
         <div className="w-64 bg-gray-900 border-l border-gray-700 overflow-hidden flex flex-col">
           {/* Pin States Panel */}
