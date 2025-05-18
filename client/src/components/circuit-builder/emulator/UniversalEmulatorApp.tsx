@@ -14,6 +14,8 @@ import { CircuitBuilder } from './CircuitBuilder';
 import RealAVR8EmulatorConnector from './RealAVR8EmulatorConnector';
 import EmulatedLEDComponent from './EmulatedLEDComponent';
 import VisibleLEDComponent from './VisibleLEDComponent';
+import DirectEmulatorLogger from './DirectEmulatorLogger';
+import ForcedLEDComponent from './ForcedLEDComponent';
 import { EmulatedComponent } from './HeroEmulator';
 
 // Define the emulated components on the window for global access
@@ -515,22 +517,16 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
         
         {/* Add a built-in LED that's always visible and connected to pin 13 */}
         <div className="absolute top-4 right-4 z-10">
-          <div className="bg-gray-800 p-2 rounded shadow-lg border border-gray-700">
-            <h4 className="text-xs text-gray-400 mb-1">Built-in LED (Pin 13)</h4>
+          <div className="bg-gray-800 p-3 rounded shadow-lg border border-gray-700">
+            <h4 className="text-xs text-gray-400 mb-2 text-center">Built-in LED (Pin 13)</h4>
             <div className="flex items-center justify-center">
-              <VisibleLEDComponent 
-                id="built-in-led"
-                color="yellow"
-                size="medium"
+              <ForcedLEDComponent 
+                isRunning={isRunning}
+                addLogMessage={addLog}
+                color="#ffff00"
+                size={40}
                 onStateChange={(isOn) => {
-                  // Log state changes to both console and simulation logs
-                  console.log(`Built-in LED state changed to ${isOn ? 'ON' : 'OFF'}`);
-                  
-                  // Update simulation logs
-                  const timestamp = new Date().toLocaleTimeString();
-                  addLog(`${timestamp} - 💡 Built-in LED is now ${isOn ? 'ON' : 'OFF'}`);
-                  
-                  // Also update our debug pins state
+                  // Update debug pins state
                   setDebugPins(prev => ({
                     ...prev,
                     '13': isOn
@@ -540,6 +536,19 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
             </div>
           </div>
         </div>
+        
+        {/* Invisible component to force LED blinking and simulation logs */}
+        <DirectEmulatorLogger 
+          addLog={addLog}
+          isRunning={isRunning}
+          onUpdatePinState={(pinId, isHigh) => {
+            // Update debug pins display
+            setDebugPins(prev => ({
+              ...prev,
+              [pinId]: isHigh
+            }));
+          }}
+        />
         
         {/* Right sidebar - Logs and Serial Output */}
         <div className="w-64 bg-gray-900 border-l border-gray-700 overflow-hidden flex flex-col">
