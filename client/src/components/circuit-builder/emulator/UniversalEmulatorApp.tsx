@@ -170,10 +170,12 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
     const pinStr = pin.toString();
     const timestamp = new Date().toLocaleTimeString();
     
-    // Always generate a visible log entry with timestamp
-    const logMessage = `${timestamp} - Pin ${pinStr} changed to ${isHigh ? 'HIGH' : 'LOW'}`;
+    // Always generate a visible log entry with timestamp and make it prominent
+    const logMessage = `${timestamp} - 📡 Pin ${pinStr} changed to ${isHigh ? 'HIGH ⚡' : 'LOW ⚪'}`;
     console.log(`UI received pin change: ${logMessage}`);
-    addLog(logMessage);
+    
+    // Add to simulation logs with priority
+    addLog(`${logMessage}`);
     
     // Update our debug pins state
     setDebugPins(prev => ({
@@ -181,11 +183,11 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
       [pinStr]: isHigh
     }));
     
-    // For pin 13 (built-in LED), provide special debug info
+    // For pin 13 (built-in LED), provide special debug info with extra visibility
     if (pinStr === '13') {
       const ledMessage = `${timestamp} - 📌 Built-in LED on pin 13 is now ${isHigh ? 'ON 🟢' : 'OFF ⚫'}`;
       console.log(ledMessage);
-      addLog(ledMessage);
+      addLog(`\n--- LED UPDATE ---\n${ledMessage}\n-----------------\n`);
       
       // Also update window title as an additional indicator
       if (typeof window !== 'undefined') {
@@ -200,13 +202,38 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
       addLog(analogMessage);
     }
     
-    // Force additional UI update to ensure logs are refreshed
-    setTimeout(() => {
-      addLog(`${timestamp} - ✓ Confirmed pin ${pinStr} state: ${isHigh ? 'HIGH' : 'LOW'}`);
-    }, 100);
-    
     // Update component states based on pin changes
     // For example, turning on/off LEDs connected to specific pins
+  }, [addLog]);
+  
+  // Listen for simulation events from the emulator
+  useEffect(() => {
+    // Add event listeners for pin changes and other emulator events
+    const handlePinStateEvent = (event: any) => {
+      const { pin, isHigh, timestamp } = event.detail;
+      const message = `${timestamp || new Date().toLocaleTimeString()} - EVENT: Pin ${pin} = ${isHigh ? 'HIGH' : 'LOW'}`;
+      console.log('Pin state event received:', message);
+      addLog(message);
+      
+      // Also update our debug pins
+      setDebugPins(prev => ({
+        ...prev,
+        [pin.toString()]: isHigh
+      }));
+    };
+    
+    // Add listener for pin state change events
+    window.addEventListener('pin-state-change', handlePinStateEvent);
+    window.addEventListener('avr8-pin-change', handlePinStateEvent);
+    
+    // Log when emulator events are set up
+    addLog('🔌 Real-time pin change monitoring enabled');
+    
+    // Clean up when unmounting
+    return () => {
+      window.removeEventListener('pin-state-change', handlePinStateEvent);
+      window.removeEventListener('avr8-pin-change', handlePinStateEvent);
+    };
   }, [addLog]);
   
   // Handle serial data from the emulator
