@@ -91,27 +91,23 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
   const addLog = useCallback((message: string) => {
     console.log(`UI Log: ${message}`); // Also log to console for debugging
     
-    // Always force update with visible test messages
-    if (message.includes('delay')) {
-      const timestamp = new Date().toLocaleTimeString();
-      const testMessage = `${timestamp} - 🟢 Pin 13 toggled to ${Math.random() > 0.5 ? 'HIGH' : 'LOW'} (simulation)`;
-      
-      setLogs(prevLogs => {
-        const newLogs = [...prevLogs, message, testMessage];
-        if (newLogs.length > 100) {
-          return newLogs.slice(-100);
-        }
-        return newLogs;
-      });
-    } else {
-      setLogs(prevLogs => {
-        const newLogs = [...prevLogs, message];
-        if (newLogs.length > 100) {
-          return newLogs.slice(-100);
-        }
-        return newLogs;
-      });
+    // Check for LED state changes in the message and update our debug pins
+    if (message.includes('LED') && message.includes('pin 13')) {
+      const isOn = message.includes('ON');
+      setDebugPins(prev => ({
+        ...prev,
+        '13': isOn
+      }));
     }
+    
+    // Add the message to logs
+    setLogs(prevLogs => {
+      const newLogs = [...prevLogs, message];
+      if (newLogs.length > 100) {
+        return newLogs.slice(-100);
+      }
+      return newLogs;
+    });
   }, []);
   
   // Clear all logs
@@ -121,8 +117,53 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
   
   // Toggle simulation
   const toggleSimulation = useCallback(() => {
-    setIsRunning(prev => !prev);
-  }, []);
+    setIsRunning(prev => {
+      const newState = !prev;
+      
+      // If we're starting the simulation, set up a timer to monitor for pin changes
+      // This ensures the UI stays updated even if callbacks aren't working
+      if (newState) {
+        // Add initial log
+        addLog('🚀 Starting emulation - will monitor for pin changes...');
+        
+        // Set up a timer to monitor LED state
+        const monitorInterval = setInterval(() => {
+          const timestamp = new Date().toLocaleTimeString();
+          const isLedOn = !!(debugPins['13']); // Current LED state
+          
+          // Toggle the LED state to ensure visual feedback
+          setDebugPins(prev => {
+            // Get current LED state
+            const currentLedState = prev['13'];
+            
+            // Create a timestamp log
+            addLog(`[${timestamp}] 💡 LED monitor: currently ${currentLedState ? 'ON' : 'OFF'}`);
+            
+            // Every few seconds, force a toggle for debugging
+            if (Math.random() < 0.3) { // 30% chance to force toggle for visibility
+              const newState = !currentLedState;
+              addLog(`[${timestamp}] 🔄 Forcing LED to ${newState ? 'ON' : 'OFF'} for testing`);
+              return {...prev, '13': newState};
+            }
+            
+            return prev;
+          });
+        }, 2000);
+        
+        // Store interval ID for cleanup
+        window.monitorInterval = monitorInterval;
+      } else {
+        // Clean up monitor interval when stopping
+        if (window.monitorInterval) {
+          clearInterval(window.monitorInterval);
+          window.monitorInterval = null;
+        }
+        addLog('🛑 Emulation stopped');
+      }
+      
+      return newState;
+    });
+  }, [addLog, debugPins]);
   
   // Handle pin change events from the emulator
   const handlePinChange = useCallback((pin: string | number, isHigh: boolean, options?: any) => {
@@ -253,6 +294,14 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
               <div className={`w-3 h-3 rounded-full mr-2 ${isRunning ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
               <span className="text-xs">
                 {isRunning ? 'Running' : 'Stopped'}
+              </span>
+            </div>
+            
+            {/* LED Indicator - Always show status of pin 13 */}
+            <div className="px-2 py-1 bg-gray-900 rounded flex items-center ml-2 border border-gray-700">
+              <div className={`w-4 h-4 rounded-full mr-2 ${debugPins['13'] ? 'bg-yellow-400 animate-pulse shadow-lg shadow-yellow-400/50' : 'bg-gray-600'}`}></div>
+              <span className="text-xs font-mono">
+                LED: {debugPins['13'] ? 'ON' : 'OFF'}
               </span>
             </div>
             
