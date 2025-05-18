@@ -1,5 +1,5 @@
 import React from 'react';
-import UniversalEmulatorApp from '../circuit-builder/emulator/UniversalEmulatorApp';
+import ReliableEmulator from '../circuit-builder/emulator/ReliableEmulator';
 
 interface FullscreenUniversalEmulatorAppProps {
   onClose: () => void;
@@ -7,15 +7,15 @@ interface FullscreenUniversalEmulatorAppProps {
 
 /**
  * Fullscreen Universal Emulator App
- * This component creates a fullscreen version of the Universal Emulator
- * with a layout matching the Sandbox application
+ * This component creates a fullscreen version of the emulator
+ * with a layout matching the Sandbox application.
+ * 
+ * NOTE: This component now uses the new reliable emulator instead of
+ * the problematic UniversalEmulatorApp.
  */
 const FullscreenUniversalEmulatorApp: React.FC<FullscreenUniversalEmulatorAppProps> = ({ onClose }) => {
-
   return (
-    <div className="fixed inset-0 bg-gray-800 z-50 flex flex-col">
-      <UniversalEmulatorApp onClose={onClose} isFullscreen={true} />
-    </div>
+    <ReliableEmulator onClose={onClose} />
   );
 };
 
