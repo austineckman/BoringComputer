@@ -171,13 +171,30 @@ const RealAVR8EmulatorConnector = forwardRef<EmulatorRefType, RealAVR8EmulatorCo
               }
             }
             
-            // Always add to simulation logs for any pin changes we see,
-            // ensuring that activity is visible in the UI
-            onLogMessage?.(`[AVR8] Pin ${pinStr} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+            // Add detailed logs with timestamp for any pin changes
+            const timestamp = new Date().toLocaleTimeString();
+            const pinMessage = `[${timestamp}] Pin ${pinStr} changed to ${isHigh ? 'HIGH ⚡' : 'LOW ⚫'}`;
             
-            // Call the pin state change callback
+            // Log to console for debugging
+            console.log(`EMULATOR EVENT: ${pinMessage}`);
+            
+            // Always send to UI logs with visual indicators
+            onLogMessage?.(pinMessage);
+            
+            // For pin 13 (built-in LED), provide special emphasis
+            if (pinStr === '13') {
+              const ledMessage = `[${timestamp}] 💡 Built-in LED is now ${isHigh ? 'ON' : 'OFF'}`;
+              console.log(`EMULATOR LED: ${ledMessage}`);
+              onLogMessage?.(ledMessage);
+            }
+            
+            // Call the pin state change callback with extra metadata
             if (onPinStateChange) {
-              onPinStateChange(pinStr, isHigh);
+              onPinStateChange(pinStr, isHigh, { 
+                timestamp,
+                source: 'emulator',
+                forced: true 
+              });
             }
           };
           
@@ -401,6 +418,9 @@ const RealAVR8EmulatorConnector = forwardRef<EmulatorRefType, RealAVR8EmulatorCo
     useEffect(() => {
       if (!emulatorRef.current) return;
       
+      // Reference to the status interval timer
+      let statusInterval: any = null;
+      
       if (isRunning) {
         if (!isActive) {
           // Start the emulation
@@ -408,8 +428,34 @@ const RealAVR8EmulatorConnector = forwardRef<EmulatorRefType, RealAVR8EmulatorCo
             try {
               emulatorRef.current.start();
               setIsActive(true);
-              onLogMessage?.('Emulation started');
+              onLogMessage?.('⚡ Emulation started - Monitoring pin changes...');
               console.log('AVR8 Emulation started');
+              
+              // Start monitoring for pin changes and forcing UI updates
+              // This ensures we see pin changes even if callbacks aren't firing properly
+              statusInterval = setInterval(() => {
+                try {
+                  // Get current pin states from emulator
+                  const pinStates = emulatorRef.current?.getPinStates() || {};
+                  const timestamp = new Date().toLocaleTimeString();
+                  
+                  // Always log the LED state (pin 13)
+                  const pin13State = !!pinStates['13']; 
+                  const ledStatus = `[${timestamp}] 💡 LED status: ${pin13State ? 'ON' : 'OFF'}`;
+                  onLogMessage?.(ledStatus);
+                  
+                  // Force pin change notification for LED
+                  if (onPinStateChange) {
+                    onPinStateChange('13', pin13State, { 
+                      timestamp,
+                      source: 'monitor_update' 
+                    });
+                  }
+                } catch (err) {
+                  console.error('Error in pin monitoring:', err);
+                }
+              }, 1500);
+              
             } catch (error) {
               console.error('Failed to start emulation:', error);
               onEmulationError?.(`Failed to start emulation: ${error}`);
@@ -423,8 +469,28 @@ const RealAVR8EmulatorConnector = forwardRef<EmulatorRefType, RealAVR8EmulatorCo
                   emulatorRef.current.start();
                   setIsActive(true);
                   setCompilationSuccess(true);
-                  onLogMessage?.('Code compiled and emulation started');
+                  onLogMessage?.('✅ Code compiled and emulation started');
                   console.log('AVR8 Emulation started after compilation');
+                  
+                  // Same monitoring logic as above
+                  statusInterval = setInterval(() => {
+                    try {
+                      const pinStates = emulatorRef.current?.getPinStates() || {};
+                      const timestamp = new Date().toLocaleTimeString();
+                      const pin13State = !!pinStates['13']; 
+                      onLogMessage?.(`[${timestamp}] 💡 LED status: ${pin13State ? 'ON' : 'OFF'}`);
+                      
+                      if (onPinStateChange) {
+                        onPinStateChange('13', pin13State, { 
+                          timestamp,
+                          source: 'monitor_update' 
+                        });
+                      }
+                    } catch (err) {
+                      console.error('Error in pin monitoring:', err);
+                    }
+                  }, 1500);
+                  
                 } else {
                   console.error('Failed to compile code:', result?.error);
                   onEmulationError?.(`Failed to compile code: ${result?.error}`);
@@ -442,9 +508,15 @@ const RealAVR8EmulatorConnector = forwardRef<EmulatorRefType, RealAVR8EmulatorCo
         if (isActive) {
           // Stop the emulation
           try {
+            // Clear monitoring interval
+            if (statusInterval) {
+              clearInterval(statusInterval);
+              statusInterval = null;
+            }
+            
             emulatorRef.current.stop();
             setIsActive(false);
-            onLogMessage?.('Emulation stopped');
+            onLogMessage?.('🛑 Emulation stopped');
             console.log('AVR8 Emulation stopped');
           } catch (error) {
             console.error('Failed to stop emulation:', error);
@@ -452,7 +524,14 @@ const RealAVR8EmulatorConnector = forwardRef<EmulatorRefType, RealAVR8EmulatorCo
           }
         }
       }
-    }, [isRunning, isActive, compilationSuccess, code, onLogMessage, onEmulationError]);
+      
+      // Cleanup when unmounting or when dependencies change
+      return () => {
+        if (statusInterval) {
+          clearInterval(statusInterval);
+        }
+      };
+    }, [isRunning, isActive, compilationSuccess, code, onLogMessage, onEmulationError, onPinStateChange]);
     
     // Render nothing - this is a connector component
     return null;
