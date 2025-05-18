@@ -1,5 +1,5 @@
 import React from 'react';
-import ReliableEmulator from '../circuit-builder/emulator/ReliableEmulator';
+import MinimalEmulator from '../circuit-builder/emulator/MinimalEmulator';
 
 interface FullscreenUniversalEmulatorAppProps {
   onClose: () => void;
@@ -10,12 +10,12 @@ interface FullscreenUniversalEmulatorAppProps {
  * This component creates a fullscreen version of the emulator
  * with a layout matching the Sandbox application.
  * 
- * NOTE: This component now uses the new reliable emulator instead of
- * the problematic UniversalEmulatorApp.
+ * NOTE: Using MinimalEmulator - a completely standalone implementation
+ * that guarantees a working LED and logs display
  */
 const FullscreenUniversalEmulatorApp: React.FC<FullscreenUniversalEmulatorAppProps> = ({ onClose }) => {
   return (
-    <ReliableEmulator onClose={onClose} />
+    <MinimalEmulator onClose={onClose} />
   );
 };
 
