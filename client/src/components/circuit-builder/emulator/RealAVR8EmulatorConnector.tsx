@@ -87,10 +87,25 @@ const RealAVR8EmulatorConnector = forwardRef<EmulatorRefType, RealAVR8EmulatorCo
           const handlePinChange = (pin: string | number, isHigh: boolean, options?: any) => {
             // Convert pin to string if it's a number
             const pinStr = pin.toString();
+            const timestamp = new Date().toLocaleTimeString();
+            
+            // Always log every pin change with detailed information
+            console.log(`[EMULATOR] Pin ${pinStr} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+            onLogMessage?.(`[${timestamp}] Pin ${pinStr} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+            
+            // Forward this to the parent component
+            if (onPinChange) {
+              onPinChange(pin, isHigh, options);
+            }
             
             // For pin 13 (built-in LED), provide more detailed user-facing feedback
             if (pinStr === '13') {
-              onLogMessage?.(`[Arduino] Built-in LED is ${isHigh ? 'ON' : 'OFF'}`);
+              const ledStatus = isHigh ? 'ON' : 'OFF';
+              console.log(`[EMULATOR] 💡 Built-in LED is ${ledStatus}`);
+              onLogMessage?.(`[${timestamp}] 💡 Built-in LED is ${ledStatus}`);
+              
+              // Add an extra visible message for LED changes
+              onLogMessage?.(`🚨 IMPORTANT: LED on pin 13 is now ${ledStatus} at ${timestamp}`);
             }
             
             // Find the component that this pin belongs to
