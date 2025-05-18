@@ -143,6 +143,30 @@ export class RealAVR8Emulator {
             detail: { pin, isHigh, timestamp }
           });
           window.dispatchEvent(event);
+          
+          // Special event for built-in LED (pin 13)
+          if (pin === 13) {
+            // Directly update any LED components in the global registry
+            if (window.emulatedComponents) {
+              Object.keys(window.emulatedComponents).forEach(id => {
+                const component = window.emulatedComponents[id];
+                if (component.type === 'led' && (component.anode === '13' || component.anode === 13)) {
+                  console.log(`Setting LED component ${id} to ${isHigh ? 'ON' : 'OFF'}`);
+                  component.isOn = isHigh;
+                  
+                  // Also send a component-specific event
+                  const ledEvent = new CustomEvent('component-state-changed', {
+                    detail: {
+                      componentId: id,
+                      pinId: pin.toString(),
+                      isHigh: isHigh
+                    }
+                  });
+                  document.dispatchEvent(ledEvent);
+                }
+              });
+            }
+          }
         }
       } catch (error) {
         console.error('Failed in pin change notification:', error);
