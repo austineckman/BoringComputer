@@ -434,8 +434,23 @@ export class RealAVR8Core {
    * @param {Object} options - Additional options (like analogValue)
    */
   notifyPinChange(pin, isHigh, options = {}) {
-    // Log the pin change
-    this.log(`Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}${options.analogValue ? ` (analog: ${options.analogValue})` : ''}`);
+    const currentTime = new Date().toLocaleTimeString();
+    
+    // Create an unmistakable log message with timestamp
+    const pinMessage = `**** PIN CHANGE **** [${currentTime}] - Pin ${pin} is now ${isHigh ? 'HIGH' : 'LOW'}`;
+    
+    // Log directly to console
+    console.log(pinMessage);
+    
+    // And through our log system
+    this.log(pinMessage);
+    
+    // For pin 13 (LED), add extra highlight
+    if (pin === 13) {
+      const ledMessage = `**** LED PIN 13 **** [${currentTime}] - ${isHigh ? 'ON' : 'OFF'}`;
+      console.log(ledMessage);
+      this.log(ledMessage);
+    }
     
     // Update our internal pin state tracking
     this.pinStates[pin] = isHigh;
@@ -443,24 +458,37 @@ export class RealAVR8Core {
     // Update analog values if present
     if (options.analogValue !== undefined) {
       this.analogValues[pin] = options.analogValue;
+      this.log(`**** ANALOG VALUE **** Pin ${pin} analog value: ${options.analogValue}`);
     }
     
-    // Call the internal onPinChange callback if defined
+    // Call the internal onPinChange callback
     if (this.onPinChange) {
-      this.onPinChange(pin, isHigh, options);
+      try {
+        this.onPinChange(pin, isHigh, options);
+      } catch (error) {
+        console.error('Error in onPinChange callback:', error);
+      }
     }
     
-    // Also call the external callback through options for compatibility
+    // Call the external callback through options for compatibility
     if (this.options && this.options.onPinChange) {
-      this.options.onPinChange(pin, isHigh, options);
+      try {
+        this.options.onPinChange(pin, isHigh, options);
+      } catch (error) {
+        console.error('Error in options.onPinChange callback:', error);
+      }
     }
     
-    // Dispatch a custom event for components to listen to
+    // Dispatch a custom event as another way to notify of changes
     if (typeof window !== 'undefined') {
-      const event = new CustomEvent('avr8-pin-change', { 
-        detail: { pin, isHigh, options, source: 'emulator' }
-      });
-      window.dispatchEvent(event);
+      try {
+        const event = new CustomEvent('avr8-pin-change', { 
+          detail: { pin, isHigh, options, source: 'emulator' }
+        });
+        window.dispatchEvent(event);
+      } catch (error) {
+        console.error('Error dispatching pin change event:', error);
+      }
     }
   }
   
@@ -765,16 +793,50 @@ export class RealAVR8Core {
    * @param {string} message - The log message
    */
   log(message) {
+    // Always log to console first
     console.log(`[RealAVR8] ${message}`);
     
-    // Internal callback
-    if (this.onLogMessage) {
-      this.onLogMessage(message);
+    // Ensure pin change messages are very visible in logs
+    if (message.includes('PIN CHANGE') || message.includes('LED PIN')) {
+      console.log('███████████████████████████████████████');
+      console.log(`🔌 ${message}`);
+      console.log('███████████████████████████████████████');
+      
+      // Also use global event to make sure the UI receives it
+      if (typeof window !== 'undefined') {
+        try {
+          // Dispatch a dedicated event for pin changes
+          const pinEvent = new CustomEvent('avr8-message', {
+            detail: { message, type: 'pin-change', timestamp: new Date().toISOString() }
+          });
+          window.dispatchEvent(pinEvent);
+          
+          // Also try to access the UI log function directly if it exists
+          if (window.universalEmulatorAddLog) {
+            window.universalEmulatorAddLog(message);
+          }
+        } catch (err) {
+          console.error('Error dispatching log event:', err);
+        }
+      }
     }
     
-    // External callback
+    // Try internal callback
+    if (this.onLogMessage) {
+      try {
+        this.onLogMessage(message);
+      } catch (err) {
+        console.error('Error in internal log callback:', err);
+      }
+    }
+    
+    // Try external callback
     if (this.options && this.options.onLogMessage) {
-      this.options.onLogMessage(message);
+      try {
+        this.options.onLogMessage(message);
+      } catch (err) {
+        console.error('Error in external log callback:', err);
+      }
     }
   }
 }

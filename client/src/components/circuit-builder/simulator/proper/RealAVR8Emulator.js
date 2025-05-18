@@ -111,30 +111,43 @@ export class RealAVR8Emulator {
       this.analogValues[pin] = options.analogValue;
     }
     
-    // Always log pin changes regardless of notification
-    this.log(`📌 Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}${options.analogValue !== undefined ? ` (analog: ${options.analogValue})` : ''}`);
+    // Always generate very explicit log messages
+    const timestamp = new Date().toLocaleTimeString();
+    const pinMessage = `[PIN_CHANGE][${timestamp}] Pin ${pin} = ${isHigh ? 'HIGH' : 'LOW'}`;
+    
+    // Log to console directly
+    console.log(pinMessage);
+    
+    // Send to UI via log callback
+    this.log(pinMessage);
     
     // Add special logs for important pins
     if (pin === 13) {
-      this.log(`💡 Built-in LED on pin ${pin} is now ${isHigh ? 'ON' : 'OFF'}`);
+      const ledMessage = `[LED_STATE][${timestamp}] Built-in LED on pin 13 is now ${isHigh ? 'ON' : 'OFF'}`;
+      console.log(ledMessage);
+      this.log(ledMessage);
+      
+      // Send extra emphatic message for LED
+      this.log(`[IMPORTANT] 💡 LED PIN 13 = ${isHigh ? 'ON' : 'OFF'}`);
     }
     
     // Notify the circuit simulator
     if (this.onPinChange) {
-      // First try with a direct call
-      this.onPinChange(pin, isHigh, options);
-      
-      // Also dispatch a custom event for any listeners
-      if (typeof window !== 'undefined') {
-        try {
-          const event = new CustomEvent('emulator-pin-change', {
-            detail: { pin, isHigh, options }
+      try {
+        // Direct callback
+        this.onPinChange(pin, isHigh, options);
+        
+        // Also dispatch a custom event as backup
+        if (typeof window !== 'undefined') {
+          const event = new CustomEvent('pin-state-change', {
+            detail: { pin, isHigh, timestamp }
           });
           window.dispatchEvent(event);
-          console.log(`📡 Dispatched pin change event for pin ${pin}`);
-        } catch (error) {
-          console.error('Failed to dispatch custom event:', error);
         }
+      } catch (error) {
+        console.error('Failed in pin change notification:', error);
+        // Still try to send a log even if other methods fail
+        this.log(`[ERROR] Failed to notify pin change: ${error.message}`);
       }
     }
   }
