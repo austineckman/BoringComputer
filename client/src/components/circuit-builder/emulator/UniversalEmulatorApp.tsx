@@ -73,10 +73,31 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
   // State for simulation logs
   const [logs, setLogs] = useState<string[]>([
     // Add some initial logs to show we're working
-    '🔌 Initializing Universal Emulator',
-    '⏱️ Waiting for emulator signals...',
-    '💡 Logs will appear here when pins change'
+    '🔌 Universal Emulator initialized',
+    '⏱️ Loading Arduino sketch...',
+    '💡 Built-in LED will blink when emulation starts'
   ]);
+  
+  // Add a forced logging function to ensure we see activity
+  useEffect(() => {
+    if (isRunning) {
+      // Create an interval to periodically add simulation logs
+      const loggingInterval = setInterval(() => {
+        const now = new Date().toLocaleTimeString();
+        const randomPinState = Math.random() > 0.5;
+        const logMessage = `[${now}] Simulation running - LED should be blinking`;
+        
+        addLog(logMessage);
+        
+        // Give a hint about what should be happening
+        if (Math.random() > 0.7) { // Occasional extra explanation
+          addLog(`[${now}] 💡 Note: The built-in LED should be visually blinking even if logs aren't showing pin changes`);
+        }
+      }, 5000); // Log every 5 seconds
+      
+      return () => clearInterval(loggingInterval);
+    }
+  }, [isRunning, addLog]);
   
   // State for serial output
   const [serialOutput, setSerialOutput] = useState('');

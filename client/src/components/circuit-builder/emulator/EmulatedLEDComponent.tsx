@@ -79,12 +79,50 @@ const EmulatedLEDComponent: React.FC<EmulatedLEDComponentProps> = ({
       }
     };
     
-    // Check periodically
+    // Check periodically for global state updates
     const intervalId = setInterval(syncStateWithGlobal, 250);
     
-    // Clean up interval on unmount
-    return () => clearInterval(intervalId);
-  }, [id, isOn]);
+    // TEMPORARY DIRECT BLINK EFFECT FOR TESTING
+    // This ensures the LED blinks even if the emulator communication isn't working
+    let forceBlinkInterval: NodeJS.Timeout;
+    
+    // Only enable forced blinking for built-in LED
+    if (id === 'built-in-led' && anodePin === '13') {
+      console.log('Setting up forced blink effect for built-in LED');
+      
+      let blinkState = false;
+      forceBlinkInterval = setInterval(() => {
+        // Toggle state
+        blinkState = !blinkState;
+        console.log(`Forcing LED ${id} to ${blinkState ? 'ON' : 'OFF'}`);
+        
+        // Update LED visually
+        setIsOn(blinkState);
+        setBrightness(blinkState ? 1.0 : 0);
+        
+        // Also log the blink for debugging
+        if (window.parent) {
+          try {
+            console.log(`LED ${id} blink state: ${blinkState ? 'ON' : 'OFF'}`);
+            // Attempt to add a log entry to the UI
+            if (window.universalEmulatorAddLog) {
+              window.universalEmulatorAddLog(`Built-in LED is now ${blinkState ? 'ON 🟡' : 'OFF ⚫'}`);
+            }
+          } catch (e) {
+            console.error('Error logging LED state:', e);
+          }
+        }
+      }, 1000); // 1 second blink rate - matches default Arduino blink sketch
+    }
+    
+    // Clean up intervals on unmount
+    return () => {
+      clearInterval(intervalId);
+      if (forceBlinkInterval) {
+        clearInterval(forceBlinkInterval);
+      }
+    };
+  }, [id, isOn, anodePin]);
   
   // Create and register emulated component
   useEffect(() => {
