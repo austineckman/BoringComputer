@@ -188,13 +188,9 @@ const RealAVR8EmulatorConnector = forwardRef<EmulatorRefType, RealAVR8EmulatorCo
               onLogMessage?.(ledMessage);
             }
             
-            // Call the pin state change callback with extra metadata
+            // Call the pin state change callback
             if (onPinStateChange) {
-              onPinStateChange(pinStr, isHigh, { 
-                timestamp,
-                source: 'emulator',
-                forced: true 
-              });
+              onPinStateChange(pinStr, isHigh);
             }
           };
           
@@ -436,7 +432,8 @@ const RealAVR8EmulatorConnector = forwardRef<EmulatorRefType, RealAVR8EmulatorCo
               statusInterval = setInterval(() => {
                 try {
                   // Get current pin states from emulator
-                  const pinStates = emulatorRef.current?.getPinStates() || {};
+                  // Use pinStates property directly since it's safer
+                  const pinStates = emulatorRef.current?.pinStates || {};
                   const timestamp = new Date().toLocaleTimeString();
                   
                   // Always log the LED state (pin 13)
@@ -446,10 +443,7 @@ const RealAVR8EmulatorConnector = forwardRef<EmulatorRefType, RealAVR8EmulatorCo
                   
                   // Force pin change notification for LED
                   if (onPinStateChange) {
-                    onPinStateChange('13', pin13State, { 
-                      timestamp,
-                      source: 'monitor_update' 
-                    });
+                    onPinStateChange('13', pin13State);
                   }
                 } catch (err) {
                   console.error('Error in pin monitoring:', err);
@@ -475,16 +469,13 @@ const RealAVR8EmulatorConnector = forwardRef<EmulatorRefType, RealAVR8EmulatorCo
                   // Same monitoring logic as above
                   statusInterval = setInterval(() => {
                     try {
-                      const pinStates = emulatorRef.current?.getPinStates() || {};
+                      const pinStates = emulatorRef.current?.pinStates || {};
                       const timestamp = new Date().toLocaleTimeString();
                       const pin13State = !!pinStates['13']; 
                       onLogMessage?.(`[${timestamp}] 💡 LED status: ${pin13State ? 'ON' : 'OFF'}`);
                       
                       if (onPinStateChange) {
-                        onPinStateChange('13', pin13State, { 
-                          timestamp,
-                          source: 'monitor_update' 
-                        });
+                        onPinStateChange('13', pin13State);
                       }
                     } catch (err) {
                       console.error('Error in pin monitoring:', err);
