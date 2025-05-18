@@ -16,6 +16,7 @@ import EmulatedLEDComponent from './EmulatedLEDComponent';
 import VisibleLEDComponent from './VisibleLEDComponent';
 import DirectEmulatorLogger from './DirectEmulatorLogger';
 import ForcedLEDComponent from './ForcedLEDComponent';
+import FixedEmulatorConnector from './FixedEmulatorConnector';
 import { EmulatedComponent } from './HeroEmulator';
 
 // Define the emulated components on the window for global access
@@ -537,11 +538,24 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
           </div>
         </div>
         
-        {/* Invisible component to force LED blinking and simulation logs */}
+        {/* Use BOTH connection methods to ensure we get feedback */}
         <DirectEmulatorLogger 
           addLog={addLog}
           isRunning={isRunning}
           onUpdatePinState={(pinId, isHigh) => {
+            // Update debug pins display
+            setDebugPins(prev => ({
+              ...prev,
+              [pinId]: isHigh
+            }));
+          }}
+        />
+        
+        {/* Fixed connector that directly monitors console logs for [AVR8] messages */}
+        <FixedEmulatorConnector
+          isRunning={isRunning}
+          addLogMessage={addLog}
+          onPinStateChange={(pinId, isHigh) => {
             // Update debug pins display
             setDebugPins(prev => ({
               ...prev,
