@@ -314,6 +314,15 @@ export class RealAVR8Emulator {
   }
   
   /**
+   * Get all pin states for UI display
+   * @returns {Object} Object mapping pin numbers to their HIGH/LOW states
+   */
+  getPinStates() {
+    // Return a copy of the current pin states
+    return {...this.pinStates};
+  }
+  
+  /**
    * Analyze Arduino code to detect used pins
    * @param {string} code - The Arduino code
    * @returns {number[]} The pins used in the code
