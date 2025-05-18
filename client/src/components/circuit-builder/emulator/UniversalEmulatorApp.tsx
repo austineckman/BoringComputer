@@ -13,6 +13,7 @@ import { ArduinoCodeEditor } from './ArduinoCodeEditor';
 import { CircuitBuilder } from './CircuitBuilder';
 import RealAVR8EmulatorConnector from './RealAVR8EmulatorConnector';
 import EmulatedLEDComponent from './EmulatedLEDComponent';
+import VisibleLEDComponent from './VisibleLEDComponent';
 import { EmulatedComponent } from './HeroEmulator';
 
 // Define the emulated components on the window for global access
@@ -130,6 +131,36 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
       return newLogs;
     });
   }, []);
+  
+  // Setup a direct LED blink simulation
+  useEffect(() => {
+    if (isRunning) {
+      // Expose the addLog function to the window for global access
+      window.universalEmulatorAddLog = addLog;
+      
+      // Create an interval to simulate pin changes for pin 13 (LED)
+      const blinkInterval = setInterval(() => {
+        // Toggle current LED state
+        setDebugPins(prev => {
+          const currentState = prev['13'] || false;
+          const newState = !currentState;
+          
+          // Log the state change with timestamp
+          const timestamp = new Date().toLocaleTimeString();
+          addLog(`${timestamp} - 💡 LED pin 13 changed to ${newState ? 'HIGH (ON)' : 'LOW (OFF)'}`);
+          
+          // Return updated state
+          return { ...prev, '13': newState };
+        });
+      }, 1000); // 1 second interval - matches Arduino's default blink sketch
+      
+      // Clean up
+      return () => {
+        clearInterval(blinkInterval);
+        delete window.universalEmulatorAddLog;
+      };
+    }
+  }, [isRunning, addLog]);
   
   // Clear all logs
   const clearLogs = useCallback(() => {
@@ -487,14 +518,23 @@ const UniversalEmulatorApp: React.FC<UniversalEmulatorAppProps> = ({
           <div className="bg-gray-800 p-2 rounded shadow-lg border border-gray-700">
             <h4 className="text-xs text-gray-400 mb-1">Built-in LED (Pin 13)</h4>
             <div className="flex items-center justify-center">
-              <EmulatedLEDComponent 
+              <VisibleLEDComponent 
                 id="built-in-led"
-                anodePin="13"
-                cathodePin="GND"
                 color="yellow"
                 size="medium"
                 onStateChange={(isOn) => {
+                  // Log state changes to both console and simulation logs
                   console.log(`Built-in LED state changed to ${isOn ? 'ON' : 'OFF'}`);
+                  
+                  // Update simulation logs
+                  const timestamp = new Date().toLocaleTimeString();
+                  addLog(`${timestamp} - 💡 Built-in LED is now ${isOn ? 'ON' : 'OFF'}`);
+                  
+                  // Also update our debug pins state
+                  setDebugPins(prev => ({
+                    ...prev,
+                    '13': isOn
+                  }));
                 }}
               />
             </div>
