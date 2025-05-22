@@ -1,84 +1,56 @@
 import React, { useState, useEffect, useRef } from "react";
 
-// ASCII art - craftable logo for terminal welcome message
-const CRAFTABLE_ASCII_ART = `
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@%%%%%%%@%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@#@@%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@%%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%%@@@@@@@@@@@@@@@@@@
-@@@@@@@@@%@#+++#%@@@*+*+#+++++#@@@%+++%@@+++++#@#++%@@@+++@@#++#+@#++%@*+*%+*+++*%#@@@@@@@@@@@@@@@@@
-@@@@@@@%%@#+*##*+@%++%#+#@**@%*+@@@#++*@@%++@#++@++@@@@%+*@*+*%*+@@+*@@**%%*%**%*%@%@@@@@@@@@@@@@@@@
-@@@@@@@@@@***@@@*@++#@@%@@++@@++@@@+%**@@%++@@+*@+*@@@@%++@++%@@%@@++@@*+%@@@**@@@@%@@@@@@@@@@@@@@@@
-@@@@@@@%%@@***+#@@*+%@@@@@++++*%@@#+@*+#@@*++++%@++@@@@%+*@+*@@#%%@++++*+%@@@**@@%@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@%*++@**%@@@@@+*@*+%@@*++++*@@*+@@@@@+*@@%%%**@*+@@#*%@++@@#*%@@@*+@@@%@@@@@@@@@@@@@@@@@
-@@@@@@@@@@#%@@@++#**+@%+%@+*@%**@@+%@@*+@@++@@@@@+*%%*#%*+@**#@#*@@++@@#*%@@@**@@@%@@@@@@@@@@@@@@@@@
-@@@@@@@@@@*******@@%***+%#**#%**%*##@%###%#*%@@@######%###@@#****%%+*%@***@@#*+#@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@###%@@@@@@@@@@@@@@@@@@@@@@@@@%*++++*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@%@@@@@@@@@@@@@@@@@%%%@@@@@@@@*++++++++++%@@@@@@@#*#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@%@@@@@@@@@@@@@@%%##*#@@@@@@#**++++++++**@@@@@*+*%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@%@@@@@@@@@@@@@@@%##%#**#%@@**++++++++++#%@@@@+**%@@#*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@#@@@@@@@@@@@@@@@@%%@@@%####@%#@@%#***%@%*@@@%%%******#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@%@%@@@@@@@@@@@@@@%*@@@@@@@@%@#%@@@*++%@@@#@%%%##@####@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@%@@@@@@@@@@@@@@#%@@@@@@@@@@#+*#*#@@***+*%@#%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%@@@@@@@@@@@@@@@@
-@@@@@@@@@@@%@@@@@@@@@@@@@%%@@@@@@@@@@@@@@#+****#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%@@@@@@@@@@@@@@@@
-@@@@@@@@@@@%@@@@@@@@@@@@@@@@@@@@@@@@%#%@@%###*%%@@%%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%@@@@@@@@@@@@@@@@
-@@@@@@@@@@%%@@@@@@@*+**%#@@@%***@@@@#**#**#@@@%#******#@#******#%@##**@@@@@@@@@@@@@%@@@@@@@@@@@@@@@@
-@@@@@@@@@@%@@@@@@#*+*@%*#@@@@+++#@@@@***##+**@#+##+*##*@@***%##+#@%**%@@@@@@@@@@@@@%@@@@@@@@@@@@@@@@
-@@@@@@@@@%%%@@@@@++*@@@@@@@@#*%**@@@@*+*@@**+@@@@%+*@@@@@***@@%@@@%+*%@@@@@@@@@@@@@%@@@@@@@@@@@@@@@@
-@@@@@@@@@@@%@@@@@*+%@@@@@@@@+*@**#@@@**+*+*+%@@@@#**@@@@@+****#@@@%+*@@@@@@@@@@@@#%@@@@@@@@@@@@@@@@
-@@@@@@@@@@@%@@@@@+**@@@@%@@**+***+@@@***@***@@@@@%**@@@@@***@@%@@@%**%@@@%@@@@@@%@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@#@@@@@%+**##+*@%+*@@@***@@***@@+*#@@@@#**@@@@@+**##%*#@%+*###*+@@@@@%@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@%@@@@@@@%#**#@%***@@%**#%#*#*#@*##%@@#*###@@@********%@*****##*@@@@%@%@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@%%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@%%%@@@@%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%@@%@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@@%@%@@@@@@%%@@@@@%@@@@@@@@@@@%%%%@@@@@@@@%@@@@@@@@@@%%%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// Synth-style modular logo
+const SYNTH_LOGO = `
+   ▄████████  ▄████████    ▄████████    ▄████████     ███     
+  ███    ███ ███    ███   ███    ███   ███    ███ ▀█████████▄ 
+  ███    █▀  ███    ███   ███    ███   ███    █▀     ▀███▀▀██ 
+  ███        ███    ███   ███    ███  ▄███▄▄▄         ███   ▀ 
+▀███████████ ███    ███ ▀███████████ ▀▀███▀▀▀         ███     
+         ███ ███    ███   ███    ███   ███             ███     
+   ▄█    ███ ███    ███   ███    ███   ███             ███     
+ ▄████████▀   ██████████   ███    █▀    ███            ▄████▀   
+                                                              
+      ╔═══════════════════════════════════════════════╗       
+      ║ █▌▐█ ▐█▀▀█ ▐█▀▀█ █▌ █ █     ▐█▀▀▀ █▀▀  █▌ █ ║       
+      ║ █▌▐█ ▐█  █ ▐█  █ █▌ █ █     ▐█▀▀  ▀▀█  █▌ █ ║       
+      ║ ▀▀▀▀ ▐▀▀▀▀ ▐▀▀▀▀ ▀▀▀▀ ▀▀▀▀▀ ▐▀▀▀▀ ▀▀▀  ▀▀▀▀ ║       
+      ╚═══════════════════════════════════════════════╝       
 `;
 
-// List of loading messages for the terminal
-const LOADING_MESSAGES = [
-  "Initializing CraftingTableOS v1.0.4815...",
-  "Checking system integrity...",
-  "Loading database modules...",
-  "Establishing secure connection...",
-  "Mounting virtual filesystems...",
-  "Calibrating quantum flux capacitor...",
-  "Analyzing temporal anomalies...",
-  "Searching for the three golden keys...",
-  "Connecting to the central crafting network...",
-  "Loading user profile data...",
-  "Initializing inventory management system...",
-  "Checking for updates to the crafting table...",
-  "Warming up the pixel renderer...",
-  "Activating retro compatibility mode...",
-  "Preparing GUI components...",
-  "Loading background music modules...",
-  "Running final diagnostics...",
-  "Initializing desktop environment...",
+// Modular synth interface messages
+const SYNTH_MESSAGES = [
+  "INITIALIZING MODULAR SYNTHESIS ENGINE...",
+  "LOADING OSCILLATOR MODULES...",
+  "CALIBRATING VOLTAGE CONTROLLED FILTERS...",
+  "CONNECTING PATCH CABLES...",
+  "TUNING ANALOG CIRCUITS...",
+  "WARMING UP VACUUM TUBES...",
+  "SYNCHRONIZING SEQUENCER PATTERNS...",
+  "ADJUSTING ENVELOPE GENERATORS...",
+  "LOADING WAVEFORM TABLES...",
+  "CONFIGURING AUDIO ROUTING MATRIX...",
+  "TESTING SIGNAL PROCESSORS...",
+  "INITIALIZING DELAY MODULES...",
+  "SETTING UP REVERB CHAMBERS...",
+  "LOADING SAMPLE BANKS...",
+  "CONNECTING MIDI INTERFACES...",
+  "FINALIZING SYSTEM PATCH...",
 ];
 
-// As progress gets higher, we'll show these garbled/glitched messages
+// Glitch messages for high progress
 const GLITCH_MESSAGES = [
-  "W@rn!ng: M3m0ry c0rrup+ion d3t3cted...",
-  "C0de inj3c+!on att3mpt bl0ck3d...",
-  "Synta&* err0r^^ in m0dul3 l0ading...",
-  "D@t@ fragm3n+s r3c0v3r3d...",
-  ">Syst3m inst@bil!ty d3t3c+ed<!",
-  "F!le s¥st3m ch@0s r3p0rt3d...",
-  "KEY.<ANOMALY>.DETECTED:///",
-  "SYNCHRONIZATION.FAILURE..#@%",
-  "MEMORY_OVERFLOW:ERROR:0x94FF32...",
-  "ATTEMPTING_RECOVERY-SEQUENCE...",
-  "TIMELINE_CORRUPTION_DETECTED...",
-  "DIMENSIONAL_RIFT_CLOSING...",
-  "REALITY.PARAMETERS.NORMALIZING...",
-  "SYSTEM.REBOOT.IMMINENT...3...2...1...",
-]
+  "VCO_DRIFT_DETECTED::COMPENSATING...",
+  "FILTER_RESONANCE_OVERFLOW//LIMITING...",
+  "PATCH_CABLE_INTERFERENCE>>>ROUTING...",
+  "ANALOG_NOISE_INJECTION:::FILTERING...",
+  "VOLTAGE_SPIKE_DETECTED||REGULATING...",
+  "SEQUENCER_CLOCK_JITTER```STABILIZING...",
+  "FEEDBACK_LOOP_WARNING:::DAMPENING...",
+  "OSCILLATOR_SYNC_ERROR<<<RETUNING...",
+  "ENVELOPE_TRIGGER_ANOMALY---RESETTING...",
+  "MODULATION_MATRIX_CHAOS~~~REALIGNING...",
+];
 
 interface LoadingScreenProps {
   onLoadComplete: () => void;
@@ -86,55 +58,65 @@ interface LoadingScreenProps {
 
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [messages, setMessages] = useState<string[]>([]);
   const [currentMessage, setCurrentMessage] = useState("");
-  const [messageSpeed, setMessageSpeed] = useState(500); // Faster initial messages
-  const [terminalCursor, setTerminalCursor] = useState(true);
-  const terminalRef = useRef<HTMLDivElement>(null);
-  const animationFrameRef = useRef<number>();
+  const [vuLevel, setVuLevel] = useState(0);
+  const [scanlineOffset, setScanlineOffset] = useState(0);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationRef = useRef<number>();
   
-  // Simulate loading progress
+  // Main loading simulation
   useEffect(() => {
-    const simulateLoading = () => {
+    const interval = setInterval(() => {
       setLoadingProgress(prev => {
-        // Adjust increment to control loading speed - doubled for faster loading
-        const increment = prev < 70 ? 
-          Math.random() * 4 : 
-          Math.random() * 3;
-        
+        const increment = prev < 80 ? Math.random() * 3 : Math.random() * 1.5;
         const newProgress = Math.min(prev + increment, 100);
         
-        // Speed up messages as loading progresses - faster to scroll ASCII art
-        if (prev < 30 && newProgress >= 30) {
-          setMessageSpeed(300); // Speed up a bit
-        } else if (prev < 60 && newProgress >= 60) {
-          setMessageSpeed(200); // Speed up more
-        } else if (prev < 85 && newProgress >= 85) {
-          setMessageSpeed(120); // Speed up a lot
-        } else if (prev < 95 && newProgress >= 95) {
-          setMessageSpeed(50); // Very fast at the end
-        }
-        
-        // When we reach 100%, signal that loading is complete
         if (newProgress >= 100 && prev < 100) {
-          setTimeout(() => {
-            onLoadComplete();
-          }, 800);
+          setTimeout(() => onLoadComplete(), 1000);
         }
         
         return newProgress;
       });
-    };
-    
-    // Run the loading simulation more frequently to make loading faster
-    const interval = setInterval(simulateLoading, 150); // Update more frequently
+    }, 150);
     
     return () => clearInterval(interval);
   }, [onLoadComplete]);
-  
-  // Initialize the matrix rain animation
+
+  // Message cycling
   useEffect(() => {
-    const canvas = document.getElementById('matrix-canvas') as HTMLCanvasElement;
+    const messageInterval = setInterval(() => {
+      const messagePool = loadingProgress > 75 ? GLITCH_MESSAGES : SYNTH_MESSAGES;
+      const newMessage = messagePool[Math.floor(Math.random() * messagePool.length)];
+      setCurrentMessage(newMessage);
+    }, 800);
+    
+    return () => clearInterval(messageInterval);
+  }, [loadingProgress]);
+
+  // VU meter animation
+  useEffect(() => {
+    const vuInterval = setInterval(() => {
+      setVuLevel(prev => {
+        const target = (loadingProgress / 100) * 0.8 + Math.random() * 0.2;
+        return prev + (target - prev) * 0.3;
+      });
+    }, 50);
+    
+    return () => clearInterval(vuInterval);
+  }, [loadingProgress]);
+
+  // Scanline animation
+  useEffect(() => {
+    const scanlineInterval = setInterval(() => {
+      setScanlineOffset(prev => (prev + 1) % 4);
+    }, 100);
+    
+    return () => clearInterval(scanlineInterval);
+  }, []);
+
+  // Circuit board animation background
+  useEffect(() => {
+    const canvas = canvasRef.current;
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
@@ -143,304 +125,202 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     
-    // Matrix characters - use more code-like symbols
-    const chars = '01アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン[]{}+-*/=0123456789ABCDEF';
-    const columns = Math.floor(canvas.width / 14); // Character width
-    const drops: number[] = [];
+    // Circuit traces
+    const traces: Array<{x1: number, y1: number, x2: number, y2: number, opacity: number}> = [];
     
-    // Initialize drops at random positions
-    for (let i = 0; i < columns; i++) {
-      drops[i] = Math.random() * -100;
+    // Generate random circuit traces
+    for (let i = 0; i < 15; i++) {
+      traces.push({
+        x1: Math.random() * canvas.width,
+        y1: Math.random() * canvas.height,
+        x2: Math.random() * canvas.width,
+        y2: Math.random() * canvas.height,
+        opacity: Math.random() * 0.3 + 0.1
+      });
     }
     
-    const drawMatrix = () => {
-      // Semi-transparent black to create trails
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const drawCircuits = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      ctx.fillStyle = '#0F0'; // Green text
-      ctx.font = '14px monospace';
-      
-      // Draw characters
-      for (let i = 0; i < drops.length; i++) {
-        // Random character
-        const text = chars[Math.floor(Math.random() * chars.length)];
-        // x coordinate dependent on column, y on drop position
-        ctx.fillText(text, i * 14, drops[i] * 14);
-        
-        // Move drops down for next frame
-        drops[i]++;
-        
-        // Reset drop when it reaches the bottom with some randomness
-        if (drops[i] * 14 > canvas.height && Math.random() > 0.975) {
-          drops[i] = Math.random() * -20;
-        }
+      // Draw grid
+      ctx.strokeStyle = 'rgba(0, 255, 255, 0.05)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += 50) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += 50) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
       }
       
-      // Request next frame
-      animationFrameRef.current = requestAnimationFrame(drawMatrix);
+      // Draw traces
+      traces.forEach(trace => {
+        ctx.strokeStyle = `rgba(0, 255, 255, ${trace.opacity})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(trace.x1, trace.y1);
+        ctx.lineTo(trace.x2, trace.y2);
+        ctx.stroke();
+        
+        // Animated pulse
+        const time = Date.now() * 0.001;
+        const pulse = Math.sin(time * 2 + trace.x1 * 0.01) * 0.5 + 0.5;
+        ctx.fillStyle = `rgba(255, 0, 255, ${pulse * 0.3})`;
+        ctx.beginPath();
+        ctx.arc(trace.x1, trace.y1, 3, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      
+      animationRef.current = requestAnimationFrame(drawCircuits);
     };
     
-    // Start the animation
-    drawMatrix();
+    drawCircuits();
     
-    // Clean up on unmount
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
       }
     };
   }, []);
-  
-  // Handle the terminal message display
-  useEffect(() => {
-    // Skip if we've reached the end
-    if (loadingProgress >= 100) return;
-    
-    // Add ASCII logo as the first message at the start
-    if (messages.length === 0) {
-      // First add the ASCII art to the terminal - add additional strings to push it fully to view
-      setMessages([`${CRAFTABLE_ASCII_ART}`]);
-      
-      // After a short delay, add more initial system messages to quickly push the ASCII art up
-      setTimeout(() => {
-        const initialMessages = [
-          'SYSTEM: Initializing boot sequence...',
-          'KERNEL: Loading system modules...',
-          'MEMORY: Performing memory check...',
-          'CPU: Initializing processor cores...',
-          'SYSTEM: Checking system integrity...',
-          'HARDWARE: Detecting connected devices...',
-          'STORAGE: Mounting filesystems...',
-          'NETWORK: Initializing virtual interfaces...',
-          'SERVICES: Starting system services...',
-          'SECURITY: Initializing protection modules...',
-          'DRIVERS: Loading device drivers...',
-          'GRAPHICS: Initializing display adapter...',
-          'SYSTEM: Loading desktop environment...',
-          'UI: Preparing interface elements...',
-          'APPLICATIONS: Preloading system applications...',
-          'SYSTEM: Running startup scripts...',
-        ];
-        
-        // Add each message with a delay to create a staggered effect
-        initialMessages.forEach((msg, index) => {
-          setTimeout(() => {
-            setMessages(prev => [...prev, msg]);
-            
-            // Ensure we auto-scroll to show new content without scrollbars
-            if (terminalRef.current) {
-              const terminalContent = terminalRef.current;
-              terminalContent.scrollTop = terminalContent.scrollHeight;
-            }
-          }, index * 200);
-        });
-      }, 1000);
-    }
-    
-    // Terminal cursor blink effect
-    const cursorInterval = setInterval(() => {
-      setTerminalCursor(prev => !prev);
-    }, 500);
-    
-    // Show a new message based on loading progress
-    const messageInterval = setInterval(() => {
-      let messagePool = LOADING_MESSAGES;
-      
-      // Show glitched messages more frequently as we approach 100%
-      if (loadingProgress > 75 && Math.random() > 0.5) {
-        messagePool = GLITCH_MESSAGES;
-      }
-      
-      const newMessage = messagePool[Math.floor(Math.random() * messagePool.length)];
-      
-      // Type-writer effect for the message
-      let charIndex = 0;
-      setCurrentMessage('');
-      
-      const typeInterval = setInterval(() => {
-        if (charIndex < newMessage.length) {
-          setCurrentMessage(prev => prev + newMessage.charAt(charIndex));
-          charIndex++;
-        } else {
-          clearInterval(typeInterval);
-          
-          // After typing is done, add to message history and clear current
-          setTimeout(() => {
-            setMessages(prev => [...prev, newMessage]);
-            setCurrentMessage('');
-            
-            // Auto-scroll terminal output programmatically without scrollbars
-            if (terminalRef.current) {
-              const terminalContent = terminalRef.current;
-              // Create scrolling effect by manipulating the content transform instead of scrollTop
-              // This allows scrolling without showing scrollbars
-              const currentContent = terminalContent.innerHTML;
-              const scrollHeight = terminalContent.scrollHeight;
-              
-              // Force scroll to always show latest content
-              terminalContent.scrollTop = scrollHeight;
-            }
-          }, 200);
-        }
-      }, 25); // Type faster (was 40ms)
-      
-      return () => clearInterval(typeInterval);
-    }, messageSpeed); // Controlled by loading progress
-    
-    // Occasionally add glitch effect to the terminal
-    const glitchInterval = setInterval(() => {
-      if (Math.random() > 0.9) {
-        const terminalElement = document.getElementById('terminal-output');
-        if (terminalElement) {
-          terminalElement.classList.add('glitch-effect');
-          setTimeout(() => {
-            terminalElement.classList.remove('glitch-effect');
-          }, 150);
-        }
-      }
-    }, 1000);
-    
-    return () => {
-      clearInterval(cursorInterval);
-      clearInterval(messageInterval);
-      clearInterval(glitchInterval);
-    };
-  }, [loadingProgress, messageSpeed, messages.length]);
-  
+
   return (
-    <div className="fixed inset-0 bg-black flex flex-col items-center justify-center z-50 overflow-hidden">
-      {/* Matrix-like background */}
-      <canvas id="matrix-canvas" className="absolute inset-0 opacity-30"></canvas>
+    <div className="fixed inset-0 bg-black overflow-hidden">
+      {/* Circuit board background */}
+      <canvas ref={canvasRef} className="absolute inset-0 opacity-40" />
       
-      {/* Main terminal */}
+      {/* Scanlines overlay */}
       <div 
-        className="relative z-10 w-full max-w-3xl bg-black border border-orange-500 rounded p-4 flex flex-col"
-        style={{ height: '80vh' }}
-      >
-        {/* Terminal header */}
-        <div className="border-b border-orange-500 pb-2 mb-4 flex justify-between items-center">
-          <div className="text-orange-500 font-mono text-sm">
-            CRAFTING_TABLE_OS v1.0.4815
-          </div>
-          <div className="text-orange-400 font-mono text-xs">
-            {new Date().toLocaleTimeString()} | BOOT SEQUENCE
-          </div>
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `linear-gradient(transparent 50%, rgba(0, 255, 255, 0.03) 50%)`,
+          backgroundSize: '100% 4px',
+          transform: `translateY(${scanlineOffset}px)`
+        }}
+      />
+      
+      {/* Main content */}
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-8">
+        
+        {/* Synth Logo */}
+        <div className="mb-8">
+          <pre className="text-cyan-400 text-xs font-mono leading-tight text-center filter drop-shadow-lg">
+            {SYNTH_LOGO}
+          </pre>
         </div>
         
-        {/* No ASCII art at the top - removed as requested */}
-        
-        {/* Loading bar */}
-        <div className="h-4 bg-black border border-orange-500 mb-4">
-          <div 
-            className="h-full bg-orange-500 transition-all duration-300 ease-linear"
-            style={{ width: `${loadingProgress}%` }}
-          ></div>
-        </div>
-        
-        {/* Loading percentage */}
-        <div className="text-orange-400 font-mono text-xs mb-4 flex justify-between">
-          <span>SYSTEM BOOT: {Math.floor(loadingProgress)}% COMPLETE</span>
-          <span>{loadingProgress < 70 ? "STATUS: NOMINAL" : 
-                 loadingProgress < 90 ? "STATUS: WARNING" : 
-                 "STATUS: CRITICAL"}</span>
-        </div>
-        
-        {/* ASCII art is now displayed in the terminal window */}
-        
-        {/* Terminal output - scrollable */}
-        <div 
-          ref={terminalRef}
-          id="terminal-output"
-          className="bg-black flex-1 font-mono text-sm overflow-hidden p-2 text-orange-400"
-          style={{ 
-            maxHeight: 'calc(80vh - 200px)',
-            boxShadow: 'inset 0 0 10px rgba(255, 165, 0, 0.2)'
-          }}
-        >
-          {messages.map((msg, index) => (
-            <div key={index} 
-              className={`mb-1 
-                ${loadingProgress > 80 && Math.random() > 0.7 ? 'text-green-400' : ''}
-                ${index === 0 ? 'ascii-art whitespace-pre font-mono text-amber-500' : ''}`}>
-              {index === 0 ? msg : `$ ${msg}`}
+        {/* Modular Interface Panel */}
+        <div className="bg-gradient-to-b from-gray-900 to-black border-2 border-cyan-500 rounded-lg p-6 w-full max-w-4xl shadow-2xl">
+          
+          {/* Header with VU meters */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="text-cyan-400 font-mono text-sm">
+              MODULAR_SYNTH_OS v2.1.4
             </div>
-          ))}
-          {currentMessage && (
-            <div className="flex">
-              <span>$ {currentMessage}</span>
-              <span className={terminalCursor ? 'opacity-100' : 'opacity-0'}>▊</span>
-            </div>
-          )}
-        </div>
-        
-        {/* Footer with system info */}
-        <div className="border-t border-orange-500 pt-2 mt-4">
-          <div className="flex justify-between text-orange-500 font-mono text-xs">
-            <div>
-              MEMORY: {Math.floor(loadingProgress)}% ALLOCATED
-            </div>
-            <div>
-              CPU: {Math.min(99, Math.floor(loadingProgress * 1.2))}% USAGE
-            </div>
-            <div>
-              {loadingProgress < 90 ? 
-                "BOOT SEQUENCE IN PROGRESS..." : 
-                "PREPARING DESKTOP ENVIRONMENT..."}
+            <div className="flex space-x-2">
+              {/* VU Meter */}
+              {Array.from({length: 20}).map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-1 h-8 ${
+                    i < vuLevel * 20 
+                      ? i < 14 ? 'bg-green-500' : i < 18 ? 'bg-yellow-500' : 'bg-red-500'
+                      : 'bg-gray-800'
+                  }`}
+                />
+              ))}
             </div>
           </div>
+          
+          {/* Progress bars styled as faders */}
+          <div className="grid grid-cols-4 gap-4 mb-6">
+            {['OSC', 'FILT', 'ENV', 'LFO'].map((label, i) => (
+              <div key={label} className="text-center">
+                <div className="text-cyan-400 text-xs mb-2">{label}</div>
+                <div className="h-32 w-4 bg-gray-800 border border-cyan-500 mx-auto relative">
+                  <div 
+                    className="absolute bottom-0 w-full bg-gradient-to-t from-cyan-500 to-purple-500 transition-all duration-300"
+                    style={{ height: `${(loadingProgress + i * 5) % 100}%` }}
+                  />
+                  <div className="absolute w-6 h-2 bg-white border border-gray-400 -left-1 transition-all duration-300"
+                       style={{ bottom: `${(loadingProgress + i * 5) % 100}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Main progress display */}
+          <div className="mb-6">
+            <div className="flex justify-between text-cyan-400 text-sm mb-2">
+              <span>SYSTEM INITIALIZATION</span>
+              <span>{Math.floor(loadingProgress)}%</span>
+            </div>
+            <div className="h-6 bg-gray-800 border-2 border-cyan-500 rounded overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 transition-all duration-300 relative"
+                style={{ width: `${loadingProgress}%` }}
+              >
+                <div className="absolute inset-0 bg-white opacity-20 animate-pulse" />
+              </div>
+            </div>
+          </div>
+          
+          {/* Message display */}
+          <div className="bg-black border border-cyan-500 p-4 rounded">
+            <div className="text-cyan-400 font-mono text-sm">
+              <div className="flex items-center">
+                <span className="text-green-500 mr-2">●</span>
+                <span className="animate-pulse">{currentMessage}</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Patch matrix visualization */}
+          <div className="mt-6 grid grid-cols-8 gap-1">
+            {Array.from({length: 32}).map((_, i) => (
+              <div
+                key={i}
+                className={`h-3 w-3 border border-cyan-700 ${
+                  Math.random() < loadingProgress / 100 
+                    ? 'bg-cyan-500 shadow-lg shadow-cyan-500/50' 
+                    : 'bg-gray-800'
+                }`}
+                style={{
+                  animationDelay: `${i * 50}ms`,
+                  animation: Math.random() < 0.1 ? 'pulse 1s infinite' : 'none'
+                }}
+              />
+            ))}
+          </div>
+          
         </div>
+        
+        {/* Status indicators */}
+        <div className="mt-6 flex space-x-8 text-xs">
+          <div className="flex items-center text-green-500">
+            <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse" />
+            POWER: NOMINAL
+          </div>
+          <div className="flex items-center text-cyan-400">
+            <div className="w-2 h-2 bg-cyan-500 rounded-full mr-2 animate-pulse" />
+            SYNC: LOCKED
+          </div>
+          <div className="flex items-center text-purple-400">
+            <div className="w-2 h-2 bg-purple-500 rounded-full mr-2 animate-pulse" />
+            PATCH: {loadingProgress < 100 ? 'LOADING' : 'READY'}
+          </div>
+        </div>
+        
       </div>
       
-      {/* Add some CSS for custom effects */}
-      <style>{`
-        .glitch-effect {
-          animation: glitch 0.3s infinite;
-          text-shadow: 2px 0 #ff0000, -2px 0 #00ff00;
-        }
-        
-        @keyframes glitch {
-          0% {
-            transform: translate(2px, 0);
-            text-shadow: 2px 0 #ff0000, -2px 0 #00ff00;
-          }
-          25% {
-            transform: translate(-2px, 0);
-            text-shadow: -2px 0 #ff0000, 2px 0 #00ff00;
-          }
-          50% {
-            transform: translate(0, 2px);
-            text-shadow: 2px 0 #0000ff, -2px 0 #ff0000;
-          }
-          75% {
-            transform: translate(0, -2px);
-            text-shadow: -2px 0 #0000ff, 2px 0 #ff0000;
-          }
-          100% {
-            transform: translate(2px, 0);
-            text-shadow: 2px 0 #ff0000, -2px 0 #00ff00;
-          }
-        }
-        
-        /* ASCII art styling */
-        .ascii-art {
-          font-size: 9px;
-          line-height: 9px;
-          letter-spacing: 0px;
-          font-family: monospace;
-          white-space: pre;
-          margin-bottom: 1rem;
-          color: #fbbf24; /* amber-500 */
-          text-shadow: 0 0 3px rgba(251, 191, 36, 0.8);
-          transform: scale(1.0);
-          transform-origin: top left;
-          display: block;
-          position: relative;
-          opacity: 1;
-          overflow-x: hidden;
-          max-width: 100%;
-        }
-      `}</style>
+      {/* Glow effects */}
+      <div className="absolute inset-0 bg-gradient-radial from-cyan-900/20 via-transparent to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-conic from-purple-900/10 via-transparent to-cyan-900/10 pointer-events-none" />
+      
     </div>
   );
 };
