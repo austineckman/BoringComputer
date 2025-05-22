@@ -18,7 +18,7 @@ const SYNTH_LOGO = `
       ╚═══════════════════════════════════════════════╝       
 `;
 
-// Modular synth interface messages
+// Extended modular synth interface messages
 const SYNTH_MESSAGES = [
   "INITIALIZING MODULAR SYNTHESIS ENGINE...",
   "LOADING OSCILLATOR MODULES...",
@@ -36,6 +36,20 @@ const SYNTH_MESSAGES = [
   "LOADING SAMPLE BANKS...",
   "CONNECTING MIDI INTERFACES...",
   "FINALIZING SYSTEM PATCH...",
+  "CHECKING POWER SUPPLY VOLTAGES...",
+  "INITIALIZING ANALOG-TO-DIGITAL CONVERTERS...",
+  "LOADING FIRMWARE TO MICROPROCESSORS...",
+  "CALIBRATING CONTROL VOLTAGE GENERATORS...",
+  "TESTING GATE SIGNAL PATHS...",
+  "SYNCHRONIZING CLOCK DIVIDERS...",
+  "LOADING PRESET CONFIGURATIONS...",
+  "INITIALIZING STEP SEQUENCERS...",
+  "CONFIGURING TRIGGER OUTPUTS...",
+  "WARMING UP ANALOG CIRCUITRY...",
+  "ESTABLISHING TIMING REFERENCES...",
+  "LOADING WAVETABLE OSCILLATORS...",
+  "CONFIGURING FILTER BANKS...",
+  "INITIALIZING EFFECTS PROCESSORS..."
 ];
 
 // Glitch messages for high progress
@@ -50,6 +64,11 @@ const GLITCH_MESSAGES = [
   "OSCILLATOR_SYNC_ERROR<<<RETUNING...",
   "ENVELOPE_TRIGGER_ANOMALY---RESETTING...",
   "MODULATION_MATRIX_CHAOS~~~REALIGNING...",
+  "MEMORY_CORRUPTION_DETECTED///FIXING...",
+  "THERMAL_RUNAWAY_PREVENTED||COOLING...",
+  "POWER_REGULATION_FAILURE```SWITCHING...",
+  "SIGNAL_PATH_CROSSTALK:::ISOLATING...",
+  "TIMING_REFERENCE_LOST---RESYNC...",
 ];
 
 interface LoadingScreenProps {
@@ -58,12 +77,18 @@ interface LoadingScreenProps {
 
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [currentMessage, setCurrentMessage] = useState("");
+  const [scrollingMessages, setScrollingMessages] = useState<string[]>([
+    "SYSTEM BOOT SEQUENCE INITIATED...",
+    "CHECKING HARDWARE COMPATIBILITY...",
+    "LOADING CORE SYSTEM MODULES..."
+  ]);
   const [vuLevel, setVuLevel] = useState(0);
   const [scanlineOffset, setScanlineOffset] = useState(0);
+  const [cubeRotation, setCubeRotation] = useState({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
-  
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   // Main loading simulation
   useEffect(() => {
     const interval = setInterval(() => {
@@ -82,16 +107,37 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
     return () => clearInterval(interval);
   }, [onLoadComplete]);
 
-  // Message cycling
+  // Scrolling messages system
   useEffect(() => {
     const messageInterval = setInterval(() => {
       const messagePool = loadingProgress > 75 ? GLITCH_MESSAGES : SYNTH_MESSAGES;
       const newMessage = messagePool[Math.floor(Math.random() * messagePool.length)];
-      setCurrentMessage(newMessage);
-    }, 800);
+      
+      setScrollingMessages(prev => {
+        const updated = [...prev, newMessage];
+        return updated.slice(-20); // Keep last 20 messages
+      });
+      
+      // Auto scroll to bottom
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }, 300); // Even faster message cycling
     
     return () => clearInterval(messageInterval);
   }, [loadingProgress]);
+
+  // 3D Cube rotation animation
+  useEffect(() => {
+    const rotationInterval = setInterval(() => {
+      setCubeRotation(prev => ({
+        x: prev.x + 1,
+        y: prev.y + 0.5
+      }));
+    }, 50);
+    
+    return () => clearInterval(rotationInterval);
+  }, []);
 
   // VU meter animation
   useEffect(() => {
@@ -125,10 +171,8 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     
-    // Circuit traces
     const traces: Array<{x1: number, y1: number, x2: number, y2: number, opacity: number}> = [];
     
-    // Generate random circuit traces
     for (let i = 0; i < 15; i++) {
       traces.push({
         x1: Math.random() * canvas.width,
@@ -167,7 +211,6 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
         ctx.lineTo(trace.x2, trace.y2);
         ctx.stroke();
         
-        // Animated pulse
         const time = Date.now() * 0.001;
         const pulse = Math.sin(time * 2 + trace.x1 * 0.01) * 0.5 + 0.5;
         ctx.fillStyle = `rgba(255, 0, 255, ${pulse * 0.3})`;
@@ -189,7 +232,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden">
+    <div className="fixed inset-0 bg-black overflow-hidden z-[9999]">
       {/* Circuit board background */}
       <canvas ref={canvasRef} className="absolute inset-0 opacity-40" />
       
@@ -204,114 +247,160 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
       />
       
       {/* Main content */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-8">
+      <div className="relative z-10 flex items-center justify-center min-h-screen p-8">
         
-        {/* Synth Logo */}
-        <div className="mb-8">
-          <pre className="text-cyan-400 text-xs font-mono leading-tight text-center filter drop-shadow-lg">
-            {SYNTH_LOGO}
-          </pre>
+        {/* Left side - Scrolling terminal */}
+        <div className="w-1/3 h-full">
+          <div className="bg-black border border-cyan-500 h-[80vh] overflow-hidden">
+            <div className="p-2 border-b border-cyan-500 text-cyan-400 text-xs font-mono">
+              SYSTEM CONSOLE v2.1.4 :: MODULAR_SYNTH_OS
+            </div>
+            <div className="p-3 h-full overflow-hidden">
+              <div className="h-full overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                {scrollingMessages.map((msg, index) => (
+                  <div key={index} className="text-cyan-400 font-mono text-xs mb-1">
+                    <span className="text-green-500">[{String(index + 1).padStart(3, '0')}]</span> 
+                    <span className="ml-2 animate-pulse">{msg}</span>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+            </div>
+          </div>
         </div>
         
-        {/* Modular Interface Panel */}
-        <div className="bg-gradient-to-b from-gray-900 to-black border-2 border-cyan-500 rounded-lg p-6 w-full max-w-4xl shadow-2xl">
+        {/* Center - 3D Rotating Cube and Logo */}
+        <div className="w-1/3 flex flex-col items-center justify-center">
+          {/* Synth Logo */}
+          <div className="mb-8">
+            <pre className="text-cyan-400 text-xs font-mono leading-tight text-center filter drop-shadow-lg">
+              {SYNTH_LOGO}
+            </pre>
+          </div>
           
-          {/* Header with VU meters */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="text-cyan-400 font-mono text-sm">
-              MODULAR_SYNTH_OS v2.1.4
+          {/* 3D Rotating Cube - 1997 style */}
+          <div className="mb-8" style={{ perspective: '1000px' }}>
+            <div 
+              className="w-32 h-32 relative"
+              style={{
+                transform: `rotateX(${cubeRotation.x}deg) rotateY(${cubeRotation.y}deg)`,
+                transformStyle: 'preserve-3d'
+              }}
+            >
+              {/* Cube faces */}
+              <div className="absolute w-32 h-32 border-2 border-cyan-500 bg-gradient-to-br from-cyan-900/30 to-purple-900/30" 
+                   style={{ transform: 'translateZ(64px)' }} />
+              <div className="absolute w-32 h-32 border-2 border-cyan-500 bg-gradient-to-br from-purple-900/30 to-pink-900/30" 
+                   style={{ transform: 'rotateY(90deg) translateZ(64px)' }} />
+              <div className="absolute w-32 h-32 border-2 border-cyan-500 bg-gradient-to-br from-pink-900/30 to-cyan-900/30" 
+                   style={{ transform: 'rotateY(180deg) translateZ(64px)' }} />
+              <div className="absolute w-32 h-32 border-2 border-cyan-500 bg-gradient-to-br from-cyan-900/30 to-purple-900/30" 
+                   style={{ transform: 'rotateY(-90deg) translateZ(64px)' }} />
+              <div className="absolute w-32 h-32 border-2 border-cyan-500 bg-gradient-to-br from-purple-900/30 to-pink-900/30" 
+                   style={{ transform: 'rotateX(90deg) translateZ(64px)' }} />
+              <div className="absolute w-32 h-32 border-2 border-cyan-500 bg-gradient-to-br from-pink-900/30 to-cyan-900/30" 
+                   style={{ transform: 'rotateX(-90deg) translateZ(64px)' }} />
+              
+              {/* Center glow effect */}
+              <div className="absolute inset-0 bg-cyan-500/20 rounded animate-pulse" />
             </div>
-            <div className="flex space-x-2">
-              {/* VU Meter */}
-              {Array.from({length: 20}).map((_, i) => (
+          </div>
+          
+          {/* Loading percentage */}
+          <div className="text-cyan-400 font-mono text-3xl mb-4 animate-pulse">
+            {Math.floor(loadingProgress)}%
+          </div>
+          
+          {/* Status */}
+          <div className="text-center">
+            <div className="text-cyan-400 font-mono text-sm mb-2">SYSTEM INITIALIZATION</div>
+            <div className="flex space-x-4 text-xs">
+              <div className="flex items-center text-green-500">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse" />
+                POWER
+              </div>
+              <div className="flex items-center text-cyan-400">
+                <div className="w-2 h-2 bg-cyan-500 rounded-full mr-2 animate-pulse" />
+                SYNC
+              </div>
+              <div className="flex items-center text-purple-400">
+                <div className="w-2 h-2 bg-purple-500 rounded-full mr-2 animate-pulse" />
+                READY
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Right side - Modular Interface */}
+        <div className="w-1/3">
+          <div className="bg-gradient-to-b from-gray-900 to-black border-2 border-cyan-500 rounded-lg p-4 h-[80vh]">
+            
+            {/* Header with VU meters */}
+            <div className="flex justify-between items-center mb-6">
+              <div className="text-cyan-400 font-mono text-sm">
+                PATCH MATRIX
+              </div>
+              <div className="flex space-x-1">
+                {Array.from({length: 16}).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-1 h-6 ${
+                      i < vuLevel * 16 
+                        ? i < 11 ? 'bg-green-500' : i < 14 ? 'bg-yellow-500' : 'bg-red-500'
+                        : 'bg-gray-800'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            {/* Progress bars styled as faders */}
+            <div className="grid grid-cols-4 gap-4 mb-6">
+              {['OSC', 'FILT', 'ENV', 'LFO'].map((label, i) => (
+                <div key={label} className="text-center">
+                  <div className="text-cyan-400 text-xs mb-2">{label}</div>
+                  <div className="h-20 w-3 bg-gray-800 border border-cyan-500 mx-auto relative">
+                    <div 
+                      className="absolute bottom-0 w-full bg-gradient-to-t from-cyan-500 to-purple-500 transition-all duration-300"
+                      style={{ height: `${(loadingProgress + i * 10) % 100}%` }}
+                    />
+                    <div className="absolute w-4 h-1 bg-white border border-gray-400 -left-0.5 transition-all duration-300"
+                         style={{ bottom: `${(loadingProgress + i * 10) % 100}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Main progress display */}
+            <div className="mb-6">
+              <div className="h-4 bg-gray-800 border-2 border-cyan-500 rounded overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 transition-all duration-300 relative"
+                  style={{ width: `${loadingProgress}%` }}
+                >
+                  <div className="absolute inset-0 bg-white opacity-20 animate-pulse" />
+                </div>
+              </div>
+            </div>
+            
+            {/* Patch matrix visualization */}
+            <div className="grid grid-cols-8 gap-1">
+              {Array.from({length: 32}).map((_, i) => (
                 <div
                   key={i}
-                  className={`w-1 h-8 ${
-                    i < vuLevel * 20 
-                      ? i < 14 ? 'bg-green-500' : i < 18 ? 'bg-yellow-500' : 'bg-red-500'
+                  className={`h-3 w-3 border border-cyan-700 ${
+                    Math.random() < loadingProgress / 100 
+                      ? 'bg-cyan-500 shadow-lg shadow-cyan-500/50' 
                       : 'bg-gray-800'
                   }`}
+                  style={{
+                    animationDelay: `${i * 50}ms`,
+                    animation: Math.random() < 0.1 ? 'pulse 1s infinite' : 'none'
+                  }}
                 />
               ))}
             </div>
-          </div>
-          
-          {/* Progress bars styled as faders */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
-            {['OSC', 'FILT', 'ENV', 'LFO'].map((label, i) => (
-              <div key={label} className="text-center">
-                <div className="text-cyan-400 text-xs mb-2">{label}</div>
-                <div className="h-32 w-4 bg-gray-800 border border-cyan-500 mx-auto relative">
-                  <div 
-                    className="absolute bottom-0 w-full bg-gradient-to-t from-cyan-500 to-purple-500 transition-all duration-300"
-                    style={{ height: `${(loadingProgress + i * 5) % 100}%` }}
-                  />
-                  <div className="absolute w-6 h-2 bg-white border border-gray-400 -left-1 transition-all duration-300"
-                       style={{ bottom: `${(loadingProgress + i * 5) % 100}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          {/* Main progress display */}
-          <div className="mb-6">
-            <div className="flex justify-between text-cyan-400 text-sm mb-2">
-              <span>SYSTEM INITIALIZATION</span>
-              <span>{Math.floor(loadingProgress)}%</span>
-            </div>
-            <div className="h-6 bg-gray-800 border-2 border-cyan-500 rounded overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 transition-all duration-300 relative"
-                style={{ width: `${loadingProgress}%` }}
-              >
-                <div className="absolute inset-0 bg-white opacity-20 animate-pulse" />
-              </div>
-            </div>
-          </div>
-          
-          {/* Message display */}
-          <div className="bg-black border border-cyan-500 p-4 rounded">
-            <div className="text-cyan-400 font-mono text-sm">
-              <div className="flex items-center">
-                <span className="text-green-500 mr-2">●</span>
-                <span className="animate-pulse">{currentMessage}</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Patch matrix visualization */}
-          <div className="mt-6 grid grid-cols-8 gap-1">
-            {Array.from({length: 32}).map((_, i) => (
-              <div
-                key={i}
-                className={`h-3 w-3 border border-cyan-700 ${
-                  Math.random() < loadingProgress / 100 
-                    ? 'bg-cyan-500 shadow-lg shadow-cyan-500/50' 
-                    : 'bg-gray-800'
-                }`}
-                style={{
-                  animationDelay: `${i * 50}ms`,
-                  animation: Math.random() < 0.1 ? 'pulse 1s infinite' : 'none'
-                }}
-              />
-            ))}
-          </div>
-          
-        </div>
-        
-        {/* Status indicators */}
-        <div className="mt-6 flex space-x-8 text-xs">
-          <div className="flex items-center text-green-500">
-            <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse" />
-            POWER: NOMINAL
-          </div>
-          <div className="flex items-center text-cyan-400">
-            <div className="w-2 h-2 bg-cyan-500 rounded-full mr-2 animate-pulse" />
-            SYNC: LOCKED
-          </div>
-          <div className="flex items-center text-purple-400">
-            <div className="w-2 h-2 bg-purple-500 rounded-full mr-2 animate-pulse" />
-            PATCH: {loadingProgress < 100 ? 'LOADING' : 'READY'}
+            
           </div>
         </div>
         
