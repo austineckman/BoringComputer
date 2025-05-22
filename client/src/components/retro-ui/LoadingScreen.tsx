@@ -23,7 +23,7 @@ const SYNTH_LOGO = `
    ╚═══════════════════════════════════════════════════════╝
 `;
 
-// Extended modular synth interface messages
+// Massive hacker-era synth messages
 const SYNTH_MESSAGES = [
   "INITIALIZING MODULAR SYNTHESIS ENGINE...",
   "LOADING OSCILLATOR MODULES...",
@@ -54,7 +54,62 @@ const SYNTH_MESSAGES = [
   "ESTABLISHING TIMING REFERENCES...",
   "LOADING WAVETABLE OSCILLATORS...",
   "CONFIGURING FILTER BANKS...",
-  "INITIALIZING EFFECTS PROCESSORS..."
+  "INITIALIZING EFFECTS PROCESSORS...",
+  "SCANNING MEMORY BANKS 0x0000-0xFFFF...",
+  "LOADING BOOTLOADER V2.1.4815...",
+  "CHECKING CPU CACHE COHERENCY...",
+  "INITIALIZING SYSTEM TIMERS...",
+  "LOADING KERNEL MODULES...",
+  "SCANNING FOR HARDWARE INTERRUPTS...",
+  "INITIALIZING DMA CONTROLLERS...",
+  "SETTING UP MEMORY MANAGEMENT UNIT...",
+  "LOADING DEVICE DRIVERS...",
+  "ESTABLISHING SYSTEM CALLS TABLE...",
+  "CONFIGURING PROCESS SCHEDULER...",
+  "INITIALIZING FILE SYSTEM DRIVERS...",
+  "MOUNTING ROOT FILESYSTEM...",
+  "STARTING SYSTEM DAEMONS...",
+  "LOADING NETWORK PROTOCOLS...",
+  "INITIALIZING GRAPHICS SUBSYSTEM...",
+  "CONFIGURING AUDIO PIPELINE...",
+  "LOADING USER INTERFACE MODULES...",
+  "ESTABLISHING SECURITY CONTEXT...",
+  "INITIALIZING CRYPTO ENGINES...",
+  "SETTING UP VIRTUAL MEMORY...",
+  "CONFIGURING SWAP SPACE...",
+  "LOADING SHARED LIBRARIES...",
+  "INITIALIZING SYMBOL TABLES...",
+  "SETTING UP EXCEPTION HANDLERS...",
+  "CONFIGURING REAL-TIME CLOCK...",
+  "LOADING POWER MANAGEMENT...",
+  "INITIALIZING THERMAL MONITORING...",
+  "CONFIGURING CPU FREQUENCY SCALING...",
+  "SETTING UP WATCHDOG TIMER...",
+  "LOADING HARDWARE ABSTRACTION LAYER...",
+  "INITIALIZING PLATFORM DRIVERS...",
+  "CONFIGURING INTERRUPT CONTROLLERS...",
+  "SETTING UP DIRECT MEMORY ACCESS...",
+  "LOADING FIRMWARE BLOBS...",
+  "INITIALIZING MICROCODE UPDATES...",
+  "CONFIGURING CACHE HIERARCHIES...",
+  "SETTING UP TRANSLATION LOOKASIDE BUFFERS...",
+  "LOADING PERFORMANCE COUNTERS...",
+  "INITIALIZING DEBUG INTERFACES...",
+  "CONFIGURING TRACE BUFFERS...",
+  "SETTING UP PROFILING HOOKS...",
+  "LOADING INSTRUMENTATION FRAMEWORK...",
+  "INITIALIZING LOGGING SUBSYSTEM...",
+  "CONFIGURING AUDIT TRAIL...",
+  "SETTING UP SYSTEM MONITORING...",
+  "LOADING DIAGNOSTIC TOOLS...",
+  "INITIALIZING HEALTH CHECKS...",
+  "CONFIGURING FAULT TOLERANCE...",
+  "SETTING UP REDUNDANCY SYSTEMS...",
+  "LOADING BACKUP PROCEDURES...",
+  "INITIALIZING RECOVERY PROTOCOLS...",
+  "CONFIGURING EMERGENCY HANDLERS...",
+  "SETTING UP PANIC ROUTINES...",
+  "LOADING CRASH DUMP FACILITIES..."
 ];
 
 // Glitch messages for high progress
@@ -85,13 +140,21 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
   const [scrollingMessages, setScrollingMessages] = useState<string[]>([
     "SYSTEM BOOT SEQUENCE INITIATED...",
     "CHECKING HARDWARE COMPATIBILITY...",
-    "LOADING CORE SYSTEM MODULES..."
+    "LOADING CORE SYSTEM MODULES...",
+    "INITIALIZING RANDOM ACCESS MEMORY...",
+    "SETTING UP INTERRUPT VECTORS...",
+    "LOADING SYSTEM LIBRARIES..."
   ]);
   const [vuLevel, setVuLevel] = useState(0);
   const [scanlineOffset, setScanlineOffset] = useState(0);
+  const [staticIntensity, setStaticIntensity] = useState(0);
+  const [glitchOffset, setGlitchOffset] = useState(0);
   const [cubeRotation, setCubeRotation] = useState({ x: 0, y: 0 });
+  const [movingElements, setMovingElements] = useState<Array<{id: number, x: number, y: number, speed: number}>>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const staticCanvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
+  const staticAnimationRef = useRef<number>();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Main loading simulation
@@ -112,7 +175,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
     return () => clearInterval(interval);
   }, [onLoadComplete]);
 
-  // Scrolling messages system
+  // Ultra-fast scrolling messages system
   useEffect(() => {
     const messageInterval = setInterval(() => {
       const messagePool = loadingProgress > 75 ? GLITCH_MESSAGES : SYNTH_MESSAGES;
@@ -120,17 +183,51 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
       
       setScrollingMessages(prev => {
         const updated = [...prev, newMessage];
-        return updated.slice(-20); // Keep last 20 messages
+        return updated.slice(-40); // Keep more messages visible
       });
       
       // Auto scroll to bottom
       setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    }, 300); // Even faster message cycling
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+      }, 50);
+    }, 120); // Much faster message cycling for hacker feel
     
     return () => clearInterval(messageInterval);
   }, [loadingProgress]);
+
+  // Static/noise effects
+  useEffect(() => {
+    const staticInterval = setInterval(() => {
+      setStaticIntensity(Math.random() * 0.8 + 0.2);
+      setGlitchOffset(Math.random() * 10 - 5);
+    }, 80);
+    
+    return () => clearInterval(staticInterval);
+  }, []);
+
+  // Moving elements initialization
+  useEffect(() => {
+    const elements = Array.from({length: 8}, (_, i) => ({
+      id: i,
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      speed: Math.random() * 2 + 0.5
+    }));
+    setMovingElements(elements);
+  }, []);
+
+  // Moving elements animation
+  useEffect(() => {
+    const moveInterval = setInterval(() => {
+      setMovingElements(prev => prev.map(el => ({
+        ...el,
+        x: (el.x + el.speed) % window.innerWidth,
+        y: el.y + Math.sin(Date.now() * 0.001 + el.id) * 0.5
+      })));
+    }, 50);
+    
+    return () => clearInterval(moveInterval);
+  }, []);
 
   // 3D Cube rotation animation
   useEffect(() => {
@@ -165,6 +262,42 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
     return () => clearInterval(scanlineInterval);
   }, []);
 
+  // Static effects canvas
+  useEffect(() => {
+    const canvas = staticCanvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const drawStatic = () => {
+      const imageData = ctx.createImageData(canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      for (let i = 0; i < data.length; i += 4) {
+        const noise = Math.random() * staticIntensity * 255;
+        data[i] = noise; // Red
+        data[i + 1] = noise * 0.7; // Green
+        data[i + 2] = noise * 1.2; // Blue
+        data[i + 3] = noise * 0.1; // Alpha
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+      staticAnimationRef.current = requestAnimationFrame(drawStatic);
+    };
+    
+    drawStatic();
+    
+    return () => {
+      if (staticAnimationRef.current) {
+        cancelAnimationFrame(staticAnimationRef.current);
+      }
+    };
+  }, [staticIntensity]);
+
   // Circuit board animation background
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -176,51 +309,65 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     
-    const traces: Array<{x1: number, y1: number, x2: number, y2: number, opacity: number}> = [];
+    const traces: Array<{x1: number, y1: number, x2: number, y2: number, opacity: number, speed: number}> = [];
     
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < 25; i++) {
       traces.push({
         x1: Math.random() * canvas.width,
         y1: Math.random() * canvas.height,
         x2: Math.random() * canvas.width,
         y2: Math.random() * canvas.height,
-        opacity: Math.random() * 0.3 + 0.1
+        opacity: Math.random() * 0.4 + 0.1,
+        speed: Math.random() * 2 + 0.5
       });
     }
     
     const drawCircuits = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      // Draw grid
-      ctx.strokeStyle = 'rgba(0, 255, 255, 0.05)';
+      // Draw animated grid with glitch
+      ctx.strokeStyle = `rgba(0, 255, 255, ${0.05 + staticIntensity * 0.1})`;
       ctx.lineWidth = 1;
-      for (let x = 0; x < canvas.width; x += 50) {
+      for (let x = glitchOffset; x < canvas.width; x += 40) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, canvas.height);
         ctx.stroke();
       }
-      for (let y = 0; y < canvas.height; y += 50) {
+      for (let y = glitchOffset; y < canvas.height; y += 40) {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(canvas.width, y);
         ctx.stroke();
       }
       
-      // Draw traces
-      traces.forEach(trace => {
-        ctx.strokeStyle = `rgba(0, 255, 255, ${trace.opacity})`;
-        ctx.lineWidth = 2;
+      // Draw animated traces
+      traces.forEach((trace, index) => {
+        const time = Date.now() * 0.001;
+        const animatedOpacity = trace.opacity + Math.sin(time * trace.speed + index) * 0.2;
+        
+        ctx.strokeStyle = `rgba(0, 255, 255, ${Math.max(0, animatedOpacity)})`;
+        ctx.lineWidth = 2 + Math.sin(time * 3 + index) * 0.5;
         ctx.beginPath();
         ctx.moveTo(trace.x1, trace.y1);
         ctx.lineTo(trace.x2, trace.y2);
         ctx.stroke();
         
-        const time = Date.now() * 0.001;
-        const pulse = Math.sin(time * 2 + trace.x1 * 0.01) * 0.5 + 0.5;
-        ctx.fillStyle = `rgba(255, 0, 255, ${pulse * 0.3})`;
+        // Animated pulse points
+        const pulse = Math.sin(time * 4 + trace.x1 * 0.01) * 0.5 + 0.5;
+        ctx.fillStyle = `rgba(255, 0, 255, ${pulse * 0.8})`;
         ctx.beginPath();
-        ctx.arc(trace.x1, trace.y1, 3, 0, Math.PI * 2);
+        ctx.arc(trace.x1 + Math.sin(time) * 2, trace.y1, 4 + pulse * 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Data flow particles
+        const flowProgress = (time * trace.speed) % 1;
+        const flowX = trace.x1 + (trace.x2 - trace.x1) * flowProgress;
+        const flowY = trace.y1 + (trace.y2 - trace.y1) * flowProgress;
+        
+        ctx.fillStyle = `rgba(0, 255, 255, ${1 - flowProgress})`;
+        ctx.beginPath();
+        ctx.arc(flowX, flowY, 2, 0, Math.PI * 2);
         ctx.fill();
       });
       
@@ -234,20 +381,45 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, []);
+  }, [staticIntensity, glitchOffset]);
 
   return (
     <div className="fixed inset-0 bg-black overflow-hidden z-[9999]">
-      {/* Circuit board background */}
-      <canvas ref={canvasRef} className="absolute inset-0 opacity-40" />
+      {/* Static noise background */}
+      <canvas ref={staticCanvasRef} className="absolute inset-0 opacity-20" />
       
-      {/* Scanlines overlay */}
+      {/* Circuit board background */}
+      <canvas ref={canvasRef} className="absolute inset-0 opacity-50" />
+      
+      {/* Moving elements */}
+      {movingElements.map(el => (
+        <div
+          key={el.id}
+          className="absolute w-1 h-1 bg-cyan-500 animate-pulse"
+          style={{
+            left: `${el.x}px`,
+            top: `${el.y}px`,
+            boxShadow: '0 0 10px cyan'
+          }}
+        />
+      ))}
+      
+      {/* Enhanced scanlines overlay with glitch */}
       <div 
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: `linear-gradient(transparent 50%, rgba(0, 255, 255, 0.03) 50%)`,
-          backgroundSize: '100% 4px',
-          transform: `translateY(${scanlineOffset}px)`
+          background: `linear-gradient(transparent 50%, rgba(0, 255, 255, ${0.05 + staticIntensity * 0.05}) 50%)`,
+          backgroundSize: '100% 2px',
+          transform: `translateY(${scanlineOffset + glitchOffset}px)`
+        }}
+      />
+      
+      {/* Additional static overlay */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-30"
+        style={{
+          background: `radial-gradient(circle, transparent 40%, rgba(0, 255, 255, ${staticIntensity * 0.1}) 100%)`,
+          filter: `contrast(${1 + staticIntensity * 0.5}) brightness(${1 + staticIntensity * 0.3})`
         }}
       />
       
