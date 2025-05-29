@@ -395,11 +395,11 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
       {movingElements.map(el => (
         <div
           key={el.id}
-          className="absolute w-1 h-1 bg-cyan-500 animate-pulse"
+          className="absolute w-1 h-1 bg-orange-500 animate-pulse"
           style={{
             left: `${el.x}px`,
             top: `${el.y}px`,
-            boxShadow: '0 0 10px cyan'
+            boxShadow: '0 0 10px orange'
           }}
         />
       ))}
@@ -408,7 +408,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
       <div 
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: `linear-gradient(transparent 50%, rgba(0, 255, 255, ${0.05 + staticIntensity * 0.05}) 50%)`,
+          background: `linear-gradient(transparent 50%, rgba(255, 165, 0, ${0.05 + staticIntensity * 0.05}) 50%)`,
           backgroundSize: '100% 2px',
           transform: `translateY(${scanlineOffset + glitchOffset}px)`
         }}
@@ -418,7 +418,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
       <div 
         className="absolute inset-0 pointer-events-none opacity-30"
         style={{
-          background: `radial-gradient(circle, transparent 40%, rgba(0, 255, 255, ${staticIntensity * 0.1}) 100%)`,
+          background: `radial-gradient(circle, transparent 40%, rgba(255, 165, 0, ${staticIntensity * 0.1}) 100%)`,
           filter: `contrast(${1 + staticIntensity * 0.5}) brightness(${1 + staticIntensity * 0.3})`
         }}
       />
@@ -426,17 +426,17 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
       {/* Main content */}
       <div className="relative z-10 flex items-center justify-center min-h-screen p-8">
         
-        {/* Left side - Scrolling terminal */}
-        <div className="w-1/3 h-full">
-          <div className="bg-black border border-cyan-500 h-[80vh] overflow-hidden">
-            <div className="p-2 border-b border-cyan-500 text-cyan-400 text-xs font-mono">
+        {/* Center - Scrolling terminal */}
+        <div className="w-1/3 h-full flex justify-center">
+          <div className="bg-black border border-orange-500 h-[80vh] overflow-hidden w-full max-w-md">
+            <div className="p-2 border-b border-orange-500 text-orange-400 text-xs font-mono">
               SYSTEM CONSOLE v2.1.4 :: MODULAR_SYNTH_OS
             </div>
             <div className="p-3 h-full overflow-hidden">
               <div className="h-full overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 {scrollingMessages.map((msg, index) => (
-                  <div key={index} className="text-cyan-400 font-mono text-xs mb-1">
-                    <span className="text-green-500">[{String(index + 1).padStart(3, '0')}]</span> 
+                  <div key={index} className="text-orange-400 font-mono text-xs mb-1">
+                    <span className="text-orange-300">[{String(index + 1).padStart(3, '0')}]</span> 
                     <span className="ml-2 animate-pulse">{msg}</span>
                   </div>
                 ))}
@@ -450,7 +450,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
         <div className="w-1/3 flex flex-col items-center justify-center">
           {/* Synth Logo */}
           <div className="mb-8">
-            <pre className="text-cyan-400 text-xs font-mono leading-tight text-center filter drop-shadow-lg">
+            <pre className="text-orange-400 text-xs font-mono leading-tight text-center filter drop-shadow-lg">
               {SYNTH_LOGO}
             </pre>
           </div>
@@ -465,21 +465,21 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadComplete }) => {
               }}
             >
               {/* Cube faces */}
-              <div className="absolute w-32 h-32 border-2 border-cyan-500 bg-gradient-to-br from-cyan-900/30 to-purple-900/30" 
+              <div className="absolute w-32 h-32 border-2 border-orange-500 bg-gradient-to-br from-orange-900/30 to-yellow-900/30" 
                    style={{ transform: 'translateZ(64px)' }} />
-              <div className="absolute w-32 h-32 border-2 border-cyan-500 bg-gradient-to-br from-purple-900/30 to-pink-900/30" 
+              <div className="absolute w-32 h-32 border-2 border-orange-500 bg-gradient-to-br from-yellow-900/30 to-red-900/30" 
                    style={{ transform: 'rotateY(90deg) translateZ(64px)' }} />
-              <div className="absolute w-32 h-32 border-2 border-cyan-500 bg-gradient-to-br from-pink-900/30 to-cyan-900/30" 
+              <div className="absolute w-32 h-32 border-2 border-orange-500 bg-gradient-to-br from-red-900/30 to-orange-900/30" 
                    style={{ transform: 'rotateY(180deg) translateZ(64px)' }} />
-              <div className="absolute w-32 h-32 border-2 border-cyan-500 bg-gradient-to-br from-cyan-900/30 to-purple-900/30" 
+              <div className="absolute w-32 h-32 border-2 border-orange-500 bg-gradient-to-br from-amber-900/30 to-yellow-900/30" 
                    style={{ transform: 'rotateY(-90deg) translateZ(64px)' }} />
-              <div className="absolute w-32 h-32 border-2 border-cyan-500 bg-gradient-to-br from-purple-900/30 to-pink-900/30" 
+              <div className="absolute w-32 h-32 border-2 border-orange-500 bg-gradient-to-br from-yellow-900/30 to-amber-900/30" 
                    style={{ transform: 'rotateX(90deg) translateZ(64px)' }} />
-              <div className="absolute w-32 h-32 border-2 border-cyan-500 bg-gradient-to-br from-pink-900/30 to-cyan-900/30" 
+              <div className="absolute w-32 h-32 border-2 border-orange-500 bg-gradient-to-br from-orange-900/30 to-red-900/30" 
                    style={{ transform: 'rotateX(-90deg) translateZ(64px)' }} />
               
               {/* Center glow effect */}
-              <div className="absolute inset-0 bg-cyan-500/20 rounded animate-pulse" />
+              <div className="absolute inset-0 bg-orange-500/20 rounded animate-pulse" />
             </div>
           </div>
           
