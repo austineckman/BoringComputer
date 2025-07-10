@@ -37,9 +37,9 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction) =>
     return res.status(401).json({ message: "Authentication required" });
   }
   
-  // Check if user has admin role
+  // Check if user has admin role (either explicit admin or Founder)
   const user = req.user as User;
-  if (!user.roles?.includes('admin')) {
+  if (!user.roles?.includes('admin') && !user.roles?.includes('Founder')) {
     return res.status(403).json({ message: "Admin access required" });
   }
   
@@ -147,7 +147,15 @@ export function setupAuth(app: any): void {
                         })
                         .filter((name: string) => name && name !== '@everyone');
                       
-                      console.log(`${profile.username} has Discord roles:`, discordRoles);
+                      // Add admin role for users with Founder role
+                      if (discordRoles.includes('Founder')) {
+                        if (!discordRoles.includes('admin')) {
+                          discordRoles.push('admin');
+                        }
+                        console.log(`${profile.username} is a Founder - granted admin privileges`);
+                      }
+                      
+                      console.log(`${profile.username} final roles (with admin mapping):`, discordRoles);
                     } else {
                       console.error('Failed to fetch server roles:', memberResponse.status);
                     }

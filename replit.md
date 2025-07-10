@@ -23,6 +23,10 @@ Preferred communication style: Simple, everyday language.
 - Created role mapping system from Discord server roles to app permissions (admin, moderator, premium, user)
 - Added debug endpoints for troubleshooting Discord role issues
 - System now fetches real Discord roles instead of using placeholder roles
+- **Founder Role Admin Mapping**: Anyone with "Founder" Discord role automatically gets admin privileges in CraftingTable OS
+- Fixed role authentication to properly fetch and display real Discord server roles in profile window
+- **Founder Role Admin Mapping**: Anyone with "Founder" Discord role automatically gets admin privileges in CraftingTable OS
+- Fixed role authentication to properly fetch and display real Discord server roles in profile window
 
 ## System Architecture
 
