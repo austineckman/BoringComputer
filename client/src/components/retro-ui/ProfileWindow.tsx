@@ -120,6 +120,26 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
           </div>
           <div className="text-lg font-bold">{user?.username}</div>
           <div className="text-sm text-gray-500">Level {user?.level || 1} Adventurer</div>
+          {user?.roles && user.roles.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {user.roles.map((role) => (
+                <span
+                  key={role}
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    role === 'admin' 
+                      ? 'bg-red-100 text-red-800 border border-red-200' 
+                      : role === 'moderator'
+                      ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                      : role === 'premium'
+                      ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                      : 'bg-blue-100 text-blue-800 border border-blue-200'
+                  }`}
+                >
+                  {role}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         
         <form onSubmit={handleSubmit}>
