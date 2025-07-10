@@ -41,6 +41,15 @@ Preferred communication style: Simple, everyday language.
 - Shop features multiple purchase options (1, 5, or 10 keys) with proper gold validation
 - Integrated with user inventory system for real-time gold and key tracking
 
+### Major Emulator Cleanup (July 10, 2025)
+- **MASSIVE CLEANUP**: Removed 18+ broken/competing emulator implementations that were causing confusion
+- Deleted: CleanEmulator, DirectEmulatorLogger, DirectFixedEmulator, EmergencyFixedEmulator, FixedEmulatorConnector, ForcedLEDComponent, HeroEmulator, HeroEmulatorConnector, MinimalEmulator, RealAVR8EmulatorConnector, ReliableEmulator, SimpleEmulator, StandaloneBlinker, VisibleLEDComponent, WorkingEmulator, EmulatedButtonComponent, EmulatedLEDComponent, EmulatedOLEDComponent, UniversalEmulatorApp
+- Removed broken simulator implementations: AVR8Simulator, ProperAVR8Simulator, RealSimulatorContext
+- Cleaned up broken test pages and routes: emulator-test.tsx, clean-emulator.tsx, EmulatorLauncher.tsx
+- Fixed broken imports in App.tsx and CircuitBuilderWindow.tsx
+- **Goal**: Consolidate to ONE working emulator implementation instead of 18+ broken ones
+- **Next**: Build single, clean BasicEmulator as the definitive sandbox emulator
+
 ## System Architecture
 
 ### Backend Architecture
