@@ -28,7 +28,7 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
   // Debug logging to verify Discord roles functionality
   React.useEffect(() => {
     console.log('Profile window state:', {
-      user: user ? { id: user.id, username: user.username, discordId: user.discordId } : null,
+      user: user ? { id: user.id, username: user.username, discordId: user.discordId, roles: user.roles } : null,
       discordRolesEnabled: !!user && !!user.discordId,
       rolesData: discordRoles,
       rolesLoading,
