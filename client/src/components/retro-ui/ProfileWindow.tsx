@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { User, Save, Loader2, Award, CheckCircle } from 'lucide-react';
+import { User, Save, Loader2, Award, CheckCircle, Shield, Crown, Star } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useTitles } from '@/hooks/useTitles';
+import { useQuery } from '@tanstack/react-query';
 import logoImage from "@assets/Asset 6@2x-8.png";
 import { apiRequest } from '@/lib/queryClient';
 
@@ -19,6 +20,14 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
     setActiveTitle, 
     isSetting 
   } = useTitles();
+  
+  // Fetch Discord server roles
+  const { data: discordRoles } = useQuery({
+    queryKey: ['/api/debug/server-roles'],
+    retry: false,
+    enabled: !!user,
+  });
+  
   const [isLoading, setIsLoading] = useState(false);
   const [username, setUsername] = useState(user?.username || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -120,24 +129,72 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
           </div>
           <div className="text-lg font-bold">{user?.username}</div>
           <div className="text-sm text-gray-500">Level {user?.level || 1} Adventurer</div>
+          
+          {/* Display Discord Server Roles */}
+          {discordRoles?.roles && discordRoles.roles.length > 0 && (
+            <div className="mt-3">
+              <div className="text-xs font-medium text-gray-600 mb-1">Discord Server Roles</div>
+              <div className="flex flex-wrap gap-1">
+                {discordRoles.roles.map((role: any) => {
+                  const getRoleIcon = (roleName: string) => {
+                    const name = roleName.toLowerCase();
+                    if (name.includes('admin') || name.includes('owner')) return <Crown className="w-3 h-3" />;
+                    if (name.includes('mod') || name.includes('staff')) return <Shield className="w-3 h-3" />;
+                    if (name.includes('premium') || name.includes('vip') || name.includes('supporter')) return <Star className="w-3 h-3" />;
+                    return null;
+                  };
+                  
+                  const getRoleColor = (roleName: string) => {
+                    const name = roleName.toLowerCase();
+                    if (name.includes('admin') || name.includes('owner')) return 'bg-red-100 text-red-800 border-red-200';
+                    if (name.includes('mod') || name.includes('staff')) return 'bg-purple-100 text-purple-800 border-purple-200';
+                    if (name.includes('premium') || name.includes('vip') || name.includes('supporter')) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                    if (name.includes('member') || name.includes('user')) return 'bg-green-100 text-green-800 border-green-200';
+                    return 'bg-blue-100 text-blue-800 border-blue-200';
+                  };
+                  
+                  return (
+                    <span
+                      key={role.id}
+                      className={`px-2 py-1 rounded-full text-xs font-medium border flex items-center gap-1 ${getRoleColor(role.name)}`}
+                      style={{ 
+                        borderColor: role.color ? `#${role.color.toString(16).padStart(6, '0')}` : undefined 
+                      }}
+                    >
+                      {getRoleIcon(role.name)}
+                      {role.name}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          
+          {/* Display App Permission Roles */}
           {user?.roles && user.roles.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2">
-              {user.roles.map((role) => (
-                <span
-                  key={role}
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    role === 'admin' 
-                      ? 'bg-red-100 text-red-800 border border-red-200' 
-                      : role === 'moderator'
-                      ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                      : role === 'premium'
-                      ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                      : 'bg-blue-100 text-blue-800 border border-blue-200'
-                  }`}
-                >
-                  {role}
-                </span>
-              ))}
+            <div className="mt-3">
+              <div className="text-xs font-medium text-gray-600 mb-1">App Permissions</div>
+              <div className="flex flex-wrap gap-1">
+                {user.roles.map((role) => (
+                  <span
+                    key={role}
+                    className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
+                      role === 'admin' 
+                        ? 'bg-red-100 text-red-800 border border-red-200' 
+                        : role === 'moderator'
+                        ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                        : role === 'premium'
+                        ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                        : 'bg-blue-100 text-blue-800 border border-blue-200'
+                    }`}
+                  >
+                    {role === 'admin' && <Crown className="w-3 h-3" />}
+                    {role === 'moderator' && <Shield className="w-3 h-3" />}
+                    {role === 'premium' && <Star className="w-3 h-3" />}
+                    {role}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
         </div>
