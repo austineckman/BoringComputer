@@ -622,7 +622,6 @@ void loop() {
   
   // Add a log entry with timestamp
   const addSimulationLog = (message: string) => {
-    addSimulatorLog(message);
     console.log(`[Simulator] ${message}`);
   };
   
