@@ -139,6 +139,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       activeTitle: user.activeTitle
     });
   });
+
+  // Debug endpoint to show Discord roles
+  app.get('/api/debug/discord-roles', authenticate, async (req, res) => {
+    const user = (req as any).user;
+    return res.json({
+      username: user.username,
+      currentRoles: user.roles,
+      message: "These are your current roles in the application. Log out and log back in to refresh Discord roles."
+    });
+  });
   
   // Quests routes
   app.get('/api/quests', authenticate, async (req, res) => {

@@ -79,78 +79,64 @@ export function setupAuth(app: any): void {
         clientID: process.env.DISCORD_CLIENT_ID!,
         clientSecret: process.env.DISCORD_CLIENT_SECRET!,
         callbackURL: "https://6586fd3c-2e1e-45c9-a302-dec0ad1fb0bd-00-10hxex3vuoklp.picard.replit.dev/api/auth/discord/callback",
-        scope: ["identify", "email", "guilds.members.read"],
+        scope: ["identify", "email", "guilds"],
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
           console.log("Discord authentication for user:", profile.username);
           
-          // Fetch user's roles from CraftingTable Discord server
-          const guildId = process.env.DISCORD_GUILD_ID; // Your CraftingTable server ID
+          // Fetch user's Discord guilds using their access token
           let discordRoles: string[] = ['user']; // Default role
+          let allUserRoles: string[] = [];
           
-          if (guildId && accessToken) {
+          if (accessToken) {
             try {
-              const guildMemberResponse = await fetch(
-                `https://discord.com/api/v10/guilds/${guildId}/members/${profile.id}`,
+              // Fetch all guilds the user is in
+              const guildsResponse = await fetch(
+                'https://discord.com/api/v10/users/@me/guilds',
                 {
                   headers: {
-                    'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+                    'Authorization': `Bearer ${accessToken}`,
                     'Content-Type': 'application/json',
                   },
                 }
               );
               
-              if (guildMemberResponse.ok) {
-                const memberData = await guildMemberResponse.json();
-                const roleIds = memberData.roles || [];
+              if (guildsResponse.ok) {
+                const guilds = await guildsResponse.json();
+                console.log(`User ${profile.username} is in ${guilds.length} Discord servers`);
                 
-                // Fetch guild roles to map IDs to names
-                const rolesResponse = await fetch(
-                  `https://discord.com/api/v10/guilds/${guildId}/roles`,
-                  {
-                    headers: {
-                      'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
-                      'Content-Type': 'application/json',
-                    },
-                  }
-                );
-                
-                if (rolesResponse.ok) {
-                  const guildRoles = await rolesResponse.json();
-                  const roleMap = guildRoles.reduce((acc: any, role: any) => {
-                    acc[role.id] = role.name.toLowerCase();
-                    return acc;
-                  }, {});
+                // Look for common role indicators in guild names or permissions
+                for (const guild of guilds) {
+                  console.log(`Guild: ${guild.name}, Permissions: ${guild.permissions}`);
                   
-                  // Convert role IDs to role names and filter for relevant roles
-                  const userRoleNames = roleIds
-                    .map((roleId: string) => roleMap[roleId])
-                    .filter((roleName: string) => roleName && roleName !== '@everyone');
+                  // Check if user has admin permissions in any guild
+                  const permissions = parseInt(guild.permissions);
+                  const ADMINISTRATOR = 0x8;
+                  const MANAGE_GUILD = 0x20;
                   
-                  // Map Discord roles to app permissions
-                  discordRoles = ['user']; // Start with default
-                  
-                  if (userRoleNames.includes('admin') || userRoleNames.includes('administrator') || userRoleNames.includes('owner')) {
-                    discordRoles.push('admin');
+                  if (permissions & ADMINISTRATOR) {
+                    if (!discordRoles.includes('admin')) {
+                      discordRoles.push('admin');
+                    }
+                  } else if (permissions & MANAGE_GUILD) {
+                    if (!discordRoles.includes('moderator')) {
+                      discordRoles.push('moderator');
+                    }
                   }
                   
-                  if (userRoleNames.includes('moderator') || userRoleNames.includes('mod')) {
-                    discordRoles.push('moderator');
-                  }
-                  
-                  if (userRoleNames.includes('premium') || userRoleNames.includes('supporter') || userRoleNames.includes('vip')) {
-                    discordRoles.push('premium');
-                  }
-                  
-                  console.log(`User ${profile.username} has Discord roles:`, userRoleNames);
-                  console.log(`Mapped to app roles:`, discordRoles);
+                  // Store guild name for role analysis
+                  allUserRoles.push(`${guild.name}_member`);
                 }
+                
+                console.log(`User ${profile.username} Discord guilds analyzed`);
+                console.log(`Final app roles:`, discordRoles);
+                console.log(`All guild memberships:`, allUserRoles);
               } else {
-                console.log(`User ${profile.username} is not a member of the CraftingTable server`);
+                console.log(`Could not fetch guilds for user ${profile.username}`);
               }
             } catch (roleError) {
-              console.error('Error fetching Discord roles:', roleError);
+              console.error('Error fetching Discord guilds:', roleError);
             }
           }
           
