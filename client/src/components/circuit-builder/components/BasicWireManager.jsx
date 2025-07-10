@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useSimulator } from '../simulator/SimpleSimulatorContext';
+import { useSimulator } from '../simulator/SimulatorContext';
 
 /**
  * BasicWireManager - A simplified wire manager component that handles
  * connecting pins between circuit components.
  */
-const BasicWireManager = ({ canvasRef, onWiresChange }) => {
-  // Access the simple simulator context to share wire information
+const BasicWireManager = ({ canvasRef }) => {
+  // Access the simulator context to share wire information
   const { setWires: setSimulatorWires } = useSimulator();
   
   // State for managing wires and selections
@@ -287,15 +287,9 @@ const BasicWireManager = ({ canvasRef, onWiresChange }) => {
       };
       
       // Add the new wire and reset pending connection and waypoints
-      const updatedWires = [...wires, newWire];
-      setWires(updatedWires);
+      setWires([...wires, newWire]);
       setPendingConnection(null);
       setPendingWireWaypoints([]); // Reset waypoints
-      
-      // Notify parent component of wire changes
-      if (onWiresChange) {
-        onWiresChange(updatedWires);
-      }
       
       console.log(`Created wire from ${pendingConnection.sourceName} to ${pinName} with ${pendingWireWaypoints.length} waypoints`);
     } catch (error) {
@@ -342,14 +336,8 @@ const BasicWireManager = ({ canvasRef, onWiresChange }) => {
   // Delete a wire by ID
   const deleteWire = (wireId) => {
     console.log(`Deleting wire with ID: ${wireId}`);
-    const updatedWires = wires.filter(wire => wire.id !== wireId);
-    setWires(updatedWires);
+    setWires(wires.filter(wire => wire.id !== wireId));
     setSelectedWireId(null);
-    
-    // Notify parent component of wire changes
-    if (onWiresChange) {
-      onWiresChange(updatedWires);
-    }
   };
   
   // Handle wire selection

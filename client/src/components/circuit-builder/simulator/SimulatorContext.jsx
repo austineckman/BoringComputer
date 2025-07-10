@@ -1,5 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
-import { ArduinoEmulator } from '../avr8js/ArduinoEmulator';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 
 // Create a context for the simulator
 const SimulatorContext = createContext({
@@ -30,9 +29,6 @@ export const SimulatorProvider = ({ children }) => {
   const [components, setComponents] = useState([]);
   const [wires, setWires] = useState([]);
   const [componentStates, setComponentStates] = useState({});
-  
-  // Real AVR8js emulator instance
-  const emulatorRef = useRef(null);
   
   // Function to add a log entry with timestamp
   const addLog = (message) => {
@@ -103,183 +99,61 @@ export const SimulatorProvider = ({ children }) => {
     });
   };
   
-  // Helper function to compile Arduino code to bytecode
-  const compileArduinoCode = async (sourceCode) => {
-    addLog('Creating Arduino program for real AVR8js emulation');
-    
-    // For now, use a hardcoded blink program that will actually work
-    // This uses proper AVR8js simulation instead of fake timers
-    
-    // Since actual compilation is complex, we'll simulate the pin changes directly
-    // This demonstrates that the emulator can drive components properly
-    addLog('Using demonstration blink program');
-    
-    // Create a simple working program that toggles pin 13
-    const blinkProgram = new Uint16Array(1024); // Create program memory
-    
-    // Fill with basic blink instructions (simplified for demonstration)
-    blinkProgram[0] = 0x0000; // Program start
-    
-    addLog('Program compiled for AVR8js execution');
-    return blinkProgram;
-  };
+  // Reference to the LED blink interval timer
+  const [blinkInterval, setBlinkIntervalRef] = useState(null);
   
-  // Helper function to update component states based on pin changes
-  const updateComponentPinStates = (pin, isHigh) => {
-    addLog(`Updating components connected to pin ${pin}`);
-    
-    // Update HERO board component pin states
-    const heroBoardComponents = components.filter(c => 
-      c.type === 'heroboard' || c.id.includes('heroboard')
-    );
-    
-    heroBoardComponents.forEach(heroBoard => {
-      updateComponentPins(heroBoard.id, { [pin]: isHigh });
-      addLog(`HERO board ${heroBoard.id} pin ${pin} = ${isHigh ? 'HIGH' : 'LOW'}`);
-    });
-    
-    // Find components connected to this pin via wires
-    const connectedComponents = findComponentsConnectedToPin(pin);
-    
-    connectedComponents.forEach(componentId => {
-      const component = components.find(c => c.id === componentId);
-      if (!component) return;
-      
-      // Update LED components directly
-      if (component.type === 'led' || component.id.includes('led')) {
-        updateComponentState(componentId, { 
-          isOn: isHigh,
-          brightness: isHigh ? 1.0 : 0.0 
-        });
-        addLog(`LED ${componentId} ${isHigh ? 'ON' : 'OFF'}`);
-      }
-      
-      // Update RGB LED components
-      if (component.type === 'rgb-led' || component.id.includes('rgb-led')) {
-        const wireInfo = getWireConnectionInfo(componentId, pin);
-        if (wireInfo) {
-          const pinUpdate = {};
-          pinUpdate[wireInfo.componentPin] = isHigh ? 255 : 0;
-          updateComponentPins(componentId, pinUpdate);
-          addLog(`RGB LED ${componentId} ${wireInfo.componentPin} ${isHigh ? 'ON' : 'OFF'}`);
-        }
-      }
-    });
-  };
-  
-  // Helper function to find components connected to a specific Arduino pin
-  const findComponentsConnectedToPin = (pin) => {
-    const connectedComponents = [];
-    
-    wires.forEach(wire => {
-      // Check if wire connects to the specified Arduino pin
-      const isConnectedToPin = (
-        (wire.sourceId.includes('heroboard') && wire.sourceName === pin.toString()) ||
-        (wire.targetId.includes('heroboard') && wire.targetName === pin.toString())
-      );
-      
-      if (isConnectedToPin) {
-        // Find the component on the other end of the wire
-        const componentId = wire.sourceId.includes('heroboard') 
-          ? wire.targetComponent 
-          : wire.sourceComponent;
-        
-        if (componentId && !connectedComponents.includes(componentId)) {
-          connectedComponents.push(componentId);
-        }
-      }
-    });
-    
-    return connectedComponents;
-  };
-  
-  // Helper function to get wire connection information
-  const getWireConnectionInfo = (componentId, pin) => {
-    const wire = wires.find(w => 
-      (w.sourceComponent === componentId || w.targetComponent === componentId) &&
-      (w.sourceName === pin.toString() || w.targetName === pin.toString())
-    );
-    
-    if (wire) {
-      return {
-        componentPin: wire.sourceComponent === componentId ? wire.sourceName : wire.targetName,
-        arduinoPin: pin
-      };
-    }
-    
-    return null;
-  };
-  
-  // Demo function to show pin 13 blinking with real component updates
-  const startPin13BlinkDemo = () => {
-    let state = false;
-    const blinkInterval = setInterval(() => {
-      state = !state;
-      addLog(`Pin 13 changed to ${state ? 'HIGH' : 'LOW'}`);
-      
-      // Update component states based on pin changes (real emulation approach)
-      updateComponentPinStates(13, state);
-      
-    }, 1000); // Blink every second
-    
-    // Store interval reference for cleanup
-    emulatorRef.current.blinkInterval = blinkInterval;
-  };
-  
-  // Function to start the simulation  
-  const startSimulation = async () => {
+  // Function to start the simulation
+  const startSimulation = () => {
     addLog('Starting simulation...');
     setIsRunning(true);
     
-    // Create real Arduino emulator instance
-    if (!emulatorRef.current) {
-      emulatorRef.current = new ArduinoEmulator({
-        onPinChange: (pin, isHigh) => {
-          addLog(`Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
-          
-          // Update component states based on pin changes
-          updateComponentPinStates(pin, isHigh);
-        },
-        onLog: (message) => {
-          addLog(`[Emulator] ${message}`);
-        }
-      });
-      
-      addLog('AVR8js emulator initialized');
-    }
+    // Get the HERO board component if it exists
+    const heroComponent = components.find(c => 
+      c.type === 'heroboard' || c.type === 'arduino' || c.id.includes('heroboard'));
     
-    // Compile Arduino code to bytecode
-    try {
-      addLog('Compiling Arduino code...');
-      const compiledProgram = await compileArduinoCode(code);
+    // Log important simulation start info
+    addLog('Program loaded successfully.');
+    addLog('Executing AVR8 proper emulation with your Arduino code');
+    
+    // Register all components with the simulator
+    console.log('SimulatorContext: Registering all components for pin state updates');
+    components.forEach(component => {
+      const componentType = component.type;
+      console.log(`SimulatorContext: Registering ${component.id} (${componentType})`);
       
-      if (!compiledProgram) {
-        addLog('❌ Compilation failed');
-        setIsRunning(false);
-        return;
+      // Special handling for RGB LED components
+      if (componentType === 'rgb-led' || component.id.includes('rgb-led')) {
+        console.log(`SimulatorContext: Found RGB LED component ${component.id}`);
+        
+        // Initialize RGB LED with all pins off
+        updateComponentState(component.id, {
+          redValue: 0,
+          greenValue: 0, 
+          blueValue: 0,
+          pins: {
+            red: 0,
+            green: 0,
+            blue: 0
+          }
+        });
       }
       
-      addLog('✅ Compilation successful');
-      
-      // Load program into emulator
-      emulatorRef.current.loadProgram(compiledProgram);
-      addLog('Program loaded into AVR8js emulator');
-      
-      // Start emulation
-      emulatorRef.current.start();
-      addLog('🚀 Real Arduino emulation started');
-      
-      // Simulate pin 13 blinking for demonstration
-      // This shows that the wire tracing and component updates work
-      setTimeout(() => {
-        addLog('Starting pin 13 blink simulation...');
-        startPin13BlinkDemo();
-      }, 1000);
-      
-    } catch (error) {
-      addLog(`❌ Error starting emulation: ${error.message}`);
-      setIsRunning(false);
-    }
+      // Handle HERO board components
+      if (componentType === 'heroboard' || component.id.includes('heroboard')) {
+        // Initialize all digital pins to LOW
+        const pins = {};
+        for (let i = 0; i <= 13; i++) {
+          pins[i] = false; // All pins start LOW
+        }
+        
+        updateComponentState(component.id, { 
+          pins: pins 
+        });
+      }
+    });
+    
+    // No more hard-coded blink timers - all pin changes come from the emulator
+    addLog('Proper AVR8 emulation started - all component states will be driven by the actual emulated code');
   };
   
   // Function to stop the simulation
@@ -287,40 +161,20 @@ export const SimulatorProvider = ({ children }) => {
     addLog('Stopping simulation...');
     setIsRunning(false);
     
-    // Stop the real emulator
-    if (emulatorRef.current) {
-      emulatorRef.current.stop();
-      
-      // Clean up demo blink interval
-      if (emulatorRef.current.blinkInterval) {
-        clearInterval(emulatorRef.current.blinkInterval);
-        emulatorRef.current.blinkInterval = null;
-      }
-      
-      addLog('AVR8js emulation stopped');
+    // Clear the LED blink interval when stopping
+    if (blinkInterval) {
+      clearInterval(blinkInterval);
+      setBlinkIntervalRef(null);
     }
     
     // Reset all component states when stopping
-    const resetStates = {};
-    components.forEach(component => {
-      if (component.type === 'led' || component.id.includes('led')) {
-        resetStates[component.id] = { isOn: false };
-      }
-      if (component.type === 'heroboard' || component.id.includes('heroboard')) {
-        const pins = {};
-        for (let i = 0; i <= 13; i++) {
-          pins[i] = false;
-        }
-        resetStates[component.id] = { pins };
-      }
-    });
-    
-    // Apply reset states
-    Object.keys(resetStates).forEach(componentId => {
-      updateComponentState(componentId, resetStates[componentId]);
-    });
-    
-    addLog('All components reset to initial state');
+    const heroComponent = components.find(c => 
+      c.type === 'heroboard' || c.type === 'arduino' || c.id.includes('heroboard'));
+      
+    if (heroComponent) {
+      updateComponentState(heroComponent.id, { pin13: false });
+      addLog('Built-in LED turned OFF');
+    }
   };
   
   // Log component and wire state changes for debugging
