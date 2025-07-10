@@ -25,8 +25,13 @@ Preferred communication style: Simple, everyday language.
 - System now fetches real Discord roles instead of using placeholder roles
 - **Founder Role Admin Mapping**: Anyone with "Founder" Discord role automatically gets admin privileges in CraftingTable OS
 - Fixed role authentication to properly fetch and display real Discord server roles in profile window
-- **Founder Role Admin Mapping**: Anyone with "Founder" Discord role automatically gets admin privileges in CraftingTable OS
-- Fixed role authentication to properly fetch and display real Discord server roles in profile window
+
+### Authentication Endpoint Fix (July 10, 2025)
+- Fixed critical authentication endpoint mismatch between frontend and backend
+- Frontend was calling `/api/auth/user` but backend only provides `/api/auth/me`
+- Updated all frontend authentication hooks to use correct `/api/auth/me` endpoint
+- This resolves Oracle access control system to properly recognize admin privileges
+- Backend logs confirm user session has proper roles: ['CraftingTable', 'Founder', 'Academy', 'Server Booster', 'admin']
 
 ## System Architecture
 
