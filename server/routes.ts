@@ -213,8 +213,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/user/discord-roles', authenticate, async (req, res) => {
     try {
       const user = (req as any).user;
-      console.log('Discord roles request - Session:', req.sessionID, 'Authenticated:', req.isAuthenticated());
-      console.log('Fetching Discord roles for user:', user?.username, 'Discord ID:', user?.discordId);
+      console.log('Discord roles request for user:', { 
+        id: user?.id, 
+        username: user?.username, 
+        discordId: user?.discordId,
+        roles: user?.roles 
+      });
       
       const guildId = process.env.DISCORD_GUILD_ID;
       const botToken = process.env.DISCORD_BOT_TOKEN;
@@ -225,7 +229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (!user?.discordId) {
-        console.error('User missing Discord ID:', user);
+        console.error('User missing Discord ID. User object:', user);
         return res.status(400).json({ error: 'User not linked to Discord account' });
       }
 

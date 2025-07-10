@@ -85,13 +85,14 @@ export function setupAuth(app: any): void {
         try {
           console.log("Discord authentication for user:", profile.username);
           
-          // Fetch user's roles from your specific Discord server
-          let discordRoles: string[] = ['user']; // Default role
+          // Fetch user's actual Discord server roles
+          let discordRoles: string[] = []; // Start empty, no defaults
           const guildId = process.env.DISCORD_GUILD_ID;
+          const botToken = process.env.DISCORD_BOT_TOKEN;
           
-          if (accessToken && guildId) {
+          if (guildId && botToken) {
             try {
-              // Check if user is in your server using their access token
+              // First check if user is in the server
               const userGuildsResponse = await fetch(
                 'https://discord.com/api/v10/users/@me/guilds',
                 {
@@ -107,35 +108,54 @@ export function setupAuth(app: any): void {
                 const userGuild = userGuilds.find((guild: any) => guild.id === guildId);
                 
                 if (userGuild) {
-                  console.log(`User ${profile.username} is a member of your Discord server`);
+                  console.log(`User ${profile.username} is a member of Discord server`);
                   
-                  // Check user's permissions in the server to determine role level
-                  const permissions = parseInt(userGuild.permissions);
-                  const ADMINISTRATOR = 0x8;
-                  const MANAGE_GUILD = 0x20;
-                  const MANAGE_ROLES = 0x10000000;
-                  const MANAGE_CHANNELS = 0x10;
+                  // Now fetch the user's actual roles in the server using bot token
+                  const memberResponse = await fetch(
+                    `https://discord.com/api/v10/guilds/${guildId}/members/${profile.id}`,
+                    {
+                      headers: {
+                        'Authorization': `Bot ${botToken}`,
+                        'Content-Type': 'application/json',
+                      },
+                    }
+                  );
                   
-                  // Map permissions to app roles
-                  discordRoles = ['user']; // Start with default
-                  
-                  if (permissions & ADMINISTRATOR) {
-                    discordRoles.push('admin');
-                    console.log(`User ${profile.username} has Administrator permissions`);
-                  } else if (permissions & (MANAGE_GUILD | MANAGE_ROLES | MANAGE_CHANNELS)) {
-                    discordRoles.push('moderator');
-                    console.log(`User ${profile.username} has Moderator-level permissions`);
+                  if (memberResponse.ok) {
+                    const member = await memberResponse.json();
+                    const roleIds = member.roles || [];
+                    
+                    // Fetch all server roles to map IDs to names
+                    const rolesResponse = await fetch(
+                      `https://discord.com/api/v10/guilds/${guildId}/roles`,
+                      {
+                        headers: {
+                          'Authorization': `Bot ${botToken}`,
+                          'Content-Type': 'application/json',
+                        },
+                      }
+                    );
+                    
+                    if (rolesResponse.ok) {
+                      const allRoles = await rolesResponse.json();
+                      
+                      // Map role IDs to role names, excluding @everyone
+                      discordRoles = roleIds
+                        .map((roleId: string) => {
+                          const role = allRoles.find((r: any) => r.id === roleId);
+                          return role?.name;
+                        })
+                        .filter((name: string) => name && name !== '@everyone');
+                      
+                      console.log(`${profile.username} has Discord roles:`, discordRoles);
+                    } else {
+                      console.error('Failed to fetch server roles:', memberResponse.status);
+                    }
+                  } else {
+                    console.error('Failed to fetch member data:', memberResponse.status);
                   }
-                  
-                  // Check if user is server owner
-                  if (userGuild.owner) {
-                    discordRoles.push('admin');
-                    console.log(`User ${profile.username} is the server owner`);
-                  }
-                  
-                  console.log(`Final app roles for ${profile.username}:`, discordRoles);
                 } else {
-                  console.log(`User ${profile.username} is not a member of your Discord server`);
+                  console.log(`User ${profile.username} is not a member of the Discord server`);
                 }
               } else {
                 const errorText = await userGuildsResponse.text();
@@ -145,9 +165,7 @@ export function setupAuth(app: any): void {
               console.error('Error fetching Discord server roles:', roleError);
             }
           } else {
-            if (!guildId) {
-              console.log('DISCORD_GUILD_ID not configured - using default user role');
-            }
+            console.log('Discord configuration missing - cannot fetch roles');
           }
           
           // Try to find existing user by Discord ID
@@ -198,6 +216,7 @@ export function setupAuth(app: any): void {
       if (!user) {
         return done(null, false);
       }
+      console.log('Deserializing user from session:', { id: user.id, username: user.username, discordId: user.discordId, roles: user.roles });
       done(null, user);
     } catch (error) {
       done(error);
