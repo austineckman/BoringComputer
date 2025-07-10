@@ -149,6 +149,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       message: "These are your current roles in the application. Log out and log back in to refresh Discord roles."
     });
   });
+
+  // List all roles in the CraftingTable Discord server
+  app.get('/api/debug/server-roles', authenticate, async (req, res) => {
+    const guildId = process.env.DISCORD_GUILD_ID;
+    const botToken = process.env.DISCORD_BOT_TOKEN;
+    
+    if (!guildId) {
+      return res.status(400).json({ error: "Discord Guild ID not configured" });
+    }
+
+    if (!botToken) {
+      return res.status(400).json({ error: "Discord Bot Token not configured" });
+    }
+
+    try {
+      const rolesResponse = await fetch(
+        `https://discord.com/api/v10/guilds/${guildId}/roles`,
+        {
+          headers: {
+            'Authorization': `Bot ${botToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!rolesResponse.ok) {
+        return res.status(500).json({ 
+          error: "Could not fetch Discord server roles",
+          details: `HTTP ${rolesResponse.status}: ${rolesResponse.statusText}`,
+          note: "Make sure the bot has proper permissions in your Discord server"
+        });
+      }
+
+      const roles = await rolesResponse.json();
+      
+      // Filter out @everyone and organize by position
+      const serverRoles = roles
+        .filter((role: any) => role.name !== '@everyone')
+        .sort((a: any, b: any) => b.position - a.position)
+        .map((role: any) => ({
+          id: role.id,
+          name: role.name,
+          color: role.color,
+          position: role.position,
+          permissions: role.permissions,
+          mentionable: role.mentionable,
+          hoist: role.hoist
+        }));
+
+      return res.json({
+        guildId,
+        serverName: "CraftingTable Discord",
+        totalRoles: serverRoles.length,
+        roles: serverRoles,
+        currentUserRoles: ((req as any).user).roles
+      });
+
+    } catch (error) {
+      console.error('Error fetching Discord server roles:', error);
+      return res.status(500).json({ 
+        error: "Failed to fetch Discord server roles",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
   
   // Quests routes
   app.get('/api/quests', authenticate, async (req, res) => {
