@@ -78,7 +78,7 @@ export function setupAuth(app: any): void {
       {
         clientID: process.env.DISCORD_CLIENT_ID!,
         clientSecret: process.env.DISCORD_CLIENT_SECRET!,
-        callbackURL: "/api/auth/discord/callback",
+        callbackURL: "http://localhost:5000/api/auth/discord/callback",
         scope: ["identify", "email"],
       },
       async (accessToken, refreshToken, profile, done) => {
