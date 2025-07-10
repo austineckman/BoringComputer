@@ -2,12 +2,10 @@
 import React, { useState, useEffect } from "react";
 import wallpaper from "@assets/wallbg.png";
 import hoodedFigureImg from "@assets/hooded-figure.png";
-import LoadingScreen from "@/components/retro-ui/LoadingScreen";
 import "@/components/retro-ui/retro-ui.css";
 
 export default function AuthPage() {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [showLoadingScreen, setShowLoadingScreen] = useState(false);
   
   useEffect(() => {
     const timer = setInterval(() => {
@@ -18,17 +16,8 @@ export default function AuthPage() {
   }, []);
 
   const handleDiscordLogin = () => {
-    setShowLoadingScreen(true);
     window.location.href = "/api/auth/discord";
   };
-
-  const handleLoadingComplete = () => {
-    setShowLoadingScreen(false);
-  };
-
-  if (showLoadingScreen) {
-    return <LoadingScreen onLoadComplete={handleLoadingComplete} />;
-  }
   
   return (
     <div>
