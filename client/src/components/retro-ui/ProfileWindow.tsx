@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Award, CheckCircle, Shield, Crown, Star, Users, Zap, Trophy, X } from 'lucide-react';
+import { Award, CheckCircle, Shield, Crown, Star, Users, Zap, Trophy, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTitles } from '@/hooks/useTitles';
 import { useQuery } from '@tanstack/react-query';
@@ -25,351 +25,191 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
     enabled: !!user,
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Check if password change is requested
-    const isPasswordChange = oldPassword && newPassword;
-    
-    // Basic validation
-    if (isPasswordChange) {
-      if (newPassword !== confirmPassword) {
-        toast({
-          title: "Error",
-          description: "New passwords do not match",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      if (newPassword.length < 6) {
-        toast({
-          title: "Error",
-          description: "New password must be at least 6 characters",
-          variant: "destructive"
-        });
-        return;
-      }
-    }
-    
-    setIsLoading(true);
-    
-    try {
-      // Handle password change if requested
-      if (isPasswordChange) {
-        const response = await apiRequest('POST', '/api/auth/change-password', {
-          currentPassword: oldPassword,
-          newPassword: newPassword
-        });
-        
-        // Check if response is ok
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.message || 'Failed to change password');
-        }
-        
-        // Clear password fields
-        setOldPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-        
-        toast({
-          title: "Success",
-          description: "Password updated successfully",
-        });
-      }
-      
-      // Add profile info update here later if needed
-      // For example, update username/email
-      
-      if (!isPasswordChange) {
-        toast({
-          title: "Info",
-          description: "No changes were made. To update your password, please fill in all password fields.",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update profile",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const getRoleIcon = (roleName: string) => {
+    const name = roleName.toLowerCase();
+    if (name.includes('admin') || name.includes('owner')) return <Crown className="w-4 h-4" />;
+    if (name.includes('mod') || name.includes('staff')) return <Shield className="w-4 h-4" />;
+    if (name.includes('premium') || name.includes('vip') || name.includes('supporter')) return <Star className="w-4 h-4" />;
+    return <Users className="w-4 h-4" />;
+  };
+  
+  const getRoleColor = (roleName: string) => {
+    const name = roleName.toLowerCase();
+    if (name.includes('admin') || name.includes('owner')) return 'bg-red-500/20 text-red-300 border-red-500/50';
+    if (name.includes('mod') || name.includes('staff')) return 'bg-purple-500/20 text-purple-300 border-purple-500/50';
+    if (name.includes('premium') || name.includes('vip') || name.includes('supporter')) return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/50';
+    if (name.includes('member') || name.includes('user')) return 'bg-green-500/20 text-green-300 border-green-500/50';
+    return 'bg-blue-500/20 text-blue-300 border-blue-500/50';
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="bg-blue-900 text-white p-2 flex items-center">
-        <User size={18} className="mr-2" />
-        <span className="font-bold">Profile Settings</span>
-      </div>
-      
-      {/* Content */}
-      <div className="flex-1 p-4 bg-gray-100 overflow-y-auto">
-        <div className="flex flex-col items-center mb-6">
-          <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center border-2 border-blue-500 mb-3">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-gradient-to-br from-gray-900 to-blue-900 rounded-lg shadow-xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto border border-blue-500">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <Users className="w-6 h-6 text-blue-400" />
+            Discord Connection
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        
+        {/* User Profile Section */}
+        <div className="text-center mb-6 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+          <div className="flex justify-center mb-4">
             <img 
               src={logoImage} 
               alt="Profile" 
-              className="w-14 h-14" 
+              className="w-16 h-16 rounded-full border-2 border-blue-400" 
             />
           </div>
-          <div className="text-lg font-bold">{user?.username}</div>
-          <div className="text-sm text-gray-500">Level {user?.level || 1} Adventurer</div>
+          <div className="text-xl font-bold text-white">{user?.username}</div>
+          <div className="text-sm text-blue-300">Level {user?.level || 1} Adventurer</div>
           
-          {/* Display Discord Server Roles */}
-          {discordRoles?.roles && discordRoles.roles.length > 0 && (
-            <div className="mt-3">
-              <div className="text-xs font-medium text-gray-600 mb-1">Discord Server Roles</div>
-              <div className="flex flex-wrap gap-1">
-                {discordRoles.roles.map((role: any) => {
-                  const getRoleIcon = (roleName: string) => {
-                    const name = roleName.toLowerCase();
-                    if (name.includes('admin') || name.includes('owner')) return <Crown className="w-3 h-3" />;
-                    if (name.includes('mod') || name.includes('staff')) return <Shield className="w-3 h-3" />;
-                    if (name.includes('premium') || name.includes('vip') || name.includes('supporter')) return <Star className="w-3 h-3" />;
-                    return null;
-                  };
-                  
-                  const getRoleColor = (roleName: string) => {
-                    const name = roleName.toLowerCase();
-                    if (name.includes('admin') || name.includes('owner')) return 'bg-red-100 text-red-800 border-red-200';
-                    if (name.includes('mod') || name.includes('staff')) return 'bg-purple-100 text-purple-800 border-purple-200';
-                    if (name.includes('premium') || name.includes('vip') || name.includes('supporter')) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-                    if (name.includes('member') || name.includes('user')) return 'bg-green-100 text-green-800 border-green-200';
-                    return 'bg-blue-100 text-blue-800 border-blue-200';
-                  };
-                  
-                  return (
-                    <span
-                      key={role.id}
-                      className={`px-2 py-1 rounded-full text-xs font-medium border flex items-center gap-1 ${getRoleColor(role.name)}`}
-                      style={{ 
-                        borderColor: role.color ? `#${role.color.toString(16).padStart(6, '0')}` : undefined 
-                      }}
-                    >
-                      {getRoleIcon(role.name)}
-                      {role.name}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          
-          {/* Display App Permission Roles */}
-          {user?.roles && user.roles.length > 0 && (
-            <div className="mt-3">
-              <div className="text-xs font-medium text-gray-600 mb-1">App Permissions</div>
-              <div className="flex flex-wrap gap-1">
-                {user.roles.map((role) => (
-                  <span
-                    key={role}
-                    className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
-                      role === 'admin' 
-                        ? 'bg-red-100 text-red-800 border border-red-200' 
-                        : role === 'moderator'
-                        ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                        : role === 'premium'
-                        ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                        : 'bg-blue-100 text-blue-800 border border-blue-200'
-                    }`}
-                  >
-                    {role === 'admin' && <Crown className="w-3 h-3" />}
-                    {role === 'moderator' && <Shield className="w-3 h-3" />}
-                    {role === 'premium' && <Star className="w-3 h-3" />}
-                    {role}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Discord Connection Status */}
+          <div className="mt-4 flex items-center justify-center gap-2 text-green-400">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span className="text-xs font-medium">Connected to CraftingTable Discord</span>
+          </div>
         </div>
-        
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium mb-1" htmlFor="username">
-                Username
-              </label>
-              <input
-                id="username"
-                type="text"
-                className="w-full rounded border border-gray-300 p-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1" htmlFor="email">
-                Email (optional)
-              </label>
-              <input
-                id="email"
-                type="email"
-                className="w-full rounded border border-gray-300 p-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                value={email || ''}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-            
-            <div className="border-t border-gray-200 pt-4 mt-2">
-              <h3 className="font-medium mb-3">Change Password (optional)</h3>
-              
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium mb-1" htmlFor="oldPassword">
-                    Current Password
-                  </label>
-                  <input
-                    id="oldPassword"
-                    type="password"
-                    className="w-full rounded border border-gray-300 p-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    value={oldPassword}
-                    onChange={(e) => setOldPassword(e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-1" htmlFor="newPassword">
-                    New Password
-                  </label>
-                  <input
-                    id="newPassword"
-                    type="password"
-                    className="w-full rounded border border-gray-300 p-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-1" htmlFor="confirmPassword">
-                    Confirm New Password
-                  </label>
-                  <input
-                    id="confirmPassword"
-                    type="password"
-                    className="w-full rounded border border-gray-300 p-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Stats Section */}
-          <div className="bg-white rounded-md border border-gray-300 p-3 mb-4">
-            <h3 className="font-medium mb-2 text-blue-900">Character Stats</h3>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Level:</span>
-                <span className="font-medium">{user?.level || 1}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Items:</span>
-                <span className="font-medium">{user?.inventory ? Object.keys(user.inventory).length : 0}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Quests Completed:</span>
-                <span className="font-medium">0</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Experience:</span>
-                <span className="font-medium">0 XP</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Titles Section */}
-          <div className="bg-white rounded-md border border-gray-300 p-3 mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-medium text-blue-900">Your Titles</h3>
-              {activeTitle && (
-                <button
-                  type="button"
-                  className="text-xs text-gray-500 hover:text-red-500"
-                  onClick={() => setActiveTitle(null)}
-                  disabled={isSetting}
+
+        {/* Discord Server Roles */}
+        {discordRoles?.roles && discordRoles.roles.length > 0 && (
+          <div className="mb-6 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+            <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+              <Shield className="w-5 h-5 text-purple-400" />
+              Discord Server Roles
+            </h3>
+            <div className="grid grid-cols-1 gap-2">
+              {discordRoles.roles.map((role: any) => (
+                <div
+                  key={role.id}
+                  className={`p-3 rounded-lg border flex items-center gap-3 ${getRoleColor(role.name)}`}
+                  style={{ 
+                    backgroundColor: role.color ? `#${role.color.toString(16).padStart(6, '0')}20` : undefined,
+                    borderColor: role.color ? `#${role.color.toString(16).padStart(6, '0')}` : undefined 
+                  }}
                 >
-                  Clear Active Title
-                </button>
-              )}
-            </div>
-            
-            {titles.length === 0 ? (
-              <div className="p-3 bg-gray-50 rounded-md text-center text-gray-500 text-sm">
-                <Award className="h-10 w-10 mx-auto mb-2 text-gray-400" />
-                <p>You haven't unlocked any titles yet.</p>
-                <p className="text-xs mt-1">Explore the world to discover hidden titles!</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {titles.map((title) => (
-                  <div 
-                    key={title}
-                    className={`p-2 border rounded-md flex items-center justify-between cursor-pointer transition-colors ${activeTitle === title ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
-                    onClick={() => activeTitle !== title && setActiveTitle(title)}
-                  >
-                    <div className="flex items-center">
-                      <Award className={`h-4 w-4 mr-2 ${activeTitle === title ? 'text-blue-500' : 'text-gray-400'}`} />
-                      <span className={`${activeTitle === title ? 'font-medium text-blue-700' : 'text-gray-700'}`}>
-                        {title}
-                      </span>
-                    </div>
-                    {activeTitle === title && (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
+                  {getRoleIcon(role.name)}
+                  <div className="flex-1">
+                    <div className="font-medium">{role.name}</div>
+                    {role.permissions && (
+                      <div className="text-xs opacity-75 mt-1">
+                        {role.permissions.includes('Administrator') && 'Full Administrator'}
+                        {role.permissions.includes('ManageGuild') && !role.permissions.includes('Administrator') && 'Server Manager'}
+                        {role.permissions.includes('ModerateMembers') && !role.permissions.includes('ManageGuild') && 'Moderator'}
+                      </div>
                     )}
                   </div>
-                ))}
-              </div>
-            )}
-            
-            <div className="mt-3 pt-2 border-t border-gray-200">
-              <p className="text-xs text-gray-500">
-                Titles are displayed next to your username and show off your achievements and special discoveries.
-              </p>
+                </div>
+              ))}
             </div>
           </div>
-          
-          <div className="flex justify-end space-x-2">
-            <button
-              type="button"
-              className="px-4 py-2 border border-gray-300 rounded shadow-sm text-sm font-medium bg-white text-gray-700 hover:bg-gray-50"
-              onClick={onClose}
-              disabled={isLoading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded shadow-sm text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 size={16} className="mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save size={16} className="mr-2" />
-                  Save Changes
-                </>
-              )}
-            </button>
+        )}
+
+        {/* App Permission Roles */}
+        {user?.roles && user.roles.length > 0 && (
+          <div className="mb-6 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+            <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-yellow-400" />
+              App Permissions
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {user.roles.map((role) => (
+                <span
+                  key={role}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${
+                    role === 'admin' 
+                      ? 'bg-red-500/20 text-red-300 border border-red-500/50' 
+                      : role === 'moderator'
+                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/50'
+                      : role === 'premium'
+                      ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/50'
+                      : 'bg-blue-500/20 text-blue-300 border border-blue-500/50'
+                  }`}
+                >
+                  {role === 'admin' && <Crown className="w-4 h-4" />}
+                  {role === 'moderator' && <Shield className="w-4 h-4" />}
+                  {role === 'premium' && <Star className="w-4 h-4" />}
+                  {role === 'user' && <Users className="w-4 h-4" />}
+                  {role.charAt(0).toUpperCase() + role.slice(1)}
+                </span>
+              ))}
+            </div>
           </div>
-        </form>
+        )}
+
+        {/* Character Stats */}
+        <div className="mb-6 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+          <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-yellow-400" />
+            Character Stats
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gray-700/50 p-3 rounded-lg text-center">
+              <div className="text-2xl font-bold text-blue-400">{user?.level || 1}</div>
+              <div className="text-xs text-gray-400">Level</div>
+            </div>
+            <div className="bg-gray-700/50 p-3 rounded-lg text-center">
+              <div className="text-2xl font-bold text-green-400">{user?.inventory ? Object.keys(user.inventory).length : 0}</div>
+              <div className="text-xs text-gray-400">Items</div>
+            </div>
+            <div className="bg-gray-700/50 p-3 rounded-lg text-center">
+              <div className="text-2xl font-bold text-purple-400">0</div>
+              <div className="text-xs text-gray-400">Quests</div>
+            </div>
+            <div className="bg-gray-700/50 p-3 rounded-lg text-center">
+              <div className="text-2xl font-bold text-yellow-400">0</div>
+              <div className="text-xs text-gray-400">XP</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Active Titles */}
+        {titles.length > 0 && (
+          <div className="mb-6 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+            <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+              <Award className="w-5 h-5 text-yellow-400" />
+              Active Titles
+            </h3>
+            {activeTitle ? (
+              <div className="flex items-center justify-between p-3 bg-yellow-500/20 border border-yellow-500/50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Award className="w-4 h-4 text-yellow-400" />
+                  <span className="font-medium text-yellow-300">{activeTitle}</span>
+                </div>
+                <button
+                  onClick={() => setActiveTitle(null)}
+                  className="text-xs text-gray-400 hover:text-red-400 transition-colors"
+                  disabled={isSetting}
+                >
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <div className="text-center py-4 text-gray-400">
+                <Award className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No active title selected</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Close Button */}
+        <div className="flex justify-center">
+          <button
+            onClick={onClose}
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+          >
+            <CheckCircle className="w-4 h-4" />
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );
