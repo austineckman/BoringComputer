@@ -175,10 +175,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       if (!rolesResponse.ok) {
+        const errorText = await rolesResponse.text();
         return res.status(500).json({ 
           error: "Could not fetch Discord server roles",
           details: `HTTP ${rolesResponse.status}: ${rolesResponse.statusText}`,
-          note: "Make sure the bot has proper permissions in your Discord server"
+          response: errorText,
+          troubleshooting: {
+            "404 Not Found": "Bot is not in the Discord server",
+            "403 Forbidden": "Bot lacks 'View Server Members' permission", 
+            "401 Unauthorized": "Invalid bot token",
+            solution: "Invite bot to server with 'View Server Members' permission"
+          }
         });
       }
 
