@@ -29,6 +29,7 @@ import HelpCenterWindow from "./HelpCenterWindow";
 import ElectronicsCheatSheetWindow from "./ElectronicsCheatSheetWindow";
 import ResistorCalculatorWindow from "./ResistorCalculatorWindow";
 import CodeCaravanWindow from "./CodeCaravanWindow";
+import ShopWindow from "./ShopWindow";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import wallpaperImage from "@assets/wallpaper.png";
 import goldCrateImage from "@assets/goldcrate.png";
@@ -659,8 +660,8 @@ const RetroDesktop: React.FC = () => {
   const openShopWindow = () => {
     openWindow(
       "shop", 
-      "Shop", 
-      <WebBrowserWindow initialUrl="https://craftingtable.com" title="Crafting Shop" />, 
+      "The Keymaster's Shop", 
+      <ShopWindow onClose={() => closeWindow("shop")} />, 
       "shopcoin",
       { width: 800, height: 600 }
     );

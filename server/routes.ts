@@ -127,6 +127,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Note: /api/auth/me endpoint is now handled in routes/auth.ts to avoid conflicts
 
+  // Shop purchase endpoint
+  app.post('/api/shop/purchase', authenticate, async (req, res) => {
+    try {
+      const { itemId, quantity, totalCost } = req.body;
+      const userId = (req as any).user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      if (!itemId || !quantity || !totalCost) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // Get current user
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Check if user has enough gold
+      const userGold = user.inventory?.['gold'] || 0;
+      if (userGold < totalCost) {
+        return res.status(400).json({ message: "Insufficient gold" });
+      }
+
+      // Update user inventory
+      const updatedInventory = { ...user.inventory };
+      updatedInventory['gold'] = userGold - totalCost;
+      updatedInventory[itemId] = (updatedInventory[itemId] || 0) + quantity;
+
+      // Save updated user
+      await storage.updateUser(userId, { inventory: updatedInventory });
+
+      res.json({
+        success: true,
+        itemId,
+        quantity,
+        totalCost,
+        remainingGold: updatedInventory['gold']
+      });
+    } catch (error) {
+      console.error('Shop purchase error:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Debug endpoint to give gold to user (for testing purposes)
+  app.post('/api/debug/give-gold', authenticate, async (req, res) => {
+    try {
+      const { amount } = req.body;
+      const userId = (req as any).user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const goldAmount = amount || 1000;
+      const updatedInventory = { ...user.inventory };
+      updatedInventory['gold'] = (updatedInventory['gold'] || 0) + goldAmount;
+
+      await storage.updateUser(userId, { inventory: updatedInventory });
+
+      res.json({
+        success: true,
+        message: `Added ${goldAmount} gold to your inventory`,
+        totalGold: updatedInventory['gold']
+      });
+    } catch (error) {
+      console.error('Give gold error:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Debug endpoint to show Discord roles
   app.get('/api/debug/discord-roles', authenticate, async (req, res) => {
     const user = (req as any).user;
