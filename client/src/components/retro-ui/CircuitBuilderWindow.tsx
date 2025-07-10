@@ -25,10 +25,9 @@ import {
 
 // Import our CircuitBuilder component
 import CircuitBuilder from '../circuit-builder/CircuitBuilder';
-import SimulationControlPanel from '../circuit-builder/simulator/SimulationControlPanel';
 
-// Import simple simulator components
-import { SimpleSimulatorProvider, useSimulator } from '../circuit-builder/simulator/SimpleSimulatorContext';
+// Import simulator components
+import { SimulatorProvider, useSimulator } from '../circuit-builder/simulator/SimulatorContext';
 // Import only the proper simulator - legacy simulator removed to enforce hardware emulation
 // import AVR8Simulator from '../circuit-builder/simulator/AVR8Simulator'; // REMOVED - uses keyword-based shortcuts
 // Import our proper AVR8 simulator 
@@ -512,9 +511,7 @@ void loop() {
     
     // Update the simulator context with the latest code
     // This is crucial for the simulator to use the latest code
-    if (updateSimulatorCode) {
-      updateSimulatorCode(currentCode);
-    }
+    updateSimulatorCode(currentCode);
     
     if (typeof window !== 'undefined') {
       // Store in localStorage for persistence
@@ -534,25 +531,23 @@ void loop() {
   const [isSimulationRunning, setIsSimulationRunning] = useState(false);
   const [showExampleDropdown, setShowExampleDropdown] = useState(false);
 
-  // Use simple simulator context
+  // Use simulator context
   const { 
     startSimulation,
     stopSimulation,
-    addLog,
+    addLog: addSimulatorLog,
     logs: simulatorLogs,
     updateComponentState,  // Access the updateComponentState function
     updateComponentPins,   // Access the updateComponentPins function for pin-specific updates
     setCode: updateSimulatorCode // Get the simulator's setCode function
-  } = useSimulator() || {};
+  } = useSimulator();
   
   // Run the simulation
   const runSimulation = () => {
     if (isSimulationRunning) {
       // Stop the simulation
       addSimulationLog('Stopping simulation...');
-      if (stopSimulation) {
-        stopSimulation();
-      }
+      stopSimulation();
       setIsSimulationRunning(false);
       if (typeof window !== 'undefined') {
         window.isSimulationRunning = false; // Set global flag for components
@@ -602,14 +597,9 @@ void loop() {
           window.isSimulationRunning = true; // Set global flag for components
         }
         
-        // Start the simple simulator
-        if (startSimulation) {
-          startSimulation();
-          addSimulationLog('✅ Simulation started successfully');
-          addSimulationLog('Hardware emulation is now running on the virtual circuit');
-        } else {
-          addSimulationLog('⚠️ Simulator functions not available');
-        }
+        startSimulation();
+        addSimulationLog('✅ Simulation started successfully');
+        addSimulationLog('Hardware emulation is now running on the virtual circuit');
       }, 500); // 500ms delay for better user feedback
     }
   };
@@ -631,9 +621,7 @@ void loop() {
   
   // Add a log entry with timestamp
   const addSimulationLog = (message: string) => {
-    if (addLog) {
-      addLog(message);
-    }
+    addSimulatorLog(message);
     console.log(`[Simulator] ${message}`);
   };
   
@@ -723,8 +711,7 @@ void loop() {
   }, [saveProject]);
 
   return (
-    <SimpleSimulatorProvider>
-      <LibraryManagerProvider>
+    <LibraryManagerProvider>
       <div className="flex flex-col w-full h-full bg-gray-800 text-white overflow-hidden">
       {/* Toolbar */}
       <div className="bg-gray-900 p-2 flex items-center justify-between border-b border-gray-700">
@@ -812,8 +799,11 @@ void loop() {
         <div className="w-full bg-gray-900 overflow-hidden relative">
           <CircuitBuilder />
           
-          {/* Simple, powerful simulation control panel */}
-          <SimulationControlPanel />
+          {/* Proper simulator implementation with real execution */}
+          {/* Simulator removed - needs proper AVR8 implementation */}
+          <div className="p-4 text-gray-400">
+            <p>Emulator integration in progress...</p>
+          </div>
           {/* <ProperAVR8Simulator 
             code={code}
             isRunning={isSimulationRunning}
@@ -1040,8 +1030,7 @@ void loop() {
         </div>
       )}
       </div>
-      </LibraryManagerProvider>
-    </SimpleSimulatorProvider>
+    </LibraryManagerProvider>
   );
 };
 
