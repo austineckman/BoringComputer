@@ -91,12 +91,12 @@ export function setupAuth(app: any): void {
           
           if (accessToken && guildId) {
             try {
-              // Check if user is in your specific server and get their roles
+              // Use bot token to get user's roles in the specific server
               const guildMemberResponse = await fetch(
-                `https://discord.com/api/v10/users/@me/guilds/${guildId}/member`,
+                `https://discord.com/api/v10/guilds/${guildId}/members/${profile.id}`,
                 {
                   headers: {
-                    'Authorization': `Bearer ${accessToken}`,
+                    'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
                     'Content-Type': 'application/json',
                   },
                 }
@@ -107,12 +107,12 @@ export function setupAuth(app: any): void {
                 const userRoleIds = memberData.roles || [];
                 console.log(`User ${profile.username} has ${userRoleIds.length} roles in your Discord server`);
                 
-                // Fetch the guild roles to map IDs to names
+                // Fetch the guild roles to map IDs to names using bot token
                 const rolesResponse = await fetch(
                   `https://discord.com/api/v10/guilds/${guildId}/roles`,
                   {
                     headers: {
-                      'Authorization': `Bearer ${accessToken}`,
+                      'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
                       'Content-Type': 'application/json',
                     },
                   }
