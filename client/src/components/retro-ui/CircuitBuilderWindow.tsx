@@ -512,7 +512,9 @@ void loop() {
     
     // Update the simulator context with the latest code
     // This is crucial for the simulator to use the latest code
-    updateSimulatorCode(currentCode);
+    if (updateSimulatorCode) {
+      updateSimulatorCode(currentCode);
+    }
     
     if (typeof window !== 'undefined') {
       // Store in localStorage for persistence
@@ -541,14 +543,16 @@ void loop() {
     updateComponentState,  // Access the updateComponentState function
     updateComponentPins,   // Access the updateComponentPins function for pin-specific updates
     setCode: updateSimulatorCode // Get the simulator's setCode function
-  } = useSimulator();
+  } = useSimulator() || {};
   
   // Run the simulation
   const runSimulation = () => {
     if (isSimulationRunning) {
       // Stop the simulation
       addSimulationLog('Stopping simulation...');
-      stopSimulation();
+      if (stopSimulation) {
+        stopSimulation();
+      }
       setIsSimulationRunning(false);
       if (typeof window !== 'undefined') {
         window.isSimulationRunning = false; // Set global flag for components
@@ -599,9 +603,13 @@ void loop() {
         }
         
         // Start the simple simulator
-        startSimulation();
-        addSimulationLog('✅ Simulation started successfully');
-        addSimulationLog('Hardware emulation is now running on the virtual circuit');
+        if (startSimulation) {
+          startSimulation();
+          addSimulationLog('✅ Simulation started successfully');
+          addSimulationLog('Hardware emulation is now running on the virtual circuit');
+        } else {
+          addSimulationLog('⚠️ Simulator functions not available');
+        }
       }, 500); // 500ms delay for better user feedback
     }
   };
@@ -623,7 +631,9 @@ void loop() {
   
   // Add a log entry with timestamp
   const addSimulationLog = (message: string) => {
-    addLog(message);
+    if (addLog) {
+      addLog(message);
+    }
     console.log(`[Simulator] ${message}`);
   };
   
