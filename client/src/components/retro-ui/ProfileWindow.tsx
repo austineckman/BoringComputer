@@ -61,82 +61,75 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gradient-to-br from-gray-900 to-blue-900 rounded-lg shadow-xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto border border-blue-500">
+    <div className="retro-window-content h-full overflow-y-auto bg-gray-100 p-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-blue-400" />
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-black flex items-center gap-2">
+            <Users className="w-6 h-6 text-blue-600" />
             User Profile
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
         </div>
         
         {/* User Info */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-6 p-4 bg-white border-2 border-gray-300 retro-inset">
           <div className="flex justify-center mb-4">
             <img 
               src={user?.avatar || logoImage} 
               alt="Profile" 
-              className="w-20 h-20 rounded-full border-4 border-blue-400" 
+              className="w-20 h-20 rounded border-2 border-gray-400" 
             />
           </div>
-          <div className="text-2xl font-bold text-white">{user?.username}</div>
-          <div className="text-blue-300 mb-2">Level {user?.level || 1} Adventurer</div>
+          <div className="text-xl font-bold text-black">{user?.username}</div>
+          <div className="text-blue-600 mb-2">Level {user?.level || 1} Adventurer</div>
           {activeTitle && (
-            <div className="inline-block px-3 py-1 bg-yellow-500/20 border border-yellow-500/50 rounded-full text-yellow-300 text-sm">
+            <div className="inline-block px-3 py-1 bg-yellow-200 border border-yellow-400 text-yellow-800 text-sm">
               "{activeTitle}"
             </div>
           )}
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 p-4 rounded-lg border border-blue-500/30">
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="bg-white p-3 border-2 border-gray-300 retro-inset">
             <div className="flex items-center gap-2 mb-2">
-              <Trophy className="w-5 h-5 text-yellow-400" />
-              <span className="text-sm font-medium text-gray-300">Level</span>
+              <Trophy className="w-4 h-4 text-yellow-600" />
+              <span className="text-sm font-medium text-black">Level</span>
             </div>
-            <div className="text-2xl font-bold text-white">{user?.level || 1}</div>
+            <div className="text-xl font-bold text-blue-600">{user?.level || 1}</div>
           </div>
           
-          <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 p-4 rounded-lg border border-purple-500/30">
+          <div className="bg-white p-3 border-2 border-gray-300 retro-inset">
             <div className="flex items-center gap-2 mb-2">
-              <Zap className="w-5 h-5 text-purple-400" />
-              <span className="text-sm font-medium text-gray-300">Items</span>
+              <Zap className="w-4 h-4 text-purple-600" />
+              <span className="text-sm font-medium text-black">Items</span>
             </div>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-xl font-bold text-purple-600">
               {user?.inventory ? Object.values(user.inventory).reduce((a, b) => a + b, 0) : 0}
             </div>
           </div>
           
-          <div className="bg-gradient-to-br from-green-600/20 to-green-800/20 p-4 rounded-lg border border-green-500/30">
+          <div className="bg-white p-3 border-2 border-gray-300 retro-inset">
             <div className="flex items-center gap-2 mb-2">
-              <Award className="w-5 h-5 text-green-400" />
-              <span className="text-sm font-medium text-gray-300">Quests</span>
+              <Award className="w-4 h-4 text-green-600" />
+              <span className="text-sm font-medium text-black">Quests</span>
             </div>
-            <div className="text-2xl font-bold text-white">12</div>
+            <div className="text-xl font-bold text-green-600">12</div>
           </div>
           
-          <div className="bg-gradient-to-br from-orange-600/20 to-orange-800/20 p-4 rounded-lg border border-orange-500/30">
+          <div className="bg-white p-3 border-2 border-gray-300 retro-inset">
             <div className="flex items-center gap-2 mb-2">
-              <Star className="w-5 h-5 text-orange-400" />
-              <span className="text-sm font-medium text-gray-300">XP</span>
+              <Star className="w-4 h-4 text-orange-600" />
+              <span className="text-sm font-medium text-black">XP</span>
             </div>
-            <div className="text-2xl font-bold text-white">2,340</div>
+            <div className="text-xl font-bold text-orange-600">2,340</div>
           </div>
         </div>
 
         {/* Title Selection */}
         {titles && titles.length > 0 && (
-          <div className="mb-6 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-            <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-              <Crown className="w-5 h-5 text-yellow-400" />
+          <div className="mb-6 p-3 bg-white border-2 border-gray-300 retro-inset">
+            <h3 className="text-sm font-semibold text-black mb-3 flex items-center gap-2">
+              <Crown className="w-4 h-4 text-yellow-600" />
               Titles
             </h3>
             <div className="grid grid-cols-1 gap-2">
@@ -145,16 +138,16 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
                   key={title}
                   onClick={() => setActiveTitle(title)}
                   disabled={isSetting}
-                  className={`p-3 rounded-lg border text-left transition-all ${
+                  className={`p-2 border text-left transition-all ${
                     activeTitle === title
-                      ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-300'
-                      : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-600/50'
+                      ? 'bg-yellow-200 border-yellow-400 text-yellow-800'
+                      : 'bg-gray-100 border-gray-300 text-black hover:bg-gray-200'
                   } ${isSetting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">"{title}"</span>
+                    <span className="font-medium text-sm">"{title}"</span>
                     {activeTitle === title && (
-                      <CheckCircle className="w-4 h-4 text-yellow-400" />
+                      <CheckCircle className="w-3 h-3 text-yellow-600" />
                     )}
                   </div>
                 </button>
@@ -164,9 +157,9 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
         )}
 
         {/* Discord Roles - Small Section */}
-        <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-          <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
-            <Shield className="w-4 h-4 text-purple-400" />
+        <div className="p-3 bg-white border-2 border-gray-300 retro-inset">
+          <h3 className="text-sm font-semibold text-black mb-2 flex items-center gap-2">
+            <Shield className="w-4 h-4 text-purple-600" />
             Discord Roles
           </h3>
           
@@ -175,121 +168,21 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
               {discordRoles.roles.map((role: any) => (
                 <span
                   key={role.id}
-                  className={`px-2 py-1 rounded text-xs font-medium ${getRoleColor(role.name)}`}
-                  style={{ 
-                    backgroundColor: role.color ? `#${role.color.toString(16).padStart(6, '0')}30` : undefined,
-                  }}
+                  className="px-2 py-1 bg-blue-100 border border-blue-300 text-blue-800 text-xs font-medium"
                 >
                   {role.name}
                 </span>
               ))}
             </div>
           ) : (
-            <div className="text-xs text-gray-400">
+            <div className="text-xs text-gray-600">
               {!user?.discordId ? 'Not connected' : 'No roles found'}
             </div>
           )}
         </div>
 
-        {/* App Permission Roles */}
-        {user?.roles && user.roles.length > 0 && (
-          <div className="mb-6 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-            <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-yellow-400" />
-              App Permissions
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {user.roles.map((role) => (
-                <span
-                  key={role}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${
-                    role === 'admin' 
-                      ? 'bg-red-500/20 text-red-300 border border-red-500/50' 
-                      : role === 'moderator'
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/50'
-                      : role === 'premium'
-                      ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/50'
-                      : 'bg-blue-500/20 text-blue-300 border border-blue-500/50'
-                  }`}
-                >
-                  {role === 'admin' && <Crown className="w-4 h-4" />}
-                  {role === 'moderator' && <Shield className="w-4 h-4" />}
-                  {role === 'premium' && <Star className="w-4 h-4" />}
-                  {role === 'user' && <Users className="w-4 h-4" />}
-                  {role.charAt(0).toUpperCase() + role.slice(1)}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
 
-        {/* Character Stats */}
-        <div className="mb-6 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-yellow-400" />
-            Character Stats
-          </h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-700/50 p-3 rounded-lg text-center">
-              <div className="text-2xl font-bold text-blue-400">{user?.level || 1}</div>
-              <div className="text-xs text-gray-400">Level</div>
-            </div>
-            <div className="bg-gray-700/50 p-3 rounded-lg text-center">
-              <div className="text-2xl font-bold text-green-400">{user?.inventory ? Object.keys(user.inventory).length : 0}</div>
-              <div className="text-xs text-gray-400">Items</div>
-            </div>
-            <div className="bg-gray-700/50 p-3 rounded-lg text-center">
-              <div className="text-2xl font-bold text-purple-400">0</div>
-              <div className="text-xs text-gray-400">Quests</div>
-            </div>
-            <div className="bg-gray-700/50 p-3 rounded-lg text-center">
-              <div className="text-2xl font-bold text-yellow-400">0</div>
-              <div className="text-xs text-gray-400">XP</div>
-            </div>
-          </div>
-        </div>
 
-        {/* Active Titles */}
-        {titles.length > 0 && (
-          <div className="mb-6 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-            <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-              <Award className="w-5 h-5 text-yellow-400" />
-              Active Titles
-            </h3>
-            {activeTitle ? (
-              <div className="flex items-center justify-between p-3 bg-yellow-500/20 border border-yellow-500/50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Award className="w-4 h-4 text-yellow-400" />
-                  <span className="font-medium text-yellow-300">{activeTitle}</span>
-                </div>
-                <button
-                  onClick={() => setActiveTitle(null)}
-                  className="text-xs text-gray-400 hover:text-red-400 transition-colors"
-                  disabled={isSetting}
-                >
-                  Remove
-                </button>
-              </div>
-            ) : (
-              <div className="text-center py-4 text-gray-400">
-                <Award className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No active title selected</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Close Button */}
-        <div className="flex justify-center">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-          >
-            <CheckCircle className="w-4 h-4" />
-            Close
-          </button>
-        </div>
-      </div>
     </div>
   );
 };

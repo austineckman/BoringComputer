@@ -10,6 +10,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Profile Window Retro Integration (July 10, 2025)
+- Fixed architectural issue with duplicate popup windows in profile system
+- Converted ProfileWindow from modal overlay to proper retro window system integration
+- Redesigned profile UI to match retro Windows 95 aesthetic with proper borders and inset styling
+- Profile now opens as single retro-style window instead of creating competing modal overlay
+- Maintained all profile functionality: user stats, title selection, Discord role display
+
 ### Discord OAuth Role Integration (July 10, 2025)
 - Successfully implemented Discord OAuth authentication with proper Replit domain callback
 - Added Discord bot integration for server role fetching using bot token
