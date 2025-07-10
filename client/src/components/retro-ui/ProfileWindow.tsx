@@ -22,18 +22,26 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
   const { data: discordRoles, isLoading: rolesLoading, error: rolesError } = useQuery({
     queryKey: ['/api/user/discord-roles'],
     retry: false,
-    enabled: !!user,
+    enabled: !!user && !!user.discordId, // Only fetch if user exists and has Discord ID
   });
 
-  // Debug logging
+  // Debug logging and trigger user data refetch on mount
   React.useEffect(() => {
-    console.log('Discord roles query state:', {
-      data: discordRoles,
-      loading: rolesLoading,
-      error: rolesError,
-      user: user?.username
+    console.log('Profile window state:', {
+      user: user ? { id: user.id, username: user.username, discordId: user.discordId } : null,
+      authenticated: !!user,
+      rolesData: discordRoles,
+      rolesLoading,
+      rolesError
     });
-  }, [discordRoles, rolesLoading, rolesError, user]);
+  }, [user, discordRoles, rolesLoading, rolesError]);
+
+  // Trigger a refetch of user data when component mounts to get latest Discord ID
+  React.useEffect(() => {
+    import('@/lib/queryClient').then(({ queryClient }) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+    });
+  }, []);
 
   const getRoleIcon = (roleName: string) => {
     const name = roleName.toLowerCase();
@@ -106,7 +114,12 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
             <div className="text-center py-4 text-red-400">
               <Shield className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">Failed to load Discord roles</p>
-              <p className="text-xs text-gray-500 mt-1">Make sure you're in the CraftingTable Discord server</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {!user?.discordId ? 
+                  'Connect your Discord account to see server roles' :
+                  'Make sure you\'re in the CraftingTable Discord server'
+                }
+              </p>
             </div>
           )}
           
@@ -139,8 +152,15 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
             !rolesLoading && !rolesError && (
               <div className="text-center py-4 text-gray-400">
                 <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No Discord roles found</p>
-                <p className="text-xs text-gray-500 mt-1">Join the CraftingTable Discord server to see your roles</p>
+                <p className="text-sm">
+                  {!user?.discordId ? 'Discord not connected' : 'No Discord roles found'}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {!user?.discordId ? 
+                    'Log in with Discord to see server roles' :
+                    'Join the CraftingTable Discord server to see your roles'
+                  }
+                </p>
               </div>
             )
           )}
