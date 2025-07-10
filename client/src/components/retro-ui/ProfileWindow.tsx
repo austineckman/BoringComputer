@@ -25,23 +25,16 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
     enabled: !!user && !!user.discordId, // Only fetch if user exists and has Discord ID
   });
 
-  // Debug logging and trigger user data refetch on mount
+  // Debug logging to verify Discord roles functionality
   React.useEffect(() => {
     console.log('Profile window state:', {
       user: user ? { id: user.id, username: user.username, discordId: user.discordId } : null,
-      authenticated: !!user,
+      discordRolesEnabled: !!user && !!user.discordId,
       rolesData: discordRoles,
       rolesLoading,
-      rolesError
+      rolesError: rolesError ? rolesError.message : null
     });
   }, [user, discordRoles, rolesLoading, rolesError]);
-
-  // Trigger a refetch of user data when component mounts to get latest Discord ID
-  React.useEffect(() => {
-    import('@/lib/queryClient').then(({ queryClient }) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-    });
-  }, []);
 
   const getRoleIcon = (roleName: string) => {
     const name = roleName.toLowerCase();
