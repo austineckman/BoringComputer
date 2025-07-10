@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
-import { User, Save, Loader2, Award, CheckCircle, Shield, Crown, Star } from 'lucide-react';
+import React from 'react';
+import { User, Award, CheckCircle, Shield, Crown, Star, Users, Zap, Trophy, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
 import { useTitles } from '@/hooks/useTitles';
 import { useQuery } from '@tanstack/react-query';
 import logoImage from "@assets/Asset 6@2x-8.png";
-import { apiRequest } from '@/lib/queryClient';
 
 interface ProfileWindowProps {
   onClose: () => void;
@@ -13,7 +11,6 @@ interface ProfileWindowProps {
 
 const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const { 
     titles, 
     activeTitle, 
@@ -27,13 +24,6 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
     retry: false,
     enabled: !!user,
   });
-  
-  const [isLoading, setIsLoading] = useState(false);
-  const [username, setUsername] = useState(user?.username || '');
-  const [email, setEmail] = useState(user?.email || '');
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
