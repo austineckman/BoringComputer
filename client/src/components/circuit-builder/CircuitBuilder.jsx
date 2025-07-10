@@ -8,12 +8,12 @@ import './styles/tooltips.css'; // Import custom tooltip styles
 import './styles/wire-manager.css'; // Import wire manager styles
 import './lib/pin-tooltips.js'; // Import pin tooltip enhancer
 
-// Import simulator context to pass down simulation state to components
-import { useSimulator } from './simulator/SimulatorContext';
+// Import simple simulator context to pass down simulation state to components
+import { useSimulator } from './simulator/SimpleSimulatorContext';
 
 // Import specialized component implementations
 import HeroBoard from './components/HeroBoard';
-import LED from './components/LED';
+import LED from './components/SimpleLED';
 import RGBLED from './components/RGBLED';
 import Resistor from './components/Resistor';
 import Photoresistor from './components/Photoresistor';
@@ -29,8 +29,8 @@ import OLEDDisplay from './components/OLEDDisplay';
  * Manages components, wires, and interactions
  */
 const CircuitBuilder = () => {
-  // Access simulator context to share component data
-  const { setSimulationComponents } = useSimulator();
+  // Access simple simulator context to share component data
+  const { setComponents: setSimulatorComponents, setWires: setSimulatorWires } = useSimulator();
   
   // State for circuit components
   const [components, setComponents] = useState([]);
@@ -41,13 +41,24 @@ const CircuitBuilder = () => {
   // Get the currently selected component
   const selectedComponent = components.find(c => c.id === selectedComponentId);
   
-  // Share components with the simulator context
+  // Share components and wires with the simple simulator context
   useEffect(() => {
-    if (setSimulationComponents) {
-      console.log(`Sharing ${components.length} components with simulator context`);
-      setSimulationComponents(components);
+    if (setSimulatorComponents) {
+      console.log(`Sharing ${components.length} components with simple simulator`);
+      setSimulatorComponents(components);
     }
-  }, [components, setSimulationComponents]);
+  }, [components, setSimulatorComponents]);
+  
+  // Wire manager state
+  const [wires, setWires] = useState([]);
+  
+  // Share wires when they change
+  useEffect(() => {
+    if (setSimulatorWires && wires) {
+      console.log(`Sharing ${wires.length} wires with simple simulator`);
+      setSimulatorWires(wires);
+    }
+  }, [wires, setSimulatorWires]);
   
   // Track mouse position for wire connections
   useEffect(() => {
@@ -545,7 +556,7 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
         {components.map(renderComponent)}
         
         {/* Wire management layer */}
-        <BasicWireManager canvasRef={canvasRef} />
+        <BasicWireManager canvasRef={canvasRef} onWiresChange={setWires} />
         
         {/* Custom pin tooltip component */}
         <PinTooltip />

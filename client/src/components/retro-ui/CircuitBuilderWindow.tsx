@@ -25,9 +25,10 @@ import {
 
 // Import our CircuitBuilder component
 import CircuitBuilder from '../circuit-builder/CircuitBuilder';
+import SimulationControlPanel from '../circuit-builder/simulator/SimulationControlPanel';
 
-// Import simulator components
-import { SimulatorProvider, useSimulator } from '../circuit-builder/simulator/SimulatorContext';
+// Import simple simulator components
+import { SimpleSimulatorProvider, useSimulator } from '../circuit-builder/simulator/SimpleSimulatorContext';
 // Import only the proper simulator - legacy simulator removed to enforce hardware emulation
 // import AVR8Simulator from '../circuit-builder/simulator/AVR8Simulator'; // REMOVED - uses keyword-based shortcuts
 // Import our proper AVR8 simulator 
@@ -711,7 +712,8 @@ void loop() {
   }, [saveProject]);
 
   return (
-    <LibraryManagerProvider>
+    <SimpleSimulatorProvider>
+      <LibraryManagerProvider>
       <div className="flex flex-col w-full h-full bg-gray-800 text-white overflow-hidden">
       {/* Toolbar */}
       <div className="bg-gray-900 p-2 flex items-center justify-between border-b border-gray-700">
@@ -799,11 +801,8 @@ void loop() {
         <div className="w-full bg-gray-900 overflow-hidden relative">
           <CircuitBuilder />
           
-          {/* Proper simulator implementation with real execution */}
-          {/* Simulator removed - needs proper AVR8 implementation */}
-          <div className="p-4 text-gray-400">
-            <p>Emulator integration in progress...</p>
-          </div>
+          {/* Simple, powerful simulation control panel */}
+          <SimulationControlPanel />
           {/* <ProperAVR8Simulator 
             code={code}
             isRunning={isSimulationRunning}
@@ -1030,7 +1029,8 @@ void loop() {
         </div>
       )}
       </div>
-    </LibraryManagerProvider>
+      </LibraryManagerProvider>
+    </SimpleSimulatorProvider>
   );
 };
 
