@@ -1,9 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import passport from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as DiscordStrategy } from "passport-discord";
 import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
 import { storage } from "./storage";
 import { User } from "@shared/schema";
 
@@ -12,9 +10,11 @@ declare global {
   namespace Express {
     // Define user type for passport
     interface User {
-      id: number;
+      id: string;
       username: string;
+      discordId: string;
       email: string | null;
+      avatar: string | null;
       roles: string[] | null;
       level: number | null;
       inventory: Record<string, number> | null;
@@ -22,31 +22,6 @@ declare global {
     }
   }
 }
-
-const scryptAsync = promisify(scrypt);
-
-// Helper functions for password hashing and verification
-export async function hashPassword(password: string): Promise<string> {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
-}
-
-export async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
-  // Only support properly hashed passwords (contains a dot separator for hash.salt)
-  if (!stored.includes('.')) {
-    console.error('Security warning: Found unhashed password in database');
-    return false; // Reject any non-hashed passwords for security
-  }
-  
-  // Handle hashed password
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
-}
-
-// No mock users - only use real authenticated users from the database
 
 // Authentication middleware
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
@@ -97,30 +72,52 @@ export function setupAuth(app: any): void {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Configure local strategy for username/password auth
+  // Configure Discord strategy for OAuth
   passport.use(
-    new LocalStrategy(async (username, password, done) => {
-      try {
-        const user = await storage.getUserByUsername(username);
-        if (!user) {
-          return done(null, false, { message: "Invalid username or password" });
+    new DiscordStrategy(
+      {
+        clientID: process.env.DISCORD_CLIENT_ID!,
+        clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+        callbackURL: "/auth/discord/callback",
+        scope: ["identify", "email"],
+      },
+      async (accessToken, refreshToken, profile, done) => {
+        try {
+          console.log("Discord authentication for user:", profile.username);
+          
+          // Try to find existing user by Discord ID
+          let user = await storage.getUserByDiscordId(profile.id);
+          
+          if (!user) {
+            // Create new user from Discord profile
+            console.log("Creating new user from Discord profile:", profile.username);
+            user = await storage.createUser({
+              discordId: profile.id,
+              username: profile.username,
+              email: profile.email || null,
+              avatar: profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png` : null,
+              roles: ['user'], // Default role
+              level: 1,
+              inventory: {},
+            });
+          } else {
+            // Update existing user info
+            console.log("Updating existing Discord user:", profile.username);
+            user = await storage.updateUser(user.id, {
+              username: profile.username,
+              email: profile.email || user.email,
+              avatar: profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png` : user.avatar,
+            });
+          }
+
+          console.log("Discord authentication successful for user:", user.username);
+          return done(null, user);
+        } catch (error) {
+          console.error("Discord authentication error:", error);
+          return done(error);
         }
-        
-        // Check password
-        if (!user.password) {
-          return done(null, false, { message: "Invalid username or password" });
-        }
-        
-        const isValid = await comparePasswords(password, user.password);
-        if (!isValid) {
-          return done(null, false, { message: "Invalid username or password" });
-        }
-        
-        return done(null, user);
-      } catch (error) {
-        return done(error);
       }
-    })
+    )
   );
 
   // Serialize user to the session
