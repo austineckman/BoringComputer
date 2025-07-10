@@ -8,6 +8,15 @@ This is a comprehensive educational platform for electronics and maker education
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### Discord OAuth Role Integration (July 10, 2025)
+- Successfully implemented Discord OAuth authentication with proper Replit domain callback
+- Added Discord bot integration for server role fetching using bot token
+- Created role mapping system from Discord server roles to app permissions (admin, moderator, premium, user)
+- Added debug endpoints for troubleshooting Discord role issues
+- System now fetches real Discord roles instead of using placeholder roles
+
 ## System Architecture
 
 ### Backend Architecture
