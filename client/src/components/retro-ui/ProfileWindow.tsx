@@ -21,6 +21,13 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
   // Fetch user's Discord roles
   const { data: discordRoles, isLoading: rolesLoading, error: rolesError } = useQuery({
     queryKey: ['/api/user/discord-roles'],
+    queryFn: async () => {
+      const response = await fetch('/api/user/discord-roles');
+      if (!response.ok) {
+        throw new Error(`${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    },
     retry: false,
     enabled: !!user && !!user.discordId, // Only fetch if user exists and has Discord ID
   });
@@ -172,6 +179,20 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
               {!user?.discordId ? 'Not connected' : 'No roles found'}
             </div>
           )}
+        </div>
+
+        {/* Re-authenticate Button */}
+        <div className="mt-4 p-3 bg-white border-2 border-gray-300 retro-inset">
+          <h3 className="text-sm font-semibold text-black mb-2">Account Actions</h3>
+          <button
+            onClick={() => window.location.href = '/api/auth/logout'}
+            className="w-full px-3 py-2 bg-red-500 text-white border border-red-600 font-medium text-sm hover:bg-red-600 transition-colors"
+          >
+            Logout & Re-authenticate
+          </button>
+          <p className="text-xs text-gray-600 mt-1">
+            Log out and log back in to refresh your Discord server roles
+          </p>
         </div>
 
 
