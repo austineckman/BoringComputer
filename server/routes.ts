@@ -221,6 +221,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Get user's Discord roles
+  app.get('/api/user/discord-roles', authenticate, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      console.log('Fetching Discord roles for user:', user?.username, 'Discord ID:', user?.discordId);
+      
+      const guildId = process.env.DISCORD_GUILD_ID;
+      const botToken = process.env.DISCORD_BOT_TOKEN;
+      
+      if (!guildId || !botToken) {
+        console.error('Discord configuration missing:', { guildId: !!guildId, botToken: !!botToken });
+        return res.status(500).json({ error: 'Discord configuration missing' });
+      }
+
+      if (!user?.discordId) {
+        console.error('User missing Discord ID:', user);
+        return res.status(400).json({ error: 'User not linked to Discord account' });
+      }
+
+      // Get all server roles first
+      const rolesResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}/roles`, {
+        headers: {
+          'Authorization': `Bot ${botToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!rolesResponse.ok) {
+        console.error('Failed to fetch server roles:', rolesResponse.status, rolesResponse.statusText);
+        return res.status(500).json({ error: 'Failed to fetch server roles' });
+      }
+
+      const allRoles = await rolesResponse.json();
+
+      // Get user's guild member info using bot token
+      const memberResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${user.discordId}`, {
+        headers: {
+          'Authorization': `Bot ${botToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!memberResponse.ok) {
+        const errorText = await memberResponse.text();
+        console.error('Failed to fetch member info:', {
+          status: memberResponse.status,
+          statusText: memberResponse.statusText,
+          error: errorText,
+          discordId: user.discordId,
+          guildId
+        });
+        return res.status(404).json({ 
+          error: 'User not found in Discord server',
+          details: 'Make sure you are a member of the CraftingTable Discord server',
+          debug: {
+            discordId: user.discordId,
+            guildId,
+            httpStatus: memberResponse.status
+          }
+        });
+      }
+
+      const memberData = await memberResponse.json();
+      const userRoleIds = memberData.roles || [];
+
+      // Filter roles to only include user's roles
+      const userRoles = allRoles
+        .filter((role: any) => userRoleIds.includes(role.id) && role.name !== '@everyone')
+        .map((role: any) => ({
+          id: role.id,
+          name: role.name,
+          color: role.color,
+          permissions: role.permissions,
+          position: role.position
+        }))
+        .sort((a: any, b: any) => b.position - a.position); // Sort by position (highest first)
+
+      res.json({
+        guildId,
+        serverName: 'CraftingTable',
+        userId: user.discordId,
+        username: user.username,
+        roles: userRoles
+      });
+    } catch (error) {
+      console.error('Error fetching user Discord roles:', error);
+      res.status(500).json({ error: 'Failed to fetch user roles' });
+    }
+  });
   
   // Quests routes
   app.get('/api/quests', authenticate, async (req, res) => {

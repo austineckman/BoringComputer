@@ -18,12 +18,22 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
     isSetting 
   } = useTitles();
   
-  // Fetch Discord server roles
-  const { data: discordRoles } = useQuery({
-    queryKey: ['/api/debug/server-roles'],
+  // Fetch user's Discord roles
+  const { data: discordRoles, isLoading: rolesLoading, error: rolesError } = useQuery({
+    queryKey: ['/api/user/discord-roles'],
     retry: false,
     enabled: !!user,
   });
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('Discord roles query state:', {
+      data: discordRoles,
+      loading: rolesLoading,
+      error: rolesError,
+      user: user?.username
+    });
+  }, [discordRoles, rolesLoading, rolesError, user]);
 
   const getRoleIcon = (roleName: string) => {
     const name = roleName.toLowerCase();
@@ -79,12 +89,28 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
         </div>
 
         {/* Discord Server Roles */}
-        {discordRoles?.roles && discordRoles.roles.length > 0 && (
-          <div className="mb-6 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-            <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-purple-400" />
-              Discord Server Roles
-            </h3>
+        <div className="mb-6 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+          <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+            <Shield className="w-5 h-5 text-purple-400" />
+            Discord Server Roles
+          </h3>
+          
+          {rolesLoading && (
+            <div className="text-center py-4 text-gray-400">
+              <div className="animate-spin w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full mx-auto mb-2"></div>
+              <p className="text-sm">Loading Discord roles...</p>
+            </div>
+          )}
+          
+          {rolesError && (
+            <div className="text-center py-4 text-red-400">
+              <Shield className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Failed to load Discord roles</p>
+              <p className="text-xs text-gray-500 mt-1">Make sure you're in the CraftingTable Discord server</p>
+            </div>
+          )}
+          
+          {discordRoles?.roles && discordRoles.roles.length > 0 ? (
             <div className="grid grid-cols-1 gap-2">
               {discordRoles.roles.map((role: any) => (
                 <div
@@ -109,8 +135,16 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            !rolesLoading && !rolesError && (
+              <div className="text-center py-4 text-gray-400">
+                <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No Discord roles found</p>
+                <p className="text-xs text-gray-500 mt-1">Join the CraftingTable Discord server to see your roles</p>
+              </div>
+            )
+          )}
+        </div>
 
         {/* App Permission Roles */}
         {user?.roles && user.roles.length > 0 && (
