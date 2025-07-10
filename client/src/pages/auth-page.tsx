@@ -1,128 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "wouter";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-
 import wallpaper from "@assets/wallbg.png";
 import hoodedFigureImg from "@assets/hooded-figure.png";
-import bagImage from "@assets/506_Gold_Bag_Leather_B.png";
 import "@/components/retro-ui/retro-ui.css";
 
-// Auth validation schemas
-const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required"),
-});
-
-const registerSchema = z.object({
-  username: z.string()
-    .min(3, "Username must be at least 3 characters")
-    .max(20, "Username must be 20 characters or less")
-    .regex(/^[a-zA-Z0-9_-]+$/, "Username can only contain letters, numbers, underscores and hyphens"),
-  password: z.string()
-    .min(6, "Password must be at least 6 characters"),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
-type RegisterFormValues = z.infer<typeof registerSchema>;
-
 export default function AuthPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("login");
-  const [, setLocation] = useLocation();
-  const { toast } = useToast();
-  
-
-
-  // Login form
-  const loginForm = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      username: "",
-      password: "",
-    },
-  });
-
-  // Register form
-  const registerForm = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      username: "",
-      password: "",
-    },
-  });
-  
-  // Reset forms when switching tabs
-  useEffect(() => {
-    loginForm.reset({ username: "", password: "" });
-    registerForm.reset({ username: "", password: "" });
-  }, [activeTab]);
-
-  // Handle login submission
-  const onLoginSubmit = async (values: LoginFormValues) => {
-    try {
-      setIsLoading(true);
-      const response = await apiRequest("POST", "/api/auth/login", values);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Login failed");
-      }
-      
-      // Successfully logged in
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
-      
-      // Redirect to home page using window.location for a full page reload
-      window.location.href = "/";
-    } catch (error) {
-      toast({
-        title: "Login failed",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Handle registration submission
-  const onRegisterSubmit = async (values: RegisterFormValues) => {
-    try {
-      setIsLoading(true);
-      const response = await apiRequest("POST", "/api/auth/register", values);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Registration failed");
-      }
-      
-      // Successfully registered and logged in
-      toast({
-        title: "Registration successful",
-        description: "Welcome to Quest Giver!",
-      });
-      
-      // Redirect to home page using window.location for a full page reload
-      window.location.href = "/";
-    } catch (error) {
-      toast({
-        title: "Registration failed",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Get current time for the login screen
   const [currentTime, setCurrentTime] = useState(new Date());
   
   useEffect(() => {
@@ -132,6 +13,10 @@ export default function AuthPage() {
     
     return () => clearInterval(timer);
   }, []);
+
+  const handleDiscordLogin = () => {
+    window.location.href = "/api/auth/discord";
+  };
   
   return (
     <div>
@@ -161,6 +46,7 @@ export default function AuthPage() {
           }}>
         </div>
       </div>
+      
       {/* Windows 95-style Login Box */}
       <div className="w-full max-w-md mx-auto z-10">
         {/* Main Window */}
@@ -189,166 +75,27 @@ export default function AuthPage() {
                   Welcome to CraftingTableOS
                 </h1>
                 <p className="text-gray-700 text-sm">
-                  Type your username and password
+                  Please authenticate to continue
                 </p>
               </div>
             </div>
             
-            {/* Login Tabs */}
-            <div className="border-t border-l border-r border-gray-400 mb-4">
-              <div className="flex">
-                <button 
-                  className={`px-4 py-1 text-sm text-black ${activeTab === 'login' 
-                    ? 'bg-gray-200' 
-                    : 'bg-gray-300'}`}
-                  onClick={() => {
-                    // Clear form fields when switching tabs
-                    document.querySelectorAll('input[name="username"], input[name="password"]').forEach(
-                      input => (input as HTMLInputElement).value = ''
-                    );
-                    setActiveTab('login');
-                  }}
-                >
-                  Login
-                </button>
-                <button 
-                  className={`px-4 py-1 text-sm text-black ${activeTab === 'register' 
-                    ? 'bg-gray-200' 
-                    : 'bg-gray-300'}`}
-                  onClick={() => {
-                    // Clear form fields when switching tabs
-                    document.querySelectorAll('input[name="username"], input[name="password"]').forEach(
-                      input => (input as HTMLInputElement).value = ''
-                    );
-                    setActiveTab('register');
-                  }}
-                >
-                  Register
-                </button>
-              </div>
+            {/* Discord Login Button */}
+            <div className="flex justify-center">
+              <button 
+                onClick={handleDiscordLogin}
+                className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white flex items-center justify-center space-x-2"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.211.375-.445.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                </svg>
+                <span>Login with Discord</span>
+              </button>
             </div>
             
-            {activeTab === 'login' ? (
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.currentTarget);
-                const username = formData.get('username') as string;
-                const password = formData.get('password') as string;
-                
-                if (username && password) {
-                  onLoginSubmit({ username, password });
-                }
-              }}>
-                <div className="space-y-3">
-                  <div className="flex items-center">
-                    <label htmlFor="login-username" className="w-24 text-sm text-black">Username:</label>
-                    <div className="flex-1">
-                      <input
-                        id="login-username"
-                        name="username"
-                        placeholder="Enter username"
-                        className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white text-black"
-                        style={{
-                          zIndex: 50,
-                          position: 'relative',
-                          backgroundColor: '#fff',
-                          pointerEvents: 'auto'
-                        }}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <label htmlFor="login-password" className="w-24 text-sm text-black">Password:</label>
-                    <div className="flex-1">
-                      <input
-                        id="login-password"
-                        name="password"
-                        type="password"
-                        placeholder="Enter password"
-                        className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white text-black"
-                        style={{
-                          zIndex: 50,
-                          position: 'relative',
-                          backgroundColor: '#fff',
-                          pointerEvents: 'auto'
-                        }}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-center mt-5 pt-3 border-t border-gray-400">
-                    <button 
-                      type="submit" 
-                      disabled={isLoading} 
-                      className="min-w-32 px-6 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-normal text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white"
-                    >
-                      {isLoading ? "Logging in..." : "Login"}
-                    </button>
-                  </div>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.currentTarget);
-                const username = formData.get('username') as string;
-                const password = formData.get('password') as string;
-                
-                if (username && password) {
-                  onRegisterSubmit({ username, password });
-                }
-              }}>
-                <div className="space-y-3">
-                  <div className="flex items-center">
-                    <label htmlFor="register-username" className="w-24 text-sm text-black">Username:</label>
-                    <div className="flex-1">
-                      <input
-                        id="register-username"
-                        name="username"
-                        placeholder="Choose username"
-                        className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white text-black"
-                        style={{
-                          zIndex: 50,
-                          position: 'relative',
-                          backgroundColor: '#fff',
-                          pointerEvents: 'auto'
-                        }}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <label htmlFor="register-password" className="w-24 text-sm text-black">Password:</label>
-                    <div className="flex-1">
-                      <input
-                        id="register-password"
-                        name="password"
-                        type="password"
-                        placeholder="Choose password"
-                        className="w-full border-2 border-t-gray-600 border-l-gray-600 border-r-white border-b-white px-2 py-1 text-sm bg-white text-black"
-                        style={{
-                          zIndex: 50,
-                          position: 'relative',
-                          backgroundColor: '#fff',
-                          pointerEvents: 'auto'
-                        }}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-center mt-5 pt-3 border-t border-gray-400">
-                    <button 
-                      type="submit" 
-                      disabled={isLoading} 
-                      className="min-w-32 px-6 py-1.5 bg-gray-200 hover:bg-gray-300 text-black font-normal text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white"
-                    >
-                      {isLoading ? "Creating..." : "Create Account"}
-                    </button>
-                  </div>
-                </div>
-              </form>
-            )}
+            <div className="mt-4 text-center text-xs text-gray-600">
+              <p>By logging in, you agree to our Terms of Service</p>
+            </div>
           </div>
           
           {/* Footer Status Bar */}
