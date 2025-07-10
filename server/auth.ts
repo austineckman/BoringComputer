@@ -79,11 +79,80 @@ export function setupAuth(app: any): void {
         clientID: process.env.DISCORD_CLIENT_ID!,
         clientSecret: process.env.DISCORD_CLIENT_SECRET!,
         callbackURL: "https://6586fd3c-2e1e-45c9-a302-dec0ad1fb0bd-00-10hxex3vuoklp.picard.replit.dev/api/auth/discord/callback",
-        scope: ["identify", "email"],
+        scope: ["identify", "email", "guilds.members.read"],
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
           console.log("Discord authentication for user:", profile.username);
+          
+          // Fetch user's roles from CraftingTable Discord server
+          const guildId = process.env.DISCORD_GUILD_ID; // Your CraftingTable server ID
+          let discordRoles: string[] = ['user']; // Default role
+          
+          if (guildId && accessToken) {
+            try {
+              const guildMemberResponse = await fetch(
+                `https://discord.com/api/v10/guilds/${guildId}/members/${profile.id}`,
+                {
+                  headers: {
+                    'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
+              
+              if (guildMemberResponse.ok) {
+                const memberData = await guildMemberResponse.json();
+                const roleIds = memberData.roles || [];
+                
+                // Fetch guild roles to map IDs to names
+                const rolesResponse = await fetch(
+                  `https://discord.com/api/v10/guilds/${guildId}/roles`,
+                  {
+                    headers: {
+                      'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+                      'Content-Type': 'application/json',
+                    },
+                  }
+                );
+                
+                if (rolesResponse.ok) {
+                  const guildRoles = await rolesResponse.json();
+                  const roleMap = guildRoles.reduce((acc: any, role: any) => {
+                    acc[role.id] = role.name.toLowerCase();
+                    return acc;
+                  }, {});
+                  
+                  // Convert role IDs to role names and filter for relevant roles
+                  const userRoleNames = roleIds
+                    .map((roleId: string) => roleMap[roleId])
+                    .filter((roleName: string) => roleName && roleName !== '@everyone');
+                  
+                  // Map Discord roles to app permissions
+                  discordRoles = ['user']; // Start with default
+                  
+                  if (userRoleNames.includes('admin') || userRoleNames.includes('administrator') || userRoleNames.includes('owner')) {
+                    discordRoles.push('admin');
+                  }
+                  
+                  if (userRoleNames.includes('moderator') || userRoleNames.includes('mod')) {
+                    discordRoles.push('moderator');
+                  }
+                  
+                  if (userRoleNames.includes('premium') || userRoleNames.includes('supporter') || userRoleNames.includes('vip')) {
+                    discordRoles.push('premium');
+                  }
+                  
+                  console.log(`User ${profile.username} has Discord roles:`, userRoleNames);
+                  console.log(`Mapped to app roles:`, discordRoles);
+                }
+              } else {
+                console.log(`User ${profile.username} is not a member of the CraftingTable server`);
+              }
+            } catch (roleError) {
+              console.error('Error fetching Discord roles:', roleError);
+            }
+          }
           
           // Try to find existing user by Discord ID
           let user = await storage.getUserByDiscordId(profile.id);
@@ -96,16 +165,17 @@ export function setupAuth(app: any): void {
               username: profile.username,
               email: profile.email || null,
               avatar: profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png` : null,
-              roles: ['user'], // Default role
+              roles: discordRoles,
               level: 1,
               inventory: {},
             });
           } else {
-            // Update existing user info
+            // Update existing user info and roles
             console.log("Updating existing Discord user:", profile.username);
             user = await storage.updateUser(user.id, {
               username: profile.username,
               email: profile.email || user.email,
+              roles: discordRoles, // Update roles from Discord
               avatar: profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png` : user.avatar,
             });
           }
