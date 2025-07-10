@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import LoadingScreen from "@/components/retro-ui/LoadingScreen";
+
 import wallpaper from "@assets/wallbg.png";
 import hoodedFigureImg from "@assets/hooded-figure.png";
 import bagImage from "@assets/506_Gold_Bag_Leather_B.png";
@@ -36,13 +36,7 @@ export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
-  // Loading screen state
-  const [showLoadingScreen, setShowLoadingScreen] = useState(true);
-  
-  // Hide loading screen after it completes
-  const handleLoadingComplete = () => {
-    setShowLoadingScreen(false);
-  };
+
 
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -141,9 +135,6 @@ export default function AuthPage() {
   
   return (
     <div>
-      {/* Loading screen */}
-      {showLoadingScreen && <LoadingScreen onLoadComplete={handleLoadingComplete} />}
-    
       {/* Main login UI */}
       <div 
         className="min-h-screen w-full flex flex-col justify-center items-center relative overflow-hidden retro-desktop"
