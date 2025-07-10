@@ -131,6 +131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       id: user.id,
       username: user.username,
       email: user.email,
+      discordId: user.discordId, // Include Discord ID if available
       avatar: user.avatar,
       roles: user.roles,
       level: user.level,
@@ -226,6 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/user/discord-roles', authenticate, async (req, res) => {
     try {
       const user = (req as any).user;
+      console.log('Discord roles request - Session:', req.sessionID, 'Authenticated:', req.isAuthenticated());
       console.log('Fetching Discord roles for user:', user?.username, 'Discord ID:', user?.discordId);
       
       const guildId = process.env.DISCORD_GUILD_ID;
