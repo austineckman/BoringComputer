@@ -532,11 +532,11 @@ void loop() {
   const [isSimulationRunning, setIsSimulationRunning] = useState(false);
   const [showExampleDropdown, setShowExampleDropdown] = useState(false);
 
-  // Use simulator context
+  // Use simple simulator context
   const { 
     startSimulation,
     stopSimulation,
-    addLog: addSimulatorLog,
+    addLog,
     logs: simulatorLogs,
     updateComponentState,  // Access the updateComponentState function
     updateComponentPins,   // Access the updateComponentPins function for pin-specific updates
@@ -598,6 +598,7 @@ void loop() {
           window.isSimulationRunning = true; // Set global flag for components
         }
         
+        // Start the simple simulator
         startSimulation();
         addSimulationLog('✅ Simulation started successfully');
         addSimulationLog('Hardware emulation is now running on the virtual circuit');
@@ -622,6 +623,7 @@ void loop() {
   
   // Add a log entry with timestamp
   const addSimulationLog = (message: string) => {
+    addLog(message);
     console.log(`[Simulator] ${message}`);
   };
   
