@@ -158,7 +158,9 @@ export function setupAuth(app: any): void {
                   console.log(`Could not fetch roles from your Discord server`);
                 }
               } else {
-                console.log(`User ${profile.username} is not a member of your Discord server`);
+                const errorText = await guildMemberResponse.text();
+                console.log(`Error fetching member data for ${profile.username}:`, guildMemberResponse.status, errorText);
+                console.log(`This could mean: bot not in server, missing permissions, or user not in server`);
               }
             } catch (roleError) {
               console.error('Error fetching Discord server roles:', roleError);
