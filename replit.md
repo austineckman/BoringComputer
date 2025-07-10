@@ -33,6 +33,14 @@ Preferred communication style: Simple, everyday language.
 - This resolves Oracle access control system to properly recognize admin privileges
 - Backend logs confirm user session has proper roles: ['CraftingTable', 'Founder', 'Academy', 'Server Booster', 'admin']
 
+### Shopkeeper System (July 10, 2025)
+- Redesigned shop from external website to in-app shopkeeper window
+- Created ShopWindow component with Keymaster character selling Keys for 100 gold each
+- Added interactive shopkeeper dialogue system with randomized responses
+- Implemented purchase API endpoint `/api/shop/purchase` with inventory management
+- Shop features multiple purchase options (1, 5, or 10 keys) with proper gold validation
+- Integrated with user inventory system for real-time gold and key tracking
+
 ## System Architecture
 
 ### Backend Architecture
