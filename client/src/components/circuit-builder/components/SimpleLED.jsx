@@ -96,6 +96,67 @@ const SimpleLED = ({
     }
   };
   
+  // Handle pin click - IDENTICAL to other LED components
+  const handlePinClicked = (e) => {
+    console.log("Pin clicked on LED:", e.detail);
+    
+    // Extract pin information from the event
+    if (onPinConnect) {
+      try {
+        // The data is a JSON string inside the detail object
+        const pinDataJson = e.detail.data;
+        const pinData = JSON.parse(pinDataJson);
+        
+        // Get pin ID and type from the parsed data
+        const pinId = pinData.name;
+        // Determine pin type based on signals if available
+        let pinType = 'bidirectional';
+        if (pinData.signals && pinData.signals.length > 0) {
+          const signal = pinData.signals[0];
+          if (signal.type === 'power') {
+            pinType = 'power';
+          } else if (signal.type === 'digital') {
+            pinType = 'digital';
+          }
+        }
+        
+        // Get position information
+        const clientX = e.detail.clientX || 0;
+        const clientY = e.detail.clientY || 0;
+        
+        console.log(`Pin clicked: ${pinId} (${pinType})`);
+        
+        // Call the parent's onPinConnect handler
+        onPinConnect(pinId, pinType, id);
+        
+        // Send another event with the formatted pin ID to match our wire manager
+        const formattedPinId = `pt-${id.toLowerCase().split('-')[0]}-${id}-${pinId}`;
+        
+        // Create a custom pin click event to trigger the wire manager
+        const pinClickEvent = new CustomEvent('pinClicked', {
+          detail: {
+            id: formattedPinId,
+            pinData: pinDataJson,
+            pinType: pinType,
+            parentId: id,
+            pinName: pinId,
+            parentComponentId: id,
+            coordinates: {
+              x: clientX,
+              y: clientY
+            }
+          }
+        });
+        
+        // Dispatch the event to the document for the wire manager to catch
+        document.dispatchEvent(pinClickEvent);
+        
+      } catch (error) {
+        console.error("Error handling pin click:", error);
+      }
+    }
+  };
+
   // Handle drag/rotate (same as before)
   const onDragOrRotate = ({ target, beforeTranslate, beforeRotate }) => {
     if (beforeTranslate) {
@@ -132,6 +193,18 @@ const SimpleLED = ({
       triggerRedraw();
     }
   }, [posTop, posLeft]);
+
+  // Set up pin click event listener
+  useEffect(() => {
+    if (targetRef.current) {
+      const element = targetRef.current;
+      element.addEventListener('pinClicked', handlePinClicked);
+      
+      return () => {
+        element.removeEventListener('pinClicked', handlePinClicked);
+      };
+    }
+  }, [onPinConnect, id]);
   
   return (
     <div>
