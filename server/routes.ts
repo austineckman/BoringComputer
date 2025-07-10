@@ -125,21 +125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get('/api/auth/me', authenticate, (req, res) => {
-    const user = (req as any).user;
-    return res.json({
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      discordId: user.discordId, // Include Discord ID if available
-      avatar: user.avatar,
-      roles: user.roles,
-      level: user.level,
-      inventory: user.inventory,
-      titles: user.titles || [],
-      activeTitle: user.activeTitle
-    });
-  });
+  // Note: /api/auth/me endpoint is now handled in routes/auth.ts to avoid conflicts
 
   // Debug endpoint to show Discord roles
   app.get('/api/debug/discord-roles', authenticate, async (req, res) => {

@@ -9,6 +9,7 @@ interface User {
   id: string;
   username: string;
   email?: string;
+  discordId?: string;  // Added missing discordId field
   avatar?: string;
   roles?: string[];
   level: number;

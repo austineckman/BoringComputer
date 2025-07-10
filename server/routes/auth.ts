@@ -38,10 +38,13 @@ router.get("/me", (req, res) => {
   
   const user = req.user as Express.User;
   
+  // Debug logging removed
+  
   return res.json({
     id: user.id,
     username: user.username,
     email: user.email,
+    discordId: user.discordId,  // Make sure to include discordId
     roles: user.roles,
     level: user.level,
     inventory: user.inventory,
