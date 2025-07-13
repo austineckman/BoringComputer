@@ -1880,7 +1880,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
               <button
                 onClick={() => {
                   setConnectingFrom(contextMenu.questId);
-                  setContextMenu(null);
+                  // Menu stays open - only closes via red X
                   window.sounds?.click();
                 }}
                 className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center gap-2"
@@ -1903,7 +1903,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                     rewards: []
                   };
                   // Add the quest to the list (this would need proper state management)
-                  setContextMenu(null);
+                  // Menu stays open - only closes via red X
                   window.sounds?.success();
                 }}
                 className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center gap-2"
@@ -1919,7 +1919,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   if (quest) {
                     onEditQuest(quest);
                   }
-                  setContextMenu(null);
+                  // Menu stays open - only closes via red X
                   window.sounds?.click();
                 }}
                 className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center gap-2"
@@ -1940,7 +1940,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                     };
                     // Add duplicate logic here
                   }
-                  setContextMenu(null);
+                  // Menu stays open - only closes via red X
                   window.sounds?.click();
                 }}
                 className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center gap-2"
@@ -1970,7 +1970,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                     };
                   });
                   setQuestPositions(newPositions);
-                  setContextMenu(null);
+                  // Menu stays open - only closes via red X
                   window.sounds?.success();
                 }}
                 className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center gap-2"
@@ -1986,7 +1986,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                     canvasRef.current.scrollTop = 0;
                     canvasRef.current.scrollLeft = 0;
                   }
-                  setContextMenu(null);
+                  // Menu stays open - only closes via red X
                   window.sounds?.click();
                 }}
                 className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center gap-2"
@@ -2004,7 +2004,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                     onDeleteQuest(contextMenu.questId);
                     window.sounds?.error();
                   }
-                  setContextMenu(null);
+                  // Menu stays open - only closes via red X
                 }}
                 className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors flex items-center gap-2"
               >
