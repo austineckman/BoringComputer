@@ -1932,31 +1932,33 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         {/* Flow Canvas */}
         <div className="flex-1 relative overflow-hidden bg-gradient-to-br from-gray-900 via-black to-gray-900">
           {questFlowMode ? (
-            <QuestFlowCanvas 
-              quests={kitQuests}
-              connections={questConnections}
-              onQuestMove={(questId, position) => {
-                // Handle quest position updates
-                console.log(`Moving quest ${questId} to position`, position);
-              }}
-              onCreateConnection={(fromQuest, toQuest) => {
-                setQuestConnections(prev => ({
-                  ...prev,
-                  [fromQuest]: [...(prev[fromQuest] || []), toQuest]
-                }));
-              }}
-              onEditQuest={(quest) => {
-                setEditingItem(quest);
-                setEditingType('quest');
-                window.sounds?.click();
-              }}
-              onDeleteQuest={(questId) => {
-                const quest = kitQuests.find(q => q.id === questId);
-                if (quest) {
-                  handleDeleteClick('quest', questId, quest.title);
-                }
-              }}
-            />
+            <DndProvider backend={HTML5Backend}>
+              <QuestFlowCanvas 
+                quests={kitQuests}
+                connections={questConnections}
+                onQuestMove={(questId, position) => {
+                  // Handle quest position updates
+                  console.log(`Moving quest ${questId} to position`, position);
+                }}
+                onCreateConnection={(fromQuest, toQuest) => {
+                  setQuestConnections(prev => ({
+                    ...prev,
+                    [fromQuest]: [...(prev[fromQuest] || []), toQuest]
+                  }));
+                }}
+                onEditQuest={(quest) => {
+                  setEditingItem(quest);
+                  setEditingType('quest');
+                  window.sounds?.click();
+                }}
+                onDeleteQuest={(questId) => {
+                  const quest = kitQuests.find(q => q.id === questId);
+                  if (quest) {
+                    handleDeleteClick('quest', questId, quest.title);
+                  }
+                }}
+              />
+            </DndProvider>
           ) : (
             <QuestGridView 
               quests={kitQuests}
