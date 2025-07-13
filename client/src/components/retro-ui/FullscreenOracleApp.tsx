@@ -1600,11 +1600,11 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       
       // Get components for the selected kit
       const kitComponentsList = kitComponents[selectedQuestKitId] || [];
-      const kitComponentNames = kitComponentsList.map(comp => comp.name.toLowerCase());
+      const kitComponentNames = kitComponentsList.map(comp => comp?.name?.toLowerCase()).filter(Boolean);
       
       // Check if any of the quest's component requirements match kit components
       return quest.componentRequirements.some(requirement => 
-        kitComponentNames.includes(requirement.name.toLowerCase())
+        requirement?.name && kitComponentNames.includes(requirement.name.toLowerCase())
       );
     });
 
@@ -1618,7 +1618,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         quest.description.toLowerCase().includes(searchLower) ||
         quest.adventureLine.toLowerCase().includes(searchLower) ||
         quest.componentRequirements?.some(comp => 
-          comp.name.toLowerCase().includes(searchLower)
+          comp?.name?.toLowerCase().includes(searchLower)
         )
       );
     });
