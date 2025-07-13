@@ -217,11 +217,9 @@ const GizboTreasureWindow: React.FC<GizboTreasureWindowProps> = ({ onClose, onMi
         {/* Right Content - Auction Listings */}
         <div className="flex-1 p-6 overflow-y-auto">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Current Auctions</h2>
-              <p className="text-gray-600">Dimension-cracking relics ready for bidding</p>
-            </div>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Current Auctions</h2>
+            <p className="text-gray-600">Dimension-cracking relics ready for bidding</p>
           </div>
 
           {/* Auction Grid */}
