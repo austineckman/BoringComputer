@@ -6,6 +6,7 @@ import Desktop from "@/pages/desktop"; // Import the new Desktop page
 import AuthPage from "@/pages/auth-page";
 import Quests from "@/pages/quests";
 import QuestDetail from "@/pages/quest-detail";
+import MissionPage from "@/pages/mission";
 import AdventureLine from "@/pages/adventure-line";
 import Inventory from "@/pages/new-inventory";
 import UnifiedInventory from "@/pages/unified-inventory";
@@ -132,6 +133,11 @@ function App() {
               <QuestDetail />
             </MainLayout>
           )} 
+        />
+
+        <ProtectedRoute 
+          path="/mission/:questId" 
+          component={() => <MissionPage />} 
         />
         
         <ProtectedRoute 

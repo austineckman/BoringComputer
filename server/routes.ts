@@ -26,6 +26,7 @@ import lootboxesRoutes from './routes/lootboxes';
 import lootboxRewardsRoutes from './routes/lootboxRewards';
 import circuitProjectsRoutes from './routes/circuit-projects';
 import arduinoComponentsRoutes from './routes/arduino-components';
+import missionRoutes from './routes/missions';
 import { authenticate, hashPassword } from './auth';
 import { conditionalCsrfProtection, getCsrfToken, handleCsrfError } from './middleware/csrf';
 import { addSecurityHeaders } from './middleware/security-headers';
@@ -108,6 +109,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register Arduino components routes
   app.use("/api/arduino-components", arduinoComponentsRoutes);
+  
+  // Register mission routes
+  app.use("/api/missions", missionRoutes);
   
   // Auth routes have been moved to separate files
   // Using passport authentication with proper session handling
