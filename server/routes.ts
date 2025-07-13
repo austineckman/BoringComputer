@@ -30,9 +30,9 @@ import missionRoutes from './routes/missions';
 import { authenticate, hashPassword } from './auth';
 import { conditionalCsrfProtection, getCsrfToken, handleCsrfError } from './middleware/csrf';
 import { addSecurityHeaders } from './middleware/security-headers';
-import { componentKits, items } from '@shared/schema';
+import { componentKits, items, auctionListings, users } from '@shared/schema';
 import { itemDatabase } from './itemDatabase';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 
 // Using Passport authentication instead of custom middleware
 
@@ -2084,6 +2084,156 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/lootbox-rewards', authenticate, lootboxRewardsRoutes);
   
   // Routes for admin recipes and crafting were already registered above
+  
+  // BMAH (Black Market Auction House) Routes
+  app.get('/api/bmah/auctions', async (req, res) => {
+    try {
+      const result = await db.select().from(auctionListings).orderBy(desc(auctionListings.createdAt));
+      res.json(result);
+    } catch (error) {
+      console.error('Error fetching auctions:', error);
+      res.status(500).json({ message: 'Failed to fetch auctions' });
+    }
+  });
+
+  app.post('/api/bmah/auctions', authenticate, adminAuth, async (req, res) => {
+    try {
+      const {
+        itemId,
+        itemName,
+        itemDescription,
+        itemImagePath,
+        itemRarity,
+        startingBid,
+        currentBid,
+        bidIncrement,
+        expiresAt
+      } = req.body;
+
+      // Validate required fields
+      if (!itemId || !itemName || !startingBid || !expiresAt) {
+        return res.status(400).json({ message: 'Missing required fields' });
+      }
+
+      const [auction] = await db.insert(auctionListings).values({
+        itemId,
+        itemName,
+        itemDescription,
+        itemImagePath,
+        itemRarity,
+        startingBid,
+        currentBid: currentBid || startingBid,
+        bidIncrement: bidIncrement || Math.max(5, Math.floor(startingBid * 0.05)),
+        expiresAt: new Date(expiresAt),
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+
+      res.json(auction);
+    } catch (error) {
+      console.error('Error creating auction:', error);
+      res.status(500).json({ message: 'Failed to create auction' });
+    }
+  });
+
+  app.patch('/api/bmah/auctions/:id/cancel', authenticate, adminAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const [auction] = await db
+        .update(auctionListings)
+        .set({
+          status: 'cancelled',
+          updatedAt: new Date()
+        })
+        .where(eq(auctionListings.id, id))
+        .returning();
+
+      if (!auction) {
+        return res.status(404).json({ message: 'Auction not found' });
+      }
+
+      res.json(auction);
+    } catch (error) {
+      console.error('Error cancelling auction:', error);
+      res.status(500).json({ message: 'Failed to cancel auction' });
+    }
+  });
+
+  app.post('/api/bmah/auctions/:id/bid', authenticate, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { bidAmount } = req.body;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      if (!bidAmount || bidAmount <= 0) {
+        return res.status(400).json({ message: 'Invalid bid amount' });
+      }
+
+      // Get current auction
+      const [auction] = await db
+        .select()
+        .from(auctionListings)
+        .where(eq(auctionListings.id, id));
+
+      if (!auction) {
+        return res.status(404).json({ message: 'Auction not found' });
+      }
+
+      if (auction.status !== 'active') {
+        return res.status(400).json({ message: 'Auction is not active' });
+      }
+
+      if (new Date() > new Date(auction.expiresAt)) {
+        return res.status(400).json({ message: 'Auction has expired' });
+      }
+
+      const minBid = auction.currentBid + auction.bidIncrement;
+      if (bidAmount < minBid) {
+        return res.status(400).json({ 
+          message: `Bid must be at least ${minBid} gold` 
+        });
+      }
+
+      // Check if user has enough gold
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId));
+
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      const userInventory = user.inventory || {};
+      const userGold = userInventory['gold'] || 0;
+
+      if (userGold < bidAmount) {
+        return res.status(400).json({ message: 'Insufficient gold' });
+      }
+
+      // Update auction with new bid
+      const [updatedAuction] = await db
+        .update(auctionListings)
+        .set({
+          currentBid: bidAmount,
+          highestBidder: userId.toString(),
+          updatedAt: new Date()
+        })
+        .where(eq(auctionListings.id, id))
+        .returning();
+
+      res.json(updatedAuction);
+    } catch (error) {
+      console.error('Error placing bid:', error);
+      res.status(500).json({ message: 'Failed to place bid' });
+    }
+  });
   
   return httpServer;
 }

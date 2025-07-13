@@ -269,6 +269,24 @@ export const circuitProjects = pgTable("circuit_projects", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Auction Listings table - for BMAH (Black Market Auction House)
+export const auctionListings = pgTable("auction_listings", {
+  id: text("id").primaryKey().default('gen_random_uuid()'), 
+  itemId: text("item_id").notNull(),
+  itemName: text("item_name").notNull(),
+  itemDescription: text("item_description"),
+  itemImagePath: text("item_image_path"),
+  itemRarity: text("item_rarity", { enum: ["common", "uncommon", "rare", "epic", "legendary"] }).notNull(),
+  startingBid: integer("starting_bid").notNull(),
+  currentBid: integer("current_bid").notNull(),
+  bidIncrement: integer("bid_increment").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  status: text("status", { enum: ["active", "ended", "cancelled"] }).notNull().default("active"),
+  highestBidder: text("highest_bidder"), // User ID
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Arduino Components table - for metadata about available components
 export const arduinoComponents = pgTable("arduino_components", {
   id: text("id").primaryKey(), // e.g., "led", "button", "resistor"
