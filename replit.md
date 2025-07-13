@@ -47,6 +47,11 @@ Preferred communication style: Simple, everyday language.
 - **Proper Kit Integration**: Fixed quest filtering by ensuring new quests have proper component requirements for selected kit
 - **Enhanced User Experience**: Direct creation eliminates popup interruptions, provides 350px horizontal spacing, and slight vertical offset for visual variety
 
+### Shop Rebranding (July 13, 2025)
+- **Renamed Shop Interface**: Changed "Shop" to "BMAH (Black Market Auction House)" in RetroDesktop component
+- Updated both desktop icon instances to reflect new branding
+- Maintains existing shop functionality while providing more immersive gaming nomenclature
+
 ### Shopkeeper System (July 10, 2025)
 - Redesigned shop from external website to in-app shopkeeper window
 - Created ShopWindow component with Keymaster character selling Keys for 100 gold each

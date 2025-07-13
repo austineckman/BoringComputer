@@ -116,7 +116,7 @@ const RetroDesktop: React.FC = () => {
     
     // Second column (after 4 icons in first column)
     { id: "lootboxes", name: "HackLock.exe", icon: "picklock", path: "/lootboxes", position: { x: 140, y: 20 } },
-    { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 140, y: 120 } },
+    { id: "shop", name: "BMAH (Black Market Auction House)", icon: "shopcoin", path: "/shop", position: { x: 140, y: 120 } },
     { id: "circuitbuilder", name: "Sandbox", icon: "circuitbuilder", position: { x: 140, y: 220 } },
     { id: "discord", name: "Discord", icon: "discord", position: { x: 140, y: 320 } },
   ]);
@@ -132,7 +132,7 @@ const RetroDesktop: React.FC = () => {
       
       // Second column (after 4 icons in first column)
       { id: "lootboxes", name: "HackLock.exe", icon: "picklock", path: "/lootboxes", position: { x: 140, y: 20 } },
-      { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 140, y: 120 } },
+      { id: "shop", name: "BMAH (Black Market Auction House)", icon: "shopcoin", path: "/shop", position: { x: 140, y: 120 } },
       { id: "circuitbuilder", name: "Sandbox", icon: "circuitbuilder", position: { x: 140, y: 220 } },
       { id: "discord", name: "Discord", icon: "discord", position: { x: 140, y: 320 } },
     ];
