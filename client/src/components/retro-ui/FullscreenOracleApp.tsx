@@ -1646,9 +1646,15 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 e.stopPropagation();
                 e.preventDefault();
                 
+                // Capture the element reference before setTimeout
+                const buttonElement = e.currentTarget;
+                
                 // Small delay to ensure event handling is complete
                 setTimeout(() => {
-                  const rect = e.currentTarget.getBoundingClientRect();
+                  // Check if the element still exists
+                  if (!buttonElement) return;
+                  
+                  const rect = buttonElement.getBoundingClientRect();
                   const canvasRect = canvasRef.current?.getBoundingClientRect();
                   const scrollLeft = canvasRef.current?.scrollLeft || 0;
                   const scrollTop = canvasRef.current?.scrollTop || 0;
