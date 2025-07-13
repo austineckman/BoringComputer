@@ -107,10 +107,24 @@ const RetroDesktop: React.FC = () => {
   const [colorScheme, setColorScheme] = useState<'blue' | 'black' | 'orange' | 'green' | 'red'>('blue');
   
   // Desktop icons (regular icons visible to all users)
-  const [desktopIcons, setDesktopIcons] = useState<DesktopIcon[]>(() => {
+  const [desktopIcons, setDesktopIcons] = useState<DesktopIcon[]>([
     // Base icons that all users see
+    { id: "recyclebin", name: "Recycle Bin", icon: "trashIcon", position: { x: 20, y: 20 } },
+    { id: "quests", name: "Quests", icon: "questgrimoire", path: "/quests", position: { x: 20, y: 120 } },
+    { id: "inventory", name: "Inventory.exe", icon: "ironbag", path: "/inventory", position: { x: 20, y: 220 } },
+    { id: "crafting", name: "Gizbo's Forge", icon: "craftingarmor", path: "/crafting", position: { x: 20, y: 320 } },
+    
+    // Second column (after 4 icons in first column)
+    { id: "lootboxes", name: "HackLock.exe", icon: "picklock", path: "/lootboxes", position: { x: 140, y: 20 } },
+    { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 140, y: 120 } },
+    { id: "circuitbuilder", name: "Sandbox", icon: "circuitbuilder", position: { x: 140, y: 220 } },
+    { id: "discord", name: "Discord", icon: "discord", position: { x: 140, y: 320 } },
+  ]);
+
+  // Update desktop icons when user data changes
+  useEffect(() => {
     const baseIcons = [
-      // First column (recyclebin at top left)
+      // Base icons that all users see
       { id: "recyclebin", name: "Recycle Bin", icon: "trashIcon", position: { x: 20, y: 20 } },
       { id: "quests", name: "Quests", icon: "questgrimoire", path: "/quests", position: { x: 20, y: 120 } },
       { id: "inventory", name: "Inventory.exe", icon: "ironbag", path: "/inventory", position: { x: 20, y: 220 } },
@@ -121,8 +135,6 @@ const RetroDesktop: React.FC = () => {
       { id: "shop", name: "Shop", icon: "shopcoin", path: "/shop", position: { x: 140, y: 120 } },
       { id: "circuitbuilder", name: "Sandbox", icon: "circuitbuilder", position: { x: 140, y: 220 } },
       { id: "discord", name: "Discord", icon: "discord", position: { x: 140, y: 320 } },
-      
-      // Third column - Universal Emulator icon removed
     ];
     
     // Only add Oracle icon for admin users (including Founder role)
@@ -130,8 +142,8 @@ const RetroDesktop: React.FC = () => {
       baseIcons.push({ id: "oracle", name: "The Oracle", icon: "oracle", position: { x: 800, y: 20 } });
     }
     
-    return baseIcons;
-  });
+    setDesktopIcons(baseIcons);
+  }, [user?.roles]); // Re-run when user roles change
   
   // Admin icons (for reference only - no longer displayed in a folder)
   const adminIcons: DesktopIcon[] = [
