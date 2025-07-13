@@ -291,6 +291,9 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [activeKitId, setActiveKitId] = useState<string | null>(null);
   const [selectedQuestKitId, setSelectedQuestKitId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [questFlowMode, setQuestFlowMode] = useState(false);
+  const [draggedQuest, setDraggedQuest] = useState<Quest | null>(null);
+  const [questConnections, setQuestConnections] = useState<Record<string, string[]>>({});
   
   // State for modals and actions
   const [confirmDelete, setConfirmDelete] = useState<{ 
@@ -1503,6 +1506,479 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     );
   };
 
+  // Quest Flow Canvas Component - Like Klaviyo automation builder
+  const QuestFlowCanvas = ({ 
+    quests, 
+    connections, 
+    onQuestMove, 
+    onCreateConnection, 
+    onEditQuest, 
+    onDeleteQuest 
+  }: {
+    quests: Quest[];
+    connections: Record<string, string[]>;
+    onQuestMove: (questId: string, position: {x: number, y: number}) => void;
+    onCreateConnection: (fromQuest: string, toQuest: string) => void;
+    onEditQuest: (quest: Quest) => void;
+    onDeleteQuest: (questId: string) => void;
+  }) => {
+    const [questPositions, setQuestPositions] = useState<Record<string, {x: number, y: number}>>({});
+    const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
+    const canvasRef = useRef<HTMLDivElement>(null);
+
+    // Initialize quest positions in a grid
+    useEffect(() => {
+      const positions: Record<string, {x: number, y: number}> = {};
+      quests.forEach((quest, index) => {
+        const row = Math.floor(index / 3);
+        const col = index % 3;
+        positions[quest.id] = {
+          x: 100 + col * 300,
+          y: 100 + row * 200
+        };
+      });
+      setQuestPositions(positions);
+    }, [quests]);
+
+    const QuestNode = ({ quest }: { quest: Quest }) => {
+      const position = questPositions[quest.id] || { x: 0, y: 0 };
+      const [{ isDragging }, drag] = useDrag({
+        type: 'quest',
+        item: { id: quest.id, type: 'quest' },
+        collect: (monitor) => ({
+          isDragging: monitor.isDragging(),
+        }),
+      });
+
+      const isConnecting = connectingFrom === quest.id;
+      const hasConnections = connections[quest.id]?.length > 0;
+
+      return (
+        <div
+          ref={drag}
+          className={`absolute bg-gray-900 border-2 rounded-lg p-4 w-64 cursor-pointer transition-all ${
+            isDragging ? 'opacity-50 scale-105' : 'opacity-100'
+          } ${
+            isConnecting ? 'border-brand-orange shadow-lg shadow-brand-orange/30' : 
+            hasConnections ? 'border-blue-500' : 'border-gray-600'
+          } hover:border-brand-orange/60 hover:shadow-lg`}
+          style={{
+            left: position.x,
+            top: position.y,
+            transform: isDragging ? 'rotate(2deg)' : 'none'
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          {/* Quest Node Header */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <div className={`w-3 h-3 rounded-full ${
+                quest.status === 'completed' ? 'bg-green-500' :
+                quest.status === 'in-progress' ? 'bg-yellow-500' :
+                quest.status === 'locked' ? 'bg-red-500' : 'bg-blue-500'
+              }`} />
+              <span className="text-xs text-gray-400">
+                {quest.difficulty}/5 Difficulty
+              </span>
+            </div>
+            <div className="flex space-x-1">
+              <button
+                onClick={() => onEditQuest(quest)}
+                className="p-1 hover:bg-gray-700 rounded"
+                onMouseEnter={() => window.sounds?.hover()}
+              >
+                <Edit className="h-3 w-3 text-gray-400" />
+              </button>
+              <button
+                onClick={() => onDeleteQuest(quest.id)}
+                className="p-1 hover:bg-gray-700 rounded"
+                onMouseEnter={() => window.sounds?.hover()}
+              >
+                <Trash2 className="h-3 w-3 text-gray-400 hover:text-red-500" />
+              </button>
+            </div>
+          </div>
+
+          {/* Quest Title */}
+          <h4 className="text-white font-bold text-sm mb-2 truncate">{quest.title}</h4>
+          
+          {/* Quest Description */}
+          <p className="text-gray-300 text-xs mb-3 line-clamp-2">{quest.description}</p>
+          
+          {/* Quest Rewards */}
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-brand-orange font-bold">{quest.xpReward} XP</span>
+            <span className="text-gray-400">{quest.rewards?.length || 0} rewards</span>
+          </div>
+
+          {/* Connection Buttons */}
+          <div className="absolute -right-2 top-1/2 transform -translate-y-1/2">
+            <button
+              onClick={() => {
+                if (connectingFrom === quest.id) {
+                  setConnectingFrom(null);
+                } else {
+                  setConnectingFrom(quest.id);
+                }
+                window.sounds?.click();
+              }}
+              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                isConnecting 
+                  ? 'bg-brand-orange border-brand-orange text-white' 
+                  : 'bg-gray-800 border-gray-600 text-gray-400 hover:border-brand-orange'
+              }`}
+              title={isConnecting ? 'Cancel connection' : 'Connect to another quest'}
+            >
+              <Plus className="h-3 w-3" />
+            </button>
+          </div>
+
+          {/* Input Connection Point */}
+          <div 
+            className="absolute -left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 bg-gray-700 border-2 border-gray-500 rounded-full cursor-pointer hover:border-brand-orange"
+            onClick={() => {
+              if (connectingFrom && connectingFrom !== quest.id) {
+                onCreateConnection(connectingFrom, quest.id);
+                setConnectingFrom(null);
+                window.sounds?.success();
+              }
+            }}
+            title="Connection input"
+          />
+        </div>
+      );
+    };
+
+    // Render connection lines
+    const renderConnections = () => {
+      const lines: JSX.Element[] = [];
+      Object.entries(connections).forEach(([fromId, toIds]) => {
+        const fromPos = questPositions[fromId];
+        if (!fromPos) return;
+
+        toIds.forEach((toId, index) => {
+          const toPos = questPositions[toId];
+          if (!toPos) return;
+
+          const fromX = fromPos.x + 256; // Quest node width
+          const fromY = fromPos.y + 60;  // Quest node height / 2
+          const toX = toPos.x;
+          const toY = toPos.y + 60;
+
+          // Calculate bezier curve control points
+          const midX = (fromX + toX) / 2;
+          const path = `M ${fromX},${fromY} C ${midX},${fromY} ${midX},${toY} ${toX},${toY}`;
+
+          lines.push(
+            <g key={`${fromId}-${toId}-${index}`}>
+              <path
+                d={path}
+                stroke="#f97316"
+                strokeWidth="2"
+                fill="none"
+                markerEnd="url(#arrowhead)"
+                className="opacity-70 hover:opacity-100 transition-opacity"
+              />
+            </g>
+          );
+        });
+      });
+
+      return (
+        <svg className="absolute inset-0 pointer-events-none" style={{ zIndex: 1 }}>
+          <defs>
+            <marker
+              id="arrowhead"
+              markerWidth="10"
+              markerHeight="7"
+              refX="9"
+              refY="3.5"
+              orient="auto"
+            >
+              <polygon
+                points="0 0, 10 3.5, 0 7"
+                fill="#f97316"
+              />
+            </marker>
+          </defs>
+          {lines}
+        </svg>
+      );
+    };
+
+    return (
+      <div 
+        ref={canvasRef}
+        className="relative w-full h-full overflow-auto cursor-grab active:cursor-grabbing"
+        onClick={() => setConnectingFrom(null)}
+        style={{ minHeight: '600px', minWidth: '1000px' }}
+      >
+        {/* Connection Lines */}
+        {renderConnections()}
+        
+        {/* Quest Nodes */}
+        {quests.map(quest => (
+          <QuestNode key={quest.id} quest={quest} />
+        ))}
+
+        {/* Instructions */}
+        {quests.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center text-gray-400">
+              <GitBranch className="h-16 w-16 mx-auto mb-4 opacity-50" />
+              <h3 className="text-xl font-bold mb-2">Quest Flow Builder</h3>
+              <p className="text-sm">Add quests to start building your campaign automation flow</p>
+              <p className="text-xs mt-2">• Drag quests to reposition them</p>
+              <p className="text-xs">• Click the + button to connect quests</p>
+              <p className="text-xs">• Connected quests unlock when prerequisites are completed</p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Quest Grid View Component - Traditional grid layout
+  const QuestGridView = ({ 
+    quests, 
+    searchQuery, 
+    onEditQuest, 
+    onDeleteQuest 
+  }: {
+    quests: Quest[];
+    searchQuery: string;
+    onEditQuest: (quest: Quest) => void;
+    onDeleteQuest: (questId: string) => void;
+  }) => {
+    const filteredQuests = quests.filter(quest => {
+      if (!searchQuery) return true;
+      const searchLower = searchQuery.toLowerCase();
+      return (
+        quest.title.toLowerCase().includes(searchLower) ||
+        quest.description.toLowerCase().includes(searchLower) ||
+        quest.adventureLine.toLowerCase().includes(searchLower) ||
+        quest.componentRequirements?.some(comp => 
+          comp?.name?.toLowerCase().includes(searchLower)
+        )
+      );
+    });
+
+    if (filteredQuests.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+          <Sparkles className="h-12 w-12 mb-3 opacity-50" />
+          <p className="text-lg mb-2">No quests found</p>
+          <p className="text-sm">Try adjusting your search or create a new quest</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-6 overflow-y-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredQuests.map(quest => (
+            <div 
+              key={quest.id}
+              className="border border-gray-700 bg-black/40 rounded-lg p-4 hover:border-brand-orange/50 transition-colors"
+            >
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="text-white font-bold text-lg truncate">{quest.title}</h3>
+                <div className="flex space-x-1">
+                  <button 
+                    className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                    title="Edit quest"
+                    onClick={() => onEditQuest(quest)}
+                    onMouseEnter={() => window.sounds?.hover()}
+                  >
+                    <Edit className="h-4 w-4 text-gray-400 hover:text-white" />
+                  </button>
+                  <button 
+                    className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                    title="Delete quest"
+                    onClick={() => onDeleteQuest(quest.id)}
+                    onMouseEnter={() => window.sounds?.hover()}
+                  >
+                    <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                  </button>
+                </div>
+              </div>
+              
+              <p className="text-gray-300 text-sm mb-3 line-clamp-3">{quest.description}</p>
+              
+              <div className="flex items-center justify-between mb-3">
+                <span className="bg-brand-orange/20 text-brand-orange text-xs px-2 py-1 rounded-full">
+                  {quest.xpReward} XP
+                </span>
+                <span className="text-xs text-gray-400">
+                  Difficulty: {quest.difficulty}/5
+                </span>
+              </div>
+              
+              <div className="text-xs text-gray-400 mb-2">
+                Adventure Line: {quest.adventureLine}
+              </div>
+              
+              {quest.componentRequirements && quest.componentRequirements.length > 0 && (
+                <div className="text-xs">
+                  <p className="text-gray-400 mb-1">Required Components:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {quest.componentRequirements.slice(0, 3).map((component, index) => (
+                      <span 
+                        key={index}
+                        className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded"
+                      >
+                        {component.name}
+                      </span>
+                    ))}
+                    {quest.componentRequirements.length > 3 && (
+                      <span className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded">
+                        +{quest.componentRequirements.length - 3} more
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Render campaign automation-style quest flow
+  const renderQuestFlow = () => {
+    const selectedKit = componentKits.find(kit => kit.id === selectedQuestKitId);
+    const kitQuests = quests.filter(quest => {
+      if (!quest.componentRequirements || quest.componentRequirements.length === 0) return false;
+      const kitComponentsList = kitComponents[selectedQuestKitId!] || [];
+      const kitComponentNames = kitComponentsList.map(comp => comp?.name?.toLowerCase()).filter(Boolean);
+      return quest.componentRequirements.some(requirement => 
+        requirement?.name && kitComponentNames.includes(requirement.name.toLowerCase())
+      );
+    });
+
+    return (
+      <div className="h-full flex flex-col">
+        {/* Flow Builder Header */}
+        <div className="border-b border-gray-700 p-4 bg-black/40">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setSelectedQuestKitId(null)}
+                className="flex items-center text-gray-400 hover:text-white transition-colors"
+                onMouseEnter={() => window.sounds?.hover()}
+              >
+                <ArrowRight className="h-4 w-4 mr-2 rotate-180" />
+                Back to Kit Selection
+              </button>
+              <div className="w-px h-6 bg-gray-600"></div>
+              <div className="flex items-center space-x-3">
+                {selectedKit?.imagePath && (
+                  <img 
+                    src={selectedKit.imagePath}
+                    alt={selectedKit.name}
+                    className="w-10 h-10 object-contain"
+                    style={{imageRendering: 'pixelated'}}
+                  />
+                )}
+                <div>
+                  <h3 className="text-lg font-bold text-white">{selectedKit?.name}</h3>
+                  <p className="text-sm text-gray-400">Quest Flow Builder</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setQuestFlowMode(!questFlowMode)}
+                className={`px-3 py-2 rounded-md transition-colors flex items-center ${
+                  questFlowMode 
+                    ? 'bg-brand-orange text-white' 
+                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                }`}
+                onMouseEnter={() => window.sounds?.hover()}
+              >
+                <GitBranch className="h-4 w-4 mr-2" />
+                {questFlowMode ? 'Exit Flow Mode' : 'Flow Builder'}
+              </button>
+              <button
+                className="px-3 py-2 bg-brand-orange/80 text-white rounded-md hover:bg-brand-orange transition-colors flex items-center"
+                onClick={() => {
+                  const newQuest: Quest = {
+                    id: `new-quest-${Date.now()}`,
+                    title: 'New Quest',
+                    description: 'A new epic quest awaits brave adventurers!',
+                    adventureLine: selectedKit?.name || '30 Days Lost in Space',
+                    xpReward: 100,
+                    difficulty: 3,
+                    rewards: [],
+                    status: 'available',
+                    componentRequirements: []
+                  };
+                  setEditingItem(newQuest);
+                  setEditingType('quest');
+                  setIsCreatingNewItem(true);
+                  window.sounds?.click();
+                }}
+                onMouseEnter={() => window.sounds?.hover()}
+              >
+                <PlusCircle className="h-4 w-4 mr-1" />
+                Add Quest
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Flow Canvas */}
+        <div className="flex-1 relative overflow-hidden bg-gradient-to-br from-gray-900 via-black to-gray-900">
+          {questFlowMode ? (
+            <QuestFlowCanvas 
+              quests={kitQuests}
+              connections={questConnections}
+              onQuestMove={(questId, position) => {
+                // Handle quest position updates
+                console.log(`Moving quest ${questId} to position`, position);
+              }}
+              onCreateConnection={(fromQuest, toQuest) => {
+                setQuestConnections(prev => ({
+                  ...prev,
+                  [fromQuest]: [...(prev[fromQuest] || []), toQuest]
+                }));
+              }}
+              onEditQuest={(quest) => {
+                setEditingItem(quest);
+                setEditingType('quest');
+                window.sounds?.click();
+              }}
+              onDeleteQuest={(questId) => {
+                const quest = kitQuests.find(q => q.id === questId);
+                if (quest) {
+                  handleDeleteClick('quest', questId, quest.title);
+                }
+              }}
+            />
+          ) : (
+            <QuestGridView 
+              quests={kitQuests}
+              searchQuery={searchQuery}
+              onEditQuest={(quest) => {
+                setEditingItem(quest);
+                setEditingType('quest');
+                window.sounds?.click();
+              }}
+              onDeleteQuest={(questId) => {
+                const quest = kitQuests.find(q => q.id === questId);
+                if (quest) {
+                  handleDeleteClick('quest', questId, quest.title);
+                }
+              }}
+            />
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // Render quest cards with kit selection
   const renderQuests = () => {
     if (loadingQuests) {
@@ -1588,219 +2064,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       );
     }
 
-    // Get the selected kit
-    const selectedKit = componentKits.find(kit => kit.id === selectedQuestKitId);
-    
-    // Filter quests for the selected kit
-    const kitQuests = quests.filter(quest => {
-      // Check if quest's component requirements match components from the selected kit
-      if (!quest.componentRequirements || quest.componentRequirements.length === 0) {
-        return false;
-      }
-      
-      // Get components for the selected kit
-      const kitComponentsList = kitComponents[selectedQuestKitId] || [];
-      const kitComponentNames = kitComponentsList.map(comp => comp?.name?.toLowerCase()).filter(Boolean);
-      
-      // Check if any of the quest's component requirements match kit components
-      return quest.componentRequirements.some(requirement => 
-        requirement?.name && kitComponentNames.includes(requirement.name.toLowerCase())
-      );
-    });
-
-    // Apply search filter to kit quests
-    const filteredKitQuests = kitQuests.filter(quest => {
-      if (!searchQuery) return true;
-      
-      const searchLower = searchQuery.toLowerCase();
-      return (
-        quest.title.toLowerCase().includes(searchLower) ||
-        quest.description.toLowerCase().includes(searchLower) ||
-        quest.adventureLine.toLowerCase().includes(searchLower) ||
-        quest.componentRequirements?.some(comp => 
-          comp?.name?.toLowerCase().includes(searchLower)
-        )
-      );
-    });
-
-    return (
-      <div className="space-y-6">
-        {/* Kit header with back button */}
-        <div className="flex items-center justify-between bg-black/30 rounded-lg p-4 border border-gray-700">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => {
-                setSelectedQuestKitId(null);
-                window.sounds?.click();
-              }}
-              className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
-              onMouseEnter={() => window.sounds?.hover()}
-            >
-              <ArrowRight className="h-5 w-5 text-gray-400 rotate-180" />
-            </button>
-            
-            {selectedKit?.imagePath && (
-              <div className="h-16 w-16 rounded-lg overflow-hidden bg-gray-900/50 flex items-center justify-center">
-                <img 
-                  src={selectedKit.imagePath}
-                  alt={selectedKit.name}
-                  className="max-h-full max-w-full object-contain"
-                  style={{imageRendering: 'pixelated'}}
-                />
-              </div>
-            )}
-            
-            <div>
-              <h2 className="text-xl font-bold text-white">{selectedKit?.name} Quests</h2>
-              <p className="text-gray-400 text-sm">{filteredKitQuests.length} quest{filteredKitQuests.length !== 1 ? 's' : ''} found</p>
-            </div>
-          </div>
-          
-          <div className="text-right">
-            <span className="bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded-full mr-2">
-              {selectedKit?.category}
-            </span>
-            <span className="bg-blue-900/30 text-blue-300 text-xs px-2 py-1 rounded-full">
-              {selectedKit?.difficulty}
-            </span>
-          </div>
-        </div>
-
-        {/* Quest cards */}
-        {filteredKitQuests.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-            <FileText className="h-12 w-12 mb-3 opacity-50" />
-            <p className="text-lg mb-2">No quests found for this kit</p>
-            <p className="text-sm">
-              {searchQuery ? 'Try adjusting your search or ' : ''}
-              Create a new quest for {selectedKit?.name}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredKitQuests.map(quest => (
-              <div 
-                key={quest.id}
-                className="border border-gray-700 rounded-lg bg-space-dark/80 p-4 hover:border-brand-orange/60 transition-colors overflow-hidden relative"
-              >
-                {/* Status badge */}
-                {quest.active === false && (
-                  <div className="absolute top-2 right-2 z-10">
-                    <span className="bg-red-900/80 text-white text-xs px-2 py-0.5 rounded-full">
-                      Inactive
-                    </span>
-                  </div>
-                )}
-                
-                {/* Image section */}
-                {(quest.heroImage || (quest.content?.images && quest.content.images.length > 0)) && (
-                  <div className="h-32 w-full mb-3 rounded-md overflow-hidden relative">
-                    <img 
-                      src={quest.heroImage || (quest.content?.images && quest.content.images[0])} 
-                      alt={quest.title}
-                      className="absolute inset-0 w-full h-full object-cover" 
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                    
-                    <div className="absolute bottom-2 right-2 flex space-x-1">
-                      {quest.content?.videos && quest.content.videos.length > 0 && (
-                        <span className="flex h-5 items-center rounded-full bg-red-500/20 px-2 text-xs text-white">
-                          <svg viewBox="0 0 24 24" className="h-3 w-3 mr-1 fill-current" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M4 8h16v8H4z"></path>
-                            <path d="M14 12l-6-4v8l6-4z"></path>
-                          </svg>
-                          {quest.content.videos.length}
-                        </span>
-                      )}
-                      
-                      {quest.content?.images && quest.content.images.length > 1 && (
-                        <span className="flex h-5 items-center rounded-full bg-blue-500/20 px-2 text-xs text-white">
-                          <svg viewBox="0 0 24 24" className="h-3 w-3 mr-1 fill-current" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M4 4h16v16H4z"></path>
-                            <path d="M4 4h12v12H4z"></path>
-                          </svg>
-                          {quest.content.images.length}
-                        </span>
-                      )}
-                      
-                      {quest.content?.codeBlocks && quest.content.codeBlocks.length > 0 && (
-                        <span className="flex h-5 items-center rounded-full bg-green-500/20 px-2 text-xs text-white">
-                          <svg viewBox="0 0 24 24" className="h-3 w-3 mr-1 fill-current" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4z"></path>
-                            <path d="M14.6 16.6l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"></path>
-                          </svg>
-                          {quest.content.codeBlocks.length}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-                
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-lg font-bold text-white">{quest.title}</h3>
-                  <div className="flex space-x-1">
-                    <button 
-                      className="p-1 rounded-full hover:bg-gray-700 transition-colors"
-                      title="Edit quest"
-                      onClick={() => handleEditClick('quest', quest)}
-                      onMouseEnter={() => window.sounds?.hover()}
-                    >
-                      <Edit className="h-4 w-4 text-gray-400 hover:text-white" />
-                    </button>
-                    <button 
-                      className="p-1 rounded-full hover:bg-gray-700 transition-colors"
-                      title="Delete quest"
-                      onClick={() => handleDeleteClick('quest', quest.id.toString(), quest.title)}
-                      onMouseEnter={() => window.sounds?.hover()}
-                    >
-                      <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
-                    </button>
-                  </div>
-                </div>
-                
-                <p className="text-gray-300 text-sm mb-3 line-clamp-2">{quest.description}</p>
-                
-                <div className="flex flex-wrap items-center gap-2 mb-3">
-                  <span className="flex h-6 items-center rounded-full bg-primary/10 px-2 text-xs text-gray-300">
-                    {new Date(quest.date).toLocaleDateString()}
-                  </span>
-                  
-                  <span className="flex h-6 items-center rounded-full bg-blue-900/20 px-2 text-xs text-blue-300">
-                    {quest.adventureLine}
-                  </span>
-                  
-                  <span className="flex h-6 items-center rounded-full bg-yellow-500/10 px-2 text-xs text-yellow-300">
-                    {Array(quest.difficulty).fill('★').join('')}
-                  </span>
-                  
-                  <span className="flex h-6 items-center rounded-full bg-amber-500/20 px-2 text-xs text-amber-300">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    {quest.xpReward} XP
-                  </span>
-                </div>
-                
-                {quest.componentRequirements && quest.componentRequirements.length > 0 && (
-                  <div className="text-xs">
-                    <h4 className="text-gray-400 mb-1">Required components:</h4>
-                    <div className="flex flex-wrap gap-1">
-                      {quest.componentRequirements.map((comp, index) => (
-                        <span 
-                          key={index}
-                          className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded"
-                          title={comp.description}
-                        >
-                          {comp.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
+    // If a kit is selected, show the quest flow interface
+    return renderQuestFlow();
   };
 
   // Filter users based on search query
