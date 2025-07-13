@@ -3091,8 +3091,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       return (
         <div className="p-4 text-center">
           <div className="flex items-center justify-center space-x-2 mb-4">
-            <Loader2 className="animate-spin h-6 w-6" />
-            <p>Loading auction listings...</p>
+            <Loader2 className="animate-spin h-6 w-6 text-amber-400" />
+            <p className="text-amber-200">Loading Gizbo's treasure vault...</p>
           </div>
         </div>
       );
@@ -3106,37 +3106,81 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
 
     return (
       <div className="p-4">
+        {/* Gizbo's Header */}
+        <div className="mb-6 bg-gradient-to-r from-amber-900/40 to-orange-900/40 border-2 border-amber-600/50 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <div className="h-16 w-16 rounded-full bg-amber-600/20 border-3 border-amber-500 flex items-center justify-center mr-4">
+                <span className="text-4xl">🏴‍☠️</span>
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold text-amber-400 mb-1">Gizbo's Treasure Redistribution</h2>
+                <p className="text-amber-200/80 text-lg italic">"Got payments to make, savvy? These be the finest plunder!"</p>
+              </div>
+            </div>
+            <button
+              className="flex items-center px-6 py-3 bg-amber-600 hover:bg-amber-700 text-black font-bold rounded-lg shadow-lg transition-all border-2 border-amber-500 hover:border-amber-400"
+              onClick={() => setCreateAuctionMode(true)}
+              onMouseEnter={() => window.sounds?.hover()}
+            >
+              <PlusCircle className="h-5 w-5 mr-2" />
+              Add Pirate Loot
+            </button>
+          </div>
+
+          {/* Gizbo's Backstory */}
+          <div className="bg-amber-950/50 border border-amber-600/30 rounded-lg p-4">
+            <div className="flex items-start">
+              <div className="h-10 w-10 rounded-full bg-amber-600/20 border-2 border-amber-500 flex items-center justify-center mr-3 mt-1">
+                <span className="text-xl">👑</span>
+              </div>
+              <div>
+                <h3 className="text-amber-400 font-bold mb-2">Captain Gizbo's Fair Distribution Notice</h3>
+                <p className="text-amber-200/90 leading-relaxed mb-3">
+                  "Ahoy there, ye scurvy dogs! These treasures be fairly redistributed loot from me pirate tax collection routes. 
+                  Every mission ye complete puts rare booty into circulation - and I take me fair cut, naturally!"
+                </p>
+                <p className="text-amber-300/80 text-sm">
+                  💰 <strong>The System:</strong> Rare items from successful missions get taxed into Gizbo's vault, then auctioned fairly to all pirates.<br/>
+                  ⚔️ <strong>Fair Chance:</strong> Every scallywag gets equal opportunity at the rarest treasures.<br/>
+                  🏴‍☠️ <strong>Payment Due:</strong> Gold goes to Gizbo's coffers - he's got debts to settle, savvy?
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Create auction form */}
         {createAuctionMode && (
-          <div className="mb-6 bg-gray-900/50 border border-red-500/30 rounded-lg p-4">
+          <div className="mb-6 bg-gradient-to-b from-amber-900/30 to-orange-900/30 border-2 border-amber-600/40 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-red-400 flex items-center">
-                <Gavel className="h-5 w-5 mr-2" />
-                Create New Auction
+              <h3 className="text-xl font-bold text-amber-400 flex items-center">
+                <Gavel className="h-6 w-6 mr-2" />
+                Add Treasure to Gizbo's Auction
               </h3>
               <button
                 onClick={() => setCreateAuctionMode(false)}
-                className="text-gray-400 hover:text-white"
+                className="text-amber-400 hover:text-amber-200 transition-colors"
               >
-                <X className="h-5 w-5" />
+                <X className="h-6 w-6" />
               </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Item Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Select Item
+                <label className="block text-sm font-medium text-amber-300 mb-2">
+                  💎 Choose Treasure to Auction
                 </label>
                 <select
                   value={newAuction.itemId}
                   onChange={(e) => setNewAuction({...newAuction, itemId: e.target.value})}
-                  className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                  className="w-full bg-amber-950/50 border-2 border-amber-600/40 rounded-md px-3 py-2 text-amber-100 focus:border-amber-500 focus:outline-none"
                 >
-                  <option value="">Choose an item...</option>
+                  <option value="">Select from Gizbo's vault...</option>
                   {items.map(item => (
                     <option key={item.id} value={item.id}>
-                      {item.name} ({item.rarity})
+                      {item.rarity === 'legendary' ? '🌟' : item.rarity === 'epic' ? '💜' : item.rarity === 'rare' ? '💙' : item.rarity === 'uncommon' ? '💚' : '🤍'} {item.name} ({item.rarity})
                     </option>
                   ))}
                 </select>
@@ -3144,61 +3188,62 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
 
               {/* Starting Bid */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Starting Bid (Gold)
+                <label className="block text-sm font-medium text-amber-300 mb-2">
+                  💰 Starting Bid (Gold Doubloons)
                 </label>
                 <input
                   type="number"
                   min="1"
                   value={newAuction.startingBid}
                   onChange={(e) => setNewAuction({...newAuction, startingBid: parseInt(e.target.value) || 1})}
-                  className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                  className="w-full bg-amber-950/50 border-2 border-amber-600/40 rounded-md px-3 py-2 text-amber-100 focus:border-amber-500 focus:outline-none"
+                  placeholder="How much gold to start?"
                 />
               </div>
 
               {/* Duration */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Duration (Hours)
+                <label className="block text-sm font-medium text-amber-300 mb-2">
+                  ⏱️ Auction Duration
                 </label>
                 <select
                   value={newAuction.durationHours}
                   onChange={(e) => setNewAuction({...newAuction, durationHours: parseInt(e.target.value)})}
-                  className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                  className="w-full bg-amber-950/50 border-2 border-amber-600/40 rounded-md px-3 py-2 text-amber-100 focus:border-amber-500 focus:outline-none"
                 >
-                  <option value={1}>1 Hour</option>
-                  <option value={6}>6 Hours</option>
-                  <option value={12}>12 Hours</option>
-                  <option value={24}>24 Hours</option>
-                  <option value={48}>48 Hours</option>
-                  <option value={72}>72 Hours</option>
-                  <option value={168}>1 Week</option>
+                  <option value={1}>⚡ 1 Hour (Quick Sale)</option>
+                  <option value={6}>🌅 6 Hours (Morning to Evening)</option>
+                  <option value={12}>🌞 12 Hours (Half Day)</option>
+                  <option value={24}>🌕 24 Hours (Full Day)</option>
+                  <option value={48}>📅 48 Hours (Two Days)</option>
+                  <option value={72}>📆 72 Hours (Three Days)</option>
+                  <option value={168}>🗓️ 1 Week (Extended)</option>
                 </select>
               </div>
             </div>
 
             {/* Create button */}
-            <div className="mt-4 flex justify-end space-x-2">
+            <div className="mt-6 flex justify-end space-x-3">
               <button
                 onClick={() => setCreateAuctionMode(false)}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md text-white transition-colors"
+                className="px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-white transition-colors border border-gray-500"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreateAuction}
                 disabled={!newAuction.itemId}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-md text-white transition-colors flex items-center"
+                className="px-6 py-2 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg text-black font-bold transition-all border-2 border-amber-500 disabled:border-gray-500 flex items-center"
               >
-                <Gavel className="h-4 w-4 mr-2" />
-                Create Auction
+                <Gavel className="h-5 w-5 mr-2" />
+                🏴‍☠️ Launch Auction
               </button>
             </div>
           </div>
         )}
 
         {/* Auction listings grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredAuctions.length > 0 ? (
             filteredAuctions.map(auction => {
               const timeLeft = new Date(auction.expiresAt).getTime() - Date.now();
@@ -3208,90 +3253,122 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
               return (
                 <div 
                   key={auction.id}
-                  className={`border rounded-lg p-4 transition-colors ${
-                    auction.status === 'active' ? 'border-red-500/30 bg-gray-900/40' : 'border-gray-700 bg-gray-900/20'
+                  className={`border-2 rounded-lg p-4 transition-all hover:scale-105 ${
+                    auction.status === 'active' ? 'border-amber-500/50 bg-gradient-to-b from-amber-900/30 to-orange-900/30 shadow-lg shadow-amber-500/20' : 'border-gray-600/50 bg-gray-900/30'
                   }`}
                 >
+                  {/* Treasure header */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center">
+                      <span className="text-lg mr-2">💎</span>
+                      <span className="text-amber-400 font-bold text-sm">GIZBO'S TREASURE</span>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-full font-bold ${
+                      auction.itemRarity === 'legendary' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' :
+                      auction.itemRarity === 'epic' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50' :
+                      auction.itemRarity === 'rare' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50' :
+                      auction.itemRarity === 'uncommon' ? 'bg-green-500/20 text-green-400 border border-green-500/50' :
+                      'bg-gray-500/20 text-gray-400 border border-gray-500/50'
+                    }`}>
+                      {auction.itemRarity === 'legendary' ? '🌟 LEGENDARY' : 
+                       auction.itemRarity === 'epic' ? '💜 EPIC' : 
+                       auction.itemRarity === 'rare' ? '💙 RARE' : 
+                       auction.itemRarity === 'uncommon' ? '💚 UNCOMMON' : 
+                       '🤍 COMMON'}
+                    </span>
+                  </div>
+
                   {/* Item image and details */}
-                  <div className="flex items-start space-x-3 mb-3">
+                  <div className="flex items-start space-x-3 mb-4">
                     {auction.itemImagePath ? (
                       <img
                         src={auction.itemImagePath}
                         alt={auction.itemName}
-                        className="w-12 h-12 object-contain rounded border border-gray-600"
+                        className="w-16 h-16 object-contain rounded border-2 border-amber-600/50 bg-amber-950/30 p-1"
                         style={{ imageRendering: 'pixelated' }}
                       />
                     ) : (
-                      <div className={`w-12 h-12 rounded border ${rarityBorderClass(auction.itemRarity)} ${rarityColorClass(auction.itemRarity)} flex items-center justify-center`}>
-                        <Package className="h-6 w-6" />
+                      <div className="w-16 h-16 rounded border-2 border-amber-600/50 bg-amber-950/30 flex items-center justify-center">
+                        <Package className="h-8 w-8 text-amber-400" />
                       </div>
                     )}
                     <div className="flex-1">
-                      <h3 className="font-bold text-white">{auction.itemName}</h3>
-                      <p className="text-sm text-gray-400 line-clamp-2">{auction.itemDescription}</p>
-                      <span className={`inline-block mt-1 text-xs px-2 py-0.5 rounded ${rarityColorClass(auction.itemRarity)}`}>
-                        {auction.itemRarity}
-                      </span>
+                      <h3 className="font-bold text-amber-100 text-lg">{auction.itemName}</h3>
+                      <p className="text-sm text-amber-200/80 line-clamp-2">{auction.itemDescription}</p>
                     </div>
                   </div>
 
-                  {/* Bidding info */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-400">Current Bid:</span>
-                      <span className="text-yellow-400 font-bold">{auction.currentBid} gold</span>
+                  {/* Bidding info with pirate theme */}
+                  <div className="bg-amber-950/40 border border-amber-600/30 rounded-lg p-3 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-amber-300 flex items-center">
+                        <span className="mr-1">💰</span> Current Bid:
+                      </span>
+                      <span className="text-amber-100 font-bold text-lg">{auction.currentBid} doubloons</span>
                     </div>
                     
                     {auction.highestBidder && (
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-400">Highest Bidder:</span>
-                        <span className="text-white text-sm">{auction.highestBidder}</span>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-amber-300 flex items-center">
+                          <span className="mr-1">👑</span> Leading Bidder:
+                        </span>
+                        <span className="text-amber-100 text-sm font-medium">{auction.highestBidder}</span>
                       </div>
                     )}
 
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-400">Time Left:</span>
-                      <span className={`text-sm font-bold ${isExpired ? 'text-red-500' : 'text-green-400'}`}>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-amber-300 flex items-center">
+                        <span className="mr-1">⏰</span> Time Remaining:
+                      </span>
+                      <span className={`text-sm font-bold ${isExpired ? 'text-red-400' : 'text-green-400'}`}>
                         {timeString}
                       </span>
                     </div>
 
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-400">Status:</span>
-                      <span className={`text-sm font-bold ${
-                        auction.status === 'active' ? 'text-green-400' : 
-                        auction.status === 'ended' ? 'text-red-500' : 'text-gray-500'
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-amber-300 flex items-center">
+                        <span className="mr-1">⚔️</span> Auction Status:
+                      </span>
+                      <span className={`text-sm font-bold px-2 py-1 rounded ${
+                        auction.status === 'active' ? 'text-green-400 bg-green-500/20' : 
+                        auction.status === 'ended' ? 'text-red-400 bg-red-500/20' : 'text-gray-400 bg-gray-500/20'
                       }`}>
-                        {auction.status.toUpperCase()}
+                        {auction.status === 'active' ? '🏴‍☠️ ACTIVE' : 
+                         auction.status === 'ended' ? '💀 ENDED' : '❌ CANCELLED'}
                       </span>
                     </div>
                   </div>
 
-                  {/* Action buttons */}
+                  {/* Pirate action buttons */}
                   <div className="mt-4 flex space-x-2">
                     <button
                       onClick={() => handleEditAuction(auction)}
-                      className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-white text-sm transition-colors flex items-center justify-center"
+                      className="flex-1 px-3 py-2 bg-amber-600 hover:bg-amber-700 rounded-lg text-black font-medium text-sm transition-all border border-amber-500 flex items-center justify-center"
                     >
                       <Edit className="h-4 w-4 mr-1" />
-                      Edit
+                      ⚙️ Adjust
                     </button>
                     <button
                       onClick={() => handleCancelAuction(auction.id)}
-                      className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 rounded-md text-white text-sm transition-colors flex items-center justify-center"
+                      className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-medium text-sm transition-all border border-red-500 flex items-center justify-center"
                     >
                       <X className="h-4 w-4 mr-1" />
-                      Cancel
+                      ❌ Cancel
                     </button>
                   </div>
                 </div>
               );
             })
           ) : (
-            <div className="col-span-full flex flex-col items-center justify-center h-48 text-gray-400">
-              <Gavel className="h-12 w-12 mb-4 opacity-50" />
-              <p className="text-lg mb-2">No auction listings found</p>
-              <p className="text-sm">Create your first auction to get started</p>
+            <div className="col-span-full flex flex-col items-center justify-center h-64 text-amber-200/60">
+              <div className="text-6xl mb-4">🏴‍☠️</div>
+              <h3 className="text-xl font-bold text-amber-400 mb-2">Gizbo's Vault is Empty!</h3>
+              <p className="text-lg mb-2 text-center">No treasures be ready for auction, matey!</p>
+              <p className="text-sm text-center max-w-md">Complete some missions to generate rare loot for Gizbo to tax and redistribute. The best treasures await fair bidding!</p>
+              <div className="mt-4 text-amber-300/80 text-center">
+                <p className="text-xs">💡 <em>"Once ye pirates start completin' missions, I'll be taxin' the good stuff for everyone's benefit!"</em></p>
+                <p className="text-xs mt-1">- Captain Gizbo</p>
+              </div>
             </div>
           )}
         </div>
@@ -4272,15 +4349,15 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           <button
             className={`px-4 py-2 text-sm font-medium rounded-t-md ${
               activeTab === 'bmah' 
-                ? 'bg-brand-orange/20 text-brand-orange border-t border-l border-r border-brand-orange/30' 
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-amber-600/20 text-amber-400 border-t border-l border-r border-amber-500/30' 
+                : 'text-gray-400 hover:text-amber-300'
             }`}
             onClick={() => handleTabChange('bmah')}
             onMouseEnter={() => window.sounds?.hover()}
           >
             <div className="flex items-center">
-              <Gavel className="h-4 w-4 mr-1" />
-              BMAH
+              <span className="mr-1">🏴‍☠️</span>
+              Gizbo's Vault
             </div>
           </button>
           <button

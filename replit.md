@@ -52,6 +52,14 @@ Preferred communication style: Simple, everyday language.
 - Updated both desktop icon instances to reflect new branding
 - Maintains existing shop functionality while providing more immersive gaming nomenclature
 
+### Gizbo's Loot Distribution UI Redesign (July 13, 2025)
+- **Complete BMAH Theme Transformation**: Redesigned auction interface to reflect Gizbo's character as pirate distributing taxed mission loot
+- **Pirate Narrative Integration**: Added Gizbo's backstory about taxing rare items from missions and redistributing fairly while keeping gold for himself
+- **Enhanced Visual Design**: Updated tab name to "Gizbo's Vault" with pirate flag emoji, amber/gold color scheme throughout
+- **Treasure-Themed UI Elements**: Added treasure chest styling, doubloons currency references, pirate emojis and terminology
+- **Character-Driven Messaging**: Integrated Gizbo's personality with authentic pirate dialogue and payment justification
+- **Fair Distribution Story**: Emphasized system where rare mission rewards get taxed into Gizbo's vault then auctioned fairly to all players
+
 ### Shopkeeper System (July 10, 2025)
 - Redesigned shop from external website to in-app shopkeeper window
 - Created ShopWindow component with Keymaster character selling Keys for 100 gold each
