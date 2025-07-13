@@ -221,6 +221,37 @@ export const systemSettings = pgTable("system_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Mission Comments table - for maker community interaction
+export const missionComments = pgTable("mission_comments", {
+  id: serial("id").primaryKey(),
+  questId: integer("quest_id").notNull().references(() => quests.id, { onDelete: 'cascade' }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  content: text("content").notNull(),
+  parentCommentId: integer("parent_comment_id"), // For replies
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  // Discord integration
+  discordUsername: text("discord_username"),
+  discordAvatar: text("discord_avatar"),
+  // Moderation
+  isHidden: boolean("is_hidden").default(false),
+  hiddenReason: text("hidden_reason"),
+});
+
+// Mission Diagrams table - for cheatsheet diagrams
+export const missionDiagrams = pgTable("mission_diagrams", {
+  id: serial("id").primaryKey(),
+  questId: integer("quest_id").notNull().references(() => quests.id, { onDelete: 'cascade' }),
+  title: text("title").notNull(),
+  description: text("description"),
+  imageUrl: text("image_url").notNull(), // Main diagram image
+  cheatsheetImageUrl: text("cheatsheet_image_url"), // Revealed cheatsheet overlay
+  cheatsheetCode: text("cheatsheet_code"), // Code snippet for cheatsheet
+  order: integer("order").notNull().default(0), // Display order
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Arduino Circuit Projects table - for saving user-created circuit designs
 export const circuitProjects = pgTable("circuit_projects", {
   id: serial("id").primaryKey(),
@@ -391,6 +422,26 @@ export const insertInventoryHistorySchema = createInsertSchema(inventoryHistory)
   source: true,
 });
 
+// Mission comments and diagrams schema
+export const insertMissionCommentSchema = createInsertSchema(missionComments).pick({
+  questId: true,
+  userId: true,
+  content: true,
+  parentCommentId: true,
+  discordUsername: true,
+  discordAvatar: true,
+});
+
+export const insertMissionDiagramSchema = createInsertSchema(missionDiagrams).pick({
+  questId: true,
+  title: true,
+  description: true,
+  imageUrl: true,
+  cheatsheetImageUrl: true,
+  cheatsheetCode: true,
+  order: true,
+});
+
 export const insertCraftingRecipeSchema = createInsertSchema(craftingRecipes).pick({
   name: true,
   description: true,
@@ -519,6 +570,12 @@ export type InsertArduinoComponent = z.infer<typeof insertArduinoComponentSchema
 
 export type UserSimulatorSettings = typeof userSimulatorSettings.$inferSelect;
 export type InsertUserSimulatorSettings = z.infer<typeof insertUserSimulatorSettingsSchema>;
+
+export type MissionComment = typeof missionComments.$inferSelect;
+export type InsertMissionComment = z.infer<typeof insertMissionCommentSchema>;
+
+export type MissionDiagram = typeof missionDiagrams.$inferSelect;
+export type InsertMissionDiagram = z.infer<typeof insertMissionDiagramSchema>;
 
 // Component Kits table - for educational kits (Arduino, Raspberry Pi, etc.)
 export const componentKits = pgTable("component_kits", {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { useLocation, useParams } from 'wouter';
+import { useLocation, useParams, useRoute } from 'wouter';
 import { Loader2, Edit, Save, Plus, Trash, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -1061,14 +1061,25 @@ export default function QuestDetailPage() {
               {/* Component Requirements Section - Moved to under description */}
               
               {!isEditing && (
-                <Button 
-                  className="w-full mt-6" 
-                  size="lg"
-                  onClick={handleCompleteQuest}
-                  onMouseEnter={() => sounds.hover?.()}
-                >
-                  Complete Quest
-                </Button>
+                <div className="space-y-3 mt-6">
+                  <Button 
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
+                    size="lg"
+                    onClick={() => navigate(`/mission/${quest.id}`)}
+                    onMouseEnter={() => sounds.hover?.()}
+                  >
+                    Start Mission
+                  </Button>
+                  
+                  <Button 
+                    className="w-full" 
+                    size="lg"
+                    onClick={handleCompleteQuest}
+                    onMouseEnter={() => sounds.hover?.()}
+                  >
+                    Complete Quest
+                  </Button>
+                </div>
               )}
             </Card>
           </div>
