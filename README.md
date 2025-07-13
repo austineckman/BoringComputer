@@ -1,24 +1,27 @@
-# Inventr Circuit Builder & Learning Platform
+# CraftingTable OS - Electronics Learning Platform
 
-A nostalgic and interactive pixel art development platform for electronic circuit design, empowering makers and electronics enthusiasts through advanced learning technologies and comprehensive technical education.
+A comprehensive educational platform combining electronics learning with gamified experiences, featuring interactive circuit building, quest systems, and the Scraplight Cartel's treasure distribution network led by Gizbo Sparkwrench.
 
 ## Overview
 
-This application is a comprehensive learning platform for electronics and maker education, featuring:
+CraftingTable OS is a cutting-edge educational platform that transforms electronics learning through gamification, featuring:
 
-- Interactive circuit building and simulation
-- Educational quest-based learning
-- Inventory and crafting systems
-- Component glossary and educational resources
-- Customizable user experience with retro aesthetics
+- **Interactive Circuit Builder**: Real Arduino simulation with AVR8js
+- **Quest System**: Gamified learning with XP, levels, and adventure lines
+- **Scraplight Cartel**: Gizbo's treasure auction system for rare components
+- **Discord Integration**: Role-based authentication and community features
+- **Retro Desktop Environment**: Windows 95-inspired interface with modern functionality
+- **Inventory & Crafting**: RPG-style material collection and equipment crafting
 
 ## Technology Stack
 
 - **Frontend**: TypeScript, React, Vite, TailwindCSS, ShadCN UI components
-- **Backend**: Node.js, Express
+- **Backend**: Node.js, Express.js
 - **Database**: PostgreSQL with Drizzle ORM
-- **Authentication**: Custom authentication with secure session management
-- **Circuit Simulation**: AVR8js for Arduino simulation
+- **Authentication**: Discord OAuth integration with role-based access control
+- **Circuit Simulation**: AVR8js for real Arduino microcontroller emulation
+- **UI Framework**: Retro desktop environment with Windows 95 aesthetics
+- **Real-time Features**: Quest system with live inventory management
 
 ## Security Features
 
@@ -43,8 +46,8 @@ This application implements various security best practices, including:
 
 1. Clone the repository:
    ```
-   git clone https://github.com/your-username/inventr-platform.git
-   cd inventr-platform
+   git clone https://github.com/your-username/craftingtable-os.git
+   cd craftingtable-os
    ```
 
 2. Install dependencies:
@@ -68,7 +71,13 @@ Create a `.env` file in the root directory with the following variables:
 
 ```
 # Database
-DATABASE_URL=postgresql://username:password@localhost:5432/inventr
+DATABASE_URL=postgresql://username:password@localhost:5432/craftingtable
+
+# Discord OAuth
+DISCORD_CLIENT_ID=your-discord-client-id
+DISCORD_CLIENT_SECRET=your-discord-client-secret
+DISCORD_BOT_TOKEN=your-discord-bot-token
+DISCORD_GUILD_ID=your-discord-server-id
 
 # Session Secret
 SESSION_SECRET=your-secret-key-here
@@ -77,12 +86,55 @@ SESSION_SECRET=your-secret-key-here
 NODE_ENV=development
 ```
 
+> **Note**: You'll need to set up a Discord application and bot to get the OAuth credentials. See the Discord Integration section below.
+
 ## Project Structure
 
-- `/client` - Frontend React application
-- `/server` - Express backend API
-- `/shared` - Shared types and utilities
-- `/public` - Static assets
+- `/client` - Frontend React application with retro desktop interface
+- `/server` - Express backend API with Discord integration
+- `/shared` - Shared TypeScript schemas and utilities
+- `/public` - Static assets and icons
+- `/attached_assets` - Project resources and lore documents
+
+## Discord Integration
+
+CraftingTable OS uses Discord for authentication and role management:
+
+1. **Create a Discord Application**:
+   - Go to https://discord.com/developers/applications
+   - Create a new application
+   - Note your Client ID and Client Secret
+
+2. **Create a Discord Bot**:
+   - In your application, go to the Bot section
+   - Create a bot and note the Bot Token
+   - Enable all necessary intents
+
+3. **Set up OAuth2**:
+   - In OAuth2 section, add your callback URL
+   - For development: `http://localhost:5000/api/callback`
+   - Grant necessary scopes: `identify`, `email`, `guilds`
+
+4. **Role Mapping**:
+   - "Founder" Discord role automatically grants admin privileges
+   - Custom role mapping available in `server/auth.ts`
+
+## Key Features
+
+### Gizbo's Scraplight Cartel
+- Reality-bending component auction system
+- Authentic character lore from the Great Collapse
+- Dimension-cracking relics distribution network
+
+### Quest System
+- Adventure lines with sequential progression
+- XP-based leveling and material rewards
+- Component kit integration for hands-on learning
+
+### Circuit Builder
+- Real Arduino simulation using AVR8js
+- Visual component library with drag-and-drop interface
+- Monaco Editor integration for code development
 
 ## Security Overview
 

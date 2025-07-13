@@ -60,6 +60,13 @@ Preferred communication style: Simple, everyday language.
 - **Character Portrait Placeholder**: Added dedicated space for Gizbo's image surrounded by workshop/loot aesthetic
 - **Streamlined Experience**: Removed confusing pirate terminology, simplified navigation, modern loading states and interactions
 
+### GitHub Repository Setup (July 13, 2025)
+- **Repository Preparation**: Updated .gitignore with comprehensive exclusions for environment variables and build artifacts
+- **Documentation Update**: Enhanced README.md with proper CraftingTable OS branding and Discord integration details
+- **Setup Automation**: Created setup-github.sh script for easy repository initialization and GitHub connection
+- **Setup Guide**: Added comprehensive GITHUB_SETUP.md with step-by-step instructions for repository creation and deployment
+- **Project Structure**: Documented complete project architecture including Discord OAuth setup and environment variables
+
 ### Shopkeeper System (July 10, 2025)
 - Redesigned shop from external website to in-app shopkeeper window
 - Created ShopWindow component with Keymaster character selling Keys for 100 gold each
