@@ -125,8 +125,8 @@ const RetroDesktop: React.FC = () => {
       // Third column - Universal Emulator icon removed
     ];
     
-    // Only add Oracle icon for admin users
-    if (user?.roles?.includes('admin')) {
+    // Only add Oracle icon for admin users (including Founder role)
+    if (user?.roles?.includes('admin') || user?.roles?.includes('Founder')) {
       baseIcons.push({ id: "oracle", name: "The Oracle", icon: "oracle", position: { x: 800, y: 20 } });
     }
     
@@ -501,8 +501,8 @@ const RetroDesktop: React.FC = () => {
         setQuestsAppState('loading');
       }
     } else if (iconId === "oracle") {
-      // Only allow admin users to open the Oracle app
-      if (user?.roles?.includes('admin')) {
+      // Only allow admin users to open the Oracle app (including Founder role)
+      if (user?.roles?.includes('admin') || user?.roles?.includes('Founder')) {
         // Open the Oracle app if it's currently closed
         if (oracleAppState === 'closed') {
           setOracleAppState('open');
@@ -892,7 +892,7 @@ const RetroDesktop: React.FC = () => {
       )}
       
       {/* Fullscreen Oracle Application - Only visible to admin users */}
-      {oracleAppState === 'open' && user?.roles?.includes('admin') ? (
+      {oracleAppState === 'open' && (user?.roles?.includes('admin') || user?.roles?.includes('Founder')) ? (
         <FullscreenOracleApp onClose={() => {
           // Reset app state to closed
           setOracleAppState('closed');
