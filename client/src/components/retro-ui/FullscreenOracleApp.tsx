@@ -7,7 +7,7 @@ import {
   ClipboardList, Grid3X3, ArrowRight, AlertCircle, Clock, User,
   BarChart2, PieChart, TrendingUp, Server, UserCheck, Activity,
   Calendar, Download, HardDrive, GitBranch, Heart, CheckSquare,
-  Copy, RotateCcw
+  Copy, RotateCcw, Gavel
 } from 'lucide-react';
 import { 
   BarChart, Bar, LineChart as RechartsLine, Line, PieChart as RechartsProChart, Pie, Cell, 
@@ -106,6 +106,23 @@ interface Quest {
     description: string;
     kitId: string;
   }>;
+}
+
+interface AuctionListing {
+  id: string;
+  itemId: string;
+  itemName: string;
+  itemDescription: string;
+  itemImagePath?: string;
+  itemRarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  startingBid: number;
+  currentBid: number;
+  bidIncrement: number;
+  expiresAt: string;
+  status: 'active' | 'ended' | 'cancelled';
+  highestBidder?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // For sounds
@@ -278,8 +295,8 @@ interface Recipe {
 }
 
 const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) => {
-  // State for tabs - include 'recipes' for crafting management
-  const [activeTab, setActiveTab] = useState<'lootboxes' | 'quests' | 'users' | 'items' | 'kits' | 'recipes' | 'settings'>('lootboxes');
+  // State for tabs - include 'recipes' for crafting management and 'bmah' for auction management
+  const [activeTab, setActiveTab] = useState<'lootboxes' | 'quests' | 'users' | 'items' | 'kits' | 'recipes' | 'bmah' | 'settings'>('lootboxes');
   
   // State for data
   const [lootboxes, setLootboxes] = useState<LootBox[]>([]);
@@ -289,6 +306,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [componentKits, setComponentKits] = useState<ComponentKit[]>([]);
   const [kitComponents, setKitComponents] = useState<Record<string, KitComponent[]>>({});
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [auctionListings, setAuctionListings] = useState<AuctionListing[]>([]);
   const [activeKitId, setActiveKitId] = useState<string | null>(null);
   const [selectedQuestKitId, setSelectedQuestKitId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -326,8 +344,17 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [loadingItems, setLoadingItems] = useState(true);
   const [loadingKits, setLoadingKits] = useState(true);
   const [loadingRecipes, setLoadingRecipes] = useState(true);
+  const [loadingAuctions, setLoadingAuctions] = useState(true);
   const [loadingComponents, setLoadingComponents] = useState(false);
   const [loadingStats, setLoadingStats] = useState(true);
+  
+  // BMAH specific states
+  const [createAuctionMode, setCreateAuctionMode] = useState(false);
+  const [newAuction, setNewAuction] = useState({
+    itemId: '',
+    startingBid: 100,
+    durationHours: 24
+  });
   
   // Game statistics state
   const [gameStats, setGameStats] = useState<GameStatistics | null>(null);
@@ -492,12 +519,40 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       }
     };
 
+    const fetchAuctions = async () => {
+      try {
+        setLoadingAuctions(true);
+        const response = await fetch('/api/bmah/auctions');
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Auction listings data from API:', data);
+          if (Array.isArray(data)) {
+            setAuctionListings(data);
+            console.log(`Loaded ${data.length} auction listings`);
+          } else {
+            console.error('Expected array for auction listings but got:', typeof data);
+            setAuctionListings([]);
+          }
+        } else {
+          console.error('Failed to fetch auction listings, status:', response.status);
+          // Set empty array on error to prevent loading spinner
+          setAuctionListings([]);
+        }
+      } catch (error) {
+        console.error('Error fetching auction listings:', error);
+        setAuctionListings([]);
+      } finally {
+        setLoadingAuctions(false);
+      }
+    };
+
     fetchLootboxes();
     fetchQuests();
     fetchUsers();
     fetchItems();
     fetchComponentKits();
     fetchRecipes();
+    fetchAuctions();
   }, []);
 
   // Add debug logging to see what we're getting from the API
@@ -510,12 +565,12 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   // Generate game statistics when data is loaded
   useEffect(() => {
     if (!loadingUsers && !loadingItems && !loadingLootboxes && 
-        !loadingQuests && !loadingKits && !loadingRecipes) {
+        !loadingQuests && !loadingKits && !loadingRecipes && !loadingAuctions) {
       generateGameStatistics();
     }
   }, [
     loadingUsers, loadingItems, loadingLootboxes, 
-    loadingQuests, loadingKits, loadingRecipes
+    loadingQuests, loadingKits, loadingRecipes, loadingAuctions
   ]);
   
   // Generate game statistics from available data
@@ -980,6 +1035,20 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         console.error('Error refreshing recipes:', error);
       } finally {
         setLoadingRecipes(false);
+      }
+    } else if (activeTab === 'bmah') {
+      setLoadingAuctions(true);
+      try {
+        const response = await fetch('/api/bmah/auctions');
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Refreshed auction listings data:', data);
+          setAuctionListings(data);
+        }
+      } catch (error) {
+        console.error('Error refreshing auction listings:', error);
+      } finally {
+        setLoadingAuctions(false);
       }
     }
   };
@@ -3016,6 +3085,231 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     );
   };
 
+  // Render BMAH tab for auction management
+  const renderBMAH = () => {
+    if (loadingAuctions) {
+      return (
+        <div className="p-4 text-center">
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <Loader2 className="animate-spin h-6 w-6" />
+            <p>Loading auction listings...</p>
+          </div>
+        </div>
+      );
+    }
+
+    const filteredAuctions = auctionListings.filter(auction => {
+      if (!searchQuery) return true;
+      return auction.itemName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             auction.itemDescription.toLowerCase().includes(searchQuery.toLowerCase());
+    });
+
+    return (
+      <div className="p-4">
+        {/* Create auction form */}
+        {createAuctionMode && (
+          <div className="mb-6 bg-gray-900/50 border border-red-500/30 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-red-400 flex items-center">
+                <Gavel className="h-5 w-5 mr-2" />
+                Create New Auction
+              </h3>
+              <button
+                onClick={() => setCreateAuctionMode(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Item Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Select Item
+                </label>
+                <select
+                  value={newAuction.itemId}
+                  onChange={(e) => setNewAuction({...newAuction, itemId: e.target.value})}
+                  className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                >
+                  <option value="">Choose an item...</option>
+                  {items.map(item => (
+                    <option key={item.id} value={item.id}>
+                      {item.name} ({item.rarity})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Starting Bid */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Starting Bid (Gold)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={newAuction.startingBid}
+                  onChange={(e) => setNewAuction({...newAuction, startingBid: parseInt(e.target.value) || 1})}
+                  className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                />
+              </div>
+
+              {/* Duration */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Duration (Hours)
+                </label>
+                <select
+                  value={newAuction.durationHours}
+                  onChange={(e) => setNewAuction({...newAuction, durationHours: parseInt(e.target.value)})}
+                  className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                >
+                  <option value={1}>1 Hour</option>
+                  <option value={6}>6 Hours</option>
+                  <option value={12}>12 Hours</option>
+                  <option value={24}>24 Hours</option>
+                  <option value={48}>48 Hours</option>
+                  <option value={72}>72 Hours</option>
+                  <option value={168}>1 Week</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Create button */}
+            <div className="mt-4 flex justify-end space-x-2">
+              <button
+                onClick={() => setCreateAuctionMode(false)}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateAuction}
+                disabled={!newAuction.itemId}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-md text-white transition-colors flex items-center"
+              >
+                <Gavel className="h-4 w-4 mr-2" />
+                Create Auction
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Auction listings grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredAuctions.length > 0 ? (
+            filteredAuctions.map(auction => {
+              const timeLeft = new Date(auction.expiresAt).getTime() - Date.now();
+              const isExpired = timeLeft <= 0;
+              const timeString = isExpired ? 'EXPIRED' : formatTimeLeft(timeLeft);
+              
+              return (
+                <div 
+                  key={auction.id}
+                  className={`border rounded-lg p-4 transition-colors ${
+                    auction.status === 'active' ? 'border-red-500/30 bg-gray-900/40' : 'border-gray-700 bg-gray-900/20'
+                  }`}
+                >
+                  {/* Item image and details */}
+                  <div className="flex items-start space-x-3 mb-3">
+                    {auction.itemImagePath ? (
+                      <img
+                        src={auction.itemImagePath}
+                        alt={auction.itemName}
+                        className="w-12 h-12 object-contain rounded border border-gray-600"
+                        style={{ imageRendering: 'pixelated' }}
+                      />
+                    ) : (
+                      <div className={`w-12 h-12 rounded border ${rarityBorderClass(auction.itemRarity)} ${rarityColorClass(auction.itemRarity)} flex items-center justify-center`}>
+                        <Package className="h-6 w-6" />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <h3 className="font-bold text-white">{auction.itemName}</h3>
+                      <p className="text-sm text-gray-400 line-clamp-2">{auction.itemDescription}</p>
+                      <span className={`inline-block mt-1 text-xs px-2 py-0.5 rounded ${rarityColorClass(auction.itemRarity)}`}>
+                        {auction.itemRarity}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Bidding info */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-400">Current Bid:</span>
+                      <span className="text-yellow-400 font-bold">{auction.currentBid} gold</span>
+                    </div>
+                    
+                    {auction.highestBidder && (
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-400">Highest Bidder:</span>
+                        <span className="text-white text-sm">{auction.highestBidder}</span>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-400">Time Left:</span>
+                      <span className={`text-sm font-bold ${isExpired ? 'text-red-500' : 'text-green-400'}`}>
+                        {timeString}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-400">Status:</span>
+                      <span className={`text-sm font-bold ${
+                        auction.status === 'active' ? 'text-green-400' : 
+                        auction.status === 'ended' ? 'text-red-500' : 'text-gray-500'
+                      }`}>
+                        {auction.status.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="mt-4 flex space-x-2">
+                    <button
+                      onClick={() => handleEditAuction(auction)}
+                      className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-white text-sm transition-colors flex items-center justify-center"
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleCancelAuction(auction.id)}
+                      className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 rounded-md text-white text-sm transition-colors flex items-center justify-center"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="col-span-full flex flex-col items-center justify-center h-48 text-gray-400">
+              <Gavel className="h-12 w-12 mb-4 opacity-50" />
+              <p className="text-lg mb-2">No auction listings found</p>
+              <p className="text-sm">Create your first auction to get started</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Helper function to format time left
+  const formatTimeLeft = (timeLeft: number): string => {
+    const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  };
+
   // Render settings tab with game statistics dashboard
   const renderSettings = () => {
     if (loadingStats || !gameStats) {
@@ -3701,6 +3995,132 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     }
   };
 
+  // BMAH handler functions
+  const handleCreateAuction = async () => {
+    try {
+      window.sounds?.click();
+      setNotificationMessage({
+        type: 'success',
+        message: 'Creating auction...'
+      });
+
+      const selectedItem = items.find(item => item.id === newAuction.itemId);
+      if (!selectedItem) {
+        setNotificationMessage({
+          type: 'error',
+          message: 'Please select a valid item'
+        });
+        return;
+      }
+
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + newAuction.durationHours);
+
+      const auctionData = {
+        itemId: newAuction.itemId,
+        itemName: selectedItem.name,
+        itemDescription: selectedItem.description,
+        itemImagePath: selectedItem.imagePath,
+        itemRarity: selectedItem.rarity,
+        startingBid: newAuction.startingBid,
+        currentBid: newAuction.startingBid,
+        bidIncrement: Math.max(5, Math.floor(newAuction.startingBid * 0.05)), // 5% increment or minimum 5 gold
+        expiresAt: expiresAt.toISOString(),
+        status: 'active'
+      };
+
+      const response = await fetch('/api/bmah/auctions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(auctionData)
+      });
+
+      if (response.ok) {
+        const createdAuction = await response.json();
+        setAuctionListings(prev => [createdAuction, ...prev]);
+        setCreateAuctionMode(false);
+        setNewAuction({
+          itemId: '',
+          startingBid: 100,
+          durationHours: 24
+        });
+        setNotificationMessage({
+          type: 'success',
+          message: 'Auction created successfully!'
+        });
+        window.sounds?.success();
+      } else {
+        const errorData = await response.json();
+        setNotificationMessage({
+          type: 'error',
+          message: errorData.message || 'Failed to create auction'
+        });
+        window.sounds?.error();
+      }
+    } catch (error) {
+      console.error('Error creating auction:', error);
+      setNotificationMessage({
+        type: 'error',
+        message: 'An error occurred while creating auction'
+      });
+      window.sounds?.error();
+    }
+  };
+
+  const handleEditAuction = (auction: AuctionListing) => {
+    // TODO: Implement auction editing
+    console.log('Edit auction:', auction);
+    setNotificationMessage({
+      type: 'success',
+      message: 'Auction editing coming soon!'
+    });
+  };
+
+  const handleCancelAuction = async (auctionId: string) => {
+    try {
+      window.sounds?.click();
+      setNotificationMessage({
+        type: 'success',
+        message: 'Cancelling auction...'
+      });
+
+      const response = await fetch(`/api/bmah/auctions/${auctionId}/cancel`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const updatedAuction = await response.json();
+        setAuctionListings(prev => prev.map(auction => 
+          auction.id === auctionId ? updatedAuction : auction
+        ));
+        setNotificationMessage({
+          type: 'success',
+          message: 'Auction cancelled successfully!'
+        });
+        window.sounds?.success();
+      } else {
+        const errorData = await response.json();
+        setNotificationMessage({
+          type: 'error',
+          message: errorData.message || 'Failed to cancel auction'
+        });
+        window.sounds?.error();
+      }
+    } catch (error) {
+      console.error('Error cancelling auction:', error);
+      setNotificationMessage({
+        type: 'error',
+        message: 'An error occurred while cancelling auction'
+      });
+      window.sounds?.error();
+    }
+  };
+
   return (
     <div 
       className="absolute inset-0 flex flex-col bg-black text-white z-50"
@@ -3847,6 +4267,20 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
             <div className="flex items-center">
               <ClipboardList className="h-4 w-4 mr-1" />
               Recipes
+            </div>
+          </button>
+          <button
+            className={`px-4 py-2 text-sm font-medium rounded-t-md ${
+              activeTab === 'bmah' 
+                ? 'bg-brand-orange/20 text-brand-orange border-t border-l border-r border-brand-orange/30' 
+                : 'text-gray-400 hover:text-white'
+            }`}
+            onClick={() => handleTabChange('bmah')}
+            onMouseEnter={() => window.sounds?.hover()}
+          >
+            <div className="flex items-center">
+              <Gavel className="h-4 w-4 mr-1" />
+              BMAH
             </div>
           </button>
           <button
@@ -4004,6 +4438,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         {activeTab === 'users' && renderUsers()}
         {activeTab === 'items' && renderItems()}
         {activeTab === 'kits' && renderComponentKits()}
+        {activeTab === 'bmah' && renderBMAH()}
         {activeTab === 'recipes' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredRecipes.map(recipe => (
