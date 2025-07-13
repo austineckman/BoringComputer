@@ -84,6 +84,13 @@ export function setupAuth(app: any): void {
       async (accessToken, refreshToken, profile, done) => {
         try {
           console.log("Discord authentication for user:", profile.username);
+          console.log("Discord profile ID:", profile.id);
+          console.log("Available environment variables:", {
+            hasGuildId: !!process.env.DISCORD_GUILD_ID,
+            hasBotToken: !!process.env.DISCORD_BOT_TOKEN,
+            guildId: process.env.DISCORD_GUILD_ID?.slice(0, 4) + "...",
+            botTokenLength: process.env.DISCORD_BOT_TOKEN?.length
+          });
           
           // Fetch user's actual Discord server roles
           let discordRoles: string[] = []; // Start empty, no defaults
@@ -91,6 +98,7 @@ export function setupAuth(app: any): void {
           const botToken = process.env.DISCORD_BOT_TOKEN;
           
           if (guildId && botToken) {
+            console.log("Attempting to fetch Discord roles for", profile.username);
             try {
               // First check if user is in the server
               const userGuildsResponse = await fetch(

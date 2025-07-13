@@ -130,10 +130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Debug endpoint to fix roles for current user (development only)
-  app.post('/api/debug/fix-roles', (req, res, next) => {
-    // Skip CSRF protection for debug endpoints
-    next();
-  }, authenticate, async (req, res) => {
+  app.get('/api/debug/fix-roles', authenticate, async (req, res) => {
     try {
       const userId = (req as any).user?.id;
       const username = (req as any).user?.username;

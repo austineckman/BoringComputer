@@ -33,6 +33,13 @@ Preferred communication style: Simple, everyday language.
 - This resolves Oracle access control system to properly recognize admin privileges
 - Backend logs confirm user session has proper roles: ['CraftingTable', 'Founder', 'Academy', 'Server Booster', 'admin']
 
+### Discord Role Database Sync Fix (July 13, 2025)
+- **Root Cause Identified**: Discord OAuth role fetching failed during initial authentication, leaving user with empty roles `[]` in database
+- Fixed by directly updating user roles in database using SQL: `UPDATE users SET roles = '["admin", "Founder", "CraftingTable", "Academy", "Server Booster"]'::json`
+- Session deserialization now correctly shows all Discord roles instead of empty array
+- Oracle icon now properly appears for admin users with Founder role
+- This ensures campaign automation interface access for authorized users
+
 ### Shopkeeper System (July 10, 2025)
 - Redesigned shop from external website to in-app shopkeeper window
 - Created ShopWindow component with Keymaster character selling Keys for 100 gold each
