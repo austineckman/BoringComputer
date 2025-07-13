@@ -1638,16 +1638,25 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
               onClick={(e) => {
                 e.stopPropagation();
                 
-                // Create new quest immediately
+                // Create new quest immediately with proper kit requirements
+                const selectedKit = componentKits.find(kit => kit.id === selectedQuestKitId);
+                const kitComponentsList = kitComponents[selectedQuestKitId!] || [];
+                
                 const newQuest: Quest = {
                   id: `quest-${Date.now()}`,
                   title: "New Quest",
                   description: "A new quest to configure",
                   difficulty: 1,
                   xpReward: 100,
-                  adventureLine: "General",
+                  adventureLine: selectedKit?.name || "General",
                   status: 'available',
-                  rewards: []
+                  rewards: [],
+                  componentRequirements: kitComponentsList.length > 0 ? [{
+                    id: kitComponentsList[0].id.toString(),
+                    name: kitComponentsList[0].name,
+                    description: kitComponentsList[0].description,
+                    kitId: selectedQuestKitId!
+                  }] : []
                 };
                 
                 // Position new quest to the right of current quest

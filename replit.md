@@ -40,6 +40,13 @@ Preferred communication style: Simple, everyday language.
 - Oracle icon now properly appears for admin users with Founder role
 - This ensures campaign automation interface access for authorized users
 
+### Direct Quest Creation Workflow (July 13, 2025)
+- **Complete Context Menu Removal**: Eliminated popup context menu system that was interrupting workflow
+- **Streamlined Quest Creation**: Plus button now instantly creates connected quests with automatic positioning
+- **Automatic Wire Connections**: New quests automatically connect to parent quests with visual connection lines
+- **Proper Kit Integration**: Fixed quest filtering by ensuring new quests have proper component requirements for selected kit
+- **Enhanced User Experience**: Direct creation eliminates popup interruptions, provides 350px horizontal spacing, and slight vertical offset for visual variety
+
 ### Shopkeeper System (July 10, 2025)
 - Redesigned shop from external website to in-app shopkeeper window
 - Created ShopWindow component with Keymaster character selling Keys for 100 gold each
