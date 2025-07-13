@@ -111,33 +111,6 @@ const GizboTreasureWindow: React.FC<GizboTreasureWindowProps> = ({ onClose, onMi
 
   return (
     <div className="bg-white w-full h-full flex flex-col overflow-hidden">
-      {/* Window Header */}
-      <div className="bg-gray-900 text-white p-4 flex items-center justify-between border-b">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-            <Wrench className="text-white" size={20} />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold">Scraplight Cartel</h1>
-            <p className="text-gray-300 text-sm">Gizbo's Rare Finds Exchange</p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={onMinimize}
-            className="w-8 h-8 bg-gray-700 hover:bg-gray-600 rounded flex items-center justify-center transition-colors"
-          >
-            <Minimize size={14} />
-          </button>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 bg-red-600 hover:bg-red-500 rounded flex items-center justify-center transition-colors"
-          >
-            <X size={14} />
-          </button>
-        </div>
-      </div>
-
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar - Gizbo's Info */}
