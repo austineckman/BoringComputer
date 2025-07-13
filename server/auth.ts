@@ -58,13 +58,13 @@ export function setupAuth(app: any): void {
       resave: false,
       saveUninitialized: false,
       cookie: {
-        secure: useSecureCookies, // Use secure cookies in production
+        secure: false, // Always use non-secure cookies in development
         httpOnly: true, // Prevents JavaScript from reading the cookie
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        sameSite: useSecureCookies ? 'none' : 'lax', // Allow cross-site cookie in production with HTTPS
+        sameSite: 'lax', // Use lax for development compatibility
       },
       store: storage.sessionStore,
-      name: 'app.sid', // Don't use the default connect.sid name (reveals Express usage)
+      name: 'connect.sid', // Use standard session name for compatibility
     })
   );
 
