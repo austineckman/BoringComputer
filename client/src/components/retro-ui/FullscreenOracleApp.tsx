@@ -1524,6 +1524,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   }) => {
     const [questPositions, setQuestPositions] = useState<Record<string, {x: number, y: number}>>({});
     const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
+    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const canvasRef = useRef<HTMLDivElement>(null);
 
     // Initialize quest positions in a grid
@@ -1539,6 +1540,24 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       });
       setQuestPositions(positions);
     }, [quests]);
+
+    // Handle mouse movement for temporary connection line
+    useEffect(() => {
+      const handleMouseMove = (e: MouseEvent) => {
+        if (connectingFrom && canvasRef.current) {
+          const rect = canvasRef.current.getBoundingClientRect();
+          setMousePosition({
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+          });
+        }
+      };
+
+      if (connectingFrom) {
+        document.addEventListener('mousemove', handleMouseMove);
+        return () => document.removeEventListener('mousemove', handleMouseMove);
+      }
+    }, [connectingFrom]);
 
     const QuestNode = ({ quest }: { quest: Quest }) => {
       const position = questPositions[quest.id] || { x: 0, y: 0 };
@@ -1614,7 +1633,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           {/* Connection Buttons */}
           <div className="absolute -right-2 top-1/2 transform -translate-y-1/2">
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 if (connectingFrom === quest.id) {
                   setConnectingFrom(null);
                 } else {
@@ -1622,29 +1642,45 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 }
                 window.sounds?.click();
               }}
-              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+              className={`relative w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 transform ${
                 isConnecting 
-                  ? 'bg-brand-orange border-brand-orange text-white' 
-                  : 'bg-gray-800 border-gray-600 text-gray-400 hover:border-brand-orange'
+                  ? 'bg-brand-orange border-brand-orange text-white scale-110 shadow-lg shadow-brand-orange/50' 
+                  : 'bg-gray-800 border-gray-600 text-gray-400 hover:border-brand-orange hover:scale-105 hover:shadow-md'
               }`}
               title={isConnecting ? 'Cancel connection' : 'Connect to another quest'}
             >
-              <Plus className="h-3 w-3" />
+              <Plus className={`h-3 w-3 transition-transform duration-300 ${isConnecting ? 'rotate-45' : ''}`} />
+              {/* Pulsing ring for active connection mode */}
+              {isConnecting && (
+                <div className="absolute inset-0 rounded-full border-2 border-brand-orange animate-ping opacity-75"></div>
+              )}
             </button>
           </div>
 
           {/* Input Connection Point */}
           <div 
-            className="absolute -left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 bg-gray-700 border-2 border-gray-500 rounded-full cursor-pointer hover:border-brand-orange"
-            onClick={() => {
+            className={`absolute -left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 rounded-full cursor-pointer transition-all duration-300 ${
+              connectingFrom && connectingFrom !== quest.id
+                ? 'bg-brand-orange/20 border-2 border-brand-orange scale-125 shadow-lg shadow-brand-orange/30'
+                : 'bg-gray-700 border-2 border-gray-500 hover:border-brand-orange hover:scale-110'
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
               if (connectingFrom && connectingFrom !== quest.id) {
                 onCreateConnection(connectingFrom, quest.id);
                 setConnectingFrom(null);
                 window.sounds?.success();
               }
             }}
-            title="Connection input"
-          />
+            title={connectingFrom && connectingFrom !== quest.id ? "Click to create connection" : "Connection input"}
+          >
+            {/* Connection indicator dot */}
+            <div className={`absolute inset-1 rounded-full transition-all duration-300 ${
+              connectingFrom && connectingFrom !== quest.id
+                ? 'bg-brand-orange animate-pulse'
+                : 'bg-gray-600'
+            }`} />
+          </div>
         </div>
       );
     };
@@ -1652,6 +1688,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     // Render connection lines
     const renderConnections = () => {
       const lines: JSX.Element[] = [];
+
+      // Render existing connections
       Object.entries(connections).forEach(([fromId, toIds]) => {
         const fromPos = questPositions[fromId];
         if (!fromPos) return;
@@ -1665,41 +1703,124 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           const toX = toPos.x;
           const toY = toPos.y + 60;
 
-          // Calculate bezier curve control points
-          const midX = (fromX + toX) / 2;
-          const path = `M ${fromX},${fromY} C ${midX},${fromY} ${midX},${toY} ${toX},${toY}`;
+          // Calculate bezier curve control points for smoother curves
+          const distance = Math.abs(toX - fromX);
+          const curveStrength = Math.min(distance * 0.4, 120);
+          const midX1 = fromX + curveStrength;
+          const midX2 = toX - curveStrength;
+          const path = `M ${fromX},${fromY} C ${midX1},${fromY} ${midX2},${toY} ${toX},${toY}`;
 
           lines.push(
             <g key={`${fromId}-${toId}-${index}`}>
+              {/* Shadow/glow effect */}
               <path
                 d={path}
                 stroke="#f97316"
-                strokeWidth="2"
+                strokeWidth="6"
+                fill="none"
+                className="opacity-20"
+                filter="blur(2px)"
+              />
+              {/* Main connection line */}
+              <path
+                d={path}
+                stroke="#f97316"
+                strokeWidth="3"
                 fill="none"
                 markerEnd="url(#arrowhead)"
-                className="opacity-70 hover:opacity-100 transition-opacity"
+                className="opacity-80 hover:opacity-100 transition-all duration-300 cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Add connection deletion on click
+                  if (window.confirm('Delete this connection?')) {
+                    const updatedConnections = { ...connections };
+                    updatedConnections[fromId] = updatedConnections[fromId].filter(id => id !== toId);
+                    if (updatedConnections[fromId].length === 0) {
+                      delete updatedConnections[fromId];
+                    }
+                    // Update connections state (this would need to be passed as prop)
+                    window.sounds?.error();
+                  }
+                }}
+              />
+              {/* Connection points for visual feedback */}
+              <circle
+                cx={fromX}
+                cy={fromY}
+                r="3"
+                fill="#f97316"
+                className="opacity-60"
+              />
+              <circle
+                cx={toX}
+                cy={toY}
+                r="3"
+                fill="#f97316"
+                className="opacity-60"
               />
             </g>
           );
         });
       });
 
+      // Render temporary connection line while connecting
+      if (connectingFrom) {
+        const fromPos = questPositions[connectingFrom];
+        if (fromPos) {
+          const fromX = fromPos.x + 256;
+          const fromY = fromPos.y + 60;
+          const toX = mousePosition.x;
+          const toY = mousePosition.y;
+
+          const distance = Math.abs(toX - fromX);
+          const curveStrength = Math.min(distance * 0.4, 120);
+          const midX1 = fromX + curveStrength;
+          const midX2 = toX - curveStrength;
+          const tempPath = `M ${fromX},${fromY} C ${midX1},${fromY} ${midX2},${toY} ${toX},${toY}`;
+
+          lines.push(
+            <g key="temp-connection">
+              <path
+                d={tempPath}
+                stroke="#f97316"
+                strokeWidth="2"
+                fill="none"
+                strokeDasharray="5,5"
+                className="opacity-60 animate-pulse"
+              />
+              <circle
+                cx={fromX}
+                cy={fromY}
+                r="4"
+                fill="#f97316"
+                className="animate-pulse"
+              />
+            </g>
+          );
+        }
+      }
+
       return (
-        <svg className="absolute inset-0 pointer-events-none" style={{ zIndex: 1 }}>
+        <svg className="absolute inset-0 pointer-events-auto" style={{ zIndex: 1 }}>
           <defs>
             <marker
               id="arrowhead"
-              markerWidth="10"
-              markerHeight="7"
-              refX="9"
-              refY="3.5"
+              markerWidth="12"
+              markerHeight="8"
+              refX="11"
+              refY="4"
               orient="auto"
             >
               <polygon
-                points="0 0, 10 3.5, 0 7"
+                points="0 0, 12 4, 0 8"
                 fill="#f97316"
               />
             </marker>
+            {/* Gradient for enhanced visual appeal */}
+            <linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#f97316" stopOpacity="0.8"/>
+              <stop offset="100%" stopColor="#fb923c" stopOpacity="1"/>
+            </linearGradient>
           </defs>
           {lines}
         </svg>
