@@ -1564,13 +1564,18 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     // Handle clicks outside context menu to close it
     useEffect(() => {
       const handleClickOutside = (e: MouseEvent) => {
-        if (contextMenu) {
+        const target = e.target as Element;
+        // Don't close if clicking inside the context menu
+        if (contextMenu && !target.closest('[data-context-menu]')) {
           setContextMenu(null);
         }
       };
 
       if (contextMenu) {
-        document.addEventListener('click', handleClickOutside);
+        // Add delay to prevent immediate closing
+        setTimeout(() => {
+          document.addEventListener('click', handleClickOutside);
+        }, 100);
         return () => document.removeEventListener('click', handleClickOutside);
       }
     }, [contextMenu]);
@@ -1652,9 +1657,12 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
               onClick={(e) => {
                 e.stopPropagation();
                 const rect = e.currentTarget.getBoundingClientRect();
+                const canvasRect = canvasRef.current?.getBoundingClientRect();
+                const scrollLeft = canvasRef.current?.scrollLeft || 0;
+                const scrollTop = canvasRef.current?.scrollTop || 0;
                 setContextMenu({
-                  x: rect.right + 8,
-                  y: rect.top,
+                  x: (rect.right - (canvasRect?.left || 0)) + scrollLeft + 8,
+                  y: (rect.top - (canvasRect?.top || 0)) + scrollTop - 4,
                   questId: quest.id
                 });
                 window.sounds?.click();
@@ -1865,6 +1873,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         {/* Context Menu */}
         {contextMenu && (
           <div
+            data-context-menu
             className="absolute z-50 bg-gray-800 border border-gray-600 rounded-lg shadow-xl min-w-48"
             style={{
               left: contextMenu.x,
