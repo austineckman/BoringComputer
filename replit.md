@@ -41,6 +41,14 @@ Preferred communication style: Simple, everyday language.
 - Shop features multiple purchase options (1, 5, or 10 keys) with proper gold validation
 - Integrated with user inventory system for real-time gold and key tracking
 
+### Component Kit Visualization Enhancement (July 13, 2025)
+- Added large component kit images to quest system for clear kit identification
+- Kit images display prominently above adventure lines in main quest view
+- When viewing specific adventure line, kit image appears at top with kit name and description
+- Images use pixel art rendering to maintain retro aesthetic
+- Responsive design adapts to different screen sizes
+- Visual enhancement helps users understand which hardware kit is needed for each quest series
+
 ### Major Emulator Cleanup (July 10, 2025)
 - **MASSIVE CLEANUP**: Removed 18+ broken/competing emulator implementations that were causing confusion
 - Deleted: CleanEmulator, DirectEmulatorLogger, DirectFixedEmulator, EmergencyFixedEmulator, FixedEmulatorConnector, ForcedLEDComponent, HeroEmulator, HeroEmulatorConnector, MinimalEmulator, RealAVR8EmulatorConnector, ReliableEmulator, SimpleEmulator, StandaloneBlinker, VisibleLEDComponent, WorkingEmulator, EmulatedButtonComponent, EmulatedLEDComponent, EmulatedOLEDComponent, UniversalEmulatorApp

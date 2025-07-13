@@ -42,12 +42,11 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
   
   // Debug logs for lootbox configs only once on initial load
   useEffect(() => {
-    if (!loadingLootBoxConfigs) {
-      // Convert to string representations to avoid referential equality changes
-      console.log('Lootbox configs loaded:', JSON.stringify(lootBoxConfigs).substring(0, 100) + (lootBoxConfigs.length > 0 ? '...' : ''));
+    if (!loadingLootBoxConfigs && lootBoxConfigs.length > 0) {
+      console.log('Lootbox configs loaded:', lootBoxConfigs.length);
       console.log('Lootbox configs map size:', Object.keys(lootBoxConfigsMap).length);
     }
-  }, [loadingLootBoxConfigs]);
+  }, [loadingLootBoxConfigs, lootBoxConfigs.length, Object.keys(lootBoxConfigsMap).length]);
   const [selectedAdventureLine, setSelectedAdventureLine] = useState<string | null>(null);
   const [filteredQuests, setFilteredQuests] = useState<Quest[]>([]);
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
@@ -165,8 +164,32 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
         // Skip if no quests in this line pass the filters
         if (lineQuests.length === 0) return null;
         
+        // Find the kit for this adventure line
+        const firstQuestInLine = lineQuests[0];
+        const questKit = firstQuestInLine?.kitId ? kits?.find(k => k.id === firstQuestInLine.kitId) : null;
+
         return (
           <div key={line} className="mb-8">
+            {/* Component Kit Image Section */}
+            {questKit?.image && (
+              <div className="mb-6 bg-gray-900/80 border border-brand-orange/30 rounded-lg overflow-hidden shadow-lg">
+                <div className="p-6">
+                  <div className="flex items-center justify-center">
+                    <img 
+                      src={questKit.image} 
+                      alt={`${questKit.name} Component Kit`}
+                      className="max-w-full h-auto max-h-64 object-contain rounded-lg shadow-md"
+                      style={{ imageRendering: 'pixelated' }}
+                    />
+                  </div>
+                  <div className="text-center mt-4">
+                    <h3 className="text-lg font-bold text-brand-orange">{questKit.name}</h3>
+                    <p className="text-gray-300 text-sm mt-1">{questKit.description}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div 
               className="flex items-center mb-4 cursor-pointer group"
               onClick={() => {
@@ -189,8 +212,32 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
     // Display only quests from the selected adventure line
     const lineQuests = filteredQuests.filter(q => q.adventureLine === selectedAdventureLine);
     
+    // Find the kit for the selected adventure line
+    const firstQuestInLine = lineQuests[0];
+    const selectedKit = firstQuestInLine?.kitId ? kits?.find(k => k.id === firstQuestInLine.kitId) : null;
+
     return (
       <div>
+        {/* Component Kit Image Section for Selected Adventure Line */}
+        {selectedKit?.image && (
+          <div className="mb-6 bg-gray-900/80 border border-brand-orange/30 rounded-lg overflow-hidden shadow-lg">
+            <div className="p-6">
+              <div className="flex items-center justify-center">
+                <img 
+                  src={selectedKit.image} 
+                  alt={`${selectedKit.name} Component Kit`}
+                  className="max-w-full h-auto max-h-64 object-contain rounded-lg shadow-md"
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              </div>
+              <div className="text-center mt-4">
+                <h3 className="text-lg font-bold text-brand-orange">{selectedKit.name}</h3>
+                <p className="text-gray-300 text-sm mt-1">{selectedKit.description}</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="flex items-center mb-6">
           <button 
             className="flex items-center text-lg font-bold text-brand-orange hover:underline" 
