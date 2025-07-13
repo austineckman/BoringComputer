@@ -289,6 +289,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [kitComponents, setKitComponents] = useState<Record<string, KitComponent[]>>({});
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [activeKitId, setActiveKitId] = useState<string | null>(null);
+  const [selectedQuestKitId, setSelectedQuestKitId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
   // State for modals and actions
@@ -749,6 +750,34 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       fetchComponentsForKit();
     }
   }, [activeKitId]);
+
+  // Fetch components for selected quest kit when selectedQuestKitId changes
+  useEffect(() => {
+    if (selectedQuestKitId && !kitComponents[selectedQuestKitId]) {
+      const fetchComponentsForQuestKit = async () => {
+        try {
+          console.log(`Fetching components for quest kit ID: ${selectedQuestKitId}`);
+          
+          const response = await fetch(`/api/admin/kits/${selectedQuestKitId}/components`);
+          if (response.ok) {
+            const components = await response.json();
+            console.log(`Found ${components.length} components for quest kit: ${selectedQuestKitId}`);
+            
+            setKitComponents(prev => ({
+              ...prev,
+              [selectedQuestKitId]: components
+            }));
+          } else {
+            console.error(`Failed to fetch components for quest kit ${selectedQuestKitId}`);
+          }
+        } catch (error) {
+          console.error(`Error fetching components for quest kit ${selectedQuestKitId}:`, error);
+        }
+      };
+
+      fetchComponentsForQuestKit();
+    }
+  }, [selectedQuestKitId, kitComponents]);
 
   // Filter data based on search query with looser conditions
   const filteredLootboxes = lootboxes.filter(box => {
@@ -1474,7 +1503,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     );
   };
 
-  // Render quest cards
+  // Render quest cards with kit selection
   const renderQuests = () => {
     if (loadingQuests) {
       return (
@@ -1485,137 +1514,291 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       );
     }
 
-    if (filteredQuests.length === 0) {
+    // If no kit is selected, show kit selection interface
+    if (!selectedQuestKitId) {
       return (
-        <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-          <FileText className="h-12 w-12 mb-3 opacity-50" />
-          <p className="text-lg mb-2">No quests found</p>
-          <p className="text-sm">Try adjusting your search or create a new quest</p>
+        <div className="space-y-6">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-white mb-2">Select Component Kit</h2>
+            <p className="text-gray-400">Choose a component kit to view and manage its quests</p>
+          </div>
+          
+          {loadingKits ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-brand-orange mr-3" />
+              <span className="text-brand-orange">Loading component kits...</span>
+            </div>
+          ) : componentKits.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              <CircuitBoard className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p className="text-lg mb-2">No component kits found</p>
+              <p className="text-sm">Create a component kit first to manage quests</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {componentKits.map(kit => (
+                <div 
+                  key={kit.id}
+                  className="border border-gray-700 rounded-lg bg-black/40 p-6 hover:border-brand-orange/60 transition-all duration-300 cursor-pointer group"
+                  onClick={() => {
+                    setSelectedQuestKitId(kit.id);
+                    window.sounds?.click();
+                  }}
+                  onMouseEnter={() => window.sounds?.hover()}
+                >
+                  {/* Kit Image */}
+                  {kit.imagePath && (
+                    <div className="h-40 w-full mb-4 rounded-lg overflow-hidden bg-gray-900/50 flex items-center justify-center">
+                      <img 
+                        src={kit.imagePath}
+                        alt={kit.name}
+                        className="max-h-full max-w-full object-contain"
+                        style={{imageRendering: 'pixelated'}}
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="space-y-3">
+                    <h3 className="text-xl font-bold text-white group-hover:text-brand-orange transition-colors">
+                      {kit.name}
+                    </h3>
+                    
+                    <p className="text-gray-300 text-sm line-clamp-3">
+                      {kit.description}
+                    </p>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex space-x-2">
+                        <span className="bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded-full">
+                          {kit.category}
+                        </span>
+                        <span className="bg-blue-900/30 text-blue-300 text-xs px-2 py-1 rounded-full">
+                          {kit.difficulty}
+                        </span>
+                      </div>
+                      
+                      <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-brand-orange transition-colors" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       );
     }
 
+    // Get the selected kit
+    const selectedKit = componentKits.find(kit => kit.id === selectedQuestKitId);
+    
+    // Filter quests for the selected kit
+    const kitQuests = quests.filter(quest => {
+      // Check if quest's component requirements match components from the selected kit
+      if (!quest.componentRequirements || quest.componentRequirements.length === 0) {
+        return false;
+      }
+      
+      // Get components for the selected kit
+      const kitComponentsList = kitComponents[selectedQuestKitId] || [];
+      const kitComponentNames = kitComponentsList.map(comp => comp.name.toLowerCase());
+      
+      // Check if any of the quest's component requirements match kit components
+      return quest.componentRequirements.some(requirement => 
+        kitComponentNames.includes(requirement.name.toLowerCase())
+      );
+    });
+
+    // Apply search filter to kit quests
+    const filteredKitQuests = kitQuests.filter(quest => {
+      if (!searchQuery) return true;
+      
+      const searchLower = searchQuery.toLowerCase();
+      return (
+        quest.title.toLowerCase().includes(searchLower) ||
+        quest.description.toLowerCase().includes(searchLower) ||
+        quest.adventureLine.toLowerCase().includes(searchLower) ||
+        quest.componentRequirements?.some(comp => 
+          comp.name.toLowerCase().includes(searchLower)
+        )
+      );
+    });
+
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-        {filteredQuests.map(quest => (
-          <div 
-            key={quest.id}
-            className="border border-gray-700 rounded-lg bg-space-dark/80 p-4 hover:border-brand-orange/60 transition-colors overflow-hidden relative"
-          >
-            {/* Status badge */}
-            {quest.active === false && (
-              <div className="absolute top-2 right-2 z-10">
-                <span className="bg-red-900/80 text-white text-xs px-2 py-0.5 rounded-full">
-                  Inactive
-                </span>
-              </div>
-            )}
+      <div className="space-y-6">
+        {/* Kit header with back button */}
+        <div className="flex items-center justify-between bg-black/30 rounded-lg p-4 border border-gray-700">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => {
+                setSelectedQuestKitId(null);
+                window.sounds?.click();
+              }}
+              className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
+              onMouseEnter={() => window.sounds?.hover()}
+            >
+              <ArrowRight className="h-5 w-5 text-gray-400 rotate-180" />
+            </button>
             
-            {/* Image section */}
-            {(quest.heroImage || (quest.content?.images && quest.content.images.length > 0)) && (
-              <div className="h-32 w-full mb-3 rounded-md overflow-hidden relative">
+            {selectedKit?.imagePath && (
+              <div className="h-16 w-16 rounded-lg overflow-hidden bg-gray-900/50 flex items-center justify-center">
                 <img 
-                  src={quest.heroImage || (quest.content?.images && quest.content.images[0])} 
-                  alt={quest.title}
-                  className="absolute inset-0 w-full h-full object-cover" 
+                  src={selectedKit.imagePath}
+                  alt={selectedKit.name}
+                  className="max-h-full max-w-full object-contain"
+                  style={{imageRendering: 'pixelated'}}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                
-                <div className="absolute bottom-2 right-2 flex space-x-1">
-                  {quest.content?.videos && quest.content.videos.length > 0 && (
-                    <span className="flex h-5 items-center rounded-full bg-red-500/20 px-2 text-xs text-white">
-                      <svg viewBox="0 0 24 24" className="h-3 w-3 mr-1 fill-current" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M4 8h16v8H4z"></path>
-                        <path d="M14 12l-6-4v8l6-4z"></path>
-                      </svg>
-                      {quest.content.videos.length}
-                    </span>
-                  )}
-                  
-                  {quest.content?.images && quest.content.images.length > 1 && (
-                    <span className="flex h-5 items-center rounded-full bg-blue-500/20 px-2 text-xs text-white">
-                      <svg viewBox="0 0 24 24" className="h-3 w-3 mr-1 fill-current" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M4 4h16v16H4z"></path>
-                        <path d="M4 4h12v12H4z"></path>
-                      </svg>
-                      {quest.content.images.length}
-                    </span>
-                  )}
-                  
-                  {quest.content?.codeBlocks && quest.content.codeBlocks.length > 0 && (
-                    <span className="flex h-5 items-center rounded-full bg-green-500/20 px-2 text-xs text-white">
-                      <svg viewBox="0 0 24 24" className="h-3 w-3 mr-1 fill-current" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4z"></path>
-                        <path d="M14.6 16.6l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"></path>
-                      </svg>
-                      {quest.content.codeBlocks.length}
-                    </span>
-                  )}
-                </div>
               </div>
             )}
             
-            <div className="flex items-start justify-between mb-3">
-              <h3 className="text-lg font-bold text-white">{quest.title}</h3>
-              <div className="flex space-x-1">
-                <button 
-                  className="p-1 rounded-full hover:bg-gray-700 transition-colors"
-                  title="Edit quest"
-                  onClick={() => handleEditClick('quest', quest)}
-                  onMouseEnter={() => window.sounds?.hover()}
-                >
-                  <Edit className="h-4 w-4 text-gray-400 hover:text-white" />
-                </button>
-                <button 
-                  className="p-1 rounded-full hover:bg-gray-700 transition-colors"
-                  title="Delete quest"
-                  onClick={() => handleDeleteClick('quest', quest.id.toString(), quest.title)}
-                  onMouseEnter={() => window.sounds?.hover()}
-                >
-                  <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
-                </button>
-              </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">{selectedKit?.name} Quests</h2>
+              <p className="text-gray-400 text-sm">{filteredKitQuests.length} quest{filteredKitQuests.length !== 1 ? 's' : ''} found</p>
             </div>
-            
-            <p className="text-gray-300 text-sm mb-3 line-clamp-2">{quest.description}</p>
-            
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              <span className="flex h-6 items-center rounded-full bg-primary/10 px-2 text-xs text-gray-300">
-                {new Date(quest.date).toLocaleDateString()}
-              </span>
-              
-              <span className="flex h-6 items-center rounded-full bg-blue-900/20 px-2 text-xs text-blue-300">
-                {quest.adventureLine}
-              </span>
-              
-              <span className="flex h-6 items-center rounded-full bg-yellow-500/10 px-2 text-xs text-yellow-300">
-                {Array(quest.difficulty).fill('★').join('')}
-              </span>
-              
-              <span className="flex h-6 items-center rounded-full bg-amber-500/20 px-2 text-xs text-amber-300">
-                <Sparkles className="h-3 w-3 mr-1" />
-                {quest.xpReward} XP
-              </span>
-            </div>
-            
-            {quest.componentRequirements && quest.componentRequirements.length > 0 && (
-              <div className="text-xs">
-                <h4 className="text-gray-400 mb-1">Required components:</h4>
-                <div className="flex flex-wrap gap-1">
-                  {quest.componentRequirements.map((comp, index) => (
-                    <span 
-                      key={index}
-                      className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded"
-                      title={comp.description}
-                    >
-                      {comp.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
-        ))}
+          
+          <div className="text-right">
+            <span className="bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded-full mr-2">
+              {selectedKit?.category}
+            </span>
+            <span className="bg-blue-900/30 text-blue-300 text-xs px-2 py-1 rounded-full">
+              {selectedKit?.difficulty}
+            </span>
+          </div>
+        </div>
+
+        {/* Quest cards */}
+        {filteredKitQuests.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+            <FileText className="h-12 w-12 mb-3 opacity-50" />
+            <p className="text-lg mb-2">No quests found for this kit</p>
+            <p className="text-sm">
+              {searchQuery ? 'Try adjusting your search or ' : ''}
+              Create a new quest for {selectedKit?.name}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredKitQuests.map(quest => (
+              <div 
+                key={quest.id}
+                className="border border-gray-700 rounded-lg bg-space-dark/80 p-4 hover:border-brand-orange/60 transition-colors overflow-hidden relative"
+              >
+                {/* Status badge */}
+                {quest.active === false && (
+                  <div className="absolute top-2 right-2 z-10">
+                    <span className="bg-red-900/80 text-white text-xs px-2 py-0.5 rounded-full">
+                      Inactive
+                    </span>
+                  </div>
+                )}
+                
+                {/* Image section */}
+                {(quest.heroImage || (quest.content?.images && quest.content.images.length > 0)) && (
+                  <div className="h-32 w-full mb-3 rounded-md overflow-hidden relative">
+                    <img 
+                      src={quest.heroImage || (quest.content?.images && quest.content.images[0])} 
+                      alt={quest.title}
+                      className="absolute inset-0 w-full h-full object-cover" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                    
+                    <div className="absolute bottom-2 right-2 flex space-x-1">
+                      {quest.content?.videos && quest.content.videos.length > 0 && (
+                        <span className="flex h-5 items-center rounded-full bg-red-500/20 px-2 text-xs text-white">
+                          <svg viewBox="0 0 24 24" className="h-3 w-3 mr-1 fill-current" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 8h16v8H4z"></path>
+                            <path d="M14 12l-6-4v8l6-4z"></path>
+                          </svg>
+                          {quest.content.videos.length}
+                        </span>
+                      )}
+                      
+                      {quest.content?.images && quest.content.images.length > 1 && (
+                        <span className="flex h-5 items-center rounded-full bg-blue-500/20 px-2 text-xs text-white">
+                          <svg viewBox="0 0 24 24" className="h-3 w-3 mr-1 fill-current" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 4h16v16H4z"></path>
+                            <path d="M4 4h12v12H4z"></path>
+                          </svg>
+                          {quest.content.images.length}
+                        </span>
+                      )}
+                      
+                      {quest.content?.codeBlocks && quest.content.codeBlocks.length > 0 && (
+                        <span className="flex h-5 items-center rounded-full bg-green-500/20 px-2 text-xs text-white">
+                          <svg viewBox="0 0 24 24" className="h-3 w-3 mr-1 fill-current" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4z"></path>
+                            <path d="M14.6 16.6l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"></path>
+                          </svg>
+                          {quest.content.codeBlocks.length}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex items-start justify-between mb-3">
+                  <h3 className="text-lg font-bold text-white">{quest.title}</h3>
+                  <div className="flex space-x-1">
+                    <button 
+                      className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                      title="Edit quest"
+                      onClick={() => handleEditClick('quest', quest)}
+                      onMouseEnter={() => window.sounds?.hover()}
+                    >
+                      <Edit className="h-4 w-4 text-gray-400 hover:text-white" />
+                    </button>
+                    <button 
+                      className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                      title="Delete quest"
+                      onClick={() => handleDeleteClick('quest', quest.id.toString(), quest.title)}
+                      onMouseEnter={() => window.sounds?.hover()}
+                    >
+                      <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                    </button>
+                  </div>
+                </div>
+                
+                <p className="text-gray-300 text-sm mb-3 line-clamp-2">{quest.description}</p>
+                
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <span className="flex h-6 items-center rounded-full bg-primary/10 px-2 text-xs text-gray-300">
+                    {new Date(quest.date).toLocaleDateString()}
+                  </span>
+                  
+                  <span className="flex h-6 items-center rounded-full bg-blue-900/20 px-2 text-xs text-blue-300">
+                    {quest.adventureLine}
+                  </span>
+                  
+                  <span className="flex h-6 items-center rounded-full bg-yellow-500/10 px-2 text-xs text-yellow-300">
+                    {Array(quest.difficulty).fill('★').join('')}
+                  </span>
+                  
+                  <span className="flex h-6 items-center rounded-full bg-amber-500/20 px-2 text-xs text-amber-300">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    {quest.xpReward} XP
+                  </span>
+                </div>
+                
+                {quest.componentRequirements && quest.componentRequirements.length > 0 && (
+                  <div className="text-xs">
+                    <h4 className="text-gray-400 mb-1">Required components:</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {quest.componentRequirements.map((comp, index) => (
+                        <span 
+                          key={index}
+                          className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded"
+                          title={comp.description}
+                        >
+                          {comp.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
