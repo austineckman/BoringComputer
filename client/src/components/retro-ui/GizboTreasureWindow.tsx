@@ -222,13 +222,6 @@ const GizboTreasureWindow: React.FC<GizboTreasureWindowProps> = ({ onClose, onMi
               <h2 className="text-2xl font-bold text-gray-900">Current Auctions</h2>
               <p className="text-gray-600">Dimension-cracking relics ready for bidding</p>
             </div>
-            <button
-              onClick={() => setShowCreateForm(!showCreateForm)}
-              className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-            >
-              <Plus size={16} />
-              <span>List New Item</span>
-            </button>
           </div>
 
           {/* Auction Grid */}
