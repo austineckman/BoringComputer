@@ -1561,24 +1561,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       }
     }, [connectingFrom]);
 
-    // Handle clicks outside context menu to close it
-    useEffect(() => {
-      const handleClickOutside = (e: MouseEvent) => {
-        const target = e.target as Element;
-        // Don't close if clicking inside the context menu
-        if (contextMenu && !target.closest('[data-context-menu]')) {
-          setContextMenu(null);
-        }
-      };
-
-      if (contextMenu) {
-        // Add delay to prevent immediate closing
-        setTimeout(() => {
-          document.addEventListener('click', handleClickOutside);
-        }, 100);
-        return () => document.removeEventListener('click', handleClickOutside);
-      }
-    }, [contextMenu]);
+    // No auto-close behavior - menu stays open until explicitly closed
 
     const QuestNode = ({ quest }: { quest: Quest }) => {
       const position = questPositions[quest.id] || { x: 0, y: 0 };
@@ -1858,7 +1841,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         className="relative w-full h-full overflow-auto cursor-grab active:cursor-grabbing"
         onClick={() => {
           setConnectingFrom(null);
-          setContextMenu(null);
+          // Context menu stays open - only closes via red X or option selection
         }}
         style={{ minHeight: '600px', minWidth: '1000px' }}
       >
@@ -1882,8 +1865,15 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
             onClick={(e) => e.stopPropagation()}
           >
             <div className="py-2">
-              <div className="px-3 py-1 text-xs text-gray-400 uppercase font-semibold border-b border-gray-700 mb-1">
-                Quest Tools
+              <div className="flex items-center justify-between px-3 py-1 text-xs text-gray-400 uppercase font-semibold border-b border-gray-700 mb-1">
+                <span>Quest Tools</span>
+                <button
+                  onClick={() => setContextMenu(null)}
+                  className="text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded p-1 transition-colors"
+                  title="Close menu"
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </div>
               
               {/* Start Connection */}
