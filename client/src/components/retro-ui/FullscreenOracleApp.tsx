@@ -1579,6 +1579,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       return (
         <div
           ref={drag}
+          data-quest-node
           className={`absolute bg-gray-900 border-2 rounded-lg p-4 w-64 cursor-pointer transition-all ${
             isDragging ? 'opacity-50 scale-105' : 'opacity-100'
           } ${
@@ -1637,25 +1638,33 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           {/* Connection Buttons */}
           <div className="absolute -right-2 top-1/2 transform -translate-y-1/2">
             <button
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                const rect = e.currentTarget.getBoundingClientRect();
-                const canvasRect = canvasRef.current?.getBoundingClientRect();
-                const scrollLeft = canvasRef.current?.scrollLeft || 0;
-                const scrollTop = canvasRef.current?.scrollTop || 0;
                 
-                // Toggle menu - close if same quest, open if different or closed
-                if (contextMenu?.questId === quest.id) {
-                  setContextMenu(null);
-                } else {
-                  setContextMenu({
-                    x: (rect.right - (canvasRect?.left || 0)) + scrollLeft + 8,
-                    y: (rect.top - (canvasRect?.top || 0)) + scrollTop - 4,
-                    questId: quest.id
-                  });
-                }
-                window.sounds?.click();
+                // Small delay to ensure event handling is complete
+                setTimeout(() => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const canvasRect = canvasRef.current?.getBoundingClientRect();
+                  const scrollLeft = canvasRef.current?.scrollLeft || 0;
+                  const scrollTop = canvasRef.current?.scrollTop || 0;
+                  
+                  // Toggle menu - close if same quest, open if different or closed
+                  if (contextMenu?.questId === quest.id) {
+                    setContextMenu(null);
+                  } else {
+                    setContextMenu({
+                      x: (rect.right - (canvasRect?.left || 0)) + scrollLeft + 8,
+                      y: (rect.top - (canvasRect?.top || 0)) + scrollTop - 4,
+                      questId: quest.id
+                    });
+                  }
+                  window.sounds?.click();
+                }, 0);
               }}
               className={`relative w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 transform ${
                 contextMenu?.questId === quest.id
@@ -1847,8 +1856,12 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         ref={canvasRef}
         className="relative w-full h-full overflow-auto cursor-grab active:cursor-grabbing"
         onClick={(e) => {
-          // Only close context menu if clicking on the canvas itself, not on quest nodes
-          if (e.target === e.currentTarget) {
+          // Close context menu if clicking outside of quest nodes and context menu
+          const target = e.target as HTMLElement;
+          const isQuestNode = target.closest('[data-quest-node]');
+          const isContextMenu = target.closest('[data-context-menu]');
+          
+          if (!isQuestNode && !isContextMenu) {
             setConnectingFrom(null);
             setContextMenu(null);
           }
