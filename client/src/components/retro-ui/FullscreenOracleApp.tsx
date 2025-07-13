@@ -1510,14 +1510,12 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   // Quest Flow Canvas Component - Like Klaviyo automation builder
   const QuestFlowCanvas = ({ 
     quests, 
-    connections, 
     onQuestMove, 
     onCreateConnection, 
     onEditQuest, 
     onDeleteQuest 
   }: {
     quests: Quest[];
-    connections: Record<string, string[]>;
     onQuestMove: (questId: string, position: {x: number, y: number}) => void;
     onCreateConnection: (fromQuest: string, toQuest: string) => void;
     onEditQuest: (quest: Quest) => void;
@@ -1526,8 +1524,6 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     const [questPositions, setQuestPositions] = useState<Record<string, {x: number, y: number}>>({});
     const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-    const [contextMenu, setContextMenu] = useState<{x: number, y: number, questId: string} | null>(null);
-    const [recentlyClicked, setRecentlyClicked] = useState<string | null>(null);
     const canvasRef = useRef<HTMLDivElement>(null);
 
     // Initialize quest positions in a grid
@@ -1575,7 +1571,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       });
 
       const isConnecting = connectingFrom === quest.id;
-      const hasConnections = connections[quest.id]?.length > 0;
+      const hasConnections = questConnections[quest.id]?.length > 0;
 
       return (
         <div
@@ -1639,64 +1635,48 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           {/* Connection Buttons */}
           <div className="absolute -right-2 top-1/2 transform -translate-y-1/2">
             <button
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
               onClick={(e) => {
                 e.stopPropagation();
-                e.preventDefault();
                 
-                // Set this button as recently clicked for 5 seconds
-                setRecentlyClicked(quest.id);
-                setTimeout(() => {
-                  setRecentlyClicked(prev => prev === quest.id ? null : prev);
-                }, 5000);
+                // Create new quest immediately
+                const newQuest: Quest = {
+                  id: `quest-${Date.now()}`,
+                  title: "New Quest",
+                  description: "A new quest to configure",
+                  difficulty: 1,
+                  xpReward: 100,
+                  adventureLine: "General",
+                  status: 'available',
+                  rewards: []
+                };
                 
-                // Capture the element reference before setTimeout
-                const buttonElement = e.currentTarget;
-                
-                // Small delay to ensure event handling is complete
-                setTimeout(() => {
-                  // Check if the element still exists
-                  if (!buttonElement) return;
+                // Position new quest to the right of current quest
+                const currentPos = questPositions[quest.id];
+                if (currentPos) {
+                  const newPosition = {
+                    x: currentPos.x + 350, // Space it out horizontally
+                    y: currentPos.y + Math.random() * 100 - 50 // Small vertical offset for visual variety
+                  };
+                  setQuestPositions(prev => ({
+                    ...prev,
+                    [newQuest.id]: newPosition
+                  }));
                   
-                  const rect = buttonElement.getBoundingClientRect();
-                  const canvasRect = canvasRef.current?.getBoundingClientRect();
-                  
-                  // Toggle menu - close if same quest, open if different or closed
-                  if (contextMenu?.questId === quest.id) {
-                    setContextMenu(null);
-                  } else {
-                    // Calculate position relative to the canvas, but keep it simple
-                    const x = rect.right - (canvasRect?.left || 0) + 8;
-                    const y = rect.top - (canvasRect?.top || 0);
-                    
-                    // Ensure the menu stays within reasonable bounds
-                    const safeX = Math.max(10, Math.min(x, (canvasRect?.width || 400) - 200));
-                    const safeY = Math.max(10, y);
-                    
-                    setContextMenu({
-                      x: safeX,
-                      y: safeY,
-                      questId: quest.id
-                    });
-                  }
-                  window.sounds?.click();
-                }, 0);
+                  // Auto-create connection wire
+                  setQuestConnections(prev => ({
+                    ...prev,
+                    [quest.id]: [...(prev[quest.id] || []), newQuest.id]
+                  }));
+                }
+                
+                // Add quest to the actual quests list
+                setQuests(prev => [...prev, newQuest]);
+                window.sounds?.success();
               }}
-              className={`relative w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 transform ${
-                contextMenu?.questId === quest.id || recentlyClicked === quest.id
-                  ? 'bg-brand-orange border-brand-orange text-white scale-110 shadow-lg shadow-brand-orange/50' 
-                  : 'bg-gray-800 border-gray-600 text-gray-400 hover:border-brand-orange hover:scale-105 hover:shadow-md'
-              }`}
-              title="Quest options menu"
+              className="relative w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 transform bg-gray-800 border-gray-600 text-gray-400 hover:border-brand-orange hover:scale-105 hover:shadow-md hover:bg-brand-orange/10"
+              title="Add connected quest"
             >
-              <Plus className={`h-3 w-3 transition-transform duration-300 ${contextMenu?.questId === quest.id ? 'rotate-45' : ''}`} />
-              {/* Pulsing ring for active menu or recently clicked */}
-              {(contextMenu?.questId === quest.id || recentlyClicked === quest.id) && (
-                <div className="absolute inset-0 rounded-full border-2 border-brand-orange animate-ping opacity-75"></div>
-              )}
+              <Plus className="h-3 w-3 transition-transform duration-300" />
             </button>
           </div>
 
@@ -1733,7 +1713,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       const lines: JSX.Element[] = [];
 
       // Render existing connections
-      Object.entries(connections).forEach(([fromId, toIds]) => {
+      Object.entries(questConnections).forEach(([fromId, toIds]) => {
         const fromPos = questPositions[fromId];
         if (!fromPos) return;
 
@@ -1776,12 +1756,12 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   e.stopPropagation();
                   // Add connection deletion on click
                   if (window.confirm('Delete this connection?')) {
-                    const updatedConnections = { ...connections };
+                    const updatedConnections = { ...questConnections };
                     updatedConnections[fromId] = updatedConnections[fromId].filter(id => id !== toId);
                     if (updatedConnections[fromId].length === 0) {
                       delete updatedConnections[fromId];
                     }
-                    // Update connections state (this would need to be passed as prop)
+                    setQuestConnections(updatedConnections);
                     window.sounds?.error();
                   }
                 }}
@@ -1875,14 +1855,12 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         ref={canvasRef}
         className="relative w-full h-full overflow-auto cursor-grab active:cursor-grabbing"
         onClick={(e) => {
-          // Close context menu if clicking outside of quest nodes and context menu
+          // Close connection mode if clicking outside of quest nodes
           const target = e.target as HTMLElement;
           const isQuestNode = target.closest('[data-quest-node]');
-          const isContextMenu = target.closest('[data-context-menu]');
           
-          if (!isQuestNode && !isContextMenu) {
+          if (!isQuestNode) {
             setConnectingFrom(null);
-            setContextMenu(null);
           }
         }}
         style={{ minHeight: '600px', minWidth: '1000px' }}
@@ -1895,167 +1873,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           <QuestNode key={quest.id} quest={quest} />
         ))}
 
-        {/* Context Menu */}
-        {contextMenu && (
-          <div
-            data-context-menu
-            className="absolute z-50 bg-gray-800 border border-gray-600 rounded-lg shadow-xl min-w-48"
-            style={{
-              left: contextMenu.x,
-              top: contextMenu.y,
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="py-2">
-              <div className="flex items-center justify-between px-3 py-1 text-xs text-gray-400 uppercase font-semibold border-b border-gray-700 mb-1">
-                <span>Quest Tools</span>
-                <button
-                  onClick={() => setContextMenu(null)}
-                  className="text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded p-1 transition-colors"
-                  title="Close menu"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-              
-              {/* Start Connection */}
-              <button
-                onClick={() => {
-                  setConnectingFrom(contextMenu.questId);
-                  // Menu stays open - only closes via red X
-                  window.sounds?.click();
-                }}
-                className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center gap-2"
-              >
-                <ArrowRight className="h-4 w-4 text-brand-orange" />
-                Start Connection
-              </button>
-              
-              {/* Add New Quest */}
-              <button
-                onClick={() => {
-                  const newQuest: Quest = {
-                    id: `quest-${Date.now()}`,
-                    title: "New Quest",
-                    description: "A new quest to configure",
-                    difficulty: 1,
-                    xpReward: 100,
-                    adventureLine: "General",
-                    status: 'available',
-                    rewards: []
-                  };
-                  // Add the quest to the list (this would need proper state management)
-                  // Menu stays open - only closes via red X
-                  window.sounds?.success();
-                }}
-                className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4 text-green-400" />
-                Add New Quest
-              </button>
-              
-              {/* Edit Quest */}
-              <button
-                onClick={() => {
-                  const quest = quests.find(q => q.id === contextMenu.questId);
-                  if (quest) {
-                    onEditQuest(quest);
-                  }
-                  // Menu stays open - only closes via red X
-                  window.sounds?.click();
-                }}
-                className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center gap-2"
-              >
-                <Edit2 className="h-4 w-4 text-blue-400" />
-                Edit Quest
-              </button>
-              
-              {/* Duplicate Quest */}
-              <button
-                onClick={() => {
-                  const quest = quests.find(q => q.id === contextMenu.questId);
-                  if (quest) {
-                    const duplicateQuest: Quest = {
-                      ...quest,
-                      id: `quest-${Date.now()}`,
-                      title: `${quest.title} (Copy)`,
-                    };
-                    // Add duplicate logic here
-                  }
-                  // Menu stays open - only closes via red X
-                  window.sounds?.click();
-                }}
-                className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center gap-2"
-              >
-                <Copy className="h-4 w-4 text-purple-400" />
-                Duplicate Quest
-              </button>
-              
-              <div className="border-t border-gray-700 my-1"></div>
-              
-              {/* Flow Tools */}
-              <div className="px-3 py-1 text-xs text-gray-400 uppercase font-semibold">
-                Flow Tools
-              </div>
-              
-              {/* Auto-arrange */}
-              <button
-                onClick={() => {
-                  // Auto-arrange quests in a grid
-                  const newPositions: Record<string, {x: number, y: number}> = {};
-                  quests.forEach((quest, index) => {
-                    const row = Math.floor(index / 3);
-                    const col = index % 3;
-                    newPositions[quest.id] = {
-                      x: 100 + col * 300,
-                      y: 100 + row * 200
-                    };
-                  });
-                  setQuestPositions(newPositions);
-                  // Menu stays open - only closes via red X
-                  window.sounds?.success();
-                }}
-                className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center gap-2"
-              >
-                <Grid3X3 className="h-4 w-4 text-cyan-400" />
-                Auto-arrange
-              </button>
-              
-              {/* Reset View */}
-              <button
-                onClick={() => {
-                  if (canvasRef.current) {
-                    canvasRef.current.scrollTop = 0;
-                    canvasRef.current.scrollLeft = 0;
-                  }
-                  // Menu stays open - only closes via red X
-                  window.sounds?.click();
-                }}
-                className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center gap-2"
-              >
-                <RotateCcw className="h-4 w-4 text-yellow-400" />
-                Reset View
-              </button>
-              
-              <div className="border-t border-gray-700 my-1"></div>
-              
-              {/* Delete Quest */}
-              <button
-                onClick={() => {
-                  if (window.confirm('Are you sure you want to delete this quest?')) {
-                    onDeleteQuest(contextMenu.questId);
-                    window.sounds?.error();
-                  }
-                  // Menu stays open - only closes via red X
-                }}
-                className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors flex items-center gap-2"
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete Quest
-              </button>
-            </div>
-          </div>
-        )}
+
 
         {/* Instructions */}
         {quests.length === 0 && (
@@ -2065,7 +1883,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
               <h3 className="text-xl font-bold mb-2">Quest Flow Builder</h3>
               <p className="text-sm">Add quests to start building your campaign automation flow</p>
               <p className="text-xs mt-2">• Drag quests to reposition them</p>
-              <p className="text-xs">• Click the + button to open quest tools</p>
+              <p className="text-xs">• Click the + button to instantly create connected quests</p>
               <p className="text-xs">• Connected quests unlock when prerequisites are completed</p>
             </div>
           </div>
