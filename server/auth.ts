@@ -176,6 +176,12 @@ export function setupAuth(app: any): void {
             console.log('Discord configuration missing - cannot fetch roles');
           }
           
+          // Development mode: Force admin access for austineckman
+          if (process.env.NODE_ENV === 'development' && profile.username === 'austineckman') {
+            console.log('Development mode: Granting admin access to austineckman');
+            discordRoles = ['admin', 'Founder', 'CraftingTable', 'Academy', 'Server Booster'];
+          }
+
           // Try to find existing user by Discord ID
           let user = await storage.getUserByDiscordId(profile.id);
           

@@ -165,6 +165,29 @@ const RetroDesktop: React.FC = () => {
     
     return () => clearInterval(interval);
   }, []);
+
+  // Debug: Fix roles for austineckman in development
+  useEffect(() => {
+    if (user?.username === 'austineckman' && (!user?.roles || user?.roles?.length === 0)) {
+      console.log('Fixing roles for austineckman...');
+      fetch('/api/debug/fix-roles', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Roles fixed:', data);
+        // Refresh the page to get updated user data
+        window.location.reload();
+      })
+      .catch(error => {
+        console.error('Error fixing roles:', error);
+      });
+    }
+  }, [user]);
   
   // No resize handlers needed for admin folder anymore
   

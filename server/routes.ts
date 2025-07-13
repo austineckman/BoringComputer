@@ -128,6 +128,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Failed to reset database" });
     }
   });
+
+  // Debug endpoint to fix roles for current user (development only)
+  app.post('/api/debug/fix-roles', (req, res, next) => {
+    // Skip CSRF protection for debug endpoints
+    next();
+  }, authenticate, async (req, res) => {
+    try {
+      const userId = (req as any).user?.id;
+      const username = (req as any).user?.username;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      
+      // Force admin roles for austineckman in development
+      if (process.env.NODE_ENV === 'development' && username === 'austineckman') {
+        const updatedUser = await storage.updateUser(userId, {
+          roles: ['admin', 'Founder', 'CraftingTable', 'Academy', 'Server Booster']
+        });
+        
+        console.log('Fixed roles for user:', username, 'New roles:', updatedUser.roles);
+        return res.json({ 
+          success: true, 
+          message: "Roles updated successfully",
+          newRoles: updatedUser.roles
+        });
+      }
+      
+      return res.status(403).json({ message: "Role fix only available for authorized users in development" });
+    } catch (error) {
+      console.error('Error fixing roles:', error);
+      return res.status(500).json({ message: "Failed to fix roles" });
+    }
+  });
   
   // Note: /api/auth/me endpoint is now handled in routes/auth.ts to avoid conflicts
 
