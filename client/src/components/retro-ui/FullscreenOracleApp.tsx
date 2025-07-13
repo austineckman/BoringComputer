@@ -1639,15 +1639,22 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 const rect = e.currentTarget.getBoundingClientRect();
                 const canvasRect = canvasRef.current?.getBoundingClientRect();
                 const scrollLeft = canvasRef.current?.scrollLeft || 0;
                 const scrollTop = canvasRef.current?.scrollTop || 0;
-                setContextMenu({
-                  x: (rect.right - (canvasRect?.left || 0)) + scrollLeft + 8,
-                  y: (rect.top - (canvasRect?.top || 0)) + scrollTop - 4,
-                  questId: quest.id
-                });
+                
+                // Toggle menu - close if same quest, open if different or closed
+                if (contextMenu?.questId === quest.id) {
+                  setContextMenu(null);
+                } else {
+                  setContextMenu({
+                    x: (rect.right - (canvasRect?.left || 0)) + scrollLeft + 8,
+                    y: (rect.top - (canvasRect?.top || 0)) + scrollTop - 4,
+                    questId: quest.id
+                  });
+                }
                 window.sounds?.click();
               }}
               className={`relative w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 transform ${
@@ -1839,9 +1846,12 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       <div 
         ref={canvasRef}
         className="relative w-full h-full overflow-auto cursor-grab active:cursor-grabbing"
-        onClick={() => {
-          setConnectingFrom(null);
-          // Context menu stays open - only closes via red X or option selection
+        onClick={(e) => {
+          // Only close context menu if clicking on the canvas itself, not on quest nodes
+          if (e.target === e.currentTarget) {
+            setConnectingFrom(null);
+            setContextMenu(null);
+          }
         }}
         style={{ minHeight: '600px', minWidth: '1000px' }}
       >
