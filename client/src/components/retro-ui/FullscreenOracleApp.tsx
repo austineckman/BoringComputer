@@ -1663,16 +1663,22 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   
                   const rect = buttonElement.getBoundingClientRect();
                   const canvasRect = canvasRef.current?.getBoundingClientRect();
-                  const scrollLeft = canvasRef.current?.scrollLeft || 0;
-                  const scrollTop = canvasRef.current?.scrollTop || 0;
                   
                   // Toggle menu - close if same quest, open if different or closed
                   if (contextMenu?.questId === quest.id) {
                     setContextMenu(null);
                   } else {
+                    // Calculate position relative to the canvas, but keep it simple
+                    const x = rect.right - (canvasRect?.left || 0) + 8;
+                    const y = rect.top - (canvasRect?.top || 0);
+                    
+                    // Ensure the menu stays within reasonable bounds
+                    const safeX = Math.max(10, Math.min(x, (canvasRect?.width || 400) - 200));
+                    const safeY = Math.max(10, y);
+                    
                     setContextMenu({
-                      x: (rect.right - (canvasRect?.left || 0)) + scrollLeft + 8,
-                      y: (rect.top - (canvasRect?.top || 0)) + scrollTop - 4,
+                      x: safeX,
+                      y: safeY,
                       questId: quest.id
                     });
                   }
