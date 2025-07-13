@@ -1527,6 +1527,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const [contextMenu, setContextMenu] = useState<{x: number, y: number, questId: string} | null>(null);
+    const [recentlyClicked, setRecentlyClicked] = useState<string | null>(null);
     const canvasRef = useRef<HTMLDivElement>(null);
 
     // Initialize quest positions in a grid
@@ -1646,6 +1647,12 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 e.stopPropagation();
                 e.preventDefault();
                 
+                // Set this button as recently clicked for 5 seconds
+                setRecentlyClicked(quest.id);
+                setTimeout(() => {
+                  setRecentlyClicked(prev => prev === quest.id ? null : prev);
+                }, 5000);
+                
                 // Capture the element reference before setTimeout
                 const buttonElement = e.currentTarget;
                 
@@ -1673,15 +1680,15 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 }, 0);
               }}
               className={`relative w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 transform ${
-                contextMenu?.questId === quest.id
+                contextMenu?.questId === quest.id || recentlyClicked === quest.id
                   ? 'bg-brand-orange border-brand-orange text-white scale-110 shadow-lg shadow-brand-orange/50' 
                   : 'bg-gray-800 border-gray-600 text-gray-400 hover:border-brand-orange hover:scale-105 hover:shadow-md'
               }`}
               title="Quest options menu"
             >
               <Plus className={`h-3 w-3 transition-transform duration-300 ${contextMenu?.questId === quest.id ? 'rotate-45' : ''}`} />
-              {/* Pulsing ring for active menu */}
-              {contextMenu?.questId === quest.id && (
+              {/* Pulsing ring for active menu or recently clicked */}
+              {(contextMenu?.questId === quest.id || recentlyClicked === quest.id) && (
                 <div className="absolute inset-0 rounded-full border-2 border-brand-orange animate-ping opacity-75"></div>
               )}
             </button>
