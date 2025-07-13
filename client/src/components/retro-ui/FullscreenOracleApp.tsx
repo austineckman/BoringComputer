@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Search, RefreshCw, Package, Sparkles, FileText, Settings, Users, 
-  PlusCircle, Loader2, Edit, Trash2, AlertTriangle, Upload, 
+  PlusCircle, Loader2, Edit, Edit2, Trash2, AlertTriangle, Upload, 
   Shield, ShieldCheck, ShieldX, Star, CalendarClock, LineChart,
   Database, Eye, FileImage, Box, Plus, CircuitBoard, Clipboard,
   ClipboardList, Grid3X3, ArrowRight, AlertCircle, Clock, User,
   BarChart2, PieChart, TrendingUp, Server, UserCheck, Activity,
-  Calendar, Download, HardDrive, GitBranch, Heart, CheckSquare
+  Calendar, Download, HardDrive, GitBranch, Heart, CheckSquare,
+  Copy, RotateCcw
 } from 'lucide-react';
 import { 
   BarChart, Bar, LineChart as RechartsLine, Line, PieChart as RechartsProChart, Pie, Cell, 
