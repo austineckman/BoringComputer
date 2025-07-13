@@ -30,6 +30,7 @@ import ElectronicsCheatSheetWindow from "./ElectronicsCheatSheetWindow";
 import ResistorCalculatorWindow from "./ResistorCalculatorWindow";
 import CodeCaravanWindow from "./CodeCaravanWindow";
 import ShopWindow from "./ShopWindow";
+import GizboTreasureWindow from "./GizboTreasureWindow";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import wallpaperImage from "@assets/wallpaper.png";
 import goldCrateImage from "@assets/goldcrate.png";
@@ -103,6 +104,8 @@ const RetroDesktop: React.FC = () => {
   
   // State for Code Caravan window
   const [isCodeCaravanOpen, setIsCodeCaravanOpen] = useState<boolean>(false);
+  // State for Gizbo's Treasure window
+  const [isGizboTreasureOpen, setIsGizboTreasureOpen] = useState<boolean>(false);
   const [iconSize, setIconSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [colorScheme, setColorScheme] = useState<'blue' | 'black' | 'orange' | 'green' | 'red'>('blue');
   
@@ -132,7 +135,7 @@ const RetroDesktop: React.FC = () => {
       
       // Second column (after 4 icons in first column)
       { id: "lootboxes", name: "HackLock.exe", icon: "picklock", path: "/lootboxes", position: { x: 140, y: 20 } },
-      { id: "shop", name: "BMAH", icon: "shopcoin", path: "/shop", position: { x: 140, y: 120 } },
+      { id: "gizbotreasure", name: "Gizbo's Treasure", icon: "shopcoin", position: { x: 140, y: 120 } },
       { id: "circuitbuilder", name: "Sandbox", icon: "circuitbuilder", position: { x: 140, y: 220 } },
       { id: "discord", name: "Discord", icon: "discord", position: { x: 140, y: 320 } },
     ];
@@ -504,6 +507,8 @@ const RetroDesktop: React.FC = () => {
       openTerminalWindow();
     } else if (iconId === "shop") {
       openShopWindow();
+    } else if (iconId === "gizbotreasure") {
+      openGizboTreasureWindow();
     } else if (iconId === "recyclebin") {
       openRecycleBinWindow();
     } else if (iconId === "codequiz") {
@@ -832,6 +837,19 @@ const RetroDesktop: React.FC = () => {
       />, 
       "🎮",
       { width: 800, height: 650 }
+    );
+  };
+
+  const openGizboTreasureWindow = () => {
+    openWindow(
+      "gizbotreasure", 
+      "🏴‍☠️ Gizbo's Treasure Redistribution", 
+      <GizboTreasureWindow 
+        onClose={() => closeWindow("gizbotreasure")} 
+        onMinimize={() => minimizeWindow("gizbotreasure")}
+      />, 
+      "shopcoin",
+      { width: 1000, height: 700 }
     );
   };
   
