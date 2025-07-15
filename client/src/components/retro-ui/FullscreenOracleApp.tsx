@@ -2073,69 +2073,128 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
 
     return (
       <div className="p-6 overflow-y-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="space-y-4">
           {filteredQuests.map(quest => (
             <div 
               key={quest.id}
-              className="border border-gray-700 bg-black/40 rounded-lg p-4 hover:border-brand-orange/50 transition-colors"
+              className="border border-gray-700 bg-black/40 rounded-lg p-6 hover:border-brand-orange/50 transition-colors"
             >
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="text-white font-bold text-lg truncate">{quest.title}</h3>
-                <div className="flex space-x-1">
-                  <button 
-                    className="p-1 rounded-full hover:bg-gray-700 transition-colors"
-                    title="Edit quest"
-                    onClick={() => onEditQuest(quest)}
-                    onMouseEnter={() => window.sounds?.hover()}
-                  >
-                    <Edit className="h-4 w-4 text-gray-400 hover:text-white" />
-                  </button>
-                  <button 
-                    className="p-1 rounded-full hover:bg-gray-700 transition-colors"
-                    title="Delete quest"
-                    onClick={() => onDeleteQuest(quest.id)}
-                    onMouseEnter={() => window.sounds?.hover()}
-                  >
-                    <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
-                  </button>
-                </div>
-              </div>
-              
-              <p className="text-gray-300 text-sm mb-3 line-clamp-3">{quest.description}</p>
-              
-              <div className="flex items-center justify-between mb-3">
-                <span className="bg-brand-orange/20 text-brand-orange text-xs px-2 py-1 rounded-full">
-                  {quest.xpReward} XP
-                </span>
-                <span className="text-xs text-gray-400">
-                  Difficulty: {quest.difficulty}/5
-                </span>
-              </div>
-              
-              <div className="text-xs text-gray-400 mb-2">
-                Adventure Line: {quest.adventureLine}
-              </div>
-              
-              {quest.componentRequirements && quest.componentRequirements.length > 0 && (
-                <div className="text-xs">
-                  <p className="text-gray-400 mb-1">Required Components:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {quest.componentRequirements.slice(0, 3).map((component, index) => (
-                      <span 
-                        key={index}
-                        className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded"
-                      >
-                        {component.name}
-                      </span>
-                    ))}
-                    {quest.componentRequirements.length > 3 && (
-                      <span className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded">
-                        +{quest.componentRequirements.length - 3} more
-                      </span>
+              <div className="flex gap-6">
+                {/* Hero Image */}
+                <div className="flex-shrink-0">
+                  <div className="w-32 h-24 bg-gray-900/50 rounded-lg overflow-hidden flex items-center justify-center">
+                    {quest.content?.images?.[0] ? (
+                      <img 
+                        src={quest.content.images[0]}
+                        alt={quest.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-gray-500 text-center">
+                        <FileImage className="h-8 w-8 mx-auto mb-1" />
+                        <span className="text-xs">No Image</span>
+                      </div>
                     )}
                   </div>
                 </div>
-              )}
+
+                {/* Main Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="text-white font-bold text-xl mb-1">{quest.title}</h3>
+                      <div className="flex items-center gap-3 text-sm text-gray-400">
+                        <span>Adventure Line: {quest.adventureLine}</span>
+                        <span>•</span>
+                        <span>Difficulty: {quest.difficulty}/5</span>
+                        <span>•</span>
+                        <span className="text-brand-orange">{quest.xpReward} XP</span>
+                        <span>•</span>
+                        <span>{quest.comments || 0} comments</span>
+                      </div>
+                    </div>
+                    <div className="flex space-x-1">
+                      <button 
+                        className="p-2 rounded-full hover:bg-gray-700 transition-colors"
+                        title="Edit quest"
+                        onClick={() => onEditQuest(quest)}
+                        onMouseEnter={() => window.sounds?.hover()}
+                      >
+                        <Edit className="h-4 w-4 text-gray-400 hover:text-white" />
+                      </button>
+                      <button 
+                        className="p-2 rounded-full hover:bg-gray-700 transition-colors"
+                        title="Delete quest"
+                        onClick={() => onDeleteQuest(quest.id)}
+                        onMouseEnter={() => window.sounds?.hover()}
+                      >
+                        <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <p className="text-gray-300 text-sm mb-4 line-clamp-2">{quest.description}</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Required Components */}
+                    <div>
+                      <h4 className="text-gray-400 text-xs font-medium mb-2">REQUIRED COMPONENTS</h4>
+                      {quest.componentRequirements && quest.componentRequirements.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {quest.componentRequirements.map((component, index) => (
+                            <span 
+                              key={index}
+                              className="bg-gray-800 text-gray-300 px-2 py-1 rounded text-xs"
+                            >
+                              {component.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-500 text-xs">No components required</span>
+                      )}
+                    </div>
+
+                    {/* Rewards */}
+                    <div>
+                      <h4 className="text-gray-400 text-xs font-medium mb-2">REWARDS</h4>
+                      {quest.rewards && quest.rewards.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {quest.rewards.map((reward, index) => (
+                            <span 
+                              key={index}
+                              className="bg-green-900/30 text-green-300 px-2 py-1 rounded text-xs"
+                            >
+                              {reward.quantity}× {reward.id}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-500 text-xs">No rewards configured</span>
+                      )}
+                    </div>
+
+                    {/* Loot Boxes */}
+                    <div>
+                      <h4 className="text-gray-400 text-xs font-medium mb-2">LOOT BOXES</h4>
+                      {quest.lootBoxRewards && quest.lootBoxRewards.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {quest.lootBoxRewards.map((loot, index) => (
+                            <span 
+                              key={index}
+                              className="bg-purple-900/30 text-purple-300 px-2 py-1 rounded text-xs"
+                            >
+                              {loot.quantity}× {loot.type}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-500 text-xs">No loot boxes</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           ))}
         </div>
