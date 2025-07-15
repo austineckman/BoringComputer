@@ -51,6 +51,10 @@ interface QuestData {
     quantity: number;
   }>;
   componentRequirements: any[];
+  solutionCode?: string;
+  wiringInstructions?: string;
+  wiringDiagram?: string;
+  solutionNotes?: string;
 }
 
 const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({ 
@@ -82,7 +86,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   const quest = questData || fetchedQuest;
 
   // Fetch comments
-  const { data: comments, isLoading: commentsLoading } = useQuery<QuestComment[]>({
+  const { data: comments, isLoading: commentsLoading, refetch: refetchComments } = useQuery<QuestComment[]>({
     queryKey: [`/api/quests/${questId}/comments`],
   });
 
@@ -109,6 +113,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
     onSuccess: (data) => {
       console.log('Comment added successfully:', data);
       queryClient.invalidateQueries({ queryKey: [`/api/quests/${questId}/comments`] });
+      refetchComments(); // Force immediate refresh
       setNewComment('');
       setReplyingTo(null);
     },
@@ -331,20 +336,42 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
                       ⚠️ Warning: Using the solution will reduce your XP rewards
                     </div>
                     
-                    {quest.content?.codeBlocks && quest.content.codeBlocks.length > 0 && (
+                    {quest.solutionCode && (
                       <div>
-                        <h3 className="font-bold text-red-400 mb-2">Expected Code:</h3>
-                        <pre className="bg-black/50 p-4 rounded-md text-sm overflow-x-auto">
-                          <code>{quest.content.codeBlocks[0].code}</code>
+                        <h3 className="font-bold text-red-400 mb-2">Solution Code:</h3>
+                        <pre className="bg-black/50 p-4 rounded-md text-sm overflow-x-auto font-mono">
+                          <code>{quest.solutionCode}</code>
                         </pre>
                       </div>
                     )}
                     
-                    {quest.missionBrief && (
+                    {quest.wiringInstructions && (
                       <div>
-                        <h3 className="font-bold text-red-400 mb-2">Mission Instructions:</h3>
-                        <div className="bg-black/50 p-4 rounded-md text-sm">
-                          {quest.missionBrief}
+                        <h3 className="font-bold text-red-400 mb-2">Wiring Instructions:</h3>
+                        <div className="bg-black/50 p-4 rounded-md text-sm whitespace-pre-wrap">
+                          {quest.wiringInstructions}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {quest.wiringDiagram && (
+                      <div>
+                        <h3 className="font-bold text-red-400 mb-2">Wiring Diagram:</h3>
+                        <div className="bg-black/50 p-4 rounded-md">
+                          <img 
+                            src={quest.wiringDiagram} 
+                            alt="Wiring Diagram" 
+                            className="max-w-full h-auto rounded border border-gray-600"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {quest.solutionNotes && (
+                      <div>
+                        <h3 className="font-bold text-red-400 mb-2">Additional Notes:</h3>
+                        <div className="bg-black/50 p-4 rounded-md text-sm whitespace-pre-wrap">
+                          {quest.solutionNotes}
                         </div>
                       </div>
                     )}
