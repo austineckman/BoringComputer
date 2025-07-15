@@ -2274,7 +2274,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 className="px-3 py-2 bg-brand-orange/80 text-white rounded-md hover:bg-brand-orange transition-colors flex items-center"
                 onClick={() => {
                   const newQuest: Quest = {
-                    id: `new-quest-${Date.now()}`,
+                    id: Date.now().toString(),
                     title: 'New Quest',
                     description: 'A new epic quest awaits brave adventurers!',
                     adventureLine: selectedQuestLine || selectedKit?.name || '30 Days Lost in Space',
@@ -2282,7 +2282,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                     difficulty: 3,
                     rewards: [],
                     status: 'available',
-                    componentRequirements: []
+                    componentRequirements: [],
+                    ...(selectedQuestKitId && { kitId: selectedQuestKitId })
                   };
                   setEditingItem(newQuest);
                   setEditingType('quest');
@@ -2308,7 +2309,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   <button
                     onClick={() => {
                       const newQuest: Quest = {
-                        id: `new-quest-${Date.now()}`,
+                        id: Date.now().toString(),
                         title: 'New Quest',
                         description: 'A new epic quest awaits brave adventurers!',
                         adventureLine: selectedQuestLine || selectedKit?.name || '30 Days Lost in Space',
@@ -2316,7 +2317,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                         difficulty: 3,
                         rewards: [],
                         status: 'available',
-                        componentRequirements: []
+                        componentRequirements: [],
+                        ...(selectedQuestKitId && { kitId: selectedQuestKitId })
                       };
                       setEditingItem(newQuest);
                       setEditingType('quest');
@@ -5717,54 +5719,29 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-gray-300 text-sm mb-1">Storyline</label>
-                      <select
+                      <input
+                        type="text"
                         className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
                         value={(editingItem as Quest).adventureLine}
                         onChange={(e) => {
                           const updatedQuest = {...editingItem as Quest, adventureLine: e.target.value};
                           setEditingItem(updatedQuest);
                         }}
-                      >
-                        <option value="30 Days Lost in Space">30 Days Lost in Space</option>
-                        <option value="Adventures in Wonderland">Adventures in Wonderland</option>
-                        <option value="Cosmic Voyager">Cosmic Voyager</option>
-                        <option value="Digital Frontiers">Digital Frontiers</option>
-                        <option value="Maker's Journey">Maker's Journey</option>
-                      </select>
+                        placeholder="Quest storyline"
+                        readOnly
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Auto-populated from selected quest line</p>
                     </div>
                     <div>
                       <label className="block text-gray-300 text-sm mb-1">Component Kit</label>
-                      <select
+                      <input
+                        type="text"
                         className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                        value={(editingItem as any).kitId || ''}
-                        onChange={(e) => {
-                          const updatedQuest = {...editingItem as any, kitId: e.target.value};
-                          // When changing kit, we also need to reset component requirements
-                          if (e.target.value && e.target.value !== (editingItem as any).kitId) {
-                            setLoadingComponents(true);
-                            // If selecting a kit, we'll load its components in a separate API call
-                            fetch(`/api/admin/kits/${e.target.value}/components`)
-                              .then(response => response.json())
-                              .then(components => {
-                                setKitComponents({
-                                  ...kitComponents,
-                                  [e.target.value]: components
-                                });
-                                setLoadingComponents(false);
-                              })
-                              .catch(error => {
-                                console.error('Error loading kit components:', error);
-                                setLoadingComponents(false);
-                              });
-                          }
-                          setEditingItem(updatedQuest);
-                        }}
-                      >
-                        <option value="">-- Select Kit --</option>
-                        {componentKits.map(kit => (
-                          <option key={kit.id} value={kit.id}>{kit.name}</option>
-                        ))}
-                      </select>
+                        value={componentKits.find(kit => kit.id === selectedQuestKitId)?.name || ''}
+                        readOnly
+                        placeholder="Component kit"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Auto-populated from selected kit</p>
                     </div>
                   </div>
                   
@@ -5864,12 +5841,12 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                             id: '',
                             name: '',
                             description: '',
-                            kitId: updatedQuest.kitId || '',
+                            kitId: selectedQuestKitId || '',
                             quantity: 1
                           });
                           setEditingItem(updatedQuest);
                         }}
-                        disabled={!(editingItem as any).kitId || !kitComponents[(editingItem as any).kitId]}
+                        disabled={!selectedQuestKitId || !kitComponents[selectedQuestKitId]}
                         onMouseEnter={() => window.sounds?.hover()}
                       >
                         <PlusCircle className="h-3 w-3 mr-1" />
@@ -5880,7 +5857,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                     {/* Selected Components */}
                     <div className="space-y-2">
                       {((editingItem as any).componentRequirements || []).map((component: any, index: number) => {
-                        const selectedComponent = component.id ? kitComponents[(editingItem as any).kitId]?.find(c => c.id === component.id) : null;
+                        const selectedComponent = component.id ? kitComponents[selectedQuestKitId]?.find(c => c.id === component.id) : null;
                         
                         return (
                           <div key={index} className="flex items-center gap-2 bg-black/40 p-2 rounded border border-gray-700">
@@ -5891,7 +5868,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                                 value={component.id || ''}
                                 onChange={(e) => {
                                   const updatedQuest = {...editingItem as any};
-                                  const selectedComp = kitComponents[(editingItem as any).kitId]?.find(c => c.id === parseInt(e.target.value));
+                                  const selectedComp = kitComponents[selectedQuestKitId]?.find(c => c.id === parseInt(e.target.value));
                                   
                                   if (selectedComp) {
                                     updatedQuest.componentRequirements[index] = {
@@ -5907,7 +5884,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                                       id: '',
                                       name: '',
                                       description: '',
-                                      kitId: (editingItem as any).kitId || '',
+                                      kitId: selectedQuestKitId || '',
                                       quantity: component.quantity || 1
                                     };
                                   }
@@ -5916,7 +5893,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                                 }}
                               >
                                 <option value="">-- Select Component --</option>
-                                {kitComponents[(editingItem as any).kitId]?.map(comp => (
+                                {kitComponents[selectedQuestKitId]?.map(comp => (
                                   <option key={comp.id} value={comp.id}>{comp.name}</option>
                                 ))}
                               </select>
@@ -5979,13 +5956,13 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                             </div>
                           ) : (
                             <div>
-                              {(editingItem as any).kitId ? (
+                              {selectedQuestKitId ? (
                                 <div className="text-gray-500 text-sm">
                                   No components selected yet. Click "Add Component" to specify components required for this quest.
                                 </div>
                               ) : (
                                 <div className="text-gray-500 text-sm">
-                                  Please select a Component Kit first to add required components to this quest.
+                                  Component kit is auto-selected from your navigation. Components are available for selection.
                                 </div>
                               )}
                             </div>
@@ -6170,19 +6147,19 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                     
                     <div className="md:w-1/3 space-y-4">
                       {/* Kit and Components Preview */}
-                      {(editingItem as any).kitId && (
+                      {selectedQuestKitId && (
                         <div className="bg-black/20 border border-gray-700/50 rounded-lg p-3">
                           <div className="text-xs text-gray-500 mb-2">Required Kit:</div>
                           <div className="flex items-center gap-2">
-                            {componentKits.find(kit => kit.id === (editingItem as any).kitId)?.imagePath && (
+                            {componentKits.find(kit => kit.id === selectedQuestKitId)?.imagePath && (
                               <img 
-                                src={componentKits.find(kit => kit.id === (editingItem as any).kitId)?.imagePath || ''} 
+                                src={componentKits.find(kit => kit.id === selectedQuestKitId)?.imagePath || ''} 
                                 alt="Kit"
                                 className="w-8 h-8 object-contain"
                               />
                             )}
                             <span className="text-sm text-white font-medium">
-                              {componentKits.find(kit => kit.id === (editingItem as any).kitId)?.name || "Unknown Kit"}
+                              {componentKits.find(kit => kit.id === selectedQuestKitId)?.name || "Unknown Kit"}
                             </span>
                           </div>
                           
