@@ -90,6 +90,13 @@ router.get('/entities/:tableName/:id', authenticate, async (req, res) => {
 // Create or update an entity (upsert)
 router.post('/entities', authenticate, async (req, res) => {
   try {
+    console.log('🔧 Oracle API POST request received:', {
+      hasId: !!req.body.id,
+      hasData: !!req.body.data,
+      tableName: req.body.tableName,
+      bodyKeys: Object.keys(req.body)
+    });
+    
     // Handle both create and update operations
     let parsedBody;
     
