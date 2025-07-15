@@ -40,6 +40,14 @@ Preferred communication style: Simple, everyday language.
 - Oracle icon now properly appears for admin users with Founder role
 - This ensures campaign automation interface access for authorized users
 
+### Quest Component Requirements Fix (July 15, 2025)
+- **Component Requirements Persistence**: Fixed critical issue where quest component requirements weren't saving properly
+- **Backend Oracle API Enhancement**: Added special handling for quest component requirements in Oracle API PUT/POST endpoints
+- **Separate Table Management**: Component requirements now properly saved to separate `questComponents` table with proper foreign key relationships
+- **Frontend Save Process**: Removed destructuring that was excluding component requirements from quest save data
+- **Quest Creation Support**: Both quest creation and editing now properly handle component requirements
+- **Full-Width Quest Grid**: Converted Oracle quest display from 3-column cards to full-width horizontal layout showing hero images, components, rewards, and loot boxes at a glance
+
 ### Hierarchical Quest Line System (July 15, 2025)
 - **Three-Level Navigation**: Implemented Component Kit → Quest Line → Individual Quests hierarchical structure
 - **Unique Quest Lines**: Quest lines are now unique within each component kit with proper isolation
