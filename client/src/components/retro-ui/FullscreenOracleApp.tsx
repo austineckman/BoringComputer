@@ -5675,26 +5675,15 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                             updatedQuest.componentRequirements = [];
                           }
                           
-                          // Only show this button if a kit is selected
-                          if (updatedQuest.kitId && kitComponents[updatedQuest.kitId]) {
-                            // Add first available component from kit that's not already added
-                            const availableComponents = kitComponents[updatedQuest.kitId].filter(
-                              comp => !(updatedQuest.componentRequirements || []).some(
-                                (req: any) => req.id === comp.id
-                              )
-                            );
-                            
-                            if (availableComponents.length > 0) {
-                              const component = availableComponents[0];
-                              updatedQuest.componentRequirements.push({
-                                id: component.id,
-                                name: component.name,
-                                description: component.description,
-                                kitId: updatedQuest.kitId
-                              });
-                              setEditingItem(updatedQuest);
-                            }
-                          }
+                          // Add a new empty component requirement
+                          updatedQuest.componentRequirements.push({
+                            id: '',
+                            name: '',
+                            description: '',
+                            kitId: updatedQuest.kitId || '',
+                            quantity: 1
+                          });
+                          setEditingItem(updatedQuest);
                         }}
                         disabled={!(editingItem as any).kitId || !kitComponents[(editingItem as any).kitId]}
                         onMouseEnter={() => window.sounds?.hover()}
@@ -5706,37 +5695,95 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                     
                     {/* Selected Components */}
                     <div className="space-y-2">
-                      {((editingItem as any).componentRequirements || []).map((component: any, index: number) => (
-                        <div key={index} className="flex items-center gap-2 bg-black/40 p-2 rounded border border-gray-700">
-                          <div className="flex-1">
-                            <div className="flex items-center">
-                              {component.imagePath && (
-                                <img 
-                                  src={component.imagePath} 
-                                  alt={component.name}
-                                  className="w-8 h-8 object-contain mr-2" 
-                                />
+                      {((editingItem as any).componentRequirements || []).map((component: any, index: number) => {
+                        const selectedComponent = component.id ? kitComponents[(editingItem as any).kitId]?.find(c => c.id === component.id) : null;
+                        
+                        return (
+                          <div key={index} className="flex items-center gap-2 bg-black/40 p-2 rounded border border-gray-700">
+                            {/* Component Selector */}
+                            <div className="flex-1">
+                              <select
+                                className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none text-sm"
+                                value={component.id || ''}
+                                onChange={(e) => {
+                                  const updatedQuest = {...editingItem as any};
+                                  const selectedComp = kitComponents[(editingItem as any).kitId]?.find(c => c.id === parseInt(e.target.value));
+                                  
+                                  if (selectedComp) {
+                                    updatedQuest.componentRequirements[index] = {
+                                      id: selectedComp.id,
+                                      name: selectedComp.name,
+                                      description: selectedComp.description,
+                                      kitId: selectedComp.kitId,
+                                      imagePath: selectedComp.imagePath,
+                                      quantity: component.quantity || 1
+                                    };
+                                  } else {
+                                    updatedQuest.componentRequirements[index] = {
+                                      id: '',
+                                      name: '',
+                                      description: '',
+                                      kitId: (editingItem as any).kitId || '',
+                                      quantity: component.quantity || 1
+                                    };
+                                  }
+                                  
+                                  setEditingItem(updatedQuest);
+                                }}
+                              >
+                                <option value="">-- Select Component --</option>
+                                {kitComponents[(editingItem as any).kitId]?.map(comp => (
+                                  <option key={comp.id} value={comp.id}>{comp.name}</option>
+                                ))}
+                              </select>
+                              
+                              {/* Component preview */}
+                              {selectedComponent && (
+                                <div className="flex items-center mt-1">
+                                  {selectedComponent.imagePath && (
+                                    <img 
+                                      src={selectedComponent.imagePath} 
+                                      alt={selectedComponent.name}
+                                      className="w-6 h-6 object-contain mr-2" 
+                                    />
+                                  )}
+                                  <div className="text-xs text-gray-400">{selectedComponent.description}</div>
+                                </div>
                               )}
-                              <div>
-                                <div className="font-semibold text-sm">{component.name}</div>
-                                <div className="text-gray-400 text-xs">{component.description}</div>
-                              </div>
                             </div>
+                            
+                            {/* Quantity Selector */}
+                            <div className="w-20">
+                              <label className="block text-gray-300 text-xs mb-1">Qty</label>
+                              <input
+                                type="number"
+                                min="1"
+                                max="10"
+                                className="w-full px-2 py-1 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none text-sm"
+                                value={component.quantity || 1}
+                                onChange={(e) => {
+                                  const updatedQuest = {...editingItem as any};
+                                  updatedQuest.componentRequirements[index].quantity = parseInt(e.target.value) || 1;
+                                  setEditingItem(updatedQuest);
+                                }}
+                              />
+                            </div>
+                            
+                            {/* Remove Button */}
+                            <button
+                              className="p-1 text-red-500 hover:text-red-700 rounded"
+                              onClick={() => {
+                                const updatedQuest = {...editingItem as any};
+                                updatedQuest.componentRequirements.splice(index, 1);
+                                setEditingItem(updatedQuest);
+                              }}
+                              onMouseEnter={() => window.sounds?.hover()}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           </div>
-                          
-                          <button
-                            className="p-1 text-red-500 hover:text-red-700 rounded"
-                            onClick={() => {
-                              const updatedQuest = {...editingItem as any};
-                              updatedQuest.componentRequirements.splice(index, 1);
-                              setEditingItem(updatedQuest);
-                            }}
-                            onMouseEnter={() => window.sounds?.hover()}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ))}
+                        );
+                      })}
                       
                       {/* Empty state */}
                       {(!((editingItem as any).componentRequirements?.length > 0)) && (
@@ -5963,7 +6010,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                                 {((editingItem as any).componentRequirements || []).map((comp: any, idx: number) => (
                                   <div key={idx} className="flex items-center gap-2 text-xs text-gray-300 bg-black/30 rounded p-1">
                                     <div className="w-2 h-2 bg-brand-orange rounded-full"></div>
-                                    <span>{comp.name}</span>
+                                    <span>{comp.quantity || 1}x {comp.name || 'Unnamed Component'}</span>
                                   </div>
                                 ))}
                               </div>
