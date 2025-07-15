@@ -21,7 +21,16 @@ export interface LootBoxConfig {
 export function useLootBoxConfigs() {
   const { data, isLoading, error } = useQuery<LootBoxConfig[]>({
     queryKey: ['/api/lootbox-configs'],
+    queryFn: async () => {
+      const response = await fetch('/api/lootbox-configs');
+      if (!response.ok) {
+        throw new Error('Failed to fetch lootbox configs');
+      }
+      return response.json();
+    },
   });
+
+
 
   // Convert the array to a record for easier lookup
   const lootBoxConfigsMap = data?.reduce<Record<string, LootBoxConfig>>((acc, config) => {
