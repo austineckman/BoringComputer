@@ -5,6 +5,7 @@ import { apiRequest } from '@/lib/queryClient';
 
 interface ActiveQuestScreenProps {
   questId: string;
+  questData?: QuestData;
   onClose: () => void;
   onComplete?: () => void;
   onAbandon?: () => void;
@@ -53,6 +54,7 @@ interface QuestData {
 
 const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({ 
   questId, 
+  questData,
   onClose, 
   onComplete, 
   onAbandon 
@@ -68,10 +70,14 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
 
   const queryClient = useQueryClient();
 
-  // Fetch quest data
-  const { data: quest, isLoading: questLoading } = useQuery<QuestData>({
+  // Use passed quest data or fetch from API as fallback
+  const { data: fetchedQuest, isLoading: questLoading } = useQuery<QuestData>({
     queryKey: [`/api/quests/${questId}`],
+    enabled: !questData, // Only fetch if questData is not provided
   });
+
+  // Use provided questData or fallback to fetched data
+  const quest = questData || fetchedQuest;
 
   // Fetch comments
   const { data: comments, isLoading: commentsLoading } = useQuery<QuestComment[]>({
@@ -179,7 +185,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
     reactToCommentMutation.mutate({ commentId, emoji });
   };
 
-  if (questLoading) {
+  if (questLoading && !questData) {
     return (
       <div className="absolute inset-0 bg-black/90 flex items-center justify-center">
         <div className="text-center">
