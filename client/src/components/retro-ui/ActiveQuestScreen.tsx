@@ -249,15 +249,14 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
             <h2 className="text-xl font-bold text-brand-orange mb-4">Tutorial Video</h2>
             {quest.content?.videos && quest.content.videos.length > 0 ? (
               <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-                <video 
-                  src={quest.content.videos[0]}
-                  controls
+                <iframe
+                  src={`https://www.youtube.com/embed/${quest.content.videos[0]}`}
                   className="w-full h-full"
-                  onPlay={() => setVideoPlaying(true)}
-                  onPause={() => setVideoPlaying(false)}
-                >
-                  Your browser does not support the video tag.
-                </video>
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title="Quest Tutorial Video"
+                ></iframe>
               </div>
             ) : (
               <div className="aspect-video bg-gray-800 rounded-lg flex items-center justify-center">
