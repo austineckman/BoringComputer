@@ -272,10 +272,10 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                   </h2>
                 </div>
                 <div className="p-6">
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {selectedQuest.componentRequirements.map((comp, idx) => (
-                      <div key={idx} className="flex items-center space-x-4 bg-gray-800/70 rounded-lg p-4">
-                        <div className="w-12 h-12 bg-black/40 rounded-lg flex items-center justify-center">
+                      <div key={idx} className="bg-gray-800/70 rounded-lg p-4 text-center">
+                        <div className="w-12 h-12 bg-black/40 rounded-lg flex items-center justify-center mx-auto mb-2">
                           {comp.imagePath ? (
                             <img 
                               src={comp.imagePath} 
@@ -287,11 +287,8 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                             <Cpu className="w-8 h-8 text-gray-400" />
                           )}
                         </div>
-                        <div className="flex-1">
-                          <h3 className="text-white font-semibold text-base">{comp.name}</h3>
-                          <p className="text-gray-400 text-sm">{comp.description}</p>
-                        </div>
-                        <div className="px-3 py-1 bg-brand-orange/90 rounded-full text-white text-sm font-bold">
+                        <h3 className="text-white font-semibold text-sm">{comp.name}</h3>
+                        <div className="px-2 py-1 bg-brand-orange/90 rounded-full text-white text-xs font-bold mt-2 inline-block">
                           {comp.quantity || 1}x
                         </div>
                       </div>
@@ -531,10 +528,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
         )}
       </div>
       
-      {/* Bottom notice about returning to desktop */}
-      <div className="p-3 bg-black/80 border-t border-brand-orange/30 text-center text-xs text-gray-400">
-        Press ESC or click the X button to return to desktop
-      </div>
+
     </div>
   );
 };
