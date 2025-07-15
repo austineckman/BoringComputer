@@ -197,9 +197,33 @@ router.post('/entities', authenticate, async (req, res) => {
       
       resultEntity = updatedEntity;
     } else {
-      // Insert new entity
-      const [newEntity] = await db.insert(table).values(data).returning();
-      resultEntity = newEntity;
+      // Handle component requirements separately for new quest creation
+      if (tableName === 'quests' && data.componentRequirements) {
+        const componentRequirements = data.componentRequirements;
+        
+        // Remove componentRequirements from quest data before saving
+        const { componentRequirements: _, ...questData } = data;
+        
+        // Insert new quest
+        const [newQuest] = await db.insert(table).values(questData).returning();
+        resultEntity = newQuest;
+        
+        // Insert quest components
+        if (componentRequirements && componentRequirements.length > 0) {
+          const questComponentsData = componentRequirements.map((comp: any) => ({
+            questId: newQuest.id,
+            componentId: parseInt(comp.id),
+            quantity: comp.quantity || 1,
+            isOptional: comp.isOptional || false
+          }));
+          
+          await db.insert(schema.questComponents).values(questComponentsData);
+        }
+      } else {
+        // Insert new entity normally for non-quest tables
+        const [newEntity] = await db.insert(table).values(data).returning();
+        resultEntity = newEntity;
+      }
     }
     
     return res.status(isUpdateOperation ? 200 : 201).json(resultEntity);
@@ -266,7 +290,46 @@ router.put('/entities', authenticate, async (req, res) => {
     const table = tableMap[tableName];
     const idField = table.id;
     
-    // Update entity
+    // Handle component requirements separately for quests
+    if (tableName === 'quests' && data.componentRequirements) {
+      const questId = isNaN(Number(id)) ? id : Number(id);
+      const componentRequirements = data.componentRequirements;
+      
+      // Remove componentRequirements from quest data before saving
+      const { componentRequirements: _, ...questData } = data;
+      
+      // Update the quest first
+      const [updatedQuest] = await db
+        .update(table)
+        .set(questData)
+        .where(eq(idField, questId))
+        .returning();
+      
+      if (!updatedQuest) {
+        return res.status(404).json({ message: `Quest with ID ${id} not found` });
+      }
+      
+      // Delete existing quest components
+      await db
+        .delete(schema.questComponents)
+        .where(eq(schema.questComponents.questId, questId));
+      
+      // Insert new quest components
+      if (componentRequirements && componentRequirements.length > 0) {
+        const questComponentsData = componentRequirements.map((comp: any) => ({
+          questId: questId,
+          componentId: parseInt(comp.id),
+          quantity: comp.quantity || 1,
+          isOptional: comp.isOptional || false
+        }));
+        
+        await db.insert(schema.questComponents).values(questComponentsData);
+      }
+      
+      return res.json(updatedQuest);
+    }
+    
+    // Update entity normally for non-quest tables
     const [updatedEntity] = await db
       .update(table)
       .set(data)

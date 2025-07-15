@@ -6894,9 +6894,8 @@ void loop() {
                   <button
                     className="px-4 py-2 bg-brand-orange text-white rounded hover:bg-brand-orange/80"
                     onClick={() => {
-                      // Omit the componentRequirements as it's handled separately in the backend
-                      const { componentRequirements, ...data } = editingItem as any;
-                      handleEditSubmit(data);
+                      // Include componentRequirements in the save data - backend now handles it properly
+                      handleEditSubmit(editingItem as any);
                     }}
                     onMouseEnter={() => window.sounds?.hover()}
                   >
