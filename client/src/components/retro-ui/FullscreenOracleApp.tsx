@@ -6322,7 +6322,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                       <input
                         type="text"
                         className="flex-1 px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                        value={(editingItem as any).heroImage || ''}
+                        value={(editingItem as any).content?.images?.[0] || (editingItem as any).heroImage || ''}
                         readOnly
                         placeholder="Hero image URL will appear here after upload"
                       />
@@ -6367,10 +6367,17 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                             
                             const data = await response.json();
                             
-                            // Update the form with the new image path
+                            // Update the form with the new image path in content.images
+                            const currentQuest = editingItem as any;
                             const updatedQuest = {
-                              ...editingItem as any,
-                              heroImage: data.url
+                              ...currentQuest,
+                              heroImage: data.url,
+                              content: {
+                                ...currentQuest.content,
+                                images: [data.url, ...(currentQuest.content?.images?.slice(1) || [])], // Replace first image or add as first
+                                videos: currentQuest.content?.videos || [],
+                                codeBlocks: currentQuest.content?.codeBlocks || []
+                              }
                             };
                             setEditingItem(updatedQuest);
                             
@@ -6406,12 +6413,12 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                         Upload Hero Image
                       </button>
                     </div>
-                    {(editingItem as any).heroImage && (
+                    {((editingItem as any).content?.images?.[0] || (editingItem as any).heroImage) && (
                       <div className="mt-2 bg-gray-800 rounded-md overflow-hidden">
                         <div className="text-xs text-gray-400 p-2">Hero Image Preview</div>
                         <div className="h-32 flex items-center justify-center p-2">
                           <img 
-                            src={(editingItem as any).heroImage} 
+                            src={(editingItem as any).content?.images?.[0] || (editingItem as any).heroImage} 
                             alt="Hero Preview" 
                             className="max-h-full max-w-full object-contain" 
                           />
