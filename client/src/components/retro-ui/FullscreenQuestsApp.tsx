@@ -35,6 +35,8 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
   const { items, loading: loadingItems } = useItems();
   const { lootBoxConfigs, lootBoxConfigsMap, isLoading: loadingLootBoxConfigs } = useLootBoxConfigs();
   
+
+  
   const [selectedKit, setSelectedKit] = useState<string | null>(null);
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
   const [questView, setQuestView] = useState<'kit-select' | 'quest-list' | 'detail' | 'active'>('kit-select');
@@ -198,10 +200,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                       const lootboxConfig = isLootbox ? lootBoxConfigsMap[reward.id] : null;
                       const rarityClass = item?.rarity ? getRarityColorClass(item.rarity) : 'border-gray-600';
                       
-                      // Debug logging for reward display
-                      if (isLootbox && !lootboxConfig) {
-                        console.log('Missing lootbox config for:', reward.id);
-                      }
+
                       
                       return (
                         <div 
@@ -304,20 +303,8 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
             
             {/* Quest Info and Start Button */}
             <div className="bg-gray-900/80 border border-brand-orange/30 rounded-lg p-6">
-              <h3 className="text-lg font-bold text-brand-orange mb-4">Quest Information</h3>
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center justify-between">
-                  <span className="text-blue-300 font-semibold text-sm">Adventure Line:</span>
-                  <span className="text-white text-sm">{selectedQuest.adventureLine}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-300 font-semibold text-sm">Quest Order:</span>
-                  <span className="text-white text-sm">#{selectedQuest.orderInLine}</span>
-                </div>
-              </div>
-              
               <button
-                className="w-full py-6 bg-gradient-to-b from-orange-500 to-orange-700 hover:from-orange-600 hover:to-orange-800 border-2 border-orange-400 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200 font-bold text-white text-xl tracking-wide"
+                className="w-full py-6 bg-gradient-to-b from-orange-500 to-orange-700 hover:from-orange-600 hover:to-orange-800 border-2 border-orange-400 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200 font-bold text-white text-xl tracking-wide mb-6"
                 onClick={() => {
                   window.sounds?.click();
                   if (selectedQuest) {
@@ -333,6 +320,18 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
               >
                 START QUEST
               </button>
+              
+              <h3 className="text-lg font-bold text-brand-orange mb-4">Quest Information</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-blue-300 font-semibold text-sm">Adventure Line:</span>
+                  <span className="text-white text-sm">{selectedQuest.adventureLine}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-300 font-semibold text-sm">Quest Order:</span>
+                  <span className="text-white text-sm">#{selectedQuest.orderInLine}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
