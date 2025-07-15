@@ -72,6 +72,22 @@ export const userQuests = pgTable("user_quests", {
   completedAt: timestamp("completed_at"),
 });
 
+// Quest Comments table
+export const questComments = pgTable("quest_comments", {
+  id: serial("id").primaryKey(),
+  questId: bigint("quest_id", { mode: "number" }).notNull().references(() => quests.id, { onDelete: 'cascade' }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  content: text("content").notNull(),
+  parentId: integer("parent_id").references(() => questComments.id, { onDelete: 'cascade' }),
+  reactions: json("reactions").$type<{
+    emoji: string;
+    count: number;
+    users: number[];
+  }[]>().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Submissions table
 export const submissions = pgTable("submissions", {
   id: serial("id").primaryKey(),
@@ -545,6 +561,14 @@ export const insertUserSimulatorSettingsSchema = createInsertSchema(userSimulato
   savedTemplates: true
 });
 
+export const insertQuestCommentSchema = createInsertSchema(questComments).pick({
+  questId: true,
+  userId: true,
+  content: true,
+  parentId: true,
+  reactions: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -597,6 +621,9 @@ export type InsertArduinoComponent = z.infer<typeof insertArduinoComponentSchema
 
 export type UserSimulatorSettings = typeof userSimulatorSettings.$inferSelect;
 export type InsertUserSimulatorSettings = z.infer<typeof insertUserSimulatorSettingsSchema>;
+
+export type QuestComment = typeof questComments.$inferSelect;
+export type InsertQuestComment = z.infer<typeof insertQuestCommentSchema>;
 
 export type MissionComment = typeof missionComments.$inferSelect;
 export type InsertMissionComment = z.infer<typeof insertMissionCommentSchema>;
@@ -762,4 +789,21 @@ export const usersRelations = relations(users, ({ many }) => ({
   lootBoxes: many(lootBoxes),
   circuitProjects: many(circuitProjects),
   simulatorSettings: many(userSimulatorSettings),
+  questComments: many(questComments),
+}));
+
+export const questCommentsRelations = relations(questComments, ({ one, many }) => ({
+  quest: one(quests, {
+    fields: [questComments.questId],
+    references: [quests.id],
+  }),
+  user: one(users, {
+    fields: [questComments.userId],
+    references: [users.id],
+  }),
+  parent: one(questComments, {
+    fields: [questComments.parentId],
+    references: [questComments.id],
+  }),
+  replies: many(questComments),
 }));

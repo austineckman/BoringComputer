@@ -6386,7 +6386,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   
                   {/* Hero Image */}
                   <div className="mb-4">
-                    <label className="block text-gray-300 text-sm mb-1">Hero Image</label>
+                    <label className="block text-gray-300 text-sm mb-1">Hero Image (Quest Detail Page)</label>
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
@@ -6496,6 +6496,128 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                     )}
                   </div>
                   
+                  {/* Expected Result GIF */}
+                  <div className="mb-4">
+                    <label className="block text-gray-300 text-sm mb-1">Expected Result GIF (Active Quest Screen)</label>
+                    <p className="text-xs text-gray-400 mb-2">Upload a GIF showing the expected circuit behavior for the active quest screen</p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        className="flex-1 px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as any).content?.images?.[1] || ''}
+                        readOnly
+                        placeholder="Expected result GIF URL will appear here after upload"
+                      />
+                      <input
+                        type="file"
+                        accept="image/gif"
+                        className="hidden"
+                        id="quest-result-gif-upload"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          
+                          // Create a FormData object
+                          const formData = new FormData();
+                          formData.append('image', file);
+                          
+                          try {
+                            // First, get the CSRF token
+                            const csrfResponse = await fetch('/api/csrf-token', {
+                              credentials: 'include'
+                            });
+                            
+                            if (!csrfResponse.ok) {
+                              throw new Error('Failed to get CSRF token');
+                            }
+                            
+                            const csrfData = await csrfResponse.json();
+                            
+                            // Upload the image with CSRF token
+                            const response = await fetch('/api/admin/upload-image', {
+                              method: 'POST',
+                              body: formData,
+                              headers: {
+                                'X-CSRF-Token': csrfData.token
+                              },
+                              credentials: 'include'
+                            });
+                            
+                            if (!response.ok) {
+                              throw new Error(`Upload failed: ${response.statusText}`);
+                            }
+                            
+                            const data = await response.json();
+                            
+                            // Update the form with the new image path in content.images[1]
+                            const currentQuest = editingItem as any;
+                            const currentImages = currentQuest.content?.images || [];
+                            const updatedImages = [...currentImages];
+                            
+                            // Ensure we have at least 2 slots, and set the second image as the result GIF
+                            if (updatedImages.length < 2) {
+                              updatedImages.push('', data.url);
+                            } else {
+                              updatedImages[1] = data.url;
+                            }
+                            
+                            const updatedQuest = {
+                              ...currentQuest,
+                              content: {
+                                ...currentQuest.content,
+                                images: updatedImages,
+                                videos: currentQuest.content?.videos || [],
+                                codeBlocks: currentQuest.content?.codeBlocks || []
+                              }
+                            };
+                            setEditingItem(updatedQuest);
+                            
+                            setNotificationMessage({
+                              type: 'success',
+                              message: 'Expected result GIF uploaded successfully'
+                            });
+                            
+                            setTimeout(() => {
+                              setNotificationMessage(null);
+                            }, 3000);
+                          } catch (err) {
+                            const error = err as Error;
+                            console.error('Error uploading GIF:', error);
+                            
+                            setNotificationMessage({
+                              type: 'error',
+                              message: `Failed to upload expected result GIF: ${error.message}`
+                            });
+                            
+                            setTimeout(() => {
+                              setNotificationMessage(null);
+                            }, 3000);
+                          }
+                        }}
+                      />
+                      <button
+                        className="px-4 py-2 bg-gray-800 text-gray-300 rounded hover:bg-gray-700 flex items-center"
+                        onClick={() => document.getElementById('quest-result-gif-upload')?.click()}
+                        onMouseEnter={() => window.sounds?.hover()}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Result GIF
+                      </button>
+                    </div>
+                    {(editingItem as any).content?.images?.[1] && (
+                      <div className="mt-2 bg-gray-800 rounded-md overflow-hidden">
+                        <div className="text-xs text-gray-400 p-2">Expected Result GIF Preview</div>
+                        <div className="h-32 flex items-center justify-center p-2">
+                          <img 
+                            src={(editingItem as any).content?.images?.[1]} 
+                            alt="Expected Result GIF Preview" 
+                            className="max-h-full max-w-full object-contain" 
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Content Images */}
                   <div className="mb-4">
                     <div className="flex justify-between items-center mb-2">
