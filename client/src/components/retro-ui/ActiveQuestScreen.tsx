@@ -88,6 +88,12 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   // Fetch comments
   const { data: comments, isLoading: commentsLoading, refetch: refetchComments } = useQuery<QuestComment[]>({
     queryKey: [`/api/quests/${questId}/comments`],
+    refetchOnWindowFocus: false,
+    staleTime: 0, // Always refetch to get latest comments
+    select: (data) => {
+      console.log('Raw comments data from API:', data);
+      return data;
+    }
   });
 
   // Timer for unlocking cheat
@@ -110,10 +116,11 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
       console.log('Making API request to add comment:', data);
       return apiRequest('POST', `/api/quests/${questId}/comments`, data);
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log('Comment added successfully:', data);
-      queryClient.invalidateQueries({ queryKey: [`/api/quests/${questId}/comments`] });
-      refetchComments(); // Force immediate refresh
+      // Force a fresh fetch of comments
+      await queryClient.invalidateQueries({ queryKey: [`/api/quests/${questId}/comments`] });
+      await refetchComments();
       setNewComment('');
       setReplyingTo(null);
     },
@@ -405,7 +412,9 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
                 <p className="text-gray-400">Loading comments...</p>
               </div>
             ) : comments && comments.length > 0 ? (
-              comments.map(comment => (
+              comments.map(comment => {
+                console.log('Rendering comment:', comment);
+                return (
                 <div key={comment.id} className="bg-gray-800 rounded-lg p-3">
                   <div className="flex items-start space-x-3">
                     <img 
@@ -492,7 +501,8 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
                     </div>
                   </div>
                 </div>
-              ))
+                );
+              })
             ) : (
               <div className="text-center py-8 text-gray-400">
                 <MessageCircle className="w-16 h-16 mx-auto mb-2" />
