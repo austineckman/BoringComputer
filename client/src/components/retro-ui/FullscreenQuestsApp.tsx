@@ -198,6 +198,11 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                       const lootboxConfig = isLootbox ? lootBoxConfigsMap[reward.id] : null;
                       const rarityClass = item?.rarity ? getRarityColorClass(item.rarity) : 'border-gray-600';
                       
+                      // Debug logging for reward display
+                      if (isLootbox && !lootboxConfig) {
+                        console.log('Missing lootbox config for:', reward.id);
+                      }
+                      
                       return (
                         <div 
                           key={`${reward.id}-${idx}`}
@@ -218,17 +223,32 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                                 className="w-10 h-10 object-contain"
                                 style={{ imageRendering: 'pixelated' }}
                               />
+                            ) : isLootbox ? (
+                              <Gift className="w-8 h-8 text-yellow-400" />
                             ) : (
                               <Package className="w-8 h-8 text-gray-400" />
                             )}
                           </div>
                           <div className="flex-1">
                             <h3 className="text-white font-semibold text-base">
-                              {item?.name || (lootboxConfig ? lootboxConfig.name : reward.id)}
+                              {item?.name || (isLootbox && lootboxConfig ? lootboxConfig.name : isLootbox ? `${reward.id} Loot Box` : reward.id)}
                             </h3>
                             <p className="text-gray-400 text-sm">
-                              {item?.description || (lootboxConfig ? lootboxConfig.description : 'Reward item')}
+                              {item?.description || (isLootbox && lootboxConfig ? lootboxConfig.description : isLootbox ? 'Contains random rewards and materials' : 'Reward item')}
                             </p>
+                            {item?.rarity && (
+                              <div className="mt-1">
+                                <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
+                                  item.rarity === 'legendary' ? 'bg-yellow-400/20 text-yellow-400' :
+                                  item.rarity === 'epic' ? 'bg-purple-400/20 text-purple-400' :
+                                  item.rarity === 'rare' ? 'bg-blue-400/20 text-blue-400' :
+                                  item.rarity === 'uncommon' ? 'bg-green-400/20 text-green-400' :
+                                  'bg-gray-400/20 text-gray-400'
+                                }`}>
+                                  {item.rarity.toUpperCase()}
+                                </span>
+                              </div>
+                            )}
                           </div>
                           <div className="px-3 py-1 bg-brand-orange/90 rounded-full text-white text-sm font-bold">
                             {reward.quantity}x

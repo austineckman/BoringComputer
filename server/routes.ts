@@ -413,6 +413,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public lootbox configurations endpoint
+  app.get('/api/lootbox-configs', async (req, res) => {
+    try {
+      const configs = await storage.getLootBoxConfigs();
+      res.json(configs);
+    } catch (error) {
+      console.error('Error fetching lootbox configurations:', error);
+      res.status(500).json({ error: 'Failed to fetch lootbox configurations' });
+    }
+  });
+
   // Quest completion endpoint
   app.post('/api/quests/:questId/complete', authenticate, async (req, res) => {
     try {
