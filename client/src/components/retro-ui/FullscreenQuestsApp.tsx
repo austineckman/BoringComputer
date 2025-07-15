@@ -442,7 +442,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
     const questCodeBlocks = selectedQuest.content?.codeBlocks || [];
     
     return (
-      <div className="flex-1 overflow-y-auto p-6 max-w-7xl mx-auto">
+      <div className="flex-1 overflow-y-auto p-6 max-w-6xl mx-auto">
         {/* Back button */}
         <button 
           className="flex items-center text-white hover:text-brand-orange mb-4 bg-gray-900/90 px-4 py-2 rounded-md border border-brand-orange/50 shadow-md"
@@ -457,154 +457,97 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
           Back to Quest List
         </button>
         
-        {/* Quest content container with semi-transparent background */}
-        <div className="bg-gray-900/80 rounded-lg shadow-lg border border-brand-orange/30 overflow-hidden">
-          {/* Hero section with reduced height image */}
-          <div className="relative">
+        {/* Main quest intro layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Left column - Hero Image and Title */}
+          <div className="bg-gray-900/80 rounded-lg shadow-lg border border-brand-orange/30 overflow-hidden">
+            {/* Hero image */}
             {questImages[0] && (
-              <div className="w-full h-48 md:h-56 lg:h-64 overflow-hidden">
-                <img 
-                  src={questImages[0]} 
-                  alt={selectedQuest.title}
-                  className="w-full h-full object-cover"
-                />
-                {/* Gradient overlay to improve text visibility */}
-                <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent opacity-80"></div>
+              <div className="relative">
+                <div className="w-full h-80 overflow-hidden">
+                  <img 
+                    src={questImages[0]} 
+                    alt={selectedQuest.title}
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Dark gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
+                </div>
+                
+                {/* Title overlay */}
+                <div className="absolute bottom-0 left-0 right-0 p-6">
+                  <h1 className="text-3xl md:text-4xl font-bold text-white text-shadow mb-2">{selectedQuest.title}</h1>
+                  <div className="flex flex-wrap items-center gap-4 text-shadow">
+                    <span className="text-brand-orange flex items-center text-lg font-semibold">
+                      <Award className="h-6 w-6 mr-1" />
+                      {selectedQuest.xpReward} XP
+                    </span>
+                    <span className="text-yellow-400 text-lg">
+                      {Array(selectedQuest.difficulty).fill('★').join('')}
+                    </span>
+                  </div>
+                </div>
               </div>
             )}
             
-            {/* Title and info positioned over image with better contrast */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
-              <h1 className="text-2xl md:text-3xl font-bold text-white text-shadow mb-1">{selectedQuest.title}</h1>
-              <div className="flex flex-wrap items-center gap-4 text-shadow">
-                <span className="text-brand-orange flex items-center">
-                  <Award className="h-5 w-5 mr-1" />
-                  {selectedQuest.xpReward} XP
-                </span>
-                <span className="text-yellow-400">
-                  Difficulty: {Array(selectedQuest.difficulty).fill('★').join('')}
-                </span>
-                <span className="text-blue-300">
-                  Adventure: {selectedQuest.adventureLine}
-                </span>
-                <span className="text-gray-300">
-                  Order: {selectedQuest.orderInLine}
-                </span>
-              </div>
+            {/* Quest description */}
+            <div className="p-6 bg-gray-800/50">
+              <p className="text-lg text-white leading-relaxed">{selectedQuest.description}</p>
             </div>
           </div>
           
-          {/* Quest description section with better contrast */}
-          <div className="px-6 py-6 bg-gray-800/50">
-            <p className="text-lg text-white leading-relaxed">{selectedQuest.description}</p>
+          {/* Right column - Mission Brief and Key Info */}
+          <div className="space-y-4">
+            {/* Mission Brief */}
+            {selectedQuest.missionBrief && (
+              <div className="bg-gray-900/80 border border-brand-orange/30 rounded-lg shadow-lg">
+                <div className="bg-gray-800/60 px-6 py-4 border-b border-brand-orange/30">
+                  <h2 className="text-xl font-bold text-brand-orange">Mission Brief</h2>
+                </div>
+                <div className="p-6">
+                  <p className="text-white leading-relaxed whitespace-pre-line">{selectedQuest.missionBrief}</p>
+                </div>
+              </div>
+            )}
+            
+            {/* Adventure Line Info */}
+            <div className="bg-gray-900/80 border border-brand-orange/30 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-blue-300 font-semibold">Adventure Line:</span>
+                <span className="text-white">{selectedQuest.adventureLine}</span>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-gray-300 font-semibold">Quest Order:</span>
+                <span className="text-white">#{selectedQuest.orderInLine}</span>
+              </div>
+            </div>
+            
+            {/* RuneScape-style Start Quest Button */}
+            <div className="bg-gray-900/80 border border-brand-orange/30 rounded-lg p-6">
+              <button
+                className="w-full py-4 bg-gradient-to-b from-orange-500 to-orange-700 hover:from-orange-600 hover:to-orange-800 border-2 border-orange-400 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200 font-bold text-white text-xl tracking-wide"
+                onClick={() => {
+                  window.sounds?.click();
+                  if (selectedQuest) {
+                    setActiveQuestId(selectedQuest.id.toString());
+                    setQuestView('active');
+                  }
+                }}
+                onMouseEnter={() => window.sounds?.hover()}
+                style={{
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+                  boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.2), 0 4px 8px rgba(0,0,0,0.3)'
+                }}
+              >
+                ⚔️ START QUEST ⚔️
+              </button>
+            </div>
           </div>
         </div>
         
-        {/* Mission brief section with improved readability */}
-        {selectedQuest.missionBrief && (
-          <div className="mt-6 bg-gray-900/80 border border-brand-orange/30 rounded-lg p-6 shadow-lg">
-            <h2 className="text-xl font-bold text-brand-orange mb-4 border-b border-brand-orange/30 pb-2">Mission Brief</h2>
-            <p className="text-white leading-relaxed whitespace-pre-line">{selectedQuest.missionBrief}</p>
-          </div>
-        )}
-        
-        {/* Rewards section */}
-        {selectedQuest.rewards && selectedQuest.rewards.length > 0 && (
-          <div className="mt-6 bg-gray-900/80 border border-brand-orange/30 rounded-lg shadow-lg overflow-hidden">
-            <div className="bg-gray-800/60 px-6 py-4 border-b border-brand-orange/30">
-              <h2 className="text-xl font-bold text-brand-orange flex items-center">
-                <Gift className="h-5 w-5 mr-2" />
-                Quest Rewards
-              </h2>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {selectedQuest.rewards.map((reward, idx) => {
-                  // Find item details
-                  const item = items?.find(i => i.id === reward.id);
-                  
-                  // Check if this is a lootbox type reward
-                  const isLootbox = reward.type === 'lootbox';
-                  // Get lootbox config if available
-                  const lootboxConfig = isLootbox ? getLootBoxConfigById(lootBoxConfigsMap, reward.id) : null;
-                  
-                  // Debug logging to help identify image issues
-                  console.log(`Reward [${idx}] - ID: ${reward.id}, Type: ${reward.type}`);
-                  console.log(`Item found: ${!!item}, Image path: ${item?.imagePath}`);
-                  console.log(`Is lootbox: ${isLootbox}, Lootbox config found: ${!!lootboxConfig}, Image: ${lootboxConfig?.image}`);
-                  
-                  // Determine rarity class for border color
-                  const rarityClass = item?.rarity ? getRarityColorClass(item.rarity) : 'border-gray-600';
-                  
-                  return (
-                    <div 
-                      key={`${reward.id}-${idx}`}
-                      className={`bg-gray-800/70 rounded-lg border ${rarityClass} p-4 flex flex-col items-center hover:shadow-md hover:border-opacity-100 transition-all duration-300`}
-                    >
-                      <div className="bg-gradient-to-b from-gray-700/50 to-black/50 p-3 rounded-lg mb-3 flex items-center justify-center">
-                        {item?.imagePath ? (
-                          // Show item image from database
-                          <img 
-                            src={item.imagePath} 
-                            alt={reward.id}
-                            className="w-20 h-20 object-contain"
-                            style={{ imageRendering: 'pixelated' }}
-                          />
-                        ) : isLootbox && lootboxConfig?.image ? (
-                          // Show lootbox image from lootbox config
-                          <img 
-                            src={lootboxConfig.image} 
-                            alt={lootboxConfig.name}
-                            className="w-20 h-20 object-contain"
-                            style={{ imageRendering: 'pixelated' }}
-                          />
-                        ) : isLootbox ? (
-                          // For lootboxes without config, look for item with matching ID in items list
-                          <img 
-                            src={`/uploads/items/${reward.id}.png`} 
-                            alt={reward.id || "Loot Crate"}
-                            className="w-20 h-20 object-contain"
-                            style={{ imageRendering: 'pixelated' }}
-                            onError={(e) => {
-                              // If image fails to load, try looking for item with this ID
-                              const img = e.currentTarget;
-                              // Try looking for a default image with this generic type
-                              img.src = `/uploads/lootboxes/${reward.id}.png`;
-                              img.onerror = () => {
-                                // As last resort, use our real crate asset
-                                img.src = '/assets/goldcrate.png';
-                              };
-                            }}
-                          />
-                        ) : (
-                          // Show generic package icon with appropriate styling for non-lootbox items
-                          <div className="flex items-center justify-center">
-                            <Package className="w-16 h-16 text-gray-400" />
-                          </div>
-                        )}
-                      </div>
-                      <h3 className="text-white font-semibold text-center mb-1 px-1">
-                        {item?.name || (lootboxConfig ? lootboxConfig.name : reward.id)}
-                      </h3>
-                      <div className="px-2 py-1 bg-brand-orange/90 rounded-full text-white text-xs font-bold mt-1">
-                        {reward.quantity}x
-                      </div>
-                      {item?.description ? (
-                        <p className="text-gray-300 text-xs text-center mt-2 line-clamp-2 px-1">{item.description}</p>
-                      ) : lootboxConfig?.description && (
-                        <p className="text-gray-300 text-xs text-center mt-2 line-clamp-2 px-1">{lootboxConfig.description}</p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
-        
         {/* Required Components section */}
         {selectedQuest.componentRequirements && selectedQuest.componentRequirements.length > 0 && (
-          <div className="mt-6 bg-gray-900/80 border border-brand-orange/30 rounded-lg shadow-lg overflow-hidden">
+          <div className="mb-6 bg-gray-900/80 border border-brand-orange/30 rounded-lg shadow-lg overflow-hidden">
             <div className="bg-gray-800/60 px-6 py-4 border-b border-brand-orange/30">
               <h2 className="text-xl font-bold text-brand-orange flex items-center">
                 <Cpu className="h-5 w-5 mr-2" />
@@ -612,13 +555,13 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
               </h2>
             </div>
             <div className="p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {selectedQuest.componentRequirements.map((component) => (
                   <div 
                     key={component.id}
                     className="bg-gray-800/80 rounded-lg border border-gray-600 hover:border-gray-400 p-4 flex transition-all duration-300"
                   >
-                    <div className="mr-4 flex-shrink-0 flex items-center justify-center bg-black/40 p-2 rounded-md">
+                    <div className="mr-4 flex-shrink-0 flex items-center justify-center bg-black/40 p-3 rounded-md">
                       {component.imagePath ? (
                         <img 
                           src={component.imagePath} 
@@ -630,7 +573,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                         <Cpu className="w-12 h-12 text-gray-400" />
                       )}
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <h3 className="text-white font-semibold mb-1">{component.name}</h3>
                       <p className="text-gray-300 text-sm">{component.description}</p>
                       {component.quantity > 1 && (
@@ -647,6 +590,91 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
             </div>
           </div>
         )}
+        
+        {/* Rewards section */}
+        {selectedQuest.rewards && selectedQuest.rewards.length > 0 && (
+          <div className="mb-6 bg-gray-900/80 border border-brand-orange/30 rounded-lg shadow-lg overflow-hidden">
+            <div className="bg-gray-800/60 px-6 py-4 border-b border-brand-orange/30">
+              <h2 className="text-xl font-bold text-brand-orange flex items-center">
+                <Gift className="h-5 w-5 mr-2" />
+                Quest Rewards
+              </h2>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {selectedQuest.rewards.map((reward, idx) => {
+                  // Find item details
+                  const item = items?.find(i => i.id === reward.id);
+                  
+                  // Check if this is a lootbox type reward
+                  const isLootbox = reward.type === 'lootbox';
+                  // Get lootbox config if available
+                  const lootboxConfig = isLootbox ? getLootBoxConfigById(lootBoxConfigsMap, reward.id) : null;
+                  
+                  // Determine rarity class for border color
+                  const rarityClass = item?.rarity ? getRarityColorClass(item.rarity) : 'border-gray-600';
+                  
+                  return (
+                    <div 
+                      key={`${reward.id}-${idx}`}
+                      className={`bg-gray-800/70 rounded-lg border ${rarityClass} p-4 flex flex-col items-center hover:shadow-md hover:border-opacity-100 transition-all duration-300`}
+                    >
+                      <div className="bg-gradient-to-b from-gray-700/50 to-black/50 p-3 rounded-lg mb-3 flex items-center justify-center">
+                        {item?.imagePath ? (
+                          // Show item image from database
+                          <img 
+                            src={item.imagePath} 
+                            alt={reward.id}
+                            className="w-12 h-12 object-contain"
+                            style={{ imageRendering: 'pixelated' }}
+                          />
+                        ) : isLootbox && lootboxConfig?.image ? (
+                          // Show lootbox image from lootbox config
+                          <img 
+                            src={lootboxConfig.image} 
+                            alt={lootboxConfig.name}
+                            className="w-12 h-12 object-contain"
+                            style={{ imageRendering: 'pixelated' }}
+                          />
+                        ) : isLootbox ? (
+                          // For lootboxes without config, look for item with matching ID in items list
+                          <img 
+                            src={`/uploads/items/${reward.id}.png`} 
+                            alt={reward.id || "Loot Crate"}
+                            className="w-12 h-12 object-contain"
+                            style={{ imageRendering: 'pixelated' }}
+                            onError={(e) => {
+                              // If image fails to load, try looking for item with this ID
+                              const img = e.currentTarget;
+                              // Try looking for a default image with this generic type
+                              img.src = `/uploads/lootboxes/${reward.id}.png`;
+                              img.onerror = () => {
+                                // As last resort, use our real crate asset
+                                img.src = '/assets/goldcrate.png';
+                              };
+                            }}
+                          />
+                        ) : (
+                          // Show generic package icon with appropriate styling for non-lootbox items
+                          <div className="flex items-center justify-center">
+                            <Package className="w-10 h-10 text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="text-white font-semibold text-center text-sm mb-1 px-1 line-clamp-2">
+                        {item?.name || (lootboxConfig ? lootboxConfig.name : reward.id)}
+                      </h3>
+                      <div className="px-2 py-1 bg-brand-orange/90 rounded-full text-white text-xs font-bold">
+                        {reward.quantity}x
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
         
         {/* Images gallery */}
         {questImages.length > 1 && (
@@ -789,23 +817,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
             </div>
           </div>
         )}
-        
-        {/* Action buttons */}
-        <div className="flex justify-end space-x-4">
-          <button
-            className="px-6 py-3 bg-brand-orange text-white font-medium rounded-md hover:bg-brand-orange/80 transition-colors"
-            onClick={() => {
-              window.sounds?.click();
-              if (selectedQuest) {
-                setActiveQuestId(selectedQuest.id.toString());
-                setQuestView('active');
-              }
-            }}
-            onMouseEnter={() => window.sounds?.hover()}
-          >
-            Start Quest
-          </button>
-        </div>
+
       </div>
     );
   };
