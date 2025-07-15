@@ -12,6 +12,7 @@ import { useLootBoxConfigs, getLootBoxConfigById, getRarityColorClass } from '..
 import questImage from '@assets/01_Fire_Grimoire.png';
 import wallbg from '@assets/wallbg.png';
 import defaultLootboxImage from '@assets/goldcrate.png';
+import ActiveQuestScreen from './ActiveQuestScreen';
 
 // For sounds
 declare global {
@@ -50,7 +51,8 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
   const [selectedAdventureLine, setSelectedAdventureLine] = useState<string | null>(null);
   const [filteredQuests, setFilteredQuests] = useState<Quest[]>([]);
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
-  const [questView, setQuestView] = useState<'list' | 'detail'>('list');
+  const [questView, setQuestView] = useState<'list' | 'detail' | 'active'>('list');
+  const [activeQuestId, setActiveQuestId] = useState<string | null>(null);
   
   // Initialize filtered quests when allQuests changes
   // Combined effect that only runs when filters or data changes
@@ -792,7 +794,13 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
         <div className="flex justify-end space-x-4">
           <button
             className="px-6 py-3 bg-brand-orange text-white font-medium rounded-md hover:bg-brand-orange/80 transition-colors"
-            onClick={() => window.sounds?.click()}
+            onClick={() => {
+              window.sounds?.click();
+              if (selectedQuest) {
+                setActiveQuestId(selectedQuest.id.toString());
+                setQuestView('active');
+              }
+            }}
             onMouseEnter={() => window.sounds?.hover()}
           >
             Start Quest
@@ -839,7 +847,25 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
       
       {/* Main content */}
       <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
-        {questView === 'list' ? (
+        {questView === 'active' && activeQuestId ? (
+          <ActiveQuestScreen
+            questId={activeQuestId}
+            onClose={() => {
+              setQuestView('list');
+              setActiveQuestId(null);
+            }}
+            onComplete={() => {
+              setQuestView('list');
+              setActiveQuestId(null);
+              // Refresh quest data
+              window.location.reload();
+            }}
+            onAbandon={() => {
+              setQuestView('list');
+              setActiveQuestId(null);
+            }}
+          />
+        ) : questView === 'list' ? (
           <>
             {/* Sidebar with filters - only show in list view */}
             <div className="w-full md:w-64 bg-space-dark/80 p-4 border-r border-brand-orange/30 overflow-y-auto">
