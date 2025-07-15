@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, json, boolean, jsonb, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, bigint, timestamp, json, boolean, jsonb, primaryKey } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -25,7 +25,7 @@ export const users = pgTable("users", {
 
 // Quests table
 export const quests = pgTable("quests", {
-  id: serial("id").primaryKey(),
+  id: bigint("id", { mode: "number" }).primaryKey(),
   date: text("date").notNull(), // YYYY-MM-DD format
   title: text("title").notNull(),
   description: text("description").notNull(),  // Will be used as flavor text
@@ -57,7 +57,7 @@ export const quests = pgTable("quests", {
 export const userQuests = pgTable("user_quests", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
-  questId: integer("quest_id").notNull(),
+  questId: bigint("quest_id", { mode: "number" }).notNull(),
   status: text("status").notNull(), // active, completed, available, upcoming, locked
   startedAt: timestamp("started_at"),
   completedAt: timestamp("completed_at"),
@@ -67,7 +67,7 @@ export const userQuests = pgTable("user_quests", {
 export const submissions = pgTable("submissions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
-  questId: integer("quest_id").notNull(),
+  questId: bigint("quest_id", { mode: "number" }).notNull(),
   description: text("description").notNull(),
   code: text("code"),
   image: text("image"), // Base64 encoded
@@ -633,7 +633,7 @@ export const kitComponents = pgTable("kit_components", {
 // Quest Components table - tracks which components are required for each quest
 export const questComponents = pgTable("quest_components", {
   id: serial("id").primaryKey(),
-  questId: integer("quest_id").notNull(),
+  questId: bigint("quest_id", { mode: "number" }).notNull(),
   componentId: integer("component_id").notNull(), // References the kit_components table
   quantity: integer("quantity").default(1), // How many of this component are needed
   isOptional: boolean("is_optional").default(false), // Whether this component is optional for quest completion
