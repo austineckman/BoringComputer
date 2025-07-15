@@ -309,6 +309,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [auctionListings, setAuctionListings] = useState<AuctionListing[]>([]);
   const [activeKitId, setActiveKitId] = useState<string | null>(null);
   const [selectedQuestKitId, setSelectedQuestKitId] = useState<string | null>(null);
+  const [selectedQuestLine, setSelectedQuestLine] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [questFlowMode, setQuestFlowMode] = useState(false);
   const [draggedQuest, setDraggedQuest] = useState<Quest | null>(null);
@@ -2098,31 +2099,146 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     );
   };
 
-  // Render campaign automation-style quest flow
-  const renderQuestFlow = () => {
-    const selectedKit = componentKits.find(kit => kit.id === selectedQuestKitId);
+  // Helper function to get unique quest lines for a kit
+  const getQuestLinesForKit = (kitId: string) => {
     const kitQuests = quests.filter(quest => {
       if (!quest.componentRequirements || quest.componentRequirements.length === 0) return false;
-      const kitComponentsList = kitComponents[selectedQuestKitId!] || [];
+      const kitComponentsList = kitComponents[kitId] || [];
       const kitComponentNames = kitComponentsList.map(comp => comp?.name?.toLowerCase()).filter(Boolean);
       return quest.componentRequirements.some(requirement => 
         requirement?.name && kitComponentNames.includes(requirement.name.toLowerCase())
       );
     });
+    
+    const uniqueLines = [...new Set(kitQuests.map(quest => quest.adventureLine))];
+    return uniqueLines.map(line => ({
+      name: line,
+      questCount: kitQuests.filter(quest => quest.adventureLine === line).length
+    }));
+  };
+
+  // Render campaign automation-style quest flow
+  const renderQuestFlow = () => {
+    const selectedKit = componentKits.find(kit => kit.id === selectedQuestKitId);
+    
+    // If no quest line is selected, show quest line selection
+    if (!selectedQuestLine) {
+      const questLines = getQuestLinesForKit(selectedQuestKitId!);
+      
+      return (
+        <div className="h-full flex flex-col">
+          {/* Quest Line Selection Header */}
+          <div className="border-b border-gray-700 p-4 bg-black/40">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => {
+                    setSelectedQuestKitId(null);
+                    setSelectedQuestLine(null);
+                  }}
+                  className="flex items-center text-gray-400 hover:text-white transition-colors"
+                  onMouseEnter={() => window.sounds?.hover()}
+                >
+                  <ArrowRight className="h-4 w-4 mr-2 rotate-180" />
+                  Back to Kit Selection
+                </button>
+                <div className="w-px h-6 bg-gray-600"></div>
+                <div className="flex items-center space-x-3">
+                  {selectedKit?.imagePath && (
+                    <img 
+                      src={selectedKit.imagePath}
+                      alt={selectedKit.name}
+                      className="w-10 h-10 object-contain"
+                      style={{imageRendering: 'pixelated'}}
+                    />
+                  )}
+                  <div>
+                    <h3 className="text-lg font-bold text-white">{selectedKit?.name}</h3>
+                    <p className="text-sm text-gray-400">Select Quest Line</p>
+                  </div>
+                </div>
+              </div>
+              
+              <button
+                className="px-3 py-2 bg-brand-orange/80 text-white rounded-md hover:bg-brand-orange transition-colors flex items-center"
+                onClick={() => {
+                  const newQuestLineName = prompt('Enter quest line name:');
+                  if (newQuestLineName) {
+                    setSelectedQuestLine(newQuestLineName);
+                    window.sounds?.click();
+                  }
+                }}
+                onMouseEnter={() => window.sounds?.hover()}
+              >
+                <PlusCircle className="h-4 w-4 mr-1" />
+                New Quest Line
+              </button>
+            </div>
+          </div>
+
+          {/* Quest Lines Grid */}
+          <div className="flex-1 p-6 overflow-y-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {questLines.map((questLine, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 hover:bg-gray-800/70 cursor-pointer transition-colors"
+                  onClick={() => {
+                    setSelectedQuestLine(questLine.name);
+                    window.sounds?.click();
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-white font-semibold">{questLine.name}</h4>
+                    <span className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded">
+                      {questLine.questCount} quest{questLine.questCount !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-400">
+                    Click to view and edit this quest line
+                  </p>
+                </div>
+              ))}
+              
+              {/* Empty state for no quest lines */}
+              {questLines.length === 0 && (
+                <div className="col-span-full text-center py-12 text-gray-400">
+                  <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No quest lines found for this kit</p>
+                  <p className="text-sm mt-2">Create a new quest line to get started</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // If quest line is selected, show individual quests in that line
+    const kitQuests = quests.filter(quest => {
+      if (!quest.componentRequirements || quest.componentRequirements.length === 0) return false;
+      const kitComponentsList = kitComponents[selectedQuestKitId!] || [];
+      const kitComponentNames = kitComponentsList.map(comp => comp?.name?.toLowerCase()).filter(Boolean);
+      const matchesKit = quest.componentRequirements.some(requirement => 
+        requirement?.name && kitComponentNames.includes(requirement.name.toLowerCase())
+      );
+      const matchesLine = quest.adventureLine === selectedQuestLine;
+      return matchesKit && matchesLine;
+    });
 
     return (
       <div className="h-full flex flex-col">
-        {/* Flow Builder Header */}
+        {/* Quest Flow Header */}
         <div className="border-b border-gray-700 p-4 bg-black/40">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => setSelectedQuestKitId(null)}
+                onClick={() => setSelectedQuestLine(null)}
                 className="flex items-center text-gray-400 hover:text-white transition-colors"
                 onMouseEnter={() => window.sounds?.hover()}
               >
                 <ArrowRight className="h-4 w-4 mr-2 rotate-180" />
-                Back to Kit Selection
+                Back to Quest Lines
               </button>
               <div className="w-px h-6 bg-gray-600"></div>
               <div className="flex items-center space-x-3">
@@ -2136,7 +2252,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 )}
                 <div>
                   <h3 className="text-lg font-bold text-white">{selectedKit?.name}</h3>
-                  <p className="text-sm text-gray-400">Quest Flow Builder</p>
+                  <p className="text-sm text-gray-400">{selectedQuestLine}</p>
                 </div>
               </div>
             </div>
@@ -2161,7 +2277,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                     id: `new-quest-${Date.now()}`,
                     title: 'New Quest',
                     description: 'A new epic quest awaits brave adventurers!',
-                    adventureLine: selectedKit?.name || '30 Days Lost in Space',
+                    adventureLine: selectedQuestLine || selectedKit?.name || '30 Days Lost in Space',
                     xpReward: 100,
                     difficulty: 3,
                     rewards: [],
@@ -2184,7 +2300,40 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
 
         {/* Flow Canvas */}
         <div className="flex-1 relative overflow-hidden bg-gradient-to-br from-gray-900 via-black to-gray-900">
-          {questFlowMode ? (
+          {/* Empty state for new quest lines */}
+          {kitQuests.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full">
+              <div className="text-center mb-8">
+                <div className="flex justify-center mb-6">
+                  <button
+                    onClick={() => {
+                      const newQuest: Quest = {
+                        id: `new-quest-${Date.now()}`,
+                        title: 'New Quest',
+                        description: 'A new epic quest awaits brave adventurers!',
+                        adventureLine: selectedQuestLine || selectedKit?.name || '30 Days Lost in Space',
+                        xpReward: 100,
+                        difficulty: 3,
+                        rewards: [],
+                        status: 'available',
+                        componentRequirements: []
+                      };
+                      setEditingItem(newQuest);
+                      setEditingType('quest');
+                      setIsCreatingNewItem(true);
+                      window.sounds?.click();
+                    }}
+                    className="w-20 h-20 bg-brand-orange/20 hover:bg-brand-orange/30 border-2 border-brand-orange border-dashed rounded-lg flex items-center justify-center transition-colors group"
+                    onMouseEnter={() => window.sounds?.hover()}
+                  >
+                    <Plus className="h-8 w-8 text-brand-orange group-hover:scale-110 transition-transform" />
+                  </button>
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Start Your Quest Line</h3>
+                <p className="text-gray-400">Click the plus button above to create your first quest in this line</p>
+              </div>
+            </div>
+          ) : questFlowMode ? (
             <DndProvider backend={HTML5Backend}>
               <QuestFlowCanvas 
                 quests={kitQuests}
