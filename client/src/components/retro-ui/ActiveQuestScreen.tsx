@@ -71,7 +71,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   const queryClient = useQueryClient();
 
   // Use passed quest data or fetch from API as fallback
-  const { data: fetchedQuest, isLoading: questLoading } = useQuery<QuestData>({
+  const { data: fetchedQuest, isLoading: questLoading, error: questError } = useQuery<QuestData>({
     queryKey: [`/api/quests/${questId}`],
     enabled: !questData, // Only fetch if questData is not provided
   });

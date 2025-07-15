@@ -360,9 +360,10 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
       
       {/* Main content */}
       <div className="flex-1 flex flex-col">
-        {questView === 'active' && activeQuestId ? (
+        {questView === 'active' && activeQuestId && selectedQuest ? (
           <ActiveQuestScreen
             questId={activeQuestId}
+            questData={selectedQuest}
             onClose={() => {
               setQuestView('quest-list');
               setActiveQuestId(null);
