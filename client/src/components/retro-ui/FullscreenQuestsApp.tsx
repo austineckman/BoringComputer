@@ -47,7 +47,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
       console.log('Lootbox configs loaded:', lootBoxConfigs.length);
       console.log('Lootbox configs map size:', Object.keys(lootBoxConfigsMap).length);
     }
-  }, [loadingLootBoxConfigs, lootBoxConfigs.length, Object.keys(lootBoxConfigsMap).length]);
+  }, [loadingLootBoxConfigs, lootBoxConfigs.length]);
   const [selectedAdventureLine, setSelectedAdventureLine] = useState<string | null>(null);
   const [filteredQuests, setFilteredQuests] = useState<Quest[]>([]);
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
@@ -850,6 +850,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
         {questView === 'active' && activeQuestId ? (
           <ActiveQuestScreen
             questId={activeQuestId}
+            questData={allQuests?.find(q => q.id.toString() === activeQuestId)}
             onClose={() => {
               setQuestView('list');
               setActiveQuestId(null);
