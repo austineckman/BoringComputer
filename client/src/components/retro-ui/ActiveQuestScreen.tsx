@@ -104,10 +104,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   const addCommentMutation = useMutation({
     mutationFn: async (data: { content: string; parentId?: string }) => {
       console.log('Making API request to add comment:', data);
-      return apiRequest(`/api/quests/${questId}/comments`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      return apiRequest('POST', `/api/quests/${questId}/comments`, data);
     },
     onSuccess: (data) => {
       console.log('Comment added successfully:', data);
@@ -123,10 +120,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   // React to comment mutation
   const reactToCommentMutation = useMutation({
     mutationFn: async (data: { commentId: string; emoji: string }) => {
-      return apiRequest(`/api/quests/${questId}/comments/${data.commentId}/reactions`, {
-        method: 'POST',
-        body: JSON.stringify({ emoji: data.emoji }),
-      });
+      return apiRequest('POST', `/api/quests/${questId}/comments/${data.commentId}/reactions`, { emoji: data.emoji });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/quests/${questId}/comments`] });
@@ -136,12 +130,9 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   // Complete quest mutation
   const completeQuestMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/quests/${questId}/complete`, {
-        method: 'POST',
-        body: JSON.stringify({
-          submission: "Quest completed via active quest screen",
-          image: null
-        }),
+      return apiRequest('POST', `/api/quests/${questId}/complete`, {
+        submission: "Quest completed via active quest screen",
+        image: null
       });
     },
     onSuccess: () => {
@@ -152,9 +143,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   // Abandon quest mutation
   const abandonQuestMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/quests/${questId}/abandon`, {
-        method: 'POST',
-      });
+      return apiRequest('POST', `/api/quests/${questId}/abandon`);
     },
     onSuccess: () => {
       if (onAbandon) onAbandon();
