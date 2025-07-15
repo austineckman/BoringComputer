@@ -1712,7 +1712,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 const kitComponentsList = kitComponents[selectedQuestKitId!] || [];
                 
                 const newQuest: Quest = {
-                  id: `quest-${Date.now()}`,
+                  id: Date.now().toString(),
                   title: "New Quest",
                   description: "A new quest to configure",
                   difficulty: 1,
@@ -4450,7 +4450,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 } else if (activeTab === 'quests') {
                   // Create a new quest with default values
                   const newQuest: Quest = {
-                    id: `new-quest-${Date.now()}`, // Temporary ID, will be replaced by server
+                    id: Date.now().toString(), // Numeric ID as string
                     title: 'New Quest',
                     description: 'A new epic quest awaits brave adventurers!',
                     adventureLine: '30 Days Lost in Space', // Default adventure line
