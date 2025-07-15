@@ -2145,20 +2145,37 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
 
   // Helper function to get unique quest lines for a kit
   const getQuestLinesForKit = (kitId: string) => {
-    const kitQuests = quests.filter(quest => {
-      if (!quest.componentRequirements || quest.componentRequirements.length === 0) return false;
-      const kitComponentsList = kitComponents[kitId] || [];
-      const kitComponentNames = kitComponentsList.map(comp => comp?.name?.toLowerCase()).filter(Boolean);
-      return quest.componentRequirements.some(requirement => 
-        requirement?.name && kitComponentNames.includes(requirement.name.toLowerCase())
-      );
-    });
+    // Get all adventure lines, not just those that match the kit
+    const uniqueLines = [...new Set(quests.map(quest => quest.adventureLine))];
     
-    const uniqueLines = [...new Set(kitQuests.map(quest => quest.adventureLine))];
-    return uniqueLines.map(line => ({
-      name: line,
-      questCount: kitQuests.filter(quest => quest.adventureLine === line).length
-    }));
+    return uniqueLines.map(line => {
+      // Count quests in this line that match the kit OR have no component requirements
+      const lineQuests = quests.filter(quest => {
+        if (quest.adventureLine !== line) return false;
+        
+        // If quest has a kitId, match by kitId (new approach)
+        if (quest.kitId) {
+          return quest.kitId === kitId;
+        }
+        
+        // If quest has component requirements, match by component names (legacy approach)
+        if (quest.componentRequirements && quest.componentRequirements.length > 0) {
+          const kitComponentsList = kitComponents[kitId] || [];
+          const kitComponentNames = kitComponentsList.map(comp => comp?.name?.toLowerCase()).filter(Boolean);
+          return quest.componentRequirements.some(requirement => 
+            requirement?.name && kitComponentNames.includes(requirement.name.toLowerCase())
+          );
+        }
+        
+        // If quest has no component requirements, include it for all kits
+        return true;
+      });
+      
+      return {
+        name: line,
+        questCount: lineQuests.length
+      };
+    }).filter(line => line.questCount > 0); // Only show lines that have quests
   };
 
   // Render campaign automation-style quest flow
