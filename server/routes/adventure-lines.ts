@@ -10,31 +10,26 @@ router.use(authenticate);
 // Get all adventure lines
 router.get("/api/adventure-lines", async (req: Request, res: Response) => {
   try {
-    // Get distinct adventure lines from the quests table
-    const result = await db.query.quests.findMany({
+    // Get all quests first
+    const allQuests = await db.query.quests.findMany({
       columns: {
         adventureLine: true
-      },
-      distinct: ['adventureLine'],
-      where: (quests, { isNotNull }) => isNotNull(quests.adventureLine)
+      }
     });
     
-    // Transform into the format expected by the frontend
-    const adventureLines = result
-      .filter(item => item.adventureLine) // Filter out any null values
-      .map(item => ({
-        id: item.adventureLine,
-        name: item.adventureLine
-      }));
+    // Get unique adventure lines manually
+    const uniqueLines = [...new Set(allQuests
+      .map(quest => quest.adventureLine)
+      .filter(line => line !== null && line !== undefined)
+    )];
     
-    // If no adventure lines exist yet, provide some defaults
-    if (adventureLines.length === 0) {
-      return res.json([
-        { id: "30 Days Lost in Space", name: "30 Days Lost in Space" },
-        { id: "Cogsworth City", name: "Cogsworth City" },
-        { id: "Neon Realm", name: "Neon Realm" }
-      ]);
-    }
+    // Transform into the format expected by the frontend
+    const adventureLines = uniqueLines.map(line => ({
+      id: line,
+      name: line
+    }));
+    
+    console.log("Adventure lines found:", adventureLines);
     
     res.json(adventureLines);
   } catch (error) {

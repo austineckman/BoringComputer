@@ -156,16 +156,7 @@ const questFormSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { 
     message: "Date must be in YYYY-MM-DD format" 
   }),
-  adventureLine: z.enum([
-    "30 Days Lost in Space", 
-    "Cogsworth City", 
-    "Neon Realm", 
-    "Nebula Raider", 
-    "Pandoras Box"
-  ], { 
-    required_error: "Adventure line is required",
-    invalid_type_error: "Please select a valid adventure line"
-  }),
+  adventureLine: z.string().min(1, { message: "Adventure line is required" }),
   difficulty: z.coerce.number().min(1).max(5),
   orderInLine: z.coerce.number().min(0),
   xpReward: z.coerce.number().min(1),
@@ -594,7 +585,7 @@ const AdminQuests: React.FC = () => {
       description: '',
       missionBrief: '',
       date: new Date().toISOString().split('T')[0],
-      adventureLine: '30 Days Lost in Space',
+      adventureLine: adventureLinesData.length > 0 ? adventureLinesData[0].id : '30 Days Lost in Space',
       difficulty: 1,
       orderInLine: 0,
       xpReward: 100,
@@ -614,13 +605,8 @@ const AdminQuests: React.FC = () => {
 
   // Handle opening the dialog for editing an existing quest
   const handleEditQuest = (quest: Quest) => {
-    // Ensure adventureLine is one of our valid options
+    // Use the quest's existing adventure line
     let validAdventureLine = quest.adventureLine;
-    const validOptions = ["30 Days Lost in Space", "Cogsworth City", "Neon Realm", "Nebula Raider", "Pandoras Box"];
-    
-    if (!validOptions.includes(validAdventureLine)) {
-      validAdventureLine = "30 Days Lost in Space"; // Default if not a valid option
-    }
     
     form.reset({
       title: quest.title,
@@ -825,6 +811,18 @@ const AdminQuests: React.FC = () => {
   // Get unique adventure lines for filter dropdown
   const adventureLines = [...new Set(quests.map((quest: Quest) => quest.adventureLine))];
   
+  // Fetch adventure lines from the API for the form dropdown
+  const { data: adventureLinesData = [], isLoading: loadingAdventureLines } = useQuery({
+    queryKey: ['/api/adventure-lines'],
+    // Use the default queryFn
+    onSuccess: (data) => {
+      console.log("Fetched adventure lines:", data);
+    },
+    onError: (error) => {
+      console.error('Error fetching adventure lines:', error);
+    }
+  });
+  
   return (
     <AdminLayout>
       <div className="container py-6">
@@ -949,19 +947,23 @@ const AdminQuests: React.FC = () => {
                                     defaultValue={field.value}
                                   >
                                     <SelectTrigger>
-                                      <SelectValue placeholder="Select adventure kit" />
+                                      <SelectValue placeholder="Select adventure line" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="30 Days Lost in Space">30 Days Lost in Space</SelectItem>
-                                      <SelectItem value="Cogsworth City">Cogsworth City</SelectItem>
-                                      <SelectItem value="Neon Realm">Neon Realm</SelectItem>
-                                      <SelectItem value="Nebula Raider">Nebula Raider</SelectItem>
-                                      <SelectItem value="Pandoras Box">Pandoras Box</SelectItem>
+                                      {loadingAdventureLines ? (
+                                        <SelectItem value="loading" disabled>Loading...</SelectItem>
+                                      ) : (
+                                        adventureLinesData.map((line: any) => (
+                                          <SelectItem key={line.id} value={line.id}>
+                                            {line.name}
+                                          </SelectItem>
+                                        ))
+                                      )}
                                     </SelectContent>
                                   </Select>
                                 </FormControl>
                                 <FormDescription>
-                                  The kit or topic this quest belongs to
+                                  The adventure line this quest belongs to
                                 </FormDescription>
                                 <FormMessage />
                               </FormItem>
