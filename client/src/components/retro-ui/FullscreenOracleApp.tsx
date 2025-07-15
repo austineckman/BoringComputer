@@ -6417,6 +6417,185 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   </div>
                 </div>
                 
+                {/* Solution/Cheats Section */}
+                <div className="border border-gray-700 rounded-lg p-4 bg-black/30">
+                  <h3 className="text-md font-semibold text-brand-orange mb-4">Solution Helper (Cheats)</h3>
+                  <p className="text-xs text-gray-400 mb-4">
+                    This section provides the complete solution that users can reveal after 5 minutes if they need help.
+                  </p>
+                  
+                  {/* Solution Code */}
+                  <div className="mb-4">
+                    <label className="block text-gray-300 text-sm mb-1">Solution Code</label>
+                    <textarea
+                      className="w-full px-3 py-2 bg-gray-900 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none min-h-[120px] font-mono text-sm"
+                      value={(editingItem as any).solutionCode || ''}
+                      onChange={(e) => {
+                        const updatedQuest = {
+                          ...editingItem as any,
+                          solutionCode: e.target.value
+                        };
+                        setEditingItem(updatedQuest);
+                      }}
+                      placeholder="// Complete Arduino code solution
+void setup() {
+  // Setup code here
+}
+
+void loop() {
+  // Main loop code here
+}"
+                    />
+                  </div>
+                  
+                  {/* Wiring Instructions */}
+                  <div className="mb-4">
+                    <label className="block text-gray-300 text-sm mb-1">Wiring Instructions</label>
+                    <textarea
+                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none min-h-[100px]"
+                      value={(editingItem as any).wiringInstructions || ''}
+                      onChange={(e) => {
+                        const updatedQuest = {
+                          ...editingItem as any,
+                          wiringInstructions: e.target.value
+                        };
+                        setEditingItem(updatedQuest);
+                      }}
+                      placeholder="Step-by-step wiring instructions:
+1. Connect LED positive leg to digital pin 13
+2. Connect LED negative leg to ground through 220Ω resistor
+3. Connect power and ground to breadboard rails
+..."
+                    />
+                  </div>
+                  
+                  {/* Wiring Diagram Image */}
+                  <div className="mb-4">
+                    <label className="block text-gray-300 text-sm mb-1">Wiring Diagram Image</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        className="flex-1 px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
+                        value={(editingItem as any).wiringDiagram || ''}
+                        readOnly
+                        placeholder="Wiring diagram image URL will appear here after upload"
+                      />
+                      <input
+                        type="file"
+                        accept="image/png, image/jpeg, image/gif, image/webp"
+                        className="hidden"
+                        id="wiring-diagram-upload"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          
+                          // Create a FormData object
+                          const formData = new FormData();
+                          formData.append('image', file);
+                          
+                          try {
+                            // First, get the CSRF token
+                            const csrfResponse = await fetch('/api/csrf-token', {
+                              credentials: 'include'
+                            });
+                            
+                            if (!csrfResponse.ok) {
+                              throw new Error('Failed to get CSRF token');
+                            }
+                            
+                            const csrfData = await csrfResponse.json();
+                            
+                            // Upload the image with CSRF token
+                            const response = await fetch('/api/admin/upload-image', {
+                              method: 'POST',
+                              body: formData,
+                              headers: {
+                                'X-CSRF-Token': csrfData.token
+                              },
+                              credentials: 'include'
+                            });
+                            
+                            if (!response.ok) {
+                              throw new Error(`Upload failed: ${response.statusText}`);
+                            }
+                            
+                            const data = await response.json();
+                            
+                            // Update the form with the new image path
+                            const updatedQuest = {
+                              ...editingItem as any,
+                              wiringDiagram: data.url
+                            };
+                            setEditingItem(updatedQuest);
+                            
+                            setNotificationMessage({
+                              type: 'success',
+                              message: 'Wiring diagram uploaded successfully'
+                            });
+                            
+                            setTimeout(() => {
+                              setNotificationMessage(null);
+                            }, 3000);
+                          } catch (err) {
+                            const error = err as Error;
+                            console.error('Error uploading wiring diagram:', error);
+                            
+                            setNotificationMessage({
+                              type: 'error',
+                              message: `Failed to upload wiring diagram: ${error.message}`
+                            });
+                            
+                            setTimeout(() => {
+                              setNotificationMessage(null);
+                            }, 3000);
+                          }
+                        }}
+                      />
+                      <button
+                        className="px-4 py-2 bg-gray-800 text-gray-300 rounded hover:bg-gray-700 flex items-center"
+                        onClick={() => document.getElementById('wiring-diagram-upload')?.click()}
+                        onMouseEnter={() => window.sounds?.hover()}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Diagram
+                      </button>
+                    </div>
+                    {(editingItem as any).wiringDiagram && (
+                      <div className="mt-2 bg-gray-800 rounded-md overflow-hidden">
+                        <div className="text-xs text-gray-400 p-2">Wiring Diagram Preview</div>
+                        <div className="h-32 flex items-center justify-center p-2">
+                          <img 
+                            src={(editingItem as any).wiringDiagram} 
+                            alt="Wiring Diagram Preview" 
+                            className="max-h-full max-w-full object-contain" 
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Solution Notes */}
+                  <div>
+                    <label className="block text-gray-300 text-sm mb-1">Solution Notes</label>
+                    <textarea
+                      className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none min-h-[80px]"
+                      value={(editingItem as any).solutionNotes || ''}
+                      onChange={(e) => {
+                        const updatedQuest = {
+                          ...editingItem as any,
+                          solutionNotes: e.target.value
+                        };
+                        setEditingItem(updatedQuest);
+                      }}
+                      placeholder="Additional notes about the solution:
+- Common mistakes to avoid
+- Why this approach works
+- Alternative solutions
+- Troubleshooting tips"
+                    />
+                  </div>
+                </div>
+                
                 {/* Action Buttons */}
                 <div className="flex justify-end space-x-3 pt-4 border-t border-gray-700">
                   <button
@@ -6542,10 +6721,24 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                           formData.append('image', file);
                           
                           try {
-                            // Upload the image
+                            // First, get the CSRF token
+                            const csrfResponse = await fetch('/api/csrf-token', {
+                              credentials: 'include'
+                            });
+                            
+                            if (!csrfResponse.ok) {
+                              throw new Error('Failed to get CSRF token');
+                            }
+                            
+                            const csrfData = await csrfResponse.json();
+                            
+                            // Upload the image with CSRF token
                             const response = await fetch(`/api/admin/kits/${(editingItem as ComponentKit).id}/image`, {
                               method: 'POST',
                               body: formData,
+                              headers: {
+                                'X-CSRF-Token': csrfData.token
+                              },
                               credentials: 'include'
                             });
                             
