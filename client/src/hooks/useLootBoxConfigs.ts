@@ -20,7 +20,7 @@ export interface LootBoxConfig {
 
 export function useLootBoxConfigs() {
   const { data, isLoading, error } = useQuery<LootBoxConfig[]>({
-    queryKey: ['/api/admin/lootboxes'],
+    queryKey: ['/api/lootbox-configs'],
   });
 
   // Convert the array to a record for easier lookup
