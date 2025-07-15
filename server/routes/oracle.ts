@@ -112,7 +112,18 @@ router.post('/entities', authenticate, async (req, res) => {
     }
     
     const table = tableMap[tableName];
-    const isUpdateOperation = !!id;
+    
+    // Determine if this is an update operation by checking if entity exists
+    let isUpdateOperation = false;
+    if (id) {
+      const idField = table.id;
+      const [existingEntity] = await db
+        .select()
+        .from(table)
+        .where(eq(idField, isNaN(Number(id)) ? id : Number(id)));
+      
+      isUpdateOperation = !!existingEntity;
+    }
     
     // Validate data structure for specific tables
     if (tableName === 'quests') {
