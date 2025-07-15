@@ -1615,15 +1615,14 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const canvasRef = useRef<HTMLDivElement>(null);
 
-    // Initialize quest positions in a grid
+    // Initialize quest positions in a vertical top-down layout
     useEffect(() => {
       const positions: Record<string, {x: number, y: number}> = {};
       quests.forEach((quest, index) => {
-        const row = Math.floor(index / 3);
-        const col = index % 3;
+        // Sort quests by adventure line order or creation time for proper flow
         positions[quest.id] = {
-          x: 100 + col * 300,
-          y: 100 + row * 200
+          x: 400, // Center horizontally
+          y: 100 + index * 250 // Stack vertically with 250px spacing
         };
       });
       setQuestPositions(positions);
@@ -1721,8 +1720,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
             <span className="text-gray-400">{quest.rewards?.length || 0} rewards</span>
           </div>
 
-          {/* Connection Buttons */}
-          <div className="absolute -right-2 top-1/2 transform -translate-y-1/2">
+          {/* Connection Buttons - Positioned for vertical flow */}
+          <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -1748,12 +1747,12 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   }] : []
                 };
                 
-                // Position new quest to the right of current quest
+                // Position new quest below the current quest in vertical flow
                 const currentPos = questPositions[quest.id];
                 if (currentPos) {
                   const newPosition = {
-                    x: currentPos.x + 350, // Space it out horizontally
-                    y: currentPos.y + Math.random() * 100 - 50 // Small vertical offset for visual variety
+                    x: currentPos.x, // Keep same horizontal position for vertical flow
+                    y: currentPos.y + 250 // Position below with 250px spacing
                   };
                   setQuestPositions(prev => ({
                     ...prev,
@@ -1778,9 +1777,9 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
             </button>
           </div>
 
-          {/* Input Connection Point */}
+          {/* Input Connection Point - Positioned for vertical flow */}
           <div 
-            className={`absolute -left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 rounded-full cursor-pointer transition-all duration-300 ${
+            className={`absolute -top-2 left-1/2 transform -translate-x-1/2 w-4 h-4 rounded-full cursor-pointer transition-all duration-300 ${
               connectingFrom && connectingFrom !== quest.id
                 ? 'bg-brand-orange/20 border-2 border-brand-orange scale-125 shadow-lg shadow-brand-orange/30'
                 : 'bg-gray-700 border-2 border-gray-500 hover:border-brand-orange hover:scale-110'
@@ -1819,17 +1818,18 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           const toPos = questPositions[toId];
           if (!toPos) return;
 
-          const fromX = fromPos.x + 256; // Quest node width
-          const fromY = fromPos.y + 60;  // Quest node height / 2
-          const toX = toPos.x;
-          const toY = toPos.y + 60;
+          // For vertical flow: from bottom of parent to top of child
+          const fromX = fromPos.x + 128; // Quest node width / 2 (center horizontally)
+          const fromY = fromPos.y + 120; // Quest node height (bottom of quest)
+          const toX = toPos.x + 128;      // Quest node width / 2 (center horizontally)
+          const toY = toPos.y;            // Top of quest
 
-          // Calculate bezier curve control points for smoother curves
-          const distance = Math.abs(toX - fromX);
-          const curveStrength = Math.min(distance * 0.4, 120);
-          const midX1 = fromX + curveStrength;
-          const midX2 = toX - curveStrength;
-          const path = `M ${fromX},${fromY} C ${midX1},${fromY} ${midX2},${toY} ${toX},${toY}`;
+          // Calculate bezier curve control points for vertical flow
+          const distance = Math.abs(toY - fromY);
+          const curveStrength = Math.min(distance * 0.4, 80);
+          const midY1 = fromY + curveStrength;
+          const midY2 = toY - curveStrength;
+          const path = `M ${fromX},${fromY} C ${fromX},${midY1} ${toX},${midY2} ${toX},${toY}`;
 
           lines.push(
             <g key={`${fromId}-${toId}-${index}`}>
@@ -1888,16 +1888,17 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       if (connectingFrom) {
         const fromPos = questPositions[connectingFrom];
         if (fromPos) {
-          const fromX = fromPos.x + 256;
-          const fromY = fromPos.y + 60;
+          // For vertical flow: from bottom of quest to mouse position
+          const fromX = fromPos.x + 128; // Quest node width / 2
+          const fromY = fromPos.y + 120; // Quest node height (bottom)
           const toX = mousePosition.x;
           const toY = mousePosition.y;
 
-          const distance = Math.abs(toX - fromX);
-          const curveStrength = Math.min(distance * 0.4, 120);
-          const midX1 = fromX + curveStrength;
-          const midX2 = toX - curveStrength;
-          const tempPath = `M ${fromX},${fromY} C ${midX1},${fromY} ${midX2},${toY} ${toX},${toY}`;
+          const distance = Math.abs(toY - fromY);
+          const curveStrength = Math.min(distance * 0.4, 80);
+          const midY1 = fromY + curveStrength;
+          const midY2 = toY - curveStrength;
+          const tempPath = `M ${fromX},${fromY} C ${fromX},${midY1} ${toX},${midY2} ${toX},${toY}`;
 
           lines.push(
             <g key="temp-connection">
