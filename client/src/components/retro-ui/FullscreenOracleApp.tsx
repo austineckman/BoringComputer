@@ -1139,6 +1139,13 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           delete formattedData.updatedAt;
         }
         
+        // Debug logging for quest component requirements
+        console.log('🔧 Frontend: Quest data being sent:', formattedData);
+        console.log('🔧 Frontend: componentRequirements in data:', formattedData.componentRequirements ? 'YES' : 'NO');
+        if (formattedData.componentRequirements) {
+          console.log('🔧 Frontend: componentRequirements:', formattedData.componentRequirements);
+        }
+        
         endpoint = '/api/oracle/entities';
         body = {
           tableName: 'quests',
@@ -2483,6 +2490,9 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   }));
                 }}
                 onEditQuest={(quest) => {
+                  console.log('🔧 Opening quest for editing:', quest.id);
+                  console.log('🔧 Quest componentRequirements:', quest.componentRequirements);
+                  console.log('🔧 componentRequirements length:', quest.componentRequirements ? quest.componentRequirements.length : 'NO COMPONENTS');
                   setEditingItem(quest);
                   setEditingType('quest');
                   window.sounds?.click();
