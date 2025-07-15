@@ -103,6 +103,16 @@ router.post('/entities', authenticate, async (req, res) => {
     
     const { tableName, id, data } = parsedBody;
     
+    // Debug logging for quest operations
+    if (tableName === 'quests') {
+      console.log('🔧 Quest operation - Table:', tableName, 'ID:', id);
+      console.log('🔧 Quest data keys:', Object.keys(data));
+      console.log('🔧 componentRequirements in data:', data.componentRequirements ? 'YES' : 'NO');
+      if (data.componentRequirements) {
+        console.log('🔧 componentRequirements length:', data.componentRequirements.length);
+      }
+    }
+    
     if (!tableMap[tableName]) {
       return res.status(400).json({ 
         message: `Table ${tableName} does not exist`,
@@ -238,6 +248,9 @@ router.post('/entities', authenticate, async (req, res) => {
         
         // Handle component requirements separately
         if (componentRequirements && componentRequirements.length > 0) {
+          console.log('🔧 Processing component requirements for NEW quest:', newQuest.id);
+          console.log('🔧 Component requirements received:', JSON.stringify(componentRequirements, null, 2));
+          
           const questComponentsData = componentRequirements.map((comp: any) => ({
             questId: newQuest.id,
             componentId: parseInt(comp.id),
@@ -245,7 +258,11 @@ router.post('/entities', authenticate, async (req, res) => {
             isOptional: comp.isOptional || false
           }));
           
+          console.log('🔧 Inserting quest components for NEW quest:', JSON.stringify(questComponentsData, null, 2));
           await db.insert(schema.questComponents).values(questComponentsData);
+          console.log('🔧 Successfully inserted quest components for NEW quest');
+        } else {
+          console.log('🔧 No component requirements for NEW quest');
         }
       } else {
         // Insert new entity normally for non-quest tables
@@ -367,10 +384,14 @@ router.put('/entities', authenticate, async (req, res) => {
       
       // Handle component requirements separately
       if (componentRequirements !== undefined) {
+        console.log('🔧 Processing component requirements for quest:', questId);
+        console.log('🔧 Component requirements received:', JSON.stringify(componentRequirements, null, 2));
+        
         // Delete existing quest components
         await db
           .delete(schema.questComponents)
           .where(eq(schema.questComponents.questId, questId));
+        console.log('🔧 Deleted existing quest components');
         
         // Insert new quest components
         if (componentRequirements && componentRequirements.length > 0) {
@@ -381,8 +402,14 @@ router.put('/entities', authenticate, async (req, res) => {
             isOptional: comp.isOptional || false
           }));
           
+          console.log('🔧 Inserting quest components:', JSON.stringify(questComponentsData, null, 2));
           await db.insert(schema.questComponents).values(questComponentsData);
+          console.log('🔧 Successfully inserted quest components');
+        } else {
+          console.log('🔧 No component requirements to insert');
         }
+      } else {
+        console.log('🔧 Component requirements not provided in request');
       }
       
       return res.json(updatedQuest);
