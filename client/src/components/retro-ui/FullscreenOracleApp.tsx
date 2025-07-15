@@ -5613,18 +5613,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                         }}
                       />
                     </div>
-                    <div>
-                      <label className="block text-gray-300 text-sm mb-1">Date</label>
-                      <input
-                        type="date"
-                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                        value={(editingItem as any).date ? new Date((editingItem as any).date).toISOString().split('T')[0] : ''}
-                        onChange={(e) => {
-                          const updatedQuest = {...editingItem as any, date: e.target.value};
-                          setEditingItem(updatedQuest);
-                        }}
-                      />
-                    </div>
+                    
                   </div>
                   
                   <div className="mt-4 flex items-center">
