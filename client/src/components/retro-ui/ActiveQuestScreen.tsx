@@ -29,13 +29,26 @@ interface QuestData {
   id: string;
   title: string;
   description: string;
-  videoUrl?: string;
-  circuitGifUrl?: string;
-  components: string[];
-  expectedCode?: string;
-  expectedWiring?: string;
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  estimatedTime: number;
+  missionBrief?: string;
+  adventureLine: string;
+  difficulty: number;
+  orderInLine: number;
+  xpReward: number;
+  rewards: any[];
+  status: string;
+  content: {
+    videos: string[];
+    images: string[];
+    codeBlocks: Array<{
+      language: string;
+      code: string;
+    }>;
+  };
+  lootBoxRewards: Array<{
+    type: string;
+    quantity: number;
+  }>;
+  componentRequirements: any[];
 }
 
 const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({ 
@@ -112,6 +125,10 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
     mutationFn: async () => {
       return apiRequest(`/api/quests/${questId}/complete`, {
         method: 'POST',
+        body: JSON.stringify({
+          submission: "Quest completed via active quest screen",
+          image: null
+        }),
       });
     },
     onSuccess: () => {
@@ -224,10 +241,10 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
           {/* Video Section */}
           <div className="bg-gray-900 rounded-lg p-6">
             <h2 className="text-xl font-bold text-brand-orange mb-4">Tutorial Video</h2>
-            {quest.videoUrl ? (
+            {quest.content?.videos && quest.content.videos.length > 0 ? (
               <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
                 <video 
-                  src={quest.videoUrl}
+                  src={quest.content.videos[0]}
                   controls
                   className="w-full h-full"
                   onPlay={() => setVideoPlaying(true)}
@@ -249,10 +266,10 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
           {/* Expected Result Section */}
           <div className="bg-gray-900 rounded-lg p-6">
             <h2 className="text-xl font-bold text-brand-orange mb-4">Expected Result</h2>
-            {quest.circuitGifUrl ? (
+            {quest.content?.images && quest.content.images.length > 0 ? (
               <div className="bg-black rounded-lg p-4 flex justify-center">
                 <img 
-                  src={quest.circuitGifUrl}
+                  src={quest.content.images[0]}
                   alt="Expected circuit result"
                   className="max-w-full max-h-64 rounded-lg"
                   style={{ imageRendering: 'pixelated' }}
@@ -299,20 +316,20 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
                       ⚠️ Warning: Using the solution will reduce your XP rewards
                     </div>
                     
-                    {quest.expectedCode && (
+                    {quest.content?.codeBlocks && quest.content.codeBlocks.length > 0 && (
                       <div>
                         <h3 className="font-bold text-red-400 mb-2">Expected Code:</h3>
                         <pre className="bg-black/50 p-4 rounded-md text-sm overflow-x-auto">
-                          <code>{quest.expectedCode}</code>
+                          <code>{quest.content.codeBlocks[0].code}</code>
                         </pre>
                       </div>
                     )}
                     
-                    {quest.expectedWiring && (
+                    {quest.missionBrief && (
                       <div>
-                        <h3 className="font-bold text-red-400 mb-2">Wiring Instructions:</h3>
+                        <h3 className="font-bold text-red-400 mb-2">Mission Instructions:</h3>
                         <div className="bg-black/50 p-4 rounded-md text-sm">
-                          {quest.expectedWiring}
+                          {quest.missionBrief}
                         </div>
                       </div>
                     )}
