@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Play, Pause, MessageCircle, Heart, ThumbsUp, ThumbsDown, Reply, ChevronDown, ChevronUp, Clock, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ActiveQuestScreenProps {
   questId: string;
@@ -69,6 +70,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   const [elapsedTime, setElapsedTime] = useState(0);
 
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Use passed quest data or fetch from API as fallback
   const { data: fetchedQuest, isLoading: questLoading, error: questError } = useQuery<QuestData>({
@@ -173,7 +175,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   };
 
   const handleAddComment = () => {
-    if (newComment.trim()) {
+    if (newComment.trim() && user) {
       addCommentMutation.mutate({ 
         content: newComment,
         parentId: replyingTo || undefined
@@ -214,9 +216,9 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   }
 
   return (
-    <div className="absolute inset-0 bg-black text-white overflow-hidden">
+    <div className="absolute inset-0 bg-black text-white flex flex-col">
       {/* Header */}
-      <div className="bg-black/90 border-b border-brand-orange/30 p-4 flex items-center justify-between">
+      <div className="bg-black/90 border-b border-brand-orange/30 p-4 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center space-x-4">
           <h1 className="text-2xl font-bold text-brand-orange">{quest.title}</h1>
           <div className="flex items-center space-x-2 text-sm text-gray-400">
@@ -241,7 +243,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex min-h-0">
         {/* Main Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Video Section */}
@@ -271,19 +273,20 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
           {/* Expected Result Section */}
           <div className="bg-gray-900 rounded-lg p-6">
             <h2 className="text-xl font-bold text-brand-orange mb-4">Expected Result</h2>
-            {quest.content?.images && quest.content.images.length > 0 ? (
+            {quest.content?.images && quest.content.images.length > 1 && quest.content.images[1] ? (
               <div className="bg-black rounded-lg p-4 flex justify-center">
                 <img 
-                  src={quest.content.images[0]}
+                  src={quest.content.images[1]}
                   alt="Expected circuit result"
                   className="max-w-full max-h-64 rounded-lg"
-                  style={{ imageRendering: 'pixelated' }}
+                  style={{ imageRendering: quest.content.images[1]?.endsWith('.gif') ? 'auto' : 'pixelated' }}
                 />
               </div>
             ) : (
               <div className="bg-gray-800 rounded-lg p-8 text-center text-gray-400">
                 <CheckCircle className="w-16 h-16 mx-auto mb-2" />
-                <p>Circuit demonstration coming soon</p>
+                <p>Upload an Expected Result GIF in the admin panel</p>
+                <p className="text-sm mt-2">This will show the circuit behavior students should achieve</p>
               </div>
             )}
           </div>
@@ -478,29 +481,45 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
                 </button>
               </div>
             )}
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                placeholder="Add a comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
-                className="flex-1 px-3 py-2 bg-gray-800 text-white border border-gray-600 rounded-md focus:border-brand-orange focus:outline-none text-sm"
-              />
-              <button
-                onClick={handleAddComment}
-                disabled={!newComment.trim() || addCommentMutation.isPending}
-                className="px-4 py-2 bg-brand-orange hover:bg-brand-orange/80 disabled:bg-gray-600 text-white rounded-md"
-              >
-                Post
-              </button>
-            </div>
+            {user ? (
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <img 
+                    src={user.avatar || 'https://via.placeholder.com/32'} 
+                    alt={user.username}
+                    className="w-8 h-8 rounded-full"
+                  />
+                  <span className="text-sm text-gray-300">{user.username}</span>
+                </div>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    placeholder="Add a comment..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
+                    className="flex-1 px-3 py-2 bg-gray-800 text-white border border-gray-600 rounded-md focus:border-brand-orange focus:outline-none text-sm"
+                  />
+                  <button
+                    onClick={handleAddComment}
+                    disabled={!newComment.trim() || addCommentMutation.isPending}
+                    className="px-4 py-2 bg-brand-orange hover:bg-brand-orange/80 disabled:bg-gray-600 text-white rounded-md"
+                  >
+                    Post
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center text-gray-400 py-4">
+                <p>Please log in to comment</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
       
       {/* Complete Quest Button */}
-      <div className="p-4 bg-black/90 border-t border-brand-orange/30 flex justify-center">
+      <div className="p-4 bg-black/90 border-t border-brand-orange/30 flex justify-center flex-shrink-0">
         <button
           onClick={() => completeQuestMutation.mutate()}
           disabled={completeQuestMutation.isPending}

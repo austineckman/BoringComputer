@@ -30,7 +30,7 @@ import missionRoutes from './routes/missions';
 import { authenticate, hashPassword } from './auth';
 import { conditionalCsrfProtection, getCsrfToken, handleCsrfError } from './middleware/csrf';
 import { addSecurityHeaders } from './middleware/security-headers';
-import { componentKits, items, auctionListings, users } from '@shared/schema';
+import { componentKits, items, auctionListings, users, questComments } from '@shared/schema';
 import { itemDatabase } from './itemDatabase';
 import { eq, desc } from 'drizzle-orm';
 
@@ -249,6 +249,214 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentRoles: user.roles,
       message: "These are your current roles in the application. Log out and log back in to refresh Discord roles."
     });
+  });
+
+  // Quest comments endpoints
+  app.get('/api/quests/:questId/comments', async (req, res) => {
+    try {
+      const { questId } = req.params;
+      const comments = await db.select({
+        id: questComments.id,
+        content: questComments.content,
+        parentId: questComments.parentId,
+        reactions: questComments.reactions,
+        createdAt: questComments.createdAt,
+        user: {
+          id: users.id,
+          username: users.username,
+          avatar: users.avatar,
+        }
+      })
+      .from(questComments)
+      .innerJoin(users, eq(questComments.userId, users.id))
+      .where(eq(questComments.questId, parseInt(questId)))
+      .orderBy(questComments.createdAt);
+
+      // Transform to expected format
+      const transformedComments = comments.map(comment => ({
+        id: comment.id.toString(),
+        userId: comment.user.id.toString(),
+        username: comment.user.username,
+        avatar: comment.user.avatar || 'https://via.placeholder.com/32',
+        content: comment.content,
+        timestamp: comment.createdAt.toISOString(),
+        parentId: comment.parentId?.toString(),
+        reactions: comment.reactions || [],
+        replies: []
+      }));
+
+      // Group replies under parent comments
+      const commentsMap = new Map();
+      const rootComments = [];
+
+      transformedComments.forEach(comment => {
+        commentsMap.set(comment.id, { ...comment, replies: [] });
+        if (!comment.parentId) {
+          rootComments.push(comment);
+        }
+      });
+
+      transformedComments.forEach(comment => {
+        if (comment.parentId) {
+          const parent = commentsMap.get(comment.parentId);
+          if (parent) {
+            parent.replies.push(comment);
+          }
+        }
+      });
+
+      res.json(Array.from(commentsMap.values()).filter(comment => !comment.parentId));
+    } catch (error) {
+      console.error('Error fetching quest comments:', error);
+      res.status(500).json({ error: 'Failed to fetch comments' });
+    }
+  });
+
+  app.post('/api/quests/:questId/comments', authenticate, async (req, res) => {
+    try {
+      const { questId } = req.params;
+      const { content, parentId } = req.body;
+      const userId = (req as any).user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      if (!content?.trim()) {
+        return res.status(400).json({ error: 'Comment content is required' });
+      }
+
+      const [comment] = await db.insert(questComments).values({
+        questId: parseInt(questId),
+        userId: userId,
+        content: content.trim(),
+        parentId: parentId ? parseInt(parentId) : null,
+        reactions: [],
+      }).returning();
+
+      // Get user info for response
+      const user = await storage.getUser(userId);
+      
+      const responseComment = {
+        id: comment.id.toString(),
+        userId: userId.toString(),
+        username: user?.username || 'Unknown',
+        avatar: user?.avatar || 'https://via.placeholder.com/32',
+        content: comment.content,
+        timestamp: comment.createdAt.toISOString(),
+        parentId: comment.parentId?.toString(),
+        reactions: [],
+        replies: []
+      };
+
+      res.json(responseComment);
+    } catch (error) {
+      console.error('Error creating quest comment:', error);
+      res.status(500).json({ error: 'Failed to create comment' });
+    }
+  });
+
+  app.post('/api/quests/:questId/comments/:commentId/reactions', authenticate, async (req, res) => {
+    try {
+      const { commentId } = req.params;
+      const { emoji } = req.body;
+      const userId = (req as any).user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      // Get the comment
+      const [comment] = await db.select()
+        .from(questComments)
+        .where(eq(questComments.id, parseInt(commentId)));
+
+      if (!comment) {
+        return res.status(404).json({ error: 'Comment not found' });
+      }
+
+      const reactions = comment.reactions || [];
+      const existingReaction = reactions.find((r: any) => r.emoji === emoji);
+
+      if (existingReaction) {
+        // Toggle reaction
+        if (existingReaction.users.includes(userId)) {
+          // Remove reaction
+          existingReaction.users = existingReaction.users.filter((uid: number) => uid !== userId);
+          existingReaction.count = existingReaction.users.length;
+          if (existingReaction.count === 0) {
+            reactions.splice(reactions.indexOf(existingReaction), 1);
+          }
+        } else {
+          // Add reaction
+          existingReaction.users.push(userId);
+          existingReaction.count = existingReaction.users.length;
+        }
+      } else {
+        // Create new reaction
+        reactions.push({
+          emoji,
+          count: 1,
+          users: [userId]
+        });
+      }
+
+      // Update the comment
+      await db.update(questComments)
+        .set({ reactions })
+        .where(eq(questComments.id, parseInt(commentId)));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error updating reaction:', error);
+      res.status(500).json({ error: 'Failed to update reaction' });
+    }
+  });
+
+  // Quest completion endpoint
+  app.post('/api/quests/:questId/complete', authenticate, async (req, res) => {
+    try {
+      const { questId } = req.params;
+      const userId = (req as any).user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      // Get the quest
+      const quest = await storage.getQuestById(parseInt(questId));
+      if (!quest) {
+        return res.status(404).json({ error: 'Quest not found' });
+      }
+
+      // Check if already completed
+      const user = await storage.getUser(userId);
+      if (user?.completedQuests?.includes(parseInt(questId))) {
+        return res.status(400).json({ error: 'Quest already completed' });
+      }
+
+      // Award XP and update completed quests
+      const newXp = (user?.xp || 0) + quest.xpReward;
+      const newCompletedQuests = [...(user?.completedQuests || []), parseInt(questId)];
+
+      await storage.updateUser(userId, {
+        xp: newXp,
+        completedQuests: newCompletedQuests
+      });
+
+      // Award rewards (simplified for now)
+      let rewardMessage = `Quest completed! +${quest.xpReward} XP`;
+      
+      res.json({
+        success: true,
+        message: rewardMessage,
+        xpAwarded: quest.xpReward,
+        newXp: newXp
+      });
+    } catch (error) {
+      console.error('Error completing quest:', error);
+      res.status(500).json({ error: 'Failed to complete quest' });
+    }
   });
 
   // List all roles in the CraftingTable Discord server
