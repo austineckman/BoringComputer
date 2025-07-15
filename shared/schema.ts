@@ -26,7 +26,7 @@ export const users = pgTable("users", {
 // Quests table
 export const quests = pgTable("quests", {
   id: bigint("id", { mode: "number" }).primaryKey(),
-  date: text("date").notNull(), // YYYY-MM-DD format
+  date: text("date"), // YYYY-MM-DD format (optional)
   title: text("title").notNull(),
   description: text("description").notNull(),  // Will be used as flavor text
   missionBrief: text("mission_brief"),         // Direct mission instructions
