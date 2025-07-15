@@ -87,10 +87,21 @@ router.get('/entities/:tableName/:id', authenticate, async (req, res) => {
   }
 });
 
-// Create a new entity
+// Create or update an entity (upsert)
 router.post('/entities', authenticate, async (req, res) => {
   try {
-    const { tableName, data } = createEntitySchema.parse(req.body);
+    // Handle both create and update operations
+    let parsedBody;
+    
+    if (req.body.id && req.body.data) {
+      // Update operation format: {tableName, id, data}
+      parsedBody = updateEntitySchema.parse(req.body);
+    } else {
+      // Create operation format: {tableName, data}
+      parsedBody = createEntitySchema.parse(req.body);
+    }
+    
+    const { tableName, id, data } = parsedBody;
     
     if (!tableMap[tableName]) {
       return res.status(400).json({ 
@@ -101,6 +112,7 @@ router.post('/entities', authenticate, async (req, res) => {
     }
     
     const table = tableMap[tableName];
+    const isUpdateOperation = !!id;
     
     // Validate data structure for specific tables
     if (tableName === 'quests') {
@@ -129,7 +141,7 @@ router.post('/entities', authenticate, async (req, res) => {
         });
       }
       
-      if (data.id && !Number.isInteger(data.id)) {
+      if (data.id && !Number.isInteger(Number(data.id))) {
         return res.status(400).json({ 
           message: 'Quest ID must be an integer',
           error: 'INVALID_QUEST_ID',
@@ -138,7 +150,7 @@ router.post('/entities', authenticate, async (req, res) => {
         });
       }
       
-      if (data.id && data.id > Number.MAX_SAFE_INTEGER) {
+      if (data.id && Number(data.id) > Number.MAX_SAFE_INTEGER) {
         return res.status(400).json({ 
           message: 'Quest ID exceeds maximum safe integer',
           error: 'QUEST_ID_TOO_LARGE',
@@ -146,12 +158,40 @@ router.post('/entities', authenticate, async (req, res) => {
           maxSafeInteger: Number.MAX_SAFE_INTEGER
         });
       }
+      
+      // Convert string ID to number for quests
+      if (data.id && typeof data.id === 'string') {
+        data.id = Number(data.id);
+      }
     }
     
-    // Insert new entity
-    const [newEntity] = await db.insert(table).values(data).returning();
+    // Handle both create and update operations
+    let resultEntity;
     
-    return res.status(201).json(newEntity);
+    if (isUpdateOperation) {
+      // Update existing entity
+      const idField = table.id;
+      const [updatedEntity] = await db
+        .update(table)
+        .set(data)
+        .where(eq(idField, isNaN(Number(id)) ? id : Number(id)))
+        .returning();
+      
+      if (!updatedEntity) {
+        return res.status(404).json({ 
+          message: `${tableName} with ID ${id} not found`,
+          error: 'ENTITY_NOT_FOUND'
+        });
+      }
+      
+      resultEntity = updatedEntity;
+    } else {
+      // Insert new entity
+      const [newEntity] = await db.insert(table).values(data).returning();
+      resultEntity = newEntity;
+    }
+    
+    return res.status(isUpdateOperation ? 200 : 201).json(resultEntity);
   } catch (error) {
     console.error('Error creating entity:', error);
     
