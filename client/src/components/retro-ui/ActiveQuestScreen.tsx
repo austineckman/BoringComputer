@@ -103,22 +103,27 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   // Add comment mutation
   const addCommentMutation = useMutation({
     mutationFn: async (data: { content: string; parentId?: string }) => {
+      console.log('Making API request to add comment:', data);
       return apiRequest(`/api/quests/${questId}/comments`, {
         method: 'POST',
         body: JSON.stringify(data),
       });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Comment added successfully:', data);
       queryClient.invalidateQueries({ queryKey: [`/api/quests/${questId}/comments`] });
       setNewComment('');
       setReplyingTo(null);
+    },
+    onError: (error) => {
+      console.error('Error adding comment:', error);
     },
   });
 
   // React to comment mutation
   const reactToCommentMutation = useMutation({
     mutationFn: async (data: { commentId: string; emoji: string }) => {
-      return apiRequest(`/api/quests/${questId}/comments/${data.commentId}/react`, {
+      return apiRequest(`/api/quests/${questId}/comments/${data.commentId}/reactions`, {
         method: 'POST',
         body: JSON.stringify({ emoji: data.emoji }),
       });
@@ -176,10 +181,13 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
 
   const handleAddComment = () => {
     if (newComment.trim() && user) {
+      console.log('Adding comment:', { content: newComment, parentId: replyingTo || undefined, questId });
       addCommentMutation.mutate({ 
         content: newComment,
         parentId: replyingTo || undefined
       });
+    } else {
+      console.log('Cannot add comment:', { newComment: newComment.trim(), user });
     }
   };
 
@@ -269,6 +277,16 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
               </div>
             )}
           </div>
+
+          {/* Mission Brief Section */}
+          {quest.missionBrief && (
+            <div className="bg-gray-900 rounded-lg p-6">
+              <h2 className="text-xl font-bold text-brand-orange mb-4">Mission Instructions</h2>
+              <div className="bg-gray-800 rounded-lg p-4">
+                <div className="text-gray-300 whitespace-pre-wrap">{quest.missionBrief}</div>
+              </div>
+            </div>
+          )}
 
           {/* Expected Result Section */}
           <div className="bg-gray-900 rounded-lg p-6">
