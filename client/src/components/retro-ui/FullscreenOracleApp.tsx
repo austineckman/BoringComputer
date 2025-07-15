@@ -2260,14 +2260,26 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
 
     // If quest line is selected, show individual quests in that line
     const kitQuests = quests.filter(quest => {
-      if (!quest.componentRequirements || quest.componentRequirements.length === 0) return false;
-      const kitComponentsList = kitComponents[selectedQuestKitId!] || [];
-      const kitComponentNames = kitComponentsList.map(comp => comp?.name?.toLowerCase()).filter(Boolean);
-      const matchesKit = quest.componentRequirements.some(requirement => 
-        requirement?.name && kitComponentNames.includes(requirement.name.toLowerCase())
-      );
       const matchesLine = quest.adventureLine === selectedQuestLine;
-      return matchesKit && matchesLine;
+      
+      // If quest has kitId, match by kitId (new approach)
+      if (quest.kitId) {
+        const matchesKit = quest.kitId === selectedQuestKitId;
+        return matchesKit && matchesLine;
+      }
+      
+      // Fallback: If quest has componentRequirements, match by component names (legacy approach)
+      if (quest.componentRequirements && quest.componentRequirements.length > 0) {
+        const kitComponentsList = kitComponents[selectedQuestKitId!] || [];
+        const kitComponentNames = kitComponentsList.map(comp => comp?.name?.toLowerCase()).filter(Boolean);
+        const matchesKit = quest.componentRequirements.some(requirement => 
+          requirement?.name && kitComponentNames.includes(requirement.name.toLowerCase())
+        );
+        return matchesKit && matchesLine;
+      }
+      
+      // If no kit requirements, just match by adventure line
+      return matchesLine;
     });
 
     return (
