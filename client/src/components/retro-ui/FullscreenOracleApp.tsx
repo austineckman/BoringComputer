@@ -4836,10 +4836,24 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                           formData.append('image', file);
                           
                           try {
-                            // Upload the image
+                            // First, get the CSRF token
+                            const csrfResponse = await fetch('/api/csrf-token', {
+                              credentials: 'include'
+                            });
+                            
+                            if (!csrfResponse.ok) {
+                              throw new Error('Failed to get CSRF token');
+                            }
+                            
+                            const csrfData = await csrfResponse.json();
+                            
+                            // Upload the image with CSRF token
                             const response = await fetch(`/api/admin/items/${(editingItem as GameItem).id}/image`, {
                               method: 'POST',
                               body: formData,
+                              headers: {
+                                'X-CSRF-Token': csrfData.token
+                              },
                               credentials: 'include'
                             });
                             
@@ -6106,10 +6120,24 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                           formData.append('image', file);
                           
                           try {
-                            // Upload the image
+                            // First, get the CSRF token
+                            const csrfResponse = await fetch('/api/csrf-token', {
+                              credentials: 'include'
+                            });
+                            
+                            if (!csrfResponse.ok) {
+                              throw new Error('Failed to get CSRF token');
+                            }
+                            
+                            const csrfData = await csrfResponse.json();
+                            
+                            // Upload the image with CSRF token
                             const response = await fetch('/api/admin/upload-image', {
                               method: 'POST',
                               body: formData,
+                              headers: {
+                                'X-CSRF-Token': csrfData.token
+                              },
                               credentials: 'include'
                             });
                             
@@ -6753,10 +6781,24 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                           formData.append('image', file);
                           
                           try {
-                            // Upload the image
+                            // First, get the CSRF token
+                            const csrfResponse = await fetch('/api/csrf-token', {
+                              credentials: 'include'
+                            });
+                            
+                            if (!csrfResponse.ok) {
+                              throw new Error('Failed to get CSRF token');
+                            }
+                            
+                            const csrfData = await csrfResponse.json();
+                            
+                            // Upload the image with CSRF token
                             const response = await fetch(`/api/admin/components/${(editingItem as KitComponent).id}/image`, {
                               method: 'POST',
                               body: formData,
+                              headers: {
+                                'X-CSRF-Token': csrfData.token
+                              },
                               credentials: 'include'
                             });
                             
