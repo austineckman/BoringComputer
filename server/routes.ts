@@ -771,6 +771,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Active Quest API endpoints
+  app.get('/api/quests/:questId/comments', authenticate, async (req, res) => {
+    try {
+      const questId = req.params.questId;
+      
+      // Mock comments data for now - in production, this would come from a database
+      const mockComments = [
+        {
+          id: '1',
+          userId: '123',
+          username: 'TechMaster99',
+          avatar: 'https://via.placeholder.com/40',
+          content: 'Great tutorial! The LED wiring was tricky but I got it working.',
+          timestamp: '2 hours ago',
+          replies: [],
+          reactions: [
+            { emoji: '👍', count: 3, userReacted: false },
+            { emoji: '🔥', count: 1, userReacted: false }
+          ]
+        },
+        {
+          id: '2',
+          userId: '456',
+          username: 'CircuitWizard',
+          avatar: 'https://via.placeholder.com/40',
+          content: 'Anyone having issues with the resistor values? Mine seems off.',
+          timestamp: '1 hour ago',
+          replies: [
+            {
+              id: '3',
+              userId: '789',
+              username: 'ElectroGuru',
+              avatar: 'https://via.placeholder.com/40',
+              content: 'Check your multimeter reading, should be 220Ω',
+              timestamp: '30 minutes ago',
+              replies: [],
+              reactions: []
+            }
+          ],
+          reactions: [
+            { emoji: '🤔', count: 2, userReacted: false }
+          ]
+        }
+      ];
+      
+      res.json(mockComments);
+    } catch (error) {
+      console.error('Error fetching quest comments:', error);
+      res.status(500).json({ message: 'Failed to fetch comments' });
+    }
+  });
+  
+  app.post('/api/quests/:questId/comments', authenticate, async (req, res) => {
+    try {
+      const questId = req.params.questId;
+      const { content, parentId } = req.body;
+      const user = (req as any).user;
+      
+      if (!content || !content.trim()) {
+        return res.status(400).json({ message: 'Comment content is required' });
+      }
+      
+      // In production, this would save to database
+      const newComment = {
+        id: Date.now().toString(),
+        userId: user.id.toString(),
+        username: user.username,
+        avatar: user.avatar || 'https://via.placeholder.com/40',
+        content: content.trim(),
+        timestamp: 'just now',
+        replies: [],
+        reactions: []
+      };
+      
+      res.json(newComment);
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      res.status(500).json({ message: 'Failed to add comment' });
+    }
+  });
+  
+  app.post('/api/quests/:questId/comments/:commentId/react', authenticate, async (req, res) => {
+    try {
+      const { questId, commentId } = req.params;
+      const { emoji } = req.body;
+      const user = (req as any).user;
+      
+      if (!emoji) {
+        return res.status(400).json({ message: 'Emoji is required' });
+      }
+      
+      // In production, this would update the database
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error reacting to comment:', error);
+      res.status(500).json({ message: 'Failed to react to comment' });
+    }
+  });
+  
+  app.post('/api/quests/:questId/abandon', authenticate, async (req, res) => {
+    try {
+      const questId = parseInt(req.params.questId);
+      const user = (req as any).user;
+      
+      // Find the active quest
+      const userQuests = await storage.getUserQuests(user.id);
+      const activeQuest = userQuests.find(uq => uq.questId === questId && uq.status === 'active');
+      
+      if (!activeQuest) {
+        return res.status(400).json({ message: 'Quest is not currently active' });
+      }
+      
+      // Mark quest as available again
+      await storage.updateUserQuest(activeQuest.id, { status: 'available' });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error abandoning quest:', error);
+      res.status(500).json({ message: 'Failed to abandon quest' });
+    }
+  });
+  
   // Inventory routes
   app.get('/api/inventory', authenticate, async (req, res) => {
     try {
