@@ -113,13 +113,13 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
         </button>
         
         {/* Main quest intro layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Left column - Hero Image and Title */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          {/* Left column - Hero Image and Flavor Text */}
           <div className="bg-gray-900/80 rounded-lg shadow-lg border border-brand-orange/30 overflow-hidden">
             {/* Hero image */}
             {questImages[0] && (
               <div className="relative">
-                <div className="w-full h-80 overflow-hidden">
+                <div className="w-full h-64 overflow-hidden">
                   <img 
                     src={questImages[0]} 
                     alt={selectedQuest.title}
@@ -130,14 +130,14 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                 </div>
                 
                 {/* Title overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-6">
-                  <h1 className="text-3xl md:text-4xl font-bold text-white text-shadow mb-2">{selectedQuest.title}</h1>
-                  <div className="flex flex-wrap items-center gap-4 text-shadow">
-                    <span className="text-brand-orange flex items-center text-lg font-semibold">
-                      <Award className="h-6 w-6 mr-1" />
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <h1 className="text-2xl font-bold text-white text-shadow mb-2">{selectedQuest.title}</h1>
+                  <div className="flex flex-wrap items-center gap-3 text-shadow">
+                    <span className="text-brand-orange flex items-center text-sm font-semibold">
+                      <Award className="h-4 w-4 mr-1" />
                       {selectedQuest.xpReward} XP
                     </span>
-                    <span className="text-yellow-400 text-lg">
+                    <span className="text-yellow-400 text-sm">
                       {Array(selectedQuest.difficulty).fill('★').join('')}
                     </span>
                   </div>
@@ -145,42 +145,105 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
               </div>
             )}
             
-            {/* Quest description */}
-            <div className="p-6 bg-gray-800/50">
-              <p className="text-lg text-white leading-relaxed">{selectedQuest.description}</p>
+            {/* Flavor text */}
+            <div className="p-4 bg-gray-800/50">
+              <p className="text-sm text-gray-300 leading-relaxed">{selectedQuest.description}</p>
             </div>
           </div>
           
-          {/* Right column - Mission Brief and Key Info */}
+          {/* Middle column - Mission Brief and Adventure Info */}
           <div className="space-y-4">
             {/* Mission Brief */}
             {selectedQuest.missionBrief && (
               <div className="bg-gray-900/80 border border-brand-orange/30 rounded-lg shadow-lg">
-                <div className="bg-gray-800/60 px-6 py-4 border-b border-brand-orange/30">
-                  <h2 className="text-xl font-bold text-brand-orange">Mission Brief</h2>
+                <div className="bg-gray-800/60 px-4 py-3 border-b border-brand-orange/30">
+                  <h2 className="text-lg font-bold text-brand-orange">Mission Brief</h2>
                 </div>
-                <div className="p-6">
-                  <p className="text-white leading-relaxed whitespace-pre-line">{selectedQuest.missionBrief}</p>
+                <div className="p-4">
+                  <p className="text-white text-sm leading-relaxed whitespace-pre-line">{selectedQuest.missionBrief}</p>
                 </div>
               </div>
             )}
             
             {/* Adventure Line Info */}
             <div className="bg-gray-900/80 border border-brand-orange/30 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-blue-300 font-semibold">Adventure Line:</span>
-                <span className="text-white">{selectedQuest.adventureLine}</span>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-blue-300 font-semibold text-sm">Adventure Line:</span>
+                <span className="text-white text-sm">{selectedQuest.adventureLine}</span>
               </div>
-              <div className="flex items-center justify-between mt-2">
-                <span className="text-gray-300 font-semibold">Quest Order:</span>
-                <span className="text-white">#{selectedQuest.orderInLine}</span>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-300 font-semibold text-sm">Quest Order:</span>
+                <span className="text-white text-sm">#{selectedQuest.orderInLine}</span>
               </div>
             </div>
+          </div>
+          
+          {/* Right column - Quest Rewards and Start Button */}
+          <div className="space-y-4">
+            {/* Quest Rewards */}
+            {selectedQuest.rewards && selectedQuest.rewards.length > 0 && (
+              <div className="bg-gray-900/80 border border-brand-orange/30 rounded-lg shadow-lg">
+                <div className="bg-gray-800/60 px-4 py-3 border-b border-brand-orange/30">
+                  <h2 className="text-lg font-bold text-brand-orange flex items-center">
+                    <Gift className="h-4 w-4 mr-2" />
+                    Quest Rewards
+                  </h2>
+                </div>
+                <div className="p-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {selectedQuest.rewards.slice(0, 4).map((reward, idx) => {
+                      const item = items?.find(i => i.id === reward.id);
+                      const isLootbox = reward.type === 'lootbox';
+                      const lootboxConfig = isLootbox ? lootBoxConfigsMap[reward.id] : null;
+                      const rarityClass = item?.rarity ? getRarityColorClass(item.rarity) : 'border-gray-600';
+                      
+                      return (
+                        <div 
+                          key={`${reward.id}-${idx}`}
+                          className={`bg-gray-800/70 rounded-lg border ${rarityClass} p-3 flex flex-col items-center transition-all duration-300`}
+                        >
+                          <div className="bg-gradient-to-b from-gray-700/50 to-black/50 p-2 rounded-lg mb-2 flex items-center justify-center">
+                            {item?.imagePath ? (
+                              <img 
+                                src={item.imagePath} 
+                                alt={reward.id}
+                                className="w-8 h-8 object-contain"
+                                style={{ imageRendering: 'pixelated' }}
+                              />
+                            ) : isLootbox && lootboxConfig?.image ? (
+                              <img 
+                                src={lootboxConfig.image} 
+                                alt={lootboxConfig.name}
+                                className="w-8 h-8 object-contain"
+                                style={{ imageRendering: 'pixelated' }}
+                              />
+                            ) : (
+                              <Package className="w-6 h-6 text-gray-400" />
+                            )}
+                          </div>
+                          <h3 className="text-white font-semibold text-center text-xs mb-1 line-clamp-1">
+                            {item?.name || (lootboxConfig ? lootboxConfig.name : reward.id)}
+                          </h3>
+                          <div className="px-2 py-1 bg-brand-orange/90 rounded-full text-white text-xs font-bold">
+                            {reward.quantity}x
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {selectedQuest.rewards.length > 4 && (
+                    <div className="mt-2 text-center text-xs text-gray-400">
+                      +{selectedQuest.rewards.length - 4} more rewards
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             
-            {/* RuneScape-style Start Quest Button */}
-            <div className="bg-gray-900/80 border border-brand-orange/30 rounded-lg p-6">
+            {/* Start Quest Button */}
+            <div className="bg-gray-900/80 border border-brand-orange/30 rounded-lg p-4">
               <button
-                className="w-full py-4 bg-gradient-to-b from-orange-500 to-orange-700 hover:from-orange-600 hover:to-orange-800 border-2 border-orange-400 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200 font-bold text-white text-xl tracking-wide"
+                className="w-full py-4 bg-gradient-to-b from-orange-500 to-orange-700 hover:from-orange-600 hover:to-orange-800 border-2 border-orange-400 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200 font-bold text-white text-lg tracking-wide"
                 onClick={() => {
                   window.sounds?.click();
                   if (selectedQuest) {
@@ -194,7 +257,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                   boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.2), 0 4px 8px rgba(0,0,0,0.3)'
                 }}
               >
-                ⚔️ START QUEST ⚔️
+                START QUEST
               </button>
             </div>
           </div>
@@ -203,36 +266,36 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
         {/* Required Components section */}
         {selectedQuest.componentRequirements && selectedQuest.componentRequirements.length > 0 && (
           <div className="mb-6 bg-gray-900/80 border border-brand-orange/30 rounded-lg shadow-lg overflow-hidden">
-            <div className="bg-gray-800/60 px-6 py-4 border-b border-brand-orange/30">
-              <h2 className="text-xl font-bold text-brand-orange flex items-center">
-                <Cpu className="h-5 w-5 mr-2" />
+            <div className="bg-gray-800/60 px-4 py-3 border-b border-brand-orange/30">
+              <h2 className="text-lg font-bold text-brand-orange flex items-center">
+                <Cpu className="h-4 w-4 mr-2" />
                 Required Components
               </h2>
             </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {selectedQuest.componentRequirements.map((component) => (
                   <div 
                     key={component.id}
-                    className="bg-gray-800/80 rounded-lg border border-gray-600 hover:border-gray-400 p-4 flex transition-all duration-300"
+                    className="bg-gray-800/80 rounded-lg border border-gray-600 hover:border-gray-400 p-3 flex flex-col items-center transition-all duration-300"
                   >
-                    <div className="mr-4 flex-shrink-0 flex items-center justify-center bg-black/40 p-3 rounded-md">
+                    <div className="mb-3 flex items-center justify-center bg-black/40 p-3 rounded-md">
                       {component.imagePath ? (
                         <img 
                           src={component.imagePath} 
                           alt={component.name}
-                          className="w-16 h-16 object-contain"
+                          className="w-12 h-12 object-contain"
                           style={{ imageRendering: 'pixelated' }}
                         />
                       ) : (
-                        <Cpu className="w-12 h-12 text-gray-400" />
+                        <Cpu className="w-10 h-10 text-gray-400" />
                       )}
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-white font-semibold mb-1">{component.name}</h3>
-                      <p className="text-gray-300 text-sm">{component.description}</p>
+                    <div className="flex-1 text-center">
+                      <h3 className="text-white font-semibold mb-1 text-sm">{component.name}</h3>
+                      <p className="text-gray-300 text-xs line-clamp-2">{component.description}</p>
                       {component.quantity > 1 && (
-                        <div className="flex items-center mt-2">
+                        <div className="flex items-center justify-center mt-2">
                           <div className="bg-brand-orange/80 text-white text-xs px-2 py-1 rounded-full font-bold">
                             Qty: {component.quantity}
                           </div>
@@ -245,83 +308,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
             </div>
           </div>
         )}
-        
-        {/* Rewards section */}
-        {selectedQuest.rewards && selectedQuest.rewards.length > 0 && (
-          <div className="mb-6 bg-gray-900/80 border border-brand-orange/30 rounded-lg shadow-lg overflow-hidden">
-            <div className="bg-gray-800/60 px-6 py-4 border-b border-brand-orange/30">
-              <h2 className="text-xl font-bold text-brand-orange flex items-center">
-                <Gift className="h-5 w-5 mr-2" />
-                Quest Rewards
-              </h2>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {selectedQuest.rewards.map((reward, idx) => {
-                  // Find item details
-                  const item = items?.find(i => i.id === reward.id);
-                  
-                  // Check if this is a lootbox type reward
-                  const isLootbox = reward.type === 'lootbox';
-                  // Get lootbox config if available
-                  const lootboxConfig = isLootbox ? lootBoxConfigsMap[reward.id] : null;
-                  
-                  // Determine rarity class for border color
-                  const rarityClass = item?.rarity ? getRarityColorClass(item.rarity) : 'border-gray-600';
-                  
-                  return (
-                    <div 
-                      key={`${reward.id}-${idx}`}
-                      className={`bg-gray-800/70 rounded-lg border ${rarityClass} p-4 flex flex-col items-center hover:shadow-md hover:border-opacity-100 transition-all duration-300`}
-                    >
-                      <div className="bg-gradient-to-b from-gray-700/50 to-black/50 p-3 rounded-lg mb-3 flex items-center justify-center">
-                        {item?.imagePath ? (
-                          <img 
-                            src={item.imagePath} 
-                            alt={reward.id}
-                            className="w-12 h-12 object-contain"
-                            style={{ imageRendering: 'pixelated' }}
-                          />
-                        ) : isLootbox && lootboxConfig?.image ? (
-                          <img 
-                            src={lootboxConfig.image} 
-                            alt={lootboxConfig.name}
-                            className="w-12 h-12 object-contain"
-                            style={{ imageRendering: 'pixelated' }}
-                          />
-                        ) : isLootbox ? (
-                          <img 
-                            src={`/uploads/items/${reward.id}.png`} 
-                            alt={reward.id || "Loot Crate"}
-                            className="w-12 h-12 object-contain"
-                            style={{ imageRendering: 'pixelated' }}
-                            onError={(e) => {
-                              const img = e.currentTarget;
-                              img.src = `/uploads/lootboxes/${reward.id}.png`;
-                              img.onerror = () => {
-                                img.src = '/assets/goldcrate.png';
-                              };
-                            }}
-                          />
-                        ) : (
-                          <div className="flex items-center justify-center">
-                            <Package className="w-10 h-10 text-gray-400" />
-                          </div>
-                        )}
-                      </div>
-                      <h3 className="text-white font-semibold text-center text-sm mb-1 px-1 line-clamp-2">
-                        {item?.name || (lootboxConfig ? lootboxConfig.name : reward.id)}
-                      </h3>
-                      <div className="px-2 py-1 bg-brand-orange/90 rounded-full text-white text-xs font-bold">
-                        {reward.quantity}x
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
+
       </div>
     );
   };
