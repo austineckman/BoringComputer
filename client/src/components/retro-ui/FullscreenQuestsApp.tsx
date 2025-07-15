@@ -94,8 +94,14 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
   const renderQuestDetail = () => {
     if (!selectedQuest) return null;
     
+    console.log('Quest detail rendering for:', selectedQuest.title);
+    console.log('Quest content:', selectedQuest.content);
+    console.log('Quest images:', selectedQuest.content?.images);
+    
     const questImages = selectedQuest.content?.images || [];
     const heroImage = questImages[0]; // Get the first image as hero image
+    
+    console.log('Hero image:', heroImage);
     
     return (
       <div className="flex-1 overflow-y-auto p-6 max-w-6xl mx-auto">
