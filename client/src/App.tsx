@@ -38,6 +38,7 @@ import { ProtectedRoute, AdminRoute } from "@/lib/protected-route";
 import { SoundProvider } from "@/context/SoundContext";
 import { AuthProvider } from "@/hooks/use-auth";
 import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
+import RetroBootScreen from "@/components/retro-ui/RetroBootScreen";
 
 function App() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -80,9 +81,12 @@ function App() {
 
   if (isAuthenticating) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-12 h-12 border-4 border-brand-orange border-t-transparent rounded-full"></div>
-      </div>
+      <RetroBootScreen 
+        onComplete={() => {
+          // Allow the boot screen to complete naturally
+          // The authentication process will handle the redirect
+        }}
+      />
     );
   }
 
