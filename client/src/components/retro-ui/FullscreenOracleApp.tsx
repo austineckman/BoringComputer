@@ -1296,22 +1296,66 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         window.sounds?.error();
         const errorText = await response.text();
         let errorMessage = 'Failed to update';
+        let detailedError = '';
         
         try {
           const errorData = JSON.parse(errorText);
           errorMessage = errorData.message || errorMessage;
+          
+          // Show detailed error information
+          if (errorData.error) {
+            detailedError += `\nError Code: ${errorData.error}`;
+          }
+          
+          if (errorData.details) {
+            detailedError += `\nDetails: ${errorData.details}`;
+          }
+          
+          if (errorData.hint) {
+            detailedError += `\nHint: ${errorData.hint}`;
+          }
+          
+          if (errorData.receivedId) {
+            detailedError += `\nReceived ID: ${errorData.receivedId} (${errorData.receivedType})`;
+          }
+          
+          if (errorData.maxSafeInteger) {
+            detailedError += `\nMax Safe Integer: ${errorData.maxSafeInteger}`;
+          }
+          
+          if (errorData.availableTables) {
+            detailedError += `\nAvailable Tables: ${errorData.availableTables.join(', ')}`;
+          }
+          
+          if (errorData.requestData) {
+            detailedError += `\nRequest Data: ${JSON.stringify(errorData.requestData, null, 2)}`;
+          }
+          
+          // Log full error details to console for debugging
+          console.error('Detailed error information:', {
+            response: response,
+            status: response.status,
+            statusText: response.statusText,
+            errorData: errorData,
+            requestEndpoint: endpoint,
+            requestMethod: method,
+            requestBody: body
+          });
+          
         } catch (e) {
           // If the response isn't JSON, use the text directly
           errorMessage = errorText || errorMessage;
+          console.error('Error parsing response:', e);
+          console.error('Raw response:', errorText);
         }
         
         setNotificationMessage({
           type: 'error',
-          message: `Error: ${errorMessage}`
+          message: `Error: ${errorMessage}${detailedError}`
         });
         setTimeout(() => {
           setNotificationMessage(null);
-        }, 3000);
+        }, 5000); // Show error for 5 seconds instead of 3
       }
     } catch (err) {
       window.sounds?.error();

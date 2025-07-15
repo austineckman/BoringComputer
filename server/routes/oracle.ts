@@ -93,10 +93,60 @@ router.post('/entities', authenticate, async (req, res) => {
     const { tableName, data } = createEntitySchema.parse(req.body);
     
     if (!tableMap[tableName]) {
-      return res.status(400).json({ message: `Table ${tableName} does not exist` });
+      return res.status(400).json({ 
+        message: `Table ${tableName} does not exist`,
+        availableTables: Object.keys(tableMap),
+        error: 'INVALID_TABLE'
+      });
     }
     
     const table = tableMap[tableName];
+    
+    // Validate data structure for specific tables
+    if (tableName === 'quests') {
+      // Validate quest-specific data
+      if (!data.title || typeof data.title !== 'string') {
+        return res.status(400).json({ 
+          message: 'Quest title is required and must be a string',
+          error: 'INVALID_QUEST_TITLE',
+          receivedData: data
+        });
+      }
+      
+      if (!data.adventureLine || typeof data.adventureLine !== 'string') {
+        return res.status(400).json({ 
+          message: 'Quest adventure line is required and must be a string',
+          error: 'INVALID_ADVENTURE_LINE',
+          receivedData: data
+        });
+      }
+      
+      if (!data.description || typeof data.description !== 'string') {
+        return res.status(400).json({ 
+          message: 'Quest description is required and must be a string',
+          error: 'INVALID_QUEST_DESCRIPTION',
+          receivedData: data
+        });
+      }
+      
+      if (data.id && !Number.isInteger(data.id)) {
+        return res.status(400).json({ 
+          message: 'Quest ID must be an integer',
+          error: 'INVALID_QUEST_ID',
+          receivedId: data.id,
+          receivedType: typeof data.id
+        });
+      }
+      
+      if (data.id && data.id > Number.MAX_SAFE_INTEGER) {
+        return res.status(400).json({ 
+          message: 'Quest ID exceeds maximum safe integer',
+          error: 'QUEST_ID_TOO_LARGE',
+          receivedId: data.id,
+          maxSafeInteger: Number.MAX_SAFE_INTEGER
+        });
+      }
+    }
     
     // Insert new entity
     const [newEntity] = await db.insert(table).values(data).returning();
@@ -104,7 +154,52 @@ router.post('/entities', authenticate, async (req, res) => {
     return res.status(201).json(newEntity);
   } catch (error) {
     console.error('Error creating entity:', error);
-    return res.status(500).json({ message: 'Failed to create entity' });
+    
+    // More specific error handling
+    if (error.code === '22003') {
+      return res.status(400).json({ 
+        message: 'Numeric value out of range',
+        error: 'NUMERIC_VALUE_OUT_OF_RANGE',
+        details: error.message,
+        hint: 'The ID value is too large for the database column. Consider using a smaller numeric value.',
+        requestData: req.body
+      });
+    }
+    
+    if (error.code === '23505') {
+      return res.status(409).json({ 
+        message: 'Duplicate key value violates unique constraint',
+        error: 'DUPLICATE_KEY_ERROR',
+        details: error.detail,
+        requestData: req.body
+      });
+    }
+    
+    if (error.code === '23502') {
+      return res.status(400).json({ 
+        message: 'Not null constraint violation',
+        error: 'NULL_CONSTRAINT_VIOLATION',
+        details: error.message,
+        requestData: req.body
+      });
+    }
+    
+    if (error.code === '23503') {
+      return res.status(400).json({ 
+        message: 'Foreign key constraint violation',
+        error: 'FOREIGN_KEY_CONSTRAINT_VIOLATION',
+        details: error.detail,
+        requestData: req.body
+      });
+    }
+    
+    return res.status(500).json({ 
+      message: 'Failed to create entity',
+      error: 'UNKNOWN_DATABASE_ERROR',
+      details: error.message,
+      code: error.code,
+      requestData: req.body
+    });
   }
 });
 
