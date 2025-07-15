@@ -1185,12 +1185,32 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         }
       }
       
+      // For POST/PUT requests to protected endpoints, we need CSRF token
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      
+      // Add CSRF token for protected endpoints
+      if (method === 'POST' || method === 'PUT') {
+        try {
+          const csrfResponse = await fetch('/api/csrf-token', {
+            credentials: 'include'
+          });
+          
+          if (csrfResponse.ok) {
+            const csrfData = await csrfResponse.json();
+            headers['X-CSRF-Token'] = csrfData.token;
+          }
+        } catch (error) {
+          console.error('Failed to get CSRF token:', error);
+        }
+      }
+      
       const response = await fetch(endpoint, {
         method,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
+        headers,
+        body: JSON.stringify(body),
+        credentials: 'include'
       });
       
       if (response.ok) {
