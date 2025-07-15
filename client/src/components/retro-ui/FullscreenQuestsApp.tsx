@@ -95,6 +95,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
     if (!selectedQuest) return null;
     
     const questImages = selectedQuest.content?.images || [];
+    const heroImage = questImages[0]; // Get the first image as hero image
     
     return (
       <div className="flex-1 overflow-y-auto p-6 max-w-6xl mx-auto">
@@ -117,11 +118,11 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
           {/* Left column - Hero Image and Flavor Text */}
           <div className="bg-gray-900/80 rounded-lg shadow-lg border border-brand-orange/30 overflow-hidden">
             {/* Hero image */}
-            {questImages[0] && (
+            {heroImage ? (
               <div className="relative">
                 <div className="w-full h-64 overflow-hidden">
                   <img 
-                    src={questImages[0]} 
+                    src={heroImage} 
                     alt={selectedQuest.title}
                     className="w-full h-full object-cover"
                   />
@@ -141,6 +142,19 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                       {Array(selectedQuest.difficulty).fill('★').join('')}
                     </span>
                   </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-gray-800/60">
+                <h1 className="text-2xl font-bold text-white mb-2">{selectedQuest.title}</h1>
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-brand-orange flex items-center text-sm font-semibold">
+                    <Award className="h-4 w-4 mr-1" />
+                    {selectedQuest.xpReward} XP
+                  </span>
+                  <span className="text-yellow-400 text-sm">
+                    {Array(selectedQuest.difficulty).fill('★').join('')}
+                  </span>
                 </div>
               </div>
             )}
