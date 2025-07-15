@@ -174,11 +174,6 @@ router.post('/entities', authenticate, async (req, res) => {
       if (data.id && typeof data.id === 'string') {
         data.id = Number(data.id);
       }
-      
-      // Add current date if not provided (required field)
-      if (!data.date) {
-        data.date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-      }
     }
     
     // Handle both create and update operations
