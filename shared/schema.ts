@@ -51,6 +51,15 @@ export const quests = pgTable("quests", {
   }>().default({videos: [], images: [], codeBlocks: []}),
   // Reference to a component kit (if this quest requires physical components)
   kitId: text("kit_id").references(() => componentKits.id, { onDelete: 'set null' }),
+  // Solution helper fields for quest cheat system
+  solutionCode: text("solution_code"),         // Complete Arduino code solution
+  wiringInstructions: text("wiring_instructions"), // Step-by-step wiring instructions
+  wiringDiagram: text("wiring_diagram"),       // URL to wiring diagram image
+  solutionNotes: text("solution_notes"),       // Additional troubleshooting notes
+  // Hero image field for quest display
+  heroImage: text("hero_image"),               // URL to hero image
+  // Quest status tracking
+  status: text("status").default("available"), // available, active, completed, locked
 });
 
 // User Quests status table

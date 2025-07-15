@@ -197,18 +197,46 @@ router.post('/entities', authenticate, async (req, res) => {
       
       resultEntity = updatedEntity;
     } else {
-      // Handle component requirements separately for new quest creation
-      if (tableName === 'quests' && data.componentRequirements) {
+      // Handle quest creation with comprehensive field support
+      if (tableName === 'quests') {
         const componentRequirements = data.componentRequirements;
         
-        // Remove componentRequirements from quest data before saving
+        // Remove componentRequirements from quest data before saving (handled separately)
         const { componentRequirements: _, ...questData } = data;
         
+        // Ensure all quest fields are properly handled for new quests
+        const cleanQuestData = {
+          ...questData,
+          // Ensure core fields are present
+          title: questData.title || 'Untitled Quest',
+          description: questData.description || 'No description provided',
+          adventureLine: questData.adventureLine || 'General',
+          difficulty: questData.difficulty || 1,
+          xpReward: questData.xpReward || 100,
+          // Handle solution fields
+          solutionCode: questData.solutionCode || null,
+          wiringInstructions: questData.wiringInstructions || null,
+          wiringDiagram: questData.wiringDiagram || null,
+          solutionNotes: questData.solutionNotes || null,
+          heroImage: questData.heroImage || null,
+          status: questData.status || 'available',
+          // Handle JSON fields safely
+          rewards: questData.rewards || [],
+          lootBoxRewards: questData.lootBoxRewards || [],
+          content: questData.content || { videos: [], images: [], codeBlocks: [] },
+          // Handle optional fields
+          date: questData.date || null,
+          missionBrief: questData.missionBrief || null,
+          kitId: questData.kitId || null,
+          orderInLine: questData.orderInLine || 0,
+          active: questData.active !== undefined ? questData.active : true
+        };
+        
         // Insert new quest
-        const [newQuest] = await db.insert(table).values(questData).returning();
+        const [newQuest] = await db.insert(table).values(cleanQuestData).returning();
         resultEntity = newQuest;
         
-        // Insert quest components
+        // Handle component requirements separately
         if (componentRequirements && componentRequirements.length > 0) {
           const questComponentsData = componentRequirements.map((comp: any) => ({
             questId: newQuest.id,
@@ -290,18 +318,46 @@ router.put('/entities', authenticate, async (req, res) => {
     const table = tableMap[tableName];
     const idField = table.id;
     
-    // Handle component requirements separately for quests
-    if (tableName === 'quests' && data.componentRequirements) {
+    // Handle quest updates with comprehensive field support
+    if (tableName === 'quests') {
       const questId = isNaN(Number(id)) ? id : Number(id);
       const componentRequirements = data.componentRequirements;
       
-      // Remove componentRequirements from quest data before saving
+      // Remove componentRequirements from quest data before saving (handled separately)
       const { componentRequirements: _, ...questData } = data;
+      
+      // Ensure all quest fields are properly handled
+      const cleanQuestData = {
+        ...questData,
+        // Ensure core fields are present
+        title: questData.title || 'Untitled Quest',
+        description: questData.description || 'No description provided',
+        adventureLine: questData.adventureLine || 'General',
+        difficulty: questData.difficulty || 1,
+        xpReward: questData.xpReward || 100,
+        // Handle solution fields
+        solutionCode: questData.solutionCode || null,
+        wiringInstructions: questData.wiringInstructions || null,
+        wiringDiagram: questData.wiringDiagram || null,
+        solutionNotes: questData.solutionNotes || null,
+        heroImage: questData.heroImage || null,
+        status: questData.status || 'available',
+        // Handle JSON fields safely
+        rewards: questData.rewards || [],
+        lootBoxRewards: questData.lootBoxRewards || [],
+        content: questData.content || { videos: [], images: [], codeBlocks: [] },
+        // Handle optional fields
+        date: questData.date || null,
+        missionBrief: questData.missionBrief || null,
+        kitId: questData.kitId || null,
+        orderInLine: questData.orderInLine || 0,
+        active: questData.active !== undefined ? questData.active : true
+      };
       
       // Update the quest first
       const [updatedQuest] = await db
         .update(table)
-        .set(questData)
+        .set(cleanQuestData)
         .where(eq(idField, questId))
         .returning();
       
@@ -309,21 +365,24 @@ router.put('/entities', authenticate, async (req, res) => {
         return res.status(404).json({ message: `Quest with ID ${id} not found` });
       }
       
-      // Delete existing quest components
-      await db
-        .delete(schema.questComponents)
-        .where(eq(schema.questComponents.questId, questId));
-      
-      // Insert new quest components
-      if (componentRequirements && componentRequirements.length > 0) {
-        const questComponentsData = componentRequirements.map((comp: any) => ({
-          questId: questId,
-          componentId: parseInt(comp.id),
-          quantity: comp.quantity || 1,
-          isOptional: comp.isOptional || false
-        }));
+      // Handle component requirements separately
+      if (componentRequirements !== undefined) {
+        // Delete existing quest components
+        await db
+          .delete(schema.questComponents)
+          .where(eq(schema.questComponents.questId, questId));
         
-        await db.insert(schema.questComponents).values(questComponentsData);
+        // Insert new quest components
+        if (componentRequirements && componentRequirements.length > 0) {
+          const questComponentsData = componentRequirements.map((comp: any) => ({
+            questId: questId,
+            componentId: parseInt(comp.id),
+            quantity: comp.quantity || 1,
+            isOptional: comp.isOptional || false
+          }));
+          
+          await db.insert(schema.questComponents).values(questComponentsData);
+        }
       }
       
       return res.json(updatedQuest);
