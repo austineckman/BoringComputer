@@ -375,8 +375,8 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
           />
         ) : questView === 'kit-select' ? (
           /* Kit Selection Screen */
-          <div className="flex-1 overflow-y-auto p-6 bg-black/70">
-            <div className="max-w-4xl mx-auto">
+          <div className="flex-1 overflow-y-auto bg-black/70">
+            <div className="p-6 pb-12 max-w-4xl mx-auto min-h-full">
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold text-white mb-4">Select a Component Kit</h2>
                 <p className="text-gray-300">Choose a kit to see available quests and adventures</p>
@@ -388,7 +388,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                   <p className="text-brand-orange">Loading kits...</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
                   {kits?.map(kit => {
                     const kitQuests = getQuestsForKit(kit.id);
                     const questCount = kitQuests.length;
