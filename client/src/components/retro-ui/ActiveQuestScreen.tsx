@@ -93,15 +93,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
     refetchInterval: false,
   });
 
-  // Debug logging
-  useEffect(() => {
-    console.log('Comments query state:', { 
-      comments: comments?.length || 0, 
-      loading: commentsLoading, 
-      error: commentsError,
-      questId 
-    });
-  }, [comments, commentsLoading, commentsError, questId]);
+
 
   // Timer for unlocking cheat
   useEffect(() => {
@@ -294,39 +286,40 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   }
 
   return (
-    <div className="absolute inset-0 bg-black text-white flex flex-col">
+    <div className="absolute inset-0 bg-black text-white flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-black/90 border-b border-brand-orange/30 p-4 flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-2xl font-bold text-brand-orange">{quest.title}</h1>
-          <div className="flex items-center space-x-2 text-sm text-gray-400">
+      <div className="bg-black/90 border-b border-brand-orange/30 p-2 sm:p-4 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center space-x-2 sm:space-x-4 min-w-0">
+          <h1 className="text-lg sm:text-2xl font-bold text-brand-orange truncate">{quest.title}</h1>
+          <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-400">
             <Clock className="w-4 h-4" />
             <span>Time: {formatTime(elapsedTime)}</span>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
           <button 
             onClick={() => abandonQuestMutation.mutate()}
-            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-md flex items-center space-x-2"
+            className="px-2 py-1 sm:px-4 sm:py-2 bg-red-600 hover:bg-red-500 text-white rounded-md flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
           >
-            <XCircle className="w-4 h-4" />
-            <span>Abandon Quest</span>
+            <XCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Abandon Quest</span>
+            <span className="sm:hidden">Abandon</span>
           </button>
           <button 
             onClick={onClose}
             className="text-white hover:text-brand-orange"
           >
-            <X className="h-6 w-6" />
+            <X className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
         </div>
       </div>
 
-      <div className="flex-1 flex min-h-0">
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
           {/* Video Section */}
-          <div className="bg-gray-900 rounded-lg p-6">
-            <h2 className="text-xl font-bold text-brand-orange mb-4">Tutorial Video</h2>
+          <div className="bg-gray-900 rounded-lg p-3 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-bold text-brand-orange mb-3 sm:mb-4">Tutorial Video</h2>
             {quest.content?.videos && quest.content.videos.length > 0 ? (
               <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
                 <iframe
@@ -465,16 +458,16 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
         </div>
 
         {/* Comments Sidebar */}
-        <div className="w-96 bg-gray-900 border-l border-brand-orange/30 flex flex-col">
-          <div className="p-4 border-b border-gray-700">
-            <h3 className="text-lg font-bold text-brand-orange flex items-center">
-              <MessageCircle className="w-5 h-5 mr-2" />
+        <div className="w-full lg:w-96 bg-gray-900 border-t lg:border-t-0 lg:border-l border-brand-orange/30 flex flex-col max-h-80 lg:max-h-none">
+          <div className="p-3 sm:p-4 border-b border-gray-700">
+            <h3 className="text-base sm:text-lg font-bold text-brand-orange flex items-center">
+              <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Community Discussion
             </h3>
           </div>
           
           {/* Comments List */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3">
             {commentsLoading ? (
               <div className="text-center py-8">
                 <div className="w-8 h-8 border-2 border-brand-orange border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
@@ -585,7 +578,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
           </div>
           
           {/* Add Comment */}
-          <div className="p-4 border-t border-gray-700">
+          <div className="p-3 sm:p-4 border-t border-gray-700">
             {replyingTo && (
               <div className="mb-3 p-2 bg-gray-800 rounded border-l-4 border-brand-orange">
                 <div className="flex items-center justify-between">
@@ -645,14 +638,14 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
         </div>
       </div>
       
-      {/* Complete Quest Button */}
-      <div className="p-4 bg-black/90 border-t border-brand-orange/30 flex justify-center flex-shrink-0">
+      {/* Complete Quest Button - Fixed at bottom */}
+      <div className="p-3 sm:p-4 bg-black/90 border-t border-brand-orange/30 flex justify-center flex-shrink-0">
         <button
           onClick={() => completeQuestMutation.mutate()}
           disabled={completeQuestMutation.isPending}
-          className="px-8 py-3 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 text-white rounded-md flex items-center space-x-2"
+          className="px-4 py-2 sm:px-8 sm:py-3 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 text-white rounded-md flex items-center space-x-2 text-sm sm:text-base"
         >
-          <CheckCircle className="w-5 h-5" />
+          <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
           <span>Complete Quest</span>
         </button>
       </div>
