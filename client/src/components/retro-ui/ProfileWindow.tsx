@@ -39,11 +39,17 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
   // Mutation for updating display name
   const updateDisplayNameMutation = useMutation({
     mutationFn: async (displayName: string) => {
-      return await apiRequest('/api/user/profile', {
+      const response = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ displayName: displayName || null })
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       // Invalidate and refetch user data
