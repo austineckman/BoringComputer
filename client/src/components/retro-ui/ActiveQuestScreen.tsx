@@ -94,6 +94,11 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
     refetchInterval: false,
   });
 
+  // Debug logging
+  console.log('Comments data:', comments);
+  console.log('Comments loading:', commentsLoading);
+  console.log('Comments error:', commentsError);
+
 
 
   // Timer for unlocking cheat
