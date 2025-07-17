@@ -681,7 +681,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="text-xs text-gray-400">
                     <Reply className="w-3 h-3 inline mr-1" />
-                    Replying to <span className="text-brand-orange">@{comments?.find(c => c.id === replyingTo)?.username || 'someone'}</span>
+                    Replying to <span className="text-brand-orange">@{comments?.find(c => c.id === replyingTo)?.displayName || comments?.find(c => c.id === replyingTo)?.username || 'someone'}</span>
                   </div>
                   <button 
                     onClick={() => setReplyingTo(null)}
@@ -700,7 +700,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
                     alt={user.username}
                     className="w-8 h-8 rounded-full"
                   />
-                  <span className={`text-sm font-medium ${getRoleColor(user)}`}>{user.username}</span>
+                  <span className={`text-sm font-medium ${getRoleColor(user)}`}>{user.displayName || user.username}</span>
                   {user.roles?.includes('Founder') && (
                     <span className="text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded">FOUNDER</span>
                   )}
