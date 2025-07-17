@@ -264,6 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user: {
           id: users.id,
           username: users.username,
+          displayName: users.displayName,
           avatar: users.avatar,
           roles: users.roles,
         }
