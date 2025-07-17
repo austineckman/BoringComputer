@@ -86,12 +86,22 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   const quest = questData || fetchedQuest;
 
   // Fetch comments
-  const { data: comments, isLoading: commentsLoading } = useQuery<QuestComment[]>({
+  const { data: comments, isLoading: commentsLoading, error: commentsError } = useQuery<QuestComment[]>({
     queryKey: [`/api/quests/${questId}/comments`],
     refetchOnWindowFocus: false,
     staleTime: 0,
     refetchInterval: false,
   });
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Comments query state:', { 
+      comments: comments?.length || 0, 
+      loading: commentsLoading, 
+      error: commentsError,
+      questId 
+    });
+  }, [comments, commentsLoading, commentsError, questId]);
 
   // Timer for unlocking cheat
   useEffect(() => {
