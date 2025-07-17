@@ -265,6 +265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: users.id,
           username: users.username,
           avatar: users.avatar,
+          roles: users.roles,
         }
       })
       .from(questComments)
@@ -278,6 +279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: comment.user.id.toString(),
         username: comment.user.username,
         avatar: comment.user.avatar || 'https://via.placeholder.com/32',
+        roles: comment.user.roles || [],
         content: comment.content,
         timestamp: comment.createdAt.toISOString(),
         parentId: comment.parentId?.toString(),
@@ -342,6 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: userId.toString(),
         username: user?.username || 'Unknown',
         avatar: user?.avatar || 'https://via.placeholder.com/32',
+        roles: user?.roles || [],
         content: comment.content,
         timestamp: comment.createdAt.toISOString(),
         parentId: comment.parentId?.toString(),
@@ -364,6 +367,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!userId) {
         return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      // Check if commentId is a temporary ID from optimistic updates
+      if (commentId.startsWith('temp-')) {
+        return res.status(404).json({ error: 'Cannot react to temporary comment' });
       }
 
       // Get the comment
