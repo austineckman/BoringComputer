@@ -12,6 +12,7 @@ declare global {
     interface User {
       id: string;
       username: string;
+      displayName: string | null;
       discordId: string;
       email: string | null;
       avatar: string | null;
@@ -199,6 +200,7 @@ export function setupAuth(app: any): void {
             user = await storage.createUser({
               discordId: profile.id,
               username: profile.username,
+              displayName: profile.displayName || profile.globalName || profile.username, // Use Discord display name if available
               email: profile.email || null,
               avatar: profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png` : null,
               roles: discordRoles,
@@ -210,6 +212,7 @@ export function setupAuth(app: any): void {
             console.log("Updating existing Discord user:", profile.username);
             user = await storage.updateUser(user.id, {
               username: profile.username,
+              displayName: profile.displayName || profile.globalName || profile.username, // Update display name from Discord
               email: profile.email || user.email,
               roles: discordRoles, // Update roles from Discord
               avatar: profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png` : user.avatar,

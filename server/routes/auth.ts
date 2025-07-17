@@ -43,6 +43,7 @@ router.get("/me", (req, res) => {
   return res.json({
     id: user.id,
     username: user.username,
+    displayName: user.displayName,
     email: user.email,
     discordId: user.discordId,  // Make sure to include discordId
     avatar: user.avatar,

@@ -7,6 +7,7 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull(),
+  displayName: text("display_name"), // Custom display name or Discord display name
   email: text("email"),
   password: text("password"), // Added for regular login
   discordId: text("discord_id"),
