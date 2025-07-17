@@ -370,6 +370,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete comment route - only admins and CraftingTable members can delete
+  app.delete('/api/quests/:questId/comments/:commentId', authenticate, async (req, res) => {
+    try {
+      const { commentId } = req.params;
+      const userId = (req as any).user?.id;
+      const userRoles = (req as any).user?.roles || [];
+
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      // Check if user has permission to delete (admin, Founder, or CraftingTable member)
+      const canDelete = userRoles.includes('admin') || 
+                       userRoles.includes('Founder') || 
+                       userRoles.includes('CraftingTable');
+
+      if (!canDelete) {
+        return res.status(403).json({ error: 'Insufficient permissions to delete comments' });
+      }
+
+      // Get the comment to verify it exists
+      const [comment] = await db.select()
+        .from(questComments)
+        .where(eq(questComments.id, parseInt(commentId)));
+
+      if (!comment) {
+        return res.status(404).json({ error: 'Comment not found' });
+      }
+
+      // Delete the comment
+      await db.delete(questComments)
+        .where(eq(questComments.id, parseInt(commentId)));
+
+      res.json({ success: true, message: 'Comment deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting quest comment:', error);
+      res.status(500).json({ error: 'Failed to delete comment' });
+    }
+  });
+
   app.post('/api/quests/:questId/comments/:commentId/reactions', authenticate, async (req, res) => {
     try {
       const { commentId } = req.params;

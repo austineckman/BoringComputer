@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Play, Pause, MessageCircle, Heart, ThumbsUp, ThumbsDown, Reply, ChevronDown, ChevronUp, Clock, AlertTriangle, CheckCircle, XCircle, Send } from 'lucide-react';
+import { X, Play, Pause, MessageCircle, Heart, ThumbsUp, ThumbsDown, Reply, ChevronDown, ChevronUp, Clock, AlertTriangle, CheckCircle, XCircle, Send, Trash2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 interface ActiveQuestScreenProps {
   questId: string;
@@ -75,6 +76,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
 
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   // Use passed quest data or fetch from API as fallback
   const { data: fetchedQuest, isLoading: questLoading, error: questError } = useQuery<QuestData>({
@@ -245,6 +247,45 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
     if (commentId.startsWith('temp-')) return;
     reactToCommentMutation.mutate({ commentId, emoji });
   };
+
+  // Delete comment mutation
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      await apiRequest(`/api/quests/${questId}/comments/${commentId}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      // Invalidate and refetch comments
+      queryClient.invalidateQueries({ queryKey: ['/api/quests', questId, 'comments'] });
+      toast({
+        title: "Comment deleted",
+        description: "Comment has been removed successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting comment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete comment. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Handle delete comment
+  const handleDeleteComment = (commentId: string) => {
+    if (window.confirm('Are you sure you want to delete this comment?')) {
+      deleteCommentMutation.mutate(commentId);
+    }
+  };
+
+  // Check if user can delete comments (admin, Founder, or CraftingTable member)
+  const canDeleteComments = user && user.roles && (
+    user.roles.includes('admin') || 
+    user.roles.includes('Founder') || 
+    user.roles.includes('CraftingTable')
+  );
 
   // Get role-based name color
   const getRoleColor = (user: any) => {
@@ -552,6 +593,15 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
                         >
                           <Reply className="w-4 h-4" />
                         </button>
+                        {canDeleteComments && (
+                          <button
+                            onClick={() => handleDeleteComment(comment.id)}
+                            className="text-red-400 hover:text-red-300"
+                            title="Delete comment"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                       
                       {/* Replies */}
