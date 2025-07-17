@@ -37,13 +37,13 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction) =>
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Authentication required" });
   }
-  
+
   // Check if user has admin role (either explicit admin or Founder)
   const user = req.user as User;
   if (!user.roles?.includes('admin') && !user.roles?.includes('Founder')) {
     return res.status(403).json({ message: "Admin access required" });
   }
-  
+
   next();
 };
 
@@ -52,7 +52,7 @@ export function setupAuth(app: any): void {
   // Configure session middleware
   // Determine if we should use secure cookies based on request protocol
   const useSecureCookies = process.env.NODE_ENV === "production";
-  
+
   app.use(
     session({
       secret: process.env.SESSION_SECRET || "quest-giver-secret-key",
@@ -92,12 +92,12 @@ export function setupAuth(app: any): void {
             guildId: process.env.DISCORD_GUILD_ID?.slice(0, 4) + "...",
             botTokenLength: process.env.DISCORD_BOT_TOKEN?.length
           });
-          
+
           // Fetch user's actual Discord server roles
           let discordRoles: string[] = []; // Start empty, no defaults
           const guildId = process.env.DISCORD_GUILD_ID;
           const botToken = process.env.DISCORD_BOT_TOKEN;
-          
+
           if (guildId && botToken) {
             console.log("Attempting to fetch Discord roles for", profile.username);
             try {
@@ -111,14 +111,14 @@ export function setupAuth(app: any): void {
                   },
                 }
               );
-              
+
               if (userGuildsResponse.ok) {
                 const userGuilds = await userGuildsResponse.json();
                 const userGuild = userGuilds.find((guild: any) => guild.id === guildId);
-                
+
                 if (userGuild) {
                   console.log(`User ${profile.username} is a member of Discord server`);
-                  
+
                   // Now fetch the user's actual roles in the server using bot token
                   const memberResponse = await fetch(
                     `https://discord.com/api/v10/guilds/${guildId}/members/${profile.id}`,
@@ -129,11 +129,11 @@ export function setupAuth(app: any): void {
                       },
                     }
                   );
-                  
+
                   if (memberResponse.ok) {
                     const member = await memberResponse.json();
                     const roleIds = member.roles || [];
-                    
+
                     // Fetch all server roles to map IDs to names
                     const rolesResponse = await fetch(
                       `https://discord.com/api/v10/guilds/${guildId}/roles`,
@@ -144,10 +144,10 @@ export function setupAuth(app: any): void {
                         },
                       }
                     );
-                    
+
                     if (rolesResponse.ok) {
                       const allRoles = await rolesResponse.json();
-                      
+
                       // Map role IDs to role names, excluding @everyone
                       discordRoles = roleIds
                         .map((roleId: string) => {
@@ -155,7 +155,7 @@ export function setupAuth(app: any): void {
                           return role?.name;
                         })
                         .filter((name: string) => name && name !== '@everyone');
-                      
+
                       // Add admin role for users with Founder role
                       if (discordRoles.includes('Founder')) {
                         if (!discordRoles.includes('admin')) {
@@ -163,7 +163,7 @@ export function setupAuth(app: any): void {
                         }
                         console.log(`${profile.username} is a Founder - granted admin privileges`);
                       }
-                      
+
                       console.log(`${profile.username} final roles (with admin mapping):`, discordRoles);
                     } else {
                       console.error('Failed to fetch server roles:', memberResponse.status);
@@ -184,7 +184,7 @@ export function setupAuth(app: any): void {
           } else {
             console.log('Discord configuration missing - cannot fetch roles');
           }
-          
+
           // Development mode: Force admin access for austineckman
           if (process.env.NODE_ENV === 'development' && profile.username === 'austineckman') {
             console.log('Development mode: Granting admin access to austineckman');
@@ -193,7 +193,7 @@ export function setupAuth(app: any): void {
 
           // Try to find existing user by Discord ID
           let user = await storage.getUserByDiscordId(profile.id);
-          
+
           if (!user) {
             // Create new user from Discord profile
             console.log("Creating new user from Discord profile:", profile.username);
@@ -237,14 +237,17 @@ export function setupAuth(app: any): void {
   // Deserialize user from the session
   passport.deserializeUser(async (id: number, done) => {
     try {
+      // Only log if we encounter an error or can't find the user
       const user = await storage.getUser(id);
-      if (!user) {
-        return done(null, false);
+      if (user) {
+        done(null, user);
+      } else {
+        console.log('User not found during session deserialization:', id);
+        done(null, false);
       }
-      console.log('Deserializing user from session:', { id: user.id, username: user.username, discordId: user.discordId, roles: user.roles });
-      done(null, user);
     } catch (error) {
-      done(error);
+      console.error('Error deserializing user:', error);
+      done(error, null);
     }
   });
 }
