@@ -134,7 +134,23 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
       };
 
       queryClient.setQueryData([`/api/quests/${questId}/comments`], (old: any) => {
-        return old ? [...old, optimisticComment] : [optimisticComment];
+        if (!old) return [optimisticComment];
+        
+        // If this is a reply, add it to the parent's replies array
+        if (newComment.parentId && !newComment.parentId.startsWith('temp-')) {
+          return old.map((comment: any) => {
+            if (comment.id === newComment.parentId) {
+              return {
+                ...comment,
+                replies: [...(comment.replies || []), optimisticComment]
+              };
+            }
+            return comment;
+          });
+        }
+        
+        // Otherwise, add as a new top-level comment
+        return [...old, optimisticComment];
       });
 
       // Return a context with the previous and new comment
@@ -207,10 +223,16 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
 
   const handleAddComment = () => {
     if (newComment.trim() && user) {
-      addCommentMutation.mutate({ 
-        content: newComment.trim(),
-        parentId: replyingTo || undefined
-      });
+      const commentData: { content: string; parentId?: string } = { 
+        content: newComment.trim()
+      };
+      
+      // Only add parentId if we're actually replying to a comment
+      if (replyingTo && !replyingTo.startsWith('temp-')) {
+        commentData.parentId = replyingTo;
+      }
+      
+      addCommentMutation.mutate(commentData);
     }
   };
 
