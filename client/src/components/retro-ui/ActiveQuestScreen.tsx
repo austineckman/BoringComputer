@@ -17,6 +17,7 @@ interface QuestComment {
   id: string;
   userId: string;
   username: string;
+  displayName?: string;
   avatar: string;
   content: string;
   timestamp: string;
@@ -130,6 +131,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
         id: `temp-${Date.now()}`,
         userId: user?.id.toString() || '',
         username: user?.username || '',
+        displayName: user?.displayName || user?.username || '',
         avatar: user?.avatar || '',
         roles: user?.roles || [],
         content: newComment.content,
@@ -251,9 +253,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   // Delete comment mutation
   const deleteCommentMutation = useMutation({
     mutationFn: async (commentId: string) => {
-      await apiRequest(`/api/quests/${questId}/comments/${commentId}`, {
-        method: 'DELETE'
-      });
+      return apiRequest('DELETE', `/api/quests/${questId}/comments/${commentId}`);
     },
     onSuccess: () => {
       // Invalidate and refetch comments
@@ -542,7 +542,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
                     />
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <span className={`font-medium ${getRoleColor(comment)}`}>{comment.username}</span>
+                        <span className={`font-medium ${getRoleColor(comment)}`}>{comment.displayName || comment.username}</span>
                         {comment.roles && comment.roles.includes('Founder') && (
                           <span className="text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded">FOUNDER</span>
                         )}
@@ -631,7 +631,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
                                     />
                                     <div className="flex-1">
                                       <div className="flex items-center space-x-2">
-                                        <span className={`font-medium text-sm ${getRoleColor(reply)}`}>{reply.username}</span>
+                                        <span className={`font-medium text-sm ${getRoleColor(reply)}`}>{reply.displayName || reply.username}</span>
                                         {reply.roles && reply.roles.includes('Founder') && (
                                           <span className="text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded">FOUNDER</span>
                                         )}
