@@ -88,16 +88,12 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   // Fetch comments
   const { data: comments, isLoading: commentsLoading, error: commentsError } = useQuery<QuestComment[]>({
     queryKey: ['/api/quests', questId, 'comments'],
-    queryFn: () => apiRequest('GET', `/api/quests/${questId}/comments`),
     refetchOnWindowFocus: false,
     staleTime: 0,
     refetchInterval: false,
   });
 
-  // Debug logging
-  console.log('Comments data:', comments);
-  console.log('Comments loading:', commentsLoading);
-  console.log('Comments error:', commentsError);
+
 
 
 
@@ -142,7 +138,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
       };
 
       queryClient.setQueryData(['/api/quests', questId, 'comments'], (old: any) => {
-        if (!old) return [optimisticComment];
+        if (!old || !Array.isArray(old)) return [optimisticComment];
         
         // If this is a reply, add it to the parent's replies array
         if (newComment.parentId && !newComment.parentId.startsWith('temp-')) {
@@ -485,7 +481,12 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
                 <div className="w-8 h-8 border-2 border-brand-orange border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
                 <p className="text-gray-400">Loading comments...</p>
               </div>
-            ) : comments && comments.length > 0 ? (
+            ) : commentsError ? (
+              <div className="text-center py-8 text-red-400">
+                <p>Error loading comments</p>
+                <p className="text-sm mt-2">Please refresh to try again</p>
+              </div>
+            ) : comments && Array.isArray(comments) && comments.length > 0 ? (
               comments.map(comment => (
                 <div key={comment.id} className="bg-gray-800 rounded-lg p-3">
                   <div className="flex items-start space-x-3">
