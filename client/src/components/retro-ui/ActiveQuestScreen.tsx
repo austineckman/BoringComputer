@@ -112,17 +112,43 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
     mutationFn: async (data: { content: string; parentId?: string }) => {
       return apiRequest('POST', `/api/quests/${questId}/comments`, data);
     },
-    onSuccess: () => {
-      // Invalidate and refetch comments
-      queryClient.invalidateQueries({ 
-        queryKey: [`/api/quests/${questId}/comments`],
-        exact: true 
+    onMutate: async (newComment) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: [`/api/quests/${questId}/comments`] });
+
+      // Snapshot the previous value
+      const previousComments = queryClient.getQueryData([`/api/quests/${questId}/comments`]);
+
+      // Optimistically update to the new value
+      const optimisticComment = {
+        id: `temp-${Date.now()}`,
+        userId: user?.id.toString() || '',
+        username: user?.username || '',
+        avatar: user?.avatar || '',
+        content: newComment.content,
+        timestamp: new Date().toISOString(),
+        reactions: [],
+        replies: []
+      };
+
+      queryClient.setQueryData([`/api/quests/${questId}/comments`], (old: any) => {
+        return old ? [...old, optimisticComment] : [optimisticComment];
       });
+
+      // Return a context with the previous and new comment
+      return { previousComments, optimisticComment };
+    },
+    onError: (err, newComment, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousComments) {
+        queryClient.setQueryData([`/api/quests/${questId}/comments`], context.previousComments);
+      }
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure we have the latest data
+      queryClient.invalidateQueries({ queryKey: [`/api/quests/${questId}/comments`] });
       setNewComment('');
       setReplyingTo(null);
-    },
-    onError: (error) => {
-      console.error('Error adding comment:', error);
     },
   });
 
