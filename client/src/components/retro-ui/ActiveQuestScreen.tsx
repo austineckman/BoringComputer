@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Play, Pause, MessageCircle, Heart, ThumbsUp, ThumbsDown, Reply, ChevronDown, ChevronUp, Clock, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { X, Play, Pause, MessageCircle, Heart, ThumbsUp, ThumbsDown, Reply, ChevronDown, ChevronUp, Clock, AlertTriangle, CheckCircle, XCircle, Send } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/useAuth';
@@ -125,8 +125,10 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
         userId: user?.id.toString() || '',
         username: user?.username || '',
         avatar: user?.avatar || '',
+        roles: user?.roles || [],
         content: newComment.content,
         timestamp: new Date().toISOString(),
+        parentId: newComment.parentId,
         reactions: [],
         replies: []
       };
@@ -213,7 +215,22 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   };
 
   const handleReaction = (commentId: string, emoji: string) => {
+    // Don't allow reactions on temporary comments
+    if (commentId.startsWith('temp-')) return;
     reactToCommentMutation.mutate({ commentId, emoji });
+  };
+
+  // Get role-based name color
+  const getRoleColor = (user: any) => {
+    if (!user?.roles) return 'text-white';
+    
+    // Priority order for role colors (highest priority first)
+    if (user.roles.includes('Founder')) return 'text-purple-400';
+    if (user.roles.includes('admin')) return 'text-red-400';
+    if (user.roles.includes('moderator')) return 'text-green-400';
+    if (user.roles.includes('premium')) return 'text-yellow-400';
+    if (user.roles.includes('Server Booster')) return 'text-pink-400';
+    return 'text-white';
   };
 
   if (questLoading && !questData) {
@@ -442,8 +459,14 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
                     />
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <span className="font-medium text-white">{comment.username}</span>
-                        <span className="text-xs text-gray-400">{comment.timestamp}</span>
+                        <span className={`font-medium ${getRoleColor(comment)}`}>{comment.username}</span>
+                        {comment.roles && comment.roles.includes('Founder') && (
+                          <span className="text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded">FOUNDER</span>
+                        )}
+                        {comment.roles && comment.roles.includes('admin') && !comment.roles.includes('Founder') && (
+                          <span className="text-xs bg-red-600 text-white px-1.5 py-0.5 rounded">ADMIN</span>
+                        )}
+                        <span className="text-xs text-gray-400">{new Date(comment.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                       </div>
                       <p className="text-gray-300 text-sm mt-1">{comment.content}</p>
                       
@@ -532,14 +555,19 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
           {/* Add Comment */}
           <div className="p-4 border-t border-gray-700">
             {replyingTo && (
-              <div className="mb-2 text-xs text-gray-400">
-                Replying to comment...
-                <button 
-                  onClick={() => setReplyingTo(null)}
-                  className="ml-2 text-brand-orange hover:text-brand-orange/80"
-                >
-                  Cancel
-                </button>
+              <div className="mb-3 p-2 bg-gray-800 rounded border-l-4 border-brand-orange">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-gray-400">
+                    <Reply className="w-3 h-3 inline mr-1" />
+                    Replying to <span className="text-brand-orange">@{comments?.find(c => c.id === replyingTo)?.username || 'someone'}</span>
+                  </div>
+                  <button 
+                    onClick={() => setReplyingTo(null)}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <XCircle className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             )}
             {user ? (
@@ -550,12 +578,18 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
                     alt={user.username}
                     className="w-8 h-8 rounded-full"
                   />
-                  <span className="text-sm text-gray-300">{user.username}</span>
+                  <span className={`text-sm font-medium ${getRoleColor(user)}`}>{user.username}</span>
+                  {user.roles?.includes('Founder') && (
+                    <span className="text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded">FOUNDER</span>
+                  )}
+                  {user.roles?.includes('admin') && !user.roles?.includes('Founder') && (
+                    <span className="text-xs bg-red-600 text-white px-1.5 py-0.5 rounded">ADMIN</span>
+                  )}
                 </div>
                 <div className="flex space-x-2">
                   <input
                     type="text"
-                    placeholder="Add a comment..."
+                    placeholder={replyingTo ? "Write a reply..." : "Message #quest-discussion"}
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
@@ -564,9 +598,9 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
                   <button
                     onClick={handleAddComment}
                     disabled={!newComment.trim() || addCommentMutation.isPending}
-                    className="px-4 py-2 bg-brand-orange hover:bg-brand-orange/80 disabled:bg-gray-600 text-white rounded-md"
+                    className="px-4 py-2 bg-brand-orange hover:bg-brand-orange/80 disabled:bg-gray-600 text-white rounded-md flex items-center space-x-1"
                   >
-                    Post
+                    <Send className="w-4 h-4" />
                   </button>
                 </div>
               </div>
