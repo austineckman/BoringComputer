@@ -126,14 +126,18 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
       // Snapshot the previous value
       const previousComments = queryClient.getQueryData(['/api/quests', questId, 'comments']);
 
+      // Get the latest user data from the query cache
+      const latestUser = queryClient.getQueryData(['/api/auth/me']) as any;
+      const currentUser = latestUser || user;
+      
       // Optimistically update to the new value
       const optimisticComment = {
         id: `temp-${Date.now()}`,
-        userId: user?.id.toString() || '',
-        username: user?.username || '',
-        displayName: user?.displayName || user?.username || '',
-        avatar: user?.avatar || '',
-        roles: user?.roles || [],
+        userId: currentUser?.id.toString() || '',
+        username: currentUser?.username || '',
+        displayName: currentUser?.displayName || currentUser?.username || '',
+        avatar: currentUser?.avatar || '',
+        roles: currentUser?.roles || [],
         content: newComment.content,
         timestamp: new Date().toISOString(),
         parentId: newComment.parentId,
