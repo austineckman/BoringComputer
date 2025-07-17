@@ -106,6 +106,15 @@ Preferred communication style: Simple, everyday language.
 - **Complete Quest Button Access**: Button now always accessible via scrolling on all screen sizes
 - **Flexible Layout**: Content flows naturally with proper responsive breakpoints for mobile, tablet, and desktop
 
+### Critical Comment System Fix (July 17, 2025)
+- **Comment Persistence Issue Resolved**: Fixed critical bug where comments appeared temporarily but disappeared on app restart
+- **Duplicate Endpoint Removal**: Removed mock comment endpoints that were overriding real database operations
+- **Authentication Fix**: Added missing `authenticate` middleware to GET comments endpoint
+- **Database Verification**: Comments are properly saved to `quest_comments` table with correct user associations
+- **Multi-User Support**: Comments now properly display across different user sessions
+- **Button Repositioning**: Moved Abandon Quest to top-left header, removed redundant X button
+- **START Quest Button**: Repositioned to top of right column in quest detail view for better accessibility
+
 ### Quest Intro Page Redesign (July 15, 2025)
 - **RuneScape-Style Interface**: Redesigned quest intro page with exciting 2-column layout inspired by classic MMORPGs
 - **Hero Image Focus**: Large hero image with title overlay and gradient for dramatic visual impact

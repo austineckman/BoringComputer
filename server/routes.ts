@@ -252,7 +252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Quest comments endpoints
-  app.get('/api/quests/:questId/comments', async (req, res) => {
+  app.get('/api/quests/:questId/comments', authenticate, async (req, res) => {
     try {
       const { questId } = req.params;
       const comments = await db.select({
