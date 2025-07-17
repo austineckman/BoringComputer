@@ -1,374 +1,635 @@
+# CraftingTable OS - Technical Architecture Analysis
 
-# CraftingTable OS - Technical Architecture Guide
+## Database Layer - PostgreSQL + Drizzle ORM
 
-## System Architecture Overview
+### Core Schema Structure (shared/schema.ts)
 
-CraftingTable OS is built as a modern full-stack web application with a retro desktop environment interface. The architecture follows a client-server model with clear separation of concerns.
-
-## Frontend Architecture
-
-### Core Technologies
-- **React 18**: Component-based UI framework with hooks
-- **TypeScript**: Type-safe development environment
-- **Vite**: Fast build tool and development server
-- **TailwindCSS**: Utility-first CSS framework
-- **ShadCN UI**: Pre-built component library
-
-### Desktop Environment Implementation
-
-#### Window Management System
+**users table** - Session-based authentication with Discord integration:
 ```typescript
-interface WindowState {
-  windows: Window[];
-  activeWindowId: string | null;
-  zIndexCounter: number;
-}
-
-interface Window {
-  id: string;
-  title: string;
-  content: ReactNode;
-  position: { x: number; y: number };
-  size: { width: number; height: number };
-  isMaximized: boolean;
-  isMinimized: boolean;
-  zIndex: number;
-  isResizable: boolean;
-}
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull(),
+  displayName: text("display_name"), // Custom name override system
+  email: text("email"),
+  password: text("password"), // bcrypt hashed for local auth
+  discordId: text("discord_id"), // OAuth linking
+  avatar: text("avatar_url"), // Discord CDN URLs
+  roles: json("roles").$type<string[]>().default([]), // ['admin', 'Founder', 'CraftingTable']
+  level: integer("level").default(1),
+  xp: integer("xp").default(0),
+  xpToNextLevel: integer("xp_to_next_level").default(300),
+  completedQuests: json("completed_quests").$type<number[]>().default([]),
+  inventory: json("inventory").$type<Record<string, number>>().default({}),
+  titles: json("titles").$type<string[]>().default([]),
+  activeTitle: text("active_title"),
+  createdAt: timestamp("created_at").defaultNow(),
+  lastLogin: timestamp("last_login").defaultNow(),
+});
 ```
 
-The window manager uses React state management with context providers to maintain window states across the application.
-
-#### Desktop Applications
-
-**Circuit Builder Pro**
-- Canvas-based rendering for performance
-- Component drag-and-drop with collision detection
-- Real-time Arduino simulation using AVR8js
-- Wire routing with automatic connection validation
-- Monaco Editor integration for code editing
-
-**Gizbo's Forge (Crafting System)**
-- Grid-based inventory management
-- Drag-and-drop crafting interface
-- Recipe validation and success animations
-- Material consumption tracking
-
-**Quest System**
-- Dynamic quest loading from server
-- Progress tracking with XP calculations
-- Adventure line categorization
-- Completion validation
-
-## Backend Architecture
-
-### Core Technologies
-- **Node.js**: JavaScript runtime environment
-- **Express.js**: Web application framework
-- **PostgreSQL**: Relational database
-- **Drizzle ORM**: Type-safe database operations
-- **Discord OAuth 2.0**: Authentication provider
-
-### Database Schema
-
-#### Core Tables
-```sql
--- User Management
-CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  username VARCHAR(50) UNIQUE NOT NULL,
-  discord_id VARCHAR(20) UNIQUE NOT NULL,
-  email VARCHAR(255),
-  avatar TEXT,
-  roles TEXT[],
-  level INTEGER DEFAULT 1,
-  xp INTEGER DEFAULT 0,
-  inventory JSONB DEFAULT '{}',
-  created_at TIMESTAMP DEFAULT NOW(),
-  last_login TIMESTAMP DEFAULT NOW()
-);
-
--- Quest System
-CREATE TABLE quests (
-  id VARCHAR(50) PRIMARY KEY,
-  title TEXT NOT NULL,
-  description TEXT,
-  objectives JSONB,
-  rewards JSONB,
-  requirements JSONB,
-  adventure_line VARCHAR(100),
-  difficulty INTEGER CHECK (difficulty BETWEEN 1 AND 5),
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- User Progress Tracking
-CREATE TABLE user_quest_progress (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id),
-  quest_id VARCHAR(50) REFERENCES quests(id),
-  status VARCHAR(20) DEFAULT 'available',
-  progress JSONB DEFAULT '{}',
-  completed_at TIMESTAMP,
-  UNIQUE(user_id, quest_id)
-);
-
--- Items and Crafting
-CREATE TABLE items (
-  id VARCHAR(50) PRIMARY KEY,
-  name TEXT NOT NULL,
-  type VARCHAR(50),
-  rarity VARCHAR(20),
-  description TEXT,
-  properties JSONB,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE recipes (
-  id VARCHAR(50) PRIMARY KEY,
-  name TEXT NOT NULL,
-  ingredients JSONB NOT NULL,
-  result JSONB NOT NULL,
-  unlock_requirements JSONB,
-  success_rate FLOAT DEFAULT 1.0,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Circuit Projects
-CREATE TABLE circuit_projects (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id),
-  name TEXT NOT NULL,
-  data JSONB NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
+**quests table** - Hierarchical quest system with component kit integration:
+```typescript
+export const quests = pgTable("quests", {
+  id: bigint("id", { mode: "number" }).primaryKey(), // Date.now() timestamp IDs
+  title: text("title").notNull(),
+  description: text("description").notNull(), // Flavor text
+  missionBrief: text("mission_brief"), // Actual learning instructions
+  adventureLine: text("adventure_line").notNull(), // "30 Days Lost in Space"
+  difficulty: integer("difficulty").notNull(),
+  orderInLine: integer("order_in_line").notNull().default(0),
+  xpReward: integer("xp_reward").notNull().default(100),
+  kitId: text("kit_id").references(() => componentKits.id), // Hardware requirement
+  solutionCode: text("solution_code"), // Arduino code solution
+  wiringInstructions: text("wiring_instructions"), // Step-by-step guide
+  wiringDiagram: text("wiring_diagram"), // Image URL
+  heroImage: text("hero_image"), // Main quest visual
+  status: text("status").default("available"),
+});
 ```
 
-### API Architecture
-
-#### Authentication Flow
+**questComments table** - Real-time community interaction:
 ```typescript
-// Discord OAuth 2.0 Flow
-POST /api/auth/discord -> Redirects to Discord
-GET /api/auth/callback -> Processes OAuth callback
-GET /api/auth/me -> Returns current user session
-POST /api/auth/logout -> Destroys session
+export const questComments = pgTable("quest_comments", {
+  id: serial("id").primaryKey(),
+  questId: text("quest_id").notNull(),
+  userId: integer("user_id").references(() => users.id),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const questCommentsRelations = relations(questComments, ({ one }) => ({
+  user: one(users, {
+    fields: [questComments.userId],
+    references: [users.id],
+  }),
+}));
 ```
 
-#### Quest System APIs
+## Authentication System (server/routes.ts)
+
+### Session Management with Performance Optimization
+
+Cookie parsing is optimized to skip static assets:
 ```typescript
-// Quest Management
-GET /api/quests -> List available quests
-GET /api/quests/:id -> Quest details
-POST /api/quests/:id/accept -> Accept quest
-POST /api/quests/:id/submit -> Submit completion
-GET /api/quest-progress -> User progress summary
+app.use((req, res, next) => {
+  // Skip expensive cookie parsing for static assets
+  if (req.path.includes('.') || 
+      req.path.includes('/assets/') || 
+      req.path.includes('/@') || 
+      req.path.includes('/_')) {
+    return next();
+  }
+  
+  const cookies: Record<string, string> = {};
+  
+  // Only parse cookies for API routes when cookie header exists
+  if (req.path.startsWith('/api') && req.headers.cookie) {
+    req.headers.cookie.split(';').forEach(cookie => {
+      const parts = cookie.split('=');
+      if (parts.length >= 2) {
+        const key = parts[0].trim();
+        const value = parts.slice(1).join('=').trim();
+        cookies[key] = value;
+      }
+    });
+  }
+  
+  req.cookies = cookies;
+  next();
+});
 ```
 
-#### Inventory & Crafting APIs
+### Authentication Middleware
+
 ```typescript
-// Inventory Management
-GET /api/inventory -> User's current inventory
-POST /api/inventory/add -> Add items to inventory
-POST /api/inventory/remove -> Remove items from inventory
-
-// Crafting System
-POST /api/craft -> Attempt crafting recipe
-GET /api/recipes -> Available recipes
-GET /api/items -> Item database
-```
-
-### Security Implementation
-
-#### Session Management
-```typescript
-interface UserSession {
-  userId: number;
-  sessionId: string;
-  expiresAt: Date;
-  ipAddress: string;
-  userAgent: string;
-  csrfToken: string;
-}
-```
-
-#### Authorization Middleware
-```typescript
-// Role-based access control
-const requireRole = (roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const user = req.session.user;
-    if (!user || !roles.some(role => user.roles.includes(role))) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
-    }
-    next();
-  };
+export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
+  const sessionId = req.cookies?.sessionId;
+  
+  if (!sessionId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
+  const user = await storage.getUserBySessionId(sessionId);
+  if (!user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
+  req.user = user;
+  next();
 };
 ```
 
-## Circuit Simulation Architecture
+### Discord Role Integration
 
-### AVR8js Integration
-The Arduino simulation uses AVR8js library for real microcontroller emulation:
-
+Discord OAuth fetches server roles via bot token:
 ```typescript
-class ArduinoEmulator {
-  private cpu: CPU;
-  private timer: Timer;
-  private usart: USART;
-  private portB: AVRIOPort;
-  private portC: AVRIOPort;
-  private portD: AVRIOPort;
+app.get('/api/user/discord-roles', authenticate, async (req, res) => {
+  const discordId = req.user.discordId;
+  const guildId = process.env.DISCORD_GUILD_ID;
+  const botToken = process.env.DISCORD_BOT_TOKEN;
+  
+  const response = await axios.get(
+    `https://discord.com/api/v10/guilds/${guildId}/members/${discordId}`,
+    { headers: { Authorization: `Bot ${botToken}` } }
+  );
+  
+  // Map Discord role IDs to human-readable names
+  const roleNames = memberData.roles.map(roleId => {
+    const role = guildData.roles.find(r => r.id === roleId);
+    return role ? role.name : null;
+  }).filter(Boolean);
+  
+  res.json({ roles: roleNames });
+});
+```
 
-  constructor() {
-    this.cpu = new CPU(new Uint16Array(0x8000));
-    this.timer = new Timer(this.cpu, timer0Config);
-    this.usart = new USART(this.cpu, usart0Config);
-    // Port initialization...
-  }
+## Frontend Architecture (client/src/components/retro-ui/RetroDesktop.tsx)
 
-  loadProgram(hexData: string): void {
-    const program = parseIntelHex(hexData);
-    this.cpu.flash.set(program);
-  }
+### Window Management System
 
-  step(): void {
-    this.cpu.tick();
-  }
+Complete desktop environment with multi-window support:
+```typescript
+interface RetroWindow {
+  id: string;
+  title: string;
+  icon: string;
+  content: React.ReactNode;
+  position: WindowPosition;
+  isMinimized: boolean;
+  isActive: boolean;
+}
+
+interface WindowPosition {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 ```
 
-### Component System
-Each circuit component implements a standardized interface:
-
+Window state management with React hooks:
 ```typescript
-interface CircuitComponent {
-  id: string;
-  type: ComponentType;
-  position: Position;
-  rotation: number;
-  pins: Pin[];
-  properties: ComponentProperties;
+const [windows, setWindows] = useState<RetroWindow[]>([]);
+const [activeWindow, setActiveWindow] = useState<string | null>(null);
+
+const openWindow = useCallback((windowConfig: Partial<RetroWindow>) => {
+  const newWindow: RetroWindow = {
+    id: `${windowConfig.id}-${Date.now()}`,
+    title: windowConfig.title || 'Untitled',
+    icon: windowConfig.icon || '',
+    content: windowConfig.content || null,
+    position: windowConfig.position || { x: 100, y: 100, width: 600, height: 400 },
+    isMinimized: false,
+    isActive: true
+  };
   
-  render(ctx: CanvasRenderingContext2D): void;
-  update(deltaTime: number): void;
-  onPinStateChange(pin: Pin, state: PinState): void;
-}
+  setWindows(prev => [...prev, newWindow]);
+  setActiveWindow(newWindow.id);
+}, []);
+```
+
+Desktop icon positioning and click handlers:
+```typescript
+const desktopIcons = [
+  {
+    id: "quest-giver",
+    name: "Quest Giver", 
+    icon: questImage,
+    position: { x: 20, y: 20 }
+  },
+  {
+    id: "circuit-builder",
+    name: "Circuit Builder",
+    icon: ledIconImage, 
+    position: { x: 20, y: 120 }
+  },
+  {
+    id: "gizbo-bmah",
+    name: "BMAH", // Black Market Auction House
+    icon: shopCoinImage,
+    position: { x: 20, y: 220 }
+  }
+];
+
+const handleIconClick = (iconId: string) => {
+  switch (iconId) {
+    case 'quest-giver':
+      openWindow({
+        id: 'quest-app',
+        title: 'Quest Giver',
+        icon: questImage,
+        content: <FullscreenQuestsApp onClose={() => closeWindow('quest-app')} />,
+        position: { x: 50, y: 50, width: 1200, height: 800 }
+      });
+      break;
+    // ... more cases
+  }
+};
+```
+
+## TanStack Query Data Management
+
+### Query Client Configuration
+
+Default query function eliminates need for individual queryFn definitions:
+```typescript
+import { QueryClient } from '@tanstack/react-query';
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      queryFn: async ({ queryKey }) => {
+        const response = await fetch(queryKey[0] as string);
+        if (!response.ok) {
+          throw new Error(`${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      },
+    },
+  },
+});
+```
+
+### Array-Based Query Keys for Cache Invalidation
+
+Hierarchical cache invalidation using array segments:
+```typescript
+// Comments query uses array format for proper cache invalidation
+const { data: comments, isLoading } = useQuery({
+  queryKey: ['/api/quests', questId, 'comments'],
+  // No queryFn needed - uses default
+});
+
+// Mutation with targeted cache invalidation
+const addCommentMutation = useMutation({
+  mutationFn: async (commentData) => {
+    return apiRequest(`/api/quests/${questId}/comments`, {
+      method: 'POST',
+      body: commentData,
+    });
+  },
+  onSuccess: () => {
+    // Invalidates only comments for this specific quest
+    queryClient.invalidateQueries(['/api/quests', questId, 'comments']);
+  },
+});
+```
+
+## Comment System Implementation
+
+### Backend API with User Data Joins
+
+Comments endpoint with proper user data selection:
+```typescript
+app.get('/api/quests/:questId/comments', authenticate, async (req, res) => {
+  const { questId } = req.params;
+  
+  const comments = await db
+    .select({
+      id: questComments.id,
+      questId: questComments.questId,
+      content: questComments.content,
+      createdAt: questComments.createdAt,
+      user: {
+        id: users.id,
+        username: users.username,
+        displayName: users.displayName, // Critical for custom names
+        avatar: users.avatar,
+        roles: users.roles,
+      },
+    })
+    .from(questComments)
+    .leftJoin(users, eq(questComments.userId, users.id))
+    .where(eq(questComments.questId, questId))
+    .orderBy(desc(questComments.createdAt));
+    
+  res.json(comments);
+});
+```
+
+### Role-Based Comment Styling
+
+Dynamic styling based on Discord roles:
+```typescript
+const getRoleStyles = (roles: string[]) => {
+  if (roles.includes('Founder')) {
+    return { 
+      usernameColor: 'text-orange-400',
+      tag: { text: 'FOUNDER', color: 'bg-orange-500' }
+    };
+  }
+  if (roles.includes('CraftingTable')) {
+    return {
+      usernameColor: 'text-blue-400', 
+      tag: { text: 'TEAM', color: 'bg-blue-500' }
+    };
+  }
+  if (roles.includes('Mod')) {
+    return {
+      usernameColor: 'text-red-400',
+      tag: { text: 'MOD', color: 'bg-red-500' }
+    };
+  }
+  if (roles.includes('Beta Tester')) {
+    return {
+      usernameColor: 'text-purple-400',
+      tag: { text: 'BETA TESTER', color: 'bg-purple-500' }
+    };
+  }
+  if (roles.includes('Academy')) {
+    return {
+      usernameColor: 'text-yellow-400',
+      tag: { text: 'ACADEMY', color: 'bg-yellow-500' }
+    };
+  }
+  return { usernameColor: 'text-gray-300', tag: null };
+};
+```
+
+### Display Name Override System
+
+Profile settings allow custom display name instead of Discord username:
+```typescript
+const [editingDisplayName, setEditingDisplayName] = useState(false);
+const [displayNameValue, setDisplayNameValue] = useState(user?.displayName || user?.username || '');
+
+const handleSaveDisplayName = async () => {
+  try {
+    await apiRequest('/api/user/display-name', {
+      method: 'PUT',
+      body: { displayName: displayNameValue },
+    });
+    queryClient.invalidateQueries(['/api/auth/me']);
+    setEditingDisplayName(false);
+  } catch (error) {
+    console.error('Failed to update display name:', error);
+  }
+};
+```
+
+Backend endpoint:
+```typescript
+app.put('/api/user/display-name', authenticate, async (req, res) => {
+  const { displayName } = req.body;
+  const userId = req.user.id;
+  
+  await db
+    .update(users)
+    .set({ displayName })
+    .where(eq(users.id, userId));
+    
+  res.json({ success: true });
+});
+```
+
+## Active Quest Interface Layout
+
+### Split-Screen Design with Sticky Chat
+
+Lesson content scrollable, chat sidebar fixed:
+```typescript
+<div className="flex h-full bg-retro-bg-primary">
+  {/* Main Content Area - Scrollable */}
+  <div className="flex-1 overflow-y-auto">
+    <div className="p-6 space-y-6">
+      {/* Mission Brief */}
+      <div className="bg-retro-bg-secondary p-4 border-2 border-retro-border rounded">
+        <h2 className="text-xl font-bold mb-3">Mission Brief</h2>
+        <p className="text-retro-text leading-relaxed">{quest.missionBrief}</p>
+      </div>
+      
+      {/* Tutorial Video */}
+      {quest.tutorialVideo && (
+        <div className="bg-black p-4 border-2 border-retro-border rounded">
+          <video controls className="w-full">
+            <source src={quest.tutorialVideo} type="video/mp4" />
+          </video>
+        </div>
+      )}
+      
+      {/* Expected Result */}
+      <div className="bg-retro-bg-secondary p-4 border-2 border-retro-border rounded">
+        <h3 className="text-lg font-bold mb-3">Expected Result</h3>
+        {quest.resultGif && (
+          <img src={quest.resultGif} alt="Expected circuit behavior" className="max-w-full" />
+        )}
+      </div>
+      
+      {/* Solution Helper with Timer */}
+      <SolutionHelper 
+        quest={quest}
+        timeRemaining={solutionTimeRemaining}
+        onReveal={() => setSolutionRevealed(true)}
+      />
+    </div>
+  </div>
+  
+  {/* Chat Sidebar - Fixed Width, Independent Scroll */}
+  <div className="w-80 bg-retro-bg-secondary border-l-2 border-retro-border flex flex-col">
+    <div className="flex-1 overflow-y-auto p-4">
+      {comments.map(comment => (
+        <CommentItem key={comment.id} comment={comment} />
+      ))}
+    </div>
+    
+    {/* Comment Input - Always Visible */}
+    <div className="p-4 border-t-2 border-retro-border">
+      <CommentInput onSubmit={handleAddComment} />
+    </div>
+  </div>
+</div>
 ```
 
 ## Audio System Architecture
 
-### Background Music Manager
+### Howler.js Integration with Auto-Play
+
+Background music manager with track progression:
 ```typescript
-class AudioManager {
-  private audioContext: AudioContext;
-  private musicTracks: Map<string, AudioBuffer>;
-  private soundEffects: Map<string, AudioBuffer>;
-  private currentMusic: AudioBufferSourceNode | null;
+const useAudioPlayer = () => {
+  const [currentTrack, setCurrentTrack] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [volume, setVolume] = useState<number>(0.8);
+  const [autoPlayEnabled, setAutoPlayEnabled] = useState<boolean>(true);
+  const currentHowl = useRef<Howl | null>(null);
   
-  async loadTrack(name: string, url: string): Promise<void> {
-    const response = await fetch(url);
-    const arrayBuffer = await response.arrayBuffer();
-    const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
-    this.musicTracks.set(name, audioBuffer);
-  }
+  const tracks = [
+    "/sounds/Chappy.mp3",
+    "/sounds/Empty Arcade.mp3", 
+    "/sounds/Factory New.mp3",
+    "/sounds/Glitched Grid.mp3",
+    "/sounds/HERO's Anthem.mp3",
+    "/sounds/Pixel Hearth.mp3",
+    "/sounds/Pixelated Warriors.mp3",
+    "/sounds/Spooky Cat.mp3",
+    "/sounds/TAVERN.EXE.mp3",
+    "/sounds/Thief in the fog.mp3"
+  ];
   
-  playMusic(trackName: string, loop: boolean = true): void {
-    const track = this.musicTracks.get(trackName);
-    if (!track) return;
+  const playTrack = useCallback((index: number) => {
+    console.log('PlayTrack called with index:', index);
     
-    this.stopMusic();
-    this.currentMusic = this.audioContext.createBufferSource();
-    this.currentMusic.buffer = track;
-    this.currentMusic.loop = loop;
-    this.currentMusic.connect(this.audioContext.destination);
-    this.currentMusic.start();
-  }
-}
+    if (currentHowl.current) {
+      currentHowl.current.stop();
+      console.log('Track stopped');
+    }
+    
+    const track = tracks[index];
+    console.log('Creating new Howl for track:', track);
+    
+    currentHowl.current = new Howl({
+      src: [track],
+      volume: volume,
+      onload: () => {
+        console.log('Track loaded');
+        if (autoPlayEnabled) {
+          currentHowl.current?.play();
+          setIsPlaying(true);
+          console.log('Track started playing');
+        }
+      },
+      onend: () => {
+        console.log('Track ended, autoPlayEnabled:', autoPlayEnabled);
+        if (autoPlayEnabled) {
+          console.log('Auto-playing next track...');
+          const nextIndex = (index + 1) % tracks.length;
+          console.log('Playing next track at index', nextIndex);
+          playTrack(nextIndex);
+          setCurrentTrack(nextIndex);
+        }
+      },
+      onerror: (id, error) => {
+        console.error('Audio error:', error);
+      }
+    });
+  }, [tracks, volume, autoPlayEnabled]);
 ```
 
-## Performance Optimizations
+## File Upload System with CSRF Protection
 
-### Frontend Optimizations
-- **Code Splitting**: Lazy loading of desktop applications
-- **Virtual Scrolling**: For large inventory lists
-- **Canvas Optimization**: Efficient rendering for circuit builder
-- **Memoization**: React.memo for expensive components
-- **Asset Optimization**: Image compression and sprite sheets
+### Multer Configuration for Image Uploads
 
-### Backend Optimizations
-- **Database Indexing**: Optimized queries for user data
-- **Connection Pooling**: Efficient database connections
-- **Response Caching**: Static content caching
-- **Rate Limiting**: API endpoint protection
-
-## Deployment Architecture
-
-### Environment Configuration
-```bash
-# Production Environment Variables
-NODE_ENV=production
-PORT=5000
-DATABASE_URL=postgresql://user:pass@localhost:5432/craftingtable
-
-# Discord OAuth
-DISCORD_CLIENT_ID=your-client-id
-DISCORD_CLIENT_SECRET=your-client-secret
-DISCORD_BOT_TOKEN=your-bot-token
-DISCORD_GUILD_ID=your-server-id
-
-# Security
-SESSION_SECRET=your-session-secret
-CSRF_SECRET=your-csrf-secret
-```
-
-### Build Process
-```bash
-# Frontend build
-npm run build:client
-# Outputs to client/dist
-
-# Backend build
-npm run build:server
-# Outputs to server/dist
-
-# Full production build
-npm run build
-```
-
-### Error Handling & Logging
 ```typescript
-// Centralized error handling
-app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error(`[${new Date().toISOString()}] Error:`, error);
-  
-  if (process.env.NODE_ENV === 'production') {
-    res.status(500).json({ error: 'Internal server error' });
-  } else {
-    res.status(500).json({ error: error.message, stack: error.stack });
+import multer from 'multer';
+import path from 'path';
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadPath = path.join(process.cwd(), 'public', 'uploads', 'hero-images');
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
   }
 });
 ```
 
-## Scalability Considerations
+### CSRF Protected Upload Endpoints
 
-### Database Scaling
-- **Read Replicas**: For heavy read operations
-- **Connection Pooling**: PgBouncer for connection management
-- **Query Optimization**: Proper indexing and query analysis
+```typescript
+app.post('/api/admin/upload/hero-image', 
+  adminAuth, 
+  conditionalCsrfProtection,
+  upload.single('heroImage'), 
+  async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    const filename = req.file.filename;
+    const imageUrl = `/uploads/hero-images/${filename}`;
+    
+    res.json({ imageUrl });
+  }
+);
+```
 
-### Application Scaling
-- **Horizontal Scaling**: Multiple server instances
-- **Load Balancing**: Nginx or similar for request distribution
-- **Session Storage**: Redis for shared session storage
-- **CDN Integration**: Static asset delivery optimization
+Frontend upload with CSRF token:
+```typescript
+const uploadHeroImage = async (file: File) => {
+  const formData = new FormData();
+  formData.append('heroImage', file);
+  formData.append('_csrf', csrfToken);
+  
+  const response = await fetch('/api/admin/upload/hero-image', {
+    method: 'POST',
+    headers: {
+      'X-CSRF-Token': csrfToken,
+    },
+    body: formData,
+  });
+  
+  if (!response.ok) {
+    throw new Error('Upload failed');
+  }
+  
+  return response.json();
+};
+```
 
-### Monitoring & Observability
-- **Application Metrics**: Response times, error rates
-- **Database Monitoring**: Query performance, connection counts
-- **User Analytics**: Feature usage, performance metrics
-- **Health Checks**: Automated system status monitoring
+## Performance Optimizations
 
----
+### Database Query Optimization
 
-This technical architecture guide provides the foundation for understanding CraftingTable OS's implementation details and scaling strategies.
+User session lookup with proper indexing:
+```sql
+CREATE INDEX idx_users_discord_id ON users(discord_id);
+CREATE INDEX idx_quest_comments_quest_id ON quest_comments(quest_id);
+CREATE INDEX idx_quest_comments_user_id ON quest_comments(user_id);
+```
+
+### Frontend Performance
+
+Virtual scrolling for large datasets:
+```typescript
+import { useVirtualizer } from '@tanstack/react-virtual';
+
+const QuestList = ({ quests }: { quests: Quest[] }) => {
+  const parentRef = useRef<HTMLDivElement>(null);
+  
+  const virtualizer = useVirtualizer({
+    count: quests.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 120,
+  });
+  
+  return (
+    <div ref={parentRef} className="h-full overflow-auto">
+      <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+        {virtualizer.getVirtualItems().map(virtualRow => (
+          <div
+            key={virtualRow.key}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: `${virtualRow.size}px`,
+              transform: `translateY(${virtualRow.start}px)`,
+            }}
+          >
+            <QuestCard quest={quests[virtualRow.index]} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+```
+
+This architecture analysis covers the actual implementation patterns, performance optimizations, and data flow within CraftingTable OS.
