@@ -337,7 +337,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   }
 
   return (
-    <div className="absolute inset-0 bg-black text-white flex flex-col overflow-y-auto">
+    <div className="absolute inset-0 bg-black text-white flex flex-col">
       {/* Header */}
       <div className="bg-black/90 border-b border-brand-orange/30 p-2 sm:p-4 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center space-x-2 sm:space-x-4 min-w-0">
@@ -371,9 +371,9 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row min-h-0 flex-1">
+      <div className="flex flex-col lg:flex-row flex-1 min-h-0">
         {/* Main Content */}
-        <div className="flex-1 p-3 sm:p-6 space-y-4 sm:space-y-6">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
           {/* Video Section */}
           <div className="bg-gray-900 rounded-lg p-3 sm:p-6">
             <h2 className="text-lg sm:text-xl font-bold text-brand-orange mb-3 sm:mb-4">Tutorial Video</h2>
@@ -514,9 +514,9 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
           </div>
         </div>
 
-        {/* Comments Sidebar */}
-        <div className="w-full lg:w-96 bg-gray-900 border-t lg:border-t-0 lg:border-l border-brand-orange/30 flex flex-col lg:max-h-none">
-          <div className="p-3 sm:p-4 border-b border-gray-700">
+        {/* Comments Sidebar - Sticky */}
+        <div className="w-full lg:w-96 bg-gray-900 border-t lg:border-t-0 lg:border-l border-brand-orange/30 flex flex-col lg:h-full">
+          <div className="p-3 sm:p-4 border-b border-gray-700 flex-shrink-0">
             <h3 className="text-base sm:text-lg font-bold text-brand-orange flex items-center">
               <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Community Discussion
@@ -524,7 +524,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
           </div>
           
           {/* Comments List */}
-          <div className="flex-1 p-3 sm:p-4 space-y-2 sm:space-y-3 max-h-80 lg:max-h-none lg:overflow-y-auto">
+          <div className="flex-1 p-3 sm:p-4 space-y-2 sm:space-y-3 overflow-y-auto min-h-0">
             {commentsLoading ? (
               <div className="text-center py-8">
                 <div className="w-8 h-8 border-2 border-brand-orange border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
@@ -679,7 +679,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
           </div>
           
           {/* Add Comment */}
-          <div className="p-3 sm:p-4 border-t border-gray-700">
+          <div className="p-3 sm:p-4 border-t border-gray-700 flex-shrink-0">
             {replyingTo && (
               <div className="mb-3 p-2 bg-gray-800 rounded border-l-4 border-brand-orange">
                 <div className="flex items-center justify-between">
