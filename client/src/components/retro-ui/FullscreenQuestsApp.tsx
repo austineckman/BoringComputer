@@ -181,8 +181,29 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
             </div>
           </div>
           
-          {/* Right column - Quest Rewards, Components, and Start Button */}
+          {/* Right column - Start Button, Quest Rewards, and Components */}
           <div className="col-span-2 space-y-6">
+            {/* Start Quest Button */}
+            <div className="bg-gray-900/80 border border-brand-orange/30 rounded-lg p-6">
+              <button
+                className="w-full py-6 bg-gradient-to-b from-orange-500 to-orange-700 hover:from-orange-600 hover:to-orange-800 border-2 border-orange-400 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200 font-bold text-white text-xl tracking-wide"
+                onClick={() => {
+                  window.sounds?.click();
+                  if (selectedQuest) {
+                    setActiveQuestId(selectedQuest.id.toString());
+                    setQuestView('active');
+                  }
+                }}
+                onMouseEnter={() => window.sounds?.hover()}
+                style={{
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+                  boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.2), 0 4px 8px rgba(0,0,0,0.3)'
+                }}
+              >
+                START QUEST
+              </button>
+            </div>
+
             {/* Quest Rewards */}
             <div className="bg-gray-900/80 border border-brand-orange/30 rounded-lg shadow-lg">
               <div className="bg-gray-800/60 px-6 py-4 border-b border-brand-orange/30">
@@ -297,27 +318,6 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                 </div>
               </div>
             )}
-            
-            {/* Quest Info and Start Button */}
-            <div className="bg-gray-900/80 border border-brand-orange/30 rounded-lg p-6">
-              <button
-                className="w-full py-6 bg-gradient-to-b from-orange-500 to-orange-700 hover:from-orange-600 hover:to-orange-800 border-2 border-orange-400 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200 font-bold text-white text-xl tracking-wide"
-                onClick={() => {
-                  window.sounds?.click();
-                  if (selectedQuest) {
-                    setActiveQuestId(selectedQuest.id.toString());
-                    setQuestView('active');
-                  }
-                }}
-                onMouseEnter={() => window.sounds?.hover()}
-                style={{
-                  textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
-                  boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.2), 0 4px 8px rgba(0,0,0,0.3)'
-                }}
-              >
-                START QUEST
-              </button>
-            </div>
           </div>
         </div>
 
