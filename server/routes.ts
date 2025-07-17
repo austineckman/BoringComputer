@@ -1806,8 +1806,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           console.log(`Found ${components.length} components for quest ID ${questId}`);
         }
-      }```text
- catch (err) {
+      } catch (err) {
         console.error("Error fetching quest components:", err);
         // Continue even if component fetch fails
       }
