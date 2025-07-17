@@ -39,14 +39,22 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
   // Mutation for updating display name
   const updateDisplayNameMutation = useMutation({
     mutationFn: async (displayName: string) => {
+      // Get CSRF token first
+      const csrfResponse = await fetch('/api/csrf-token');
+      const csrfData = await csrfResponse.json();
+      
       const response = await fetch('/api/user/profile', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfData.token
+        },
         body: JSON.stringify({ displayName: displayName || null })
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
       
       return response.json();
