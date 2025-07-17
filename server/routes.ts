@@ -328,11 +328,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Comment content is required' });
       }
 
+      // Parse parentId safely - only if it's a valid number
+      let parsedParentId = null;
+      if (parentId && !isNaN(parseInt(parentId))) {
+        parsedParentId = parseInt(parentId);
+      }
+
       const [comment] = await db.insert(questComments).values({
         questId: parseInt(questId),
         userId: userId,
         content: content.trim(),
-        parentId: parentId ? parseInt(parentId) : null,
+        parentId: parsedParentId,
         reactions: [],
       }).returning();
 
