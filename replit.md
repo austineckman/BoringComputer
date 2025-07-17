@@ -123,6 +123,14 @@ Preferred communication style: Simple, everyday language.
 - **Complete Comment System Recovery**: All 14+ comments now load and display correctly with full user data, avatars, and Discord roles
 - **Real-Time Updates**: New comments now persist properly and sync across user sessions without disappearing
 
+### Discord Role Styling Enhancement (July 17, 2025)
+- **CraftingTable Team Members**: [CraftingTable] Discord role members now display with blue usernames and blue team tags
+- **Moderator Styling**: [Mod] Discord role members display with red usernames and red MOD tags
+- **Beta Tester Styling**: [Beta Tester] Discord role members display with purple usernames and purple BETA TESTER tags
+- **Academy Member Styling**: [Academy] Discord role members display with yellow usernames and yellow ACADEMY tags
+- **Consistent Role Priority**: Role hierarchy maintained with Founder > Admin > Mod > CraftingTable > Beta Tester > Academy
+- **Complete Coverage**: Role styling applied to all comment areas including main comments, replies, and comment input section
+
 ### Quest Intro Page Redesign (July 15, 2025)
 - **RuneScape-Style Interface**: Redesigned quest intro page with exciting 2-column layout inspired by classic MMORPGs
 - **Hero Image Focus**: Large hero image with title overlay and gradient for dramatic visual impact
