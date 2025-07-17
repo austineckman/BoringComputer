@@ -23,15 +23,6 @@ async function fetchCsrfToken(): Promise<string> {
   }
 }
 
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
 interface RequestOptions {
   on401: 'returnNull' | 'throw';
 }
@@ -171,3 +162,13 @@ export const apiRequest = async (
   
   return response;
 };
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      refetchOnWindowFocus: false,
+      queryFn: getQueryFn(),
+    },
+  },
+});
