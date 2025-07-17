@@ -115,6 +115,14 @@ Preferred communication style: Simple, everyday language.
 - **Button Repositioning**: Moved Abandon Quest to top-left header, removed redundant X button
 - **START Quest Button**: Repositioned to top of right column in quest detail view for better accessibility
 
+### TanStack Query Configuration Fix (July 17, 2025)
+- **Root Cause Identified**: QueryClient was not using the default query function, causing comments to return empty objects `{}` instead of arrays
+- **Query Key Standardization**: Fixed inconsistent query key formats - changed from string-based `['/api/quests/${questId}/comments']` to array-based `['/api/quests', questId, 'comments']`
+- **Default Query Function Setup**: Properly configured QueryClient with `getQueryFn()` as default query function for automatic URL construction
+- **Mutation Cache Invalidation**: Updated all comment mutation query keys to use consistent array format for proper cache invalidation
+- **Complete Comment System Recovery**: All 14+ comments now load and display correctly with full user data, avatars, and Discord roles
+- **Real-Time Updates**: New comments now persist properly and sync across user sessions without disappearing
+
 ### Quest Intro Page Redesign (July 15, 2025)
 - **RuneScape-Style Interface**: Redesigned quest intro page with exciting 2-column layout inspired by classic MMORPGs
 - **Hero Image Focus**: Large hero image with title overlay and gradient for dramatic visual impact
