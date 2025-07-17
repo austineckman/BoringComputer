@@ -87,7 +87,8 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
 
   // Fetch comments
   const { data: comments, isLoading: commentsLoading, error: commentsError } = useQuery<QuestComment[]>({
-    queryKey: [`/api/quests/${questId}/comments`],
+    queryKey: ['/api/quests', questId, 'comments'],
+    queryFn: () => apiRequest('GET', `/api/quests/${questId}/comments`),
     refetchOnWindowFocus: false,
     staleTime: 0,
     refetchInterval: false,
@@ -116,10 +117,10 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
     },
     onMutate: async (newComment) => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: [`/api/quests/${questId}/comments`] });
+      await queryClient.cancelQueries({ queryKey: ['/api/quests', questId, 'comments'] });
 
       // Snapshot the previous value
-      const previousComments = queryClient.getQueryData([`/api/quests/${questId}/comments`]);
+      const previousComments = queryClient.getQueryData(['/api/quests', questId, 'comments']);
 
       // Optimistically update to the new value
       const optimisticComment = {
@@ -135,7 +136,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
         replies: []
       };
 
-      queryClient.setQueryData([`/api/quests/${questId}/comments`], (old: any) => {
+      queryClient.setQueryData(['/api/quests', questId, 'comments'], (old: any) => {
         if (!old) return [optimisticComment];
         
         // If this is a reply, add it to the parent's replies array
@@ -161,12 +162,12 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
     onError: (err, newComment, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousComments) {
-        queryClient.setQueryData([`/api/quests/${questId}/comments`], context.previousComments);
+        queryClient.setQueryData(['/api/quests', questId, 'comments'], context.previousComments);
       }
     },
     onSettled: () => {
       // Always refetch after error or success to ensure we have the latest data
-      queryClient.invalidateQueries({ queryKey: [`/api/quests/${questId}/comments`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/quests', questId, 'comments'] });
       setNewComment('');
       setReplyingTo(null);
     },
@@ -178,7 +179,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
       return apiRequest('POST', `/api/quests/${questId}/comments/${data.commentId}/reactions`, { emoji: data.emoji });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/quests/${questId}/comments`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/quests', questId, 'comments'] });
     },
   });
 
