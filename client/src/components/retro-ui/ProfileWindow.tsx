@@ -62,6 +62,8 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
     onSuccess: () => {
       // Invalidate and refetch user data
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      // Also invalidate any comment queries to ensure display names update
+      queryClient.invalidateQueries({ queryKey: ['/api/quests'] });
       setIsEditingDisplayName(false);
     },
     onError: (error) => {
