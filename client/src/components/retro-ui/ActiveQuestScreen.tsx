@@ -253,6 +253,10 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
     // Priority order for role colors (highest priority first)
     if (user.roles.includes('Founder')) return 'text-purple-400';
     if (user.roles.includes('admin')) return 'text-red-400';
+    if (user.roles.includes('Mod')) return 'text-red-400';
+    if (user.roles.includes('CraftingTable')) return 'text-blue-400';
+    if (user.roles.includes('Beta Tester')) return 'text-purple-400';
+    if (user.roles.includes('Academy')) return 'text-yellow-400';
     if (user.roles.includes('moderator')) return 'text-green-400';
     if (user.roles.includes('premium')) return 'text-yellow-400';
     if (user.roles.includes('Server Booster')) return 'text-pink-400';
@@ -504,6 +508,18 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
                         {comment.roles && comment.roles.includes('admin') && !comment.roles.includes('Founder') && (
                           <span className="text-xs bg-red-600 text-white px-1.5 py-0.5 rounded">ADMIN</span>
                         )}
+                        {comment.roles && comment.roles.includes('Mod') && !comment.roles.includes('Founder') && !comment.roles.includes('admin') && (
+                          <span className="text-xs bg-red-600 text-white px-1.5 py-0.5 rounded">MOD</span>
+                        )}
+                        {comment.roles && comment.roles.includes('CraftingTable') && !comment.roles.includes('Founder') && !comment.roles.includes('admin') && !comment.roles.includes('Mod') && (
+                          <span className="text-xs bg-blue-600 text-white px-1.5 py-0.5 rounded">CRAFTINGTABLE</span>
+                        )}
+                        {comment.roles && comment.roles.includes('Beta Tester') && !comment.roles.includes('Founder') && !comment.roles.includes('admin') && !comment.roles.includes('Mod') && !comment.roles.includes('CraftingTable') && (
+                          <span className="text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded">BETA TESTER</span>
+                        )}
+                        {comment.roles && comment.roles.includes('Academy') && !comment.roles.includes('Founder') && !comment.roles.includes('admin') && !comment.roles.includes('Mod') && !comment.roles.includes('CraftingTable') && !comment.roles.includes('Beta Tester') && (
+                          <span className="text-xs bg-yellow-600 text-white px-1.5 py-0.5 rounded">ACADEMY</span>
+                        )}
                         <span className="text-xs text-gray-400">{new Date(comment.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                       </div>
                       <p className="text-gray-300 text-sm mt-1">{comment.content}</p>
@@ -565,7 +581,25 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
                                     />
                                     <div className="flex-1">
                                       <div className="flex items-center space-x-2">
-                                        <span className="font-medium text-white text-sm">{reply.username}</span>
+                                        <span className={`font-medium text-sm ${getRoleColor(reply)}`}>{reply.username}</span>
+                                        {reply.roles && reply.roles.includes('Founder') && (
+                                          <span className="text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded">FOUNDER</span>
+                                        )}
+                                        {reply.roles && reply.roles.includes('admin') && !reply.roles.includes('Founder') && (
+                                          <span className="text-xs bg-red-600 text-white px-1.5 py-0.5 rounded">ADMIN</span>
+                                        )}
+                                        {reply.roles && reply.roles.includes('Mod') && !reply.roles.includes('Founder') && !reply.roles.includes('admin') && (
+                                          <span className="text-xs bg-red-600 text-white px-1.5 py-0.5 rounded">MOD</span>
+                                        )}
+                                        {reply.roles && reply.roles.includes('CraftingTable') && !reply.roles.includes('Founder') && !reply.roles.includes('admin') && !reply.roles.includes('Mod') && (
+                                          <span className="text-xs bg-blue-600 text-white px-1.5 py-0.5 rounded">CRAFTINGTABLE</span>
+                                        )}
+                                        {reply.roles && reply.roles.includes('Beta Tester') && !reply.roles.includes('Founder') && !reply.roles.includes('admin') && !reply.roles.includes('Mod') && !reply.roles.includes('CraftingTable') && (
+                                          <span className="text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded">BETA TESTER</span>
+                                        )}
+                                        {reply.roles && reply.roles.includes('Academy') && !reply.roles.includes('Founder') && !reply.roles.includes('admin') && !reply.roles.includes('Mod') && !reply.roles.includes('CraftingTable') && !reply.roles.includes('Beta Tester') && (
+                                          <span className="text-xs bg-yellow-600 text-white px-1.5 py-0.5 rounded">ACADEMY</span>
+                                        )}
                                         <span className="text-xs text-gray-400">{reply.timestamp}</span>
                                       </div>
                                       <p className="text-gray-300 text-sm mt-1">{reply.content}</p>
@@ -622,6 +656,18 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
                   )}
                   {user.roles?.includes('admin') && !user.roles?.includes('Founder') && (
                     <span className="text-xs bg-red-600 text-white px-1.5 py-0.5 rounded">ADMIN</span>
+                  )}
+                  {user.roles?.includes('Mod') && !user.roles?.includes('Founder') && !user.roles?.includes('admin') && (
+                    <span className="text-xs bg-red-600 text-white px-1.5 py-0.5 rounded">MOD</span>
+                  )}
+                  {user.roles?.includes('CraftingTable') && !user.roles?.includes('Founder') && !user.roles?.includes('admin') && !user.roles?.includes('Mod') && (
+                    <span className="text-xs bg-blue-600 text-white px-1.5 py-0.5 rounded">CRAFTINGTABLE</span>
+                  )}
+                  {user.roles?.includes('Beta Tester') && !user.roles?.includes('Founder') && !user.roles?.includes('admin') && !user.roles?.includes('Mod') && !user.roles?.includes('CraftingTable') && (
+                    <span className="text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded">BETA TESTER</span>
+                  )}
+                  {user.roles?.includes('Academy') && !user.roles?.includes('Founder') && !user.roles?.includes('admin') && !user.roles?.includes('Mod') && !user.roles?.includes('CraftingTable') && !user.roles?.includes('Beta Tester') && (
+                    <span className="text-xs bg-yellow-600 text-white px-1.5 py-0.5 rounded">ACADEMY</span>
                   )}
                 </div>
                 <div className="flex space-x-2">
