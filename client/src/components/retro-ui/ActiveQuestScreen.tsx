@@ -90,10 +90,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
     queryKey: [`/api/quests/${questId}/comments`],
     refetchOnWindowFocus: false,
     staleTime: 0, // Always refetch to get latest comments
-    select: (data) => {
-      console.log('Raw comments data from API:', data);
-      return data;
-    }
+    gcTime: 0, // Don't cache at all
   });
 
   // Timer for unlocking cheat
@@ -406,15 +403,19 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
           
           {/* Comments List */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* Debug info */}
+            <div className="text-xs text-gray-500 mb-2">
+              Loading: {commentsLoading ? 'true' : 'false'} | 
+              Comments: {comments ? comments.length : 'null'} | 
+              Type: {typeof comments}
+            </div>
             {commentsLoading ? (
               <div className="text-center py-8">
                 <div className="w-8 h-8 border-2 border-brand-orange border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
                 <p className="text-gray-400">Loading comments...</p>
               </div>
             ) : comments && comments.length > 0 ? (
-              comments.map(comment => {
-                console.log('Rendering comment:', comment);
-                return (
+              comments.map(comment => (
                 <div key={comment.id} className="bg-gray-800 rounded-lg p-3">
                   <div className="flex items-start space-x-3">
                     <img 
@@ -501,8 +502,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
                     </div>
                   </div>
                 </div>
-                );
-              })
+              ))
             ) : (
               <div className="text-center py-8 text-gray-400">
                 <MessageCircle className="w-16 h-16 mx-auto mb-2" />
