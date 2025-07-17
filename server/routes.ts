@@ -2540,5 +2540,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Profile update route
+  app.put('/api/user/profile', authenticate, async (req, res) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      const { activeTitle, displayName } = req.body;
+      
+      // Update user profile
+      const updatedUser = await storage.updateUser(userId, {
+        activeTitle: activeTitle || null,
+        displayName: displayName || null
+      });
+
+      if (!updatedUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      res.json(updatedUser);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      res.status(500).json({ error: 'Failed to update profile' });
+    }
+  });
+
   return httpServer;
 }

@@ -1,8 +1,9 @@
-import React from 'react';
-import { Award, CheckCircle, Shield, Crown, Star, Users, Zap, Trophy, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Award, CheckCircle, Shield, Crown, Star, Users, Zap, Trophy, X, Edit3, Save } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTitles } from '@/hooks/useTitles';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import logoImage from "@assets/Asset 6@2x-8.png";
 
 interface ProfileWindowProps {
@@ -11,6 +12,9 @@ interface ProfileWindowProps {
 
 const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [isEditingDisplayName, setIsEditingDisplayName] = useState(false);
+  const [displayNameInput, setDisplayNameInput] = useState(user?.displayName || '');
   const { 
     titles, 
     activeTitle, 
@@ -31,6 +35,29 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
     retry: false,
     enabled: !!user && !!user.discordId, // Only fetch if user exists and has Discord ID
   });
+
+  // Mutation for updating display name
+  const updateDisplayNameMutation = useMutation({
+    mutationFn: async (displayName: string) => {
+      return await apiRequest('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ displayName: displayName || null })
+      });
+    },
+    onSuccess: () => {
+      // Invalidate and refetch user data
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      setIsEditingDisplayName(false);
+    },
+    onError: (error) => {
+      console.error('Error updating display name:', error);
+    }
+  });
+
+  const handleSaveDisplayName = () => {
+    updateDisplayNameMutation.mutate(displayNameInput);
+  };
 
   // Debug logging to verify Discord roles functionality
   React.useEffect(() => {
@@ -84,6 +111,58 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
           {activeTitle && (
             <div className="inline-block px-3 py-1 bg-yellow-200 border border-yellow-400 text-yellow-800 text-sm">
               "{activeTitle}"
+            </div>
+          )}
+        </div>
+
+        {/* Display Name Settings */}
+        <div className="mb-6 p-4 bg-white border-2 border-gray-300 retro-inset">
+          <h3 className="text-sm font-semibold text-black mb-3 flex items-center gap-2">
+            <Edit3 className="w-4 h-4 text-blue-600" />
+            Display Name
+          </h3>
+          <div className="text-xs text-gray-600 mb-3">
+            Set a custom display name to show in comments and throughout the app. Leave blank to use your Discord username.
+          </div>
+          {isEditingDisplayName ? (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={displayNameInput}
+                onChange={(e) => setDisplayNameInput(e.target.value)}
+                placeholder="Enter custom display name"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded text-black"
+                maxLength={50}
+              />
+              <button
+                onClick={handleSaveDisplayName}
+                disabled={updateDisplayNameMutation.isPending}
+                className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:bg-gray-400"
+              >
+                <Save className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => {
+                  setIsEditingDisplayName(false);
+                  setDisplayNameInput(user?.displayName || '');
+                }}
+                className="px-3 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div className="text-black">
+                Current: <span className="font-medium">{user?.displayName || user?.username || 'Not set'}</span>
+              </div>
+              <button
+                onClick={() => setIsEditingDisplayName(true)}
+                className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-1"
+              >
+                <Edit3 className="w-4 h-4" />
+                Edit
+              </button>
             </div>
           )}
         </div>
