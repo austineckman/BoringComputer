@@ -40,6 +40,14 @@ Preferred communication style: Simple, everyday language.
 - Oracle icon now properly appears for admin users with Founder role
 - This ensures campaign automation interface access for authorized users
 
+### Custom Display Name System (July 17, 2025)
+- **Complete Display Name Override**: Users can now set custom display names in profile settings to replace messy Discord usernames
+- **Profile Settings Interface**: Added dedicated "Display Name" section with edit/save functionality and input validation
+- **Comment System Integration**: All comments now show display names (with username fallback) instead of Discord usernames
+- **Database Schema Support**: Added display_name column to users table with proper backend API endpoints
+- **Real-time Updates**: Display names update immediately across all user interfaces and comment sections
+- **Clean User Experience**: Replaces Discord usernames like "austineckman" and "craftingtable1_05196" with clean custom names like "Austin" and "CraftingTable Team"
+
 ### Quest Component Requirements Fix (July 15, 2025)
 - **Component Requirements Persistence**: Fixed critical issue where quest component requirements weren't saving properly
 - **Backend Oracle API Enhancement**: Added special handling for quest component requirements in Oracle API PUT/POST endpoints
