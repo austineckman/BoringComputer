@@ -77,9 +77,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             cookies[key] = value;
           }
         });
-
-        // Remove ALL logging to reduce noise
-        // We will only log authentication issues in the auth routes themselves
       }
 
       // Always attach the cookies object, even if empty
