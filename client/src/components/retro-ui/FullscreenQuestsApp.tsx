@@ -376,10 +376,10 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
         ) : questView === 'kit-select' ? (
           /* Kit Selection Screen */
           <div className="flex-1 overflow-y-auto bg-black/70">
-            <div className="p-6 pb-12 max-w-4xl mx-auto min-h-full">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-white mb-4">Select a Component Kit</h2>
-                <p className="text-gray-300">Choose a kit to see available quests and adventures</p>
+            <div className="p-3 sm:p-6 pb-12 max-w-4xl mx-auto min-h-full">
+              <div className="text-center mb-6 sm:mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 sm:mb-4">Select a Component Kit</h2>
+                <p className="text-gray-300 text-sm sm:text-base">Choose a kit to see available quests and adventures</p>
               </div>
               
               {loadingKits ? (
@@ -388,7 +388,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                   <p className="text-brand-orange">Loading kits...</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-8">
                   {kits?.map(kit => {
                     const kitQuests = getQuestsForKit(kit.id);
                     const questCount = kitQuests.length;
@@ -396,28 +396,28 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                     return (
                       <div 
                         key={kit.id}
-                        className="bg-gray-900/80 rounded-lg border border-brand-orange/30 p-6 hover:border-brand-orange/60 transition-all duration-300 cursor-pointer hover:shadow-lg"
+                        className="bg-gray-900/80 rounded-lg border border-brand-orange/30 p-4 sm:p-6 hover:border-brand-orange/60 transition-all duration-300 cursor-pointer hover:shadow-lg"
                         onClick={() => handleKitSelect(kit.id)}
                         onMouseEnter={() => window.sounds?.hover()}
                       >
                         <div className="flex flex-col items-center text-center">
-                          <div className="mb-4 p-4 bg-black/40 rounded-lg">
+                          <div className="mb-3 sm:mb-4 p-3 sm:p-4 bg-black/40 rounded-lg">
                             {kit.imagePath ? (
                               <img 
                                 src={kit.imagePath} 
                                 alt={kit.name}
-                                className="w-24 h-24 object-contain"
+                                className="w-16 h-16 sm:w-24 sm:h-24 object-contain"
                                 style={{ imageRendering: 'pixelated' }}
                               />
                             ) : (
-                              <Cpu className="w-24 h-24 text-gray-400" />
+                              <Cpu className="w-16 h-16 sm:w-24 sm:h-24 text-gray-400" />
                             )}
                           </div>
-                          <h3 className="text-xl font-bold text-white mb-2">{kit.name}</h3>
-                          <p className="text-gray-300 text-sm mb-4 line-clamp-3">{kit.description}</p>
-                          <div className="flex items-center justify-center space-x-4 text-sm">
+                          <h3 className="text-lg sm:text-xl font-bold text-white mb-2">{kit.name}</h3>
+                          <p className="text-gray-300 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-3">{kit.description}</p>
+                          <div className="flex items-center justify-center space-x-4 text-xs sm:text-sm">
                             <div className="flex items-center text-brand-orange">
-                              <BookOpen className="h-4 w-4 mr-1" />
+                              <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                               <span>{questCount} Quest{questCount !== 1 ? 's' : ''}</span>
                             </div>
                           </div>
@@ -433,11 +433,11 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
           /* Quest List for Selected Kit */
           <div className="flex-1 flex flex-col">
             {/* Breadcrumb and back button */}
-            <div className="bg-black/80 border-b border-brand-orange/30 p-4">
+            <div className="bg-black/80 border-b border-brand-orange/30 p-3 sm:p-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 min-w-0">
                   <button 
-                    className="flex items-center text-white hover:text-brand-orange"
+                    className="flex items-center text-white hover:text-brand-orange text-sm sm:text-base"
                     onClick={() => {
                       window.sounds?.click();
                       setQuestView('kit-select');
@@ -445,11 +445,11 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                     }}
                     onMouseEnter={() => window.sounds?.hover()}
                   >
-                    <ArrowLeft className="h-4 w-4 mr-1" />
+                    <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                     Back to Kits
                   </button>
-                  <span className="text-gray-400">•</span>
-                  <span className="text-white font-semibold">
+                  <span className="text-gray-400 hidden sm:inline">•</span>
+                  <span className="text-white font-semibold text-sm sm:text-base truncate">
                     {kits?.find(k => k.id === selectedKit)?.name || 'Selected Kit'}
                   </span>
                 </div>
@@ -457,7 +457,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
             </div>
             
             {/* Quest list */}
-            <div className="flex-1 overflow-y-auto p-6 bg-black/70">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-black/70">
               {loadingQuests ? (
                 <div className="flex flex-col items-center justify-center h-full">
                   <Loader2 className="h-10 w-10 animate-spin text-brand-orange mb-3" />
@@ -479,20 +479,20 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                 }
                 
                 return (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {kitQuests.map(quest => (
                       <div 
                         key={quest.id}
-                        className="bg-gray-900/80 rounded-lg border border-brand-orange/30 p-6 hover:border-brand-orange/60 transition-all duration-300 cursor-pointer hover:shadow-lg"
+                        className="bg-gray-900/80 rounded-lg border border-brand-orange/30 p-4 sm:p-6 hover:border-brand-orange/60 transition-all duration-300 cursor-pointer hover:shadow-lg"
                         onClick={() => handleQuestClick(quest.id.toString())}
                         onMouseEnter={() => window.sounds?.hover()}
                       >
                         <div className="flex flex-col h-full">
-                          <h3 className="text-lg font-bold text-white mb-2">{quest.title}</h3>
-                          <p className="text-gray-300 text-sm mb-4 flex-1 line-clamp-3">{quest.description}</p>
-                          <div className="flex items-center justify-between text-sm">
+                          <h3 className="text-base sm:text-lg font-bold text-white mb-2">{quest.title}</h3>
+                          <p className="text-gray-300 text-xs sm:text-sm mb-3 sm:mb-4 flex-1 line-clamp-3">{quest.description}</p>
+                          <div className="flex items-center justify-between text-xs sm:text-sm">
                             <div className="flex items-center text-brand-orange">
-                              <Award className="h-4 w-4 mr-1" />
+                              <Award className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                               <span>{quest.xpReward} XP</span>
                             </div>
                             <div className="flex items-center text-yellow-400">
