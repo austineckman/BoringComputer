@@ -86,11 +86,11 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   const quest = questData || fetchedQuest;
 
   // Fetch comments
-  const { data: comments, isLoading: commentsLoading, refetch: refetchComments } = useQuery<QuestComment[]>({
+  const { data: comments, isLoading: commentsLoading } = useQuery<QuestComment[]>({
     queryKey: [`/api/quests/${questId}/comments`],
     refetchOnWindowFocus: false,
-    staleTime: 0, // Always refetch to get latest comments
-    gcTime: 0, // Don't cache at all
+    staleTime: 0,
+    refetchInterval: false,
   });
 
   // Timer for unlocking cheat
@@ -110,14 +110,14 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   // Add comment mutation
   const addCommentMutation = useMutation({
     mutationFn: async (data: { content: string; parentId?: string }) => {
-      console.log('Making API request to add comment:', data);
       return apiRequest('POST', `/api/quests/${questId}/comments`, data);
     },
-    onSuccess: async (data) => {
-      console.log('Comment added successfully:', data);
-      // Force a fresh fetch of comments
-      await queryClient.invalidateQueries({ queryKey: [`/api/quests/${questId}/comments`] });
-      await refetchComments();
+    onSuccess: () => {
+      // Invalidate and refetch comments
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/quests/${questId}/comments`],
+        exact: true 
+      });
       setNewComment('');
       setReplyingTo(null);
     },
@@ -179,13 +179,10 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
 
   const handleAddComment = () => {
     if (newComment.trim() && user) {
-      console.log('Adding comment:', { content: newComment, parentId: replyingTo || undefined, questId });
       addCommentMutation.mutate({ 
-        content: newComment,
+        content: newComment.trim(),
         parentId: replyingTo || undefined
       });
-    } else {
-      console.log('Cannot add comment:', { newComment: newComment.trim(), user });
     }
   };
 
@@ -402,13 +399,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
           </div>
           
           {/* Comments List */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* Debug info */}
-            <div className="text-xs text-gray-500 mb-2">
-              Loading: {commentsLoading ? 'true' : 'false'} | 
-              Comments: {comments ? comments.length : 'null'} | 
-              Type: {typeof comments}
-            </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {commentsLoading ? (
               <div className="text-center py-8">
                 <div className="w-8 h-8 border-2 border-brand-orange border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
