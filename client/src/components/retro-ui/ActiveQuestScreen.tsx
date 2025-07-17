@@ -290,6 +290,17 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
       {/* Header */}
       <div className="bg-black/90 border-b border-brand-orange/30 p-2 sm:p-4 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center space-x-2 sm:space-x-4 min-w-0">
+          <button 
+            onClick={() => {
+              abandonQuestMutation.mutate();
+              onClose();
+            }}
+            className="px-2 py-1 sm:px-4 sm:py-2 bg-red-600 hover:bg-red-500 text-white rounded-md flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm flex-shrink-0"
+          >
+            <XCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Abandon Quest</span>
+            <span className="sm:hidden">Abandon</span>
+          </button>
           <h1 className="text-lg sm:text-2xl font-bold text-brand-orange truncate">{quest.title}</h1>
           <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-400">
             <Clock className="w-4 h-4" />
@@ -297,19 +308,14 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
           </div>
         </div>
         <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
-          <button 
-            onClick={() => abandonQuestMutation.mutate()}
-            className="px-2 py-1 sm:px-4 sm:py-2 bg-red-600 hover:bg-red-500 text-white rounded-md flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
+          <button
+            onClick={() => completeQuestMutation.mutate()}
+            disabled={completeQuestMutation.isPending}
+            className="px-2 py-1 sm:px-4 sm:py-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 text-white rounded-md flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
           >
-            <XCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Abandon Quest</span>
-            <span className="sm:hidden">Abandon</span>
-          </button>
-          <button 
-            onClick={onClose}
-            className="text-white hover:text-brand-orange"
-          >
-            <X className="h-5 w-5 sm:h-6 sm:w-6" />
+            <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Complete Quest</span>
+            <span className="sm:hidden">Complete</span>
           </button>
         </div>
       </div>
@@ -638,17 +644,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
         </div>
       </div>
       
-      {/* Complete Quest Button - Fixed at bottom */}
-      <div className="p-3 sm:p-4 bg-black/90 border-t border-brand-orange/30 flex justify-center flex-shrink-0">
-        <button
-          onClick={() => completeQuestMutation.mutate()}
-          disabled={completeQuestMutation.isPending}
-          className="px-4 py-2 sm:px-8 sm:py-3 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 text-white rounded-md flex items-center space-x-2 text-sm sm:text-base"
-        >
-          <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-          <span>Complete Quest</span>
-        </button>
-      </div>
+
     </div>
   );
 };
