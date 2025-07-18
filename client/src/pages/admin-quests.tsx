@@ -92,6 +92,7 @@ interface Quest {
   difficulty: number;
   orderInLine: number;
   xpReward: number;
+  goldReward: number;
   lootBoxRewards: {type: string, quantity: number}[];
   active: boolean;
   kitId?: string;
@@ -160,6 +161,7 @@ const questFormSchema = z.object({
   difficulty: z.coerce.number().min(1).max(5),
   orderInLine: z.coerce.number().min(0),
   xpReward: z.coerce.number().min(1),
+  goldReward: z.coerce.number().min(0),
   active: z.boolean().default(true),
   kitId: z.string().optional(), // Optional reference to a component kit
 });
@@ -353,6 +355,7 @@ const AdminQuests: React.FC = () => {
       difficulty: 1,
       orderInLine: 0,
       xpReward: 100,
+      goldReward: 50,
       active: true,
       kitId: '',
     },
@@ -387,6 +390,7 @@ const AdminQuests: React.FC = () => {
           difficulty,
           orderInLine: 0,
           xpReward,
+          goldReward: 50,
           active: true,
           kitId,
         });
@@ -1028,6 +1032,28 @@ const AdminQuests: React.FC = () => {
                                     onChange={(e) => field.onChange(parseInt(e.target.value))}
                                   />
                                 </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name="goldReward"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Gold Reward</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    type="number" 
+                                    min={0}
+                                    onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  Gold coins awarded for quest completion
+                                </FormDescription>
                                 <FormMessage />
                               </FormItem>
                             )}
