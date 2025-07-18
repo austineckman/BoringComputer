@@ -1082,22 +1082,23 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     setEditingItem(component);
   };
 
-  // Handle creating a new component for a kit
+  // Handle adding a new component to a kit
   const handleAddComponentClick = () => {
     if (!activeKitId) return;
     
     window.sounds?.click();
     
-    // Create a new component template without ID (will be set by database)
-    const newComponent = {
+    // Create a new component object with the selected kit ID
+    const newComponent: KitComponent = {
+      id: 0, // Temporary ID - will be assigned by database
       kitId: activeKitId,
-      name: '',
-      description: '',
+      name: 'New Component',
+      description: 'A new component for this kit',
       imagePath: '',
       partNumber: '',
-      isRequired: true,
+      isRequired: false,
       quantity: 1,
-      category: '',
+      category: 'General',
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -1117,7 +1118,6 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const closeEditDialog = () => {
     setEditingType(null);
     setEditingItem(null);
-    setIsCreatingNewItem(false);
   };
   
   const handleEditSubmit = async (data: any) => {
@@ -1128,7 +1128,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       let endpoint = '';
       let method = isCreatingNewItem ? 'POST' : 'PUT';
       let body: any = {};
-      const id = (editingItem as any).id || null;
+      const id = (editingItem as any).id;
       
       if (editingType === 'lootbox') {
         if (isCreatingNewItem) {
@@ -1208,7 +1208,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         body = data;
       } else if (editingType === 'component') {
         if (isCreatingNewItem) {
-          endpoint = `/api/admin/kits/${(editingItem as KitComponent).kitId}/components`;
+          const kitId = (editingItem as KitComponent).kitId;
+          endpoint = `/api/admin/kits/${kitId}/components`;
           body = data;
         } else {
           endpoint = `/api/admin/components/${id}`;
@@ -7402,23 +7403,9 @@ void loop() {
                         accept="image/png, image/jpeg, image/gif, image/webp"
                         className="hidden"
                         id="component-image-upload"
-                        disabled={isCreatingNewItem}
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          
-                          // Prevent upload for new components (no ID)
-                          if (isCreatingNewItem || !(editingItem as KitComponent).id) {
-                            setNotificationMessage({
-                              type: 'error',
-                              message: 'Please save the component first before uploading an image.'
-                            });
-                            
-                            setTimeout(() => {
-                              setNotificationMessage(null);
-                            }, 3000);
-                            return;
-                          }
                           
                           // Create a FormData object
                           const formData = new FormData();
@@ -7484,17 +7471,10 @@ void loop() {
                       />
                       <label
                         htmlFor="component-image-upload"
-                        className={`px-3 py-2 rounded ${
-                          isCreatingNewItem || !(editingItem as KitComponent).id
-                            ? 'bg-gray-600 text-gray-500 cursor-not-allowed'
-                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700 cursor-pointer'
-                        }`}
-                        onMouseEnter={() => !isCreatingNewItem && window.sounds?.hover()}
+                        className="px-3 py-2 bg-gray-800 text-gray-300 rounded hover:bg-gray-700 cursor-pointer"
+                        onMouseEnter={() => window.sounds?.hover()}
                       >
-                        {isCreatingNewItem || !(editingItem as KitComponent).id
-                          ? 'Save First' 
-                          : 'Upload'
-                        }
+                        Upload
                       </label>
                     </div>
                     
