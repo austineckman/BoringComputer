@@ -782,12 +782,12 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
           if (onComplete) onComplete();
         }}
         rewards={questRewards || {
-          questTitle: quest?.title,
+          questTitle: quest?.title || 'Unknown Quest',
           xpAwarded: 0,
           goldAwarded: 0,
           itemsAwarded: [],
-          newXp: 0,
-          newGold: 0,
+          newXp: user?.xp || 0,
+          newGold: user?.inventory?.gold || 0,
           alreadyCompleted: false
         }}
       />

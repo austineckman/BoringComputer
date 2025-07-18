@@ -914,11 +914,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       const questId = parseInt(req.params.questId);
-      const { submission, image } = req.body;
-
-      if (!submission) {
-        return res.status(400).json({ message: "Submission text is required" });
-      }
 
       // Verify the quest exists
       const quest = await storage.getQuest(questId);
@@ -926,21 +921,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Quest not found" });
       }
 
-      // Check if the user has this quest as active
-      const userQuests = await storage.getUserQuests(user.id);
-      const activeQuest = userQuests.find(uq => uq.questId === questId && uq.status === 'active');
-
-      if (!activeQuest) {
-        return res.status(400).json({ message: "This quest is not currently active" });
+      // Check if already completed
+      const alreadyCompleted = user.completedQuests && user.completedQuests.includes(questId);
+      
+      if (alreadyCompleted) {
+        // Return re-completion response with no rewards
+        return res.json({
+          success: true,
+          alreadyCompleted: true,
+          questTitle: quest.title,
+          xpAwarded: 0,
+          goldAwarded: 0,
+          itemsAwarded: [],
+          newXp: user.xp,
+          newGold: user.inventory?.gold || 0,
+          message: "Quest already completed - no additional rewards"
+        });
       }
 
-      // Create submission
+      // Check if the user has this quest as active (or allow completion from any state for UX)
+      const userQuests = await storage.getUserQuests(user.id);
+      let activeQuest = userQuests.find(uq => uq.questId === questId && uq.status === 'active');
+
+      // If no active quest found, create one (for direct completion flow)
+      if (!activeQuest) {
+        const existingQuest = userQuests.find(uq => uq.questId === questId);
+        if (existingQuest) {
+          await storage.updateUserQuest(existingQuest.id, { status: 'active' });
+          activeQuest = existingQuest;
+        } else {
+          const newUserQuest = await storage.createUserQuest({
+            userId: user.id,
+            questId,
+            status: 'active'
+          });
+          activeQuest = newUserQuest;
+        }
+      }
+
+      // Create submission (optional for direct completion)
       await storage.createSubmission({
         userId: user.id,
         questId,
-        description: submission,
+        description: "Quest completed via active quest screen",
         code: null,
-        image: image || null
+        image: null
       });
 
       // Mark quest as completed
@@ -954,6 +979,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Add rewards to user's inventory
       const inventory = { ...user.inventory };
+      const itemsAwarded = [];
+      let goldAwarded = 0;
 
       // Process new rewards format
       if (quest.rewards && quest.rewards.length > 0) {
@@ -961,6 +988,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // For items and equipment, add directly to inventory
           if (reward.type === 'item' || reward.type === 'equipment') {
             inventory[reward.id] = (inventory[reward.id] || 0) + reward.quantity;
+            itemsAwarded.push({
+              id: reward.id,
+              name: reward.name || reward.id,
+              quantity: reward.quantity
+            });
 
             // Create inventory history
             await storage.createInventoryHistory({
@@ -971,6 +1003,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
               source: 'quest'
             });
           } 
+          // For gold rewards
+          else if (reward.type === 'gold') {
+            const goldAmount = reward.quantity || reward.amount || 0;
+            inventory.gold = (inventory.gold || 0) + goldAmount;
+            goldAwarded += goldAmount;
+
+            // Create inventory history
+            await storage.createInventoryHistory({
+              userId: user.id,
+              type: 'gold',
+              quantity: goldAmount,
+              action: 'gained',
+              source: 'quest'
+            });
+          }
           // For lootboxes, create lootbox entries
           else if (reward.type === 'lootbox') {
             // Create loot boxes
@@ -984,6 +1031,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 sourceId: questId
               });
             }
+
+            itemsAwarded.push({
+              id: reward.id,
+              name: `${reward.id} Loot Box`,
+              quantity: reward.quantity
+            });
 
             // Add entry to inventory history
             await storage.createInventoryHistory({
@@ -1011,6 +1064,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               sourceId: questId
             });
           }
+
+          itemsAwarded.push({
+            id: reward.type,
+            name: `${reward.type} Loot Box`,
+            quantity: reward.quantity
+          });
 
           // Add entry to inventory history
           await storage.createInventoryHistory({
@@ -1066,13 +1125,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if we need to make next quest available
       await storage.getAvailableQuestsForUser(user.id);
 
-      // Return rewards and XP info
-      return res.json({ 
-        rewards: quest.rewards || [],
-        lootBoxRewards: quest.lootBoxRewards || [],
-        xpGained: xpReward,
+      // Return rewards in the format expected by the dialog
+      return res.json({
+        success: true,
+        alreadyCompleted: false,
+        questTitle: quest.title,
+        xpAwarded: xpReward,
+        goldAwarded: goldAwarded,
+        itemsAwarded: itemsAwarded,
+        newXp: updatedUser.xp,
+        newGold: inventory.gold || 0,
         newLevel: updatedUser.level,
-        xp: updatedUser.xp,
         xpToNextLevel: updatedUser.xpToNextLevel
       });
     } catch (error) {
