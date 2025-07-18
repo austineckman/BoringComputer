@@ -2766,8 +2766,16 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                           `}
                           onClick={async () => {
                           try {
+                            // Get CSRF token first
+                            const csrfResponse = await fetch('/api/csrf-token');
+                            const csrfData = await csrfResponse.json();
+                            
                             const response = await fetch(`/api/admin/users/${user.id}/toggle-admin`, {
-                              method: 'PUT'
+                              method: 'PUT',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-Token': csrfData.token
+                              }
                             });
                             
                             if (response.ok) {
