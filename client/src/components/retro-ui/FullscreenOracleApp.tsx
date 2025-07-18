@@ -2014,7 +2014,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
             setConnectingFrom(null);
           }
         }}
-        style={{ minHeight: '600px', minWidth: '1000px' }}
+        style={{ minHeight: '600px', minWidth: '1000px', paddingBottom: '80px' }}
       >
         {/* Connection Lines */}
         {renderConnections()}
@@ -2080,7 +2080,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
 
     return (
       <div className="p-6 overflow-y-auto">
-        <div className="space-y-4">
+        <div className="space-y-4 pb-20">
           {filteredQuests.map(quest => (
             <div 
               key={quest.id}
@@ -2415,7 +2415,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         </div>
 
         {/* Flow Canvas */}
-        <div className="flex-1 relative overflow-hidden bg-gradient-to-br from-gray-900 via-black to-gray-900">
+        <div className="flex-1 relative overflow-y-auto overflow-x-hidden bg-gradient-to-br from-gray-900 via-black to-gray-900">
           {/* Empty state for new quest lines */}
           {kitQuests.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full">
