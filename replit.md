@@ -55,6 +55,9 @@ Preferred communication style: Simple, everyday language.
 - **Quest Display Fix**: Resolved issue where Day 3 quest appeared missing from Oracle interface due to UI button conflicts
 - **Clean Quest Interface**: Oracle now has single, clear quest creation workflow without competing UI elements
 - **All Quests Visible**: Confirmed all 5 quests (including Day 3: "I'm worried about your battery levels") now display properly in Oracle interface
+- **Oracle Scrolling Enhancement**: Fixed Flow Canvas from overflow-hidden to overflow-y-auto for proper vertical scrolling
+- **Bottom Padding Fix**: Added pb-20 to QuestGridView and 80px paddingBottom to Flow Canvas for proper quest visibility
+- **Admin Access Improvement**: Admins can now scroll deeper and see all quests with adequate spacing below the last quest
 
 ### Solution Helper Penalty System (July 18, 2025)
 - **Removed Timer System**: Eliminated 5-minute timer requirement for solution helper access
