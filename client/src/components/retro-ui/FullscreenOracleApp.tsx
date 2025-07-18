@@ -4531,7 +4531,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
             className="h-[67px] object-contain" 
             style={{ imageRendering: 'pixelated' }}
           />
-          <span className="text-xs bg-red-600/80 text-white px-2 py-0.5 rounded-full ml-3">Admin Only</span>
+          <span className="text-xs bg-brand-orange/80 text-white px-2 py-0.5 rounded-full ml-3">Campaign Management</span>
           
           {/* Admin Action Buttons */}
           <div className="flex items-center ml-6 space-x-2">
