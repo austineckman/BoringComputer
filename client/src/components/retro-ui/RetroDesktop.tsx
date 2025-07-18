@@ -140,8 +140,8 @@ const RetroDesktop: React.FC = () => {
       { id: "discord", name: "Discord", icon: "discord", position: { x: 140, y: 320 } },
     ];
     
-    // Add Oracle icon for users with Oracle access (admin, Founder, or CraftingTable roles)
-    if (user?.roles?.includes('admin') || user?.roles?.includes('Founder') || user?.roles?.includes('CraftingTable')) {
+    // Add Oracle icon for users with CraftingTable role
+    if (user?.roles?.includes('CraftingTable')) {
       baseIcons.push({ id: "oracle", name: "The Oracle", icon: "oracle", position: { x: 800, y: 20 } });
     }
     
@@ -923,8 +923,8 @@ const RetroDesktop: React.FC = () => {
         }} />
       )}
       
-      {/* Fullscreen Oracle Application - Only visible to users with Oracle access */}
-      {oracleAppState === 'open' && (user?.roles?.includes('admin') || user?.roles?.includes('Founder') || user?.roles?.includes('CraftingTable')) ? (
+      {/* Fullscreen Oracle Application - Only visible to users with CraftingTable role */}
+      {oracleAppState === 'open' && user?.roles?.includes('CraftingTable') ? (
         <FullscreenOracleApp onClose={() => {
           // Reset app state to closed
           setOracleAppState('closed');
@@ -934,7 +934,7 @@ const RetroDesktop: React.FC = () => {
         <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center text-white">
           <div className="text-3xl text-red-500 mb-6">⚠️ Access Denied</div>
           <div className="text-xl mb-4">You do not have permission to access The Oracle.</div>
-          <div className="text-md mb-8">This administrative tool requires admin, Founder, or CraftingTable role access.</div>
+          <div className="text-md mb-8">This tool requires CraftingTable role access.</div>
           <button 
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded transition-colors"
             onClick={() => setOracleAppState('closed')}

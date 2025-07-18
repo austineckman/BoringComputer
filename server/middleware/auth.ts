@@ -39,7 +39,7 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
   }
 };
 
-// Middleware to check if the user has Oracle access (admin or CraftingTable role)
+// Middleware to check if the user has Oracle access (CraftingTable role)
 export const hasOracleAccess = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = (req as any).user;
@@ -47,15 +47,11 @@ export const hasOracleAccess = async (req: Request, res: Response, next: NextFun
       return res.status(401).json({ message: 'Authentication required' });
     }
     
-    // Check if user has admin role, CraftingTable role, or Founder role (which includes admin)
-    const hasAccess = user.roles && (
-      user.roles.includes('admin') || 
-      user.roles.includes('CraftingTable') || 
-      user.roles.includes('Founder')
-    );
+    // Check if user has CraftingTable role
+    const hasAccess = user.roles && user.roles.includes('CraftingTable');
     
     if (!hasAccess) {
-      return res.status(403).json({ message: 'Oracle access denied. Requires admin, CraftingTable, or Founder role.' });
+      return res.status(403).json({ message: 'Oracle access denied. Requires CraftingTable role.' });
     }
     
     // Add user to the request object for downstream handlers
