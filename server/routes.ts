@@ -28,6 +28,7 @@ import circuitProjectsRoutes from './routes/circuit-projects';
 import arduinoComponentsRoutes from './routes/arduino-components';
 import missionRoutes from './routes/missions';
 import { authenticate, hashPassword } from './auth';
+import { hasOracleAccess } from './middleware/auth';
 import { conditionalCsrfProtection, getCsrfToken, handleCsrfError } from './middleware/csrf';
 import { addSecurityHeaders } from './middleware/security-headers';
 import { componentKits, items, auctionListings, users, questComments } from '@shared/schema';
@@ -2486,7 +2487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/adventure-lines', adventureLinesRoutes);
 
   // Register Oracle routes (with full CRUD access to database)
-  app.use('/api/oracle', authenticate, oracleRoutes);
+  app.use('/api/oracle', hasOracleAccess, oracleRoutes);
 
   // Lootboxes routes
   app.use('/api/lootboxes', authenticate, lootboxesRoutes);
