@@ -1088,9 +1088,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     
     window.sounds?.click();
     
-    // Create a new component template
-    const newComponent: KitComponent = {
-      id: 0, // Will be set by the database
+    // Create a new component template without ID (will be set by database)
+    const newComponent = {
       kitId: activeKitId,
       name: '',
       description: '',
@@ -1118,6 +1117,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const closeEditDialog = () => {
     setEditingType(null);
     setEditingItem(null);
+    setIsCreatingNewItem(false);
   };
   
   const handleEditSubmit = async (data: any) => {
@@ -1128,7 +1128,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       let endpoint = '';
       let method = isCreatingNewItem ? 'POST' : 'PUT';
       let body: any = {};
-      const id = (editingItem as any).id;
+      const id = (editingItem as any).id || null;
       
       if (editingType === 'lootbox') {
         if (isCreatingNewItem) {
@@ -7402,9 +7402,23 @@ void loop() {
                         accept="image/png, image/jpeg, image/gif, image/webp"
                         className="hidden"
                         id="component-image-upload"
+                        disabled={isCreatingNewItem}
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
+                          
+                          // Prevent upload for new components (no ID)
+                          if (isCreatingNewItem || !(editingItem as KitComponent).id) {
+                            setNotificationMessage({
+                              type: 'error',
+                              message: 'Please save the component first before uploading an image.'
+                            });
+                            
+                            setTimeout(() => {
+                              setNotificationMessage(null);
+                            }, 3000);
+                            return;
+                          }
                           
                           // Create a FormData object
                           const formData = new FormData();
@@ -7470,10 +7484,17 @@ void loop() {
                       />
                       <label
                         htmlFor="component-image-upload"
-                        className="px-3 py-2 bg-gray-800 text-gray-300 rounded hover:bg-gray-700 cursor-pointer"
-                        onMouseEnter={() => window.sounds?.hover()}
+                        className={`px-3 py-2 rounded ${
+                          isCreatingNewItem || !(editingItem as KitComponent).id
+                            ? 'bg-gray-600 text-gray-500 cursor-not-allowed'
+                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700 cursor-pointer'
+                        }`}
+                        onMouseEnter={() => !isCreatingNewItem && window.sounds?.hover()}
                       >
-                        Upload
+                        {isCreatingNewItem || !(editingItem as KitComponent).id
+                          ? 'Save First' 
+                          : 'Upload'
+                        }
                       </label>
                     </div>
                     
