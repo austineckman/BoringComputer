@@ -2409,31 +2409,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 <GitBranch className="h-4 w-4 mr-2" />
                 {questFlowMode ? 'Exit Flow Mode' : 'Flow Builder'}
               </button>
-              <button
-                className="px-3 py-2 bg-brand-orange/80 text-white rounded-md hover:bg-brand-orange transition-colors flex items-center"
-                onClick={() => {
-                  const newQuest: Quest = {
-                    id: Date.now().toString(),
-                    title: 'New Quest',
-                    description: 'A new epic quest awaits brave adventurers!',
-                    adventureLine: selectedQuestLine || selectedKit?.name || '30 Days Lost in Space',
-                    xpReward: 100,
-                    difficulty: 3,
-                    rewards: [],
-                    status: 'available',
-                    componentRequirements: [],
-                    ...(selectedQuestKitId && { kitId: selectedQuestKitId })
-                  };
-                  setEditingItem(newQuest);
-                  setEditingType('quest');
-                  setIsCreatingNewItem(true);
-                  window.sounds?.click();
-                }}
-                onMouseEnter={() => window.sounds?.hover()}
-              >
-                <PlusCircle className="h-4 w-4 mr-1" />
-                Add Quest
-              </button>
+
             </div>
           </div>
         </div>
