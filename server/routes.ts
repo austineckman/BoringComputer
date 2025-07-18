@@ -518,7 +518,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Calculate rewards
       const xpAwarded = quest.xpReward || 100;
-      const goldAwarded = quest.goldReward || 50; // Use quest's gold reward
+      const { cheatUsed } = req.body;
+      const goldAwarded = cheatUsed ? 0 : (quest.goldReward || 50); // No gold if cheat was used
       const itemsAwarded = quest.rewards || [];
 
       // Award XP, gold and update completed quests
@@ -547,7 +548,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         success: true,
         alreadyCompleted: false,
-        message: `Quest completed! +${xpAwarded} XP, +${goldAwarded} Gold`,
+        message: cheatUsed 
+          ? `Quest completed! +${xpAwarded} XP (No gold due to using solution helper)`
+          : `Quest completed! +${xpAwarded} XP, +${goldAwarded} Gold`,
         xpAwarded,
         goldAwarded,
         itemsAwarded,
@@ -1084,10 +1087,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Award XP and Gold for completing the quest
       const xpReward = quest.xpReward || 100;
-      const goldReward = quest.goldReward || 50;
+      const { cheatUsed } = req.body;
+      const goldReward = cheatUsed ? 0 : (quest.goldReward || 50); // No gold if cheat was used
       const updatedUser = await storage.addUserXP(user.id, xpReward);
       
-      // Add gold to user's inventory
+      // Add gold to user's inventory (only if cheat wasn't used)
       const currentGold = inventory.gold || 0;
       inventory.gold = currentGold + goldReward;
 
