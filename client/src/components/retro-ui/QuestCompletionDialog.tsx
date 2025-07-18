@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CheckCircle, X, Trophy, Coins, Gift, Star } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 interface QuestCompletionDialogProps {
   isOpen: boolean;
@@ -87,6 +88,27 @@ export const QuestCompletionConfirmDialog: React.FC<QuestCompletionDialogProps> 
   );
 };
 
+// Helper function to get rarity color
+const getRarityColor = (itemId: string, itemType?: string) => {
+  // Define rarity based on item type/name
+  const rarityMap: Record<string, string> = {
+    'dark-elementium': 'border-purple-500 bg-purple-900/20', // Epic
+    'elementium-bar': 'border-blue-500 bg-blue-900/20', // Rare
+    'tech-scrap': 'border-green-500 bg-green-900/20', // Uncommon
+    'chainmail': 'border-green-500 bg-green-900/20', // Uncommon
+    'basic': 'border-yellow-500 bg-yellow-900/20', // Common lootbox
+    'copper': 'border-gray-400 bg-gray-800/20', // Common
+    'cloth': 'border-gray-400 bg-gray-800/20', // Common
+  };
+  
+  // Special handling for loot boxes
+  if (itemType === 'lootbox') {
+    return 'border-orange-500 bg-orange-900/20'; // Special lootbox styling
+  }
+  
+  return rarityMap[itemId] || 'border-gray-600 bg-gray-700/20'; // Default
+};
+
 export const QuestRewardsDialog: React.FC<QuestRewardsDialogProps> = ({
   isOpen,
   onClose,
@@ -96,6 +118,16 @@ export const QuestRewardsDialog: React.FC<QuestRewardsDialogProps> = ({
   if (!isOpen) return null;
   
   console.log('QuestRewardsDialog rewards data:', rewards);
+  
+  // Fetch items database for images and names
+  const { data: items } = useQuery({
+    queryKey: ['/api/items'],
+  });
+  
+  // Fetch loot box configs for loot box images
+  const { data: lootBoxes } = useQuery({
+    queryKey: ['/api/lootbox-configs'],
+  });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
@@ -164,16 +196,51 @@ export const QuestRewardsDialog: React.FC<QuestRewardsDialogProps> = ({
                     <span>Items Received</span>
                   </h3>
                   <div className="grid grid-cols-3 gap-2">
-                    {rewards.itemsAwarded.map((item, index) => (
-                      <div key={index} className="bg-gray-700 border border-gray-600 rounded p-2 text-center">
-                        <div className="text-xs text-gray-300 font-medium">
-                          {item.name || item.id}
+                    {rewards.itemsAwarded.map((item, index) => {
+                      // Check if it's a loot box or regular item
+                      const isLootBox = item.type === 'lootbox';
+                      const itemData = isLootBox 
+                        ? lootBoxes?.find((lb: any) => lb.id === item.id)
+                        : items?.find((i: any) => i.id === item.id);
+                      
+                      const rarityClass = getRarityColor(item.id, item.type);
+                      
+                      return (
+                        <div 
+                          key={index} 
+                          className={`border-2 rounded-lg p-3 text-center transition-all hover:scale-105 ${rarityClass}`}
+                        >
+                          {/* Item Image */}
+                          {itemData?.image && (
+                            <div className="w-12 h-12 mx-auto mb-2 relative">
+                              <img 
+                                src={itemData.image} 
+                                alt={itemData.name || item.id}
+                                className="w-full h-full object-contain"
+                                style={{ imageRendering: 'pixelated' }}
+                              />
+                            </div>
+                          )}
+                          
+                          {/* Item Name */}
+                          <div className="text-xs text-white font-medium mb-1">
+                            {itemData?.name || item.name || item.id.replace('-', ' ')}
+                          </div>
+                          
+                          {/* Quantity */}
+                          <div className="text-xs text-gray-300 font-bold">
+                            x{item.quantity}
+                          </div>
+                          
+                          {/* Item Type Badge */}
+                          {isLootBox && (
+                            <div className="text-xs text-orange-400 font-semibold mt-1">
+                              LOOT BOX
+                            </div>
+                          )}
                         </div>
-                        <div className="text-xs text-gray-400">
-                          x{item.quantity}
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
