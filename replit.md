@@ -41,12 +41,13 @@ Preferred communication style: Simple, everyday language.
 - This ensures campaign automation interface access for authorized users
 
 ### Oracle Access Control Enhancement (July 18, 2025)
-- **Extended Oracle Access**: Created new `hasOracleAccess` middleware allowing users with 'admin', 'CraftingTable', or 'Founder' Discord roles to access Oracle interface
+- **CraftingTable-Only Access**: Simplified Oracle access to check only for 'CraftingTable' Discord role as requested by team
 - **Campaign Management Access**: CraftingTable team members can now access the full Oracle campaign automation interface for quest management
 - **Role-Based Authorization**: Replaced basic `authenticate` middleware with `hasOracleAccess` on all Oracle API endpoints for proper role verification
-- **Multi-Role Support**: Oracle interface now recognizes three permission levels: admin (full access), CraftingTable (team access), and Founder (includes admin privileges)
-- **Security Enhancement**: All Oracle endpoints now properly validate Discord roles before allowing administrative operations
-- **UI Update**: Changed hardcoded "Admin Only" badge to "Campaign Management" to reflect multi-role access system
+- **Team-Specific Access**: Oracle interface now recognizes only CraftingTable role for access control
+- **Security Enhancement**: All Oracle endpoints now properly validate CraftingTable Discord role before allowing administrative operations
+- **UI Update**: Changed hardcoded "Admin Only" badge to "Campaign Management" to reflect team access system
+- **Database Fix**: Updated both craftingtable1_05196 and chas_61772 users with CraftingTable role to resolve Discord OAuth rate limiting issues
 
 ### Solution Helper Penalty System (July 18, 2025)
 - **Removed Timer System**: Eliminated 5-minute timer requirement for solution helper access
