@@ -76,10 +76,21 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [showRewardsDialog, setShowRewardsDialog] = useState(false);
   const [questRewards, setQuestRewards] = useState<any>(null);
+  const [startTime] = useState(Date.now());
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Update elapsed time every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElapsedTime(Date.now() - startTime);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [startTime]);
 
   // Use passed quest data or fetch from API as fallback
   const { data: fetchedQuest, isLoading: questLoading, error: questError } = useQuery<QuestData>({
