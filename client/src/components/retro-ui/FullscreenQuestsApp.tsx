@@ -372,6 +372,10 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
               setQuestView('quest-list');
               setActiveQuestId(null);
             }}
+            onComplete={() => {
+              setQuestView('quest-list');
+              setActiveQuestId(null);
+            }}
           />
         ) : questView === 'kit-select' ? (
           /* Kit Selection Screen */
@@ -483,12 +487,36 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                     {kitQuests.map(quest => (
                       <div 
                         key={quest.id}
-                        className="bg-gray-900/80 rounded-lg border border-brand-orange/30 p-4 sm:p-6 hover:border-brand-orange/60 transition-all duration-300 cursor-pointer hover:shadow-lg"
+                        className={`bg-gray-900/80 rounded-lg border p-4 sm:p-6 hover:border-brand-orange/60 transition-all duration-300 cursor-pointer hover:shadow-lg relative ${
+                          quest.status === 'completed' 
+                            ? 'border-green-500/50 bg-green-900/20' 
+                            : 'border-brand-orange/30'
+                        }`}
                         onClick={() => handleQuestClick(quest.id.toString())}
                         onMouseEnter={() => window.sounds?.hover()}
                       >
+                        {/* Completion Badge */}
+                        {quest.status === 'completed' && (
+                          <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-1 border-2 border-green-400 shadow-lg">
+                            <div className="w-6 h-6 flex items-center justify-center">
+                              ✓
+                            </div>
+                          </div>
+                        )}
+                        
                         <div className="flex flex-col h-full">
-                          <h3 className="text-base sm:text-lg font-bold text-white mb-2">{quest.title}</h3>
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className={`text-base sm:text-lg font-bold mb-0 ${
+                              quest.status === 'completed' ? 'text-green-300' : 'text-white'
+                            }`}>
+                              {quest.title}
+                            </h3>
+                            {quest.status === 'completed' && (
+                              <span className="text-xs text-green-400 font-semibold bg-green-900/40 px-2 py-1 rounded">
+                                COMPLETED
+                              </span>
+                            )}
+                          </div>
                           <p className="text-gray-300 text-xs sm:text-sm mb-3 sm:mb-4 flex-1 line-clamp-3">{quest.description}</p>
                           <div className="flex items-center justify-between text-xs sm:text-sm">
                             <div className="flex items-center text-brand-orange">
