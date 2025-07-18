@@ -494,34 +494,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get the quest
-      const quest = await storage.getQuestById(parseInt(questId));
+      const quest = await storage.getQuest(parseInt(questId));
       if (!quest) {
         return res.status(404).json({ error: 'Quest not found' });
       }
 
       // Check if already completed
       const user = await storage.getUser(userId);
-      if (user?.completedQuests?.includes(parseInt(questId))) {
-        return res.status(400).json({ error: 'Quest already completed' });
+      const alreadyCompleted = user?.completedQuests?.includes(parseInt(questId));
+      
+      if (alreadyCompleted) {
+        return res.json({
+          success: true,
+          alreadyCompleted: true,
+          message: 'Quest already completed - no rewards given',
+          xpAwarded: 0,
+          goldAwarded: 0,
+          itemsAwarded: [],
+          newXp: user.xp,
+          newGold: user.inventory?.gold || 0
+        });
       }
 
-      // Award XP and update completed quests
-      const newXp = (user?.xp || 0) + quest.xpReward;
+      // Calculate rewards
+      const xpAwarded = quest.xpReward || 100;
+      const goldAwarded = Math.floor(Math.random() * 50) + 25; // Random gold 25-75
+      const itemsAwarded = quest.rewards || [];
+
+      // Award XP, gold and update completed quests
+      const newXp = (user?.xp || 0) + xpAwarded;
+      const currentInventory = user?.inventory || {};
+      const newGold = (currentInventory.gold || 0) + goldAwarded;
       const newCompletedQuests = [...(user?.completedQuests || []), parseInt(questId)];
+
+      // Update user inventory with new gold and items
+      const updatedInventory = { ...currentInventory, gold: newGold };
+      
+      // Add quest reward items to inventory
+      itemsAwarded.forEach((reward: any) => {
+        if (reward.type === 'material') {
+          const currentAmount = updatedInventory[reward.id] || 0;
+          updatedInventory[reward.id] = currentAmount + (reward.quantity || 1);
+        }
+      });
 
       await storage.updateUser(userId, {
         xp: newXp,
-        completedQuests: newCompletedQuests
+        completedQuests: newCompletedQuests,
+        inventory: updatedInventory
       });
-
-      // Award rewards (simplified for now)
-      let rewardMessage = `Quest completed! +${quest.xpReward} XP`;
 
       res.json({
         success: true,
-        message: rewardMessage,
-        xpAwarded: quest.xpReward,
-        newXp: newXp
+        alreadyCompleted: false,
+        message: `Quest completed! +${xpAwarded} XP, +${goldAwarded} Gold`,
+        xpAwarded,
+        goldAwarded,
+        itemsAwarded,
+        newXp,
+        newGold,
+        questTitle: quest.title
       });
     } catch (error) {
       console.error('Error completing quest:', error);

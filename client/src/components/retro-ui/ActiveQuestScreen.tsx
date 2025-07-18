@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { QuestCompletionConfirmDialog, QuestRewardsDialog } from './QuestCompletionDialog';
 
 interface ActiveQuestScreenProps {
   questId: string;
@@ -74,6 +75,9 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showRewardsDialog, setShowRewardsDialog] = useState(false);
+  const [questRewards, setQuestRewards] = useState<any>(null);
 
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -195,13 +199,24 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   // Complete quest mutation
   const completeQuestMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('POST', `/api/quests/${questId}/complete`, {
-        submission: "Quest completed via active quest screen",
-        image: null
-      });
+      return apiRequest('POST', `/api/quests/${questId}/complete`, {});
     },
-    onSuccess: () => {
-      if (onComplete) onComplete();
+    onSuccess: (data) => {
+      setQuestRewards(data);
+      setShowConfirmDialog(false);
+      setShowRewardsDialog(true);
+      
+      // Invalidate queries to refresh user data
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/quests'] });
+    },
+    onError: (error) => {
+      console.error('Quest completion error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to complete quest. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -360,7 +375,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
         </div>
         <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
           <button
-            onClick={() => completeQuestMutation.mutate()}
+            onClick={() => setShowConfirmDialog(true)}
             disabled={completeQuestMutation.isPending}
             className="px-2 py-1 sm:px-4 sm:py-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 text-white rounded-md flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
           >
@@ -751,6 +766,31 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
         </div>
       </div>
       
+      {/* Quest Completion Dialogs */}
+      <QuestCompletionConfirmDialog
+        isOpen={showConfirmDialog}
+        onClose={() => setShowConfirmDialog(false)}
+        onConfirm={() => completeQuestMutation.mutate()}
+        isPending={completeQuestMutation.isPending}
+      />
+      
+      <QuestRewardsDialog
+        isOpen={showRewardsDialog}
+        onClose={() => {
+          setShowRewardsDialog(false);
+          setQuestRewards(null);
+          if (onComplete) onComplete();
+        }}
+        rewards={questRewards || {
+          questTitle: quest?.title,
+          xpAwarded: 0,
+          goldAwarded: 0,
+          itemsAwarded: [],
+          newXp: 0,
+          newGold: 0,
+          alreadyCompleted: false
+        }}
+      />
 
     </div>
   );
