@@ -1081,32 +1081,6 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     setEditingType('component');
     setEditingItem(component);
   };
-
-  // Handle adding a new component to a kit
-  const handleAddComponentClick = () => {
-    if (!activeKitId) return;
-    
-    window.sounds?.click();
-    
-    // Create a new component object with the selected kit ID
-    const newComponent: KitComponent = {
-      id: 0, // Temporary ID - will be assigned by database
-      kitId: activeKitId,
-      name: 'New Component',
-      description: 'A new component for this kit',
-      imagePath: '',
-      partNumber: '',
-      isRequired: false,
-      quantity: 1,
-      category: 'General',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    setEditingType('component');
-    setEditingItem(newComponent);
-    setIsCreatingNewItem(true);
-  };
   
   // Handle editing a recipe
   const handleEditRecipeClick = (recipe: Recipe) => {
@@ -1207,14 +1181,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         endpoint = `/api/admin/kits/${id}`;
         body = data;
       } else if (editingType === 'component') {
-        if (isCreatingNewItem) {
-          const kitId = (editingItem as KitComponent).kitId;
-          endpoint = `/api/admin/kits/${kitId}/components`;
-          body = data;
-        } else {
-          endpoint = `/api/admin/components/${id}`;
-          body = data;
-        }
+        endpoint = `/api/admin/components/${id}`;
+        body = data;
       } else if (editingType === 'recipe') {
         if (isCreatingNewItem) {
           endpoint = '/api/admin/recipes';
@@ -3312,7 +3280,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
               <h3 className="text-lg font-bold text-white">Components</h3>
               <button
                 className="flex items-center px-3 py-1 rounded-md bg-brand-orange text-white hover:bg-brand-orange/90 transition-colors"
-                onClick={handleAddComponentClick}
+                onClick={() => window.sounds?.click()}
                 onMouseEnter={() => window.sounds?.hover()}
                 disabled={!activeKitId}
               >
