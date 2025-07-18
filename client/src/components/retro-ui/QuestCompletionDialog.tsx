@@ -11,6 +11,7 @@ interface QuestCompletionDialogProps {
 interface QuestRewardsDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  onReturnToQuests?: () => void;
   rewards: {
     questTitle?: string;
     xpAwarded: number;
@@ -89,6 +90,7 @@ export const QuestCompletionConfirmDialog: React.FC<QuestCompletionDialogProps> 
 export const QuestRewardsDialog: React.FC<QuestRewardsDialogProps> = ({
   isOpen,
   onClose,
+  onReturnToQuests,
   rewards
 }) => {
   if (!isOpen) return null;
@@ -179,10 +181,15 @@ export const QuestRewardsDialog: React.FC<QuestRewardsDialogProps> = ({
           )}
           
           <button
-            onClick={onClose}
+            onClick={() => {
+              onClose();
+              if (onReturnToQuests) {
+                onReturnToQuests();
+              }
+            }}
             className="w-full px-4 py-3 bg-brand-orange hover:bg-brand-orange/80 text-white rounded-md border-2 border-t-orange-400 border-l-orange-400 border-r-orange-800 border-b-orange-800 font-semibold"
           >
-            {rewards.alreadyCompleted ? 'Continue Practicing' : 'Awesome!'}
+            {rewards.alreadyCompleted ? 'Return to Quest Selection' : 'Continue to Next Quest'}
           </button>
         </div>
       </div>

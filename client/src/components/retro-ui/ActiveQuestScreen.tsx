@@ -799,6 +799,10 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
         onClose={() => {
           setShowRewardsDialog(false);
           setQuestRewards(null);
+        }}
+        onReturnToQuests={() => {
+          setShowRewardsDialog(false);
+          setQuestRewards(null);
           if (onComplete) onComplete();
         }}
         rewards={questRewards ? questRewards : {
