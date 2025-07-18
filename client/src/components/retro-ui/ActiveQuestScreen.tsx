@@ -68,7 +68,8 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   onAbandon 
 }) => {
   const [showCheat, setShowCheat] = useState(false);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showRevealConfirmDialog, setShowRevealConfirmDialog] = useState(false);
+  const [showCompleteConfirmDialog, setShowCompleteConfirmDialog] = useState(false);
   const [cheatUsed, setCheatUsed] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -118,14 +119,14 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
     if (cheatUsed) {
       setShowCheat(!showCheat);
     } else {
-      setShowConfirmDialog(true);
+      setShowRevealConfirmDialog(true);
     }
   };
 
   const confirmRevealCheat = () => {
     setCheatUsed(true);
     setShowCheat(true);
-    setShowConfirmDialog(false);
+    setShowRevealConfirmDialog(false);
   };
 
   // Add comment mutation
@@ -405,7 +406,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
         </div>
         <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
           <button
-            onClick={() => setShowConfirmDialog(true)}
+            onClick={() => setShowCompleteConfirmDialog(true)}
             disabled={completeQuestMutation.isPending}
             className="px-2 py-1 sm:px-4 sm:py-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 text-white rounded-md flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
           >
@@ -794,8 +795,8 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
       
       {/* Quest Completion Dialogs */}
       <QuestCompletionConfirmDialog
-        isOpen={showConfirmDialog}
-        onClose={() => setShowConfirmDialog(false)}
+        isOpen={showCompleteConfirmDialog}
+        onClose={() => setShowCompleteConfirmDialog(false)}
         onConfirm={() => completeQuestMutation.mutate()}
         isPending={completeQuestMutation.isPending}
       />
@@ -823,7 +824,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
       />
 
       {/* Reveal Answer Confirmation Dialog */}
-      {showConfirmDialog && (
+      {showRevealConfirmDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 border-2 border-red-500 rounded-lg p-6 max-w-md w-full">
             <div className="flex items-center space-x-3 mb-4">
@@ -847,7 +848,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
             
             <div className="flex space-x-3">
               <button
-                onClick={() => setShowConfirmDialog(false)}
+                onClick={() => setShowRevealConfirmDialog(false)}
                 className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-md"
               >
                 Cancel
