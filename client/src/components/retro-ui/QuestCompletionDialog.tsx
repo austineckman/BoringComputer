@@ -92,6 +92,8 @@ export const QuestRewardsDialog: React.FC<QuestRewardsDialogProps> = ({
   rewards
 }) => {
   if (!isOpen) return null;
+  
+  console.log('QuestRewardsDialog rewards data:', rewards);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">

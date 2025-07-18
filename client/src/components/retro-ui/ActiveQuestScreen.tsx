@@ -202,6 +202,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
       return apiRequest('POST', `/api/quests/${questId}/complete`, {});
     },
     onSuccess: (data) => {
+      console.log('Quest completion response:', data);
       setQuestRewards(data);
       setShowConfirmDialog(false);
       setShowRewardsDialog(true);
@@ -781,7 +782,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
           setQuestRewards(null);
           if (onComplete) onComplete();
         }}
-        rewards={questRewards || {
+        rewards={questRewards ? questRewards : {
           questTitle: quest?.title || 'Unknown Quest',
           xpAwarded: 0,
           goldAwarded: 0,
