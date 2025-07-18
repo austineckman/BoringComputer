@@ -40,6 +40,13 @@ Preferred communication style: Simple, everyday language.
 - Oracle icon now properly appears for admin users with Founder role
 - This ensures campaign automation interface access for authorized users
 
+### Oracle Access Control Enhancement (July 18, 2025)
+- **Extended Oracle Access**: Created new `hasOracleAccess` middleware allowing users with 'admin', 'CraftingTable', or 'Founder' Discord roles to access Oracle interface
+- **Campaign Management Access**: CraftingTable team members can now access the full Oracle campaign automation interface for quest management
+- **Role-Based Authorization**: Replaced basic `authenticate` middleware with `hasOracleAccess` on all Oracle API endpoints for proper role verification
+- **Multi-Role Support**: Oracle interface now recognizes three permission levels: admin (full access), CraftingTable (team access), and Founder (includes admin privileges)
+- **Security Enhancement**: All Oracle endpoints now properly validate Discord roles before allowing administrative operations
+
 ### Solution Helper Penalty System (July 18, 2025)
 - **Removed Timer System**: Eliminated 5-minute timer requirement for solution helper access
 - **Immediate Access with Penalty**: Players can now reveal answers immediately but forfeit gold rewards
