@@ -199,7 +199,26 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   // Complete quest mutation
   const completeQuestMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('POST', `/api/quests/${questId}/complete`, {});
+      // Get CSRF token first
+      const tokenResponse = await fetch('/api/csrf-token', { credentials: 'include' });
+      const tokenData = await tokenResponse.json();
+      
+      const response = await fetch(`/api/quests/${questId}/complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': tokenData.token,
+        },
+        credentials: 'include',
+        body: JSON.stringify({})
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to complete quest');
+      }
+      
+      const data = await response.json();
+      return data;
     },
     onSuccess: (data) => {
       console.log('Quest completion response:', data);
