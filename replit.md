@@ -46,6 +46,7 @@ Preferred communication style: Simple, everyday language.
 - **Role-Based Authorization**: Replaced basic `authenticate` middleware with `hasOracleAccess` on all Oracle API endpoints for proper role verification
 - **Multi-Role Support**: Oracle interface now recognizes three permission levels: admin (full access), CraftingTable (team access), and Founder (includes admin privileges)
 - **Security Enhancement**: All Oracle endpoints now properly validate Discord roles before allowing administrative operations
+- **UI Update**: Changed hardcoded "Admin Only" badge to "Campaign Management" to reflect multi-role access system
 
 ### Solution Helper Penalty System (July 18, 2025)
 - **Removed Timer System**: Eliminated 5-minute timer requirement for solution helper access
