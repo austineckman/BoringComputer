@@ -5903,20 +5903,6 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                         ))}
                       </select>
                     </div>
-                    <div>
-                      <label className="block text-gray-300 text-sm mb-1">XP Reward</label>
-                      <input
-                        type="number"
-                        min="0"
-                        className="w-full px-3 py-2 bg-black/50 text-white border border-gray-700 rounded-md focus:border-brand-orange focus:outline-none"
-                        value={(editingItem as Quest).xpReward}
-                        onChange={(e) => {
-                          const updatedQuest = {...editingItem as Quest, xpReward: parseInt(e.target.value)};
-                          setEditingItem(updatedQuest);
-                        }}
-                      />
-                    </div>
-                    
                   </div>
                   
                   <div className="mt-4 flex items-center">
