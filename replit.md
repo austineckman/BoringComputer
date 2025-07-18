@@ -40,6 +40,15 @@ Preferred communication style: Simple, everyday language.
 - Oracle icon now properly appears for admin users with Founder role
 - This ensures campaign automation interface access for authorized users
 
+### Oracle Component Creation Fix (July 18, 2025)
+- **Component ID Issue Resolution**: Fixed Oracle "Add Component" functionality that was failing with 404 errors during image upload
+- **Proper New Component Template**: Changed new component creation from using `id: 0` to omitting ID field entirely (database assigns real ID)
+- **Image Upload Logic Fix**: Updated image upload validation to check for missing ID instead of `id === 0`
+- **User Experience Enhancement**: Image upload button now shows "Save First" for new components and prevents premature upload attempts
+- **State Management Fix**: Added proper `isCreatingNewItem` flag reset when closing edit dialogs
+- **Root Cause Elimination**: Removed hardcoded ID 0 template that was causing POST /api/admin/components/0/image 404 errors
+- **Upload Flow Improvement**: Users must now save component first before uploading images, preventing invalid API calls
+
 ### Oracle Access Control Enhancement (July 18, 2025)
 - **CraftingTable-Only Access**: Simplified Oracle access to check only for 'CraftingTable' Discord role as requested by team
 - **Campaign Management Access**: CraftingTable team members can now access the full Oracle campaign automation interface for quest management
