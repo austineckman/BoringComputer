@@ -1,6 +1,7 @@
 import express from 'express';
 import { db } from '../db';
 import { authenticate } from '../auth';
+import { hasOracleAccess } from '../middleware/auth';
 import * as schema from '@shared/schema';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -43,7 +44,7 @@ const tableMap: Record<string, any> = {
 };
 
 // Get all entities for a specific table
-router.get('/entities/:tableName', authenticate, async (req, res) => {
+router.get('/entities/:tableName', hasOracleAccess, async (req, res) => {
   try {
     const { tableName } = req.params;
     
@@ -60,7 +61,7 @@ router.get('/entities/:tableName', authenticate, async (req, res) => {
 });
 
 // Get a single entity by ID
-router.get('/entities/:tableName/:id', authenticate, async (req, res) => {
+router.get('/entities/:tableName/:id', hasOracleAccess, async (req, res) => {
   try {
     const { tableName, id } = req.params;
     
@@ -88,7 +89,7 @@ router.get('/entities/:tableName/:id', authenticate, async (req, res) => {
 });
 
 // Create or update an entity (upsert)
-router.post('/entities', authenticate, async (req, res) => {
+router.post('/entities', hasOracleAccess, async (req, res) => {
   try {
     console.log('🔧 Oracle API POST request received:', {
       hasId: !!req.body.id,
@@ -441,7 +442,7 @@ router.put('/entities', authenticate, async (req, res) => {
 });
 
 // Delete an entity
-router.delete('/entities', authenticate, async (req, res) => {
+router.delete('/entities', hasOracleAccess, async (req, res) => {
   try {
     const { tableName, id } = deleteEntitySchema.parse(req.body);
     
@@ -470,7 +471,7 @@ router.delete('/entities', authenticate, async (req, res) => {
 });
 
 // Complex queries - Get all kits with their components
-router.get('/kits-with-components', authenticate, async (req, res) => {
+router.get('/kits-with-components', hasOracleAccess, async (req, res) => {
   try {
     const kits = await db.select().from(schema.componentKits);
     
@@ -496,7 +497,7 @@ router.get('/kits-with-components', authenticate, async (req, res) => {
 });
 
 // Get all quests with their component requirements
-router.get('/quests-with-components', authenticate, async (req, res) => {
+router.get('/quests-with-components', hasOracleAccess, async (req, res) => {
   try {
     const quests = await db.select().from(schema.quests);
     
@@ -539,7 +540,7 @@ router.get('/quests-with-components', authenticate, async (req, res) => {
 });
 
 // Get user info with their quests
-router.get('/users-with-quests/:userId', authenticate, async (req, res) => {
+router.get('/users-with-quests/:userId', hasOracleAccess, async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
     
@@ -584,7 +585,7 @@ router.get('/users-with-quests/:userId', authenticate, async (req, res) => {
 });
 
 // Dedicated endpoint for updating quest rewards
-router.put('/quests/:questId/rewards', authenticate, async (req, res) => {
+router.put('/quests/:questId/rewards', hasOracleAccess, async (req, res) => {
   try {
     const questId = parseInt(req.params.questId);
     const { rewards } = req.body;
