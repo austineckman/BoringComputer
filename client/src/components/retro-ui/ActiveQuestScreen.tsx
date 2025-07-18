@@ -234,7 +234,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
     onSuccess: (data) => {
       console.log('Quest completion response:', data);
       setQuestRewards(data);
-      setShowConfirmDialog(false);
+      setShowCompleteConfirmDialog(false);
       setShowRewardsDialog(true);
       
       // Invalidate queries to refresh user data
