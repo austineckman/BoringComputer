@@ -40,6 +40,14 @@ Preferred communication style: Simple, everyday language.
 - Oracle icon now properly appears for admin users with Founder role
 - This ensures campaign automation interface access for authorized users
 
+### Discord OAuth Production Redirect Fix (July 18, 2025)
+- **Dynamic Callback URL**: Fixed hardcoded Replit dev URL in Discord OAuth configuration
+- **Environment-Based Routing**: Added intelligent callback URL detection using REPLIT_DOMAINS and NODE_ENV
+- **Production Domain Support**: Automatically routes to computer.craftingtable.com in production environment
+- **Manual Override Option**: Added DISCORD_CALLBACK_URL environment variable for explicit callback URL control
+- **Logging Enhancement**: Added comprehensive logging to track which callback URL is being used for debugging
+- **Multi-Domain Support**: Reads primary domain from REPLIT_DOMAINS environment variable for dynamic Replit deployments
+
 ### Custom Display Name System (July 17, 2025)
 - **Complete Display Name Override**: Users can now set custom display names in profile settings to replace messy Discord usernames
 - **Profile Settings Interface**: Added dedicated "Display Name" section with edit/save functionality and input validation

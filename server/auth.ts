@@ -73,13 +73,45 @@ export function setupAuth(app: any): void {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Dynamic callback URL based on environment
+  const getCallbackURL = () => {
+    // Check for explicit callback URL override first
+    if (process.env.DISCORD_CALLBACK_URL) {
+      console.log("Using explicit Discord callback URL:", process.env.DISCORD_CALLBACK_URL);
+      return process.env.DISCORD_CALLBACK_URL;
+    }
+    
+    // In production, use the computer.craftingtable.com domain
+    if (process.env.NODE_ENV === "production") {
+      const callbackUrl = "https://computer.craftingtable.com/api/auth/discord/callback";
+      console.log("Using production Discord callback URL:", callbackUrl);
+      return callbackUrl;
+    }
+    
+    // Check for Replit domain environment variables
+    const replitDomains = process.env.REPLIT_DOMAINS;
+    if (replitDomains) {
+      const primaryDomain = replitDomains.split(',')[0];
+      const callbackUrl = `https://${primaryDomain}/api/auth/discord/callback`;
+      console.log("Using Replit domain Discord callback URL:", callbackUrl);
+      return callbackUrl;
+    }
+    
+    // Fallback to localhost for local development
+    const callbackUrl = "http://localhost:5000/api/auth/discord/callback";
+    console.log("Using localhost Discord callback URL:", callbackUrl);
+    return callbackUrl;
+  };
+
+  const callbackURL = getCallbackURL();
+
   // Configure Discord strategy for OAuth
   passport.use(
     new DiscordStrategy(
       {
         clientID: process.env.DISCORD_CLIENT_ID!,
         clientSecret: process.env.DISCORD_CLIENT_SECRET!,
-        callbackURL: "https://6586fd3c-2e1e-45c9-a302-dec0ad1fb0bd-00-10hxex3vuoklp.picard.replit.dev/api/auth/discord/callback",
+        callbackURL: callbackURL,
         scope: ["identify", "email", "guilds"],
       },
       async (accessToken, refreshToken, profile, done) => {
