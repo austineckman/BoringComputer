@@ -67,15 +67,13 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   onComplete, 
   onAbandon 
 }) => {
-  const [startTime] = useState(Date.now());
-  const [cheatUnlocked, setCheatUnlocked] = useState(false);
   const [showCheat, setShowCheat] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [cheatUsed, setCheatUsed] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
   const [videoPlaying, setVideoPlaying] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showRewardsDialog, setShowRewardsDialog] = useState(false);
   const [questRewards, setQuestRewards] = useState<any>(null);
 
@@ -104,19 +102,20 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
 
 
 
-  // Timer for unlocking cheat
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      setElapsedTime(elapsed);
-      
-      if (elapsed >= 5 * 60 * 1000) { // 5 minutes
-        setCheatUnlocked(true);
-      }
-    }, 1000);
+  // Handle revealing cheat with gold penalty
+  const handleRevealCheat = () => {
+    if (cheatUsed) {
+      setShowCheat(!showCheat);
+    } else {
+      setShowConfirmDialog(true);
+    }
+  };
 
-    return () => clearInterval(timer);
-  }, [startTime]);
+  const confirmRevealCheat = () => {
+    setCheatUsed(true);
+    setShowCheat(true);
+    setShowConfirmDialog(false);
+  };
 
   // Add comment mutation
   const addCommentMutation = useMutation({
@@ -210,7 +209,7 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
           'X-CSRF-Token': tokenData.token,
         },
         credentials: 'include',
-        body: JSON.stringify({})
+        body: JSON.stringify({ cheatUsed })
       });
       
       if (!response.ok) {
@@ -464,88 +463,84 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
             )}
           </div>
 
-          {/* Cheat Section */}
+          {/* Solution Helper Section */}
           <div className="bg-gray-900 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-brand-orange">Solution Helper</h2>
-              {!cheatUnlocked ? (
-                <div className="flex items-center space-x-2 text-yellow-400">
-                  <Clock className="w-4 h-4" />
-                  <span className="text-sm">Unlocks in {formatTime(5 * 60 * 1000 - elapsedTime)}</span>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2 text-green-400">
-                  <CheckCircle className="w-4 h-4" />
-                  <span className="text-sm">Solution Available</span>
+              {cheatUsed && (
+                <div className="flex items-center space-x-2 text-red-400">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span className="text-sm">Gold Penalty Applied</span>
                 </div>
               )}
             </div>
             
-            {cheatUnlocked ? (
-              <div className="space-y-4">
-                <button
-                  onClick={() => setShowCheat(!showCheat)}
-                  className="w-full px-4 py-3 bg-red-600 hover:bg-red-500 text-white rounded-md flex items-center justify-center space-x-2"
-                >
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>{showCheat ? 'Hide Solution' : 'Show Solution'}</span>
-                </button>
-                
-                {showCheat && (
-                  <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4 space-y-4">
-                    <div className="text-center text-red-400 text-sm mb-4">
-                      ⚠️ Warning: Using the solution will reduce your XP rewards
-                    </div>
-                    
-                    {quest.solutionCode && (
-                      <div>
-                        <h3 className="font-bold text-red-400 mb-2">Solution Code:</h3>
-                        <pre className="bg-black/50 p-4 rounded-md text-sm overflow-x-auto font-mono">
-                          <code>{quest.solutionCode}</code>
-                        </pre>
-                      </div>
-                    )}
-                    
-                    {quest.wiringInstructions && (
-                      <div>
-                        <h3 className="font-bold text-red-400 mb-2">Wiring Instructions:</h3>
-                        <div className="bg-black/50 p-4 rounded-md text-sm whitespace-pre-wrap">
-                          {quest.wiringInstructions}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {quest.wiringDiagram && (
-                      <div>
-                        <h3 className="font-bold text-red-400 mb-2">Wiring Diagram:</h3>
-                        <div className="bg-black/50 p-4 rounded-md">
-                          <img 
-                            src={quest.wiringDiagram} 
-                            alt="Wiring Diagram" 
-                            className="max-w-full h-auto rounded border border-gray-600"
-                          />
-                        </div>
-                      </div>
-                    )}
-                    
-                    {quest.solutionNotes && (
-                      <div>
-                        <h3 className="font-bold text-red-400 mb-2">Additional Notes:</h3>
-                        <div className="bg-black/50 p-4 rounded-md text-sm whitespace-pre-wrap">
-                          {quest.solutionNotes}
-                        </div>
-                      </div>
-                    )}
+            <div className="space-y-4">
+              <button
+                onClick={handleRevealCheat}
+                className={`w-full px-4 py-3 rounded-md flex items-center justify-center space-x-2 ${
+                  cheatUsed 
+                    ? 'bg-gray-600 hover:bg-gray-500 text-white' 
+                    : 'bg-yellow-600 hover:bg-yellow-500 text-white'
+                }`}
+              >
+                <AlertTriangle className="w-4 h-4" />
+                <span>
+                  {cheatUsed 
+                    ? (showCheat ? 'Hide Solution' : 'Show Solution')
+                    : 'Reveal Answer (No Gold Reward)'
+                  }
+                </span>
+              </button>
+              
+              {showCheat && (
+                <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4 space-y-4">
+                  <div className="text-center text-red-400 text-sm mb-4">
+                    ⚠️ Using this solution means you won't receive any gold when completing the quest
                   </div>
-                )}
-              </div>
-            ) : (
-              <div className="bg-gray-800 rounded-lg p-8 text-center text-gray-400">
-                <Clock className="w-16 h-16 mx-auto mb-2" />
-                <p>Solution will be available after 5 minutes</p>
-                <p className="text-sm mt-2">Try to solve it yourself first!</p>
-              </div>
-            )}
+                  
+                  {quest.solutionCode && (
+                    <div>
+                      <h3 className="font-bold text-red-400 mb-2">Solution Code:</h3>
+                      <pre className="bg-black/50 p-4 rounded-md text-sm overflow-x-auto font-mono">
+                        <code>{quest.solutionCode}</code>
+                      </pre>
+                    </div>
+                  )}
+                  
+                  {quest.wiringInstructions && (
+                    <div>
+                      <h3 className="font-bold text-red-400 mb-2">Wiring Instructions:</h3>
+                      <div className="bg-black/50 p-4 rounded-md text-sm whitespace-pre-wrap">
+                        {quest.wiringInstructions}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {quest.wiringDiagram && (
+                    <div>
+                      <h3 className="font-bold text-red-400 mb-2">Wiring Diagram:</h3>
+                      <div className="bg-black/50 p-4 rounded-md">
+                        <img 
+                          src={quest.wiringDiagram} 
+                          alt="Wiring Diagram" 
+                          className="max-w-full h-auto rounded border border-gray-600"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {quest.solutionNotes && (
+                    <div>
+                      <h3 className="font-bold text-red-400 mb-2">Additional Notes:</h3>
+                      <div className="bg-black/50 p-4 rounded-md text-sm whitespace-pre-wrap">
+                        {quest.solutionNotes}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -815,6 +810,47 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
           alreadyCompleted: false
         }}
       />
+
+      {/* Reveal Answer Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border-2 border-red-500 rounded-lg p-6 max-w-md w-full">
+            <div className="flex items-center space-x-3 mb-4">
+              <AlertTriangle className="w-8 h-8 text-red-400" />
+              <h3 className="text-xl font-bold text-white">Reveal Answer Warning</h3>
+            </div>
+            
+            <div className="mb-6 space-y-3">
+              <p className="text-gray-300">
+                Are you sure you want to reveal the answer? 
+              </p>
+              <div className="bg-red-900/20 border border-red-500/30 rounded p-3">
+                <p className="text-red-400 font-medium">
+                  ⚠️ Warning: You will NOT receive any gold when completing this quest if you proceed.
+                </p>
+              </div>
+              <p className="text-gray-400 text-sm">
+                This penalty encourages learning through experimentation. You'll still get XP and items, just no gold reward.
+              </p>
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowConfirmDialog(false)}
+                className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-md"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRevealCheat}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-md font-medium"
+              >
+                Reveal Answer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

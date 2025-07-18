@@ -40,6 +40,15 @@ Preferred communication style: Simple, everyday language.
 - Oracle icon now properly appears for admin users with Founder role
 - This ensures campaign automation interface access for authorized users
 
+### Solution Helper Penalty System (July 18, 2025)
+- **Removed Timer System**: Eliminated 5-minute timer requirement for solution helper access
+- **Immediate Access with Penalty**: Players can now reveal answers immediately but forfeit gold rewards
+- **Confirmation Dialog**: Added warning dialog explaining gold penalty before revealing solutions
+- **Gold Penalty Logic**: Backend now checks `cheatUsed` parameter and sets gold reward to 0 if solution was revealed
+- **Visual Indicators**: Solution helper shows "Gold Penalty Applied" status when cheat has been used
+- **Reward Message Update**: Quest completion messages now indicate when gold was forfeited due to using solution helper
+- **Educational Focus**: Encourages learning through trial and error while still providing help when needed
+
 ### Quest Completion Rewards System Fix (July 18, 2025)
 - **Real Quest Rewards Display**: Fixed quest completion dialog to show actual quest rewards instead of placeholder data
 - **Backend API Enhancement**: Updated quest completion endpoint to return proper reward data format for frontend consumption
