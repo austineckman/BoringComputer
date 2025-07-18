@@ -518,7 +518,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Calculate rewards
       const xpAwarded = quest.xpReward || 100;
-      const goldAwarded = Math.floor(Math.random() * 50) + 25; // Random gold 25-75
+      const goldAwarded = quest.goldReward || 50; // Use quest's gold reward
       const itemsAwarded = quest.rewards || [];
 
       // Award XP, gold and update completed quests
@@ -1082,9 +1082,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Award XP for completing the quest
+      // Award XP and Gold for completing the quest
       const xpReward = quest.xpReward || 100;
+      const goldReward = quest.goldReward || 50;
       const updatedUser = await storage.addUserXP(user.id, xpReward);
+      
+      // Add gold to user's inventory
+      const currentGold = inventory.gold || 0;
+      inventory.gold = currentGold + goldReward;
 
       // Update user's inventory and completed quests
       await storage.updateUser(user.id, { 
@@ -1131,7 +1136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         alreadyCompleted: false,
         questTitle: quest.title,
         xpAwarded: xpReward,
-        goldAwarded: goldAwarded,
+        goldAwarded: goldReward,
         itemsAwarded: itemsAwarded,
         newXp: updatedUser.xp,
         newGold: inventory.gold || 0,
@@ -1765,6 +1770,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         difficulty: z.number().min(1).max(5),
         orderInLine: z.number().min(0),
         xpReward: z.number().positive(),
+        goldReward: z.number().min(0),
         rewards: z.array(z.object({
           type: z.string(),
           id: z.string(),
@@ -1859,6 +1865,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         difficulty: z.number().min(1).max(5),
         orderInLine: z.number().min(0),
         xpReward: z.number().positive(),
+        goldReward: z.number().min(0),
         rewards: z.array(z.object({
           type: z.string(),
           id: z.string(),

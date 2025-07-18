@@ -35,6 +35,7 @@ export const quests = pgTable("quests", {
   difficulty: integer("difficulty").notNull(),
   orderInLine: integer("order_in_line").notNull().default(0), // New field for sequential ordering
   xpReward: integer("xp_reward").notNull().default(100), // New field for XP rewards
+  goldReward: integer("gold_reward").notNull().default(50), // New field for Gold rewards
   // Updated rewards structure to support different types of rewards
   rewards: json("rewards").$type<{
     type: 'lootbox' | 'item' | 'equipment', // Type of reward
