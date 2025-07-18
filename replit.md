@@ -49,6 +49,13 @@ Preferred communication style: Simple, everyday language.
 - **UI Update**: Changed hardcoded "Admin Only" badge to "Campaign Management" to reflect team access system
 - **Database Fix**: Updated both craftingtable1_05196 and chas_61772 users with CraftingTable role to resolve Discord OAuth rate limiting issues
 
+### Oracle Quest Management Cleanup (July 18, 2025)
+- **Duplicate Button Removal**: Removed duplicate "Add Quest" buttons from Oracle interface header that were causing quest management confusion
+- **Single Quest Creation Path**: Streamlined quest creation to use only the intuitive plus button in empty quest line state
+- **Quest Display Fix**: Resolved issue where Day 3 quest appeared missing from Oracle interface due to UI button conflicts
+- **Clean Quest Interface**: Oracle now has single, clear quest creation workflow without competing UI elements
+- **All Quests Visible**: Confirmed all 5 quests (including Day 3: "I'm worried about your battery levels") now display properly in Oracle interface
+
 ### Solution Helper Penalty System (July 18, 2025)
 - **Removed Timer System**: Eliminated 5-minute timer requirement for solution helper access
 - **Immediate Access with Penalty**: Players can now reveal answers immediately but forfeit gold rewards
