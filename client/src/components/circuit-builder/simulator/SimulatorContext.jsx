@@ -216,15 +216,22 @@ export const SimulatorProvider = ({ children }) => {
     return 0;
   };
 
-  // Function to start the simulation
-  const startSimulation = () => {
-    console.log('SimulatorContext: startSimulation called with code length:', code?.length);
-    console.log('SimulatorContext: code preview:', code?.substring(0, 100));
+  // Function to start the simulation - modified to accept code parameter
+  const startSimulation = (codeToExecute) => {
+    // Use passed code or fall back to context code
+    const currentCode = codeToExecute || code;
+    console.log('SimulatorContext: startSimulation called with code length:', currentCode?.length);
+    console.log('SimulatorContext: code preview:', currentCode?.substring(0, 100));
     
-    if (!code || code.trim() === '') {
+    if (!currentCode || currentCode.trim() === '') {
       addLog('❌ Error: No Arduino code to execute');
-      console.log('SimulatorContext ERROR: code is:', JSON.stringify(code));
+      console.log('SimulatorContext ERROR: code is:', JSON.stringify(currentCode));
       return;
+    }
+    
+    // Update the context code if we received code as parameter
+    if (codeToExecute && codeToExecute !== code) {
+      setCode(codeToExecute);
     }
     
     // Clear previous logs
@@ -234,7 +241,7 @@ export const SimulatorProvider = ({ children }) => {
     
     try {
       // Parse the actual code from the editor
-      const { setup, loop } = codeParserRef.current.parseCode(code);
+      const { setup, loop } = codeParserRef.current.parseCode(currentCode);
       const setupInstructions = codeParserRef.current.getSetupInstructions();
       const loopInstructions = codeParserRef.current.getLoopInstructions();
       
