@@ -277,12 +277,14 @@ const RetroDesktop: React.FC = () => {
     }
   }, []);
   
-  // Open Welcome window when component mounts
+  // Welcome window disabled as requested
+  // useEffect(() => {
+  //   setTimeout(() => {
+  //     openWelcomeWindow();
+  //   }, 800);
+  // }, []);
+  
   useEffect(() => {
-    setTimeout(() => {
-      openWelcomeWindow();
-    }, 800);
-    
     // Add event listeners for windows that can be opened from Start Menu
     const handleOpenTerminal = () => {
       openTerminalWindow();
