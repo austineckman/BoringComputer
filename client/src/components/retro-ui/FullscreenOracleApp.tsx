@@ -3422,7 +3422,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         <div className="p-4 text-center">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <Loader2 className="animate-spin h-6 w-6 text-amber-400" />
-            <p className="text-amber-200">Loading Gizbo's treasure vault...</p>
+            <p className="text-amber-200">Loading BMAH auctions...</p>
           </div>
         </div>
       );
@@ -3444,8 +3444,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 <span className="text-4xl">🏴‍☠️</span>
               </div>
               <div>
-                <h2 className="text-3xl font-bold text-amber-400 mb-1">Gizbo's Treasure Redistribution</h2>
-                <p className="text-amber-200/80 text-lg italic">"Got payments to make, savvy? These be the finest plunder!"</p>
+                <h2 className="text-3xl font-bold text-amber-400 mb-1">BMAH - Black Market Auction House</h2>
+                <p className="text-amber-200/80 text-lg italic">"Rare items from across the dimensions"</p>
               </div>
             </div>
             <button
@@ -3454,7 +3454,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
               onMouseEnter={() => window.sounds?.hover()}
             >
               <PlusCircle className="h-5 w-5 mr-2" />
-              Add Pirate Loot
+              Add Auction Item
             </button>
           </div>
 
@@ -3465,15 +3465,15 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 <span className="text-xl">👑</span>
               </div>
               <div>
-                <h3 className="text-amber-400 font-bold mb-2">Captain Gizbo's Fair Distribution Notice</h3>
+                <h3 className="text-amber-400 font-bold mb-2">Black Market Auction House System</h3>
                 <p className="text-amber-200/90 leading-relaxed mb-3">
-                  "Ahoy there, ye scurvy dogs! These treasures be fairly redistributed loot from me pirate tax collection routes. 
-                  Every mission ye complete puts rare booty into circulation - and I take me fair cut, naturally!"
+                  "The Black Market Auction House operates as a fair trading system for rare dimensional artifacts. 
+                  Items discovered through missions and quests are made available to all adventurers through timed auctions."
                 </p>
                 <p className="text-amber-300/80 text-sm">
-                  💰 <strong>The System:</strong> Rare items from successful missions get taxed into Gizbo's vault, then auctioned fairly to all pirates.<br/>
-                  ⚔️ <strong>Fair Chance:</strong> Every scallywag gets equal opportunity at the rarest treasures.<br/>
-                  🏴‍☠️ <strong>Payment Due:</strong> Gold goes to Gizbo's coffers - he's got debts to settle, savvy?
+                  💰 <strong>The System:</strong> Rare items from completed missions enter the auction pool for fair distribution.<br/>
+                  ⚔️ <strong>Fair Bidding:</strong> All adventurers have equal opportunity to bid on the rarest treasures.<br/>
+                  🏴‍☠️ <strong>Gold Economy:</strong> Successful bids contribute to the game's economic circulation system.
                 </p>
               </div>
             </div>
@@ -3486,7 +3486,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-amber-400 flex items-center">
                 <Gavel className="h-6 w-6 mr-2" />
-                Add Treasure to Gizbo's Auction
+                Create New BMAH Auction
               </h3>
               <button
                 onClick={() => setCreateAuctionMode(false)}
@@ -3500,14 +3500,14 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
               {/* Item Selection */}
               <div>
                 <label className="block text-sm font-medium text-amber-300 mb-2">
-                  💎 Choose Treasure to Auction
+                  💎 Choose Item to Auction
                 </label>
                 <select
                   value={newAuction.itemId}
                   onChange={(e) => setNewAuction({...newAuction, itemId: e.target.value})}
                   className="w-full bg-amber-950/50 border-2 border-amber-600/40 rounded-md px-3 py-2 text-amber-100 focus:border-amber-500 focus:outline-none"
                 >
-                  <option value="">Select from Gizbo's vault...</option>
+                  <option value="">Select item from inventory...</option>
                   {items.map(item => (
                     <option key={item.id} value={item.id}>
                       {item.rarity === 'legendary' ? '🌟' : item.rarity === 'epic' ? '💜' : item.rarity === 'rare' ? '💙' : item.rarity === 'uncommon' ? '💚' : '🤍'} {item.name} ({item.rarity})
@@ -3519,7 +3519,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
               {/* Starting Bid */}
               <div>
                 <label className="block text-sm font-medium text-amber-300 mb-2">
-                  💰 Starting Bid (Gold Doubloons)
+                  💰 Starting Bid (Gold)
                 </label>
                 <input
                   type="number"
@@ -3527,7 +3527,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   value={newAuction.startingBid}
                   onChange={(e) => setNewAuction({...newAuction, startingBid: parseInt(e.target.value) || 1})}
                   className="w-full bg-amber-950/50 border-2 border-amber-600/40 rounded-md px-3 py-2 text-amber-100 focus:border-amber-500 focus:outline-none"
-                  placeholder="How much gold to start?"
+                  placeholder="Starting bid amount"
                 />
               </div>
 
@@ -3566,7 +3566,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 className="px-6 py-2 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg text-black font-bold transition-all border-2 border-amber-500 disabled:border-gray-500 flex items-center"
               >
                 <Gavel className="h-5 w-5 mr-2" />
-                🏴‍☠️ Launch Auction
+                Create Auction
               </button>
             </div>
           </div>
@@ -3591,7 +3591,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center">
                       <span className="text-lg mr-2">💎</span>
-                      <span className="text-amber-400 font-bold text-sm">GIZBO'S TREASURE</span>
+                      <span className="text-amber-400 font-bold text-sm">BMAH AUCTION</span>
                     </div>
                     <span className={`text-xs px-2 py-1 rounded-full font-bold ${
                       auction.itemRarity === 'legendary' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' :
@@ -3634,7 +3634,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                       <span className="text-sm text-amber-300 flex items-center">
                         <span className="mr-1">💰</span> Current Bid:
                       </span>
-                      <span className="text-amber-100 font-bold text-lg">{auction.currentBid} doubloons</span>
+                      <span className="text-amber-100 font-bold text-lg">{auction.currentBid} gold</span>
                     </div>
                     
                     {auction.highestBidder && (
@@ -3663,8 +3663,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                         auction.status === 'active' ? 'text-green-400 bg-green-500/20' : 
                         auction.status === 'ended' ? 'text-red-400 bg-red-500/20' : 'text-gray-400 bg-gray-500/20'
                       }`}>
-                        {auction.status === 'active' ? '🏴‍☠️ ACTIVE' : 
-                         auction.status === 'ended' ? '💀 ENDED' : '❌ CANCELLED'}
+                        {auction.status === 'active' ? '⚡ ACTIVE' : 
+                         auction.status === 'ended' ? '🔒 ENDED' : '❌ CANCELLED'}
                       </span>
                     </div>
                   </div>
@@ -3691,13 +3691,13 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
             })
           ) : (
             <div className="col-span-full flex flex-col items-center justify-center h-64 text-amber-200/60">
-              <div className="text-6xl mb-4">🏴‍☠️</div>
-              <h3 className="text-xl font-bold text-amber-400 mb-2">Gizbo's Vault is Empty!</h3>
-              <p className="text-lg mb-2 text-center">No treasures be ready for auction, matey!</p>
-              <p className="text-sm text-center max-w-md">Complete some missions to generate rare loot for Gizbo to tax and redistribute. The best treasures await fair bidding!</p>
+              <div className="text-6xl mb-4">💎</div>
+              <h3 className="text-xl font-bold text-amber-400 mb-2">No Active Auctions</h3>
+              <p className="text-lg mb-2 text-center">The Black Market Auction House is currently empty.</p>
+              <p className="text-sm text-center max-w-md">Complete missions and quests to discover rare items that may appear in future auctions. The most valuable treasures await your bids!</p>
               <div className="mt-4 text-amber-300/80 text-center">
-                <p className="text-xs">💡 <em>"Once ye pirates start completin' missions, I'll be taxin' the good stuff for everyone's benefit!"</em></p>
-                <p className="text-xs mt-1">- Captain Gizbo</p>
+                <p className="text-xs">💡 <em>"Premium items from completed adventures become available through the auction system for fair distribution to all players."</em></p>
+                <p className="text-xs mt-1">- BMAH System</p>
               </div>
             </div>
           )}
@@ -4686,8 +4686,8 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
             onMouseEnter={() => window.sounds?.hover()}
           >
             <div className="flex items-center">
-              <span className="mr-1">🏴‍☠️</span>
-              Gizbo's Vault
+              <span className="mr-1">💎</span>
+              BMAH
             </div>
           </button>
           <button

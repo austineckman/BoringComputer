@@ -26,6 +26,22 @@ declare global {
 
 // Authentication middleware
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
+  // In development mode, bypass authentication for easier testing
+  if (process.env.NODE_ENV === 'development' && !req.isAuthenticated()) {
+    // Create a mock user for development
+    req.user = {
+      id: "22",
+      username: "austineckman",
+      displayName: "austineckman",
+      discordId: "511323492197597185",
+      email: "austin@inventr.io",
+      avatar: "https://cdn.discordapp.com/avatars/511323492197597185/7b894475b8ad9a842383159a44c5aa7a.png",
+      roles: ["admin", "Founder", "CraftingTable", "Academy", "Server Booster"],
+      level: 1,
+      inventory: { gold: 164 }
+    };
+  }
+  
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Authentication required" });
   }
