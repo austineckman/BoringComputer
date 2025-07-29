@@ -29,12 +29,12 @@ interface GameItem {
   category?: string;
 }
 
-interface GizboTreasureWindowProps {
+interface BMAHWindowProps {
   onClose: () => void;
   onMinimize: () => void;
 }
 
-const GizboTreasureWindow: React.FC<GizboTreasureWindowProps> = ({ onClose, onMinimize }) => {
+const BMAHWindow: React.FC<BMAHWindowProps> = ({ onClose, onMinimize }) => {
   const [auctions, setAuctions] = useState<AuctionListing[]>([]);
   const [items, setItems] = useState<GameItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -290,4 +290,4 @@ const GizboTreasureWindow: React.FC<GizboTreasureWindowProps> = ({ onClose, onMi
   );
 };
 
-export default GizboTreasureWindow;
+export default BMAHWindow;
