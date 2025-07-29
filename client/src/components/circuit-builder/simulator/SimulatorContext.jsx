@@ -284,12 +284,13 @@ export const SimulatorProvider = ({ children }) => {
         if (state.phase === 'setup') {
           if (state.setupIndex < state.setupInstructions.length) {
             const instruction = state.setupInstructions[state.setupIndex];
+            addLog(`[Setup] Line ${instruction.lineNumber}: ${instruction.instruction}`);
             const delayMs = executeInstruction(instruction);
             state.setupIndex++;
             
             setTimeout(() => {
               if (isRunning) executeNextInstruction();
-            }, delayMs || 50); // Small delay between instructions for readability
+            }, delayMs || 300); // Slower for readability
           } else {
             // Setup complete, move to loop
             state.phase = 'loop';
@@ -306,12 +307,13 @@ export const SimulatorProvider = ({ children }) => {
           
           if (state.loopIndex < state.loopInstructions.length) {
             const instruction = state.loopInstructions[state.loopIndex];
+            addLog(`[Loop ${state.loopCount}] Line ${instruction.lineNumber}: ${instruction.instruction}`);
             const delayMs = executeInstruction(instruction);
             state.loopIndex++;
             
             setTimeout(() => {
               if (isRunning) executeNextInstruction();
-            }, delayMs || 50);
+            }, delayMs || 300);
           } else {
             // Loop complete, restart
             state.loopIndex = 0;
