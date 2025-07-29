@@ -480,6 +480,14 @@ const CircuitComponent = ({
             pinPositions
           }
         }));
+        
+        // Also dispatch to simulator context
+        document.dispatchEvent(new CustomEvent('updateWirePositions', {
+          detail: {
+            componentId: id,
+            pinPositions
+          }
+        }));
       }
     };
     

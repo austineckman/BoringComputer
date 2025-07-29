@@ -531,16 +531,38 @@ export const SimulatorProvider = ({ children }) => {
           newStates[component.id] = {
             id: component.id,
             type: component.type,
-            pins: {}
+            pins: {},
+            position: { x: component.x || 0, y: component.y || 0 } // Track position
           };
           hasChanges = true;
           console.log(`Registered component in simulator context: ${component.id} (${component.type})`);
+        } else {
+          // Update position if component has moved
+          const currentPos = componentStates[component.id].position || { x: 0, y: 0 };
+          const newPos = { x: component.x || 0, y: component.y || 0 };
+          
+          if (currentPos.x !== newPos.x || currentPos.y !== newPos.y) {
+            newStates[component.id] = {
+              ...componentStates[component.id],
+              position: newPos
+            };
+            hasChanges = true;
+            console.log(`Updated component ${component.id} position:`, newPos);
+          }
         }
       });
       
-      // Only update state if we have new components
+      // Only update state if we have new components or position changes
       if (hasChanges) {
         setComponentStates(newStates);
+        
+        // Dispatch event to notify wire managers of component updates
+        document.dispatchEvent(new CustomEvent('componentsUpdated', {
+          detail: { 
+            components: components,
+            componentStates: newStates
+          }
+        }));
       }
     }
   }, [components, componentStates]);
@@ -549,11 +571,59 @@ export const SimulatorProvider = ({ children }) => {
     console.log('Simulator wires updated:', wires.length);
   }, [wires]);
   
+  // Listen for component movement events from the circuit builder
+  useEffect(() => {
+    const handleComponentMove = (event) => {
+      const { componentId, newPosition, pinPositions } = event.detail;
+      console.log(`Component ${componentId} moved to:`, newPosition);
+      
+      // Update component position in simulator state
+      if (componentStates[componentId]) {
+        updateComponentState(componentId, {
+          position: newPosition
+        });
+      }
+      
+      // Update wire positions if pin positions are provided
+      if (pinPositions && Object.keys(pinPositions).length > 0) {
+        console.log(`Updating pin positions for ${componentId}:`, pinPositions);
+        
+        // Dispatch to wire managers
+        document.dispatchEvent(new CustomEvent('updateWirePositions', {
+          detail: {
+            componentId,
+            pinPositions
+          }
+        }));
+      }
+    };
+    
+    const handleComponentMoveFinal = (event) => {
+      const { componentId, pinPositions } = event.detail;
+      console.log(`Final position update for ${componentId}`);
+      
+      // Force wire redraw after movement is complete
+      document.dispatchEvent(new CustomEvent('redrawWires', {
+        detail: { componentId }
+      }));
+    };
+    
+    // Listen for component movement events
+    document.addEventListener('componentMoved', handleComponentMove);
+    document.addEventListener('componentMovedFinal', handleComponentMoveFinal);
+    
+    return () => {
+      document.removeEventListener('componentMoved', handleComponentMove);
+      document.removeEventListener('componentMovedFinal', handleComponentMoveFinal);
+    };
+  }, [componentStates, updateComponentState]);
+
   // Make the simulator context available globally for non-React components
   useEffect(() => {
     window.simulatorContext = {
       componentStates,
       wires,
+      components,
       updateComponentState,
       updateComponentPins,
       // Add a debug function to list all components
@@ -566,7 +636,7 @@ export const SimulatorProvider = ({ children }) => {
     return () => {
       delete window.simulatorContext;
     };
-  }, [componentStates, wires]);
+  }, [componentStates, wires, components]);
   
   // Create an object with all the context values
   const contextValue = {
