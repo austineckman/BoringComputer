@@ -53,6 +53,11 @@ export function validateCsrfToken(sessionId: string, token: string): boolean {
  * This avoids placing CSRF requirements on GET requests
  */
 export function conditionalCsrfProtection(req: Request, res: Response, next: NextFunction) {
+  // Skip CSRF protection in development mode for easier testing
+  if (process.env.NODE_ENV === 'development') {
+    return next();
+  }
+  
   // Only apply CSRF protection to state-changing methods and API routes
   if (
     (req.method === 'POST' || 
@@ -103,6 +108,11 @@ export function handleCsrfError(err: any, req: Request, res: Response, next: Nex
  * Endpoint to get a CSRF token
  */
 export function getCsrfToken(req: Request, res: Response) {
+  // In development mode, return a dummy token
+  if (process.env.NODE_ENV === 'development') {
+    return res.json({ token: 'dev-csrf-token' });
+  }
+  
   const sessionId = (req as any).sessionID;
   
   if (!sessionId) {

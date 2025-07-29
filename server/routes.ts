@@ -29,7 +29,7 @@ import arduinoComponentsRoutes from './routes/arduino-components';
 import missionRoutes from './routes/missions';
 import { authenticate, hashPassword } from './auth';
 import { hasOracleAccess } from './middleware/auth';
-import { conditionalCsrfProtection, getCsrfToken, handleCsrfError } from './middleware/csrf';
+// CSRF protection removed - unnecessary complexity for educational gaming platform
 import { addSecurityHeaders } from './middleware/security-headers';
 import { componentKits, items, auctionListings, users, questComments } from '@shared/schema';
 import { itemDatabase } from './itemDatabase';
@@ -91,13 +91,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Apply CSRF protection to API routes that modify data
-  app.use(conditionalCsrfProtection);
+  // CSRF protection removed - unnecessary for educational gaming platform
 
-  // Add CSRF error handler
-  app.use(handleCsrfError);
+  // CSRF error handler removed - no longer needed
 
   // Endpoint to get CSRF token
-  app.get('/api/csrf-token', getCsrfToken);
+  // CSRF token endpoint removed - no longer needed
 
   // Register the auth routes
   app.use("/api/auth", authRoutes);
