@@ -435,9 +435,9 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
           </div>
         ) : questView === 'quest-list' ? (
           /* Quest List for Selected Kit */
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col h-full">
             {/* Breadcrumb and back button */}
-            <div className="bg-black/80 border-b border-brand-orange/30 p-3 sm:p-4">
+            <div className="bg-black/80 border-b border-brand-orange/30 p-3 sm:p-4 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 min-w-0">
                   <button 
@@ -461,7 +461,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
             </div>
             
             {/* Quest list */}
-            <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-black/70">
+            <div className="flex-1 overflow-y-scroll p-3 sm:p-6 bg-black/70 min-h-0 quest-scroll" style={{ maxHeight: 'calc(100vh - 200px)' }}>
               {loadingQuests ? (
                 <div className="flex flex-col items-center justify-center h-full">
                   <Loader2 className="h-10 w-10 animate-spin text-brand-orange mb-3" />
