@@ -3,6 +3,7 @@ import {
   ReactRGBLEDComponent
 } from "../lib/inventr-component-lib.es.js";
 import Moveable from "react-moveable";
+import { useSimulator } from '../simulator/SimulatorContext';
 
 // Define MOVE_SETTINGS - remove rotation
 const MOVE_SETTINGS = {
@@ -29,6 +30,14 @@ const RGBLED = ({
 }) => {
   const targetRef = useRef();
   const moveableRef = useRef();
+  
+  // Access the simulator context for simulation state
+  const { 
+    isRunning: isSimActive, 
+    wires, 
+    componentStates, 
+    updateComponentState 
+  } = useSimulator();
 
   // Internal state is 0-1 values as required by ReactRGBLEDComponent
   const [ledRed, setLedRed] = useState(0);     // Internal red value (0-1)
@@ -80,6 +89,30 @@ const RGBLED = ({
     if (typeof commonPin === 'string') setCommonPin(commonPin);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [commonPin]);
+
+  // React to simulation state changes
+  useEffect(() => {
+    if (!isSimActive) return;
+    
+    const simulationState = componentStates[id];
+    if (simulationState) {
+      console.log(`[RGB LED ${id}] Simulation state update:`, simulationState);
+      
+      // Update LED colors from simulation
+      if (simulationState.ledRed !== undefined) {
+        setLedRed(simulationState.ledRed);
+        console.log(`[RGB LED ${id}] Setting red to ${simulationState.ledRed}`);
+      }
+      if (simulationState.ledGreen !== undefined) {
+        setLedGreen(simulationState.ledGreen);
+        console.log(`[RGB LED ${id}] Setting green to ${simulationState.ledGreen}`);
+      }
+      if (simulationState.ledBlue !== undefined) {
+        setLedBlue(simulationState.ledBlue);
+        console.log(`[RGB LED ${id}] Setting blue to ${simulationState.ledBlue}`);
+      }
+    }
+  }, [isSimActive, componentStates, id]);
 
   const [pinInfo, setPinInfo] = useState();
   const [isDragged, setIsDragged] = useState(false);
