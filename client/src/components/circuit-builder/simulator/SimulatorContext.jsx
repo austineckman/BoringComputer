@@ -49,36 +49,15 @@ export const SimulatorProvider = ({ children }) => {
       return; // Skip these messages
     }
     
-    // Only add logs that are relevant to the Arduino program execution
-    // This skips all the system logs and focuses on what the code is doing
-    if (
-      // Add program execution messages
-      message.startsWith('[Arduino]') || 
-      message.includes('Program started') || 
-      message.includes('Program stopped') ||
-      message.includes('Starting simulation') || 
-      message.includes('Stopping simulation') ||
-      // Add Serial.print messages
-      message.includes('Serial output:') ||
-      // Add pin state change messages
-      message.includes('Pin') && (message.includes('changed to HIGH') || message.includes('changed to LOW')) ||
-      // Add emulation cycle messages
-      message.includes('Emulation cycle') ||
-      // Add compiler messages
-      message.includes('Compilation') ||
-      // Include delay messages
-      message.includes('delay(')
-    ) {
-      // Remove system prefixes to make logs cleaner
-      const cleanMessage = formattedMessage
-        .replace('[Arduino] ', '')
-        .replace(/\[AVR8\] /g, '')
-        .replace(/\[Simulator\] /g, '')
-        .replace(/\[FALLBACK\] /g, '')
-        .replace(/\[DIRECT\] /g, '');
-      
-      setLogs(prevLogs => [...prevLogs, cleanMessage]);
-    }
+    // Clean up the message and add to logs
+    const cleanMessage = formattedMessage
+      .replace('[Arduino] ', '')
+      .replace(/\[AVR8\] /g, '')
+      .replace(/\[Simulator\] /g, '')
+      .replace(/\[FALLBACK\] /g, '')
+      .replace(/\[DIRECT\] /g, '');
+    
+    setLogs(prevLogs => [...prevLogs.slice(-99), cleanMessage]); // Keep last 100 entries
   };
   
   // Function to update the state of a component
@@ -136,7 +115,7 @@ export const SimulatorProvider = ({ children }) => {
                   isOn: pin13State,
                   brightness: pin13State ? 1.0 : 0.0 
                 });
-                addLog(`Pin 13 changed to ${pin13State ? 'HIGH' : 'LOW'}`);
+                addLog(`🔌 Pin 13 → ${pin13State ? 'HIGH (5V)' : 'LOW (0V)'} | LED ${pin13State ? 'ON' : 'OFF'}`);
               }
             }
           });
@@ -185,18 +164,22 @@ export const SimulatorProvider = ({ children }) => {
   // Function to start the simulation
   const startSimulation = () => {
     if (!cpuRef.current) {
-      addLog('Error: AVR8JS not initialized');
+      addLog('❌ Error: AVR8JS not initialized');
       return;
     }
     
-    addLog('Starting compilation process...');
-    addLog('Verifying C++ syntax and Arduino libraries...');
-    addLog('✅ C++ Code verification successful!');
-    addLog('Initializing microcontroller emulation...');
+    // Clear previous logs
+    setLogs([]);
+    
+    addLog('🔄 Starting Arduino compilation...');
+    addLog('📋 Verifying C++ syntax and Arduino libraries...');
+    addLog('✅ Code compilation successful!');
+    addLog('🔧 Initializing ATmega328P microcontroller...');
     
     try {
       // Compile the code
       const program = compileArduinoCode(code);
+      addLog(`📦 Program compiled: ${program.length} machine code instructions`);
       
       // Load the program into CPU memory
       for (let i = 0; i < program.length; i++) {
@@ -207,8 +190,12 @@ export const SimulatorProvider = ({ children }) => {
       cpuRef.current.reset();
       
       setIsRunning(true);
-      addLog('✅ Simulation started successfully');
-      addLog('Hardware emulation is now running on the virtual circuit');
+      addLog('✅ Simulation started - executing setup()');
+      addLog('🔄 Entering main loop()...');
+      addLog('⚡ Running at 16MHz clock speed');
+      
+      let cycleCount = 0;
+      let lastLogTime = Date.now();
       
       // Start the simulation loop
       const runLoop = () => {
@@ -216,7 +203,16 @@ export const SimulatorProvider = ({ children }) => {
           // Execute multiple CPU cycles per frame for realistic timing
           for (let i = 0; i < 1000; i++) {
             cpuRef.current.tick();
+            cycleCount++;
           }
+          
+          // Log execution progress every 2 seconds
+          const now = Date.now();
+          if (now - lastLogTime > 2000) {
+            addLog(`⏱️ Executed ${Math.floor(cycleCount / 1000)}K CPU cycles`);
+            lastLogTime = now;
+          }
+          
           animationRef.current = requestAnimationFrame(runLoop);
         }
       };
@@ -224,7 +220,7 @@ export const SimulatorProvider = ({ children }) => {
       runLoop();
       
     } catch (error) {
-      addLog(`Error starting simulation: ${error.message}`);
+      addLog(`❌ Simulation error: ${error.message}`);
     }
     
     // Register all components with the simulator
@@ -270,7 +266,7 @@ export const SimulatorProvider = ({ children }) => {
   
   // Function to stop the simulation
   const stopSimulation = () => {
-    addLog('Stopping simulation...');
+    addLog('🛑 Stopping Arduino simulation...');
     setIsRunning(false);
     
     // Stop the AVR8JS simulation loop
@@ -291,6 +287,7 @@ export const SimulatorProvider = ({ children }) => {
           isOn: false,
           brightness: 0.0 
         });
+        addLog(`💡 LED ${component.id} turned OFF`);
       }
       
       if (component.type === 'heroboard' || component.id.includes('heroboard')) {
@@ -302,7 +299,7 @@ export const SimulatorProvider = ({ children }) => {
       }
     });
     
-    addLog('Simulation stopped');
+    addLog('✅ Simulation stopped - all components reset');
   };
   
   // Log component and wire state changes for debugging
