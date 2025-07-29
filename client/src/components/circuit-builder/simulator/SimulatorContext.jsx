@@ -289,16 +289,48 @@ export const SimulatorProvider = ({ children }) => {
             console.log(`[Simulator] Setting Hero Board pin 13 to ${isHigh ? 'HIGH' : 'LOW'}`);
             
             // Find all Hero Board components and update their pin 13 state
-            Object.keys(componentStates).forEach(componentId => {
-              const component = components.find(c => c.id === componentId);
-              if (component && (component.type === 'heroboard' || componentId.includes('heroboard'))) {
-                updateComponentState(componentId, { 
+            console.log(`[Simulator] Looking for Hero Boards in components:`, components.map(c => `${c.id}(${c.type})`));
+            console.log(`[Simulator] Available component states:`, Object.keys(componentStates));
+            
+            // First try to find actual Hero Board components
+            const heroBoardComponents = components.filter(c => 
+              c.type === 'heroboard' || c.id.includes('heroboard') || c.type === 'hero-board'
+            );
+            
+            if (heroBoardComponents.length > 0) {
+              heroBoardComponents.forEach(component => {
+                updateComponentState(component.id, { 
                   pin13: isHigh,
-                  pins: { ...componentStates[componentId]?.pins, '13': isHigh }
+                  pins: { ...componentStates[component.id]?.pins, '13': isHigh }
                 });
-                console.log(`[Simulator] Updated ${componentId} pin 13 state to ${isHigh}`);
+                console.log(`[Simulator] Updated Hero Board ${component.id} pin 13 state to ${isHigh}`);
+              });
+            } else {
+              // Fallback: try to update any existing component states that might be Hero Boards
+              Object.keys(componentStates).forEach(componentId => {
+                if (componentId.includes('heroboard') || componentId.includes('hero')) {
+                  updateComponentState(componentId, { 
+                    pin13: isHigh,
+                    pins: { ...componentStates[componentId]?.pins, '13': isHigh }
+                  });
+                  console.log(`[Simulator] Updated component state ${componentId} pin 13 to ${isHigh}`);
+                }
+              });
+              
+              // If no Hero Boards found, create a global pin state that Hero Boards can read
+              if (Object.keys(componentStates).length === 0) {
+                console.log(`[Simulator] No Hero Board found, creating global pin 13 state`);
+                // Use a global state approach that Hero Board can monitor
+                if (!window.arduinoSimulatorState) window.arduinoSimulatorState = {};
+                window.arduinoSimulatorState.pin13 = isHigh;
+                
+                // Dispatch custom event for Hero Board to listen to
+                const event = new CustomEvent('arduinoPinChange', {
+                  detail: { pin: 13, value: isHigh }
+                });
+                document.dispatchEvent(event);
               }
-            });
+            }
           }
         }
 
