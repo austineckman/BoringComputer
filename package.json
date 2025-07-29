@@ -49,6 +49,7 @@
     "@types/howler": "^2.2.12",
     "@types/memoizee": "^0.4.12",
     "@types/multer": "^1.4.12",
+    "@wokwi/elements": "^1.7.0",
     "ace-builds": "^1.40.1",
     "avr8js": "^0.20.1",
     "axios": "^1.8.4",

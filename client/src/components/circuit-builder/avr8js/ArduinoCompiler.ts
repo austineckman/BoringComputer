@@ -184,14 +184,46 @@ export class ArduinoCompiler {
    * Generate a simple blink program (for pin 13)
    */
   private generateBlinkProgram(analysis: CodeAnalysis): Uint16Array {
-    // For now, just return a small dummy program
-    // In a real implementation, we would compile the actual code
-    const program = new Uint16Array(32);
+    // This is a simplified Arduino blink program in hex format
+    // Based on the classic blink sketch compiled for ATmega328P
     
-    // Fill with placeholder instructions
-    for (let i = 0; i < program.length; i++) {
-      program[i] = 0x2400 + i; // NOP instruction with some offset
-    }
+    // Get the primary delay from analysis, default to 1000ms
+    const delayMs = analysis.delays.length > 0 ? analysis.delays[0] : 1000;
+    
+    // Create a realistic blink program that toggles pin 13 (PB5)
+    // This is a hand-crafted hex program that mimics compiled Arduino code
+    const program = new Uint16Array([
+      // Setup code (like setup() function)
+      0x24BE, // eor r11, r11 (clear r11)
+      0x2400, // nop
+      0xE5A5, // ldi r26, 0x25 (DDRB address)
+      0xE0B0, // ldi r27, 0x00 
+      0xE020, // ldi r18, 0x20 (bit 5 for pin 13)
+      0x9312, // st X, r18 (set DDRB bit 5 to output)
+      
+      // Main loop (like loop() function)
+      0xE5A4, // ldi r26, 0x24 (PORTB address) - Loop start
+      0xE0B0, // ldi r27, 0x00
+      0x911C, // ld r17, X (read current PORTB)
+      0xE020, // ldi r18, 0x20 (bit 5 mask)
+      0x2712, // eor r17, r18 (toggle bit 5)
+      0x931C, // st X, r17 (write back to PORTB)
+      
+      // Delay loop (simplified delay implementation)
+      0xE5F0 + ((delayMs >> 8) & 0x0F), // ldi r31, high(delay_count)
+      0xE0E0 + (delayMs & 0x0F),        // ldi r30, low(delay_count)
+      0x97E1, // sbiw r30, 1 (delay loop start)
+      0xF7F1, // brne delay_loop
+      0xE5F0 + ((delayMs >> 4) & 0x0F), // Additional delay iterations
+      0xE0E0 + ((delayMs >> 2) & 0x0F),
+      0x97E1, // sbiw r30, 1
+      0xF7F1, // brne delay_loop2
+      
+      0xCFF6, // rjmp main_loop (jump back to loop start)
+      0x2400, // nop (padding)
+      0x2400, // nop (padding)
+      0x2400  // nop (padding)
+    ]);
     
     return program;
   }

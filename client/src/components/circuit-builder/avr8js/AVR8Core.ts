@@ -103,23 +103,29 @@ export class AVR8Core implements IAVR8Core {
    */
   private setupPinChangeListeners(): void {
     // Monitor port B pins
-    this.portB.addListener((portState) => {
+    this.portB.addListener((pinValue, port) => {
       for (let pin = 0; pin < 8; pin++) {
-        this.handlePinChange('B', pin, portState.pins[pin] === PinState.High);
+        const pinMask = 1 << pin;
+        const isHigh = (pinValue & pinMask) !== 0;
+        this.handlePinChange('B', pin, isHigh);
       }
     });
     
     // Monitor port C pins
-    this.portC.addListener((portState) => {
+    this.portC.addListener((pinValue, port) => {
       for (let pin = 0; pin < 8; pin++) {
-        this.handlePinChange('C', pin, portState.pins[pin] === PinState.High);
+        const pinMask = 1 << pin;
+        const isHigh = (pinValue & pinMask) !== 0;
+        this.handlePinChange('C', pin, isHigh);
       }
     });
     
     // Monitor port D pins
-    this.portD.addListener((portState) => {
+    this.portD.addListener((pinValue, port) => {
       for (let pin = 0; pin < 8; pin++) {
-        this.handlePinChange('D', pin, portState.pins[pin] === PinState.High);
+        const pinMask = 1 << pin;
+        const isHigh = (pinValue & pinMask) !== 0;
+        this.handlePinChange('D', pin, isHigh);
       }
     });
   }
@@ -153,7 +159,10 @@ export class AVR8Core implements IAVR8Core {
   public loadProgram(program: Uint16Array): void {
     // Reset the CPU and load the program
     this.cpu.reset();
-    this.cpu.loadProgram(program);
+    // Copy program into CPU memory
+    for (let i = 0; i < program.length; i++) {
+      this.cpu.progMem[i] = program[i];
+    }
     console.log(`[AVR8Core] Program loaded (${program.length} words)`);
   }
   
@@ -162,7 +171,9 @@ export class AVR8Core implements IAVR8Core {
    */
   public execute(cycles: number): void {
     // Run the CPU for the specified number of cycles
-    this.cpu.execute(cycles);
+    for (let i = 0; i < cycles; i++) {
+      this.cpu.tick();
+    }
   }
   
   /**
