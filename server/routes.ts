@@ -781,18 +781,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const userQuest = userQuests.find(uq => uq.questId === quest.id);
         let status = 'locked';
 
-        // If the quest is in available quests or has a user quest entry, determine status
-        if (availableQuests.some(aq => aq.id === quest.id)) {
-          status = 'available';
-        }
-
-        if (userQuest) {
-          status = userQuest.status; // active or completed
-        }
-
-        // For completed quests, also check user's completedQuests array
+        // Check completed quests FIRST (highest priority)
         if (user.completedQuests && user.completedQuests.includes(quest.id)) {
           status = 'completed';
+        }
+        // Then check user quest status (active takes precedence over available)
+        else if (userQuest) {
+          status = userQuest.status; // active or completed
+        }
+        // Finally check if quest is available
+        else if (availableQuests.some(aq => aq.id === quest.id)) {
+          status = 'available';
         }
 
         console.log(`Processing quest: ${quest.id} - ${quest.title} with status ${status}`);
