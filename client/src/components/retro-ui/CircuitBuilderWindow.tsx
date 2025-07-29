@@ -572,16 +572,13 @@ void loop() {
       // Update the simulator context with current code BEFORE starting simulation
       updateSimulatorCode(currentCode);
       
-      // Add a small delay to ensure the code is set before starting simulation
-      setTimeout(() => {
-        setIsSimulationRunning(true);
-        if (typeof window !== 'undefined') {
-          window.isSimulationRunning = true; // Set global flag for components
-        }
-        
-        // Start the simulation - this will now parse the real code
-        startSimulation();
-      }, 100); // 100ms delay to ensure code is properly set
+      setIsSimulationRunning(true);
+      if (typeof window !== 'undefined') {
+        window.isSimulationRunning = true; // Set global flag for components
+      }
+      
+      // Start the simulation with the current code directly
+      startSimulation(currentCode);
       showNotification('Arduino simulation started!', 'success');
     }
   };
