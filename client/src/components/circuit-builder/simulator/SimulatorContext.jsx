@@ -282,6 +282,24 @@ export const SimulatorProvider = ({ children }) => {
         if (instruction.instruction.includes('digitalWrite')) {
           const voltage = instruction.value === 'HIGH' ? '5V' : '0V';
           addLog(`[${timestamp}] → Pin ${instruction.pin} set to ${instruction.value} (${voltage})`);
+          
+          // Update Hero Board pin 13 state for LED blinking
+          if (instruction.pin === 13) {
+            const isHigh = instruction.value === 'HIGH';
+            console.log(`[Simulator] Setting Hero Board pin 13 to ${isHigh ? 'HIGH' : 'LOW'}`);
+            
+            // Find all Hero Board components and update their pin 13 state
+            Object.keys(componentStates).forEach(componentId => {
+              const component = components.find(c => c.id === componentId);
+              if (component && (component.type === 'heroboard' || componentId.includes('heroboard'))) {
+                updateComponentState(componentId, { 
+                  pin13: isHigh,
+                  pins: { ...componentStates[componentId]?.pins, '13': isHigh }
+                });
+                console.log(`[Simulator] Updated ${componentId} pin 13 state to ${isHigh}`);
+              }
+            });
+          }
         }
 
         if (instruction.instruction.includes('delay')) {
