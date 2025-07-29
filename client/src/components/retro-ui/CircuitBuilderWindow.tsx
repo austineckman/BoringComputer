@@ -28,6 +28,7 @@ import CircuitBuilder from '../circuit-builder/CircuitBuilder';
 
 // Import simulator components
 import { SimulatorProvider, useSimulator } from '../circuit-builder/simulator/SimulatorContext';
+import SimplifiedLogPanel from '../circuit-builder/simulator/SimplifiedLogPanel';
 // Import only the proper simulator - legacy simulator removed to enforce hardware emulation
 // import AVR8Simulator from '../circuit-builder/simulator/AVR8Simulator'; // REMOVED - uses keyword-based shortcuts
 // Import our proper AVR8 simulator 
@@ -1007,11 +1008,8 @@ void loop() {
           </div>
           
           <div className="w-1/3 p-2 overflow-auto">
-            <div className="h-full" style={{ overflow: 'hidden' }}>
-              {/* <SimulationLogPanel /> */}
-              <div className="p-4 text-gray-400">
-                <p>Simulation logs coming soon...</p>
-              </div>
+            <div className="h-full">
+              <SimplifiedLogPanel />
             </div>
           </div>
         </div>
