@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { CPU, AVRIOPort, portBConfig } from 'avr8js';
+import { ArduinoCodeParser } from './ArduinoCodeParser';
 
 // Create a context for the simulator
 const SimulatorContext = createContext({
@@ -35,6 +36,15 @@ export const SimulatorProvider = ({ children }) => {
   const cpuRef = useRef(null);
   const portBRef = useRef(null);
   const animationRef = useRef(null);
+  const codeParserRef = useRef(new ArduinoCodeParser());
+  const executionStateRef = useRef({
+    phase: 'stopped', // 'setup', 'loop', 'stopped'
+    setupIndex: 0,
+    loopIndex: 0,
+    setupInstructions: [],
+    loopInstructions: [],
+    loopCount: 0
+  });
   
   // Function to add a log entry with timestamp
   const addLog = (message) => {
@@ -161,66 +171,138 @@ export const SimulatorProvider = ({ children }) => {
     return BLINK_PROGRAM;
   };
   
+  // Execute a single Arduino instruction
+  const executeInstruction = (instruction) => {
+    const timestamp = new Date().toLocaleTimeString();
+    addLog(`[${timestamp}] Line ${instruction.lineNumber}: ${instruction.instruction}`);
+
+    if (instruction.instruction.includes('pinMode')) {
+      addLog(`[${timestamp}] → Pin ${instruction.pin} configured as ${instruction.instruction.includes('OUTPUT') ? 'OUTPUT' : 'INPUT'}`);
+    }
+
+    if (instruction.instruction.includes('digitalWrite')) {
+      const voltage = instruction.value === 'HIGH' ? '5V' : '0V';
+      addLog(`[${timestamp}] → Pin ${instruction.pin} set to ${instruction.value} (${voltage})`);
+      
+      // Update component states for pin changes
+      components.forEach(component => {
+        if (component.type === 'led' || component.id.includes('led')) {
+          const connectedWires = wires.filter(wire => 
+            (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
+            (wire.sourceName === instruction.pin.toString() || wire.targetName === instruction.pin.toString())
+          );
+          
+          if (connectedWires.length > 0) {
+            const isOn = instruction.value === 'HIGH';
+            updateComponentState(component.id, { 
+              isOn: isOn,
+              brightness: isOn ? 1.0 : 0.0 
+            });
+            addLog(`[${timestamp}] → LED ${component.id} turned ${isOn ? 'ON' : 'OFF'}`);
+          }
+        }
+      });
+    }
+
+    if (instruction.instruction.includes('delay')) {
+      addLog(`[${timestamp}] → Waiting ${instruction.delayMs}ms...`);
+      return instruction.delayMs;
+    }
+
+    if (instruction.instruction.includes('Serial.print')) {
+      addLog(`[${timestamp}] → Serial: ${instruction.instruction}`);
+    }
+
+    return 0;
+  };
+
   // Function to start the simulation
   const startSimulation = () => {
-    if (!cpuRef.current) {
-      addLog('❌ Error: AVR8JS not initialized');
+    if (!code || code.trim() === '') {
+      addLog('❌ Error: No Arduino code to execute');
       return;
     }
     
     // Clear previous logs
     setLogs([]);
     
-    addLog('🔄 Starting Arduino compilation...');
-    addLog('📋 Verifying C++ syntax and Arduino libraries...');
-    addLog('✅ Code compilation successful!');
-    addLog('🔧 Initializing ATmega328P microcontroller...');
+    addLog('🔄 Parsing Arduino code...');
     
     try {
-      // Compile the code
-      const program = compileArduinoCode(code);
-      addLog(`📦 Program compiled: ${program.length} machine code instructions`);
+      // Parse the actual code from the editor
+      const { setup, loop } = codeParserRef.current.parseCode(code);
+      const setupInstructions = codeParserRef.current.getSetupInstructions();
+      const loopInstructions = codeParserRef.current.getLoopInstructions();
       
-      // Load the program into CPU memory
-      for (let i = 0; i < program.length; i++) {
-        cpuRef.current.progMem[i] = program[i];
-      }
+      addLog(`📋 Found ${setup.length} lines in setup(), ${loop.length} lines in loop()`);
+      addLog(`✅ Code parsed: ${setupInstructions.length} setup instructions, ${loopInstructions.length} loop instructions`);
       
-      // Reset CPU to start from beginning
-      cpuRef.current.reset();
+      // Initialize execution state
+      executionStateRef.current = {
+        phase: 'setup',
+        setupIndex: 0,
+        loopIndex: 0,
+        setupInstructions,
+        loopInstructions,
+        loopCount: 0
+      };
       
       setIsRunning(true);
-      addLog('✅ Simulation started - executing setup()');
-      addLog('🔄 Entering main loop()...');
-      addLog('⚡ Running at 16MHz clock speed');
+      addLog('🔧 Starting Arduino execution...');
+      addLog('⚡ Entering setup() function');
       
-      let cycleCount = 0;
-      let lastLogTime = Date.now();
-      
-      // Start the simulation loop
-      const runLoop = () => {
-        if (cpuRef.current && isRunning) {
-          // Execute multiple CPU cycles per frame for realistic timing
-          for (let i = 0; i < 1000; i++) {
-            cpuRef.current.tick();
-            cycleCount++;
+      // Start the execution loop
+      const executeNextInstruction = () => {
+        const currentIsRunning = isRunning;
+        if (!currentIsRunning) return;
+        
+        const state = executionStateRef.current;
+        
+        if (state.phase === 'setup') {
+          if (state.setupIndex < state.setupInstructions.length) {
+            const instruction = state.setupInstructions[state.setupIndex];
+            const delayMs = executeInstruction(instruction);
+            state.setupIndex++;
+            
+            setTimeout(() => {
+              if (isRunning) executeNextInstruction();
+            }, delayMs || 50); // Small delay between instructions for readability
+          } else {
+            // Setup complete, move to loop
+            state.phase = 'loop';
+            state.loopCount = 1;
+            addLog('✅ setup() completed');
+            addLog('🔄 Entering loop() function');
+            executeNextInstruction();
+          }
+        } else if (state.phase === 'loop') {
+          if (state.loopInstructions.length === 0) {
+            addLog('⚠️ loop() function is empty');
+            return;
           }
           
-          // Log execution progress every 2 seconds
-          const now = Date.now();
-          if (now - lastLogTime > 2000) {
-            addLog(`⏱️ Executed ${Math.floor(cycleCount / 1000)}K CPU cycles`);
-            lastLogTime = now;
+          if (state.loopIndex < state.loopInstructions.length) {
+            const instruction = state.loopInstructions[state.loopIndex];
+            const delayMs = executeInstruction(instruction);
+            state.loopIndex++;
+            
+            setTimeout(() => {
+              if (isRunning) executeNextInstruction();
+            }, delayMs || 50);
+          } else {
+            // Loop complete, restart
+            state.loopIndex = 0;
+            state.loopCount++;
+            addLog(`🔄 loop() iteration ${state.loopCount} starting`);
+            executeNextInstruction();
           }
-          
-          animationRef.current = requestAnimationFrame(runLoop);
         }
       };
       
-      runLoop();
+      executeNextInstruction();
       
     } catch (error) {
-      addLog(`❌ Simulation error: ${error.message}`);
+      addLog(`❌ Code parsing error: ${error.message}`);
     }
     
     // Register all components with the simulator
@@ -268,6 +350,16 @@ export const SimulatorProvider = ({ children }) => {
   const stopSimulation = () => {
     addLog('🛑 Stopping Arduino simulation...');
     setIsRunning(false);
+    
+    // Reset execution state
+    executionStateRef.current = {
+      phase: 'stopped',
+      setupIndex: 0,
+      loopIndex: 0,
+      setupInstructions: [],
+      loopInstructions: [],
+      loopCount: 0
+    };
     
     // Stop the AVR8JS simulation loop
     if (animationRef.current) {
