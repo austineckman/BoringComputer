@@ -302,14 +302,14 @@ export const SimulatorProvider = ({ children }) => {
       
       // Start the execution loop
       const executeNextInstruction = () => {
-        console.log('executeNextInstruction called, isRunning:', isRunning);
-        const currentIsRunning = isRunning;
-        if (!currentIsRunning) {
-          console.log('executeNextInstruction: stopped because isRunning is false');
+        const state = executionStateRef.current;
+        console.log('executeNextInstruction called, state.phase:', state.phase);
+        
+        if (state.phase === 'stopped') {
+          console.log('executeNextInstruction: stopped because phase is stopped');
           return;
         }
         
-        const state = executionStateRef.current;
         console.log('executeNextInstruction: current state:', state);
         
         if (state.phase === 'setup') {
@@ -320,7 +320,7 @@ export const SimulatorProvider = ({ children }) => {
             state.setupIndex++;
             
             setTimeout(() => {
-              if (isRunning) executeNextInstruction();
+              if (executionStateRef.current.phase !== 'stopped') executeNextInstruction();
             }, delayMs || 300); // Slower for readability
           } else {
             // Setup complete, move to loop
@@ -343,7 +343,7 @@ export const SimulatorProvider = ({ children }) => {
             state.loopIndex++;
             
             setTimeout(() => {
-              if (isRunning) executeNextInstruction();
+              if (executionStateRef.current.phase !== 'stopped') executeNextInstruction();
             }, delayMs || 300);
           } else {
             // Loop complete, restart
