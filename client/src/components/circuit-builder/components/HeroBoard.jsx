@@ -68,6 +68,19 @@ const HeroBoard = ({
     triggerRedraw();
   }, [pinInfo, posTop, posLeft]);
   
+  // Listen for global Arduino pin changes as fallback
+  useEffect(() => {
+    const handleArduinoPinChange = (event) => {
+      if (event.detail.pin === 13) {
+        setPin13State(event.detail.value);
+        console.log(`[HeroBoard ${id}] Pin 13 state changed via global event to ${event.detail.value ? 'HIGH' : 'LOW'}`);
+      }
+    };
+
+    document.addEventListener('arduinoPinChange', handleArduinoPinChange);
+    return () => document.removeEventListener('arduinoPinChange', handleArduinoPinChange);
+  }, [id]);
+
   // Track pin states from the emulator signals - responsive to ALL pins
   useEffect(() => {
     // This effect listens for pin state changes from the emulator
