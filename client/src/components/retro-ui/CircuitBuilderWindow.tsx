@@ -561,6 +561,13 @@ void loop() {
       
       // Get the current code from the editor
       const currentCode = getCode();
+      console.log('CircuitBuilderWindow: Getting code for simulation, length:', currentCode?.length);
+      console.log('CircuitBuilderWindow: Code preview:', currentCode?.substring(0, 100));
+      
+      if (!currentCode || currentCode.trim() === '') {
+        showNotification('Please write some Arduino code in the editor first!', 'error');
+        return;
+      }
       
       // Update the simulator context with current code BEFORE starting simulation
       updateSimulatorCode(currentCode);
