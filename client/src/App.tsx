@@ -32,6 +32,7 @@ import LootBoxPreview from "@/pages/loot-box-preview";
 import NotFound from "@/pages/not-found";
 import MainLayout from "@/components/layout/MainLayout";
 import FullscreenUniversalEmulatorApp from "@/components/retro-ui/FullscreenUniversalEmulatorApp";
+import SimulatorDemo from "@/components/circuit-builder/demo/SimulatorDemo";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { ProtectedRoute, AdminRoute } from "@/lib/protected-route";
@@ -142,6 +143,11 @@ function App() {
         <ProtectedRoute 
           path="/mission/:questId" 
           component={() => <MissionPage />} 
+        />
+        
+        <ProtectedRoute 
+          path="/simulator-demo" 
+          component={() => <SimulatorDemo />} 
         />
         
         <ProtectedRoute 
