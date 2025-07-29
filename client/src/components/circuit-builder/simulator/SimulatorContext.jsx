@@ -24,32 +24,8 @@ export const useSimulator = () => useContext(SimulatorContext);
 
 // Simulator Provider component
 export const SimulatorProvider = ({ children }) => {
-  // Default Arduino code
-  const defaultArduinoCode = `// This example blinks an LED connected to pin 13 (or the built-in LED)
-// This is a great first test for your Arduino setup!
-
-void setup() {
-  // Initialize digital pin LED_BUILTIN (usually pin 13) as an output
-  pinMode(LED_BUILTIN, OUTPUT);
-  
-  // Add more pin initializations here if needed
-  // For example: pinMode(10, OUTPUT); // for another LED
-}
-
-void loop() {
-  // Turn the LED on
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(1000);  // Wait for 1 second (1000 milliseconds)
-  
-  // Turn the LED off
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(1000);  // Wait for 1 second
-  
-  // The loop repeats indefinitely
-}`;
-
   // State variables
-  const [code, setCode] = useState(defaultArduinoCode);
+  const [code, setCode] = useState('');
   const [logs, setLogs] = useState([]);
   const [isRunning, setIsRunning] = useState(false);
   const [components, setComponents] = useState([]);
