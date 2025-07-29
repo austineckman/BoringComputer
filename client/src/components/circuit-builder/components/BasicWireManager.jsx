@@ -8,22 +8,22 @@ import { useSimulator } from '../simulator/SimulatorContext';
 const BasicWireManager = ({ canvasRef }) => {
   // Access the simulator context to share wire information
   const { setWires: setSimulatorWires } = useSimulator();
-
+  
   // State for managing wires and selections
   const [wires, setWires] = useState([]);
   const [pendingConnection, setPendingConnection] = useState(null);
   const [pendingWireWaypoints, setPendingWireWaypoints] = useState([]); // For storing clicks during wire creation
-  const [selectedWireId, setSelectedWireId = useState(null);
+  const [selectedWireId, setSelectedWireId] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-
+  
   // Utility function to calculate true element position (for both SVG and HTML)
   const getTrueElementPosition = (element) => {
     if (!element) return null;
-
+    
     try {
       // Check if this is an SVG element
       const isSvgElement = element instanceof SVGElement;
-
+      
       if (isSvgElement) {
         // Handle SVG elements with proper transformation
         const svgRoot = element.ownerSVGElement || document.querySelector('svg');
@@ -34,18 +34,18 @@ const BasicWireManager = ({ canvasRef }) => {
           const svgPoint = svgRoot.createSVGPoint();
           svgPoint.x = bbox.x + bbox.width / 2;
           svgPoint.y = bbox.y + bbox.height / 2;
-
+          
           // Convert to screen coordinates using the element's transform matrix
           const matrix = element.getScreenCTM();
           const screenPoint = svgPoint.matrixTransform(matrix);
-
+          
           return {
             x: screenPoint.x,
             y: screenPoint.y
           };
         }
       }
-
+      
       // For HTML elements or fallback
       const rect = element.getBoundingClientRect();
       return {
@@ -57,7 +57,7 @@ const BasicWireManager = ({ canvasRef }) => {
       return null;
     }
   };
-
+  
   // Apply HERO board pin position corrections
   const adjustHeroboardPosition = (pinId, position, componentId) => {
     // Only apply to heroboard pins
@@ -67,7 +67,7 @@ const BasicWireManager = ({ canvasRef }) => {
     )) {
       // Extract the pin number from the ID
       let pinNumber;
-
+      
       // Try different formats to extract pin number
       if (pinId.includes('-D')) {
         pinNumber = pinId.split('-D')[1];
@@ -78,15 +78,15 @@ const BasicWireManager = ({ canvasRef }) => {
         const parts = pinId.split('-');
         pinNumber = parts[parts.length - 1];
       }
-
+      
       // Return position unmodified - don't apply any transformations
       // The clicked position from the HeroBoard component is already correct
       return position;
     }
-
+    
     return position;
   };
-
+  
   // RGB LED specific position correction
   const adjustRgbLedPosition = (pinId, position, componentId) => {
     // Only apply to RGB LED pins and if we have valid positions
@@ -97,18 +97,18 @@ const BasicWireManager = ({ canvasRef }) => {
     )) {
       // Extract the pin name from the ID - different formats possible
       let pinName;
-
+      
       if (pinId.includes('-red') || pinId.includes('-green') || pinId.includes('-blue') || pinId.includes('-common')) {
         pinName = pinId.split('-').pop();
       } else {
         // Try to get it from the last part of the ID
         pinName = pinId.split('-').pop();
       }
-
+      
       // Default offset - experimentally determined
       let OFFSET_X = 0;
       let OFFSET_Y = 0;
-
+      
       // Pin-specific adjustments based on which color pin it is
       if (pinName === 'red' || pinName.includes('red')) {
         // Red pin is on the left side
@@ -127,7 +127,7 @@ const BasicWireManager = ({ canvasRef }) => {
         OFFSET_X = 0;
         OFFSET_Y = 15;
       }
-
+      
       console.log(`Adjusting RGB LED pin position for ${pinName}:`, { 
         before: position,
         after: {
@@ -135,29 +135,29 @@ const BasicWireManager = ({ canvasRef }) => {
           y: position.y + OFFSET_Y
         }
       });
-
+      
       // Apply the offset to fix the position
       return {
         x: position.x + OFFSET_X,
         y: position.y + OFFSET_Y
       };
     }
-
+    
     return position;
   };
 
   // Generate a path with waypoints and 90-degree bends
   const getWirePath = (start, end, waypoints = []) => {
     if (!start || !end) return '';
-
+    
     // If there are no waypoints, return a direct straight line
     if (!waypoints || waypoints.length === 0) {
       return `M ${start.x},${start.y} L ${end.x},${end.y}`;
     }
-
+    
     // Start the path
     let path = `M ${start.x},${start.y}`;
-
+    
     // Add path through each waypoint with 90-degree bend
     waypoints.forEach((point, index) => {
       if (index === 0) {
@@ -169,32 +169,32 @@ const BasicWireManager = ({ canvasRef }) => {
         path += ` V ${point.y} H ${point.x}`;
       }
     });
-
+    
     // Connect last waypoint to end with 90-degree vertical-first bend
     const lastPoint = waypoints[waypoints.length - 1];
     path += ` V ${end.y} H ${end.x}`;
-
+    
     return path;
   };
-
+  
   // Handle pin click events
   const handlePinClick = (event) => {
     try {
       const detail = event.detail;
       if (!detail) return;
-
+      
       // Extract basic pin data - support both LED and other component formats
       // LED format has "id", other components use "pinId"
       const pinId = detail.id || detail.pinId;
       const pinType = detail.pinType || 'bidirectional';
-
+      
       // Support both LED format (parentId) and HeroBoard format (parentComponentId)
       const parentComponentId = detail.parentId || detail.parentComponentId;
-
+      
       // Get the actual pin name - LED component passes this in pinData
       // Other components may use pinName or we extract from pinId
       let pinName;
-
+      
       // If we have pinData (LED format), extract the name from there
       if (detail.pinData) {
         try {
@@ -208,14 +208,14 @@ const BasicWireManager = ({ canvasRef }) => {
         // Use the explicit pinName or extract from pinId
         pinName = detail.pinName || (pinId ? pinId.split('-').pop() : '');
       }
-
+      
       // Get canvas element to calculate relative position
       const canvas = canvasRef?.current;
       const canvasRect = canvas ? canvas.getBoundingClientRect() : null;
-
+      
       // Get pin position directly from the click event - this is what works for LED
       let pinPosition;
-
+      
       // Use clientX/Y directly (LED approach) which works
       if (detail.clientX !== undefined && detail.clientY !== undefined) {
         // Get the position directly from the click event
@@ -241,7 +241,7 @@ const BasicWireManager = ({ canvasRef }) => {
         console.log(`No position data for pin ${pinId}, using mouse position`);
         pinPosition = mousePosition;
       }
-
+      
       // Log the event for debugging
       console.log('Pin click event:', {
         pinId,
@@ -250,7 +250,7 @@ const BasicWireManager = ({ canvasRef }) => {
         parentComponentId,
         coordinates: pinPosition
       });
-
+      
       // If no pending connection, start a new one
       if (!pendingConnection) {
         setPendingConnection({
@@ -262,13 +262,13 @@ const BasicWireManager = ({ canvasRef }) => {
         });
         return;
       }
-
+      
       // If clicking on the same pin, cancel the pending connection
       if (pendingConnection.sourceId === pinId) {
         setPendingConnection(null);
         return;
       }
-
+      
       // Create a new wire connection including waypoints
       const newWire = {
         id: `wire-${Date.now()}`,
@@ -285,19 +285,19 @@ const BasicWireManager = ({ canvasRef }) => {
         waypoints: [...pendingWireWaypoints], // Store the waypoints for this wire
         color: getWireColor(pendingConnection.sourceType, pinType)
       };
-
+      
       // Add the new wire and reset pending connection and waypoints
       setWires([...wires, newWire]);
       setPendingConnection(null);
       setPendingWireWaypoints([]); // Reset waypoints
-
+      
       console.log(`Created wire from ${pendingConnection.sourceName} to ${pinName} with ${pendingWireWaypoints.length} waypoints`);
     } catch (error) {
       console.error('Error handling pin click:', error);
       setPendingConnection(null);
     }
   };
-
+  
   // Determine wire color based on pin types
   const getWireColor = (sourceType, targetType) => {
     if (sourceType === 'power' || targetType === 'power') return '#ff5555'; // Power (red)
@@ -308,7 +308,7 @@ const BasicWireManager = ({ canvasRef }) => {
     if (sourceType === 'digital' || targetType === 'digital') return '#ff55ff'; // Digital (purple)
     return '#aaaaaa'; // Default (light gray)
   };
-
+  
   // Handle canvas clicks to add waypoints during wire drawing
   const handleCanvasClick = (e) => {
     // Only respond if clicking directly on the canvas (not a component)
@@ -319,37 +319,37 @@ const BasicWireManager = ({ canvasRef }) => {
         x: e.clientX - canvasRect.left,
         y: e.clientY - canvasRect.top
       };
-
+      
       // Add a waypoint at the click position
       setPendingWireWaypoints([...pendingWireWaypoints, clickPosition]);
       console.log('Added waypoint for wire at:', clickPosition);
     }
   };
-
+  
   // Handle delete key press to remove selected wire
   const handleKeyDown = (e) => {
     if (e.key === 'Delete' && selectedWireId) {
       deleteWire(selectedWireId);
     }
   };
-
+  
   // Delete a wire by ID
   const deleteWire = (wireId) => {
     console.log(`Deleting wire with ID: ${wireId}`);
     setWires(wires.filter(wire => wire.id !== wireId));
     setSelectedWireId(null);
   };
-
+  
   // Handle wire selection
   const handleWireClick = (wireId, e) => {
     e.stopPropagation();
     setSelectedWireId(wireId === selectedWireId ? null : wireId);
   };
-
+  
   // Track mouse movement for drawing pending wire
   const handleMouseMove = (e) => {
     if (!canvasRef?.current) return;
-
+    
     const canvasRect = canvasRef.current.getBoundingClientRect();
     setMousePosition({
       x: e.clientX - canvasRect.left,
@@ -357,230 +357,150 @@ const BasicWireManager = ({ canvasRef }) => {
     });
   };
 
-  // Events that should trigger wire position updates
-  const events = ['componentMoved', 'componentMovedFinal', 'redrawWires', 'updateWirePositions'];
-
-  // Track last update time for throttling
-  let lastUpdateTime = 0;
-  const throttleInterval = 50; // Reduced from 500ms to 50ms for more responsive updates
-
-  // Enhanced function to update wire positions when components move
-  const handleComponentMove = (event) => {
-    const currentTime = performance.now();
-
-    // Extract the component ID and position from the event detail
-    let movedComponentId = null;
-    let newPosition = null;
-    let pinPositions = null;
-
-    try {
-      if (event.detail && event.detail.componentId) {
-        movedComponentId = event.detail.componentId;
-        newPosition = event.detail.newPosition;
-        pinPositions = event.detail.pinPositions;
-        console.log(`Component moved: ${movedComponentId}`, newPosition ? `to (${newPosition.x},${newPosition.y})` : '');
-      }
-    } catch (e) {
-      console.warn('Error extracting component ID from event:', e);
-    }
-
-    // Always process these events immediately for responsive UI
-    const shouldUpdate = 
-      event.type === 'componentMovedFinal' || 
-      event.type === 'redrawWires' || 
-      event.type === 'updateWirePositions' ||
-      currentTime - lastUpdateTime > throttleInterval;
-
-    if (shouldUpdate) {
-      console.log(`Updating wire positions due to ${event.type} event`);
-
-      // If we have specific pin positions, use those to update wires immediately
-      if (pinPositions && movedComponentId) {
-        setWires(wires => {
-          return wires.map(wire => {
-            const newWire = { ...wire };
-            let wireUpdated = false;
-
-            // Update source position if it matches the moved component
-            if (wire.sourceComponent === movedComponentId) {
-              const sourcePinKey = `pt-${wire.sourceComponent.split('-')[0]}-${wire.sourceComponent}-${wire.sourceName}`;
-              if (pinPositions[sourcePinKey]) {
-                newWire.sourcePos = {
-                  x: pinPositions[sourcePinKey].x,
-                  y: pinPositions[sourcePinKey].y
-                };
-                wireUpdated = true;
-                console.log(`Updated source wire position from pinPositions: (${newWire.sourcePos.x}, ${newWire.sourcePos.y})`);
+  // Handle component movement events to update wire positions
+  const handleComponentMoved = (event) => {
+    const componentId = event.detail?.componentId;
+    if (!componentId) return;
+    
+    console.log(`Component ${componentId} moved, updating wire positions`);
+    
+    // Update all wire positions for this component
+    setWires(wires => {
+      return wires.map(wire => {
+        const newWire = { ...wire };
+        
+        // Update source position if it's from the moved component
+        if (wire.sourceComponent === componentId) {
+          // Find position using component cache when available
+          const pinCacheKey = `${componentId}-${wire.sourceName}`;
+          const cachedPosition = window.pinPositionCache?.get(pinCacheKey);
+          
+          if (cachedPosition && cachedPosition.x !== undefined && cachedPosition.y !== undefined) {
+            newWire.sourcePos = { 
+              x: cachedPosition.x, 
+              y: cachedPosition.y 
+            };
+            console.log(`Updated source wire position from cache: (${newWire.sourcePos.x}, ${newWire.sourcePos.y})`);
+          } else {
+            // If no cached position, try to find the pin element
+            const pinId = `pt-${componentId.split('-')[0]}-${componentId}-${wire.sourceName}`;
+            const pinElement = document.getElementById(pinId);
+            
+            if (pinElement) {
+              const pos = getTrueElementPosition(pinElement);
+              if (pos) {
+                // Apply component-specific adjustments
+                let adjustedPos = adjustHeroboardPosition(pinId, pos, componentId);
+                adjustedPos = adjustRgbLedPosition(pinId, adjustedPos, componentId);
+                
+                newWire.sourcePos = adjustedPos;
+                console.log(`Updated source wire position from element: (${newWire.sourcePos.x}, ${newWire.sourcePos.y})`);
               }
-            }
-
-            // Update target position if it matches the moved component
-            if (wire.targetComponent === movedComponentId) {
-              const targetPinKey = `pt-${wire.targetComponent.split('-')[0]}-${wire.targetComponent}-${wire.targetName}`;
-              if (pinPositions[targetPinKey]) {
-                newWire.targetPos = {
-                  x: pinPositions[targetPinKey].x,
-                  y: pinPositions[targetPinKey].y
-                };
-                wireUpdated = true;
-                console.log(`Updated target wire position from pinPositions: (${newWire.targetPos.x}, ${newWire.targetPos.y})`);
-              }
-            }
-
-            return wireUpdated ? newWire : wire;
-          });
-        });
-
-        lastUpdateTime = currentTime;
-        return; // Exit early since we've handled the update
-      }
-
-      // Throttled update logic remains here, using the original logic to find pin positions if necessary
-      if (currentTime - lastUpdateTime > throttleInterval) {
-        setWires(wires => {
-          return wires.map(wire => {
-            const newWire = { ...wire };
-
-            // Update source position if it's from the moved component
-            if (wire.sourceComponent === movedComponentId) {
-              // Find position using component cache when available
-              const pinCacheKey = `${movedComponentId}-${wire.sourceName}`;
-              const cachedPosition = window.pinPositionCache?.get(pinCacheKey);
-
-              if (cachedPosition && cachedPosition.x !== undefined && cachedPosition.y !== undefined) {
-                newWire.sourcePos = { 
-                  x: cachedPosition.x, 
-                  y: cachedPosition.y 
-                };
-                console.log(`Updated source wire position from cache: (${newWire.sourcePos.x}, ${newWire.sourcePos.y})`);
-              } else {
-                // If no cached position, try to find the pin element
-                const pinId = `pt-${movedComponentId.split('-')[0]}-${movedComponentId}-${wire.sourceName}`;
-                const pinElement = document.getElementById(pinId);
-
-                if (pinElement) {
-                  const pos = getTrueElementPosition(pinElement);
-                  if (pos) {
-                    // Apply component-specific adjustments
-                    let adjustedPos = adjustHeroboardPosition(pinId, pos, movedComponentId);
-                    adjustedPos = adjustRgbLedPosition(pinId, adjustedPos, movedComponentId);
-
-                    newWire.sourcePos = adjustedPos;
-                    console.log(`Updated source wire position from element: (${newWire.sourcePos.x}, ${newWire.sourcePos.y})`);
-                  }
-                } else {
-                  // Handle element not found - track component movement delta if we have previous positions
-                  const movedX = event.detail.x;
-                  const movedY = event.detail.y;
-
-                  if (movedX !== undefined && movedY !== undefined) {
-                    // Calculate movement delta
-                    const deltaX = movedX - (wire._lastKnownSourceX || 0);
-                    const deltaY = movedY - (wire._lastKnownSourceY || 0);
-
-                    if (deltaX !== 0 || deltaY !== 0) {
-                      newWire.sourcePos = { 
-                        x: wire.sourcePos.x + deltaX, 
-                        y: wire.sourcePos.y + deltaY 
-                      };
-                      newWire._lastKnownSourceX = movedX;
-                      newWire._lastKnownSourceY = movedY;
-                      console.log(`Updated source wire position from delta: (${newWire.sourcePos.x}, ${newWire.sourcePos.y})`);
-                    }
-                  }
+            } else {
+              // Handle element not found - track component movement delta if we have previous positions
+              const movedX = event.detail.x;
+              const movedY = event.detail.y;
+              
+              if (movedX !== undefined && movedY !== undefined) {
+                // Calculate movement delta
+                const deltaX = movedX - (wire._lastKnownSourceX || 0);
+                const deltaY = movedY - (wire._lastKnownSourceY || 0);
+                
+                if (deltaX !== 0 || deltaY !== 0) {
+                  newWire.sourcePos = { 
+                    x: wire.sourcePos.x + deltaX, 
+                    y: wire.sourcePos.y + deltaY 
+                  };
+                  newWire._lastKnownSourceX = movedX;
+                  newWire._lastKnownSourceY = movedY;
+                  console.log(`Updated source wire position from delta: (${newWire.sourcePos.x}, ${newWire.sourcePos.y})`);
                 }
               }
             }
-
-            // Update target position if it's from the moved component
-            if (wire.targetComponent === movedComponentId) {
-              // Find position using component cache when available
-              const pinCacheKey = `${movedComponentId}-${wire.targetName}`;
-              const cachedPosition = window.pinPositionCache?.get(pinCacheKey);
-
-              if (cachedPosition && cachedPosition.x !== undefined && cachedPosition.y !== undefined) {
-                newWire.targetPos = { 
-                  x: cachedPosition.x, 
-                  y: cachedPosition.y 
-                };
-                console.log(`Updated target wire position from cache: (${newWire.targetPos.x}, ${newWire.targetPos.y})`);
-              } else {
-                // If no cached position, try to find the pin element
-                const pinId = `pt-${movedComponentId.split('-')[0]}-${movedComponentId}-${wire.targetName}`;
-                const pinElement = document.getElementById(pinId);
-
-                if (pinElement) {
-                  const pos = getTrueElementPosition(pinElement);
-                  if (pos) {
-                    // Apply component-specific adjustments
-                    let adjustedPos = adjustHeroboardPosition(pinId, pos, movedComponentId);
-                    adjustedPos = adjustRgbLedPosition(pinId, adjustedPos, movedComponentId);
-
-                    newWire.targetPos = adjustedPos;
-                    console.log(`Updated target wire position from element: (${newWire.targetPos.x}, ${newWire.targetPos.y})`);
-                  }
-                } else {
-                  // Handle element not found - track component movement delta if we have previous positions
-                  const movedX = event.detail.x;
-                  const movedY = event.detail.y;
-
-                  if (movedX !== undefined && movedY !== undefined) {
-                    // Calculate movement delta
-                    const deltaX = movedX - (wire._lastKnownTargetX || 0);
-                    const deltaY = movedY - (wire._lastKnownTargetY || 0);
-
-                    if (deltaX !== 0 || deltaY !== 0) {
-                      newWire.targetPos = { 
-                        x: wire.targetPos.x + deltaX, 
-                        y: wire.targetPos.y + deltaY 
-                      };
-                      newWire._lastKnownTargetX = movedX;
-                      newWire._lastKnownTargetY = movedY;
-                      console.log(`Updated target wire position from delta: (${newWire.targetPos.x}, ${newWire.targetPos.y})`);
-                    }
-                  }
+          }
+        }
+        
+        // Update target position if it's from the moved component
+        if (wire.targetComponent === componentId) {
+          // Find position using component cache when available
+          const pinCacheKey = `${componentId}-${wire.targetName}`;
+          const cachedPosition = window.pinPositionCache?.get(pinCacheKey);
+          
+          if (cachedPosition && cachedPosition.x !== undefined && cachedPosition.y !== undefined) {
+            newWire.targetPos = { 
+              x: cachedPosition.x, 
+              y: cachedPosition.y 
+            };
+            console.log(`Updated target wire position from cache: (${newWire.targetPos.x}, ${newWire.targetPos.y})`);
+          } else {
+            // If no cached position, try to find the pin element
+            const pinId = `pt-${componentId.split('-')[0]}-${componentId}-${wire.targetName}`;
+            const pinElement = document.getElementById(pinId);
+            
+            if (pinElement) {
+              const pos = getTrueElementPosition(pinElement);
+              if (pos) {
+                // Apply component-specific adjustments
+                let adjustedPos = adjustHeroboardPosition(pinId, pos, componentId);
+                adjustedPos = adjustRgbLedPosition(pinId, adjustedPos, componentId);
+                
+                newWire.targetPos = adjustedPos;
+                console.log(`Updated target wire position from element: (${newWire.targetPos.x}, ${newWire.targetPos.y})`);
+              }
+            } else {
+              // Handle element not found - track component movement delta if we have previous positions
+              const movedX = event.detail.x;
+              const movedY = event.detail.y;
+              
+              if (movedX !== undefined && movedY !== undefined) {
+                // Calculate movement delta
+                const deltaX = movedX - (wire._lastKnownTargetX || 0);
+                const deltaY = movedY - (wire._lastKnownTargetY || 0);
+                
+                if (deltaX !== 0 || deltaY !== 0) {
+                  newWire.targetPos = { 
+                    x: wire.targetPos.x + deltaX, 
+                    y: wire.targetPos.y + deltaY 
+                  };
+                  newWire._lastKnownTargetX = movedX;
+                  newWire._lastKnownTargetY = movedY;
+                  console.log(`Updated target wire position from delta: (${newWire.targetPos.x}, ${newWire.targetPos.y})`);
                 }
               }
             }
-
-            return newWire;
-          });
-        });
-
-        lastUpdateTime = currentTime;
-      }
-    }
+          }
+        }
+        
+        return newWire;
+      });
+    });
   };
 
   // Setup event listeners
   useEffect(() => {
     // Listen for pin clicks from components
     document.addEventListener('pinClicked', handlePinClick);
-
+    
     // Listen for component move events
-    document.addEventListener('componentMoved', handleComponentMove);
-    document.addEventListener('componentMovedFinal', handleComponentMove);
-    document.addEventListener('updateWirePositions', handleComponentMove);
-    document.addEventListener('redrawWires', handleComponentMove);
-
+    document.addEventListener('componentMoved', handleComponentMoved);
+    document.addEventListener('componentMovedFinal', handleComponentMoved);
+    
     // Add canvas click handler
     const canvas = canvasRef?.current;
     if (canvas) {
       canvas.addEventListener('click', handleCanvasClick);
       canvas.addEventListener('mousemove', handleMouseMove);
     }
-
+    
     // Add keyboard handler for deletion
     window.addEventListener('keydown', handleKeyDown);
-
+    
     // Cleanup event listeners
     return () => {
       document.removeEventListener('pinClicked', handlePinClick);
-      document.removeEventListener('componentMoved', handleComponentMove);
-      document.removeEventListener('componentMovedFinal', handleComponentMove);
-      document.removeEventListener('updateWirePositions', handleComponentMove);
-      document.removeEventListener('redrawWires', handleComponentMove);
-
+      document.removeEventListener('componentMoved', handleComponentMoved);
+      document.removeEventListener('componentMovedFinal', handleComponentMoved);
+      
       if (canvas) {
         canvas.removeEventListener('click', handleCanvasClick);
         canvas.removeEventListener('mousemove', handleMouseMove);
@@ -588,15 +508,15 @@ const BasicWireManager = ({ canvasRef }) => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [canvasRef, pendingConnection, pendingWireWaypoints, selectedWireId, wires]);
-
+  
   // Share wires with the simulator through context
   useEffect(() => {
     try {
       console.log(`Wire manager has ${wires?.length || 0} wires:`, wires);
-
+      
       // Ensure wires is always an array
       const safeWires = Array.isArray(wires) ? wires : [];
-
+      
       // Share the wires with the simulator via context
       if (typeof setSimulatorWires === 'function') {
         // Add extra debug information to each wire to help with debugging
@@ -608,19 +528,19 @@ const BasicWireManager = ({ canvasRef }) => {
             targetValid: Boolean(wire.targetId && wire.targetPos)
           }
         }));
-
+        
         setSimulatorWires(wiresWithDebug);
-
+        
         // Also share with the global window.simulatorContext for non-React components
         if (window.simulatorContext) {
           window.simulatorContext.wires = wiresWithDebug;
           console.log("Shared wires with global simulator context:", wiresWithDebug.length);
         }
-
+        
         console.log("Shared wires with simulator context:", wiresWithDebug.length);
       } else {
         console.warn("Could not share wires with simulator: setSimulatorWires not available");
-
+        
         // Even if React context is not available, try to share with global object
         if (window.simulatorContext) {
           window.simulatorContext.wires = safeWires;
@@ -640,7 +560,7 @@ const BasicWireManager = ({ canvasRef }) => {
           {wires.length} wire(s) created
         </div>
       )}
-
+      
       {/* Enhanced wire layer with stronger visibility */}
       <svg 
         className="wire-layer absolute inset-0 pointer-events-none"
@@ -662,7 +582,7 @@ const BasicWireManager = ({ canvasRef }) => {
           if (!wire || !wire.id || !wire.sourcePos || !wire.targetPos) {
             return null; // Skip invalid wires
           }
-
+          
           return (
             <g key={wire.id} className="wire-connection" style={{ pointerEvents: 'auto' }}>
               {/* Highlight path to make it more visible */}
@@ -674,7 +594,7 @@ const BasicWireManager = ({ canvasRef }) => {
                 strokeLinecap="round"
                 strokeOpacity={0.5}
               />
-
+              
               {/* Actual colored wire */}
               <path
                 d={getWirePath(wire.sourcePos, wire.targetPos, wire.waypoints)}
@@ -686,7 +606,7 @@ const BasicWireManager = ({ canvasRef }) => {
                 className="cursor-pointer"
                 title="Click to select wire, Delete key to remove"
               />
-
+              
               {/* Delete button for the wire - only shown when wire is selected */}
               {selectedWireId === wire.id && (
                 <g 
@@ -727,7 +647,7 @@ const BasicWireManager = ({ canvasRef }) => {
                   <title>Delete wire</title>
                 </g>
               )}
-
+              
               {/* Larger wire endpoint circles for better visibility */}
               <circle 
                 cx={wire.sourcePos.x} 
@@ -745,7 +665,7 @@ const BasicWireManager = ({ canvasRef }) => {
                 strokeWidth={1} 
                 fill={wire.color || '#ff0000'} 
               />
-
+              
               {/* Show waypoint markers for the completed wire */}
               {wire.waypoints && wire.waypoints.map((point, index) => (
                 <circle
@@ -759,7 +679,7 @@ const BasicWireManager = ({ canvasRef }) => {
                   opacity={selectedWireId === wire.id ? 1 : 0.7}
                 />
               ))}
-
+              
               {/* Pin labels for debugging */}
               <text 
                 x={wire.sourcePos.x + 10} 
@@ -784,7 +704,7 @@ const BasicWireManager = ({ canvasRef }) => {
             </g>
           );
         }) : null}
-
+        
         {/* Pending connection wire with improved visibility */}
         {pendingConnection && pendingConnection.sourcePos && (
           <>
@@ -815,7 +735,7 @@ const BasicWireManager = ({ canvasRef }) => {
               strokeLinecap="square"
               strokeLinejoin="miter"
             />
-
+            
             {/* Draw waypoint markers for pending wire */}
             {pendingWireWaypoints.map((point, index) => (
               <circle
