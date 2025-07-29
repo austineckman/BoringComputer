@@ -283,9 +283,11 @@ export const SimulatorProvider = ({ children }) => {
           const voltage = instruction.value === 'HIGH' ? '5V' : '0V';
           addLog(`[${timestamp}] → Pin ${instruction.pin} set to ${instruction.value} (${voltage})`);
           
-          // Update Hero Board pin 13 state for LED blinking
-          if (instruction.pin === 13) {
-            const isHigh = instruction.value === 'HIGH';
+          const isHigh = instruction.value === 'HIGH';
+          const pinNumber = instruction.pin;
+          
+          // Update Hero Board pin 13 state for built-in LED blinking
+          if (pinNumber === 13) {
             console.log(`[Simulator] Setting Hero Board pin 13 to ${isHigh ? 'HIGH' : 'LOW'}`);
             
             // Find all Hero Board components and update their pin 13 state
@@ -306,31 +308,72 @@ export const SimulatorProvider = ({ children }) => {
                 console.log(`[Simulator] Updated Hero Board ${component.id} pin 13 state to ${isHigh}`);
               });
             } else {
-              // Fallback: try to update any existing component states that might be Hero Boards
-              Object.keys(componentStates).forEach(componentId => {
-                if (componentId.includes('heroboard') || componentId.includes('hero')) {
-                  updateComponentState(componentId, { 
-                    pin13: isHigh,
-                    pins: { ...componentStates[componentId]?.pins, '13': isHigh }
-                  });
-                  console.log(`[Simulator] Updated component state ${componentId} pin 13 to ${isHigh}`);
+              // If no Hero Boards found, create a global pin state that Hero Boards can read
+              console.log(`[Simulator] No Hero Board found, creating global pin 13 state`);
+              // Use a global state approach that Hero Board can monitor
+              if (!window.arduinoSimulatorState) window.arduinoSimulatorState = {};
+              window.arduinoSimulatorState.pin13 = isHigh;
+              
+              // Dispatch custom event for Hero Board to listen to
+              const event = new CustomEvent('arduinoPinChange', {
+                detail: { pin: 13, value: isHigh }
+              });
+              document.dispatchEvent(event);
+            }
+          }
+          
+          // Update external LED components connected to any pin via wires
+          console.log(`[Simulator] Looking for LEDs connected to pin ${pinNumber}`);
+          console.log(`[Simulator] Available wires:`, wires.length);
+          console.log(`[Simulator] Available components:`, components.map(c => `${c.id}(${c.type})`));
+          
+          // Find LEDs connected to this pin through wires
+          const connectedLEDs = [];
+          
+          // Check each LED component
+          components.forEach(component => {
+            if (component.type === 'led' || component.id.includes('led')) {
+              // Find wires connected to this LED
+              const ledWires = wires.filter(wire => 
+                wire.sourceComponent === component.id || wire.targetComponent === component.id
+              );
+              
+              console.log(`[Simulator] LED ${component.id} has ${ledWires.length} wires:`, ledWires);
+              
+              // Check if any wire connects this LED to the pin we're setting
+              ledWires.forEach(wire => {
+                const isConnectedToPin = (
+                  (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString()) ||
+                  (wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}`) ||
+                  (wire.sourceName === `${pinNumber}` || wire.targetName === `${pinNumber}`)
+                );
+                
+                if (isConnectedToPin) {
+                  connectedLEDs.push(component);
+                  console.log(`[Simulator] Found LED ${component.id} connected to pin ${pinNumber} via wire`);
                 }
               });
-              
-              // If no Hero Boards found, create a global pin state that Hero Boards can read
-              if (Object.keys(componentStates).length === 0) {
-                console.log(`[Simulator] No Hero Board found, creating global pin 13 state`);
-                // Use a global state approach that Hero Board can monitor
-                if (!window.arduinoSimulatorState) window.arduinoSimulatorState = {};
-                window.arduinoSimulatorState.pin13 = isHigh;
-                
-                // Dispatch custom event for Hero Board to listen to
-                const event = new CustomEvent('arduinoPinChange', {
-                  detail: { pin: 13, value: isHigh }
-                });
-                document.dispatchEvent(event);
-              }
             }
+          });
+          
+          // Update all connected LEDs
+          connectedLEDs.forEach(led => {
+            updateComponentState(led.id, { 
+              isOn: isHigh,
+              brightness: isHigh ? 1.0 : 0.0,
+              voltage: isHigh ? 5 : 0
+            });
+            addLog(`[${timestamp}] → External LED ${led.id} turned ${isHigh ? 'ON' : 'OFF'}`);
+            console.log(`[Simulator] Updated LED ${led.id} state: isOn=${isHigh}`);
+          });
+          
+          if (connectedLEDs.length === 0) {
+            console.log(`[Simulator] No LEDs found connected to pin ${pinNumber}`);
+            console.log(`[Simulator] Available LED components:`, components.filter(c => c.type === 'led' || c.id.includes('led')));
+            console.log(`[Simulator] Checking wires for pin ${pinNumber}...`);
+            wires.forEach((wire, i) => {
+              console.log(`[Simulator] Wire ${i}: ${wire.sourceComponent}(${wire.sourceName}) → ${wire.targetComponent}(${wire.targetName})`);
+            });
           }
         }
 
