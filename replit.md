@@ -136,6 +136,10 @@ Preferred communication style: Simple, everyday language.
 - **Educational Value**: Students learn real Arduino programming with authentic hardware behavior simulation
 - **Route Integration**: Added `/blink-demo` route for testing working Arduino LED simulation
 - **Technical Achievement**: Solved the "fake timer" problem that plagues most Arduino simulators
+- **External LED Control**: Wire-based detection system finds and controls external LEDs connected to any Arduino pin
+- **Visual Debugging**: Comprehensive execution logs show line-by-line code execution with timestamps and function calls
+- **Dual LED Support**: Both Hero Board built-in LED (pin 13) and external wired LEDs blink simultaneously
+- **Clean LED Rendering**: Removed glow effect positioning issues - LED state controlled by ReactLEDElement value prop
 
 ### BMAH Branding Consolidation (July 29, 2025)
 - **Complete Oracle Interface Update**: Removed all pirate-themed references from Oracle BMAH management interface
