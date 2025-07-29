@@ -210,15 +210,10 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
   // Complete quest mutation
   const completeQuestMutation = useMutation({
     mutationFn: async () => {
-      // Get CSRF token first
-      const tokenResponse = await fetch('/api/csrf-token', { credentials: 'include' });
-      const tokenData = await tokenResponse.json();
-      
       const response = await fetch(`/api/quests/${questId}/complete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': tokenData.token,
         },
         credentials: 'include',
         body: JSON.stringify({ cheatUsed })

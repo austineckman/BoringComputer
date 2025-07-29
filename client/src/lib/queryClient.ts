@@ -1,27 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
 
-// Store CSRF token
-let csrfToken: string | null = null;
-
-// Function to fetch a new CSRF token
-async function fetchCsrfToken(): Promise<string> {
-  try {
-    const response = await fetch('/api/csrf-token', {
-      credentials: 'include',
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch CSRF token');
-    }
-    
-    const data = await response.json();
-    csrfToken = data.token;
-    return csrfToken as string; // Assert that token is a string
-  } catch (error) {
-    console.error('Error fetching CSRF token:', error);
-    throw error;
-  }
-}
+// CSRF token handling removed - unnecessary complexity for educational gaming platform
 
 interface RequestOptions {
   on401: 'returnNull' | 'throw';
@@ -91,58 +70,12 @@ export const apiRequest = async (
     credentials: 'include',
   };
 
-  // For state-changing methods, include CSRF token
-  if (method !== 'GET') {
-    // Get current headers
-    const headers = options.headers as Record<string, string>;
-    
-    // Fetch CSRF token if we don't have one
-    if (!csrfToken) {
-      try {
-        await fetchCsrfToken();
-      } catch (error) {
-        console.error('Failed to fetch CSRF token:', error);
-        // Continue with the request, server will return 403 if CSRF is required
-      }
-    }
-    
-    // Add CSRF token to headers if available
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
-    
-    // If we're sending data, add it to the body
-    if (data) {
-      options.body = JSON.stringify(data);
-    }
+  // Add data to request body if provided
+  if (data) {
+    options.body = JSON.stringify(data);
   }
 
   const response = await fetch(url, options);
-  
-  // If we get a 403 with message about CSRF token, try to refresh token and retry once
-  if (response.status === 403) {
-    try {
-      const errorBody = await response.json();
-      if (
-        errorBody.error && 
-        (errorBody.error.includes('CSRF token') || errorBody.error.includes('csrf'))
-      ) {
-        // Refresh token and retry
-        await fetchCsrfToken();
-        if (csrfToken) {
-          // Update headers with new token
-          const headers = options.headers as Record<string, string>;
-          headers['X-CSRF-Token'] = csrfToken;
-          
-          // Retry the request
-          const retryResponse = await fetch(url, options);
-          return retryResponse;
-        }
-      }
-    } catch (e) {
-      // If we can't parse the response as JSON, just continue with the original response
-    }
-  }
   
   if (!response.ok) {
     let errorMessage: string;
