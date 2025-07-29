@@ -327,33 +327,44 @@ export const SimulatorProvider = ({ children }) => {
           console.log(`[Simulator] Available wires:`, wires.length);
           console.log(`[Simulator] Available components:`, components.map(c => `${c.id}(${c.type})`));
           
-          // Find LEDs connected to this pin through wires
+          // Find LEDs connected to this pin through wires - use wire data directly since components array might be empty
           const connectedLEDs = [];
           
-          // Check each LED component
-          components.forEach(component => {
-            if (component.type === 'led' || component.id.includes('led')) {
-              // Find wires connected to this LED
-              const ledWires = wires.filter(wire => 
-                wire.sourceComponent === component.id || wire.targetComponent === component.id
+          // Extract LED IDs from wire data
+          const ledIdsFromWires = new Set();
+          wires.forEach(wire => {
+            if (wire.sourceComponent && wire.sourceComponent.includes('led')) {
+              ledIdsFromWires.add(wire.sourceComponent);
+            }
+            if (wire.targetComponent && wire.targetComponent.includes('led')) {
+              ledIdsFromWires.add(wire.targetComponent);
+            }
+          });
+          
+          console.log(`[Simulator] LED IDs found in wires:`, Array.from(ledIdsFromWires));
+          
+          // Check each LED found in wires
+          ledIdsFromWires.forEach(ledId => {
+            // Find wires connected to this LED
+            const ledWires = wires.filter(wire => 
+              wire.sourceComponent === ledId || wire.targetComponent === ledId
+            );
+            
+            console.log(`[Simulator] LED ${ledId} has ${ledWires.length} wires:`, ledWires);
+            
+            // Check if any wire connects this LED to the pin we're setting
+            ledWires.forEach(wire => {
+              const isConnectedToPin = (
+                (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString()) ||
+                (wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}`) ||
+                (wire.sourceName === `${pinNumber}` || wire.targetName === `${pinNumber}`)
               );
               
-              console.log(`[Simulator] LED ${component.id} has ${ledWires.length} wires:`, ledWires);
-              
-              // Check if any wire connects this LED to the pin we're setting
-              ledWires.forEach(wire => {
-                const isConnectedToPin = (
-                  (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString()) ||
-                  (wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}`) ||
-                  (wire.sourceName === `${pinNumber}` || wire.targetName === `${pinNumber}`)
-                );
-                
-                if (isConnectedToPin) {
-                  connectedLEDs.push(component);
-                  console.log(`[Simulator] Found LED ${component.id} connected to pin ${pinNumber} via wire`);
-                }
-              });
-            }
+              if (isConnectedToPin) {
+                connectedLEDs.push({ id: ledId, type: 'led' });
+                console.log(`[Simulator] Found LED ${ledId} connected to pin ${pinNumber} via wire`);
+              }
+            });
           });
           
           // Update all connected LEDs
