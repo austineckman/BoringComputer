@@ -46,11 +46,17 @@ export class ArduinoCodeParser {
 
       console.log(`ArduinoCodeParser: Line ${lineNumber}: "${trimmedLine}" (Section: ${currentSection}, Depth: ${braceDepth})`);
 
+      // Track braces FIRST
+      const openBraces = (trimmedLine.match(/\{/g) || []).length;
+      const closeBraces = (trimmedLine.match(/\}/g) || []).length;
+      const braceDelta = openBraces - closeBraces;
+
       // Detect setup() function
       if (trimmedLine.includes('void setup()') || trimmedLine.includes('void setup(')) {
         console.log('ArduinoCodeParser: Found void setup() function');
         currentSection = 'setup';
-        braceDepth = 0;
+        braceDepth = braceDelta; // Start with the braces on this line
+        console.log(`ArduinoCodeParser: Setup function found, initial braceDepth: ${braceDepth}`);
         return;
       }
 
@@ -58,14 +64,12 @@ export class ArduinoCodeParser {
       if (trimmedLine.includes('void loop()') || trimmedLine.includes('void loop(')) {
         console.log('ArduinoCodeParser: Found void loop() function');
         currentSection = 'loop';
-        braceDepth = 0;
+        braceDepth = braceDelta; // Start with the braces on this line
+        console.log(`ArduinoCodeParser: Loop function found, initial braceDepth: ${braceDepth}`);
         return;
       }
 
-      // Track braces
-      const openBraces = (trimmedLine.match(/\{/g) || []).length;
-      const closeBraces = (trimmedLine.match(/\}/g) || []).length;
-      const braceDelta = openBraces - closeBraces;
+      // Update brace depth for regular lines
       braceDepth += braceDelta;
       
       if (braceDelta !== 0) {
