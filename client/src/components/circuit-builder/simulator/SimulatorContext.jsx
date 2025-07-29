@@ -270,16 +270,47 @@ export const SimulatorProvider = ({ children }) => {
         loopCount: 0
       };
       
+      // Define the instruction execution function
+      const executeInstruction = (instruction) => {
+        console.log('executeInstruction called with:', instruction);
+        const timestamp = new Date().toLocaleTimeString();
+        
+        if (instruction.instruction.includes('pinMode')) {
+          addLog(`[${timestamp}] → Pin ${instruction.pin} configured as ${instruction.instruction.includes('OUTPUT') ? 'OUTPUT' : 'INPUT'}`);
+        }
+
+        if (instruction.instruction.includes('digitalWrite')) {
+          const voltage = instruction.value === 'HIGH' ? '5V' : '0V';
+          addLog(`[${timestamp}] → Pin ${instruction.pin} set to ${instruction.value} (${voltage})`);
+        }
+
+        if (instruction.instruction.includes('delay')) {
+          addLog(`[${timestamp}] → Waiting ${instruction.delayMs}ms...`);
+          return instruction.delayMs;
+        }
+
+        if (instruction.instruction.includes('Serial.print')) {
+          addLog(`[${timestamp}] → Serial: ${instruction.instruction}`);
+        }
+
+        return 0;
+      };
+
       setIsRunning(true);
       addLog('🔧 Starting Arduino execution...');
       addLog('⚡ Entering setup() function');
       
       // Start the execution loop
       const executeNextInstruction = () => {
+        console.log('executeNextInstruction called, isRunning:', isRunning);
         const currentIsRunning = isRunning;
-        if (!currentIsRunning) return;
+        if (!currentIsRunning) {
+          console.log('executeNextInstruction: stopped because isRunning is false');
+          return;
+        }
         
         const state = executionStateRef.current;
+        console.log('executeNextInstruction: current state:', state);
         
         if (state.phase === 'setup') {
           if (state.setupIndex < state.setupInstructions.length) {
@@ -324,7 +355,8 @@ export const SimulatorProvider = ({ children }) => {
         }
       };
       
-      executeNextInstruction();
+      console.log('About to call executeNextInstruction for the first time, isRunning:', isRunning);
+      setTimeout(() => executeNextInstruction(), 100); // Small delay to ensure state is set
       
     } catch (error) {
       addLog(`❌ Code parsing error: ${error.message}`);
