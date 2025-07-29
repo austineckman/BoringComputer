@@ -241,11 +241,23 @@ export const SimulatorProvider = ({ children }) => {
     
     try {
       // Parse the actual code from the editor
-      const { setup, loop } = codeParserRef.current.parseCode(currentCode);
+      console.log('SimulatorContext: About to parse code with ArduinoCodeParser');
+      const parseResult = codeParserRef.current.parseCode(currentCode);
+      console.log('SimulatorContext: Parse result:', parseResult);
+      
       const setupInstructions = codeParserRef.current.getSetupInstructions();
       const loopInstructions = codeParserRef.current.getLoopInstructions();
       
-      addLog(`📋 Found ${setup.length} lines in setup(), ${loop.length} lines in loop()`);
+      console.log('SimulatorContext: Setup instructions:', setupInstructions);
+      console.log('SimulatorContext: Loop instructions:', loopInstructions);
+      
+      if (!parseResult || (!setupInstructions.length && !loopInstructions.length)) {
+        addLog('❌ Error: ArduinoCodeParser failed to extract any instructions');
+        console.log('SimulatorContext: Parser returned empty instructions');
+        return;
+      }
+      
+      addLog(`📋 Found ${parseResult.setup?.length || 0} lines in setup(), ${parseResult.loop?.length || 0} lines in loop()`);
       addLog(`✅ Code parsed: ${setupInstructions.length} setup instructions, ${loopInstructions.length} loop instructions`);
       
       // Initialize execution state
