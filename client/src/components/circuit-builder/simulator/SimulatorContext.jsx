@@ -304,46 +304,6 @@ export const SimulatorProvider = ({ children }) => {
     } catch (error) {
       addLog(`❌ Code parsing error: ${error.message}`);
     }
-    
-    // Register all components with the simulator
-    console.log('SimulatorContext: Registering all components for pin state updates');
-    components.forEach(component => {
-      const componentType = component.type;
-      console.log(`SimulatorContext: Registering ${component.id} (${componentType})`);
-      
-      // Special handling for RGB LED components
-      if (componentType === 'rgb-led' || component.id.includes('rgb-led')) {
-        console.log(`SimulatorContext: Found RGB LED component ${component.id}`);
-        
-        // Initialize RGB LED with all pins off
-        updateComponentState(component.id, {
-          redValue: 0,
-          greenValue: 0, 
-          blueValue: 0,
-          pins: {
-            red: 0,
-            green: 0,
-            blue: 0
-          }
-        });
-      }
-      
-      // Handle HERO board components
-      if (componentType === 'heroboard' || component.id.includes('heroboard')) {
-        // Initialize all digital pins to LOW
-        const pins = {};
-        for (let i = 0; i <= 13; i++) {
-          pins[i] = false; // All pins start LOW
-        }
-        
-        updateComponentState(component.id, { 
-          pins: pins 
-        });
-      }
-    });
-    
-    // No more hard-coded blink timers - all pin changes come from the emulator
-    addLog('Proper AVR8 emulation started - all component states will be driven by the actual emulated code');
   };
   
   // Function to stop the simulation

@@ -557,51 +557,22 @@ void loop() {
       showNotification('Simulation stopped successfully', 'info');
     } else {
       // Show a notification that we're starting compilation
-      showNotification('Compiling Arduino code...', 'info');
-      addSimulationLog('Starting compilation process...');
+      showNotification('Starting Arduino simulation...', 'info');
       
       // Get the current code from the editor
       const currentCode = getCode();
       
-      // Validate the Arduino code using the imported validateArduinoCode function
-      addSimulationLog('Verifying C++ syntax and Arduino libraries...');
-      // const errors = validateArduinoCode(currentCode);
-      const errors: string[] = []; // Temporarily disabled validation
+      // Update the simulator context with current code
+      updateSimulatorCode(currentCode);
       
-      if (errors && errors.length > 0) {
-        // Show compilation errors in the log
-        addSimulationLog('⚠️ Compilation failed with errors:');
-        errors.forEach(error => {
-          addSimulationLog(`Error on line ${error.line}: ${error.message}`);
-        });
-        
-        // Show an error notification with specific first error
-        const firstError = errors[0];
-        if (firstError) {
-          showNotification(`C++ error on line ${firstError.line}: ${firstError.message}. Check logs for details.`, 'error');
-        } else {
-          showNotification('Compilation failed! Check the logs for details.', 'error');
-        }
-        return;
+      setIsSimulationRunning(true);
+      if (typeof window !== 'undefined') {
+        window.isSimulationRunning = true; // Set global flag for components
       }
       
-      // Code is valid, show success notification
-      addSimulationLog('✅ C++ Code verification successful!');
-      showNotification('Code compilation successful! Starting simulation...', 'success');
-      
-      // Add a short delay for the user to see the compilation success message
-      setTimeout(() => {
-        // Now start the simulation with current code
-        addSimulationLog('Initializing microcontroller emulation...');
-        setIsSimulationRunning(true);
-        if (typeof window !== 'undefined') {
-          window.isSimulationRunning = true; // Set global flag for components
-        }
-        
-        startSimulation();
-        addSimulationLog('✅ Simulation started successfully');
-        addSimulationLog('Hardware emulation is now running on the virtual circuit');
-      }, 500); // 500ms delay for better user feedback
+      // Start the simulation - this will now parse the real code
+      startSimulation();
+      showNotification('Arduino simulation started!', 'success');
     }
   };
   
