@@ -1,107 +1,85 @@
 import React, { useState } from 'react';
-import { X, ArrowLeft, BookOpen, Award, Loader2, AlertCircle, Star, CheckCircle, Clock, Scroll, Package } from 'lucide-react';
+import { X, ArrowLeft, BookOpen, Award, Loader2, AlertCircle, Search, Filter, Grid, List } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useQuests } from '@/hooks/useQuests';
+import { useComponentKits } from '@/hooks/useComponentKits';
 import { Quest } from '@shared/schema';
+import { motion, AnimatePresence } from 'framer-motion';
 import ActiveQuestScreen from './ActiveQuestScreen';
 
-// Custom Pixel Card Components inspired by React Bits
-const PixelCard: React.FC<{ 
-  children: React.ReactNode; 
+// Modern card component with smooth animations
+const ModernCard: React.FC<{
+  children: React.ReactNode;
   className?: string;
   onClick?: () => void;
-  variant?: 'default' | 'completed' | 'locked' | 'selected';
-}> = ({ children, className = '', onClick, variant = 'default' }) => {
-  const getVariantClasses = () => {
-    switch (variant) {
-      case 'completed':
-        return 'bg-green-900/30 border-green-400/60 shadow-green-400/20';
-      case 'locked':
-        return 'bg-gray-900/50 border-gray-600/40 opacity-75';
-      case 'selected':
-        return 'bg-blue-900/40 border-blue-400/80 shadow-blue-400/30';
-      default:
-        return 'bg-amber-900/20 border-amber-600/50 hover:border-amber-400/80';
-    }
-  };
-
+  selected?: boolean;
+  completed?: boolean;
+}> = ({ children, className = '', onClick, selected = false, completed = false }) => {
   return (
-    <div 
+    <motion.div
+      layout
+      whileHover={{ scale: 1.02, y: -4 }}
+      whileTap={{ scale: 0.98 }}
       className={`
-        relative border-2 rounded-none transition-all duration-200 cursor-pointer
-        shadow-lg hover:shadow-xl transform hover:scale-[1.02]
-        ${getVariantClasses()}
+        relative bg-white rounded-xl shadow-lg border-2 transition-all duration-300 cursor-pointer
+        ${selected ? 'border-blue-500 shadow-blue-500/20 shadow-xl' : 'border-gray-200 hover:border-gray-300'}
+        ${completed ? 'bg-green-50 border-green-300' : ''}
         ${className}
       `}
       onClick={onClick}
-      style={{
-        imageRendering: 'pixelated',
-        boxShadow: variant === 'completed' 
-          ? '0 0 20px rgba(34, 197, 94, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
-          : variant === 'selected'
-          ? '0 0 20px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
-          : '0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
-      }}
     >
       {children}
-    </div>
+      {completed && (
+        <div className="absolute top-3 right-3 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+          <div className="w-3 h-3 text-white text-xs">✓</div>
+        </div>
+      )}
+    </motion.div>
   );
 };
 
-const PixelButton: React.FC<{
+// Modern button component
+const ModernButton: React.FC<{
   children: React.ReactNode;
   onClick?: () => void;
-  variant?: 'primary' | 'secondary' | 'success' | 'danger';
+  variant?: 'primary' | 'secondary' | 'success' | 'outline';
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
   disabled?: boolean;
-}> = ({ children, onClick, variant = 'primary', className = '', disabled = false }) => {
-  const getVariantClasses = () => {
-    if (disabled) return 'bg-gray-700 border-gray-600 text-gray-400';
-    
-    switch (variant) {
-      case 'success':
-        return 'bg-green-700 hover:bg-green-600 border-green-500 text-white shadow-green-500/30';
-      case 'danger':
-        return 'bg-red-700 hover:bg-red-600 border-red-500 text-white shadow-red-500/30';
-      case 'secondary':
-        return 'bg-gray-700 hover:bg-gray-600 border-gray-500 text-white shadow-gray-500/30';
-      default:
-        return 'bg-blue-700 hover:bg-blue-600 border-blue-500 text-white shadow-blue-500/30';
-    }
+}> = ({ children, onClick, variant = 'primary', size = 'md', className = '', disabled = false }) => {
+  const baseClasses = 'font-semibold rounded-lg transition-all duration-200 flex items-center justify-center';
+  
+  const variantClasses = {
+    primary: 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl',
+    secondary: 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300',
+    success: 'bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl',
+    outline: 'border-2 border-blue-600 text-blue-600 hover:bg-blue-50'
+  };
+  
+  const sizeClasses = {
+    sm: 'px-3 py-1.5 text-sm',
+    md: 'px-4 py-2 text-base',
+    lg: 'px-6 py-3 text-lg'
   };
 
   return (
-    <button
+    <motion.button
+      whileHover={{ scale: disabled ? 1 : 1.05 }}
+      whileTap={{ scale: disabled ? 1 : 0.95 }}
       className={`
-        px-4 py-2 border-2 rounded-none font-bold text-sm transition-all duration-200
-        ${getVariantClasses()}
-        ${disabled ? 'cursor-not-allowed' : 'hover:scale-105 active:scale-95'}
+        ${baseClasses}
+        ${variantClasses[variant]}
+        ${sizeClasses[size]}
+        ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         ${className}
       `}
       onClick={onClick}
       disabled={disabled}
-      style={{
-        imageRendering: 'pixelated',
-        textShadow: '1px 1px 0 rgba(0, 0, 0, 0.5)'
-      }}
     >
       {children}
-    </button>
+    </motion.button>
   );
 };
-
-// For sounds
-declare global {
-  interface Window {
-    sounds?: {
-      click: () => void;
-      hover: () => void;
-      success: () => void;
-      error: () => void;
-      reward: () => void;
-    };
-  }
-}
 
 interface FullscreenQuestsAppProps {
   onClose: () => void;
@@ -109,276 +87,437 @@ interface FullscreenQuestsAppProps {
 
 const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) => {
   const [, navigate] = useLocation();
+  const { kits, loading: loadingKits } = useComponentKits();
   const { allQuests, loading: loadingQuests, error: questsError } = useQuests();
   
+  const [selectedKit, setSelectedKit] = useState<string | null>(null);
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
   const [activeQuestId, setActiveQuestId] = useState<string | null>(null);
-  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'completed'>('all');
+
+  // Get quests for selected kit
+  const getQuestsForKit = (kitId: string) => {
+    if (!allQuests || allQuests.length === 0) return [];
+    
+    return allQuests.filter((quest: Quest) => {
+      // First check if the quest directly belongs to this kit
+      if (quest.kitId === kitId) {
+        return true;
+      }
+      
+      // Check if any component from this kit is required for the quest
+      const components = (quest as any).componentRequirements || [];
+      if (components.length > 0) {
+        for (const comp of components) {
+          if (comp && comp.kitId === kitId) {
+            return true;
+          }
+        }
+      }
+      
+      return false;
+    });
+  };
+
+  // Filter quests based on search and status
+  const filteredQuests = selectedKit 
+    ? getQuestsForKit(selectedKit).filter((quest: Quest) => {
+        const matchesSearch = quest.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             quest.description.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = filterStatus === 'all' || 
+                             (filterStatus === 'completed' && quest.status === 'completed') ||
+                             (filterStatus === 'available' && quest.status !== 'completed');
+        return matchesSearch && matchesStatus;
+      })
+    : [];
+
   return (
-    <div className="fixed inset-0 z-50 flex bg-black" style={{ imageRendering: 'pixelated' }}>
-      {/* Left Sidebar - Quest List */}
-      <div className="w-1/3 border-r-4 border-amber-600/60 bg-gradient-to-b from-amber-900/40 to-amber-950/60 flex flex-col">
-        {/* Header */}
-        <div className="bg-amber-800/80 border-b-2 border-amber-600/60 p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Scroll className="h-6 w-6 text-amber-200" />
-              <h1 className="text-xl font-bold text-amber-100" style={{ textShadow: '2px 2px 0 rgba(0,0,0,0.8)' }}>
-                Quest Log
-              </h1>
-            </div>
-            <button 
-              className="text-amber-200 hover:text-white"
-              onClick={() => {
-                window.sounds?.click();
-                onClose();
-              }}
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Quest Categories */}
-        <div className="flex-1 overflow-hidden flex flex-col">
-          {/* Category Tabs */}
-          <div className="bg-amber-900/60 border-b-2 border-amber-700/40 p-2">
-            <div className="flex space-x-1">
-              <PixelButton variant="primary" className="text-xs px-3 py-1">
-                All Quests
-              </PixelButton>
-              <PixelButton variant="secondary" className="text-xs px-3 py-1">
-                Recommended
-              </PixelButton>
-              <PixelButton variant="secondary" className="text-xs px-3 py-1">
-                Completed
-              </PixelButton>
-            </div>
-          </div>
-
-          {/* Quest List */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            {loadingQuests ? (
-              <div className="flex flex-col items-center justify-center h-full">
-                <Loader2 className="h-8 w-8 animate-spin text-amber-400 mb-2" />
-                <p className="text-amber-300 text-sm">Loading quests...</p>
-              </div>
-            ) : allQuests && allQuests.length > 0 ? (
-              allQuests.map((quest: Quest) => (
-                <PixelCard
-                  key={quest.id}
-                  variant={quest.status === 'completed' ? 'completed' : selectedQuest?.id === quest.id ? 'selected' : 'default'}
-                  className="p-3"
-                  onClick={() => {
-                    window.sounds?.click();
-                    setSelectedQuest(quest);
-                  }}
-                >
-                  <div className="flex items-center space-x-3">
-                    {/* Quest Icon/Avatar */}
-                    <div className="w-12 h-12 bg-amber-800/60 border border-amber-600/60 flex items-center justify-center rounded-none">
-                      {quest.status === 'completed' ? (
-                        <CheckCircle className="h-6 w-6 text-green-400" />
-                      ) : (
-                        <BookOpen className="h-6 w-6 text-amber-300" />
-                      )}
-                    </div>
-                    
-                    {/* Quest Info */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className={`font-bold text-sm truncate ${
-                        quest.status === 'completed' ? 'text-green-300' : 'text-amber-100'
-                      }`} style={{ textShadow: '1px 1px 0 rgba(0,0,0,0.8)' }}>
-                        {quest.title}
-                      </h3>
-                      <p className="text-amber-300/80 text-xs truncate">
-                        {quest.adventureLine}
-                      </p>
-                      
-                      {/* Progress Indicator */}
-                      {quest.status === 'completed' ? (
-                        <div className="flex items-center space-x-1 mt-1">
-                          <div className="w-full h-1 bg-green-600 rounded-full"></div>
-                          <span className="text-green-400 text-xs font-bold">✓</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center space-x-1 mt-1">
-                          <div className="w-full h-1 bg-amber-900/60 rounded-full">
-                            <div className="w-0 h-1 bg-amber-400 rounded-full"></div>
-                          </div>
-                          <Clock className="h-3 w-3 text-amber-400" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </PixelCard>
-              ))
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full">
-                <BookOpen className="h-12 w-12 text-amber-600/60 mb-3" />
-                <p className="text-amber-300 text-sm text-center">No quests available</p>
+    <div className="fixed inset-0 z-50 bg-gray-50 flex flex-col">
+      {/* Modern Header */}
+      <div className="bg-white border-b border-gray-200 shadow-sm">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center space-x-4">
+            <BookOpen className="h-8 w-8 text-blue-600" />
+            <h1 className="text-2xl font-bold text-gray-900">Quest Management</h1>
+            {selectedKit && (
+              <div className="flex items-center space-x-2">
+                <ArrowLeft className="h-4 w-4 text-gray-400" />
+                <span className="text-gray-600">
+                  {kits?.find(k => k.id === selectedKit)?.name}
+                </span>
               </div>
             )}
           </div>
+          
+          <div className="flex items-center space-x-4">
+            {selectedKit && (
+              <>
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search quests..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                {/* Filter */}
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value as any)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">All Quests</option>
+                  <option value="available">Available</option>
+                  <option value="completed">Completed</option>
+                </select>
+                
+                {/* View Mode Toggle */}
+                <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                  >
+                    <Grid className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                  >
+                    <List className="h-4 w-4" />
+                  </button>
+                </div>
+                
+                {/* Back to Kits */}
+                <ModernButton
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedKit(null);
+                    setSelectedQuest(null);
+                    setSearchTerm('');
+                    setFilterStatus('all');
+                  }}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Kits
+                </ModernButton>
+              </>
+            )}
+            
+            {/* Close Button */}
+            <ModernButton variant="secondary" onClick={onClose}>
+              <X className="h-5 w-5" />
+            </ModernButton>
+          </div>
         </div>
       </div>
 
-      {/* Right Side - Quest Detail */}
-      <div className="flex-1 bg-gradient-to-b from-amber-50 to-amber-100 flex flex-col">
-        {selectedQuest ? (
-          <>
-            {/* Quest Header */}
-            <div className="bg-amber-800/90 border-b-4 border-amber-600/80 p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h1 className="text-2xl font-bold text-amber-100 mb-2" style={{ textShadow: '2px 2px 0 rgba(0,0,0,0.8)' }}>
-                    {selectedQuest.title}
-                  </h1>
-                  <div className="flex items-center space-x-4 text-amber-200">
-                    <div className="flex items-center space-x-1">
-                      <Award className="h-4 w-4" />
-                      <span className="text-sm font-medium">{selectedQuest.xpReward} XP</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Star className="h-4 w-4 fill-current" />
-                      <span className="text-sm">Level {selectedQuest.difficulty}</span>
-                    </div>
-                    {selectedQuest.status === 'completed' && (
-                      <div className="bg-green-600 px-2 py-1 rounded-none text-white text-xs font-bold">
-                        COMPLETED
-                      </div>
-                    )}
-                  </div>
+      {/* Main Content */}
+      <div className="flex-1 overflow-hidden">
+        <AnimatePresence mode="wait">
+          {!selectedKit ? (
+            /* Kit Selection View */
+            <motion.div
+              key="kit-selection"
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -50 }}
+              className="h-full overflow-auto p-6"
+            >
+              <div className="max-w-6xl mx-auto">
+                <div className="mb-8">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2">Choose a Component Kit</h2>
+                  <p className="text-gray-600">Select a component kit to view and manage its quests</p>
                 </div>
-                
-                {/* Quest Portrait/Image */}
-                {selectedQuest.heroImage && (
-                  <div className="w-24 h-24 border-2 border-amber-600/60 bg-amber-900/40">
-                    <img 
-                      src={selectedQuest.heroImage} 
-                      alt={selectedQuest.title}
-                      className="w-full h-full object-cover"
-                      style={{ imageRendering: 'pixelated' }}
-                    />
+
+                {loadingKits ? (
+                  <div className="flex items-center justify-center h-64">
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                  </div>
+                ) : kits && kits.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {kits.map((kit) => {
+                      const kitQuests = getQuestsForKit(kit.id);
+                      const totalQuests = kitQuests.length;
+                      const completedQuests = kitQuests.filter((q: Quest) => q.status === 'completed').length;
+                      
+                      return (
+                        <ModernCard
+                          key={kit.id}
+                          onClick={() => setSelectedKit(kit.id)}
+                          className="p-6 h-64"
+                        >
+                          <div className="flex flex-col h-full">
+                            {kit.image && (
+                              <div className="flex-shrink-0 mb-4">
+                                <img 
+                                  src={kit.image} 
+                                  alt={kit.name}
+                                  className="w-full h-24 object-contain rounded-lg"
+                                />
+                              </div>
+                            )}
+                            
+                            <div className="flex-1">
+                              <h3 className="text-xl font-bold text-gray-900 mb-2">{kit.name}</h3>
+                              <p className="text-gray-600 text-sm mb-4 line-clamp-3">{kit.description}</p>
+                            </div>
+                            
+                            <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+                              <div className="flex items-center space-x-4 text-sm">
+                                <span className="text-blue-600 font-medium">
+                                  {totalQuests} Quest{totalQuests !== 1 ? 's' : ''}
+                                </span>
+                                <span className="text-green-600 font-medium">
+                                  {completedQuests}/{totalQuests} Complete
+                                </span>
+                              </div>
+                              
+                              <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-green-500 transition-all duration-300"
+                                  style={{ width: totalQuests > 0 ? `${(completedQuests / totalQuests) * 100}%` : '0%' }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </ModernCard>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Component Kits Found</h3>
+                    <p className="text-gray-600">Component kits are required to organize quests.</p>
                   </div>
                 )}
               </div>
-            </div>
-
-            {/* Quest Content */}
-            <div className="flex-1 overflow-auto p-6">
-              {/* Quest Description */}
-              <PixelCard className="p-6 mb-6 bg-amber-50/80">
-                <h2 className="text-lg font-bold text-amber-900 mb-3" style={{ textShadow: '1px 1px 0 rgba(255,255,255,0.8)' }}>
-                  Your Task
-                </h2>
-                <p className="text-amber-800 leading-relaxed">
-                  {selectedQuest.description}
-                </p>
-                {selectedQuest.missionBrief && (
-                  <div className="mt-4 p-4 bg-amber-100 border-l-4 border-amber-600">
-                    <p className="text-amber-900 text-sm leading-relaxed">
-                      {selectedQuest.missionBrief}
+            </motion.div>
+          ) : (
+            /* Quest List View */
+            <motion.div
+              key="quest-list"
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 50 }}
+              className="h-full overflow-auto p-6"
+            >
+              <div className="max-w-6xl mx-auto">
+                {loadingQuests ? (
+                  <div className="flex items-center justify-center h-64">
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                  </div>
+                ) : filteredQuests.length > 0 ? (
+                  viewMode === 'grid' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredQuests.map((quest: Quest) => (
+                        <ModernCard
+                          key={quest.id}
+                          selected={selectedQuest?.id === quest.id}
+                          completed={quest.status === 'completed'}
+                          onClick={() => setSelectedQuest(quest)}
+                          className="p-6 h-48"
+                        >
+                          <div className="flex flex-col h-full">
+                            <div className="flex-1">
+                              <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
+                                {quest.title}
+                              </h3>
+                              <p className="text-gray-600 text-sm mb-3 line-clamp-3">
+                                {quest.description}
+                              </p>
+                              <div className="text-xs text-gray-500">
+                                {quest.adventureLine}
+                              </div>
+                            </div>
+                            
+                            <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+                              <div className="flex items-center space-x-3 text-sm">
+                                <span className="text-blue-600 font-medium">
+                                  {quest.xpReward} XP
+                                </span>
+                                <span className="text-amber-600">
+                                  Level {quest.difficulty}
+                                </span>
+                              </div>
+                              
+                              <ModernButton
+                                size="sm"
+                                variant={quest.status === 'completed' ? 'secondary' : 'primary'}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (quest.status !== 'completed') {
+                                    setActiveQuestId(quest.id.toString());
+                                  }
+                                }}
+                                disabled={quest.status === 'completed'}
+                              >
+                                {quest.status === 'completed' ? 'Completed' : 'Start'}
+                              </ModernButton>
+                            </div>
+                          </div>
+                        </ModernCard>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {filteredQuests.map((quest: Quest) => (
+                        <ModernCard
+                          key={quest.id}
+                          selected={selectedQuest?.id === quest.id}
+                          completed={quest.status === 'completed'}
+                          onClick={() => setSelectedQuest(quest)}
+                          className="p-6"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <h3 className="text-lg font-bold text-gray-900 mb-1">
+                                {quest.title}
+                              </h3>
+                              <p className="text-gray-600 text-sm mb-2">
+                                {quest.description}
+                              </p>
+                              <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                <span>{quest.adventureLine}</span>
+                                <span>{quest.xpReward} XP</span>
+                                <span>Level {quest.difficulty}</span>
+                              </div>
+                            </div>
+                            
+                            <ModernButton
+                              variant={quest.status === 'completed' ? 'secondary' : 'primary'}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (quest.status !== 'completed') {
+                                  setActiveQuestId(quest.id.toString());
+                                }
+                              }}
+                              disabled={quest.status === 'completed'}
+                            >
+                              {quest.status === 'completed' ? 'Completed' : 'Start Quest'}
+                            </ModernButton>
+                          </div>
+                        </ModernCard>
+                      ))}
+                    </div>
+                  )
+                ) : (
+                  <div className="text-center py-12">
+                    <Search className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Quests Found</h3>
+                    <p className="text-gray-600">
+                      {searchTerm ? 'Try adjusting your search terms.' : 'No quests available for this kit.'}
                     </p>
                   </div>
                 )}
-              </PixelCard>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
-              {/* Level Indicator */}
-              <PixelCard className="p-4 mb-6 bg-blue-50/80">
-                <div className="text-center">
-                  <div className="inline-block bg-blue-600 text-white px-4 py-2 rounded-none font-bold">
-                    Level {selectedQuest.difficulty}/10
-                  </div>
-                </div>
-              </PixelCard>
-
-              {/* Rewards Section */}
-              <PixelCard className="p-6 bg-amber-100/80">
-                <h2 className="text-lg font-bold text-amber-900 mb-4" style={{ textShadow: '1px 1px 0 rgba(255,255,255,0.8)' }}>
-                  Your Reward
-                </h2>
-                
-                {/* Reward Scroll */}
-                <div className="bg-amber-50 border-4 border-amber-600/40 p-4 rounded-none relative">
-                  <div className="absolute -top-2 -left-2 w-6 h-6 bg-amber-700 border border-amber-600 rounded-full"></div>
-                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-amber-700 border border-amber-600 rounded-full"></div>
-                  
-                  <div className="flex items-center justify-center space-x-8">
-                    {/* XP Reward */}
-                    <div className="text-center">
-                      <div className="w-16 h-16 bg-amber-200 border-2 border-amber-600 flex items-center justify-center rounded-none mb-2">
-                        <Award className="h-8 w-8 text-amber-700" />
-                      </div>
-                      <span className="text-amber-900 font-bold">{selectedQuest.xpReward}</span>
-                    </div>
-                    
-                    {/* Gold Reward */}
-                    {selectedQuest.goldReward && selectedQuest.goldReward > 0 && (
-                      <div className="text-center">
-                        <div className="w-16 h-16 bg-yellow-200 border-2 border-yellow-600 flex items-center justify-center rounded-none mb-2">
-                          <div className="w-8 h-8 bg-yellow-500 rounded-full"></div>
-                        </div>
-                        <span className="text-amber-900 font-bold">{selectedQuest.goldReward}</span>
-                      </div>
-                    )}
-                    
-                    {/* Item Rewards */}
-                    {selectedQuest.itemRewards && selectedQuest.itemRewards.length > 0 && (
-                      selectedQuest.itemRewards.slice(0, 3).map((reward, index) => (
-                        <div key={index} className="text-center">
-                          <div className="w-16 h-16 bg-gray-200 border-2 border-gray-600 flex items-center justify-center rounded-none mb-2">
-                            <Package className="h-8 w-8 text-gray-700" />
-                          </div>
-                          <span className="text-amber-900 font-bold text-xs">{reward.quantity}</span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </PixelCard>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="bg-amber-800/90 border-t-4 border-amber-600/80 p-4">
-              <div className="flex justify-center space-x-4">
-                {selectedQuest.status === 'completed' ? (
-                  <PixelButton variant="secondary" disabled className="px-8 py-3">
-                    Quest Completed
-                  </PixelButton>
-                ) : (
-                  <PixelButton 
-                    variant="success" 
-                    className="px-8 py-3 text-lg font-bold"
-                    onClick={() => {
-                      window.sounds?.click();
-                      setActiveQuestId(selectedQuest.id.toString());
-                    }}
+      {/* Quest Detail Sidebar */}
+      <AnimatePresence>
+        {selectedQuest && (
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            className="fixed right-0 top-0 bottom-0 w-96 bg-white shadow-2xl border-l border-gray-200 z-60"
+          >
+            <div className="flex flex-col h-full">
+              {/* Sidebar Header */}
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-start justify-between mb-4">
+                  <h2 className="text-xl font-bold text-gray-900 pr-4">
+                    {selectedQuest.title}
+                  </h2>
+                  <button
+                    onClick={() => setSelectedQuest(null)}
+                    className="text-gray-400 hover:text-gray-600"
                   >
-                    START QUEST
-                  </PixelButton>
-                )}
-                <PixelButton variant="secondary" className="px-6 py-3">
-                  Share Quest
-                </PixelButton>
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                
+                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                  <span className="flex items-center">
+                    <Award className="h-4 w-4 mr-1" />
+                    {selectedQuest.xpReward} XP
+                  </span>
+                  <span>Level {selectedQuest.difficulty}</span>
+                  {selectedQuest.status === 'completed' && (
+                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                      Completed
+                    </span>
+                  )}
+                </div>
+              </div>
+              
+              {/* Sidebar Content */}
+              <div className="flex-1 overflow-auto p-6">
+                <div className="space-y-6">
+                  {selectedQuest.heroImage && (
+                    <img 
+                      src={selectedQuest.heroImage}
+                      alt={selectedQuest.title}
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                  )}
+                  
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
+                    <p className="text-gray-600 text-sm leading-relaxed">
+                      {selectedQuest.description}
+                    </p>
+                  </div>
+                  
+                  {selectedQuest.missionBrief && (
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-2">Mission Brief</h3>
+                      <p className="text-gray-600 text-sm leading-relaxed">
+                        {selectedQuest.missionBrief}
+                      </p>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Adventure Line</h3>
+                    <p className="text-gray-600 text-sm">{selectedQuest.adventureLine}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Sidebar Actions */}
+              <div className="p-6 border-t border-gray-200">
+                <ModernButton
+                  variant={selectedQuest.status === 'completed' ? 'secondary' : 'success'}
+                  size="lg"
+                  className="w-full"
+                  onClick={() => {
+                    if (selectedQuest.status !== 'completed') {
+                      setActiveQuestId(selectedQuest.id.toString());
+                    }
+                  }}
+                  disabled={selectedQuest.status === 'completed'}
+                >
+                  {selectedQuest.status === 'completed' ? 'Quest Completed' : 'Start Quest'}
+                </ModernButton>
               </div>
             </div>
-          </>
-        ) : (
-          /* No Quest Selected */
-          <div className="flex-1 flex items-center justify-center bg-amber-50">
-            <div className="text-center">
-              <BookOpen className="h-24 w-24 text-amber-400/60 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-amber-700 mb-2">Select a Quest</h2>
-              <p className="text-amber-600">Choose a quest from the list to view details</p>
-            </div>
-          </div>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
 
       {/* Active Quest Screen Overlay */}
       {activeQuestId && (
-        <div className="absolute inset-0 z-50">
+        <div className="absolute inset-0 z-70">
           <ActiveQuestScreen 
             questId={activeQuestId}
             onClose={() => setActiveQuestId(null)}
@@ -391,22 +530,22 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
       )}
 
       {/* Loading Screen */}
-      {loadingQuests && (
-        <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-40">
+      {(loadingQuests || loadingKits) && (
+        <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-50">
           <div className="text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-amber-400 mx-auto mb-4" />
-            <p className="text-amber-300 text-lg">Loading quest data...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+            <p className="text-gray-600">Loading quest data...</p>
           </div>
         </div>
       )}
 
       {/* Error Screen */}
       {questsError && (
-        <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-40">
+        <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-50">
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <p className="text-red-400 text-lg">Failed to load quests</p>
-            <p className="text-gray-400 text-sm mt-2">Please try refreshing the page</p>
+            <p className="text-red-600 text-lg">Failed to load quests</p>
+            <p className="text-gray-500 text-sm mt-2">Please try refreshing the page</p>
           </div>
         </div>
       )}
