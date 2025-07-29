@@ -20,6 +20,7 @@ export class ArduinoCodeParser {
   private setupLines: CodeLine[] = [];
   private loopLines: CodeLine[] = [];
   private currentCode: string = '';
+  private variables: Map<string, number> = new Map(); // Store variable declarations
 
   parseCode(code: string): { setup: CodeLine[], loop: CodeLine[] } {
     console.log('ArduinoCodeParser: Starting to parse code');
@@ -28,6 +29,10 @@ export class ArduinoCodeParser {
     this.currentCode = code;
     this.setupLines = [];
     this.loopLines = [];
+    this.variables.clear(); // Reset variables
+
+    // First pass: extract variable declarations
+    this.extractVariables(code);
 
     const lines = code.split('\n');
     let currentSection: 'none' | 'setup' | 'loop' = 'none';
@@ -107,6 +112,39 @@ export class ArduinoCodeParser {
     return { setup: this.setupLines, loop: this.loopLines };
   }
 
+  // Extract variable declarations from the entire code
+  private extractVariables(code: string): void {
+    console.log('ArduinoCodeParser: Extracting variables');
+    
+    // Match variable declarations like: int redPin = 9;
+    const variableRegex = /(?:int|const\s+int|#define)\s+(\w+)\s*=\s*(\d+)/g;
+    
+    let match;
+    while ((match = variableRegex.exec(code)) !== null) {
+      const variableName = match[1];
+      const value = parseInt(match[2]);
+      this.variables.set(variableName, value);
+      console.log(`ArduinoCodeParser: Found variable ${variableName} = ${value}`);
+    }
+    
+    console.log('ArduinoCodeParser: Variables extracted:', Array.from(this.variables.entries()));
+  }
+
+  // Resolve a variable name to its value
+  private resolveVariable(variableName: string): number | null {
+    if (variableName === 'LED_BUILTIN') return 13;
+    if (/^\d+$/.test(variableName)) return parseInt(variableName);
+    
+    const value = this.variables.get(variableName);
+    if (value !== undefined) {
+      console.log(`ArduinoCodeParser: Resolved ${variableName} to ${value}`);
+      return value;
+    }
+    
+    console.warn(`ArduinoCodeParser: Unknown variable: ${variableName}`);
+    return null;
+  }
+
   parseInstruction(codeLine: CodeLine): ArduinoInstruction | null {
     const line = codeLine.content;
     const lineNumber = codeLine.lineNumber;
@@ -114,7 +152,7 @@ export class ArduinoCodeParser {
     // Parse pinMode(pin, mode)
     const pinModeMatch = line.match(/pinMode\s*\(\s*(\w+|\d+)\s*,\s*(\w+)\s*\)/);
     if (pinModeMatch) {
-      const pin = pinModeMatch[1] === 'LED_BUILTIN' ? 13 : parseInt(pinModeMatch[1]);
+      const pin = this.resolveVariable(pinModeMatch[1]);
       return {
         lineNumber,
         instruction: `pinMode(${pin}, ${pinModeMatch[2]})`,
@@ -125,7 +163,7 @@ export class ArduinoCodeParser {
     // Parse digitalWrite(pin, value)
     const digitalWriteMatch = line.match(/digitalWrite\s*\(\s*(\w+|\d+)\s*,\s*(\w+)\s*\)/);
     if (digitalWriteMatch) {
-      const pin = digitalWriteMatch[1] === 'LED_BUILTIN' ? 13 : parseInt(digitalWriteMatch[1]);
+      const pin = this.resolveVariable(digitalWriteMatch[1]);
       const value = digitalWriteMatch[2] as 'HIGH' | 'LOW';
       return {
         lineNumber,

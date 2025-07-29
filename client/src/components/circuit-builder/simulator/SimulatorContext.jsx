@@ -327,33 +327,33 @@ export const SimulatorProvider = ({ children }) => {
           console.log(`[Simulator] Available wires:`, wires.length);
           console.log(`[Simulator] Available components:`, components.map(c => `${c.id}(${c.type})`));
           
-          // Find LEDs connected to this pin through wires - use wire data directly since components array might be empty
-          const connectedLEDs = [];
+          // Find LEDs and RGB LEDs connected to this pin through wires
+          const connectedComponents = [];
           
-          // Extract LED IDs from wire data
-          const ledIdsFromWires = new Set();
+          // Extract LED and RGB LED IDs from wire data
+          const componentIdsFromWires = new Set();
           wires.forEach(wire => {
-            if (wire.sourceComponent && wire.sourceComponent.includes('led')) {
-              ledIdsFromWires.add(wire.sourceComponent);
+            if (wire.sourceComponent && (wire.sourceComponent.includes('led') || wire.sourceComponent.includes('rgb'))) {
+              componentIdsFromWires.add(wire.sourceComponent);
             }
-            if (wire.targetComponent && wire.targetComponent.includes('led')) {
-              ledIdsFromWires.add(wire.targetComponent);
+            if (wire.targetComponent && (wire.targetComponent.includes('led') || wire.targetComponent.includes('rgb'))) {
+              componentIdsFromWires.add(wire.targetComponent);
             }
           });
           
-          console.log(`[Simulator] LED IDs found in wires:`, Array.from(ledIdsFromWires));
+          console.log(`[Simulator] LED/RGB LED IDs found in wires:`, Array.from(componentIdsFromWires));
           
-          // Check each LED found in wires
-          ledIdsFromWires.forEach(ledId => {
-            // Find wires connected to this LED
-            const ledWires = wires.filter(wire => 
-              wire.sourceComponent === ledId || wire.targetComponent === ledId
+          // Check each component found in wires
+          componentIdsFromWires.forEach(componentId => {
+            // Find wires connected to this component
+            const componentWires = wires.filter(wire => 
+              wire.sourceComponent === componentId || wire.targetComponent === componentId
             );
             
-            console.log(`[Simulator] LED ${ledId} has ${ledWires.length} wires:`, ledWires);
+            console.log(`[Simulator] Component ${componentId} has ${componentWires.length} wires:`, componentWires);
             
-            // Check if any wire connects this LED to the pin we're setting
-            ledWires.forEach(wire => {
+            // Check if any wire connects this component to the pin we're setting
+            componentWires.forEach(wire => {
               const isConnectedToPin = (
                 (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString()) ||
                 (wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}`) ||
@@ -361,21 +361,54 @@ export const SimulatorProvider = ({ children }) => {
               );
               
               if (isConnectedToPin) {
-                connectedLEDs.push({ id: ledId, type: 'led' });
-                console.log(`[Simulator] Found LED ${ledId} connected to pin ${pinNumber} via wire`);
+                // Determine which pin on the component this wire connects to
+                const componentPinName = wire.sourceComponent === componentId ? wire.sourceName : wire.targetName;
+                
+                connectedComponents.push({ 
+                  id: componentId, 
+                  type: componentId.includes('rgb') ? 'rgbled' : 'led',
+                  pinName: componentPinName
+                });
+                console.log(`[Simulator] Found component ${componentId} connected to pin ${pinNumber} via wire (component pin: ${componentPinName})`);
               }
             });
           });
           
-          // Update all connected LEDs
-          connectedLEDs.forEach(led => {
-            updateComponentState(led.id, { 
-              isOn: isHigh,
-              brightness: isHigh ? 1.0 : 0.0,
-              voltage: isHigh ? 5 : 0
-            });
-            addLog(`[${timestamp}] → External LED ${led.id} turned ${isHigh ? 'ON' : 'OFF'}`);
-            console.log(`[Simulator] Updated LED ${led.id} state: isOn=${isHigh}`);
+          // Update all connected components
+          connectedComponents.forEach(component => {
+            if (component.type === 'rgbled') {
+              // Handle RGB LED with separate color channels
+              console.log(`[Simulator] Handling RGB LED ${component.id}, pin: ${component.pinName}, state: ${isHigh}`);
+              
+              const currentState = componentStates[component.id] || { ledRed: 0, ledGreen: 0, ledBlue: 0 };
+              const newState = { ...currentState };
+              
+              // Map pin names to color channels (various naming conventions)
+              const pinName = component.pinName.toLowerCase();
+              if (pinName.includes('r') || pinName === 'red') {
+                newState.ledRed = isHigh ? 1.0 : 0.0;
+                addLog(`[${timestamp}] → RGB LED ${component.id} RED channel: ${isHigh ? 'ON' : 'OFF'}`);
+              } else if (pinName.includes('g') || pinName === 'green') {
+                newState.ledGreen = isHigh ? 1.0 : 0.0;
+                addLog(`[${timestamp}] → RGB LED ${component.id} GREEN channel: ${isHigh ? 'ON' : 'OFF'}`);
+              } else if (pinName.includes('b') || pinName === 'blue') {
+                newState.ledBlue = isHigh ? 1.0 : 0.0;
+                addLog(`[${timestamp}] → RGB LED ${component.id} BLUE channel: ${isHigh ? 'ON' : 'OFF'}`);
+              }
+              
+              updateComponentState(component.id, newState);
+              console.log(`[Simulator] Updated RGB LED ${component.id} state:`, newState);
+              
+            } else {
+              // Handle regular LED
+              updateComponentState(component.id, { 
+                isOn: isHigh,
+                brightness: isHigh ? 1.0 : 0.0,
+                voltage: isHigh ? 5 : 0
+              });
+              addLog(`[${timestamp}] → LED ${component.id} turned ${isHigh ? 'ON' : 'OFF'}`);
+              console.log(`[Simulator] Updated LED ${component.id} state: isOn=${isHigh}`);
+            }
           });
           
           if (connectedLEDs.length === 0) {
