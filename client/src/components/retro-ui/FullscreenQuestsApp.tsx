@@ -88,7 +88,15 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
     });
 
     // Sort by orderInLine to ensure proper quest ordering
-    return filteredQuests.sort((a, b) => (a.orderInLine || 0) - (b.orderInLine || 0));
+    const sortedQuests = filteredQuests.sort((a, b) => (a.orderInLine || 0) - (b.orderInLine || 0));
+    
+    // Debug: Log quest ordering
+    console.log('Quest ordering for kit:', kitId);
+    sortedQuests.forEach(quest => {
+      console.log(`Quest ${quest.id}: "${quest.title}" - Order: ${quest.orderInLine || 0}`);
+    });
+    
+    return sortedQuests;
   };
 
   const handleKitSelect = (kitId: string) => {
