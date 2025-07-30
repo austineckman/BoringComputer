@@ -204,6 +204,33 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       });
     }
 
+    if (instruction.instruction.includes('analogWrite')) {
+      const pwmValue = instruction.value;
+      const brightness = pwmValue / 255; // Convert 0-255 to 0-1
+      const percentage = Math.round(brightness * 100);
+      addLog(`[${timestamp}] → Pin ${instruction.pin} PWM set to ${pwmValue}/255 (${percentage}%)`);
+      
+      // Update component states for PWM changes
+      components.forEach(component => {
+        if (component.type === 'led' || component.id.includes('led')) {
+          const connectedWires = wires.filter(wire => 
+            (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
+            (wire.sourceName === instruction.pin.toString() || wire.targetName === instruction.pin.toString())
+          );
+          
+          if (connectedWires.length > 0) {
+            const isOn = pwmValue > 0;
+            updateComponentState(component.id, { 
+              isOn: isOn,
+              brightness: brightness,
+              pwmValue: pwmValue
+            });
+            addLog(`[${timestamp}] → LED ${component.id} brightness set to ${percentage}%`);
+          }
+        }
+      });
+    }
+
     if (instruction.instruction.includes('delay')) {
       addLog(`[${timestamp}] → Waiting ${instruction.delayMs}ms...`);
       return instruction.delayMs;
@@ -443,6 +470,112 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             wires.forEach((wire, i) => {
               console.log(`[Simulator] Wire ${i}: ${wire.sourceComponent}(${wire.sourceName}) → ${wire.targetComponent}(${wire.targetName})`);
             });
+          }
+        }
+
+        if (instruction.instruction.includes('analogWrite')) {
+          const pwmValue = instruction.value;
+          const pinNumber = instruction.pin;
+          const brightness = pwmValue / 255; // Convert 0-255 to 0-1
+          const percentage = Math.round(brightness * 100);
+          
+          // Guard against null pin numbers from failed variable resolution
+          if (pinNumber === null || pinNumber === undefined) {
+            addLog(`[${timestamp}] → analogWrite(UNKNOWN_PIN, ${pwmValue}) - Pin variable not resolved`);
+            console.warn(`[Simulator] Skipping analogWrite with null pin number`);
+            return;
+          }
+          
+          addLog(`[${timestamp}] → Pin ${pinNumber} PWM set to ${pwmValue}/255 (${percentage}%)`);
+          
+          // Find LEDs and RGB LEDs connected to this pin through wires
+          const connectedComponents = [];
+          
+          // Extract LED and RGB LED IDs from wire data
+          const componentIdsFromWires = new Set();
+          wires.forEach(wire => {
+            if (wire.sourceComponent && (wire.sourceComponent.includes('led') || wire.sourceComponent.includes('rgb'))) {
+              componentIdsFromWires.add(wire.sourceComponent);
+            }
+            if (wire.targetComponent && (wire.targetComponent.includes('led') || wire.targetComponent.includes('rgb'))) {
+              componentIdsFromWires.add(wire.targetComponent);
+            }
+          });
+          
+          console.log(`[Simulator] analogWrite: LED/RGB LED IDs found in wires:`, Array.from(componentIdsFromWires));
+          
+          // Check each component found in wires
+          componentIdsFromWires.forEach(componentId => {
+            // Find wires connected to this component
+            const componentWires = wires.filter(wire => 
+              wire.sourceComponent === componentId || wire.targetComponent === componentId
+            );
+            
+            console.log(`[Simulator] analogWrite: Component ${componentId} has ${componentWires.length} wires:`, componentWires);
+            
+            // Check if any wire connects this component to the pin we're setting
+            componentWires.forEach(wire => {
+              const isConnectedToPin = (
+                (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString()) ||
+                (wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}`) ||
+                (wire.sourceName === `${pinNumber}` || wire.targetName === `${pinNumber}`)
+              );
+              
+              if (isConnectedToPin) {
+                // Determine which pin on the component this wire connects to
+                const componentPinName = wire.sourceComponent === componentId ? wire.sourceName : wire.targetName;
+                
+                connectedComponents.push({ 
+                  id: componentId, 
+                  type: componentId.includes('rgb') ? 'rgbled' : 'led',
+                  pinName: componentPinName
+                });
+                console.log(`[Simulator] analogWrite: Found component ${componentId} connected to pin ${pinNumber} via wire (component pin: ${componentPinName})`);
+              }
+            });
+          });
+          
+          // Update all connected components
+          connectedComponents.forEach(component => {
+            if (component.type === 'rgbled') {
+              // Handle RGB LED with PWM color channels
+              console.log(`[Simulator] analogWrite: Handling RGB LED ${component.id}, pin: ${component.pinName}, PWM: ${pwmValue}`);
+              
+              const currentState = componentStates[component.id] || { ledRed: 0, ledGreen: 0, ledBlue: 0 };
+              const newState = { ...currentState };
+              
+              // Map pin names to color channels (various naming conventions)
+              const pinName = component.pinName.toLowerCase();
+              if (pinName.includes('r') || pinName === 'red') {
+                newState.ledRed = brightness;
+                addLog(`[${timestamp}] → RGB LED ${component.id} RED channel: ${percentage}% (${pwmValue}/255)`);
+              } else if (pinName.includes('g') || pinName === 'green') {
+                newState.ledGreen = brightness;
+                addLog(`[${timestamp}] → RGB LED ${component.id} GREEN channel: ${percentage}% (${pwmValue}/255)`);
+              } else if (pinName.includes('b') || pinName === 'blue') {
+                newState.ledBlue = brightness;
+                addLog(`[${timestamp}] → RGB LED ${component.id} BLUE channel: ${percentage}% (${pwmValue}/255)`);
+              }
+              
+              updateComponentState(component.id, newState);
+              console.log(`[Simulator] analogWrite: Updated RGB LED ${component.id} state:`, newState);
+              
+            } else {
+              // Handle regular LED with PWM brightness
+              const isOn = pwmValue > 0;
+              updateComponentState(component.id, { 
+                isOn: isOn,
+                brightness: brightness,
+                pwmValue: pwmValue,
+                voltage: brightness * 5 // Scale voltage based on PWM
+              });
+              addLog(`[${timestamp}] → LED ${component.id} brightness: ${percentage}% (${pwmValue}/255)`);
+              console.log(`[Simulator] analogWrite: Updated LED ${component.id} state: brightness=${brightness}, pwmValue=${pwmValue}`);
+            }
+          });
+          
+          if (connectedComponents.length === 0) {
+            console.log(`[Simulator] analogWrite: No LEDs found connected to pin ${pinNumber}`);
           }
         }
 

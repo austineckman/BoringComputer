@@ -191,6 +191,21 @@ export class ArduinoCodeParser {
       return instruction;
     }
 
+    // Parse analogWrite(pin, value)
+    const analogWriteMatch = line.match(/analogWrite\s*\(\s*(\w+|\d+)\s*,\s*(\w+|\d+)\s*\)/);
+    if (analogWriteMatch) {
+      const pin = this.resolveVariable(analogWriteMatch[1]);
+      const pwmValue = this.resolveVariable(analogWriteMatch[2]) ?? parseInt(analogWriteMatch[2]);
+      const instruction = {
+        lineNumber,
+        instruction: `analogWrite(${pin}, ${pwmValue})`,
+        pin: pin ?? undefined,
+        value: pwmValue
+      };
+      console.log(`ArduinoCodeParser: Found analogWrite instruction:`, instruction);
+      return instruction;
+    }
+
     // Parse delay(ms)
     const delayMatch = line.match(/delay\s*\(\s*(\d+)\s*\)/);
     if (delayMatch) {
