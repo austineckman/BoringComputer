@@ -97,78 +97,23 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
   // Code editor state
   const [editorReady, setEditorReady] = useState(false);
   
-  // Default Arduino code for new projects
-  const defaultCode = `// RGB LED Smooth Color Mixing with analogWrite
-// This example demonstrates smooth color mixing using PWM
-// Connect the RGB LED: Red->Pin 9, Green->Pin 10, Blue->Pin 11
+  // Default Arduino code for new projects - Basic Blink Example
+  const defaultCode = `// Basic LED Blink Example
+// This is the classic "Hello World" program for Arduino
+// The built-in LED on pin 13 will blink on and off
 
-// Define the RGB LED pins
-#define RED_PIN 9
-#define GREEN_PIN 10
-#define BLUE_PIN 11
+const int ledPin = 13;  // Built-in LED on pin 13
 
 void setup() {
-  // Initialize the pins as outputs
-  pinMode(RED_PIN, OUTPUT);
-  pinMode(GREEN_PIN, OUTPUT);
-  pinMode(BLUE_PIN, OUTPUT);
-  
-  // Initially turn off all colors
-  analogWrite(RED_PIN, 0);
-  analogWrite(GREEN_PIN, 0);
-  analogWrite(BLUE_PIN, 0);
+  // Initialize the digital pin as an output
+  pinMode(ledPin, OUTPUT);
 }
 
 void loop() {
-  // Smooth color transitions using analogWrite (0-255)
-  
-  // Bright Red
-  analogWrite(RED_PIN, 255);
-  analogWrite(GREEN_PIN, 0);
-  analogWrite(BLUE_PIN, 0);
-  delay(1000);
-  
-  // Medium Green  
-  analogWrite(RED_PIN, 0);
-  analogWrite(GREEN_PIN, 180);
-  analogWrite(BLUE_PIN, 0);
-  delay(1000);
-  
-  // Bright Blue
-  analogWrite(RED_PIN, 0);
-  analogWrite(GREEN_PIN, 0);
-  analogWrite(BLUE_PIN, 255);
-  delay(1000);
-  
-  // Orange (Red + some Green)
-  analogWrite(RED_PIN, 255);
-  analogWrite(GREEN_PIN, 100);
-  analogWrite(BLUE_PIN, 0);
-  delay(1000);
-  
-  // Purple (Red + Blue)
-  analogWrite(RED_PIN, 200);
-  analogWrite(GREEN_PIN, 0);
-  analogWrite(BLUE_PIN, 255);
-  delay(1000);
-  
-  // Cyan (Green + Blue)  
-  analogWrite(RED_PIN, 0);
-  analogWrite(GREEN_PIN, 255);
-  analogWrite(BLUE_PIN, 255);
-  delay(1000);
-  
-  // Warm White (All colors, slight yellow tint)
-  analogWrite(RED_PIN, 255);
-  analogWrite(GREEN_PIN, 220);
-  analogWrite(BLUE_PIN, 180);
-  delay(1000);
-  
-  // Dim Purple
-  analogWrite(RED_PIN, 80);
-  analogWrite(GREEN_PIN, 0);
-  analogWrite(BLUE_PIN, 120);
-  delay(1000);
+  digitalWrite(ledPin, HIGH);   // Turn on the LED
+  delay(1000);                  // Wait for a second
+  digitalWrite(ledPin, LOW);    // Turn off the LED
+  delay(1000);                  // Wait for a second
 }
 
 /* 
@@ -686,6 +631,10 @@ void loop() {
       case 'buzzer':
         exampleCode = buzzerExample;
         addSimulationLog('Loaded Buzzer example');
+        break;
+      case 'blink':
+        exampleCode = defaultCode; // Use the basic blink example
+        addSimulationLog('Loaded Basic Blink example');
         break;
       default:
         exampleCode = defaultCode;
