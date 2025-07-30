@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 interface PixelCardProps {
   children: React.ReactNode;
@@ -15,75 +15,93 @@ export const PixelCard: React.FC<PixelCardProps> = ({
   onMouseEnter,
   disabled = false 
 }) => {
+  const [pixels, setPixels] = useState<Array<{ x: number; y: number; color: string }>>([]);
   const cardRef = useRef<HTMLDivElement>(null);
-  const [isHovered, setIsHovered] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout>();
+
+  const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd', '#98d8c8'];
+
+  const generatePixels = (centerX: number, centerY: number) => {
+    const newPixels = [];
+    for (let i = 0; i < 30; i++) {
+      const angle = (Math.PI * 2 * i) / 30;
+      const radius = 100 + Math.random() * 50;
+      const x = centerX + Math.cos(angle) * radius;
+      const y = centerY + Math.sin(angle) * radius;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      newPixels.push({ x, y, color });
+    }
+    return newPixels;
+  };
+
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    if (disabled) return;
+    
+    const rect = cardRef.current?.getBoundingClientRect();
+    if (rect) {
+      const centerX = e.clientX - rect.left;
+      const centerY = e.clientY - rect.top;
+      setPixels(generatePixels(centerX, centerY));
+      
+      if (onMouseEnter) onMouseEnter();
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (disabled) return;
+    
+    // Clear pixels after a short delay for smooth exit
+    timeoutRef.current = setTimeout(() => {
+      setPixels([]);
+    }, 300);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (disabled) return;
+    
+    const rect = cardRef.current?.getBoundingClientRect();
+    if (rect) {
+      const centerX = e.clientX - rect.left;
+      const centerY = e.clientY - rect.top;
+      setPixels(generatePixels(centerX, centerY));
+    }
+  };
 
   useEffect(() => {
-    const card = cardRef.current;
-    if (!card || disabled) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-      
-      const rotateX = (y - centerY) / 10;
-      const rotateY = (centerX - x) / 10;
-      
-      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
-      card.style.boxShadow = `
-        ${(x - centerX) / 5}px ${(y - centerY) / 5}px 50px rgba(0, 0, 0, 0.5),
-        0 0 30px rgba(255, 165, 0, 0.3)
-      `;
-    };
-
-    const handleMouseEnter = () => {
-      setIsHovered(true);
-      card.style.transition = 'none';
-      if (onMouseEnter) onMouseEnter();
-    };
-
-    const handleMouseLeave = () => {
-      setIsHovered(false);
-      card.style.transition = 'all 0.3s ease';
-      card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
-      card.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
-    };
-
-    card.addEventListener('mousemove', handleMouseMove);
-    card.addEventListener('mouseenter', handleMouseEnter);
-    card.addEventListener('mouseleave', handleMouseLeave);
-
     return () => {
-      card.removeEventListener('mousemove', handleMouseMove);
-      card.removeEventListener('mouseenter', handleMouseEnter);
-      card.removeEventListener('mouseleave', handleMouseLeave);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     };
-  }, [disabled, onMouseEnter]);
+  }, []);
 
   return (
     <div
       ref={cardRef}
-      className={`relative transform-gpu transition-all duration-300 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} ${className}`}
+      className={`relative overflow-hidden ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} ${className}`}
       onClick={disabled ? undefined : onClick}
-      style={{
-        transformStyle: 'preserve-3d',
-        backfaceVisibility: 'hidden',
-      }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onMouseMove={handleMouseMove}
     >
       {children}
-      {isHovered && !disabled && (
-        <div 
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: 'linear-gradient(45deg, rgba(255, 165, 0, 0.1), rgba(255, 165, 0, 0.2))',
-            borderRadius: 'inherit',
-          }}
-        />
-      )}
+      
+      {/* Pixel Animation Overlay */}
+      <div className="absolute inset-0 pointer-events-none">
+        {pixels.map((pixel, index) => (
+          <div
+            key={index}
+            className="absolute w-1 h-1"
+            style={{
+              left: pixel.x,
+              top: pixel.y,
+              backgroundColor: pixel.color,
+              animation: `pixelExplode 0.8s ease-out forwards`,
+              animationDelay: `${index * 0.01}s`,
+            }}
+          />
+        ))}
+      </div>
     </div>
   );
 };

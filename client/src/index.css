@@ -74,6 +74,22 @@ img[alt*="Breadboard"], img[alt*="Resistor"], img[alt*="Encoder"], img[alt*="Swi
   background: rgba(255, 165, 0, 0.9);
 }
 
+/* PixelCard explosion animation */
+@keyframes pixelExplode {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2) rotate(180deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(0.3) rotate(360deg) translateX(40px) translateY(40px);
+    opacity: 0;
+  }
+}
+
 /* Firefox scrollbar */
 .quest-scroll {
   scrollbar-width: auto;
