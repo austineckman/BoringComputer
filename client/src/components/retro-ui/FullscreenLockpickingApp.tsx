@@ -219,26 +219,24 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
           const totalItems = 40; // Optimized strip length
           const winnerIndex = Math.floor(totalItems / 2); // Winner at exact middle
           
+          // First, generate all random items (including the winner position)
           const generatedItems = Array.from({ length: totalItems }, (_, i) => {
-            if (i === winnerIndex) {
-              // Winner item positioned to end up at selection line
-              return {
-                id: mainReward.id,
-                item: rewardItem,
-                isWinner: true,
-                quantity: mainReward.quantity
-              };
-            } else {
-              // Random items for the rest
-              const randomItem = items[Math.floor(Math.random() * items.length)];
-              return {
-                id: randomItem.id,
-                item: randomItem,
-                isWinner: false,
-                quantity: 1
-              };
-            }
+            const randomItem = items[Math.floor(Math.random() * items.length)];
+            return {
+              id: randomItem.id,
+              item: randomItem,
+              isWinner: false,
+              quantity: 1
+            };
           });
+          
+          // Then, replace the winner position with the actual reward
+          generatedItems[winnerIndex] = {
+            id: mainReward.id,
+            item: rewardItem,
+            isWinner: true,
+            quantity: mainReward.quantity
+          };
           setSpinningItems(generatedItems);
         }
         
