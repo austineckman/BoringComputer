@@ -327,24 +327,38 @@ body {
 /* CS:GO Case Opening Animation */
 @keyframes case-spin {
   0% {
-    transform: translateX(200px);
+    transform: translateX(0px);
   }
-  80% {
-    transform: translateX(-500px);
+  70% {
+    transform: translateX(-1200px);
   }
-  90% {
-    transform: translateX(-520px);
+  85% {
+    transform: translateX(-1280px);
   }
   95% {
-    transform: translateX(-515px);
+    transform: translateX(-1270px);
   }
   100% {
-    transform: translateX(-520px);
+    transform: translateX(-1280px);
   }
 }
 
 .animate-case-spin {
-  animation: case-spin 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  animation: case-spin 4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+/* Glowing effect for winner item */
+@keyframes winner-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(255, 193, 7, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 193, 7, 0.8);
+  }
+}
+
+.winner-item {
+  animation: winner-glow 2s ease-in-out infinite;
 }
 
 @keyframes fadeInUp {
