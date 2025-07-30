@@ -7,7 +7,7 @@ import {
   ClipboardList, Grid3X3, ArrowRight, AlertCircle, Clock, User,
   BarChart2, PieChart, TrendingUp, Server, UserCheck, Activity,
   Calendar, Download, HardDrive, GitBranch, Heart, CheckSquare,
-  Copy, RotateCcw, Gavel
+  Copy, RotateCcw, Gavel, ChevronUp, ChevronDown
 } from 'lucide-react';
 import { 
   BarChart, Bar, LineChart as RechartsLine, Line, PieChart as RechartsProChart, Pie, Cell, 
@@ -778,6 +778,67 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       console.error('Error generating game statistics:', error);
     } finally {
       setLoadingStats(false);
+    }
+  };
+
+  // Handle quest reordering
+  const handleMoveQuest = async (questId: string | number, direction: 'up' | 'down') => {
+    try {
+      const questIdStr = questId.toString();
+      const currentQuests = [...filteredQuests];
+      const currentIndex = currentQuests.findIndex(q => q.id.toString() === questIdStr);
+      
+      if (currentIndex === -1) return;
+      
+      let newIndex: number;
+      if (direction === 'up' && currentIndex > 0) {
+        newIndex = currentIndex - 1;
+      } else if (direction === 'down' && currentIndex < currentQuests.length - 1) {
+        newIndex = currentIndex + 1;
+      } else {
+        return; // Can't move further in that direction
+      }
+      
+      // Swap the quests in the array
+      const questToMove = currentQuests[currentIndex];
+      const questToSwap = currentQuests[newIndex];
+      
+      // Update orderInLine values
+      const tempOrder = questToMove.orderInLine || currentIndex + 1;
+      questToMove.orderInLine = questToSwap.orderInLine || newIndex + 1;
+      questToSwap.orderInLine = tempOrder;
+      
+      // Update both quests in the backend
+      await Promise.all([
+        apiRequest('PUT', `/api/oracle/quests/${questToMove.id}`, {
+          ...questToMove,
+          orderInLine: questToMove.orderInLine
+        }),
+        apiRequest('PUT', `/api/oracle/quests/${questToSwap.id}`, {
+          ...questToSwap,
+          orderInLine: questToSwap.orderInLine
+        })
+      ]);
+      
+      // Update local state
+      setQuests(prevQuests => {
+        const updated = [...prevQuests];
+        const moveIndex = updated.findIndex(q => q.id.toString() === questIdStr);
+        const swapQuestId = questToSwap.id.toString();
+        const swapIndex = updated.findIndex(q => q.id.toString() === swapQuestId);
+        
+        if (moveIndex !== -1 && swapIndex !== -1) {
+          updated[moveIndex] = { ...questToMove };
+          updated[swapIndex] = { ...questToSwap };
+        }
+        
+        return updated;
+      });
+      
+      window.sounds?.click();
+    } catch (error) {
+      console.error('Error reordering quest:', error);
+      window.sounds?.error();
     }
   };
   
@@ -2119,6 +2180,32 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
               className="border border-gray-700 bg-black/40 rounded-lg p-6 hover:border-brand-orange/50 transition-colors"
             >
               <div className="flex gap-6">
+                {/* Reorder Controls */}
+                <div className="flex-shrink-0 flex flex-col justify-center">
+                  <button 
+                    className="p-1 rounded hover:bg-gray-700 transition-colors mb-1"
+                    title="Move quest up"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMoveQuest(quest.id, 'up');
+                    }}
+                    onMouseEnter={() => window.sounds?.hover()}
+                  >
+                    <ChevronUp className="h-4 w-4 text-gray-400 hover:text-white" />
+                  </button>
+                  <button 
+                    className="p-1 rounded hover:bg-gray-700 transition-colors"
+                    title="Move quest down"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMoveQuest(quest.id, 'down');
+                    }}
+                    onMouseEnter={() => window.sounds?.hover()}
+                  >
+                    <ChevronDown className="h-4 w-4 text-gray-400 hover:text-white" />
+                  </button>
+                </div>
+
                 {/* Hero Image */}
                 <div className="flex-shrink-0">
                   <div className="w-32 h-24 bg-gray-900/50 rounded-lg overflow-hidden flex items-center justify-center">
