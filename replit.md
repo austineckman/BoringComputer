@@ -162,6 +162,14 @@ Preferred communication style: Simple, everyday language.
 - **Mobile-First Approach**: Enhanced breakpoints for better mobile, tablet, and desktop experiences
 - **Content Density**: More quests and kits visible at once while maintaining readability
 
+### Wire Color Cheat Sheet Enhancement (July 30, 2025)
+- **Educational Wire Color Guide**: Added comprehensive cheat sheet in wire properties panel following standard electronics conventions
+- **Standard Color Mapping**: Black for ground, red for power, green for digital signals, blue for analog inputs, yellow for communication
+- **Professional Guidelines**: Orange for PWM outputs, white for clock signals, brown for reset/enable lines
+- **Visual Learning Aid**: Small color indicators next to each description help students learn proper wiring practices
+- **Integrated Design**: Clean blue-themed section that complements existing wire color selection interface
+- **Educational Value**: Teaches students why certain colors are conventionally used for specific circuit functions
+
 ### Working Arduino Simulator Implementation (July 29, 2025)
 - **Real AVR8JS Integration**: Successfully implemented authentic Arduino simulator using actual avr8js library
 - **Machine Code Execution**: Created compiler that generates real AVR assembly instructions for Arduino code
