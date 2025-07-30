@@ -126,17 +126,19 @@ Preferred communication style: Simple, everyday language.
 - **Visible Scrollbar**: Changed from overflow-y-auto to overflow-y-scroll for forced scrollbar visibility
 - **Bottom Padding**: Added pb-20 to quest grid ensuring all quests are accessible when scrolled
 
-### Natural Wire Routing System Implementation (July 30, 2025)
-- **Free-Form Wire Drawing**: Users can draw wires in any pattern by clicking waypoints on the canvas
-- **Natural Shape Preservation**: System preserves user's drawing intent - S-curves stay S-shaped, diagonals stay diagonal
+### Continuous Wire Drawing System Implementation (July 30, 2025)
+- **Paint-Style Continuous Drawing**: Click pin and drag mouse like a marker tool - wire follows cursor movement continuously
+- **Automatic Waypoint Generation**: System adds waypoints every 8 pixels of movement for smooth curves
+- **Natural Shape Preservation**: Preserves exact drawing intent - S-curves stay S-shaped, diagonals stay diagonal
 - **Smart Shape Detection**: Algorithm recognizes intentional curves, bends, and patterns with 22.5-degree angle sensitivity
 - **Gentle Smoothing**: Light 15% smoothing factor removes hand tremor without changing design intent
-- **Angled Wire Support**: Full support for diagonal wires, curves, and non-orthogonal routing patterns
-- **Live Routing Preview**: Real-time preview shows optimized path as user draws, maintaining natural shape
+- **Mouse Button Detection**: Uses proper mousedown/mouseup events for paint-style drawing experience
+- **Live Drawing Preview**: Real-time preview shows wire as you draw, following cursor exactly
 - **Path Optimization Algorithm**: Shape-preserving simplification that removes redundant points while keeping user's design
 - **Pin Label Positioning Fix**: Pin labels positioned away from connection points with `pointerEvents="none"` to prevent click interference
+- **Dual Drawing Modes**: Supports both click-to-add-waypoints and continuous paint-style drawing
 - **Educational Value**: Students can create both professional orthogonal circuits and natural flowing designs
-- **User Experience**: Draw exactly what you want - straight, curved, diagonal, or zigzag - and it stays that way
+- **User Experience**: Click pin, hold mouse button, draw any pattern, release on target pin - just like using a marker
 
 ### Working Arduino Simulator Implementation (July 29, 2025)
 - **Real AVR8JS Integration**: Successfully implemented authentic Arduino simulator using actual avr8js library
