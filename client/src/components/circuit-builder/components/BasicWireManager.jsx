@@ -366,15 +366,19 @@ const BasicWireManager = ({ canvasRef }) => {
     setMousePosition(currentMousePos);
     
     // If we're in continuous drawing mode, add waypoints as mouse moves
-    if (isDrawing && pendingConnection) {
+    if (isDrawing && pendingConnection && lastMousePos.x !== undefined) {
       const distance = Math.sqrt(
         Math.pow(currentMousePos.x - lastMousePos.x, 2) + 
         Math.pow(currentMousePos.y - lastMousePos.y, 2)
       );
       
-      // Add waypoint every 8 pixels of movement for smooth curves
-      if (distance > 8) {
-        setPendingWireWaypoints(prev => [...prev, currentMousePos]);
+      // Add waypoint every 6 pixels of movement for smooth curves
+      if (distance > 6) {
+        setPendingWireWaypoints(prev => {
+          const newWaypoints = [...prev, currentMousePos];
+          console.log('Added waypoint during continuous drawing:', currentMousePos, 'Total waypoints:', newWaypoints.length);
+          return newWaypoints;
+        });
         setLastMousePos(currentMousePos);
       }
     }
@@ -384,6 +388,7 @@ const BasicWireManager = ({ canvasRef }) => {
   const handleMouseDown = (e) => {
     // Only start drawing if we have a pending connection and it's the left mouse button
     if (pendingConnection && e.button === 0) {
+      e.preventDefault(); // Prevent default drag behavior
       setIsDrawing(true);
       const canvasRect = canvasRef.current.getBoundingClientRect();
       const startPos = {
@@ -392,8 +397,8 @@ const BasicWireManager = ({ canvasRef }) => {
       };
       setLastMousePos(startPos);
       
-      // Clear any existing waypoints to start fresh
-      setPendingWireWaypoints([]);
+      // Clear any existing waypoints and start with initial position
+      setPendingWireWaypoints([startPos]);
       
       console.log('Started continuous wire drawing at:', startPos);
     }
@@ -403,7 +408,7 @@ const BasicWireManager = ({ canvasRef }) => {
   const handleMouseUp = (e) => {
     if (isDrawing) {
       setIsDrawing(false);
-      console.log('Stopped continuous wire drawing');
+      console.log('Stopped continuous wire drawing with', pendingWireWaypoints.length, 'waypoints');
     }
   };
 
@@ -543,6 +548,16 @@ const BasicWireManager = ({ canvasRef }) => {
       canvas.addEventListener('mousedown', handleMouseDown);
       canvas.addEventListener('mouseup', handleMouseUp);
     }
+
+    // Add global mouse up handler to stop drawing even if mouse is released outside canvas
+    const handleGlobalMouseUp = (e) => {
+      if (isDrawing) {
+        setIsDrawing(false);
+        console.log('Stopped continuous wire drawing globally with', pendingWireWaypoints.length, 'waypoints');
+      }
+    };
+
+    document.addEventListener('mouseup', handleGlobalMouseUp);
     
     // Add keyboard handler for deletion
     window.addEventListener('keydown', handleKeyDown);
@@ -559,6 +574,7 @@ const BasicWireManager = ({ canvasRef }) => {
         canvas.removeEventListener('mousedown', handleMouseDown);
         canvas.removeEventListener('mouseup', handleMouseUp);
       }
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [canvasRef, pendingConnection, pendingWireWaypoints, selectedWireId, wires]);
@@ -766,12 +782,17 @@ const BasicWireManager = ({ canvasRef }) => {
         {/* Pending connection wire with smart routing preview */}
         {pendingConnection && pendingConnection.sourcePos && (
           <>
-            {/* Show optimized routing preview */}
+            {/* Show optimized routing preview with continuous drawing waypoints */}
             {(() => {
+              // Use accumulated waypoints for continuous drawing or current mouse position for click mode
+              const targetPos = isDrawing && pendingWireWaypoints.length > 0 
+                ? pendingWireWaypoints[pendingWireWaypoints.length - 1]  // Use last waypoint when drawing
+                : { x: mousePosition.x, y: mousePosition.y };  // Use mouse position for click mode
+              
               const previewPath = WireRouter.optimizePath(
                 pendingWireWaypoints, 
                 pendingConnection.sourcePos, 
-                { x: mousePosition.x, y: mousePosition.y }
+                targetPos
               );
               const pathString = WireRouter.generateSVGPath(previewPath);
               
