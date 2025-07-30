@@ -98,8 +98,8 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
   const [editorReady, setEditorReady] = useState(false);
   
   // Default Arduino code for new projects
-  const defaultCode = `// RGB LED Color Cycling Example
-// This example cycles through different colors on an RGB LED
+  const defaultCode = `// RGB LED Smooth Color Mixing with analogWrite
+// This example demonstrates smooth color mixing using PWM
 // Connect the RGB LED: Red->Pin 9, Green->Pin 10, Blue->Pin 11
 
 // Define the RGB LED pins
@@ -114,52 +114,60 @@ void setup() {
   pinMode(BLUE_PIN, OUTPUT);
   
   // Initially turn off all colors
-  digitalWrite(RED_PIN, LOW);
-  digitalWrite(GREEN_PIN, LOW);
-  digitalWrite(BLUE_PIN, LOW);
+  analogWrite(RED_PIN, 0);
+  analogWrite(GREEN_PIN, 0);
+  analogWrite(BLUE_PIN, 0);
 }
 
 void loop() {
-  // Red
-  digitalWrite(RED_PIN, HIGH);
-  digitalWrite(GREEN_PIN, LOW);
-  digitalWrite(BLUE_PIN, LOW);
+  // Smooth color transitions using analogWrite (0-255)
+  
+  // Bright Red
+  analogWrite(RED_PIN, 255);
+  analogWrite(GREEN_PIN, 0);
+  analogWrite(BLUE_PIN, 0);
   delay(1000);
   
-  // Green  
-  digitalWrite(RED_PIN, LOW);
-  digitalWrite(GREEN_PIN, HIGH);
-  digitalWrite(BLUE_PIN, LOW);
+  // Medium Green  
+  analogWrite(RED_PIN, 0);
+  analogWrite(GREEN_PIN, 180);
+  analogWrite(BLUE_PIN, 0);
   delay(1000);
   
-  // Blue
-  digitalWrite(RED_PIN, LOW);
-  digitalWrite(GREEN_PIN, LOW);
-  digitalWrite(BLUE_PIN, HIGH);
+  // Bright Blue
+  analogWrite(RED_PIN, 0);
+  analogWrite(GREEN_PIN, 0);
+  analogWrite(BLUE_PIN, 255);
   delay(1000);
   
-  // Yellow (Red + Green)
-  digitalWrite(RED_PIN, HIGH);
-  digitalWrite(GREEN_PIN, HIGH);
-  digitalWrite(BLUE_PIN, LOW);
+  // Orange (Red + some Green)
+  analogWrite(RED_PIN, 255);
+  analogWrite(GREEN_PIN, 100);
+  analogWrite(BLUE_PIN, 0);
   delay(1000);
   
   // Purple (Red + Blue)
-  digitalWrite(RED_PIN, HIGH);
-  digitalWrite(GREEN_PIN, LOW);
-  digitalWrite(BLUE_PIN, HIGH);
+  analogWrite(RED_PIN, 200);
+  analogWrite(GREEN_PIN, 0);
+  analogWrite(BLUE_PIN, 255);
   delay(1000);
   
   // Cyan (Green + Blue)  
-  digitalWrite(RED_PIN, LOW);
-  digitalWrite(GREEN_PIN, HIGH);
-  digitalWrite(BLUE_PIN, HIGH);
+  analogWrite(RED_PIN, 0);
+  analogWrite(GREEN_PIN, 255);
+  analogWrite(BLUE_PIN, 255);
   delay(1000);
   
-  // White (All colors)
-  digitalWrite(RED_PIN, HIGH);
-  digitalWrite(GREEN_PIN, HIGH);
-  digitalWrite(BLUE_PIN, HIGH);
+  // Warm White (All colors, slight yellow tint)
+  analogWrite(RED_PIN, 255);
+  analogWrite(GREEN_PIN, 220);
+  analogWrite(BLUE_PIN, 180);
+  delay(1000);
+  
+  // Dim Purple
+  analogWrite(RED_PIN, 80);
+  analogWrite(GREEN_PIN, 0);
+  analogWrite(BLUE_PIN, 120);
   delay(1000);
 }
 
