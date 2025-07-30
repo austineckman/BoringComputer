@@ -89,6 +89,90 @@ router.post('/:id/open', async (req, res) => {
   }
 });
 
+// POST /api/lootboxes/:id/open-predetermined - Open a lootbox with predetermined reward
+router.post('/:id/open-predetermined', async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const lootboxId = parseInt(req.params.id);
+    const { predeterminedReward } = req.body;
+    
+    console.log(`Opening loot box with ID: ${lootboxId}`);
+    console.log(`DEBUG - Before opening lootbox, user inventory:`, user.inventory || {});
+    
+    // Check if the lootbox exists and belongs to this user
+    const [lootbox] = await db
+      .select()
+      .from(lootBoxes)
+      .where(eq(lootBoxes.id, lootboxId))
+      .where(eq(lootBoxes.userId, user.id));
+    
+    if (!lootbox) {
+      return res.status(404).json({ message: 'Lootbox not found' });
+    }
+    
+    if (lootbox.opened) {
+      return res.status(400).json({ message: 'This lootbox has already been opened' });
+    }
+    
+    // Validate predetermined reward
+    if (!predeterminedReward || !predeterminedReward.id || !predeterminedReward.quantity) {
+      return res.status(400).json({ message: 'Invalid predetermined reward data' });
+    }
+    
+    // Mark the lootbox as opened with the predetermined reward
+    await db
+      .update(lootBoxes)  
+      .set({
+        opened: true,
+        openedAt: new Date(),
+        rewards: [predeterminedReward]
+      })
+      .where(eq(lootBoxes.id, lootboxId));
+    
+    // Add the predetermined reward to user's inventory
+    const currentInventory = user.inventory || {};
+    const itemId = predeterminedReward.id;
+    const quantity = predeterminedReward.quantity;
+    
+    console.log(`DEBUG - Adding item ${itemId} x${quantity} to inventory`);
+    
+    // Update inventory with the predetermined reward
+    const currentQuantity = currentInventory[itemId] || 0;
+    currentInventory[itemId] = currentQuantity + quantity;
+    
+    console.log(`DEBUG - After rewards added, user inventory:`, currentInventory);
+    
+    // Update user's inventory in database
+    await storage.updateUser(user.id, { inventory: currentInventory });
+    console.log(`DEBUG - User inventory updated in database`);
+    
+    // Create inventory history entry
+    await storage.createInventoryHistory({
+      userId: user.id,
+      type: itemId,
+      quantity: quantity,
+      action: 'gained',
+      source: 'lootbox'
+    });
+    
+    console.log(`Loot box open response:`, {
+      success: true,
+      message: 'Lootbox opened successfully',
+      rewards: [predeterminedReward]
+    });
+    
+    // Return success with the predetermined reward
+    return res.json({ 
+      success: true, 
+      message: 'Lootbox opened successfully',
+      rewards: [predeterminedReward] 
+    });
+  } catch (error) {
+    console.error('Error opening predetermined lootbox:', error);
+    return res.status(500).json({ message: 'Failed to open lootbox' });
+  }
+});
+
 // Schema for creating a lootbox (admin only)
 const createLootboxSchema = z.object({
   userId: z.number(),

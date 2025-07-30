@@ -186,7 +186,7 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
     }
   };
 
-  // Handle opening the lootbox
+  // Handle opening the lootbox with predetermined animation
   const handleOpenLootbox = async () => {
     if (!selectedLootbox) return;
     
@@ -197,48 +197,54 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
       }
       
       setOpeningLootbox(true);
-      setCaseAnimation(true);
       console.log('Opening lootbox with ID:', selectedLootbox.id);
-      const response = await axios.post(`/api/loot-boxes/${selectedLootbox.id}/open`);
+      
+      // STEP 1: Generate the predetermined animation strip FIRST
+      const items = Object.values(itemsInfo);
+      const totalItems = 40;
+      const winnerIndex = Math.floor(totalItems / 2); // Winner at index 20
+      
+      // Generate all random items
+      const generatedItems = Array.from({ length: totalItems }, (_, i) => {
+        const randomItem = items[Math.floor(Math.random() * items.length)];
+        return {
+          id: randomItem.id,
+          item: randomItem,
+          isWinner: i === winnerIndex,
+          quantity: 1
+        };
+      });
+      
+      // The predetermined winner is whatever was randomly generated at position 20
+      const predeterminedWinner = generatedItems[winnerIndex];
+      
+      // Set the animation items immediately
+      setSpinningItems(generatedItems);
+      setCaseAnimation(true);
+      
+      // STEP 2: Send the predetermined winner to the backend
+      const response = await axios.post(`/api/loot-boxes/${selectedLootbox.id}/open-predetermined`, {
+        predeterminedReward: {
+          type: 'item',
+          id: predeterminedWinner.id,
+          quantity: predeterminedWinner.quantity
+        }
+      });
       
       if (response.data.success) {
-        const rewards = response.data.rewards || [];
-        setLootboxRewards(rewards);
+        // Set up the reward display to match what we predetermined
+        setLootboxRewards([{
+          type: 'item',
+          id: predeterminedWinner.id,
+          quantity: predeterminedWinner.quantity
+        }]);
         
-        // Get the main reward item for the final reveal
-        if (rewards.length > 0) {
-          const mainReward = rewards[0];
-          const rewardItem = itemsInfo[mainReward.id];
-          setFinalReward({
-            ...mainReward,
-            item: rewardItem
-          });
-          
-          // Generate a long strip of items for the animation
-          const items = Object.values(itemsInfo);
-          const totalItems = 40; // Optimized strip length
-          const winnerIndex = Math.floor(totalItems / 2); // Winner at exact middle
-          
-          // First, generate all random items (including the winner position)
-          const generatedItems = Array.from({ length: totalItems }, (_, i) => {
-            const randomItem = items[Math.floor(Math.random() * items.length)];
-            return {
-              id: randomItem.id,
-              item: randomItem,
-              isWinner: false,
-              quantity: 1
-            };
-          });
-          
-          // Then, replace the winner position with the actual reward
-          generatedItems[winnerIndex] = {
-            id: mainReward.id,
-            item: rewardItem,
-            isWinner: true,
-            quantity: mainReward.quantity
-          };
-          setSpinningItems(generatedItems);
-        }
+        setFinalReward({
+          type: 'item',
+          id: predeterminedWinner.id,
+          quantity: predeterminedWinner.quantity,
+          item: predeterminedWinner.item
+        });
         
         // CS:GO style animation timing - 4 seconds
         setTimeout(() => {
@@ -255,12 +261,50 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
           setLootboxes(lootboxes.filter(box => box.id !== selectedLootbox.id));
         }, 4000);
       } else {
+        throw new Error(response.data.message || 'Failed to process predetermined reward');
+      }
+    } catch (err) {
+      console.error('Error opening lootbox:', err);
+      // Fallback to original method if new endpoint doesn't exist
+      await handleOriginalLootboxOpen();
+    }
+  };
+
+  // Fallback method using original backend logic
+  const handleOriginalLootboxOpen = async () => {
+    if (!selectedLootbox) return;
+    
+    try {
+      const response = await axios.post(`/api/loot-boxes/${selectedLootbox.id}/open`);
+      
+      if (response.data.success) {
+        const rewards = response.data.rewards || [];
+        setLootboxRewards(rewards);
+        
+        if (rewards.length > 0) {
+          const mainReward = rewards[0];
+          const rewardItem = itemsInfo[mainReward.id];
+          setFinalReward({
+            ...mainReward,
+            item: rewardItem
+          });
+        }
+        
+        setShowRewards(true);
+        setOpeningLootbox(false);
+        
+        if (window.sounds) {
+          window.sounds.questComplete();
+        }
+        
+        setLootboxes(lootboxes.filter(box => box.id !== selectedLootbox.id));
+      } else {
         setError(response.data.message || 'Failed to open lootbox');
         setOpeningLootbox(false);
         setCaseAnimation(false);
       }
     } catch (err) {
-      console.error('Error opening lootbox:', err);
+      console.error('Error with fallback lootbox opening:', err);
       setError('Failed to open the lootbox. Please try again.');
       setOpeningLootbox(false);
       setCaseAnimation(false);
