@@ -170,9 +170,11 @@ Preferred communication style: Simple, everyday language.
 - **Card Hover Effects**: Enhanced cards with scale-up hover animations and subtle image zoom effects for better interactivity
 - **Clean Information Architecture**: Removed redundant "30 Days Lost in Space" text and streamlined content to focus on essentials
 - **Image Overlay Elements**: Quest numbers and status badges now overlay on hero images for cleaner design
-- **Responsive Image Heights**: Hero images scale from 128px to 160px based on screen size for optimal viewing
+- **Responsive Image Heights**: Hero images scale from 192px to 224px based on screen size for optimal viewing without cropping
 - **Pixelated Rendering**: Consistent pixel art aesthetic maintained across all quest card images
 - **Improved Visual Hierarchy**: Title prominence increased, description condensed to 2 lines, better spacing throughout cards
+- **Component Requirements Display**: Added visual component badges showing required hardware with icons and names at card bottom
+- **Quest Rewards Visualization**: Integrated gold coin and item reward displays with colored badges and quantities for immediate reward preview
 
 ### Quest Interface Responsive Design Fix (July 30, 2025)
 - **Improved Screen Fit**: Removed fixed height constraints that prevented content from fitting on smaller screens
