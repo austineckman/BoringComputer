@@ -98,19 +98,69 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
   const [editorReady, setEditorReady] = useState(false);
   
   // Default Arduino code for new projects
-  const defaultCode = `// Basic LED Blink Example
-// This is the classic Arduino "Hello World" program
+  const defaultCode = `// RGB LED Color Cycling Example
+// This example cycles through different colors on an RGB LED
+// Connect the RGB LED: Red->Pin 9, Green->Pin 10, Blue->Pin 11
+
+// Define the RGB LED pins
+#define RED_PIN 9
+#define GREEN_PIN 10
+#define BLUE_PIN 11
 
 void setup() {
-  // Initialize digital pin 13 as an output
-  pinMode(13, OUTPUT);
+  // Initialize the pins as outputs
+  pinMode(RED_PIN, OUTPUT);
+  pinMode(GREEN_PIN, OUTPUT);
+  pinMode(BLUE_PIN, OUTPUT);
+  
+  // Initially turn off all colors
+  digitalWrite(RED_PIN, LOW);
+  digitalWrite(GREEN_PIN, LOW);
+  digitalWrite(BLUE_PIN, LOW);
 }
 
 void loop() {
-  digitalWrite(13, HIGH);   // Turn LED on
-  delay(1000);              // Wait for 1 second
-  digitalWrite(13, LOW);    // Turn LED off
-  delay(1000);              // Wait for 1 second
+  // Red
+  digitalWrite(RED_PIN, HIGH);
+  digitalWrite(GREEN_PIN, LOW);
+  digitalWrite(BLUE_PIN, LOW);
+  delay(1000);
+  
+  // Green  
+  digitalWrite(RED_PIN, LOW);
+  digitalWrite(GREEN_PIN, HIGH);
+  digitalWrite(BLUE_PIN, LOW);
+  delay(1000);
+  
+  // Blue
+  digitalWrite(RED_PIN, LOW);
+  digitalWrite(GREEN_PIN, LOW);
+  digitalWrite(BLUE_PIN, HIGH);
+  delay(1000);
+  
+  // Yellow (Red + Green)
+  digitalWrite(RED_PIN, HIGH);
+  digitalWrite(GREEN_PIN, HIGH);
+  digitalWrite(BLUE_PIN, LOW);
+  delay(1000);
+  
+  // Purple (Red + Blue)
+  digitalWrite(RED_PIN, HIGH);
+  digitalWrite(GREEN_PIN, LOW);
+  digitalWrite(BLUE_PIN, HIGH);
+  delay(1000);
+  
+  // Cyan (Green + Blue)  
+  digitalWrite(RED_PIN, LOW);
+  digitalWrite(GREEN_PIN, HIGH);
+  digitalWrite(BLUE_PIN, HIGH);
+  delay(1000);
+  
+  // White (All colors)
+  digitalWrite(RED_PIN, HIGH);
+  digitalWrite(GREEN_PIN, HIGH);
+  digitalWrite(BLUE_PIN, HIGH);
+  delay(1000);
 }
 
 /* 
