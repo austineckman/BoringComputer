@@ -327,19 +327,19 @@ body {
 /* CS:GO Case Opening Animation */
 @keyframes case-spin {
   0% {
-    transform: translateX(0px);
+    transform: translateX(200px);
   }
   80% {
-    transform: translateX(-800px);
+    transform: translateX(-500px);
   }
   90% {
-    transform: translateX(-820px);
+    transform: translateX(-520px);
   }
   95% {
-    transform: translateX(-815px);
+    transform: translateX(-515px);
   }
   100% {
-    transform: translateX(-820px);
+    transform: translateX(-520px);
   }
 }
 

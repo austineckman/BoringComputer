@@ -75,6 +75,7 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
   const [animatingReward, setAnimatingReward] = useState(false);
   const [caseAnimation, setCaseAnimation] = useState(false);
   const [finalReward, setFinalReward] = useState<any>(null);
+  const [spinningItems, setSpinningItems] = useState<any[]>([]);
   const [lootboxConfigs, setLootboxConfigs] = useState<Record<string, LootBoxConfig>>({});
   const [potentialRewards, setPotentialRewards] = useState<ItemInfo[]>([]);
 
@@ -212,6 +213,28 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
             ...mainReward,
             item: rewardItem
           });
+          
+          // Generate static spinning items array (won't change during animation)
+          const items = Object.values(itemsInfo);
+          const generatedItems = Array.from({ length: 20 }, (_, i) => {
+            if (i === 10) {
+              // Middle item is the winning item
+              return {
+                ...mainReward,
+                item: rewardItem,
+                isWinner: true
+              };
+            } else {
+              // Random items for the rest
+              const randomItem = items[Math.floor(Math.random() * items.length)];
+              return {
+                id: randomItem.id,
+                item: randomItem,
+                isWinner: false
+              };
+            }
+          });
+          setSpinningItems(generatedItems);
         }
         
         // CS:GO style animation timing - 4 seconds
@@ -419,18 +442,14 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
                       
                       {/* Scrolling Items Strip */}
                       <div className="flex items-center h-full animate-case-spin">
-                        {/* Generate random items for the scroll effect */}
-                        {Array.from({ length: 20 }, (_, i) => {
-                          const items = Object.values(itemsInfo);
-                          const randomItem = items[Math.floor(Math.random() * items.length)];
-                          const isWinningItem = i === 10 && finalReward; // Middle item is the winner
-                          const displayItem = isWinningItem ? finalReward.item : randomItem;
+                        {spinningItems.map((spinItem, i) => {
+                          const displayItem = spinItem.item;
                           
                           return (
                             <div 
                               key={i} 
                               className={`flex-shrink-0 w-24 h-32 mx-2 bg-gray-800/80 rounded border-2 flex flex-col items-center justify-center p-2 
-                                ${isWinningItem ? 'border-yellow-400 bg-yellow-900/20' : 'border-gray-600'}`}
+                                ${spinItem.isWinner ? 'border-yellow-400 bg-yellow-900/20' : 'border-gray-600'}`}
                             >
                               <div className="w-16 h-16 mb-1 bg-black/50 rounded flex items-center justify-center overflow-hidden">
                                 <img
@@ -641,6 +660,7 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
                           setShowRewards(false);
                           setCaseAnimation(false);
                           setFinalReward(null);
+                          setSpinningItems([]);
                         }}
                         onMouseEnter={() => window.sounds?.hover()}
                       >
