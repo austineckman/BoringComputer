@@ -1252,6 +1252,44 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
               </div>
             </div>
             
+            <div className="mb-3 p-3 bg-blue-50 rounded-md border border-blue-200">
+              <h4 className="font-medium text-sm text-blue-800 mb-2">Wire Color Guide:</h4>
+              <div className="text-xs text-blue-700 space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded" style={{backgroundColor: '#000000'}}></div>
+                  <span><strong>Black:</strong> Ground (GND)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded" style={{backgroundColor: '#ff0000'}}></div>
+                  <span><strong>Red:</strong> Power (5V/3.3V)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded" style={{backgroundColor: '#00ff00'}}></div>
+                  <span><strong>Green:</strong> Digital signals</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded" style={{backgroundColor: '#0000ff'}}></div>
+                  <span><strong>Blue:</strong> Analog inputs</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded" style={{backgroundColor: '#ffff00'}}></div>
+                  <span><strong>Yellow:</strong> Data/Communication</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded" style={{backgroundColor: '#ffffff', border: '1px solid #ccc'}}></div>
+                  <span><strong>White:</strong> Clock signals</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded" style={{backgroundColor: '#ff8800'}}></div>
+                  <span><strong>Orange:</strong> PWM outputs</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded" style={{backgroundColor: '#8B4513'}}></div>
+                  <span><strong>Brown:</strong> Reset/Enable</span>
+                </div>
+              </div>
+            </div>
+            
             <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
               <h4 className="font-medium text-sm text-gray-800 mb-2">Wire Actions:</h4>
               <ul className="text-xs text-gray-600 space-y-1 list-disc pl-4">
