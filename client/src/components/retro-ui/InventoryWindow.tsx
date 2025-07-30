@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
-import { Key, Loader2, PackageOpen, ShoppingBag } from "lucide-react";
+import { Key, Loader2, PackageOpen, ShoppingBag, Coins, Trophy, Package } from "lucide-react";
 import { ItemDetails } from "@/types";
 import bagBackground from "@assets/bagbkg.png";
 import inventoryExeLogo from "@assets/Untitled design - 2025-04-28T130514.365.png";
+import goldCoinImage from "@assets/22_Leperchaun_Coin.png";
+import lootCrateImage from "@assets/loot crate.png";
 
 // Define interfaces locally since we're having import issues
 interface InventoryItem {
@@ -16,11 +18,32 @@ interface InventoryItem {
   imagePath?: string;
 }
 
+interface User {
+  id: string;
+  username: string;
+  displayName?: string;
+  level: number;
+  xp: number;
+  inventory: {
+    gold: number;
+    [key: string]: number;
+  };
+}
+
 interface InventoryWindowProps {
   openItemDetails: (itemId: string, quantity: number) => void;
 }
 
 const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) => {
+  // Fetch user data for gold, XP, and level
+  const { 
+    data: user, 
+    isLoading: userLoading 
+  } = useQuery<User>({
+    queryKey: ["/api/auth/me"],
+    queryFn: getQueryFn({ on401: "throw" }) as any,
+  });
+
   // Fetch inventory items
   const { 
     data: inventoryItems, 
@@ -39,6 +62,15 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
     queryFn: getQueryFn({ on401: "throw" }) as any,
   });
 
+  // Fetch lootboxes
+  const { 
+    data: lootboxes, 
+    isLoading: lootboxesLoading 
+  } = useQuery({
+    queryKey: ["/api/lootboxes"],
+    queryFn: getQueryFn({ on401: "throw" }) as any,
+  });
+
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
 
@@ -47,7 +79,7 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
     setSelectedItem(itemId);
   };
 
-  if (inventoryLoading || itemsLoading) {
+  if (inventoryLoading || itemsLoading || userLoading || lootboxesLoading) {
     return (
       <div className="flex items-center justify-center h-full p-8">
         <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
@@ -66,6 +98,13 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
   const totalSlots = 32;
   const itemsArray = Array.isArray(inventoryItems) ? inventoryItems : [];
   const itemCount = itemsArray.length;
+  
+  // User statistics
+  const userGold = user?.inventory?.gold || 0;
+  const userXP = user?.xp || 0;
+  const userLevel = user?.level || 1;
+  const lootboxArray = Array.isArray(lootboxes) ? lootboxes : [];
+  const lootboxCount = lootboxArray.length;
 
   // Enhanced RPG-style rarity classes with stronger glow effects
   const getRarityClasses = (rarity: string) => {
@@ -133,6 +172,93 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
         </div>
       );
     });
+  };
+
+  // Render user statistics display
+  const renderUserStats = () => {
+    return (
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        {/* Gold Display */}
+        <div className="bg-black/60 border border-amber-700/70 rounded-lg p-3 flex items-center justify-between">
+          <div className="flex items-center">
+            <img 
+              src={goldCoinImage} 
+              alt="Gold" 
+              className="w-6 h-6 mr-2" 
+              style={{ imageRendering: 'pixelated' }}
+            />
+            <span className="text-amber-300 font-semibold text-sm">Gold</span>
+          </div>
+          <span className="text-amber-100 font-bold text-lg">{userGold.toLocaleString()}</span>
+        </div>
+
+        {/* XP Display */}
+        <div className="bg-black/60 border border-blue-700/70 rounded-lg p-3 flex items-center justify-between">
+          <div className="flex items-center">
+            <Trophy className="w-6 h-6 mr-2 text-blue-400" />
+            <span className="text-blue-300 font-semibold text-sm">Level {userLevel}</span>
+          </div>
+          <span className="text-blue-100 font-bold text-lg">{userXP.toLocaleString()} XP</span>
+        </div>
+
+        {/* Lootboxes Display */}
+        <div className="bg-black/60 border border-purple-700/70 rounded-lg p-3 flex items-center justify-between">
+          <div className="flex items-center">
+            <img 
+              src={lootCrateImage} 
+              alt="Loot Crates" 
+              className="w-6 h-6 mr-2" 
+              style={{ imageRendering: 'pixelated' }}
+            />
+            <span className="text-purple-300 font-semibold text-sm">Loot Crates</span>
+          </div>
+          <span className="text-purple-100 font-bold text-lg">{lootboxCount}</span>
+        </div>
+      </div>
+    );
+  };
+
+  // Render lootbox slots
+  const renderLootboxes = () => {
+    if (lootboxCount === 0) return null;
+    
+    return (
+      <div className="mb-6">
+        <div className="flex items-center mb-3">
+          <div className="flex-1 h-px bg-gradient-to-r from-purple-700/0 via-purple-700/50 to-purple-700/0"></div>
+          <div className="flex items-center bg-purple-900/40 px-2 py-1 rounded-md mx-2 border border-purple-700/50">
+            <Package className="w-4 h-4 mr-2 text-purple-300" />
+            <h4 className="text-sm font-semibold text-purple-300">Loot Crates ({lootboxCount})</h4>
+          </div>
+          <div className="flex-1 h-px bg-gradient-to-r from-purple-700/0 via-purple-700/50 to-purple-700/0"></div>
+        </div>
+        
+        <div className="grid grid-cols-6 gap-2">
+          {lootboxArray.map((lootbox: any, index: number) => (
+            <div 
+              key={`lootbox-${index}`}
+              className="relative w-14 h-14 rounded bg-purple-950/40 border border-purple-500 shadow-[0_0_8px_1px_rgba(163,53,238,0.4)] 
+                cursor-pointer hover:brightness-125 transition-all duration-200 hover:scale-105"
+              onClick={() => {
+                // Handle lootbox click - could open lootbox or show details
+                console.log('Lootbox clicked:', lootbox);
+              }}
+            >
+              <img 
+                src={lootCrateImage} 
+                alt={`${lootbox.type} Loot Crate`} 
+                className="w-full h-full object-contain p-2" 
+                style={{ imageRendering: 'pixelated' }}
+              />
+              
+              {!lootbox.opened && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white"></div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   // Render keyring slots with improved styling
@@ -247,11 +373,40 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
         <div className="flex flex-1 overflow-hidden">
           {/* Main inventory grid (left side) */}
           <div className="flex-1 overflow-auto p-4">
+            {/* User Statistics */}
+            {renderUserStats()}
+            
+            {/* Lootboxes Section */}
+            {renderLootboxes()}
+            
+            {/* Regular Items Grid */}
             {itemsArray.length > 0 ? (
-              <div className="grid grid-cols-8 gap-1.5">
-                {renderInventorySlots()}
+              <div>
+                <div className="flex items-center mb-3">
+                  <div className="flex-1 h-px bg-gradient-to-r from-amber-700/0 via-amber-700/50 to-amber-700/0"></div>
+                  <div className="flex items-center bg-amber-900/40 px-2 py-1 rounded-md mx-2 border border-amber-700/50">
+                    <ShoppingBag className="w-4 h-4 mr-2 text-amber-300" />
+                    <h4 className="text-sm font-semibold text-amber-300">Items ({itemCount})</h4>
+                  </div>
+                  <div className="flex-1 h-px bg-gradient-to-r from-amber-700/0 via-amber-700/50 to-amber-700/0"></div>
+                </div>
+                <div className="grid grid-cols-8 gap-1.5">
+                  {renderInventorySlots()}
+                </div>
               </div>
-            ) : renderEmptyState()}
+            ) : (
+              <div>
+                <div className="flex items-center mb-3">
+                  <div className="flex-1 h-px bg-gradient-to-r from-amber-700/0 via-amber-700/50 to-amber-700/0"></div>
+                  <div className="flex items-center bg-amber-900/40 px-2 py-1 rounded-md mx-2 border border-amber-700/50">
+                    <ShoppingBag className="w-4 h-4 mr-2 text-amber-300" />
+                    <h4 className="text-sm font-semibold text-amber-300">Items (0)</h4>
+                  </div>
+                  <div className="flex-1 h-px bg-gradient-to-r from-amber-700/0 via-amber-700/50 to-amber-700/0"></div>
+                </div>
+                {renderEmptyState()}
+              </div>
+            )}
             
             {/* Keyring Section */}
             <div className="mt-6 pt-4 border-t border-amber-900/30">
