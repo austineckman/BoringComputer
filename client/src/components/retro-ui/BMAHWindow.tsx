@@ -179,7 +179,12 @@ const BMAHWindow: React.FC<BMAHWindowProps> = ({ onClose, onMinimize }) => {
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Coins className="text-yellow-400" size={20} />
+              <img 
+                src="/images/gold-coin.png" 
+                alt="Gold"
+                className="w-5 h-5"
+                style={{ imageRendering: 'pixelated' }}
+              />
               <span className="text-yellow-400 font-bold">{userGold.toLocaleString()}</span>
             </div>
           </div>
@@ -284,7 +289,12 @@ const BMAHWindow: React.FC<BMAHWindowProps> = ({ onClose, onMinimize }) => {
                   </div>
                   <div className="text-lg font-bold text-yellow-400 mb-4">
                     Current Bid: {selectedAuction.currentBid.toLocaleString()} 
-                    <Coins className="inline ml-1" size={16} />
+                    <img 
+                      src="/images/gold-coin.png" 
+                      alt="Gold"
+                      className="inline w-4 h-4 ml-1"
+                      style={{ imageRendering: 'pixelated' }}
+                    />
                   </div>
                 </div>
 
