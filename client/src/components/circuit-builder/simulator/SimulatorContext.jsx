@@ -427,7 +427,7 @@ export const SimulatorProvider = ({ children }) => {
             }
           });
           
-          if (connectedLEDs.length === 0) {
+          if (connectedComponents.length === 0) {
             console.log(`[Simulator] No LEDs found connected to pin ${pinNumber}`);
             console.log(`[Simulator] Available LED components:`, components.filter(c => c.type === 'led' || c.id.includes('led')));
             console.log(`[Simulator] Checking wires for pin ${pinNumber}...`);
