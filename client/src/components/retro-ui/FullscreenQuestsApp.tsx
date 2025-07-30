@@ -380,10 +380,10 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
         ) : questView === 'kit-select' ? (
           /* Kit Selection Screen */
           <div className="flex-1 overflow-y-auto bg-black/70">
-            <div className="p-3 sm:p-6 pb-12 max-w-4xl mx-auto min-h-full">
-              <div className="text-center mb-6 sm:mb-8">
-                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 sm:mb-4">Select a Component Kit</h2>
-                <p className="text-gray-300 text-sm sm:text-base">Choose a kit to see available quests and adventures</p>
+            <div className="p-3 sm:p-6 pb-12 max-w-6xl mx-auto min-h-full">
+              <div className="text-center mb-4 sm:mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">Select a Component Kit</h2>
+                <p className="text-gray-300 text-sm">Choose a kit to see available quests and adventures</p>
               </div>
               
               {loadingKits ? (
@@ -392,7 +392,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                   <p className="text-brand-orange">Loading kits...</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 pb-8">
                   {kits?.map(kit => {
                     const kitQuests = getQuestsForKit(kit.id);
                     const questCount = kitQuests.length;
@@ -400,7 +400,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                     return (
                       <div 
                         key={kit.id}
-                        className="bg-gray-900/80 rounded-lg border border-brand-orange/30 p-4 sm:p-6 hover:border-brand-orange/60 transition-all duration-300 cursor-pointer hover:shadow-lg"
+                        className="bg-gray-900/80 rounded-lg border border-brand-orange/30 p-3 sm:p-4 hover:border-brand-orange/60 transition-all duration-300 cursor-pointer hover:shadow-lg"
                         onClick={() => handleKitSelect(kit.id)}
                         onMouseEnter={() => window.sounds?.hover()}
                       >
@@ -461,7 +461,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
             </div>
             
             {/* Quest list */}
-            <div className="flex-1 overflow-y-scroll p-3 sm:p-6 bg-black/70 min-h-0 quest-scroll" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+            <div className="flex-1 overflow-y-auto p-2 sm:p-4 bg-black/70 min-h-0 quest-scroll">
               {loadingQuests ? (
                 <div className="flex flex-col items-center justify-center h-full">
                   <Loader2 className="h-10 w-10 animate-spin text-brand-orange mb-3" />
@@ -483,11 +483,11 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                 }
                 
                 return (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-20">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 pb-20">
                     {kitQuests.map(quest => (
                       <div 
                         key={quest.id}
-                        className={`bg-gray-900/80 rounded-lg border p-4 sm:p-6 hover:border-brand-orange/60 transition-all duration-300 cursor-pointer hover:shadow-lg relative ${
+                        className={`bg-gray-900/80 rounded-lg border p-3 sm:p-4 hover:border-brand-orange/60 transition-all duration-300 cursor-pointer hover:shadow-lg relative ${
                           quest.status === 'completed' 
                             ? 'border-green-500/50 bg-green-900/20' 
                             : 'border-brand-orange/30'
