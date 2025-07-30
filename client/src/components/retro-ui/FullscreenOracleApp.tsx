@@ -830,35 +830,32 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         return; // Can't move further in that direction
       }
       
-      // Get the quests to swap
-      const questToMove = currentQuests[currentIndex];
-      const questToSwap = currentQuests[newIndex];
+      // Create a new array with the quests swapped
+      const reorderedQuests = [...currentQuests];
+      [reorderedQuests[currentIndex], reorderedQuests[newIndex]] = [reorderedQuests[newIndex], reorderedQuests[currentIndex]];
       
-      // Update orderInLine values by swapping them
-      const tempOrder = questToMove.orderInLine || currentIndex + 1;
-      questToMove.orderInLine = questToSwap.orderInLine || newIndex + 1;
-      questToSwap.orderInLine = tempOrder;
+      // Recalculate all orderInLine values to be sequential (1, 2, 3, etc.)
+      const updatedQuests = reorderedQuests.map((quest, index) => ({
+        ...quest,
+        orderInLine: index + 1
+      }));
       
-      // Update both quests in the backend
-      await Promise.all([
-        apiRequest('PUT', `/api/oracle/quests/${questToMove.id}`, {
-          ...questToMove,
-          orderInLine: questToMove.orderInLine
-        }),
-        apiRequest('PUT', `/api/oracle/quests/${questToSwap.id}`, {
-          ...questToSwap,
-          orderInLine: questToSwap.orderInLine
-        })
-      ]);
+      // Update all affected quests in the backend
+      await Promise.all(
+        updatedQuests.map(quest =>
+          apiRequest('PUT', `/api/oracle/quests/${quest.id}`, {
+            ...quest,
+            orderInLine: quest.orderInLine
+          })
+        )
+      );
       
       // Update local state to reflect the changes immediately
       setQuests(prevQuests => {
         return prevQuests.map(quest => {
-          if (quest.id.toString() === questToMove.id.toString()) {
-            return { ...quest, orderInLine: questToMove.orderInLine };
-          }
-          if (quest.id.toString() === questToSwap.id.toString()) {
-            return { ...quest, orderInLine: questToSwap.orderInLine };
+          const updatedQuest = updatedQuests.find(u => u.id.toString() === quest.id.toString());
+          if (updatedQuest) {
+            return { ...quest, orderInLine: updatedQuest.orderInLine };
           }
           return quest;
         });
