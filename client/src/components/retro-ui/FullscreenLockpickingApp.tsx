@@ -202,7 +202,13 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
       // STEP 1: Generate the predetermined animation strip FIRST
       const items = Object.values(itemsInfo);
       const totalItems = 40;
-      const winnerIndex = Math.floor(totalItems / 2); // Winner at index 20
+      
+      // CSS animation moves strip by -1070px, each item is 104px wide (96px + 8px margin)
+      // Selection line is at center of container
+      // Calculate which item will be under the selection line after animation
+      const itemWidth = 104; // w-24 (96px) + mx-1 (8px total margin)
+      const animationDistance = 1070; // From CSS animation
+      const winnerIndex = Math.floor(animationDistance / itemWidth); // This should be index 10
       
       // Generate all random items
       const generatedItems = Array.from({ length: totalItems }, (_, i) => {
@@ -215,8 +221,11 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
         };
       });
       
-      // The predetermined winner is whatever was randomly generated at position 20
+      // The predetermined winner is whatever was randomly generated at the calculated position
       const predeterminedWinner = generatedItems[winnerIndex];
+      
+      console.log(`Animation calculation: ${animationDistance}px ÷ ${itemWidth}px = winner at index ${winnerIndex}`);
+      console.log(`Predetermined winner:`, predeterminedWinner);
       
       // Set the animation items immediately
       setSpinningItems(generatedItems);
