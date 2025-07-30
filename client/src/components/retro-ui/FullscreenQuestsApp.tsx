@@ -508,7 +508,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
             </div>
 
             {/* Quest list */}
-            <div className="flex-1 overflow-y-auto p-2 sm:p-4 bg-black/70 min-h-0 quest-scroll">
+            <div className="flex-1 overflow-y-scroll p-2 sm:p-4 bg-black/70 min-h-0 quest-scroll" style={{ maxHeight: 'calc(100vh - 200px)' }}>
               {loadingQuests ? (
                 <div className="flex flex-col items-center justify-center h-full">
                   <Loader2 className="h-10 w-10 animate-spin text-brand-orange mb-3" />
@@ -535,7 +535,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                 }
                 
                 return (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 pb-20">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 pb-32">
                     {kitQuests.map(quest => {
                       const heroImage = quest.content?.images?.[0] || quest.heroImage;
                       const circuitDiagram = quest.content?.images?.[1]; // Second image as circuit diagram
