@@ -568,6 +568,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                       return (
                         <PixelCard 
                           key={quest.id}
+                          variant="blue"
                           className={`bg-gray-900/90 rounded-xl border overflow-hidden transition-all duration-300 relative group ${
                             quest.status === 'locked' 
                               ? 'border-gray-600/50 bg-gray-800/50 cursor-not-allowed opacity-60' 
@@ -580,16 +581,16 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                           disabled={quest.status === 'locked'}
                         >
                           {/* Hero Image Section */}
-                          <div className="relative h-48 sm:h-56 overflow-hidden bg-gray-800/50">
+                          <div className="relative h-48 sm:h-56 overflow-hidden bg-gray-800/50 z-10">
                             {heroImage ? (
                               <img 
                                 src={heroImage} 
                                 alt={quest.title}
-                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 relative z-10"
                                 style={{ imageRendering: 'pixelated' }}
                               />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800">
+                              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800 relative z-10">
                                 <Cpu className="w-12 h-12 text-gray-500" />
                               </div>
                             )}
