@@ -6557,24 +6557,10 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                           formData.append('image', file);
                           
                           try {
-                            // First, get the CSRF token
-                            const csrfResponse = await fetch('/api/csrf-token', {
-                              credentials: 'include'
-                            });
-                            
-                            if (!csrfResponse.ok) {
-                              throw new Error('Failed to get CSRF token');
-                            }
-                            
-                            const csrfData = await csrfResponse.json();
-                            
-                            // Upload the image with CSRF token
-                            const response = await fetch('/api/admin/upload-image', {
+                            // Upload the image directly (CSRF protection removed)
+                            const response = await fetch('/api/admin/upload/upload-image', {
                               method: 'POST',
                               body: formData,
-                              headers: {
-                                'X-CSRF-Token': csrfData.token
-                              },
                               credentials: 'include'
                             });
                             
@@ -6670,24 +6656,10 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                           formData.append('image', file);
                           
                           try {
-                            // First, get the CSRF token
-                            const csrfResponse = await fetch('/api/csrf-token', {
-                              credentials: 'include'
-                            });
-                            
-                            if (!csrfResponse.ok) {
-                              throw new Error('Failed to get CSRF token');
-                            }
-                            
-                            const csrfData = await csrfResponse.json();
-                            
-                            // Upload the image with CSRF token
-                            const response = await fetch('/api/admin/upload-image', {
+                            // Upload the image directly (CSRF protection removed)
+                            const response = await fetch('/api/admin/upload/upload-image', {
                               method: 'POST',
                               body: formData,
-                              headers: {
-                                'X-CSRF-Token': csrfData.token
-                              },
                               credentials: 'include'
                             });
                             
@@ -7060,24 +7032,10 @@ void loop() {
                           formData.append('image', file);
                           
                           try {
-                            // First, get the CSRF token
-                            const csrfResponse = await fetch('/api/csrf-token', {
-                              credentials: 'include'
-                            });
-                            
-                            if (!csrfResponse.ok) {
-                              throw new Error('Failed to get CSRF token');
-                            }
-                            
-                            const csrfData = await csrfResponse.json();
-                            
-                            // Upload the image with CSRF token
-                            const response = await fetch('/api/admin/upload-image', {
+                            // Upload the image directly (CSRF protection removed)
+                            const response = await fetch('/api/admin/upload/upload-image', {
                               method: 'POST',
                               body: formData,
-                              headers: {
-                                'X-CSRF-Token': csrfData.token
-                              },
                               credentials: 'include'
                             });
                             
@@ -7286,24 +7244,10 @@ void loop() {
                           formData.append('image', file);
                           
                           try {
-                            // First, get the CSRF token
-                            const csrfResponse = await fetch('/api/csrf-token', {
-                              credentials: 'include'
-                            });
-                            
-                            if (!csrfResponse.ok) {
-                              throw new Error('Failed to get CSRF token');
-                            }
-                            
-                            const csrfData = await csrfResponse.json();
-                            
-                            // Upload the image with CSRF token
+                            // Upload the image directly (CSRF protection removed)
                             const response = await fetch(`/api/admin/kits/${(editingItem as ComponentKit).id}/image`, {
                               method: 'POST',
                               body: formData,
-                              headers: {
-                                'X-CSRF-Token': csrfData.token
-                              },
                               credentials: 'include'
                             });
                             
@@ -7539,24 +7483,10 @@ void loop() {
                           formData.append('image', file);
                           
                           try {
-                            // First, get the CSRF token
-                            const csrfResponse = await fetch('/api/csrf-token', {
-                              credentials: 'include'
-                            });
-                            
-                            if (!csrfResponse.ok) {
-                              throw new Error('Failed to get CSRF token');
-                            }
-                            
-                            const csrfData = await csrfResponse.json();
-                            
-                            // Upload the image with CSRF token
+                            // Upload the image directly (CSRF protection removed)
                             const response = await fetch(`/api/admin/components/${(editingItem as KitComponent).id}/image`, {
                               method: 'POST',
                               body: formData,
-                              headers: {
-                                'X-CSRF-Token': csrfData.token
-                              },
                               credentials: 'include'
                             });
                             
