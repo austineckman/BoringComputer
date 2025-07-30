@@ -6137,7 +6137,15 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                     </div>
                     
                     <div>
-                      <label className="block text-gray-300 text-sm mb-1">Gold Reward</label>
+                      <label className="block text-gray-300 text-sm mb-1 flex items-center gap-2">
+                        <img 
+                          src="/images/gold-coin.png" 
+                          alt="Gold"
+                          className="w-4 h-4"
+                          style={{ imageRendering: 'pixelated' }}
+                        />
+                        Gold Reward
+                      </label>
                       <input
                         type="number"
                         min="0"
@@ -6286,7 +6294,13 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                           <span className="bg-gray-700/50 px-2 py-0.5 rounded-md text-xs">
                             {(editingItem as Quest).xpReward || 0} XP
                           </span>
-                          <span className="bg-yellow-700/50 px-2 py-0.5 rounded-md text-xs">
+                          <span className="bg-yellow-700/50 px-2 py-0.5 rounded-md text-xs flex items-center gap-1">
+                            <img 
+                              src="/images/gold-coin.png" 
+                              alt="Gold"
+                              className="w-3 h-3"
+                              style={{ imageRendering: 'pixelated' }}
+                            />
                             {(editingItem as Quest).goldReward || 0} Gold
                           </span>
                         </div>

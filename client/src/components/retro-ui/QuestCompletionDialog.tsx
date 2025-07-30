@@ -182,7 +182,12 @@ export const QuestRewardsDialog: React.FC<QuestRewardsDialogProps> = ({
 
                 {/* Gold Reward */}
                 <div className="bg-gray-700 border-2 border-gray-600 rounded-lg p-4 text-center">
-                  <Coins className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
+                  <img 
+                    src="/images/gold-coin.png" 
+                    alt="Gold Coin"
+                    className="w-8 h-8 mx-auto mb-2"
+                    style={{ imageRendering: 'pixelated' }}
+                  />
                   <div className="text-yellow-500 font-bold text-lg">+{rewards.goldAwarded} Gold</div>
                   <div className="text-xs text-gray-400">Total: {rewards.newGold} Gold</div>
                 </div>

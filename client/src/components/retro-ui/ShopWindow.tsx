@@ -192,7 +192,12 @@ const ShopWindow: React.FC<ShopWindowProps> = ({ onClose }) => {
         </h2>
         <div className="flex items-center justify-center gap-6 text-sm text-gray-300">
           <div className="flex items-center gap-2 bg-black/50 px-3 py-1 rounded border border-red-800">
-            <Coins className="w-4 h-4 text-yellow-400" />
+            <img 
+              src="/images/gold-coin.png" 
+              alt="Gold"
+              className="w-4 h-4"
+              style={{ imageRendering: 'pixelated' }}
+            />
             <span>Your Gold: <span className="text-yellow-400 font-bold">{userGold}</span></span>
           </div>
           <div className="flex items-center gap-2 bg-black/50 px-3 py-1 rounded border border-purple-800">
