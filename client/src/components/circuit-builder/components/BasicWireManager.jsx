@@ -308,20 +308,21 @@ const BasicWireManager = ({ canvasRef }) => {
         return;
       }
       
-      // For continuous drawing, preserve raw waypoints; for click mode, use optimization  
+      // Use smooth curves for click-drawn wires with waypoints  
       const drawnPath = [...pendingWireWaypoints];
       let optimizedPath;
       let useRawPath = false;
       
-      if (isDrawing && drawnPath.length > 1) {
-        // Continuous drawing: use raw waypoints for natural curves
+      if (drawnPath.length > 0) {
+        // Use smooth curves for wires with waypoints
         optimizedPath = [pendingConnection.sourcePos, ...drawnPath, pinPosition];
         useRawPath = true;
-        console.log('Using raw continuous drawing path with', optimizedPath.length, 'points');
+        console.log('Using smooth curved path with', optimizedPath.length, 'points');
       } else {
-        // Click mode: use optimized routing
-        optimizedPath = WireRouter.optimizePath(drawnPath, pendingConnection.sourcePos, pinPosition);
-        console.log('Using optimized click-mode path');
+        // Simple direct connection
+        optimizedPath = [pendingConnection.sourcePos, pinPosition];
+        useRawPath = true;
+        console.log('Using direct smooth connection');
       }
       
       // Create a new wire connection with smart routing
@@ -369,10 +370,10 @@ const BasicWireManager = ({ canvasRef }) => {
     return '#aaaaaa'; // Default (light gray)
   };
   
-  // Handle canvas clicks to add waypoints during wire drawing (only when not in continuous drawing mode)
+  // Handle canvas clicks to add waypoints during wire drawing
   const handleCanvasClick = (e) => {
-    // Only respond if clicking directly on the canvas (not a component) and not in continuous drawing mode
-    if (e.target === canvasRef.current && pendingConnection && !isDrawing) {
+    // Only respond if clicking directly on the canvas (not a component)
+    if (e.target === canvasRef.current && pendingConnection) {
       // Get the click position relative to the canvas
       const canvasRect = canvasRef.current.getBoundingClientRect();
       const clickPosition = {
@@ -406,7 +407,7 @@ const BasicWireManager = ({ canvasRef }) => {
     setSelectedWireId(wireId === selectedWireId ? null : wireId);
   };
   
-  // Track mouse movement for drawing pending wire with continuous drawing support
+  // Track mouse movement for simple wire preview only
   const handleMouseMove = (e) => {
     if (!canvasRef?.current) return;
     
@@ -417,52 +418,17 @@ const BasicWireManager = ({ canvasRef }) => {
     };
     
     setMousePosition(currentMousePos);
-    
-    // If we're in continuous drawing mode, add waypoints as mouse moves
-    if (isDrawing && pendingConnection && lastMousePos.x !== undefined) {
-      const distance = Math.sqrt(
-        Math.pow(currentMousePos.x - lastMousePos.x, 2) + 
-        Math.pow(currentMousePos.y - lastMousePos.y, 2)
-      );
-      
-      // Add waypoint every 12 pixels of movement for more organic curves
-      if (distance > 12) {
-        setPendingWireWaypoints(prev => {
-          const newWaypoints = [...prev, currentMousePos];
-          console.log('Added waypoint during continuous drawing:', currentMousePos, 'Total waypoints:', newWaypoints.length);
-          return newWaypoints;
-        });
-        setLastMousePos(currentMousePos);
-      }
-    }
+    // No continuous drawing - just show simple preview line
   };
 
-  // Handle mouse down events for starting continuous drawing
+  // Handle mouse down events - no longer needed for click-based drawing
   const handleMouseDown = (e) => {
-    // Only start drawing if we have a pending connection and it's the left mouse button
-    if (pendingConnection && e.button === 0) {
-      e.preventDefault(); // Prevent default drag behavior
-      setIsDrawing(true);
-      const canvasRect = canvasRef.current.getBoundingClientRect();
-      const startPos = {
-        x: e.clientX - canvasRect.left,
-        y: e.clientY - canvasRect.top
-      };
-      setLastMousePos(startPos);
-      
-      // Clear any existing waypoints and start with initial position
-      setPendingWireWaypoints([startPos]);
-      
-      console.log('Started continuous wire drawing at:', startPos);
-    }
+    // No continuous drawing mode
   };
 
-  // Handle mouse up events for stopping continuous drawing
+  // Handle mouse up events - no longer needed for click-based drawing
   const handleMouseUp = (e) => {
-    if (isDrawing) {
-      setIsDrawing(false);
-      console.log('Stopped continuous wire drawing with', pendingWireWaypoints.length, 'waypoints');
-    }
+    // No continuous drawing mode
   };
 
   // Handle component movement events to update wire positions
@@ -598,19 +564,10 @@ const BasicWireManager = ({ canvasRef }) => {
     if (canvas) {
       canvas.addEventListener('click', handleCanvasClick);
       canvas.addEventListener('mousemove', handleMouseMove);
-      canvas.addEventListener('mousedown', handleMouseDown);
-      canvas.addEventListener('mouseup', handleMouseUp);
+      // No longer needed for click-based drawing
     }
 
-    // Add global mouse up handler to stop drawing even if mouse is released outside canvas
-    const handleGlobalMouseUp = (e) => {
-      if (isDrawing) {
-        setIsDrawing(false);
-        console.log('Stopped continuous wire drawing globally with', pendingWireWaypoints.length, 'waypoints');
-      }
-    };
-
-    document.addEventListener('mouseup', handleGlobalMouseUp);
+    // No longer needed for click-based drawing
     
     // Add keyboard handler for deletion
     window.addEventListener('keydown', handleKeyDown);
@@ -624,10 +581,9 @@ const BasicWireManager = ({ canvasRef }) => {
       if (canvas) {
         canvas.removeEventListener('click', handleCanvasClick);
         canvas.removeEventListener('mousemove', handleMouseMove);
-        canvas.removeEventListener('mousedown', handleMouseDown);
-        canvas.removeEventListener('mouseup', handleMouseUp);
+        // No longer needed for click-based drawing
       }
-      document.removeEventListener('mouseup', handleGlobalMouseUp);
+      // No longer needed for click-based drawing
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [canvasRef, pendingConnection, pendingWireWaypoints, selectedWireId, wires]);
@@ -841,19 +797,14 @@ const BasicWireManager = ({ canvasRef }) => {
             {(() => {
               let pathString;
               
-              if (isDrawing && pendingWireWaypoints.length > 1) {
-                // For continuous drawing, use smooth curves for natural appearance
-                const rawPath = [pendingConnection.sourcePos, ...pendingWireWaypoints];
+              // Simple click-based preview - straight line with curves based on waypoints
+              if (pendingWireWaypoints.length > 0) {
+                // Show curved path through waypoints to mouse position
+                const rawPath = [pendingConnection.sourcePos, ...pendingWireWaypoints, { x: mousePosition.x, y: mousePosition.y }];
                 pathString = createSmoothCurvePath(rawPath);
               } else {
-                // For click mode, use optimized routing
-                const targetPos = { x: mousePosition.x, y: mousePosition.y };
-                const previewPath = WireRouter.optimizePath(
-                  pendingWireWaypoints, 
-                  pendingConnection.sourcePos, 
-                  targetPos
-                );
-                pathString = WireRouter.generateSVGPath(previewPath);
+                // Simple straight line preview
+                pathString = `M ${pendingConnection.sourcePos.x},${pendingConnection.sourcePos.y} L ${mousePosition.x},${mousePosition.y}`;
               }
               
               return (
@@ -881,18 +832,7 @@ const BasicWireManager = ({ canvasRef }) => {
               );
             })()}
             
-            {/* Draw waypoint markers for pending wire */}
-            {pendingWireWaypoints.map((point, index) => (
-              <circle
-                key={`waypoint-${index}`}
-                cx={point.x}
-                cy={point.y}
-                r={4}
-                fill="#ff5500"
-                stroke="#000000"
-                strokeWidth={1}
-              />
-            ))}
+            {/* No waypoint markers - cleaner appearance */}
             <text 
               x={pendingConnection.sourcePos.x + 15} 
               y={pendingConnection.sourcePos.y - 15} 
