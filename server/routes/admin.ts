@@ -663,6 +663,39 @@ router.put('/users/:id/toggle-admin', async (req, res) => {
   }
 });
 
+// Reset quest progress for testing
+router.post('/users/reset-quest-progress', async (req, res) => {
+  try {
+    // Get the current user from session
+    const currentUser = req.user;
+    if (!currentUser) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Clear the completedQuests array for the current user
+    const updatedUser = await storage.updateUser(currentUser.id, { 
+      completedQuests: [] 
+    });
+
+    if (!updatedUser) {
+      return res.status(500).json({ error: 'Failed to reset quest progress' });
+    }
+
+    res.json({
+      success: true,
+      message: `Quest progress reset successfully for ${updatedUser.username}`,
+      user: {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        completedQuests: updatedUser.completedQuests || []
+      }
+    });
+  } catch (error) {
+    console.error('Error resetting quest progress:', error);
+    res.status(500).json({ error: 'Failed to reset quest progress' });
+  }
+});
+
 // =================
 // FILE UPLOADS
 // =================

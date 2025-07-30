@@ -4515,6 +4515,47 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     }
   };
 
+  // Function to reset quest progress for testing
+  const handleResetQuestProgress = async () => {
+    try {
+      window.sounds?.click();
+      setNotificationMessage({
+        type: 'success',
+        message: 'Resetting quest progress...'
+      });
+
+      const response = await fetch('/api/admin/users/reset-quest-progress', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setNotificationMessage({
+          type: 'success',
+          message: data.message || 'Quest progress reset successfully!'
+        });
+        window.sounds?.success();
+      } else {
+        const errorData = await response.json();
+        setNotificationMessage({
+          type: 'error',
+          message: errorData.message || 'Failed to reset quest progress'
+        });
+        window.sounds?.error();
+      }
+    } catch (error) {
+      console.error('Error resetting quest progress:', error);
+      setNotificationMessage({
+        type: 'error',
+        message: 'An error occurred while resetting quest progress'
+      });
+      window.sounds?.error();
+    }
+  };
+
   // BMAH handler functions
   const handleCreateAuction = async () => {
     try {
@@ -4690,6 +4731,15 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
             >
               <Trash2 className="h-3 w-3 mr-1" />
               Clear Lootboxes
+            </button>
+            <button
+              className="px-3 py-1 text-xs bg-purple-600/90 hover:bg-purple-600 text-white rounded flex items-center"
+              onClick={handleResetQuestProgress}
+              onMouseEnter={() => window.sounds?.hover()}
+              title="Reset all quest progress for testing quests"
+            >
+              <RotateCcw className="h-3 w-3 mr-1" />
+              Reset Quest Progress
             </button>
           </div>
         </div>
