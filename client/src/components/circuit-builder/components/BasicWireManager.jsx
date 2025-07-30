@@ -747,19 +747,7 @@ const BasicWireManager = ({ canvasRef }) => {
                 fill={wire.color || '#ff0000'} 
               />
               
-              {/* Show waypoint markers for the completed wire */}
-              {wire.waypoints && wire.waypoints.map((point, index) => (
-                <circle
-                  key={`waypoint-${wire.id}-${index}`}
-                  cx={point.x}
-                  cy={point.y}
-                  r={3}
-                  fill={wire.color || '#ff0000'}
-                  stroke="#000000"
-                  strokeWidth={1}
-                  opacity={selectedWireId === wire.id ? 1 : 0.7}
-                />
-              ))}
+              {/* No waypoint markers - clean wire appearance */}
               
               {/* Pin labels positioned to avoid overlap */}
               <text 
