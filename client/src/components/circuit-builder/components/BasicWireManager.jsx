@@ -149,14 +149,46 @@ const BasicWireManager = ({ canvasRef }) => {
     return position;
   };
 
+  // Create smooth, organic wire paths that look hand-drawn
+  const createSmoothCurvePath = (points) => {
+    if (points.length < 2) return '';
+    if (points.length === 2) {
+      return `M ${points[0].x},${points[0].y} L ${points[1].x},${points[1].y}`;
+    }
+    
+    // Use quadratic Bezier curves to create smooth, flowing paths
+    let path = `M ${points[0].x},${points[0].y}`;
+    
+    for (let i = 1; i < points.length - 1; i++) {
+      const current = points[i];
+      const next = points[i + 1];
+      
+      // Create control point for smooth curve
+      const controlX = current.x;
+      const controlY = current.y;
+      const endX = (current.x + next.x) / 2;
+      const endY = (current.y + next.y) / 2;
+      
+      path += ` Q ${controlX},${controlY} ${endX},${endY}`;
+    }
+    
+    // Final segment to last point
+    const lastPoint = points[points.length - 1];
+    const secondLast = points[points.length - 2];
+    const controlX = (secondLast.x + lastPoint.x) / 2;
+    const controlY = (secondLast.y + lastPoint.y) / 2;
+    path += ` Q ${controlX},${controlY} ${lastPoint.x},${lastPoint.y}`;
+    
+    return path;
+  };
+
   // Generate a natural-looking path that follows user's drawing intent
   const getWirePath = (start, end, waypoints = [], optimizedPath = null, useRawPath = false) => {
-    // If this wire was drawn continuously, use raw path for natural curves
+    // If this wire was drawn continuously, use smooth curves for natural appearance
     if (useRawPath && optimizedPath && optimizedPath.length > 0) {
-      const rawPath = `M ${optimizedPath[0].x},${optimizedPath[0].y} ` + 
-                     optimizedPath.slice(1).map(point => `L ${point.x},${point.y}`).join(' ');
-      console.log('Rendering raw continuous path with', optimizedPath.length, 'points');
-      return rawPath;
+      const smoothPath = createSmoothCurvePath(optimizedPath);
+      console.log('Rendering smooth continuous path with', optimizedPath.length, 'points');
+      return smoothPath;
     }
     
     // Use optimized path if available, otherwise fall back to waypoints or direct path
@@ -393,8 +425,8 @@ const BasicWireManager = ({ canvasRef }) => {
         Math.pow(currentMousePos.y - lastMousePos.y, 2)
       );
       
-      // Add waypoint every 6 pixels of movement for smooth curves
-      if (distance > 6) {
+      // Add waypoint every 12 pixels of movement for more organic curves
+      if (distance > 12) {
         setPendingWireWaypoints(prev => {
           const newWaypoints = [...prev, currentMousePos];
           console.log('Added waypoint during continuous drawing:', currentMousePos, 'Total waypoints:', newWaypoints.length);
@@ -683,6 +715,7 @@ const BasicWireManager = ({ canvasRef }) => {
                 strokeWidth={selectedWireId === wire.id ? 5 : 4}
                 fill="none"
                 strokeLinecap="round"
+                strokeLinejoin="round"
                 strokeOpacity={0.5}
               />
               
@@ -693,6 +726,7 @@ const BasicWireManager = ({ canvasRef }) => {
                 strokeWidth={selectedWireId === wire.id ? 3 : 2}
                 fill="none"
                 strokeLinecap="round"
+                strokeLinejoin="round"
                 onClick={(e) => handleWireClick(wire.id, e)}
                 className="cursor-pointer"
                 title="Click to select wire, Delete key to remove"
@@ -808,10 +842,9 @@ const BasicWireManager = ({ canvasRef }) => {
               let pathString;
               
               if (isDrawing && pendingWireWaypoints.length > 1) {
-                // For continuous drawing, use raw waypoints without optimization for natural curves
+                // For continuous drawing, use smooth curves for natural appearance
                 const rawPath = [pendingConnection.sourcePos, ...pendingWireWaypoints];
-                pathString = `M ${rawPath[0].x} ${rawPath[0].y} ` + 
-                            rawPath.slice(1).map(point => `L ${point.x} ${point.y}`).join(' ');
+                pathString = createSmoothCurvePath(rawPath);
               } else {
                 // For click mode, use optimized routing
                 const targetPos = { x: mousePosition.x, y: mousePosition.y };
@@ -832,8 +865,8 @@ const BasicWireManager = ({ canvasRef }) => {
                     strokeDasharray="5,5"
                     fill="none"
                     strokeOpacity={0.3}
-                    strokeLinecap="square"
-                    strokeLinejoin="miter"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
                   <path
                     d={pathString}
@@ -841,8 +874,8 @@ const BasicWireManager = ({ canvasRef }) => {
                     strokeWidth={2}
                     strokeDasharray="5,5"
                     fill="none"
-                    strokeLinecap="square"
-                    strokeLinejoin="miter"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
                 </>
               );
