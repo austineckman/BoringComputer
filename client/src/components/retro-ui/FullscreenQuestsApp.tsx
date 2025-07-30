@@ -450,7 +450,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
           </div>
         ) : questView === 'quest-list' ? (
           /* Quest List for Selected Kit */
-          <div className="flex-1 flex flex-col h-full">
+          <div className="flex-1 flex flex-col h-full overflow-hidden">
             {/* Breadcrumb and back button */}
             <div className="bg-black/80 border-b border-brand-orange/30 p-3 sm:p-4 flex-shrink-0">
               <div className="flex items-center justify-between">
@@ -631,12 +631,63 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                               </div>
                             )}
                             
-                            {/* Components Required Section */}
+
+
+                            {/* Quest Rewards Section */}
+                            {quest.rewards && (quest.rewards.items?.length > 0 || quest.rewards.gold > 0 || quest.lootBoxRewards?.length > 0) && quest.status !== 'locked' && (
+                              <div className="mb-3">
+                                <h4 className="text-xs font-semibold text-gray-400 mb-2">Quest Rewards:</h4>
+                                <div className="flex flex-wrap gap-1">
+                                  {quest.rewards.gold > 0 && (
+                                    <div className="flex items-center bg-yellow-900/30 rounded px-2 py-1">
+                                      <img 
+                                        src="/attached_assets/22_Leperchaun_Coin.png" 
+                                        alt="Gold"
+                                        className="w-4 h-4 mr-1"
+                                        style={{ imageRendering: 'pixelated' }}
+                                      />
+                                      <span className="text-xs text-yellow-400">{quest.rewards.gold}</span>
+                                    </div>
+                                  )}
+                                  {quest.rewards.items?.slice(0, 3).map((reward: any, index: number) => (
+                                    <div key={index} className="flex items-center bg-purple-900/30 rounded px-2 py-1">
+                                      {reward.image && (
+                                        <img 
+                                          src={reward.image} 
+                                          alt={reward.name}
+                                          className="w-4 h-4 mr-1"
+                                          style={{ imageRendering: 'pixelated' }}
+                                        />
+                                      )}
+                                      <span className="text-xs text-purple-300">{reward.quantity}x {reward.name}</span>
+                                    </div>
+                                  ))}
+                                  {quest.lootBoxRewards?.slice(0, 2).map((loot: any, index: number) => (
+                                    <div key={`loot-${index}`} className="flex items-center bg-orange-900/30 rounded px-2 py-1">
+                                      <img 
+                                        src="/attached_assets/loot crate.png" 
+                                        alt="Loot Box"
+                                        className="w-4 h-4 mr-1"
+                                        style={{ imageRendering: 'pixelated' }}
+                                      />
+                                      <span className="text-xs text-orange-300">{loot.quantity}x {loot.type}</span>
+                                    </div>
+                                  ))}
+                                  {quest.rewards.items && quest.rewards.items.length > 3 && (
+                                    <div className="flex items-center bg-purple-900/30 rounded px-2 py-1">
+                                      <span className="text-xs text-purple-400">+{quest.rewards.items.length - 3} more</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Components Required Section - At Bottom */}
                             {quest.components && quest.components.length > 0 && quest.status !== 'locked' && (
                               <div className="mb-3">
                                 <h4 className="text-xs font-semibold text-gray-400 mb-2">Components Required:</h4>
                                 <div className="flex flex-wrap gap-1">
-                                  {quest.components.slice(0, 4).map((component, index) => (
+                                  {quest.components.slice(0, 4).map((component: any, index: number) => (
                                     <div key={index} className="flex items-center bg-gray-800/50 rounded px-2 py-1">
                                       {component.image && (
                                         <img 
@@ -652,44 +703,6 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                                   {quest.components.length > 4 && (
                                     <div className="flex items-center bg-gray-800/50 rounded px-2 py-1">
                                       <span className="text-xs text-gray-400">+{quest.components.length - 4} more</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Quest Rewards Section */}
-                            {quest.rewards && (quest.rewards.items?.length > 0 || quest.rewards.gold > 0) && quest.status !== 'locked' && (
-                              <div className="mb-3">
-                                <h4 className="text-xs font-semibold text-gray-400 mb-2">Quest Rewards:</h4>
-                                <div className="flex flex-wrap gap-1">
-                                  {quest.rewards.gold > 0 && (
-                                    <div className="flex items-center bg-yellow-900/30 rounded px-2 py-1">
-                                      <img 
-                                        src="/attached_assets/22_Leperchaun_Coin.png" 
-                                        alt="Gold"
-                                        className="w-4 h-4 mr-1"
-                                        style={{ imageRendering: 'pixelated' }}
-                                      />
-                                      <span className="text-xs text-yellow-400">{quest.rewards.gold}</span>
-                                    </div>
-                                  )}
-                                  {quest.rewards.items?.slice(0, 3).map((reward, index) => (
-                                    <div key={index} className="flex items-center bg-purple-900/30 rounded px-2 py-1">
-                                      {reward.image && (
-                                        <img 
-                                          src={reward.image} 
-                                          alt={reward.name}
-                                          className="w-4 h-4 mr-1"
-                                          style={{ imageRendering: 'pixelated' }}
-                                        />
-                                      )}
-                                      <span className="text-xs text-purple-300">{reward.quantity}x {reward.name}</span>
-                                    </div>
-                                  ))}
-                                  {quest.rewards.items && quest.rewards.items.length > 3 && (
-                                    <div className="flex items-center bg-purple-900/30 rounded px-2 py-1">
-                                      <span className="text-xs text-purple-400">+{quest.rewards.items.length - 3} more</span>
                                     </div>
                                   )}
                                 </div>
