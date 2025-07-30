@@ -276,15 +276,31 @@ export const SimulatorProvider = ({ children }) => {
         const timestamp = new Date().toLocaleTimeString();
         
         if (instruction.instruction.includes('pinMode')) {
-          addLog(`[${timestamp}] → Pin ${instruction.pin} configured as ${instruction.instruction.includes('OUTPUT') ? 'OUTPUT' : 'INPUT'}`);
+          const pinNumber = instruction.pin;
+          
+          // Guard against null pin numbers from failed variable resolution
+          if (pinNumber === null || pinNumber === undefined) {
+            addLog(`[${timestamp}] → pinMode(UNKNOWN_PIN, ...) - Pin variable not resolved`);
+            console.warn(`[Simulator] Skipping pinMode with null pin number`);
+            return;
+          }
+          
+          addLog(`[${timestamp}] → Pin ${pinNumber} configured as ${instruction.instruction.includes('OUTPUT') ? 'OUTPUT' : 'INPUT'}`);
         }
 
         if (instruction.instruction.includes('digitalWrite')) {
-          const voltage = instruction.value === 'HIGH' ? '5V' : '0V';
-          addLog(`[${timestamp}] → Pin ${instruction.pin} set to ${instruction.value} (${voltage})`);
-          
           const isHigh = instruction.value === 'HIGH';
           const pinNumber = instruction.pin;
+          
+          // Guard against null pin numbers from failed variable resolution
+          if (pinNumber === null || pinNumber === undefined) {
+            addLog(`[${timestamp}] → digitalWrite(UNKNOWN_PIN, ${instruction.value}) - Pin variable not resolved`);
+            console.warn(`[Simulator] Skipping digitalWrite with null pin number`);
+            return;
+          }
+          
+          const voltage = instruction.value === 'HIGH' ? '5V' : '0V';
+          addLog(`[${timestamp}] → Pin ${pinNumber} set to ${instruction.value} (${voltage})`);
           
           // Update Hero Board pin 13 state for built-in LED blinking
           if (pinNumber === 13) {

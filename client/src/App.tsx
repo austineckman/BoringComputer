@@ -34,6 +34,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import FullscreenUniversalEmulatorApp from "@/components/retro-ui/FullscreenUniversalEmulatorApp";
 import SimulatorDemo from "@/components/circuit-builder/demo/SimulatorDemo";
 import SimpleBlinkDemo from "@/components/circuit-builder/demo/SimpleBlinkDemo";
+import RGBLEDDemo from "@/pages/RGBLEDDemo";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { ProtectedRoute, AdminRoute } from "@/lib/protected-route";
@@ -154,6 +155,11 @@ function App() {
         <ProtectedRoute 
           path="/blink-demo" 
           component={() => <SimpleBlinkDemo />} 
+        />
+        
+        <ProtectedRoute 
+          path="/rgb-demo" 
+          component={() => <RGBLEDDemo />} 
         />
         
         <ProtectedRoute 
