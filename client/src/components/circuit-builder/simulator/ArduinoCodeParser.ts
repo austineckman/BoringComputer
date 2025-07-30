@@ -133,7 +133,7 @@ export class ArduinoCodeParser {
         value = parseInt(match[4]);
       }
       
-      if (variableName && !isNaN(value)) {
+      if (variableName && value !== undefined && !isNaN(value)) {
         this.variables.set(variableName, value);
         console.log(`ArduinoCodeParser: Found variable ${variableName} = ${value}`);
       }
@@ -168,7 +168,7 @@ export class ArduinoCodeParser {
       return {
         lineNumber,
         instruction: `pinMode(${pin}, ${pinModeMatch[2]})`,
-        pin
+        pin: pin ?? undefined
       };
     }
 
@@ -180,7 +180,7 @@ export class ArduinoCodeParser {
       return {
         lineNumber,
         instruction: `digitalWrite(${pin}, ${value})`,
-        pin,
+        pin: pin ?? undefined,
         value
       };
     }
