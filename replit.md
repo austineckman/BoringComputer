@@ -138,6 +138,12 @@ Preferred communication style: Simple, everyday language.
 - **Educational Value**: Students learn natural circuit wiring patterns while building with authentic-looking components
 - **User Experience**: Click → Click → Click → Beautiful curved wire appears without visible control points
 
+### Basic Blink Example Fix (July 30, 2025)
+- **Default Code Restoration**: Fixed CircuitBuilderWindow.tsx default code from RGB LED demo back to classic Arduino blink example
+- **Pin 13 LED Control**: Default code now properly controls pin 13 (built-in LED) instead of pins 9, 10, 11 (RGB channels)
+- **Educational Focus**: Restored classic "Hello World" Arduino program for beginners learning basic LED control
+- **Code Simplification**: Simple pinMode(13, OUTPUT) and digitalWrite(13, HIGH/LOW) pattern for educational clarity
+
 ### Working Arduino Simulator Implementation (July 29, 2025)
 - **Real AVR8JS Integration**: Successfully implemented authentic Arduino simulator using actual avr8js library
 - **Machine Code Execution**: Created compiler that generates real AVR assembly instructions for Arduino code
