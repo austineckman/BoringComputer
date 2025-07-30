@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSimulator } from '../simulator/SimulatorContext';
+import { WireRouter } from '../utils/WireRouter';
 
 /**
  * BasicWireManager - A simplified wire manager component that handles
@@ -147,7 +148,11 @@ const BasicWireManager = ({ canvasRef }) => {
   };
 
   // Generate a path with waypoints and 90-degree bends
-  const getWirePath = (start, end, waypoints = []) => {
+  const getWirePath = (start, end, waypoints = [], optimizedPath = null) => {
+    // Use optimized path if available, otherwise fall back to waypoints or direct path
+    if (optimizedPath && optimizedPath.length > 0) {
+      return WireRouter.generateSVGPath(optimizedPath);
+    }
     if (!start || !end) return '';
     
     // If there are no waypoints, return a direct straight line
@@ -269,7 +274,11 @@ const BasicWireManager = ({ canvasRef }) => {
         return;
       }
       
-      // Create a new wire connection including waypoints
+      // Create optimized wire path using WireRouter
+      const drawnPath = [...pendingWireWaypoints];
+      const optimizedPath = WireRouter.optimizePath(drawnPath, pendingConnection.sourcePos, pinPosition);
+      
+      // Create a new wire connection with smart routing
       const newWire = {
         id: `wire-${Date.now()}`,
         sourceId: pendingConnection.sourceId,
@@ -282,7 +291,8 @@ const BasicWireManager = ({ canvasRef }) => {
         targetComponent: parentComponentId,
         sourceName: pendingConnection.sourceName,
         targetName: pinName,
-        waypoints: [...pendingWireWaypoints], // Store the waypoints for this wire
+        waypoints: drawnPath, // Store original drawn path for reference
+        optimizedPath: optimizedPath, // Store clean routed path
         color: getWireColor(pendingConnection.sourceType, pinType)
       };
       
@@ -291,7 +301,10 @@ const BasicWireManager = ({ canvasRef }) => {
       setPendingConnection(null);
       setPendingWireWaypoints([]); // Reset waypoints
       
-      console.log(`Created wire from ${pendingConnection.sourceName} to ${pinName} with ${pendingWireWaypoints.length} waypoints`);
+      console.log(`Created wire from ${pendingConnection.sourceName} to ${pinName} with ${pendingWireWaypoints.length} waypoints`, {
+        originalWaypoints: drawnPath,
+        optimizedPath: optimizedPath
+      });
     } catch (error) {
       console.error('Error handling pin click:', error);
       setPendingConnection(null);
@@ -587,7 +600,7 @@ const BasicWireManager = ({ canvasRef }) => {
             <g key={wire.id} className="wire-connection" style={{ pointerEvents: 'auto' }}>
               {/* Highlight path to make it more visible */}
               <path
-                d={getWirePath(wire.sourcePos, wire.targetPos, wire.waypoints)}
+                d={getWirePath(wire.sourcePos, wire.targetPos, wire.waypoints, wire.optimizedPath)}
                 stroke="#000000" 
                 strokeWidth={selectedWireId === wire.id ? 5 : 4}
                 fill="none"
@@ -597,7 +610,7 @@ const BasicWireManager = ({ canvasRef }) => {
               
               {/* Actual colored wire */}
               <path
-                d={getWirePath(wire.sourcePos, wire.targetPos, wire.waypoints)}
+                d={getWirePath(wire.sourcePos, wire.targetPos, wire.waypoints, wire.optimizedPath)}
                 stroke={wire.color || '#ff0000'} // Default to bright red for high visibility
                 strokeWidth={selectedWireId === wire.id ? 3 : 2}
                 fill="none"
@@ -705,36 +718,42 @@ const BasicWireManager = ({ canvasRef }) => {
           );
         }) : null}
         
-        {/* Pending connection wire with improved visibility */}
+        {/* Pending connection wire with smart routing preview */}
         {pendingConnection && pendingConnection.sourcePos && (
           <>
-            <path
-              d={getWirePath(
-                pendingConnection.sourcePos,
-                { x: mousePosition.x, y: mousePosition.y },
-                pendingWireWaypoints
-              )}
-              stroke="#000000"
-              strokeWidth={4}
-              strokeDasharray="5,5"
-              fill="none"
-              strokeOpacity={0.3}
-              strokeLinecap="square"
-              strokeLinejoin="miter"
-            />
-            <path
-              d={getWirePath(
-                pendingConnection.sourcePos,
-                { x: mousePosition.x, y: mousePosition.y },
-                pendingWireWaypoints
-              )}
-              stroke="#ff5500"
-              strokeWidth={2}
-              strokeDasharray="5,5"
-              fill="none"
-              strokeLinecap="square"
-              strokeLinejoin="miter"
-            />
+            {/* Show optimized routing preview */}
+            {(() => {
+              const previewPath = WireRouter.optimizePath(
+                pendingWireWaypoints, 
+                pendingConnection.sourcePos, 
+                { x: mousePosition.x, y: mousePosition.y }
+              );
+              const pathString = WireRouter.generateSVGPath(previewPath);
+              
+              return (
+                <>
+                  <path
+                    d={pathString}
+                    stroke="#000000"
+                    strokeWidth={4}
+                    strokeDasharray="5,5"
+                    fill="none"
+                    strokeOpacity={0.3}
+                    strokeLinecap="square"
+                    strokeLinejoin="miter"
+                  />
+                  <path
+                    d={pathString}
+                    stroke="#ff5500"
+                    strokeWidth={2}
+                    strokeDasharray="5,5"
+                    fill="none"
+                    strokeLinecap="square"
+                    strokeLinejoin="miter"
+                  />
+                </>
+              );
+            })()}
             
             {/* Draw waypoint markers for pending wire */}
             {pendingWireWaypoints.map((point, index) => (
