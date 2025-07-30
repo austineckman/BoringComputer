@@ -329,22 +329,22 @@ body {
   0% {
     transform: translateX(0px);
   }
-  70% {
-    transform: translateX(-1200px);
-  }
   85% {
-    transform: translateX(-1280px);
+    transform: translateX(-1050px);
   }
-  95% {
-    transform: translateX(-1270px);
+  92% {
+    transform: translateX(-1070px);
+  }
+  96% {
+    transform: translateX(-1068px);
   }
   100% {
-    transform: translateX(-1280px);
+    transform: translateX(-1070px);
   }
 }
 
 .animate-case-spin {
-  animation: case-spin 4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  animation: case-spin 4s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
 }
 
 /* Glowing effect for winner item */
