@@ -386,27 +386,46 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange }) => 
     return '#aaaaaa'; // Default (light gray)
   };
   
-  // Handle canvas clicks to add waypoints during wire drawing
+  // Handle canvas clicks to add waypoints during wire drawing and clear selection
   const handleCanvasClick = (e) => {
     // Only respond if clicking directly on the canvas (not a component)
-    if (e.target === canvasRef.current && pendingConnection) {
-      // Get the click position relative to the canvas
-      const canvasRect = canvasRef.current.getBoundingClientRect();
-      const clickPosition = {
-        x: e.clientX - canvasRect.left,
-        y: e.clientY - canvasRect.top
-      };
-      
-      // Add a waypoint at the click position
-      setPendingWireWaypoints([...pendingWireWaypoints, clickPosition]);
-      console.log('Added waypoint for wire at:', clickPosition);
+    if (e.target === canvasRef.current) {
+      if (pendingConnection) {
+        // Get the click position relative to the canvas
+        const canvasRect = canvasRef.current.getBoundingClientRect();
+        const clickPosition = {
+          x: e.clientX - canvasRect.left,
+          y: e.clientY - canvasRect.top
+        };
+        
+        // Add a waypoint at the click position
+        setPendingWireWaypoints([...pendingWireWaypoints, clickPosition]);
+        console.log('Added waypoint for wire at:', clickPosition);
+      } else {
+        // If no pending connection and clicking on empty canvas, clear wire selection
+        if (selectedWireId) {
+          setSelectedWireId(null);
+          // Notify parent component about cleared selection
+          if (onWireSelection) {
+            onWireSelection(null, null);
+          }
+          console.log('Cleared wire selection');
+        }
+      }
     }
   };
   
-  // Handle delete key press to remove selected wire
+  // Handle keyboard shortcuts for wire management
   const handleKeyDown = (e) => {
     if (e.key === 'Delete' && selectedWireId) {
       deleteWire(selectedWireId);
+    } else if (e.key === 'Escape' && selectedWireId) {
+      // Clear wire selection with ESC key
+      setSelectedWireId(null);
+      if (onWireSelection) {
+        onWireSelection(null, null);
+      }
+      console.log('Cleared wire selection with ESC key');
     }
   };
   
