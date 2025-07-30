@@ -116,15 +116,27 @@ export class ArduinoCodeParser {
   private extractVariables(code: string): void {
     console.log('ArduinoCodeParser: Extracting variables');
     
-    // Match variable declarations like: int redPin = 9;
-    const variableRegex = /(?:int|const\s+int|#define)\s+(\w+)\s*=\s*(\d+)/g;
+    // Match variable declarations like: int redPin = 9; and #define RED_PIN 9
+    const variableRegex = /(?:int|const\s+int)\s+(\w+)\s*=\s*(\d+)|#define\s+(\w+)\s+(\d+)/g;
     
     let match;
     while ((match = variableRegex.exec(code)) !== null) {
-      const variableName = match[1];
-      const value = parseInt(match[2]);
-      this.variables.set(variableName, value);
-      console.log(`ArduinoCodeParser: Found variable ${variableName} = ${value}`);
+      let variableName, value;
+      
+      if (match[1] && match[2]) {
+        // int/const int format: int redPin = 9;
+        variableName = match[1];
+        value = parseInt(match[2]);
+      } else if (match[3] && match[4]) {
+        // #define format: #define RED_PIN 9
+        variableName = match[3];
+        value = parseInt(match[4]);
+      }
+      
+      if (variableName && !isNaN(value)) {
+        this.variables.set(variableName, value);
+        console.log(`ArduinoCodeParser: Found variable ${variableName} = ${value}`);
+      }
     }
     
     console.log('ArduinoCodeParser: Variables extracted:', Array.from(this.variables.entries()));
