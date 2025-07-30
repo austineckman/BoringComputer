@@ -98,28 +98,19 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
   const [editorReady, setEditorReady] = useState(false);
   
   // Default Arduino code for new projects
-  const defaultCode = `// RGB LED Color Test - Tests parser digitalWrite detection
-#define RED_PIN 9
-#define GREEN_PIN 10  
-#define BLUE_PIN 11
+  const defaultCode = `// Basic LED Blink Example
+// This is the classic Arduino "Hello World" program
 
 void setup() {
-  pinMode(RED_PIN, OUTPUT);
-  pinMode(GREEN_PIN, OUTPUT);
-  pinMode(BLUE_PIN, OUTPUT);
+  // Initialize digital pin 13 as an output
+  pinMode(13, OUTPUT);
 }
 
 void loop() {
-  digitalWrite(RED_PIN, HIGH);
-  delay(1000);
-  digitalWrite(RED_PIN, LOW);
-  digitalWrite(GREEN_PIN, HIGH);
-  delay(1000);
-  digitalWrite(GREEN_PIN, LOW);
-  digitalWrite(BLUE_PIN, HIGH);
-  delay(1000);
-  digitalWrite(BLUE_PIN, LOW);
-  delay(1000);
+  digitalWrite(13, HIGH);   // Turn LED on
+  delay(1000);              // Wait for 1 second
+  digitalWrite(13, LOW);    // Turn LED off
+  delay(1000);              // Wait for 1 second
 }
 
 /* 
