@@ -685,24 +685,28 @@ const BasicWireManager = ({ canvasRef }) => {
                 />
               ))}
               
-              {/* Pin labels for debugging */}
+              {/* Pin labels positioned to avoid overlap */}
               <text 
-                x={wire.sourcePos.x + 10} 
-                y={wire.sourcePos.y - 5} 
+                x={wire.sourcePos.x + 15} 
+                y={wire.sourcePos.y - 15} 
                 fill="black" 
                 stroke="white" 
                 strokeWidth={0.5} 
-                fontSize="10px"
+                fontSize="9px"
+                pointerEvents="none"
+                opacity="0.8"
               >
                 {wire.sourceName}
               </text>
               <text 
-                x={wire.targetPos.x + 10} 
-                y={wire.targetPos.y - 5} 
+                x={wire.targetPos.x + 15} 
+                y={wire.targetPos.y - 15} 
                 fill="black" 
                 stroke="white" 
                 strokeWidth={0.5} 
-                fontSize="10px"
+                fontSize="9px"
+                pointerEvents="none"
+                opacity="0.8"
               >
                 {wire.targetName}
               </text>
@@ -760,12 +764,14 @@ const BasicWireManager = ({ canvasRef }) => {
               />
             ))}
             <text 
-              x={pendingConnection.sourcePos.x + 10} 
-              y={pendingConnection.sourcePos.y - 5} 
+              x={pendingConnection.sourcePos.x + 15} 
+              y={pendingConnection.sourcePos.y - 15} 
               fill="black" 
               stroke="white" 
               strokeWidth={0.5} 
-              fontSize="10px"
+              fontSize="9px"
+              pointerEvents="none"
+              opacity="0.8"
             >
               {pendingConnection.sourceName}
             </text>
