@@ -195,11 +195,16 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
           
           <div className="bg-white p-3 border-2 border-gray-300 retro-inset">
             <div className="flex items-center gap-2 mb-2">
-              <Zap className="w-4 h-4 text-purple-600" />
-              <span className="text-sm font-medium text-black">Items</span>
+              <img 
+                src="/images/gold-coin.png" 
+                alt="Gold"
+                className="w-4 h-4"
+                style={{ imageRendering: 'pixelated' }}
+              />
+              <span className="text-sm font-medium text-black">Gold</span>
             </div>
-            <div className="text-xl font-bold text-purple-600">
-              {user?.inventory ? Object.values(user.inventory).reduce((a, b) => a + b, 0) : 0}
+            <div className="text-xl font-bold text-yellow-600">
+              {user?.inventory?.gold || 0}
             </div>
           </div>
           

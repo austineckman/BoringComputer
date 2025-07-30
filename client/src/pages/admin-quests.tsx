@@ -1042,7 +1042,15 @@ const AdminQuests: React.FC = () => {
                             name="goldReward"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Gold Reward</FormLabel>
+                                <FormLabel className="flex items-center gap-2">
+                                  <img 
+                                    src="/images/gold-coin.png" 
+                                    alt="Gold"
+                                    className="w-4 h-4"
+                                    style={{ imageRendering: 'pixelated' }}
+                                  />
+                                  Gold Reward
+                                </FormLabel>
                                 <FormControl>
                                   <Input 
                                     {...field} 
