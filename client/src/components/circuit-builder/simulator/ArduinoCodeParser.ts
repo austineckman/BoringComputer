@@ -218,12 +218,271 @@ export class ArduinoCodeParser {
       return instruction;
     }
 
+    // Parse digitalRead(pin)
+    const digitalReadMatch = line.match(/digitalRead\s*\(\s*(\w+|\d+)\s*\)/);
+    if (digitalReadMatch) {
+      const pin = this.resolveVariable(digitalReadMatch[1]);
+      const instruction = {
+        lineNumber,
+        instruction: `digitalRead(${pin})`,
+        pin: pin ?? undefined,
+        function: 'digitalRead'
+      };
+      console.log(`ArduinoCodeParser: Found digitalRead instruction:`, instruction);
+      return instruction;
+    }
+
+    // Parse analogRead(pin)
+    const analogReadMatch = line.match(/analogRead\s*\(\s*(\w+|\d+)\s*\)/);
+    if (analogReadMatch) {
+      const pin = this.resolveVariable(analogReadMatch[1]);
+      const instruction = {
+        lineNumber,
+        instruction: `analogRead(${pin})`,
+        pin: pin ?? undefined,
+        function: 'analogRead'
+      };
+      console.log(`ArduinoCodeParser: Found analogRead instruction:`, instruction);
+      return instruction;
+    }
+
+    // Parse map(value, fromLow, fromHigh, toLow, toHigh)
+    const mapMatch = line.match(/map\s*\(\s*(\w+|\d+)\s*,\s*(\w+|\d+)\s*,\s*(\w+|\d+)\s*,\s*(\w+|\d+)\s*,\s*(\w+|\d+)\s*\)/);
+    if (mapMatch) {
+      const value = this.resolveVariable(mapMatch[1]) ?? parseInt(mapMatch[1]);
+      const fromLow = this.resolveVariable(mapMatch[2]) ?? parseInt(mapMatch[2]);
+      const fromHigh = this.resolveVariable(mapMatch[3]) ?? parseInt(mapMatch[3]);
+      const toLow = this.resolveVariable(mapMatch[4]) ?? parseInt(mapMatch[4]);
+      const toHigh = this.resolveVariable(mapMatch[5]) ?? parseInt(mapMatch[5]);
+      const instruction = {
+        lineNumber,
+        instruction: `map(${value}, ${fromLow}, ${fromHigh}, ${toLow}, ${toHigh})`,
+        function: 'map',
+        params: { value, fromLow, fromHigh, toLow, toHigh }
+      };
+      console.log(`ArduinoCodeParser: Found map instruction:`, instruction);
+      return instruction;
+    }
+
+    // Parse constrain(value, min, max)
+    const constrainMatch = line.match(/constrain\s*\(\s*(\w+|\d+)\s*,\s*(\w+|\d+)\s*,\s*(\w+|\d+)\s*\)/);
+    if (constrainMatch) {
+      const value = this.resolveVariable(constrainMatch[1]) ?? parseInt(constrainMatch[1]);
+      const min = this.resolveVariable(constrainMatch[2]) ?? parseInt(constrainMatch[2]);
+      const max = this.resolveVariable(constrainMatch[3]) ?? parseInt(constrainMatch[3]);
+      const instruction = {
+        lineNumber,
+        instruction: `constrain(${value}, ${min}, ${max})`,
+        function: 'constrain',
+        params: { value, min, max }
+      };
+      console.log(`ArduinoCodeParser: Found constrain instruction:`, instruction);
+      return instruction;
+    }
+
+    // Parse random(min, max) or random(max)
+    const randomMatch = line.match(/random\s*\(\s*(\w+|\d+)(?:\s*,\s*(\w+|\d+))?\s*\)/);
+    if (randomMatch) {
+      const min = randomMatch[2] ? (this.resolveVariable(randomMatch[1]) ?? parseInt(randomMatch[1])) : 0;
+      const max = randomMatch[2] ? (this.resolveVariable(randomMatch[2]) ?? parseInt(randomMatch[2])) : (this.resolveVariable(randomMatch[1]) ?? parseInt(randomMatch[1]));
+      const instruction = {
+        lineNumber,
+        instruction: randomMatch[2] ? `random(${min}, ${max})` : `random(${max})`,
+        function: 'random',
+        params: { min, max }
+      };
+      console.log(`ArduinoCodeParser: Found random instruction:`, instruction);
+      return instruction;
+    }
+
+    // Parse millis()
+    const millisMatch = line.match(/millis\s*\(\s*\)/);
+    if (millisMatch) {
+      const instruction = {
+        lineNumber,
+        instruction: `millis()`,
+        function: 'millis'
+      };
+      console.log(`ArduinoCodeParser: Found millis instruction:`, instruction);
+      return instruction;
+    }
+
+    // Parse micros()
+    const microsMatch = line.match(/micros\s*\(\s*\)/);
+    if (microsMatch) {
+      const instruction = {
+        lineNumber,
+        instruction: `micros()`,
+        function: 'micros'
+      };
+      console.log(`ArduinoCodeParser: Found micros instruction:`, instruction);
+      return instruction;
+    }
+
+    // Parse delayMicroseconds(us)
+    const delayMicrosMatch = line.match(/delayMicroseconds\s*\(\s*(\w+|\d+)\s*\)/);
+    if (delayMicrosMatch) {
+      const microseconds = this.resolveVariable(delayMicrosMatch[1]) ?? parseInt(delayMicrosMatch[1]);
+      const instruction = {
+        lineNumber,
+        instruction: `delayMicroseconds(${microseconds})`,
+        delayMicros: microseconds,
+        function: 'delayMicroseconds'
+      };
+      console.log(`ArduinoCodeParser: Found delayMicroseconds instruction:`, instruction);
+      return instruction;
+    }
+
+    // Parse tone(pin, frequency) or tone(pin, frequency, duration)
+    const toneMatch = line.match(/tone\s*\(\s*(\w+|\d+)\s*,\s*(\w+|\d+)(?:\s*,\s*(\w+|\d+))?\s*\)/);
+    if (toneMatch) {
+      const pin = this.resolveVariable(toneMatch[1]);
+      const frequency = this.resolveVariable(toneMatch[2]) ?? parseInt(toneMatch[2]);
+      const duration = toneMatch[3] ? (this.resolveVariable(toneMatch[3]) ?? parseInt(toneMatch[3])) : undefined;
+      const instruction = {
+        lineNumber,
+        instruction: duration ? `tone(${pin}, ${frequency}, ${duration})` : `tone(${pin}, ${frequency})`,
+        pin: pin ?? undefined,
+        function: 'tone',
+        params: { frequency, duration }
+      };
+      console.log(`ArduinoCodeParser: Found tone instruction:`, instruction);
+      return instruction;
+    }
+
+    // Parse noTone(pin)
+    const noToneMatch = line.match(/noTone\s*\(\s*(\w+|\d+)\s*\)/);
+    if (noToneMatch) {
+      const pin = this.resolveVariable(noToneMatch[1]);
+      const instruction = {
+        lineNumber,
+        instruction: `noTone(${pin})`,
+        pin: pin ?? undefined,
+        function: 'noTone'
+      };
+      console.log(`ArduinoCodeParser: Found noTone instruction:`, instruction);
+      return instruction;
+    }
+
+    // Parse mathematical functions: abs(), max(), min(), pow(), sqrt()
+    const mathMatch = line.match(/(abs|max|min|pow|sqrt|sq)\s*\((.*?)\)/);
+    if (mathMatch) {
+      const func = mathMatch[1];
+      const params = mathMatch[2].split(',').map(p => {
+        const trimmed = p.trim();
+        return this.resolveVariable(trimmed) ?? (isNaN(parseFloat(trimmed)) ? trimmed : parseFloat(trimmed));
+      });
+      const instruction = {
+        lineNumber,
+        instruction: `${func}(${mathMatch[2]})`,
+        function: func,
+        params: params
+      };
+      console.log(`ArduinoCodeParser: Found math function:`, instruction);
+      return instruction;
+    }
+
+    // Parse if statements
+    const ifMatch = line.match(/if\s*\((.*?)\)/);
+    if (ifMatch) {
+      const condition = ifMatch[1];
+      const instruction = {
+        lineNumber,
+        instruction: `if (${condition})`,
+        function: 'if',
+        condition: condition
+      };
+      console.log(`ArduinoCodeParser: Found if statement:`, instruction);
+      return instruction;
+    }
+
+    // Parse variable assignments (int/float/etc variable = value;)
+    const assignMatch = line.match(/^\s*(int|float|long|byte|bool|boolean)\s+(\w+)\s*=\s*(.*?);?\s*$/);
+    if (assignMatch) {
+      const type = assignMatch[1];
+      const variable = assignMatch[2];
+      const value = assignMatch[3];
+      const resolvedValue = this.resolveVariable(value) ?? (isNaN(parseFloat(value)) ? value : parseFloat(value));
+      
+      // Store the variable for future resolution
+      if (typeof resolvedValue === 'number') {
+        this.variables.set(variable, resolvedValue);
+      }
+      
+      const instruction = {
+        lineNumber,
+        instruction: `${type} ${variable} = ${resolvedValue}`,
+        function: 'assignment',
+        variable: variable,
+        type: type,
+        value: resolvedValue
+      };
+      console.log(`ArduinoCodeParser: Found variable assignment:`, instruction);
+      return instruction;
+    }
+
+    // Parse simple variable assignments (variable = value;)
+    const simpleAssignMatch = line.match(/^\s*(\w+)\s*=\s*(.*?);?\s*$/);
+    if (simpleAssignMatch) {
+      const variable = simpleAssignMatch[1];
+      const value = simpleAssignMatch[2];
+      const resolvedValue = this.resolveVariable(value) ?? (isNaN(parseFloat(value)) ? value : parseFloat(value));
+      
+      // Store the variable for future resolution
+      if (typeof resolvedValue === 'number') {
+        this.variables.set(variable, resolvedValue);
+      }
+      
+      const instruction = {
+        lineNumber,
+        instruction: `${variable} = ${resolvedValue}`,
+        function: 'assignment',
+        variable: variable,
+        value: resolvedValue
+      };
+      console.log(`ArduinoCodeParser: Found simple assignment:`, instruction);
+      return instruction;
+    }
+
+    // Parse for loops
+    const forMatch = line.match(/for\s*\(\s*(.*?)\s*;\s*(.*?)\s*;\s*(.*?)\s*\)/);
+    if (forMatch) {
+      const init = forMatch[1];
+      const condition = forMatch[2];
+      const increment = forMatch[3];
+      const instruction = {
+        lineNumber,
+        instruction: `for (${init}; ${condition}; ${increment})`,
+        function: 'for',
+        init: init,
+        condition: condition,
+        increment: increment
+      };
+      console.log(`ArduinoCodeParser: Found for loop:`, instruction);
+      return instruction;
+    }
+
+    // Parse while loops
+    const whileMatch = line.match(/while\s*\((.*?)\)/);
+    if (whileMatch) {
+      const condition = whileMatch[1];
+      const instruction = {
+        lineNumber,
+        instruction: `while (${condition})`,
+        function: 'while',
+        condition: condition
+      };
+      console.log(`ArduinoCodeParser: Found while loop:`, instruction);
+      return instruction;
+    }
+
     // Parse Serial.print/println
     const serialMatch = line.match(/Serial\.(print|println)\s*\((.*)\)/);
     if (serialMatch) {
       const instruction = {
         lineNumber,
-        instruction: `Serial.${serialMatch[1]}(${serialMatch[2]})`
+        instruction: `Serial.${serialMatch[1]}(${serialMatch[2]})`,
+        function: 'serial'
       };
       console.log(`ArduinoCodeParser: Found serial instruction:`, instruction);
       return instruction;

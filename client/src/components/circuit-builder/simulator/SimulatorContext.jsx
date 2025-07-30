@@ -579,9 +579,154 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           }
         }
 
+        if (instruction.instruction.includes('delayMicroseconds')) {
+          const microseconds = instruction.delayMicros;
+          const milliseconds = microseconds / 1000;
+          addLog(`[${timestamp}] → Waiting ${microseconds}μs (${milliseconds.toFixed(2)}ms)...`);
+          return Math.max(1, milliseconds); // Minimum 1ms delay for visibility
+        }
+
         if (instruction.instruction.includes('delay')) {
           addLog(`[${timestamp}] → Waiting ${instruction.delayMs}ms...`);
           return instruction.delayMs;
+        }
+
+        if (instruction.function === 'digitalRead') {
+          const pinNumber = instruction.pin;
+          // For now, simulate digitalRead as returning LOW (can be enhanced later with actual pin states)
+          const readValue = 'LOW'; // TODO: Read actual pin state from connected components
+          addLog(`[${timestamp}] → digitalRead(${pinNumber}) returned ${readValue}`);
+          return 0;
+        }
+
+        if (instruction.function === 'analogRead') {
+          const pinNumber = instruction.pin;
+          // For now, simulate analogRead as returning a random value (can be enhanced later)
+          const readValue = Math.floor(Math.random() * 1024); // 0-1023 range for Arduino analog read
+          addLog(`[${timestamp}] → analogRead(${pinNumber}) returned ${readValue} (${(readValue/1023*5).toFixed(2)}V)`);
+          return 0;
+        }
+
+        if (instruction.function === 'map') {
+          const { value, fromLow, fromHigh, toLow, toHigh } = instruction.params;
+          const mappedValue = Math.round(toLow + (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow));
+          addLog(`[${timestamp}] → map(${value}, ${fromLow}, ${fromHigh}, ${toLow}, ${toHigh}) returned ${mappedValue}`);
+          return 0;
+        }
+
+        if (instruction.function === 'constrain') {
+          const { value, min, max } = instruction.params;
+          const constrainedValue = Math.max(min, Math.min(max, value));
+          addLog(`[${timestamp}] → constrain(${value}, ${min}, ${max}) returned ${constrainedValue}`);
+          return 0;
+        }
+
+        if (instruction.function === 'random') {
+          const { min, max } = instruction.params;
+          const randomValue = Math.floor(Math.random() * (max - min)) + min;
+          addLog(`[${timestamp}] → random(${min === 0 ? max : `${min}, ${max}`}) returned ${randomValue}`);
+          return 0;
+        }
+
+        if (instruction.function === 'millis') {
+          // Calculate simulated millis based on execution time
+          const currentTime = Date.now();
+          if (!executionStateRef.current.startTime) {
+            executionStateRef.current.startTime = currentTime;
+          }
+          const elapsedMs = currentTime - executionStateRef.current.startTime;
+          addLog(`[${timestamp}] → millis() returned ${elapsedMs}`);
+          return 0;
+        }
+
+        if (instruction.function === 'micros') {
+          // Calculate simulated micros based on execution time
+          const currentTime = Date.now();
+          if (!executionStateRef.current.startTime) {
+            executionStateRef.current.startTime = currentTime;
+          }
+          const elapsedMicros = (currentTime - executionStateRef.current.startTime) * 1000;
+          addLog(`[${timestamp}] → micros() returned ${elapsedMicros}`);
+          return 0;
+        }
+
+        if (instruction.function === 'tone') {
+          const pinNumber = instruction.pin;
+          const { frequency, duration } = instruction.params;
+          if (duration) {
+            addLog(`[${timestamp}] → tone(${pinNumber}, ${frequency}Hz, ${duration}ms) - Playing tone`);
+          } else {
+            addLog(`[${timestamp}] → tone(${pinNumber}, ${frequency}Hz) - Playing continuous tone`);
+          }
+          // TODO: Implement actual buzzer/speaker component control
+          return 0;
+        }
+
+        if (instruction.function === 'noTone') {
+          const pinNumber = instruction.pin;
+          addLog(`[${timestamp}] → noTone(${pinNumber}) - Stopping tone`);
+          // TODO: Implement actual buzzer/speaker component control
+          return 0;
+        }
+
+        // Handle mathematical functions
+        if (['abs', 'max', 'min', 'pow', 'sqrt', 'sq'].includes(instruction.function)) {
+          const func = instruction.function;
+          const params = instruction.params;
+          let result;
+          
+          switch (func) {
+            case 'abs':
+              result = Math.abs(params[0]);
+              break;
+            case 'max':
+              result = Math.max(...params);
+              break;
+            case 'min':
+              result = Math.min(...params);
+              break;
+            case 'pow':
+              result = Math.pow(params[0], params[1]);
+              break;
+            case 'sqrt':
+              result = Math.sqrt(params[0]);
+              break;
+            case 'sq':
+              result = params[0] * params[0];
+              break;
+            default:
+              result = 0;
+          }
+          
+          addLog(`[${timestamp}] → ${func}(${params.join(', ')}) returned ${result}`);
+          return 0;
+        }
+
+        // Handle variable assignments
+        if (instruction.function === 'assignment') {
+          const { variable, value, type } = instruction;
+          if (type) {
+            addLog(`[${timestamp}] → Declared ${type} variable '${variable}' = ${value}`);
+          } else {
+            addLog(`[${timestamp}] → Variable '${variable}' = ${value}`);
+          }
+          return 0;
+        }
+
+        // Handle control structures (basic logging for now)
+        if (instruction.function === 'if') {
+          addLog(`[${timestamp}] → if (${instruction.condition}) - Evaluating condition`);
+          return 0;
+        }
+
+        if (instruction.function === 'for') {
+          addLog(`[${timestamp}] → for (${instruction.init}; ${instruction.condition}; ${instruction.increment}) - Starting loop`);
+          return 0;
+        }
+
+        if (instruction.function === 'while') {
+          addLog(`[${timestamp}] → while (${instruction.condition}) - Checking condition`);
+          return 0;
         }
 
         if (instruction.instruction.includes('Serial.print')) {
