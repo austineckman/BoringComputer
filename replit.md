@@ -176,6 +176,15 @@ Preferred communication style: Simple, everyday language.
 - **Component Requirements Display**: Added visual component badges showing required hardware with icons and names at card bottom
 - **Quest Rewards Visualization**: Integrated gold coin and item reward displays with colored badges and quantities for immediate reward preview
 
+### Oracle Quest Reordering System (July 30, 2025)
+- **Up/Down Arrow Controls**: Added ChevronUp and ChevronDown buttons to the left side of each quest card for intuitive reordering
+- **Database Order Updates**: Quest reordering updates the `orderInLine` field in the database to maintain persistent quest sequence
+- **Swap Functionality**: Clicking arrows swaps adjacent quests and immediately updates both quest order values
+- **Real-time State Updates**: Local quest state reflects reordering changes instantly without requiring page refresh
+- **Audio Feedback**: Success and error sounds provide user feedback for reordering operations
+- **Admin Quest Management**: Oracle interface now supports full quest sequence control for educational campaign design
+- **Sequential Learning**: Proper quest ordering ensures students progress through educational content in the intended sequence
+
 ### Quest Interface Responsive Design Fix (July 30, 2025)
 - **Improved Screen Fit**: Removed fixed height constraints that prevented content from fitting on smaller screens
 - **Better Grid Layout**: Updated quest grid from 3-column max to responsive 1/2/3/4 columns based on screen size
