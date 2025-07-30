@@ -216,8 +216,8 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
           
           // Generate a long strip of items for the animation
           const items = Object.values(itemsInfo);
-          const totalItems = 50; // Longer strip for smoother scrolling
-          const winnerIndex = 25; // Winner in the middle
+          const totalItems = 40; // Optimized strip length
+          const winnerIndex = Math.floor(totalItems / 2); // Winner at exact middle
           
           const generatedItems = Array.from({ length: totalItems }, (_, i) => {
             if (i === winnerIndex) {
@@ -458,7 +458,7 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
                             return (
                               <div 
                                 key={`spin-${i}`}
-                                className={`flex-shrink-0 w-20 h-28 mx-1 rounded border flex flex-col items-center justify-center p-1 transition-all duration-300
+                                className={`flex-shrink-0 w-24 h-28 mx-1 rounded border flex flex-col items-center justify-center p-1
                                   ${spinItem.isWinner 
                                     ? 'border-yellow-400 bg-yellow-500/10 winner-item' 
                                     : displayItem?.rarity === 'legendary' ? 'border-orange-400 bg-orange-500/10'
