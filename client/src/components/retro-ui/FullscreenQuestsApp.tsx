@@ -28,6 +28,31 @@ interface FullscreenQuestsAppProps {
   onClose: () => void;
 }
 
+interface QuestWithComponents extends Quest {
+  componentRequirements?: Array<{
+    id: string;
+    name: string;
+    image?: string;
+    kitId?: string;
+  }>;
+  components?: Array<{
+    id: string;
+    name: string;
+    image?: string;
+    kitId?: string;
+  }>;
+  rewards?: {
+    gold?: number;
+    items?: Array<{
+      id: string;
+      name: string;
+      quantity: number;
+      image?: string;
+    }>;
+  };
+  status?: string;
+}
+
 const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) => {
   const [, navigate] = useLocation();
   const { kits, loading: loadingKits } = useComponentKits();
@@ -38,7 +63,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
 
   
   const [selectedKit, setSelectedKit] = useState<string | null>(null);
-  const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
+  const [selectedQuest, setSelectedQuest] = useState<QuestWithComponents | null>(null);
   const [questView, setQuestView] = useState<'kit-select' | 'quest-list' | 'detail' | 'active'>('kit-select');
   const [activeQuestId, setActiveQuestId] = useState<string | null>(null);
   const [questTab, setQuestTab] = useState<'available' | 'completed'>('available');
@@ -59,7 +84,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
   const getQuestsForKit = (kitId: string) => {
     if (!allQuests || allQuests.length === 0) return [];
     
-    let filteredQuests = allQuests.filter(quest => {
+    let filteredQuests = allQuests.filter((quest: any) => {
       // First check if the quest directly belongs to this kit
       if (quest.kitId === kitId) {
         return true;
@@ -79,7 +104,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
     });
 
     // Filter by quest tab (available vs completed)
-    filteredQuests = filteredQuests.filter(quest => {
+    filteredQuests = filteredQuests.filter((quest: any) => {
       if (questTab === 'completed') {
         return quest.status === 'completed';
       } else {
@@ -98,7 +123,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
   };
 
   const handleQuestClick = (questId: string) => {
-    const quest = allQuests?.find(q => q.id === questId);
+    const quest = allQuests?.find((q: any) => q.id === questId);
     if (quest && quest.status !== 'locked') {
       window.sounds?.click();
       setSelectedQuest(quest);
@@ -231,7 +256,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                 {selectedQuest.rewards && selectedQuest.rewards.length > 0 ? (
                   <div className="space-y-4">
                     {selectedQuest.rewards.map((reward, idx) => {
-                      const item = items?.find(i => i.id === reward.id);
+                      const item = items?.find((i: any) => i.id === reward.id);
                       const isLootbox = reward.type === 'lootbox';
                       const lootboxConfig = isLootbox ? lootBoxConfigsMap[reward.id] : null;
                       const rarityClass = item?.rarity ? getRarityColorClass(item.rarity) : 'border-gray-600';
@@ -536,7 +561,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                 
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 pb-32">
-                    {kitQuests.map(quest => {
+                    {kitQuests.map((quest: any) => {
                       const heroImage = quest.content?.images?.[0] || quest.heroImage;
                       const circuitDiagram = quest.content?.images?.[1]; // Second image as circuit diagram
                       
@@ -649,30 +674,51 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                                       <span className="text-xs text-yellow-400">{quest.rewards.gold}</span>
                                     </div>
                                   )}
-                                  {quest.rewards.items?.slice(0, 3).map((reward: any, index: number) => (
-                                    <div key={index} className="flex items-center bg-purple-900/30 rounded px-2 py-1">
-                                      {reward.image && (
+                                  {quest.rewards.items?.slice(0, 3).map((reward: any, index: number) => {
+                                    // Try to find item image from items database
+                                    let rewardImage = reward.image;
+                                    if (!rewardImage && items && reward.id) {
+                                      const foundItem = items.find((item: any) => item.id === reward.id);
+                                      if (foundItem?.imagePath) {
+                                        rewardImage = foundItem.imagePath;
+                                      }
+                                    }
+                                    
+                                    return (
+                                      <div key={index} className="flex items-center bg-purple-900/30 rounded px-2 py-1">
+                                        {rewardImage ? (
+                                          <img 
+                                            src={rewardImage} 
+                                            alt={reward.name}
+                                            className="w-4 h-4 mr-1"
+                                            style={{ imageRendering: 'pixelated' }}
+                                          />
+                                        ) : (
+                                          <Package className="w-3 h-3 mr-1 text-purple-400" />
+                                        )}
+                                        <span className="text-xs text-purple-300">{reward.quantity}x {reward.name}</span>
+                                      </div>
+                                    );
+                                  })}
+                                  {quest.lootBoxRewards?.slice(0, 2).map((loot: any, index: number) => {
+                                    // Try to find lootbox image from configs
+                                    let lootboxImage = "/attached_assets/loot crate.png";
+                                    if (lootBoxConfigsMap && loot.type && lootBoxConfigsMap[loot.type]?.image) {
+                                      lootboxImage = lootBoxConfigsMap[loot.type].image;
+                                    }
+                                    
+                                    return (
+                                      <div key={`loot-${index}`} className="flex items-center bg-orange-900/30 rounded px-2 py-1">
                                         <img 
-                                          src={reward.image} 
-                                          alt={reward.name}
+                                          src={lootboxImage} 
+                                          alt="Loot Box"
                                           className="w-4 h-4 mr-1"
                                           style={{ imageRendering: 'pixelated' }}
                                         />
-                                      )}
-                                      <span className="text-xs text-purple-300">{reward.quantity}x {reward.name}</span>
-                                    </div>
-                                  ))}
-                                  {quest.lootBoxRewards?.slice(0, 2).map((loot: any, index: number) => (
-                                    <div key={`loot-${index}`} className="flex items-center bg-orange-900/30 rounded px-2 py-1">
-                                      <img 
-                                        src="/attached_assets/loot crate.png" 
-                                        alt="Loot Box"
-                                        className="w-4 h-4 mr-1"
-                                        style={{ imageRendering: 'pixelated' }}
-                                      />
-                                      <span className="text-xs text-orange-300">{loot.quantity}x {loot.type}</span>
-                                    </div>
-                                  ))}
+                                        <span className="text-xs text-orange-300">{loot.quantity}x {loot.type}</span>
+                                      </div>
+                                    );
+                                  })}
                                   {quest.rewards.items && quest.rewards.items.length > 3 && (
                                     <div className="flex items-center bg-purple-900/30 rounded px-2 py-1">
                                       <span className="text-xs text-purple-400">+{quest.rewards.items.length - 3} more</span>
@@ -687,19 +733,38 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                               <div className="mb-3">
                                 <h4 className="text-xs font-semibold text-gray-400 mb-2">Components Required:</h4>
                                 <div className="flex flex-wrap gap-1">
-                                  {quest.components.slice(0, 4).map((component: any, index: number) => (
-                                    <div key={index} className="flex items-center bg-gray-800/50 rounded px-2 py-1">
-                                      {component.image && (
-                                        <img 
-                                          src={component.image} 
-                                          alt={component.name}
-                                          className="w-4 h-4 mr-1"
-                                          style={{ imageRendering: 'pixelated' }}
-                                        />
-                                      )}
-                                      <span className="text-xs text-gray-300">{component.name}</span>
-                                    </div>
-                                  ))}
+                                  {quest.components.slice(0, 4).map((component: any, index: number) => {
+                                    // Try to find component image from kits data
+                                    let componentImage = component.image;
+                                    if (!componentImage && kits && component.name) {
+                                      // Look through all kit components to find image
+                                      for (const kit of kits) {
+                                        if (kit.components) {
+                                          const foundComponent = kit.components.find((c: any) => c.name === component.name);
+                                          if (foundComponent?.image) {
+                                            componentImage = foundComponent.image;
+                                            break;
+                                          }
+                                        }
+                                      }
+                                    }
+                                    
+                                    return (
+                                      <div key={index} className="flex items-center bg-gray-800/50 rounded px-2 py-1">
+                                        {componentImage ? (
+                                          <img 
+                                            src={componentImage} 
+                                            alt={component.name}
+                                            className="w-4 h-4 mr-1"
+                                            style={{ imageRendering: 'pixelated' }}
+                                          />
+                                        ) : (
+                                          <Cpu className="w-3 h-3 mr-1 text-blue-400" />
+                                        )}
+                                        <span className="text-xs text-gray-300">{component.name}</span>
+                                      </div>
+                                    );
+                                  })}
                                   {quest.components.length > 4 && (
                                     <div className="flex items-center bg-gray-800/50 rounded px-2 py-1">
                                       <span className="text-xs text-gray-400">+{quest.components.length - 4} more</span>
