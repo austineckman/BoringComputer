@@ -1048,7 +1048,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 opened: false,
                 rewards: [],
                 source: 'quest',
-                sourceId: questId
+                sourceId: questId.toString()
               });
             }
 
@@ -1081,7 +1081,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               opened: false,
               rewards: [],
               source: 'quest',
-              sourceId: questId
+              sourceId: questId.toString()
             });
           }
 
