@@ -16,6 +16,8 @@ const BasicWireManager = ({ canvasRef }) => {
   const [pendingWireWaypoints, setPendingWireWaypoints] = useState([]); // For storing clicks during wire creation
   const [selectedWireId, setSelectedWireId] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
   
   // Utility function to calculate true element position (for both SVG and HTML)
   const getTrueElementPosition = (element) => {
@@ -314,10 +316,10 @@ const BasicWireManager = ({ canvasRef }) => {
     return '#aaaaaa'; // Default (light gray)
   };
   
-  // Handle canvas clicks to add waypoints during wire drawing
+  // Handle canvas clicks to add waypoints during wire drawing (only when not in continuous drawing mode)
   const handleCanvasClick = (e) => {
-    // Only respond if clicking directly on the canvas (not a component)
-    if (e.target === canvasRef.current && pendingConnection) {
+    // Only respond if clicking directly on the canvas (not a component) and not in continuous drawing mode
+    if (e.target === canvasRef.current && pendingConnection && !isDrawing) {
       // Get the click position relative to the canvas
       const canvasRect = canvasRef.current.getBoundingClientRect();
       const clickPosition = {
@@ -351,15 +353,58 @@ const BasicWireManager = ({ canvasRef }) => {
     setSelectedWireId(wireId === selectedWireId ? null : wireId);
   };
   
-  // Track mouse movement for drawing pending wire
+  // Track mouse movement for drawing pending wire with continuous drawing support
   const handleMouseMove = (e) => {
     if (!canvasRef?.current) return;
     
     const canvasRect = canvasRef.current.getBoundingClientRect();
-    setMousePosition({
+    const currentMousePos = {
       x: e.clientX - canvasRect.left,
       y: e.clientY - canvasRect.top
-    });
+    };
+    
+    setMousePosition(currentMousePos);
+    
+    // If we're in continuous drawing mode, add waypoints as mouse moves
+    if (isDrawing && pendingConnection) {
+      const distance = Math.sqrt(
+        Math.pow(currentMousePos.x - lastMousePos.x, 2) + 
+        Math.pow(currentMousePos.y - lastMousePos.y, 2)
+      );
+      
+      // Add waypoint every 8 pixels of movement for smooth curves
+      if (distance > 8) {
+        setPendingWireWaypoints(prev => [...prev, currentMousePos]);
+        setLastMousePos(currentMousePos);
+      }
+    }
+  };
+
+  // Handle mouse down events for starting continuous drawing
+  const handleMouseDown = (e) => {
+    // Only start drawing if we have a pending connection and it's the left mouse button
+    if (pendingConnection && e.button === 0) {
+      setIsDrawing(true);
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      const startPos = {
+        x: e.clientX - canvasRect.left,
+        y: e.clientY - canvasRect.top
+      };
+      setLastMousePos(startPos);
+      
+      // Clear any existing waypoints to start fresh
+      setPendingWireWaypoints([]);
+      
+      console.log('Started continuous wire drawing at:', startPos);
+    }
+  };
+
+  // Handle mouse up events for stopping continuous drawing
+  const handleMouseUp = (e) => {
+    if (isDrawing) {
+      setIsDrawing(false);
+      console.log('Stopped continuous wire drawing');
+    }
   };
 
   // Handle component movement events to update wire positions
@@ -490,11 +535,13 @@ const BasicWireManager = ({ canvasRef }) => {
     document.addEventListener('componentMoved', handleComponentMoved);
     document.addEventListener('componentMovedFinal', handleComponentMoved);
     
-    // Add canvas click handler
+    // Add canvas event handlers
     const canvas = canvasRef?.current;
     if (canvas) {
       canvas.addEventListener('click', handleCanvasClick);
       canvas.addEventListener('mousemove', handleMouseMove);
+      canvas.addEventListener('mousedown', handleMouseDown);
+      canvas.addEventListener('mouseup', handleMouseUp);
     }
     
     // Add keyboard handler for deletion
@@ -509,6 +556,8 @@ const BasicWireManager = ({ canvasRef }) => {
       if (canvas) {
         canvas.removeEventListener('click', handleCanvasClick);
         canvas.removeEventListener('mousemove', handleMouseMove);
+        canvas.removeEventListener('mousedown', handleMouseDown);
+        canvas.removeEventListener('mouseup', handleMouseUp);
       }
       window.removeEventListener('keydown', handleKeyDown);
     };
