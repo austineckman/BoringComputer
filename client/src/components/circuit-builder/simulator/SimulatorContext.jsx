@@ -23,9 +23,9 @@ const SimulatorContext = createContext({
 export const useSimulator = () => useContext(SimulatorContext);
 
 // Simulator Provider component
-export const SimulatorProvider = ({ children }) => {
+export const SimulatorProvider = ({ children, initialCode = '' }) => {
   // State variables
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(initialCode);
   const [logs, setLogs] = useState([]);
   const [isRunning, setIsRunning] = useState(false);
   const [components, setComponents] = useState([]);
