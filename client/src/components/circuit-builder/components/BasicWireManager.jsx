@@ -150,7 +150,15 @@ const BasicWireManager = ({ canvasRef }) => {
   };
 
   // Generate a natural-looking path that follows user's drawing intent
-  const getWirePath = (start, end, waypoints = [], optimizedPath = null) => {
+  const getWirePath = (start, end, waypoints = [], optimizedPath = null, useRawPath = false) => {
+    // If this wire was drawn continuously, use raw path for natural curves
+    if (useRawPath && optimizedPath && optimizedPath.length > 0) {
+      const rawPath = `M ${optimizedPath[0].x},${optimizedPath[0].y} ` + 
+                     optimizedPath.slice(1).map(point => `L ${point.x},${point.y}`).join(' ');
+      console.log('Rendering raw continuous path with', optimizedPath.length, 'points');
+      return rawPath;
+    }
+    
     // Use optimized path if available, otherwise fall back to waypoints or direct path
     if (optimizedPath && optimizedPath.length > 0) {
       return WireRouter.generateSVGPath(optimizedPath);
@@ -268,9 +276,21 @@ const BasicWireManager = ({ canvasRef }) => {
         return;
       }
       
-      // Create optimized wire path using WireRouter
+      // For continuous drawing, preserve raw waypoints; for click mode, use optimization  
       const drawnPath = [...pendingWireWaypoints];
-      const optimizedPath = WireRouter.optimizePath(drawnPath, pendingConnection.sourcePos, pinPosition);
+      let optimizedPath;
+      let useRawPath = false;
+      
+      if (isDrawing && drawnPath.length > 1) {
+        // Continuous drawing: use raw waypoints for natural curves
+        optimizedPath = [pendingConnection.sourcePos, ...drawnPath, pinPosition];
+        useRawPath = true;
+        console.log('Using raw continuous drawing path with', optimizedPath.length, 'points');
+      } else {
+        // Click mode: use optimized routing
+        optimizedPath = WireRouter.optimizePath(drawnPath, pendingConnection.sourcePos, pinPosition);
+        console.log('Using optimized click-mode path');
+      }
       
       // Create a new wire connection with smart routing
       const newWire = {
@@ -286,7 +306,8 @@ const BasicWireManager = ({ canvasRef }) => {
         sourceName: pendingConnection.sourceName,
         targetName: pinName,
         waypoints: drawnPath, // Store original drawn path for reference
-        optimizedPath: optimizedPath, // Store clean routed path
+        optimizedPath: optimizedPath, // Store either raw or optimized path
+        useRawPath: useRawPath, // Flag to indicate which path type to use
         color: getWireColor(pendingConnection.sourceType, pinType)
       };
       
@@ -657,7 +678,7 @@ const BasicWireManager = ({ canvasRef }) => {
             <g key={wire.id} className="wire-connection" style={{ pointerEvents: 'auto' }}>
               {/* Highlight path to make it more visible */}
               <path
-                d={getWirePath(wire.sourcePos, wire.targetPos, wire.waypoints, wire.optimizedPath)}
+                d={getWirePath(wire.sourcePos, wire.targetPos, wire.waypoints, wire.optimizedPath, wire.useRawPath)}
                 stroke="#000000" 
                 strokeWidth={selectedWireId === wire.id ? 5 : 4}
                 fill="none"
@@ -667,7 +688,7 @@ const BasicWireManager = ({ canvasRef }) => {
               
               {/* Actual colored wire */}
               <path
-                d={getWirePath(wire.sourcePos, wire.targetPos, wire.waypoints, wire.optimizedPath)}
+                d={getWirePath(wire.sourcePos, wire.targetPos, wire.waypoints, wire.optimizedPath, wire.useRawPath)}
                 stroke={wire.color || '#ff0000'} // Default to bright red for high visibility
                 strokeWidth={selectedWireId === wire.id ? 3 : 2}
                 fill="none"
@@ -782,19 +803,25 @@ const BasicWireManager = ({ canvasRef }) => {
         {/* Pending connection wire with smart routing preview */}
         {pendingConnection && pendingConnection.sourcePos && (
           <>
-            {/* Show optimized routing preview with continuous drawing waypoints */}
+            {/* Show raw continuous drawing preview or optimized routing for click mode */}
             {(() => {
-              // Use accumulated waypoints for continuous drawing or current mouse position for click mode
-              const targetPos = isDrawing && pendingWireWaypoints.length > 0 
-                ? pendingWireWaypoints[pendingWireWaypoints.length - 1]  // Use last waypoint when drawing
-                : { x: mousePosition.x, y: mousePosition.y };  // Use mouse position for click mode
+              let pathString;
               
-              const previewPath = WireRouter.optimizePath(
-                pendingWireWaypoints, 
-                pendingConnection.sourcePos, 
-                targetPos
-              );
-              const pathString = WireRouter.generateSVGPath(previewPath);
+              if (isDrawing && pendingWireWaypoints.length > 1) {
+                // For continuous drawing, use raw waypoints without optimization for natural curves
+                const rawPath = [pendingConnection.sourcePos, ...pendingWireWaypoints];
+                pathString = `M ${rawPath[0].x} ${rawPath[0].y} ` + 
+                            rawPath.slice(1).map(point => `L ${point.x} ${point.y}`).join(' ');
+              } else {
+                // For click mode, use optimized routing
+                const targetPos = { x: mousePosition.x, y: mousePosition.y };
+                const previewPath = WireRouter.optimizePath(
+                  pendingWireWaypoints, 
+                  pendingConnection.sourcePos, 
+                  targetPos
+                );
+                pathString = WireRouter.generateSVGPath(previewPath);
+              }
               
               return (
                 <>
