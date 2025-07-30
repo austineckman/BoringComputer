@@ -729,6 +729,118 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           return 0;
         }
 
+        // Handle else if statements
+        if (instruction.function === 'elseif') {
+          addLog(`[${timestamp}] → else if (${instruction.condition}) - Evaluating condition`);
+          return 0;
+        }
+
+        // Handle else statements
+        if (instruction.function === 'else') {
+          addLog(`[${timestamp}] → else - Executing else block`);
+          return 0;
+        }
+
+        // Handle switch statements
+        if (instruction.function === 'switch') {
+          addLog(`[${timestamp}] → switch (${instruction.variable}) - Switching on variable`);
+          return 0;
+        }
+
+        // Handle case statements
+        if (instruction.function === 'case') {
+          addLog(`[${timestamp}] → case ${instruction.value}: - Checking case`);
+          return 0;
+        }
+
+        // Handle default case
+        if (instruction.function === 'default') {
+          addLog(`[${timestamp}] → default: - Executing default case`);
+          return 0;
+        }
+
+        // Handle break statements
+        if (instruction.function === 'break') {
+          addLog(`[${timestamp}] → break; - Breaking from loop/switch`);
+          return 0;
+        }
+
+        // Handle increment/decrement operators
+        if (instruction.function === 'increment') {
+          const { variable, operator } = instruction;
+          addLog(`[${timestamp}] → ${variable}${operator} - Incrementing/decrementing variable`);
+          return 0;
+        }
+
+        // Handle array declarations
+        if (instruction.function === 'arrayDeclaration') {
+          const { type, variable, size } = instruction;
+          addLog(`[${timestamp}] → Declared ${type} array '${variable}[${size}]'`);
+          return 0;
+        }
+
+        // Handle array access
+        if (instruction.function === 'arrayAccess') {
+          const { array, index } = instruction;
+          addLog(`[${timestamp}] → Accessing ${array}[${index}]`);
+          return 0;
+        }
+
+        // Handle trigonometric functions
+        if (['sin', 'cos', 'tan'].includes(instruction.function)) {
+          const func = instruction.function;
+          const angle = instruction.angle;
+          let result;
+          
+          switch (func) {
+            case 'sin':
+              result = Math.sin(angle);
+              break;
+            case 'cos':
+              result = Math.cos(angle);
+              break;
+            case 'tan':
+              result = Math.tan(angle);
+              break;
+            default:
+              result = 0;
+          }
+          
+          addLog(`[${timestamp}] → ${func}(${angle}) returned ${result.toFixed(4)}`);
+          return 0;
+        }
+
+        // Handle bit manipulation functions
+        if (['bitRead', 'bitWrite', 'bitSet', 'bitClear'].includes(instruction.function)) {
+          const func = instruction.function;
+          const params = instruction.params;
+          let result = 'executed';
+          
+          switch (func) {
+            case 'bitRead':
+              result = `bit ${params[1]} of ${params[0]} = ${(params[0] >> params[1]) & 1}`;
+              break;
+            case 'bitWrite':
+              result = `set bit ${params[1]} of ${params[0]} to ${params[2]}`;
+              break;
+            case 'bitSet':
+              result = `set bit ${params[1]} of ${params[0]} to 1`;
+              break;
+            case 'bitClear':
+              result = `clear bit ${params[1]} of ${params[0]} to 0`;
+              break;
+          }
+          
+          addLog(`[${timestamp}] → ${func}(${params.join(', ')}) - ${result}`);
+          return 0;
+        }
+
+        // Handle return statements
+        if (instruction.function === 'return') {
+          addLog(`[${timestamp}] → return ${instruction.value}; - Returning from function`);
+          return 0;
+        }
+
         if (instruction.instruction.includes('Serial.print')) {
           addLog(`[${timestamp}] → Serial: ${instruction.instruction}`);
         }

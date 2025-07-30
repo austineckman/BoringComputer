@@ -116,8 +116,22 @@ export class ArduinoCodeParser {
   private extractVariables(code: string): void {
     console.log('ArduinoCodeParser: Extracting variables');
     
+    // Add built-in Arduino constants first
+    this.variables.set('HIGH', 1);
+    this.variables.set('LOW', 0);
+    this.variables.set('INPUT', 0);
+    this.variables.set('OUTPUT', 1);
+    this.variables.set('INPUT_PULLUP', 2);
+    this.variables.set('LED_BUILTIN', 13);
+    this.variables.set('A0', 14);
+    this.variables.set('A1', 15);
+    this.variables.set('A2', 16);
+    this.variables.set('A3', 17);
+    this.variables.set('A4', 18);
+    this.variables.set('A5', 19);
+    
     // Match variable declarations like: int redPin = 9; and #define RED_PIN 9
-    const variableRegex = /(?:int|const\s+int)\s+(\w+)\s*=\s*(\d+)|#define\s+(\w+)\s+(\d+)/g;
+    const variableRegex = /(?:int|const\s+int|float|long|byte|bool|boolean)\s+(\w+)\s*=\s*(\d+(?:\.\d+)?)|#define\s+(\w+)\s+(\d+|HIGH|LOW|INPUT|OUTPUT|INPUT_PULLUP)/g;
     
     let match;
     while ((match = variableRegex.exec(code)) !== null) {
@@ -126,11 +140,21 @@ export class ArduinoCodeParser {
       if (match[1] && match[2]) {
         // int/const int format: int redPin = 9;
         variableName = match[1];
-        value = parseInt(match[2]);
+        value = parseFloat(match[2]);
       } else if (match[3] && match[4]) {
-        // #define format: #define RED_PIN 9
+        // #define format: #define RED_PIN 9 or #define LED_PIN HIGH
         variableName = match[3];
-        value = parseInt(match[4]);
+        const valueStr = match[4];
+        
+        // Convert Arduino constants to numeric values
+        switch (valueStr) {
+          case 'HIGH': value = 1; break;
+          case 'LOW': value = 0; break;
+          case 'INPUT': value = 0; break;
+          case 'OUTPUT': value = 1; break;
+          case 'INPUT_PULLUP': value = 2; break;
+          default: value = parseFloat(valueStr); break;
+        }
       }
       
       if (variableName && value !== undefined && !isNaN(value)) {
@@ -473,6 +497,181 @@ export class ArduinoCodeParser {
         condition: condition
       };
       console.log(`ArduinoCodeParser: Found while loop:`, instruction);
+      return instruction;
+    }
+
+    // Parse else if statements
+    const elseIfMatch = line.match(/else\s+if\s*\((.*?)\)/);
+    if (elseIfMatch) {
+      const condition = elseIfMatch[1];
+      const instruction = {
+        lineNumber,
+        instruction: `else if (${condition})`,
+        function: 'elseif',
+        condition: condition
+      };
+      console.log(`ArduinoCodeParser: Found else if statement:`, instruction);
+      return instruction;
+    }
+
+    // Parse else statements
+    const elseMatch = line.match(/^\s*else\s*$/);
+    if (elseMatch) {
+      const instruction = {
+        lineNumber,
+        instruction: `else`,
+        function: 'else'
+      };
+      console.log(`ArduinoCodeParser: Found else statement:`, instruction);
+      return instruction;
+    }
+
+    // Parse switch statements
+    const switchMatch = line.match(/switch\s*\((.*?)\)/);
+    if (switchMatch) {
+      const variable = switchMatch[1];
+      const instruction = {
+        lineNumber,
+        instruction: `switch (${variable})`,
+        function: 'switch',
+        variable: variable
+      };
+      console.log(`ArduinoCodeParser: Found switch statement:`, instruction);
+      return instruction;
+    }
+
+    // Parse case statements
+    const caseMatch = line.match(/case\s+(\w+|\d+)\s*:/);
+    if (caseMatch) {
+      const value = caseMatch[1];
+      const instruction = {
+        lineNumber,
+        instruction: `case ${value}:`,
+        function: 'case',
+        value: value
+      };
+      console.log(`ArduinoCodeParser: Found case statement:`, instruction);
+      return instruction;
+    }
+
+    // Parse default case
+    const defaultMatch = line.match(/default\s*:/);
+    if (defaultMatch) {
+      const instruction = {
+        lineNumber,
+        instruction: `default:`,
+        function: 'default'
+      };
+      console.log(`ArduinoCodeParser: Found default case:`, instruction);
+      return instruction;
+    }
+
+    // Parse break statements
+    const breakMatch = line.match(/break\s*;/);
+    if (breakMatch) {
+      const instruction = {
+        lineNumber,
+        instruction: `break;`,
+        function: 'break'
+      };
+      console.log(`ArduinoCodeParser: Found break statement:`, instruction);
+      return instruction;
+    }
+
+    // Parse increment/decrement operators (i++, ++i, i--, --i, i+=, i-=)
+    const incrementMatch = line.match(/(\w+)\s*(\+\+|--|\+=\s*\d+|\-=\s*\d+)/);
+    if (incrementMatch) {
+      const variable = incrementMatch[1];
+      const operator = incrementMatch[2];
+      const instruction = {
+        lineNumber,
+        instruction: `${variable}${operator}`,
+        function: 'increment',
+        variable: variable,
+        operator: operator
+      };
+      console.log(`ArduinoCodeParser: Found increment/decrement:`, instruction);
+      return instruction;
+    }
+
+    // Parse array declarations (int array[5];)
+    const arrayDeclMatch = line.match(/^\s*(int|float|byte|bool)\s+(\w+)\s*\[\s*(\d+)\s*\]\s*;?\s*$/);
+    if (arrayDeclMatch) {
+      const type = arrayDeclMatch[1];
+      const variable = arrayDeclMatch[2];
+      const size = parseInt(arrayDeclMatch[3]);
+      const instruction = {
+        lineNumber,
+        instruction: `${type} ${variable}[${size}]`,
+        function: 'arrayDeclaration',
+        type: type,
+        variable: variable,
+        size: size
+      };
+      console.log(`ArduinoCodeParser: Found array declaration:`, instruction);
+      return instruction;
+    }
+
+    // Parse array access (array[index])
+    const arrayAccessMatch = line.match(/(\w+)\s*\[\s*(\w+|\d+)\s*\]/);
+    if (arrayAccessMatch) {
+      const array = arrayAccessMatch[1];
+      const index = arrayAccessMatch[2];
+      const instruction = {
+        lineNumber,
+        instruction: `${array}[${index}]`,
+        function: 'arrayAccess',
+        array: array,
+        index: index
+      };
+      console.log(`ArduinoCodeParser: Found array access:`, instruction);
+      return instruction;
+    }
+
+    // Parse trigonometric functions (sin, cos, tan)
+    const trigMatch = line.match(/(sin|cos|tan)\s*\((.*?)\)/);
+    if (trigMatch) {
+      const func = trigMatch[1];
+      const angle = this.resolveVariable(trigMatch[2]) ?? parseFloat(trigMatch[2]);
+      const instruction = {
+        lineNumber,
+        instruction: `${func}(${angle})`,
+        function: func,
+        angle: angle
+      };
+      console.log(`ArduinoCodeParser: Found trigonometric function:`, instruction);
+      return instruction;
+    }
+
+    // Parse bit manipulation functions
+    const bitMatch = line.match(/(bitRead|bitWrite|bitSet|bitClear)\s*\((.*?)\)/);
+    if (bitMatch) {
+      const func = bitMatch[1];
+      const params = bitMatch[2].split(',').map(p => {
+        const trimmed = p.trim();
+        return this.resolveVariable(trimmed) ?? (isNaN(parseInt(trimmed)) ? trimmed : parseInt(trimmed));
+      });
+      const instruction = {
+        lineNumber,
+        instruction: `${func}(${bitMatch[2]})`,
+        function: func,
+        params: params
+      };
+      console.log(`ArduinoCodeParser: Found bit manipulation function:`, instruction);
+      return instruction;
+    }
+
+    // Parse return statements
+    const returnMatch = line.match(/return\s+(.*?);/);
+    if (returnMatch) {
+      const value = returnMatch[1];
+      const instruction = {
+        lineNumber,
+        instruction: `return ${value};`,
+        function: 'return',
+        value: value
+      };
+      console.log(`ArduinoCodeParser: Found return statement:`, instruction);
       return instruction;
     }
 
