@@ -224,6 +224,14 @@ Preferred communication style: Simple, everyday language.
 - **Multiple Upload Types Fixed**: Resolved upload issues for quest hero images, result GIFs, wiring diagrams, component images, and kit images
 - **Error Handling Improvement**: Cleaned up upload error handling to provide meaningful feedback instead of empty error responses
 
+### Quest Progress Reset Tool for Testing (July 30, 2025)
+- **Oracle Testing Tool**: Added "Reset Quest Progress" button in Oracle interface header next to "Clear Lootboxes" for quest testing
+- **Complete Progress Reset**: Button clears all completed quests from user's completedQuests array, resetting progress to zero
+- **Backend API Endpoint**: Created `/api/admin/users/reset-quest-progress` POST endpoint for secure quest progress reset
+- **User Session Integration**: Reset operates on current authenticated user's quest progress only
+- **Testing Workflow Enhancement**: Allows quest designers to quickly reset progress to test quest sequences from beginning
+- **Visual Feedback**: Purple-themed button with rotate icon and success/error notifications for clear user feedback
+
 ### Wire Color Cheat Sheet Enhancement (July 30, 2025)
 - **Educational Wire Color Guide**: Added comprehensive cheat sheet in wire properties panel following standard electronics conventions
 - **Standard Color Mapping**: Black for ground, red for power, green for digital signals, blue for analog inputs, yellow for communication
