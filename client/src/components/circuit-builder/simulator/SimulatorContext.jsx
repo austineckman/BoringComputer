@@ -251,6 +251,15 @@ export const SimulatorProvider = ({ children }) => {
       console.log('SimulatorContext: Setup instructions:', setupInstructions);
       console.log('SimulatorContext: Loop instructions:', loopInstructions);
       
+      // DEBUG: Log what parser found
+      console.log('DEBUG Parser Results:', { 
+        setupLines: parseResult.setup?.length, 
+        loopLines: parseResult.loop?.length,
+        setupInstructions: setupInstructions.length, 
+        loopInstructions: loopInstructions.length 
+      });
+      console.log('DEBUG Raw Loop Lines:', parseResult.loop);
+      
       if (!parseResult || (!setupInstructions.length && !loopInstructions.length)) {
         addLog('❌ Error: ArduinoCodeParser failed to extract any instructions');
         console.log('SimulatorContext: Parser returned empty instructions');

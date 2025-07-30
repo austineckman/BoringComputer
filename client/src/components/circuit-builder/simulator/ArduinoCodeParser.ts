@@ -161,15 +161,19 @@ export class ArduinoCodeParser {
     const line = codeLine.content;
     const lineNumber = codeLine.lineNumber;
 
+    console.log(`ArduinoCodeParser: Parsing line ${lineNumber}: "${line}"`);
+
     // Parse pinMode(pin, mode)
     const pinModeMatch = line.match(/pinMode\s*\(\s*(\w+|\d+)\s*,\s*(\w+)\s*\)/);
     if (pinModeMatch) {
       const pin = this.resolveVariable(pinModeMatch[1]);
-      return {
+      const instruction = {
         lineNumber,
         instruction: `pinMode(${pin}, ${pinModeMatch[2]})`,
         pin: pin ?? undefined
       };
+      console.log(`ArduinoCodeParser: Found pinMode instruction:`, instruction);
+      return instruction;
     }
 
     // Parse digitalWrite(pin, value)
@@ -177,33 +181,40 @@ export class ArduinoCodeParser {
     if (digitalWriteMatch) {
       const pin = this.resolveVariable(digitalWriteMatch[1]);
       const value = digitalWriteMatch[2] as 'HIGH' | 'LOW';
-      return {
+      const instruction = {
         lineNumber,
         instruction: `digitalWrite(${pin}, ${value})`,
         pin: pin ?? undefined,
         value
       };
+      console.log(`ArduinoCodeParser: Found digitalWrite instruction:`, instruction);
+      return instruction;
     }
 
     // Parse delay(ms)
     const delayMatch = line.match(/delay\s*\(\s*(\d+)\s*\)/);
     if (delayMatch) {
-      return {
+      const instruction = {
         lineNumber,
         instruction: `delay(${delayMatch[1]})`,
         delayMs: parseInt(delayMatch[1])
       };
+      console.log(`ArduinoCodeParser: Found delay instruction:`, instruction);
+      return instruction;
     }
 
     // Parse Serial.print/println
     const serialMatch = line.match(/Serial\.(print|println)\s*\((.*)\)/);
     if (serialMatch) {
-      return {
+      const instruction = {
         lineNumber,
         instruction: `Serial.${serialMatch[1]}(${serialMatch[2]})`
       };
+      console.log(`ArduinoCodeParser: Found serial instruction:`, instruction);
+      return instruction;
     }
 
+    console.log(`ArduinoCodeParser: No instruction found for line ${lineNumber}: "${line}"`);
     return null;
   }
 
