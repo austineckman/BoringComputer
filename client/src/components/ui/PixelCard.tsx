@@ -312,6 +312,7 @@ export default function PixelCard({
       <canvas
         className="absolute inset-0 w-full h-full pointer-events-none"
         ref={canvasRef}
+        style={{ opacity: 0.15 }}
       />
       {children}
     </div>
