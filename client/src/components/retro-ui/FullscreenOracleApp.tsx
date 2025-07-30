@@ -785,7 +785,38 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const handleMoveQuest = async (questId: string | number, direction: 'up' | 'down') => {
     try {
       const questIdStr = questId.toString();
-      const currentQuests = [...filteredQuests];
+      
+      // Get the current displayed quests (filtered by kit and quest line)
+      let currentQuests: Quest[];
+      if (selectedQuestKitId && selectedQuestLine) {
+        // Filter quests for the selected kit and quest line
+        currentQuests = quests.filter(quest => {
+          const matchesLine = quest.adventureLine === selectedQuestLine;
+          
+          // If quest has kitId, match by kitId (new approach)
+          if (quest.kitId) {
+            const matchesKit = quest.kitId === selectedQuestKitId;
+            return matchesKit && matchesLine;
+          }
+          
+          // Fallback: If quest has componentRequirements, match by component names (legacy approach)
+          if (quest.componentRequirements && quest.componentRequirements.length > 0) {
+            const kitComponentsList = kitComponents[selectedQuestKitId] || [];
+            const kitComponentNames = kitComponentsList.map(comp => comp?.name?.toLowerCase()).filter(Boolean);
+            const matchesKit = quest.componentRequirements.some(requirement => 
+              requirement?.name && kitComponentNames.includes(requirement.name.toLowerCase())
+            );
+            return matchesKit && matchesLine;
+          }
+          
+          // If no kit requirements, just match by adventure line
+          return matchesLine;
+        }).sort((a, b) => (a.orderInLine || 0) - (b.orderInLine || 0));
+      } else {
+        // Use filtered quests if not in kit view
+        currentQuests = [...filteredQuests].sort((a, b) => (a.orderInLine || 0) - (b.orderInLine || 0));
+      }
+      
       const currentIndex = currentQuests.findIndex(q => q.id.toString() === questIdStr);
       
       if (currentIndex === -1) return;
@@ -799,11 +830,11 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         return; // Can't move further in that direction
       }
       
-      // Swap the quests in the array
+      // Get the quests to swap
       const questToMove = currentQuests[currentIndex];
       const questToSwap = currentQuests[newIndex];
       
-      // Update orderInLine values
+      // Update orderInLine values by swapping them
       const tempOrder = questToMove.orderInLine || currentIndex + 1;
       questToMove.orderInLine = questToSwap.orderInLine || newIndex + 1;
       questToSwap.orderInLine = tempOrder;
@@ -820,19 +851,17 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         })
       ]);
       
-      // Update local state
+      // Update local state to reflect the changes immediately
       setQuests(prevQuests => {
-        const updated = [...prevQuests];
-        const moveIndex = updated.findIndex(q => q.id.toString() === questIdStr);
-        const swapQuestId = questToSwap.id.toString();
-        const swapIndex = updated.findIndex(q => q.id.toString() === swapQuestId);
-        
-        if (moveIndex !== -1 && swapIndex !== -1) {
-          updated[moveIndex] = { ...questToMove };
-          updated[swapIndex] = { ...questToSwap };
-        }
-        
-        return updated;
+        return prevQuests.map(quest => {
+          if (quest.id.toString() === questToMove.id.toString()) {
+            return { ...quest, orderInLine: questToMove.orderInLine };
+          }
+          if (quest.id.toString() === questToSwap.id.toString()) {
+            return { ...quest, orderInLine: questToSwap.orderInLine };
+          }
+          return quest;
+        });
       });
       
       window.sounds?.click();
@@ -2159,7 +2188,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           comp?.name?.toLowerCase().includes(searchLower)
         )
       );
-    });
+    }).sort((a, b) => (a.orderInLine || 0) - (b.orderInLine || 0));
 
     if (filteredQuests.length === 0) {
       return (
