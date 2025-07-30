@@ -38,8 +38,28 @@ const CircuitBuilder = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const canvasRef = useRef(null);
   
+  // State for wire management
+  const [selectedWireId, setSelectedWireId] = useState(null);
+  const [selectedWire, setSelectedWire] = useState(null);
+  
   // Get the currently selected component
   const selectedComponent = components.find(c => c.id === selectedComponentId);
+  
+  // Handle wire selection from BasicWireManager
+  const handleWireSelection = (wireId, wireData) => {
+    setSelectedWireId(wireId);
+    setSelectedWire(wireData);
+    // Clear component selection when wire is selected
+    if (wireId) {
+      setSelectedComponentId(null);
+    }
+  };
+  
+  // Handle wire color change from properties panel
+  const handleWireColorChange = (wireId, newColor) => {
+    console.log(`Wire ${wireId} color changed to ${newColor}`);
+    // The BasicWireManager will handle the actual color change
+  };
   
   // Share components with the simulator context
   useEffect(() => {
@@ -136,6 +156,9 @@ const CircuitBuilder = () => {
   // Handle component selection
   const handleSelectComponent = (id) => {
     setSelectedComponentId(id);
+    // Clear wire selection when component is selected
+    setSelectedWireId(null);
+    setSelectedWire(null);
   };
   
   // Helper to dispatch component movement events for wire position updates
@@ -279,6 +302,8 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
       // Escape key to deselect
       if (e.key === 'Escape') {
         setSelectedComponentId(null);
+        setSelectedWireId(null);
+        setSelectedWire(null);
       }
     };
     
@@ -544,8 +569,12 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
         {/* Circuit components */}
         {components.map(renderComponent)}
         
-        {/* Wire management layer */}
-        <BasicWireManager canvasRef={canvasRef} />
+        {/* Wire management layer - handles creating and managing wires between pins */}
+        <BasicWireManager 
+          canvasRef={canvasRef} 
+          onWireSelection={handleWireSelection}
+          onWireColorChange={handleWireColorChange}
+        />
         
         {/* Custom pin tooltip component */}
         <PinTooltip />
@@ -1157,9 +1186,85 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
               Delete Component
             </button>
           </div>
+        ) : selectedWire ? (
+          <div>
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700">
+                Wire ID
+              </label>
+              <div className="mt-1 text-xs text-gray-500 font-mono">{selectedWire.id}</div>
+            </div>
+            
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700">
+                Connection
+              </label>
+              <div className="mt-1 text-sm">
+                <div className="text-xs text-gray-600">From: {selectedWire.sourceName} ({selectedWire.sourceComponent})</div>
+                <div className="text-xs text-gray-600">To: {selectedWire.targetName} ({selectedWire.targetComponent})</div>
+              </div>
+            </div>
+            
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Wire Color
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {/* Wire color palette from BasicWireManager */}
+                {[
+                  '#ff0000', // Red
+                  '#00ff00', // Green  
+                  '#0000ff', // Blue
+                  '#ffff00', // Yellow
+                  '#ff8800', // Orange
+                  '#8800ff', // Purple
+                  '#00ffff', // Cyan
+                  '#ff00ff', // Magenta
+                  '#ffffff', // White
+                  '#000000', // Black
+                  '#808080', // Gray
+                  '#8B4513'  // Brown
+                ].map(color => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => {
+                      // Find the wire manager and call its color change function
+                      const wireManagerElement = document.querySelector('.wire-layer');
+                      if (wireManagerElement) {
+                        // Create a custom event to change wire color
+                        const colorChangeEvent = new CustomEvent('wireColorChange', {
+                          detail: { wireId: selectedWire.id, newColor: color }
+                        });
+                        document.dispatchEvent(colorChangeEvent);
+                        
+                        // Update the selected wire state
+                        setSelectedWire(prev => ({ ...prev, color }));
+                      }
+                    }}
+                    className={`w-8 h-8 rounded border-2 ${
+                      selectedWire.color === color ? 'ring-2 ring-offset-2 ring-blue-500' : 'border-gray-300'
+                    }`}
+                    style={{ backgroundColor: color, border: color === '#ffffff' ? '2px solid #ccc' : undefined }}
+                    title={`Change wire color to ${color}`}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+              <h4 className="font-medium text-sm text-gray-800 mb-2">Wire Actions:</h4>
+              <ul className="text-xs text-gray-600 space-y-1 list-disc pl-4">
+                <li>Click a color above to change wire color</li>
+                <li>Press Delete key to remove wire</li>
+                <li>Click wire to select/deselect</li>
+                <li>ESC key to clear selection</li>
+              </ul>
+            </div>
+          </div>
         ) : (
           <div className="text-gray-500 text-sm">
-            Select a component to view and edit its properties
+            Select a component or wire to view and edit its properties
           </div>
         )}
       </div>

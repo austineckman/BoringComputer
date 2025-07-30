@@ -6,7 +6,7 @@ import { WireRouter } from '../utils/WireRouter';
  * BasicWireManager - A simplified wire manager component that handles
  * connecting pins between circuit components.
  */
-const BasicWireManager = ({ canvasRef }) => {
+const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange }) => {
   // Access the simulator context to share wire information
   const { setWires: setSimulatorWires } = useSimulator();
   
@@ -18,6 +18,22 @@ const BasicWireManager = ({ canvasRef }) => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isDrawing, setIsDrawing] = useState(false);
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
+  
+  // Wire color palette
+  const wireColors = [
+    '#ff0000', // Red
+    '#00ff00', // Green  
+    '#0000ff', // Blue
+    '#ffff00', // Yellow
+    '#ff8800', // Orange
+    '#8800ff', // Purple
+    '#00ffff', // Cyan
+    '#ff00ff', // Magenta
+    '#ffffff', // White
+    '#000000', // Black
+    '#808080', // Gray
+    '#8B4513'  // Brown
+  ];
   
   // Utility function to calculate true element position (for both SVG and HTML)
   const getTrueElementPosition = (element) => {
@@ -341,7 +357,7 @@ const BasicWireManager = ({ canvasRef }) => {
         waypoints: drawnPath, // Store original drawn path for reference
         optimizedPath: optimizedPath, // Store either raw or optimized path
         useRawPath: useRawPath, // Flag to indicate which path type to use
-        color: getWireColor(pendingConnection.sourceType, pinType)
+        color: '#ff0000' // Default red color, can be changed later
       };
       
       // Add the new wire and reset pending connection and waypoints
@@ -399,12 +415,33 @@ const BasicWireManager = ({ canvasRef }) => {
     console.log(`Deleting wire with ID: ${wireId}`);
     setWires(wires.filter(wire => wire.id !== wireId));
     setSelectedWireId(null);
+    // Notify parent component that wire was deleted
+    if (onWireSelection) {
+      onWireSelection(null, null);
+    }
+  };
+  
+  // Change wire color
+  const changeWireColor = (wireId, newColor) => {
+    console.log(`Changing wire ${wireId} color to ${newColor}`);
+    setWires(wires.map(wire => 
+      wire.id === wireId ? { ...wire, color: newColor } : wire
+    ));
+    // Notify parent component about color change
+    if (onWireColorChange) {
+      onWireColorChange(wireId, newColor);
+    }
   };
   
   // Handle wire selection
   const handleWireClick = (wireId, e) => {
     e.stopPropagation();
-    setSelectedWireId(wireId === selectedWireId ? null : wireId);
+    const newSelectedId = wireId === selectedWireId ? null : wireId;
+    setSelectedWireId(newSelectedId);
+    // Notify parent component about wire selection
+    if (onWireSelection) {
+      onWireSelection(newSelectedId, newSelectedId ? wires.find(w => w.id === newSelectedId) : null);
+    }
   };
   
   // Track mouse movement for simple wire preview only
@@ -550,6 +587,12 @@ const BasicWireManager = ({ canvasRef }) => {
     });
   };
 
+  // Handle wire color change events from properties panel
+  const handleWireColorChangeEvent = (event) => {
+    const { wireId, newColor } = event.detail;
+    changeWireColor(wireId, newColor);
+  };
+
   // Setup event listeners
   useEffect(() => {
     // Listen for pin clicks from components
@@ -558,6 +601,9 @@ const BasicWireManager = ({ canvasRef }) => {
     // Listen for component move events
     document.addEventListener('componentMoved', handleComponentMoved);
     document.addEventListener('componentMovedFinal', handleComponentMoved);
+    
+    // Listen for wire color change events from properties panel
+    document.addEventListener('wireColorChange', handleWireColorChangeEvent);
     
     // Add canvas event handlers
     const canvas = canvasRef?.current;
@@ -577,6 +623,7 @@ const BasicWireManager = ({ canvasRef }) => {
       document.removeEventListener('pinClicked', handlePinClick);
       document.removeEventListener('componentMoved', handleComponentMoved);
       document.removeEventListener('componentMovedFinal', handleComponentMoved);
+      document.removeEventListener('wireColorChange', handleWireColorChangeEvent);
       
       if (canvas) {
         canvas.removeEventListener('click', handleCanvasClick);
