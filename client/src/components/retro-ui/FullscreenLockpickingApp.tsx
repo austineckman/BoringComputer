@@ -214,15 +214,19 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
             item: rewardItem
           });
           
-          // Generate static spinning items array (won't change during animation)
+          // Generate a long strip of items for the animation
           const items = Object.values(itemsInfo);
-          const generatedItems = Array.from({ length: 20 }, (_, i) => {
-            if (i === 10) {
-              // Middle item is the winning item
+          const totalItems = 50; // Longer strip for smoother scrolling
+          const winnerIndex = 25; // Winner in the middle
+          
+          const generatedItems = Array.from({ length: totalItems }, (_, i) => {
+            if (i === winnerIndex) {
+              // Winner item positioned to end up at selection line
               return {
-                ...mainReward,
+                id: mainReward.id,
                 item: rewardItem,
-                isWinner: true
+                isWinner: true,
+                quantity: mainReward.quantity
               };
             } else {
               // Random items for the rest
@@ -230,7 +234,8 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
               return {
                 id: randomItem.id,
                 item: randomItem,
-                isWinner: false
+                isWinner: false,
+                quantity: 1
               };
             }
           });
@@ -436,39 +441,52 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
                 <div className="flex flex-col items-center justify-center mb-6">
                   {caseAnimation ? (
                     /* CS:GO Style Case Opening Animation */
-                    <div className="relative w-full h-48 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg mb-4 overflow-hidden border-2 border-yellow-500/50">
-                      {/* Selection Line */}
-                      <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-yellow-400 z-20 shadow-lg shadow-yellow-400/50"></div>
+                    <div className="relative w-full h-48 bg-gradient-to-b from-gray-800 to-gray-900 rounded-lg mb-4 overflow-hidden border border-gray-600">
+                      {/* Background gradient */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-700/20 to-transparent"></div>
                       
-                      {/* Scrolling Items Strip */}
-                      <div className="flex items-center h-full animate-case-spin">
-                        {spinningItems.map((spinItem, i) => {
-                          const displayItem = spinItem.item;
-                          
-                          return (
-                            <div 
-                              key={i} 
-                              className={`flex-shrink-0 w-24 h-32 mx-2 bg-gray-800/80 rounded border-2 flex flex-col items-center justify-center p-2 
-                                ${spinItem.isWinner ? 'border-yellow-400 bg-yellow-900/20' : 'border-gray-600'}`}
-                            >
-                              <div className="w-16 h-16 mb-1 bg-black/50 rounded flex items-center justify-center overflow-hidden">
-                                <img
-                                  src={displayItem?.imagePath || lootCrateImg}
-                                  alt={displayItem?.name || 'Item'}
-                                  className="w-full h-full object-contain"
-                                  style={{ imageRendering: 'pixelated' }}
-                                />
+                      {/* Selection indicator */}
+                      <div className="absolute left-1/2 top-4 bottom-4 w-0.5 bg-yellow-400 z-30 transform -translate-x-0.5"></div>
+                      <div className="absolute left-1/2 top-2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-yellow-400 z-30 transform -translate-x-1/2"></div>
+                      
+                      {/* Scrolling Items Container */}
+                      <div className="relative h-full flex items-center">
+                        <div className="flex items-center h-full animate-case-spin" style={{ width: 'max-content' }}>
+                          {spinningItems.map((spinItem, i) => {
+                            const displayItem = spinItem.item;
+                            
+                            return (
+                              <div 
+                                key={`spin-${i}`}
+                                className={`flex-shrink-0 w-20 h-28 mx-1 rounded border flex flex-col items-center justify-center p-1 transition-all duration-300
+                                  ${spinItem.isWinner 
+                                    ? 'border-yellow-400 bg-yellow-500/10 winner-item' 
+                                    : displayItem?.rarity === 'legendary' ? 'border-orange-400 bg-orange-500/10'
+                                    : displayItem?.rarity === 'epic' ? 'border-purple-400 bg-purple-500/10'
+                                    : displayItem?.rarity === 'rare' ? 'border-blue-400 bg-blue-500/10'
+                                    : 'border-gray-500 bg-gray-500/10'
+                                  }`}
+                              >
+                                <div className="w-12 h-12 mb-1 bg-black/30 rounded flex items-center justify-center overflow-hidden">
+                                  <img
+                                    src={displayItem?.imagePath || lootCrateImg}
+                                    alt={displayItem?.name || 'Item'}
+                                    className="w-full h-full object-contain"
+                                    style={{ imageRendering: 'pixelated' }}
+                                  />
+                                </div>
+                                <span className="text-xs text-center text-white truncate w-full px-1">
+                                  {displayItem?.name || 'Item'}
+                                </span>
                               </div>
-                              <span className="text-xs text-center text-white truncate w-full">
-                                {displayItem?.name || 'Item'}
-                              </span>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
                       
-                      {/* Glow effect on selection line */}
-                      <div className="absolute left-1/2 top-0 bottom-0 w-8 bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent transform -translate-x-1/2 z-10"></div>
+                      {/* Side fade effects */}
+                      <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-gray-900 to-transparent z-20"></div>
+                      <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-gray-900 to-transparent z-20"></div>
                     </div>
                   ) : (
                     <div className={`relative w-48 h-48 bg-black/30 rounded-lg p-4 mb-4 overflow-hidden
