@@ -324,6 +324,44 @@ body {
   color: hsl(var(--brand-light));
 }
 
+/* CS:GO Case Opening Animation */
+@keyframes case-spin {
+  0% {
+    transform: translateX(0px);
+  }
+  80% {
+    transform: translateX(-800px);
+  }
+  90% {
+    transform: translateX(-820px);
+  }
+  95% {
+    transform: translateX(-815px);
+  }
+  100% {
+    transform: translateX(-820px);
+  }
+}
+
+.animate-case-spin {
+  animation: case-spin 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
 .font-pixel {
   font-family: 'Press Start 2P', cursive;
 }

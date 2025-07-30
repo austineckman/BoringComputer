@@ -73,6 +73,8 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
   const [showRewards, setShowRewards] = useState(false);
   const [itemsInfo, setItemsInfo] = useState<Record<string, ItemInfo>>({});
   const [animatingReward, setAnimatingReward] = useState(false);
+  const [caseAnimation, setCaseAnimation] = useState(false);
+  const [finalReward, setFinalReward] = useState<any>(null);
   const [lootboxConfigs, setLootboxConfigs] = useState<Record<string, LootBoxConfig>>({});
   const [potentialRewards, setPotentialRewards] = useState<ItemInfo[]>([]);
 
@@ -194,33 +196,48 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
       }
       
       setOpeningLootbox(true);
+      setCaseAnimation(true);
       console.log('Opening lootbox with ID:', selectedLootbox.id);
       const response = await axios.post(`/api/loot-boxes/${selectedLootbox.id}/open`);
       
-      // Start opening animation sequence
-      setTimeout(() => {
-        setAnimatingReward(true);
+      if (response.data.success) {
+        const rewards = response.data.rewards || [];
+        setLootboxRewards(rewards);
         
-        // After animation, show rewards
+        // Get the main reward item for the final reveal
+        if (rewards.length > 0) {
+          const mainReward = rewards[0];
+          const rewardItem = itemsInfo[mainReward.id];
+          setFinalReward({
+            ...mainReward,
+            item: rewardItem
+          });
+        }
+        
+        // CS:GO style animation timing - 4 seconds
         setTimeout(() => {
-          setLootboxRewards(response.data.rewards);
+          setCaseAnimation(false);
           setShowRewards(true);
           setOpeningLootbox(false);
-          setAnimatingReward(false);
           
           // Play reward sound if available
           if (window.sounds) {
-            window.sounds.reward();
+            window.sounds.questComplete();
           }
           
           // Remove the opened lootbox from the list
           setLootboxes(lootboxes.filter(box => box.id !== selectedLootbox.id));
-        }, 1500);
-      }, 800);
+        }, 4000);
+      } else {
+        setError(response.data.message || 'Failed to open lootbox');
+        setOpeningLootbox(false);
+        setCaseAnimation(false);
+      }
     } catch (err) {
       console.error('Error opening lootbox:', err);
       setError('Failed to open the lootbox. Please try again.');
       setOpeningLootbox(false);
+      setCaseAnimation(false);
     }
   };
 
@@ -394,51 +411,101 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
               <div className="h-full flex flex-col">
                 {/* Top: Lootbox Image Display */}
                 <div className="flex flex-col items-center justify-center mb-6">
-                  <div className={`relative w-48 h-48 bg-black/30 rounded-lg p-4 mb-4 overflow-hidden
-                    ${animatingReward ? 'animate-pulse' : ''}`}
-                  >
-                    {openingLootbox ? (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="absolute inset-0 bg-blue-500/20 animate-pulse"></div>
-                        <Sparkles className="h-20 w-20 text-yellow-400 animate-bounce" />
+                  {caseAnimation ? (
+                    /* CS:GO Style Case Opening Animation */
+                    <div className="relative w-full h-48 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg mb-4 overflow-hidden border-2 border-yellow-500/50">
+                      {/* Selection Line */}
+                      <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-yellow-400 z-20 shadow-lg shadow-yellow-400/50"></div>
+                      
+                      {/* Scrolling Items Strip */}
+                      <div className="flex items-center h-full animate-case-spin">
+                        {/* Generate random items for the scroll effect */}
+                        {Array.from({ length: 20 }, (_, i) => {
+                          const items = Object.values(itemsInfo);
+                          const randomItem = items[Math.floor(Math.random() * items.length)];
+                          const isWinningItem = i === 10 && finalReward; // Middle item is the winner
+                          const displayItem = isWinningItem ? finalReward.item : randomItem;
+                          
+                          return (
+                            <div 
+                              key={i} 
+                              className={`flex-shrink-0 w-24 h-32 mx-2 bg-gray-800/80 rounded border-2 flex flex-col items-center justify-center p-2 
+                                ${isWinningItem ? 'border-yellow-400 bg-yellow-900/20' : 'border-gray-600'}`}
+                            >
+                              <div className="w-16 h-16 mb-1 bg-black/50 rounded flex items-center justify-center overflow-hidden">
+                                <img
+                                  src={displayItem?.imagePath || lootCrateImg}
+                                  alt={displayItem?.name || 'Item'}
+                                  className="w-full h-full object-contain"
+                                  style={{ imageRendering: 'pixelated' }}
+                                />
+                              </div>
+                              <span className="text-xs text-center text-white truncate w-full">
+                                {displayItem?.name || 'Item'}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ) : (
-                      <img
-                        src={
-                          // Use the image from the lootbox configuration if available
-                          (selectedLootbox.type && lootboxConfigs[selectedLootbox.type]?.image) 
-                            ? lootboxConfigs[selectedLootbox.type].image 
-                            : lootCrateImg
-                        }
-                        alt={selectedLootbox.name || selectedLootbox.type}
-                        className="w-full h-full object-contain pixelated"
-                        style={{ 
-                          imageRendering: 'pixelated',
-                          filter: showRewards ? 'blur(10px) brightness(0.7)' : 'none',
-                          transition: 'all 0.5s ease'
-                        }}
-                      />
-                    )}
-                    
-                    {/* Show rewards overlay */}
-                    {showRewards && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/70 animate-fadeIn">
-                        <Sparkles className="h-12 w-12 text-yellow-400 animate-ping" />
-                      </div>
-                    )}
-                  </div>
+                      
+                      {/* Glow effect on selection line */}
+                      <div className="absolute left-1/2 top-0 bottom-0 w-8 bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent transform -translate-x-1/2 z-10"></div>
+                    </div>
+                  ) : (
+                    <div className={`relative w-48 h-48 bg-black/30 rounded-lg p-4 mb-4 overflow-hidden
+                      ${animatingReward ? 'animate-pulse' : ''}`}
+                    >
+                      {openingLootbox ? (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="absolute inset-0 bg-blue-500/20 animate-pulse"></div>
+                          <Sparkles className="h-20 w-20 text-yellow-400 animate-bounce" />
+                        </div>
+                      ) : (
+                        <img
+                          src={
+                            // Use the image from the lootbox configuration if available
+                            (selectedLootbox.type && lootboxConfigs[selectedLootbox.type]?.image) 
+                              ? lootboxConfigs[selectedLootbox.type].image 
+                              : lootCrateImg
+                          }
+                          alt={selectedLootbox.name || selectedLootbox.type}
+                          className="w-full h-full object-contain pixelated"
+                          style={{ 
+                            imageRendering: 'pixelated',
+                            filter: showRewards ? 'blur(10px) brightness(0.7)' : 'none',
+                            transition: 'all 0.5s ease'
+                          }}
+                        />
+                      )}
+                      
+                      {/* Show rewards overlay */}
+                      {showRewards && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/70 animate-fadeIn">
+                          <Sparkles className="h-12 w-12 text-yellow-400 animate-ping" />
+                        </div>
+                      )}
+                    </div>
+                  )}
                   
                   {/* Open Button */}
-                  {!showRewards && !openingLootbox && (
+                  {!showRewards && !openingLootbox && !caseAnimation && (
                     <button
                       className="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg flex items-center"
                       onClick={handleOpenLootbox}
-                      disabled={openingLootbox}
+                      disabled={openingLootbox || caseAnimation}
                       onMouseEnter={() => window.sounds?.hover()}
                     >
                       <Package className="h-5 w-5 mr-2" />
                       Open Lootbox
                     </button>
+                  )}
+                  
+                  {/* Case Opening Status */}
+                  {caseAnimation && (
+                    <div className="text-center text-yellow-400 font-medium">
+                      <Loader2 className="h-5 w-5 animate-spin inline mr-2" />
+                      Opening case...
+                    </div>
                   )}
                 </div>
 
@@ -572,6 +639,8 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
                         onClick={() => {
                           setSelectedLootbox(null);
                           setShowRewards(false);
+                          setCaseAnimation(false);
+                          setFinalReward(null);
                         }}
                         onMouseEnter={() => window.sounds?.hover()}
                       >
