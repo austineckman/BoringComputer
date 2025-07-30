@@ -535,76 +535,116 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                 }
                 
                 return (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 pb-20">
-                    {kitQuests.map(quest => (
-                      <div 
-                        key={quest.id}
-                        className={`bg-gray-900/80 rounded-lg border p-3 sm:p-4 transition-all duration-300 relative ${
-                          quest.status === 'locked' 
-                            ? 'border-gray-600/50 bg-gray-800/50 cursor-not-allowed opacity-60' 
-                            : quest.status === 'completed' 
-                              ? 'border-green-500/50 bg-green-900/20 cursor-pointer hover:border-green-400/60 hover:shadow-lg' 
-                              : 'border-brand-orange/30 cursor-pointer hover:border-brand-orange/60 hover:shadow-lg'
-                        }`}
-                        onClick={() => handleQuestClick(quest.id.toString())}
-                        onMouseEnter={() => quest.status !== 'locked' && window.sounds?.hover()}
-                      >
-                        {/* Status Badge */}
-                        {quest.status === 'completed' && (
-                          <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-1 border-2 border-green-400 shadow-lg">
-                            <div className="w-6 h-6 flex items-center justify-center">
-                              ✓
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 pb-20">
+                    {kitQuests.map(quest => {
+                      const heroImage = quest.content?.images?.[0] || quest.heroImage;
+                      const circuitDiagram = quest.content?.images?.[1]; // Second image as circuit diagram
+                      
+                      return (
+                        <div 
+                          key={quest.id}
+                          className={`bg-gray-900/90 rounded-xl border overflow-hidden transition-all duration-300 relative group ${
+                            quest.status === 'locked' 
+                              ? 'border-gray-600/50 bg-gray-800/50 cursor-not-allowed opacity-60' 
+                              : quest.status === 'completed' 
+                                ? 'border-green-500/50 bg-green-900/20 cursor-pointer hover:border-green-400/60 hover:shadow-xl hover:scale-105' 
+                                : 'border-brand-orange/30 cursor-pointer hover:border-brand-orange/60 hover:shadow-xl hover:scale-105'
+                          }`}
+                          onClick={() => handleQuestClick(quest.id.toString())}
+                          onMouseEnter={() => quest.status !== 'locked' && window.sounds?.hover()}
+                        >
+                          {/* Hero Image Section */}
+                          <div className="relative h-32 sm:h-40 overflow-hidden bg-gray-800/50">
+                            {heroImage ? (
+                              <img 
+                                src={heroImage} 
+                                alt={quest.title}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                style={{ imageRendering: 'pixelated' }}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800">
+                                <Cpu className="w-12 h-12 text-gray-500" />
+                              </div>
+                            )}
+                            
+                            {/* Quest Number Overlay */}
+                            <div className="absolute top-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs font-bold">
+                              #{quest.orderInLine || 0}
                             </div>
-                          </div>
-                        )}
-                        {quest.status === 'locked' && (
-                          <div className="absolute -top-2 -right-2 bg-gray-600 text-white rounded-full p-1 border-2 border-gray-500 shadow-lg">
-                            <div className="w-6 h-6 flex items-center justify-center">
-                              🔒
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div className="flex flex-col h-full">
-                          <div className="flex items-center justify-between mb-2">
-                            <h3 className={`text-base sm:text-lg font-bold mb-0 ${
-                              quest.status === 'completed' ? 'text-green-300' : 
-                              quest.status === 'locked' ? 'text-gray-400' : 'text-white'
-                            }`}>
-                              <span className="text-xs opacity-70 mr-2">#{quest.orderInLine || 0}</span>
-                              {quest.title}
-                            </h3>
+                            
+                            {/* Status Badge */}
                             {quest.status === 'completed' && (
-                              <span className="text-xs text-green-400 font-semibold bg-green-900/40 px-2 py-1 rounded">
-                                COMPLETED
-                              </span>
+                              <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1 border-2 border-green-400 shadow-lg">
+                                <div className="w-5 h-5 flex items-center justify-center text-xs">
+                                  ✓
+                                </div>
+                              </div>
                             )}
                             {quest.status === 'locked' && (
-                              <span className="text-xs text-gray-400 font-semibold bg-gray-800/40 px-2 py-1 rounded">
-                                LOCKED
-                              </span>
+                              <div className="absolute top-2 right-2 bg-gray-600 text-white rounded-full p-1 border-2 border-gray-500 shadow-lg">
+                                <div className="w-5 h-5 flex items-center justify-center text-xs">
+                                  🔒
+                                </div>
+                              </div>
                             )}
                           </div>
-                          <p className={`text-xs sm:text-sm mb-3 sm:mb-4 flex-1 line-clamp-3 ${
-                            quest.status === 'locked' ? 'text-gray-500' : 'text-gray-300'
-                          }`}>
-                            {quest.status === 'locked' ? 'Complete previous quests to unlock this quest.' : quest.description}
-                          </p>
-                          <div className="flex items-center justify-between text-xs sm:text-sm">
-                            <div className="flex items-center text-brand-orange">
-                              <Award className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                              <span>{quest.xpReward} XP</span>
+                          
+                          {/* Content Section */}
+                          <div className="p-4">
+                            {/* Title and Status */}
+                            <div className="flex items-start justify-between mb-3">
+                              <h3 className={`text-sm sm:text-base font-bold leading-tight ${
+                                quest.status === 'completed' ? 'text-green-300' : 
+                                quest.status === 'locked' ? 'text-gray-400' : 'text-white'
+                              }`}>
+                                {quest.title}
+                              </h3>
+                              {quest.status === 'completed' && (
+                                <span className="text-xs text-green-400 font-semibold bg-green-900/40 px-2 py-1 rounded ml-2 flex-shrink-0">
+                                  DONE
+                                </span>
+                              )}
+                              {quest.status === 'locked' && (
+                                <span className="text-xs text-gray-400 font-semibold bg-gray-800/40 px-2 py-1 rounded ml-2 flex-shrink-0">
+                                  LOCKED
+                                </span>
+                              )}
                             </div>
-                            <div className="flex items-center text-yellow-400">
-                              <span>{Array(quest.difficulty).fill('★').join('')}</span>
+                            
+                            {/* Description */}
+                            <p className={`text-xs mb-3 line-clamp-2 ${
+                              quest.status === 'locked' ? 'text-gray-500' : 'text-gray-300'
+                            }`}>
+                              {quest.status === 'locked' ? 'Complete previous quests to unlock.' : quest.description}
+                            </p>
+                            
+                            {/* Circuit Diagram (if available) */}
+                            {circuitDiagram && quest.status !== 'locked' && (
+                              <div className="mb-3">
+                                <img 
+                                  src={circuitDiagram} 
+                                  alt="Circuit diagram"
+                                  className="w-full h-16 object-contain rounded bg-white/5 p-2"
+                                  style={{ imageRendering: 'pixelated' }}
+                                />
+                              </div>
+                            )}
+                            
+                            {/* Footer Info */}
+                            <div className="flex items-center justify-between text-xs">
+                              <div className="flex items-center text-brand-orange">
+                                <Award className="h-3 w-3 mr-1" />
+                                <span>{quest.xpReward} XP</span>
+                              </div>
+                              <div className="flex items-center text-yellow-400">
+                                <span>{Array(quest.difficulty).fill('★').join('')}</span>
+                              </div>
                             </div>
-                          </div>
-                          <div className="mt-2 text-xs text-gray-400">
-                            {quest.adventureLine}
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 );
               })()}

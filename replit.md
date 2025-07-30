@@ -164,6 +164,16 @@ Preferred communication style: Simple, everyday language.
 - **Enhanced Empty States**: Different messages for "No Available Quests" vs "No Completed Quests" based on active tab
 - **Order-Based Sorting**: Quests now display in proper sequential order using orderInLine database field for consistent progression
 
+### Visual Quest Card Redesign (July 30, 2025)
+- **Hero Image Focus**: Redesigned quest cards with large hero images as the primary visual element instead of text-heavy layout
+- **Circuit Diagram Integration**: Added second image support for circuit diagrams displayed neatly below quest description
+- **Card Hover Effects**: Enhanced cards with scale-up hover animations and subtle image zoom effects for better interactivity
+- **Clean Information Architecture**: Removed redundant "30 Days Lost in Space" text and streamlined content to focus on essentials
+- **Image Overlay Elements**: Quest numbers and status badges now overlay on hero images for cleaner design
+- **Responsive Image Heights**: Hero images scale from 128px to 160px based on screen size for optimal viewing
+- **Pixelated Rendering**: Consistent pixel art aesthetic maintained across all quest card images
+- **Improved Visual Hierarchy**: Title prominence increased, description condensed to 2 lines, better spacing throughout cards
+
 ### Quest Interface Responsive Design Fix (July 30, 2025)
 - **Improved Screen Fit**: Removed fixed height constraints that prevented content from fitting on smaller screens
 - **Better Grid Layout**: Updated quest grid from 3-column max to responsive 1/2/3/4 columns based on screen size
