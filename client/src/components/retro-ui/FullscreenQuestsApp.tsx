@@ -41,6 +41,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
   const [questView, setQuestView] = useState<'kit-select' | 'quest-list' | 'detail' | 'active'>('kit-select');
   const [activeQuestId, setActiveQuestId] = useState<string | null>(null);
+  const [questTab, setQuestTab] = useState<'available' | 'completed'>('available');
   
   // Simple rarity color function
   const getRarityColorClass = (rarity: string) => {
@@ -54,11 +55,11 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
     }
   };
   
-  // Get quests for selected kit
+  // Get quests for selected kit with tab filtering
   const getQuestsForKit = (kitId: string) => {
     if (!allQuests || allQuests.length === 0) return [];
     
-    return allQuests.filter(quest => {
+    let filteredQuests = allQuests.filter(quest => {
       // First check if the quest directly belongs to this kit
       if (quest.kitId === kitId) {
         return true;
@@ -76,6 +77,18 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
       
       return false;
     });
+
+    // Filter by quest tab (available vs completed)
+    filteredQuests = filteredQuests.filter(quest => {
+      if (questTab === 'completed') {
+        return quest.status === 'completed';
+      } else {
+        return quest.status !== 'completed'; // Show available, active, and locked quests
+      }
+    });
+
+    // Sort by orderInLine to ensure proper quest ordering
+    return filteredQuests.sort((a, b) => (a.orderInLine || 0) - (b.orderInLine || 0));
   };
 
   const handleKitSelect = (kitId: string) => {
@@ -85,11 +98,13 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
   };
 
   const handleQuestClick = (questId: string) => {
-    window.sounds?.click();
     const quest = allQuests?.find(q => q.id === questId);
-    if (quest) {
+    if (quest && quest.status !== 'locked') {
+      window.sounds?.click();
       setSelectedQuest(quest);
       setQuestView('detail');
+    } else {
+      window.sounds?.error();
     }
   };
 
@@ -460,6 +475,38 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
               </div>
             </div>
             
+            {/* Quest tabs */}
+            <div className="flex bg-gray-900/80 border-b border-brand-orange/30 px-4">
+              <button
+                className={`px-6 py-3 font-semibold text-sm transition-all ${
+                  questTab === 'available' 
+                    ? 'text-white border-b-2 border-brand-orange bg-brand-orange/10' 
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+                }`}
+                onClick={() => {
+                  window.sounds?.click();
+                  setQuestTab('available');
+                }}
+                onMouseEnter={() => window.sounds?.hover()}
+              >
+                Available Quests
+              </button>
+              <button
+                className={`px-6 py-3 font-semibold text-sm transition-all ${
+                  questTab === 'completed' 
+                    ? 'text-white border-b-2 border-green-500 bg-green-500/10' 
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+                }`}
+                onClick={() => {
+                  window.sounds?.click();
+                  setQuestTab('completed');
+                }}
+                onMouseEnter={() => window.sounds?.hover()}
+              >
+                Completed Quests
+              </button>
+            </div>
+
             {/* Quest list */}
             <div className="flex-1 overflow-y-auto p-2 sm:p-4 bg-black/70 min-h-0 quest-scroll">
               {loadingQuests ? (
@@ -474,9 +521,14 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                   return (
                     <div className="flex flex-col items-center justify-center h-full">
                       <BookOpen className="h-16 w-16 text-gray-400 mb-4" />
-                      <h3 className="text-xl font-bold text-white mb-2">No Quests Available</h3>
+                      <h3 className="text-xl font-bold text-white mb-2">
+                        {questTab === 'completed' ? 'No Completed Quests' : 'No Quests Available'}
+                      </h3>
                       <p className="text-gray-300 text-center">
-                        No quests are currently available for this kit.
+                        {questTab === 'completed' 
+                          ? 'Complete some quests to see them here.' 
+                          : 'No quests are currently available for this kit.'
+                        }
                       </p>
                     </div>
                   );
@@ -487,15 +539,17 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                     {kitQuests.map(quest => (
                       <div 
                         key={quest.id}
-                        className={`bg-gray-900/80 rounded-lg border p-3 sm:p-4 hover:border-brand-orange/60 transition-all duration-300 cursor-pointer hover:shadow-lg relative ${
-                          quest.status === 'completed' 
-                            ? 'border-green-500/50 bg-green-900/20' 
-                            : 'border-brand-orange/30'
+                        className={`bg-gray-900/80 rounded-lg border p-3 sm:p-4 transition-all duration-300 relative ${
+                          quest.status === 'locked' 
+                            ? 'border-gray-600/50 bg-gray-800/50 cursor-not-allowed opacity-60' 
+                            : quest.status === 'completed' 
+                              ? 'border-green-500/50 bg-green-900/20 cursor-pointer hover:border-green-400/60 hover:shadow-lg' 
+                              : 'border-brand-orange/30 cursor-pointer hover:border-brand-orange/60 hover:shadow-lg'
                         }`}
                         onClick={() => handleQuestClick(quest.id.toString())}
-                        onMouseEnter={() => window.sounds?.hover()}
+                        onMouseEnter={() => quest.status !== 'locked' && window.sounds?.hover()}
                       >
-                        {/* Completion Badge */}
+                        {/* Status Badge */}
                         {quest.status === 'completed' && (
                           <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-1 border-2 border-green-400 shadow-lg">
                             <div className="w-6 h-6 flex items-center justify-center">
@@ -503,12 +557,21 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                             </div>
                           </div>
                         )}
+                        {quest.status === 'locked' && (
+                          <div className="absolute -top-2 -right-2 bg-gray-600 text-white rounded-full p-1 border-2 border-gray-500 shadow-lg">
+                            <div className="w-6 h-6 flex items-center justify-center">
+                              🔒
+                            </div>
+                          </div>
+                        )}
                         
                         <div className="flex flex-col h-full">
                           <div className="flex items-center justify-between mb-2">
                             <h3 className={`text-base sm:text-lg font-bold mb-0 ${
-                              quest.status === 'completed' ? 'text-green-300' : 'text-white'
+                              quest.status === 'completed' ? 'text-green-300' : 
+                              quest.status === 'locked' ? 'text-gray-400' : 'text-white'
                             }`}>
+                              <span className="text-xs opacity-70 mr-2">#{quest.orderInLine || 0}</span>
                               {quest.title}
                             </h3>
                             {quest.status === 'completed' && (
@@ -516,8 +579,17 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                                 COMPLETED
                               </span>
                             )}
+                            {quest.status === 'locked' && (
+                              <span className="text-xs text-gray-400 font-semibold bg-gray-800/40 px-2 py-1 rounded">
+                                LOCKED
+                              </span>
+                            )}
                           </div>
-                          <p className="text-gray-300 text-xs sm:text-sm mb-3 sm:mb-4 flex-1 line-clamp-3">{quest.description}</p>
+                          <p className={`text-xs sm:text-sm mb-3 sm:mb-4 flex-1 line-clamp-3 ${
+                            quest.status === 'locked' ? 'text-gray-500' : 'text-gray-300'
+                          }`}>
+                            {quest.status === 'locked' ? 'Complete previous quests to unlock this quest.' : quest.description}
+                          </p>
                           <div className="flex items-center justify-between text-xs sm:text-sm">
                             <div className="flex items-center text-brand-orange">
                               <Award className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
