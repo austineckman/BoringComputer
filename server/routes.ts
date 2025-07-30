@@ -777,7 +777,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           questsByAdventureLine[adventureLine] = [];
         }
 
-        // Find user's status for this quest
+        // Find user's status for this quest with proper quest line ordering
         const userQuest = userQuests.find(uq => uq.questId === quest.id);
         let status = 'locked';
 
@@ -789,9 +789,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         else if (userQuest) {
           status = userQuest.status; // active or completed
         }
-        // Finally check if quest is available
-        else if (availableQuests.some(aq => aq.id === quest.id)) {
-          status = 'available';
+        // Check if quest should be available based on sequential ordering
+        else {
+          // Get all quests in the same adventure line, sorted by order
+          const adventureLineQuests = allQuests.filter(q => 
+            q.adventureLine === quest.adventureLine && q.active
+          ).sort((a, b) => a.orderInLine - b.orderInLine);
+          
+          const questIndex = adventureLineQuests.findIndex(q => q.id === quest.id);
+          
+          if (questIndex === 0) {
+            // First quest in line is always available
+            status = 'available';
+          } else if (questIndex > 0) {
+            // Check if previous quest is completed
+            const previousQuest = adventureLineQuests[questIndex - 1];
+            if (user.completedQuests && user.completedQuests.includes(previousQuest.id)) {
+              status = 'available';
+            } else {
+              status = 'locked';
+            }
+          }
         }
 
         console.log(`Processing quest: ${quest.id} - ${quest.title} with status ${status}`);
