@@ -199,9 +199,31 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
       setOpeningLootbox(true);
       console.log('Opening lootbox with ID:', selectedLootbox.id);
       
-      // STEP 1: Generate the predetermined animation strip FIRST
-      const items = Object.values(itemsInfo);
+      // STEP 1: Generate the predetermined animation strip FIRST using lootbox drop table
       const totalItems = 40;
+      
+      // Get items that can actually drop from this lootbox
+      const lootboxConfig = lootboxConfigs[selectedLootbox.type];
+      const possibleItems = [];
+      
+      if (lootboxConfig && lootboxConfig.itemDropTable) {
+        // Build weighted array of possible items based on drop table
+        lootboxConfig.itemDropTable.forEach(entry => {
+          const item = itemsInfo[entry.itemId];
+          if (item) {
+            // Add multiple copies based on weight for realistic distribution
+            const copies = Math.max(1, Math.floor(entry.weight / 5)); // Scale weight down
+            for (let i = 0; i < copies; i++) {
+              possibleItems.push(item);
+            }
+          }
+        });
+      }
+      
+      // Fallback to all items if no drop table found
+      if (possibleItems.length === 0) {
+        possibleItems.push(...Object.values(itemsInfo));
+      }
       
       // CSS animation moves strip by -1070px, each item is 104px wide (96px + 8px margin)
       // Selection line is at center of container
@@ -210,20 +232,24 @@ const FullscreenLockpickingApp: React.FC<FullscreenLockpickingAppProps> = ({ onC
       const animationDistance = 1070; // From CSS animation
       const winnerIndex = Math.floor(animationDistance / itemWidth); // This should be index 10
       
-      // Generate all random items
+      // Generate animation strip using only possible lootbox items
       const generatedItems = Array.from({ length: totalItems }, (_, i) => {
-        const randomItem = items[Math.floor(Math.random() * items.length)];
+        const randomItem = possibleItems[Math.floor(Math.random() * possibleItems.length)];
+        const quantity = lootboxConfig?.itemDropTable?.find(entry => entry.itemId === randomItem.id)?.maxQuantity || 1;
+        
         return {
           id: randomItem.id,
           item: randomItem,
           isWinner: i === winnerIndex,
-          quantity: 1
+          quantity: Math.max(1, Math.floor(Math.random() * quantity) + 1) // Random quantity within range
         };
       });
       
       // The predetermined winner is whatever was randomly generated at the calculated position
       const predeterminedWinner = generatedItems[winnerIndex];
       
+      console.log(`Lootbox type: ${selectedLootbox.type}`);
+      console.log(`Possible items for animation (${possibleItems.length}):`, possibleItems.map(item => item.name));
       console.log(`Animation calculation: ${animationDistance}px ÷ ${itemWidth}px = winner at index ${winnerIndex}`);
       console.log(`Predetermined winner:`, predeterminedWinner);
       

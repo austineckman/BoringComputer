@@ -135,6 +135,9 @@ Preferred communication style: Simple, everyday language.
 - **Debug Logging**: Added calculation logs showing "1070px ÷ 104px = winner at index 10" for verification
 - **Backend Predetermined Endpoint**: New `/api/lootboxes/:id/open-predetermined` endpoint accepts frontend-determined rewards
 - **CS:GO Authenticity**: Maintains smooth deceleration curves and professional case opening experience with guaranteed accuracy
+- **Authentic Drop Table Animation**: Animation strip now shows only items that can actually drop from the specific lootbox type instead of random game items
+- **Weighted Item Distribution**: Uses lootbox drop table weights to create realistic item frequency in animation strip
+- **Proper Quantity Ranges**: Animation items show appropriate quantity ranges based on lootbox configuration (e.g., 1-2 metal, 1-3 tech-scrap)
 
 ### Organic Click-Based Wire Drawing System (July 30, 2025)
 - **Simple Click-Based Drawing**: Click pin to start, click canvas to add waypoints, click target pin to finish - no dragging required
