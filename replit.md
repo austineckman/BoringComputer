@@ -126,17 +126,17 @@ Preferred communication style: Simple, everyday language.
 - **Visible Scrollbar**: Changed from overflow-y-auto to overflow-y-scroll for forced scrollbar visibility
 - **Bottom Padding**: Added pb-20 to quest grid ensuring all quests are accessible when scrolled
 
-### Smart Wire Routing System Implementation (July 30, 2025)
+### Natural Wire Routing System Implementation (July 30, 2025)
 - **Free-Form Wire Drawing**: Users can draw wires in any pattern by clicking waypoints on the canvas
-- **Intelligent Auto-Straightening**: System automatically converts free-form drawings to clean horizontal/vertical segments
-- **Minimal 90-Degree Bends**: Smart router optimizes paths to use the fewest possible direction changes
-- **Overlap Avoidance**: Advanced path optimization prevents wires from crossing poorly over each other
-- **Live Routing Preview**: Real-time preview shows optimized path as user draws, before final placement
-- **Path Optimization Algorithm**: Complex WireRouter class handles path simplification, orthogonal conversion, and bend minimization
-- **Visual Quality Enhancement**: Wires now look professional with clean angles instead of messy diagonal crossings
-- **Educational Value**: Students see proper circuit wiring techniques with industry-standard routing practices
-- **Performance Optimized**: Dual path storage (original waypoints + optimized path) for best of both worlds
-- **User Experience**: Draw freely during creation, get clean results automatically after completion
+- **Natural Shape Preservation**: System preserves user's drawing intent - S-curves stay S-shaped, diagonals stay diagonal
+- **Smart Shape Detection**: Algorithm recognizes intentional curves, bends, and patterns with 22.5-degree angle sensitivity
+- **Gentle Smoothing**: Light 15% smoothing factor removes hand tremor without changing design intent
+- **Angled Wire Support**: Full support for diagonal wires, curves, and non-orthogonal routing patterns
+- **Live Routing Preview**: Real-time preview shows optimized path as user draws, maintaining natural shape
+- **Path Optimization Algorithm**: Shape-preserving simplification that removes redundant points while keeping user's design
+- **Pin Label Positioning Fix**: Pin labels positioned away from connection points with `pointerEvents="none"` to prevent click interference
+- **Educational Value**: Students can create both professional orthogonal circuits and natural flowing designs
+- **User Experience**: Draw exactly what you want - straight, curved, diagonal, or zigzag - and it stays that way
 
 ### Working Arduino Simulator Implementation (July 29, 2025)
 - **Real AVR8JS Integration**: Successfully implemented authentic Arduino simulator using actual avr8js library
