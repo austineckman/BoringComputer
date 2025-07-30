@@ -554,7 +554,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                           onMouseEnter={() => quest.status !== 'locked' && window.sounds?.hover()}
                         >
                           {/* Hero Image Section */}
-                          <div className="relative h-32 sm:h-40 overflow-hidden bg-gray-800/50">
+                          <div className="relative h-40 sm:h-48 overflow-hidden bg-gray-800/50">
                             {heroImage ? (
                               <img 
                                 src={heroImage} 
