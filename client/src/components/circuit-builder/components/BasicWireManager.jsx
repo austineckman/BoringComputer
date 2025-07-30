@@ -147,7 +147,7 @@ const BasicWireManager = ({ canvasRef }) => {
     return position;
   };
 
-  // Generate a path with waypoints and 90-degree bends
+  // Generate a natural-looking path that follows user's drawing intent
   const getWirePath = (start, end, waypoints = [], optimizedPath = null) => {
     // Use optimized path if available, otherwise fall back to waypoints or direct path
     if (optimizedPath && optimizedPath.length > 0) {
@@ -155,29 +155,21 @@ const BasicWireManager = ({ canvasRef }) => {
     }
     if (!start || !end) return '';
     
-    // If there are no waypoints, return a direct straight line
+    // If there are no waypoints, return a direct line (can be diagonal)
     if (!waypoints || waypoints.length === 0) {
       return `M ${start.x},${start.y} L ${end.x},${end.y}`;
     }
     
-    // Start the path
+    // Build path that follows user's drawing naturally
     let path = `M ${start.x},${start.y}`;
     
-    // Add path through each waypoint with 90-degree bend
-    waypoints.forEach((point, index) => {
-      if (index === 0) {
-        // First waypoint connects from start with 90-degree vertical-first bend
-        path += ` V ${point.y} H ${point.x}`;
-      } else {
-        // Other waypoints connect from previous waypoint with 90-degree vertical-first bend
-        const prevPoint = waypoints[index - 1];
-        path += ` V ${point.y} H ${point.x}`;
-      }
+    // Connect through waypoints naturally (preserve user's intended path)
+    waypoints.forEach((point) => {
+      path += ` L ${point.x},${point.y}`;
     });
     
-    // Connect last waypoint to end with 90-degree vertical-first bend
-    const lastPoint = waypoints[waypoints.length - 1];
-    path += ` V ${end.y} H ${end.x}`;
+    // Connect to end point
+    path += ` L ${end.x},${end.y}`;
     
     return path;
   };
