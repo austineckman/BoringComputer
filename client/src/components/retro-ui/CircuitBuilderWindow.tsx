@@ -98,27 +98,28 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
   const [editorReady, setEditorReady] = useState(false);
   
   // Default Arduino code for new projects
-  const defaultCode = `// This example blinks an LED connected to pin 13 (or the built-in LED)
-// This is a great first test for your Arduino setup!
+  const defaultCode = `// RGB LED Color Test - Tests parser digitalWrite detection
+#define RED_PIN 9
+#define GREEN_PIN 10  
+#define BLUE_PIN 11
 
 void setup() {
-  // Initialize digital pin LED_BUILTIN (usually pin 13) as an output
-  pinMode(LED_BUILTIN, OUTPUT);
-  
-  // Add more pin initializations here if needed
-  // For example: pinMode(10, OUTPUT); // for another LED
+  pinMode(RED_PIN, OUTPUT);
+  pinMode(GREEN_PIN, OUTPUT);
+  pinMode(BLUE_PIN, OUTPUT);
 }
 
 void loop() {
-  // Turn the LED on
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(1000);  // Wait for 1 second (1000 milliseconds)
-  
-  // Turn the LED off
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(1000);  // Wait for 1 second
-  
-  // The loop repeats indefinitely
+  digitalWrite(RED_PIN, HIGH);
+  delay(1000);
+  digitalWrite(RED_PIN, LOW);
+  digitalWrite(GREEN_PIN, HIGH);
+  delay(1000);
+  digitalWrite(GREEN_PIN, LOW);
+  digitalWrite(BLUE_PIN, HIGH);
+  delay(1000);
+  digitalWrite(BLUE_PIN, LOW);
+  delay(1000);
 }
 
 /* 
