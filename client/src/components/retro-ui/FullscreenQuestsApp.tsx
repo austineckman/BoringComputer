@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ArrowLeft, Cpu, BookOpen, Award, Loader2, AlertCircle } from 'lucide-react';
+import { X, ArrowLeft, Cpu, BookOpen, Award, Loader2, AlertCircle, Package, Gift } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useQuests } from '@/hooks/useQuests';
 import { useComponentKits } from '@/hooks/useComponentKits';
@@ -8,7 +8,7 @@ import { useLootBoxConfigs } from '@/hooks/useLootBoxConfigs';
 import { Quest } from '@shared/schema';
 import wallbg from '@assets/lootroomg.png';
 import questImage from '@assets/current_quest_banner.png';
-import { Package, Gift } from 'lucide-react';
+import PixelCard from '../ui/PixelCard';
 import ActiveQuestScreen from './ActiveQuestScreen';
 
 // For sounds
@@ -566,17 +566,18 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                       const circuitDiagram = quest.content?.images?.[1]; // Second image as circuit diagram
                       
                       return (
-                        <div 
+                        <PixelCard 
                           key={quest.id}
                           className={`bg-gray-900/90 rounded-xl border overflow-hidden transition-all duration-300 relative group ${
                             quest.status === 'locked' 
                               ? 'border-gray-600/50 bg-gray-800/50 cursor-not-allowed opacity-60' 
                               : quest.status === 'completed' 
-                                ? 'border-green-500/50 bg-green-900/20 cursor-pointer hover:border-green-400/60 hover:shadow-xl hover:scale-105' 
-                                : 'border-brand-orange/30 cursor-pointer hover:border-brand-orange/60 hover:shadow-xl hover:scale-105'
+                                ? 'border-green-500/50 bg-green-900/20 cursor-pointer hover:border-green-400/60' 
+                                : 'border-brand-orange/30 cursor-pointer hover:border-brand-orange/60'
                           }`}
                           onClick={() => handleQuestClick(quest.id.toString())}
                           onMouseEnter={() => quest.status !== 'locked' && window.sounds?.hover()}
+                          disabled={quest.status === 'locked'}
                         >
                           {/* Hero Image Section */}
                           <div className="relative h-48 sm:h-56 overflow-hidden bg-gray-800/50">
@@ -773,7 +774,7 @@ const FullscreenQuestsApp: React.FC<FullscreenQuestsAppProps> = ({ onClose }) =>
                               </div>
                             </div>
                           </div>
-                        </div>
+                        </PixelCard>
                       );
                     })}
                   </div>
