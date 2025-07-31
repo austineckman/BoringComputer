@@ -30,7 +30,7 @@ import OLEDDisplay from './components/OLEDDisplay';
  */
 const CircuitBuilder = () => {
   // Access simulator context to share component data
-  const { setSimulationComponents } = useSimulator();
+  const { setComponents: setSimulationComponents } = useSimulator();
   
   // State for circuit components
   const [components, setComponents] = useState([]);

@@ -152,10 +152,12 @@ void loop() {
 
   // Sync circuit data from simulator to parent state for saving
   useEffect(() => {
+    console.log('Simulator components changed:', simulatorComponents);
     setComponents(simulatorComponents || []);
   }, [simulatorComponents]);
 
   useEffect(() => {
+    console.log('Simulator wires changed:', simulatorWires);
     setWires(simulatorWires || []);
   }, [simulatorWires]);
 
@@ -172,6 +174,15 @@ void loop() {
       zoom,
       pan
     };
+
+    console.log('Saving circuit data:', {
+      components: components.length,
+      wires: wires.length,
+      simulatorComponents: simulatorComponents?.length || 0,
+      simulatorWires: simulatorWires?.length || 0,
+      actualComponents: components,
+      actualWires: wires
+    });
 
     const exampleData: CircuitExample = {
       id: existingExample?.id,
