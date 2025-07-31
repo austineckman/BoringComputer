@@ -379,52 +379,73 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           console.log(`[Simulator] Available wires:`, wires.length);
           console.log(`[Simulator] Available components:`, components.map(c => `${c.id}(${c.type})`));
           
-          // Find LEDs and RGB LEDs connected to this pin through wires
-          const connectedComponents = [];
-          
-          // Extract LED and RGB LED IDs from wire data
-          const componentIdsFromWires = new Set();
-          wires.forEach(wire => {
-            if (wire.sourceComponent && (wire.sourceComponent.includes('led') || wire.sourceComponent.includes('rgb'))) {
-              componentIdsFromWires.add(wire.sourceComponent);
-            }
-            if (wire.targetComponent && (wire.targetComponent.includes('led') || wire.targetComponent.includes('rgb'))) {
-              componentIdsFromWires.add(wire.targetComponent);
-            }
-          });
-          
-          console.log(`[Simulator] LED/RGB LED IDs found in wires:`, Array.from(componentIdsFromWires));
-          
-          // Check each component found in wires
-          componentIdsFromWires.forEach(componentId => {
-            // Find wires connected to this component
-            const componentWires = wires.filter(wire => 
-              wire.sourceComponent === componentId || wire.targetComponent === componentId
-            );
+          // Function to trace circuit path through multiple components (like resistors)
+          const traceCircuitPathFromPin = (targetPinNumber, visitedComponents = new Set()) => {
+            const connectedComponents = [];
             
-            console.log(`[Simulator] Component ${componentId} has ${componentWires.length} wires:`, componentWires);
-            
-            // Check if any wire connects this component to the pin we're setting
-            componentWires.forEach(wire => {
+            // Find all wires connected to the target pin
+            const pinWires = wires.filter(wire => {
               const isConnectedToPin = (
-                (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString()) ||
-                (wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}`) ||
-                (wire.sourceName === `${pinNumber}` || wire.targetName === `${pinNumber}`)
+                (wire.sourceName === targetPinNumber.toString() || wire.targetName === targetPinNumber.toString()) ||
+                (wire.sourceName === `pin-${targetPinNumber}` || wire.targetName === `pin-${targetPinNumber}`) ||
+                (wire.sourceName === `${targetPinNumber}` || wire.targetName === `${targetPinNumber}`)
               );
+              return isConnectedToPin;
+            });
+            
+            console.log(`[Simulator] Found ${pinWires.length} wires connected to pin ${targetPinNumber}`);
+            
+            for (const wire of pinWires) {
+              // Find the component connected to this pin wire
+              const componentId = wire.sourceName === targetPinNumber.toString() ? wire.targetComponent : wire.sourceComponent;
               
-              if (isConnectedToPin) {
-                // Determine which pin on the component this wire connects to
-                const componentPinName = wire.sourceComponent === componentId ? wire.sourceName : wire.targetName;
-                
+              if (!componentId || visitedComponents.has(componentId)) continue;
+              visitedComponents.add(componentId);
+              
+              console.log(`[Simulator] Tracing from pin ${targetPinNumber} to component: ${componentId}`);
+              
+              // If this is an LED, add it to connected components
+              if (componentId.includes('led') || componentId.includes('rgb')) {
+                const componentPinName = wire.sourceName === targetPinNumber.toString() ? wire.targetName : wire.sourceName;
                 connectedComponents.push({ 
                   id: componentId, 
                   type: componentId.includes('rgb') ? 'rgbled' : 'led',
                   pinName: componentPinName
                 });
-                console.log(`[Simulator] Found component ${componentId} connected to pin ${pinNumber} via wire (component pin: ${componentPinName})`);
+                console.log(`[Simulator] Found LED ${componentId} connected to pin ${targetPinNumber}`);
               }
-            });
-          });
+              
+              // If this is an intermediate component (resistor, etc), continue tracing
+              else if (componentId.includes('resistor') || componentId.includes('capacitor') || 
+                       componentId.includes('inductor')) {
+                console.log(`[Simulator] Tracing through intermediate component: ${componentId}`);
+                
+                // Find other wires connected to this intermediate component
+                const intermediateWires = wires.filter(w => 
+                  (w.sourceComponent === componentId || w.targetComponent === componentId) && w.id !== wire.id
+                );
+                
+                for (const intWire of intermediateWires) {
+                  const nextComponentId = intWire.sourceComponent === componentId ? intWire.targetComponent : intWire.sourceComponent;
+                  
+                  if (nextComponentId && (nextComponentId.includes('led') || nextComponentId.includes('rgb')) && !visitedComponents.has(nextComponentId)) {
+                    const componentPinName = intWire.sourceComponent === componentId ? intWire.targetName : intWire.sourceName;
+                    connectedComponents.push({ 
+                      id: nextComponentId, 
+                      type: nextComponentId.includes('rgb') ? 'rgbled' : 'led',
+                      pinName: componentPinName
+                    });
+                    console.log(`[Simulator] Found LED ${nextComponentId} through resistor ${componentId}`);
+                  }
+                }
+              }
+            }
+            
+            return connectedComponents;
+          };
+          
+          // Use the enhanced tracing function
+          const connectedComponents = traceCircuitPathFromPin(pinNumber);
           
           // Update all connected components
           connectedComponents.forEach(component => {
