@@ -16,11 +16,13 @@ interface CircuitExample {
 interface CircuitExamplesOracleViewProps {
   onCreateNew: () => void;
   onEditExample: (example: CircuitExample) => void;
+  refreshTrigger?: number;
 }
 
 const CircuitExamplesOracleView: React.FC<CircuitExamplesOracleViewProps> = ({ 
   onCreateNew, 
-  onEditExample 
+  onEditExample,
+  refreshTrigger 
 }) => {
   const { user } = useAuth();
   const [examples, setExamples] = useState<CircuitExample[]>([]);
@@ -46,7 +48,7 @@ const CircuitExamplesOracleView: React.FC<CircuitExamplesOracleViewProps> = ({
 
   useEffect(() => {
     loadExamples();
-  }, []);
+  }, [refreshTrigger]);
 
   // Toggle publish status
   const togglePublishStatus = async (id: string, currentStatus: boolean) => {

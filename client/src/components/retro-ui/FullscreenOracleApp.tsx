@@ -321,6 +321,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [circuitExampleMode, setCircuitExampleMode] = useState<'list' | 'create' | 'edit'>('list');
   const [editingCircuitExample, setEditingCircuitExample] = useState<any>(null);
   const [showCircuitCreator, setShowCircuitCreator] = useState<boolean>(false);
+  const [circuitExamplesRefreshTrigger, setCircuitExamplesRefreshTrigger] = useState<number>(0);
   
   // State for modals and actions
   const [confirmDelete, setConfirmDelete] = useState<{ 
@@ -3548,6 +3549,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           setEditingCircuitExample(example);
           setShowCircuitCreator(true);
         }}
+        refreshTrigger={circuitExamplesRefreshTrigger}
       />
     );
   };
@@ -8269,6 +8271,9 @@ void loop() {
                   setShowCircuitCreator(false);
                   setEditingCircuitExample(null);
                   window.sounds?.success();
+                  
+                  // Trigger refresh of circuit examples list
+                  setCircuitExamplesRefreshTrigger(prev => prev + 1);
                   
                   setNotificationMessage({
                     type: 'success',

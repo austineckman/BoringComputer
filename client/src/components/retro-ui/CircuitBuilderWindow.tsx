@@ -78,13 +78,13 @@ interface NotificationType {
 }
 
 interface CircuitExample {
-  id: number;
+  id: string;
   name: string;
   description: string;
-  code: string;
+  arduinoCode: string;
   circuitData?: any;
   isPublished: boolean;
-  createdBy: string;
+  createdBy: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -181,7 +181,7 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
   const { user } = useAuth();
   
   // Fetch circuit examples from database
-  const { data: circuitExamples = [], isLoading: isLoadingExamples } = useQuery({
+  const { data: circuitExamples = [], isLoading: isLoadingExamples } = useQuery<CircuitExample[]>({
     queryKey: ['/api/circuit-examples'],
     retry: false,
   });
@@ -783,28 +783,25 @@ void loop() {
   
   // Handle loading example code (both hardcoded and database examples)
   const loadExampleCode = (exampleType: string) => {
-    // Check if it's a database example (numeric ID)
-    const exampleId = parseInt(exampleType);
-    if (!isNaN(exampleId)) {
-      const dbExample = circuitExamples.find((ex: CircuitExample) => ex.id === exampleId);
-      if (dbExample) {
-        // Load database example
-        setCode(dbExample.code);
-        updateSimulatorCode(dbExample.code);
-        
-        // Load circuit data if available
-        if (dbExample.circuitData) {
-          setComponents(dbExample.circuitData.components || []);
-          setWires(dbExample.circuitData.wires || []);
-          if (dbExample.circuitData.zoom) setZoom(dbExample.circuitData.zoom);
-          if (dbExample.circuitData.pan) setPan(dbExample.circuitData.pan);
-        }
-        
-        addSimulationLog(`Loaded database example: ${dbExample.name}`);
-        showNotification(`Loaded example: ${dbExample.name}`, 'success');
-        setShowExampleDropdown(false);
-        return;
+    // Check if it's a database example (UUID format)
+    const dbExample = circuitExamples.find((ex: CircuitExample) => ex.id === exampleType);
+    if (dbExample) {
+      // Load database example
+      setCode(dbExample.arduinoCode);
+      updateSimulatorCode(dbExample.arduinoCode);
+      
+      // Load circuit data if available
+      if (dbExample.circuitData) {
+        setComponents(dbExample.circuitData.components || []);
+        setWires(dbExample.circuitData.wires || []);
+        if (dbExample.circuitData.zoom) setZoom(dbExample.circuitData.zoom);
+        if (dbExample.circuitData.pan) setPan(dbExample.circuitData.pan);
       }
+      
+      addSimulationLog(`Loaded database example: ${dbExample.name}`);
+      showNotification(`Loaded example: ${dbExample.name}`, 'success');
+      setShowExampleDropdown(false);
+      return;
     }
     
     // Handle hardcoded examples
