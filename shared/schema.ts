@@ -1,5 +1,5 @@
-import { pgTable, text, serial, integer, bigint, timestamp, json, boolean, jsonb, primaryKey } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { pgTable, text, serial, integer, bigint, timestamp, json, boolean, jsonb, primaryKey, varchar } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -571,8 +571,32 @@ export const insertQuestCommentSchema = createInsertSchema(questComments).pick({
   reactions: true,
 });
 
+// Circuit Examples table for admin-created examples
+export const circuitExamples = pgTable("circuit_examples", {
+  id: text("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  arduinoCode: text("arduino_code").notNull(),
+  circuitData: jsonb("circuit_data").notNull(), // Components, wires, positions
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  isPublished: boolean("is_published").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertCircuitExampleSchema = createInsertSchema(circuitExamples).pick({
+  name: true,
+  description: true,
+  arduinoCode: true,
+  circuitData: true,
+  createdBy: true,
+  isPublished: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
+export type CircuitExample = typeof circuitExamples.$inferSelect;
+export type InsertCircuitExample = typeof circuitExamples.$inferInsert;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export type Quest = typeof quests.$inferSelect;

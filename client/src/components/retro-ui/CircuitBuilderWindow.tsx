@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, RotateCcw, Trash2, ZoomIn, ZoomOut, Move, Play, Save, FileCode, Download } from 'lucide-react';
+import { X, RotateCcw, Trash2, ZoomIn, ZoomOut, Move, Play, Save, FileCode, Download, BookOpen, Eye, EyeOff, FolderOpen } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import CircuitExamplesWindow from './CircuitExamplesWindow';
 import AceEditor from 'react-ace';
 import ace from 'ace-builds';
 
@@ -73,7 +75,96 @@ interface NotificationType {
   type: string;
 }
 
+interface SaveExampleModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (name: string, description: string, isPublished: boolean) => void;
+}
+
+// Save Example Modal Component
+const SaveExampleModal: React.FC<SaveExampleModalProps> = ({ isOpen, onClose, onSave }) => {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [isPublished, setIsPublished] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (name.trim()) {
+      onSave(name.trim(), description.trim(), isPublished);
+      setName('');
+      setDescription('');
+      setIsPublished(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-gray-800 border-2 border-gray-600 p-6 rounded-lg shadow-lg min-w-96">
+        <h3 className="text-xl font-bold text-white mb-4">Save Circuit Example</h3>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-white text-sm font-bold mb-2">
+              Example Name *
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-700 text-white border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+              placeholder="Enter example name..."
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-white text-sm font-bold mb-2">
+              Description
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-700 text-white border border-gray-600 rounded focus:outline-none focus:border-blue-500 h-20"
+              placeholder="Brief description of what this example demonstrates..."
+            />
+          </div>
+          <div className="mb-6">
+            <label className="flex items-center text-white">
+              <input
+                type="checkbox"
+                checked={isPublished}
+                onChange={(e) => setIsPublished(e.target.checked)}
+                className="mr-2"
+              />
+              <span className="flex items-center">
+                {isPublished ? <Eye className="w-4 h-4 mr-1" /> : <EyeOff className="w-4 h-4 mr-1" />}
+                Make Public (visible to all users)
+              </span>
+            </label>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Save Example
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) => {
+  const { user } = useAuth();
   // State for components and wires
   const [components, setComponents] = useState<ComponentData[]>([]);
   const [wires, setWires] = useState<WireConnection[]>([]);
@@ -474,6 +565,11 @@ void loop() {
 
   // Notification system
   const [notification, setNotification] = useState<NotificationType | null>(null);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showExamplesWindow, setShowExamplesWindow] = useState(false);
+  
+  // Check if user has admin/founder privileges
+  const hasAdminAccess = user?.roles?.includes('admin') || user?.roles?.includes('Founder') || user?.roles?.includes('CraftingTable');
   
   // Show a notification in the bottom right corner
   const showNotification = (message: string, type = 'success') => {
@@ -537,6 +633,72 @@ void loop() {
     updateComponentPins,   // Access the updateComponentPins function for pin-specific updates
     setCode: updateSimulatorCode // Get the simulator's setCode function
   } = useSimulator();
+
+  // Handle saving circuit example
+  const handleSaveExample = async (name: string, description: string, isPublished: boolean) => {
+    try {
+      const circuitData = {
+        components,
+        wires,
+        zoom,
+        pan
+      };
+
+      const response = await fetch('/api/circuit-examples', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name,
+          description,
+          arduinoCode: code,
+          circuitData,
+          isPublished
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save circuit example');
+      }
+
+      setNotification({ 
+        message: `Circuit example "${name}" saved successfully!`, 
+        type: 'success' 
+      });
+      setShowSaveModal(false);
+    } catch (error) {
+      console.error('Error saving circuit example:', error);
+      setNotification({ 
+        message: 'Failed to save circuit example. Please try again.', 
+        type: 'error' 
+      });
+    }
+  };
+
+  // Handle loading an example
+  const handleLoadExample = (example: any) => {
+    // Load the circuit data
+    if (example.circuitData) {
+      setComponents(example.circuitData.components || []);
+      setWires(example.circuitData.wires || []);
+      if (example.circuitData.zoom) setZoom(example.circuitData.zoom);
+      if (example.circuitData.pan) setPan(example.circuitData.pan);
+    }
+    
+    // Load the Arduino code
+    setCode(example.arduinoCode || '');
+    updateSimulatorCode(example.arduinoCode || '');
+    
+    // Show success notification
+    setNotification({
+      message: `Loaded example: ${example.name}`,
+      type: 'success'
+    });
+    
+    // Close the examples window
+    setShowExamplesWindow(false);
+  };
   
   // Run the simulation
   const runSimulation = () => {
@@ -546,7 +708,7 @@ void loop() {
       stopSimulation();
       setIsSimulationRunning(false);
       if (typeof window !== 'undefined') {
-        window.isSimulationRunning = false; // Set global flag for components
+        (window as any).isSimulationRunning = false; // Set global flag for components
       }
       addSimulationLog('Simulation stopped');
       showNotification('Simulation stopped successfully', 'info');
@@ -569,7 +731,7 @@ void loop() {
       
       setIsSimulationRunning(true);
       if (typeof window !== 'undefined') {
-        window.isSimulationRunning = true; // Set global flag for components
+        (window as any).isSimulationRunning = true; // Set global flag for components
       }
       
       // Start the simulation with the current code directly
@@ -759,6 +921,26 @@ void loop() {
             title="Save Project"
           >
             <Save size={18} />
+          </button>
+          
+          {/* Admin-only Save Example button */}
+          {hasAdminAccess && (
+            <button 
+              className="bg-purple-600 p-1 rounded hover:bg-purple-700 text-xs"
+              onClick={() => setShowSaveModal(true)}
+              title="Save as Example (Admin)"
+            >
+              <BookOpen size={18} />
+            </button>
+          )}
+          
+          {/* Load Examples button */}
+          <button 
+            className="bg-orange-600 p-1 rounded hover:bg-orange-700 text-xs"
+            onClick={() => setShowExamplesWindow(true)}
+            title="Load Circuit Examples"
+          >
+            <FolderOpen size={18} />
           </button>
           
           {/* Close button */}
@@ -991,6 +1173,21 @@ void loop() {
           </div>
         </div>
       </div>
+      
+      {/* Save Example Modal */}
+      <SaveExampleModal
+        isOpen={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        onSave={handleSaveExample}
+      />
+      
+      {/* Circuit Examples Window */}
+      {showExamplesWindow && (
+        <CircuitExamplesWindow
+          onClose={() => setShowExamplesWindow(false)}
+          onLoadExample={handleLoadExample}
+        />
+      )}
       
       {/* Notification popup */}
       {notification && (

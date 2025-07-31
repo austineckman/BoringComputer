@@ -27,6 +27,7 @@ import lootboxRewardsRoutes from './routes/lootboxRewards';
 import circuitProjectsRoutes from './routes/circuit-projects';
 import arduinoComponentsRoutes from './routes/arduino-components';
 import missionRoutes from './routes/missions';
+import circuitExamplesRoutes from './routes/circuit-examples';
 import { authenticate, hashPassword } from './auth';
 import { hasOracleAccess } from './middleware/auth';
 // CSRF protection removed - unnecessary complexity for educational gaming platform
@@ -109,6 +110,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register mission routes
   app.use("/api/missions", missionRoutes);
+
+  // Register circuit examples routes
+  app.use("/api/circuit-examples", circuitExamplesRoutes);
 
   // Auth routes have been moved to separate files
   // Using passport authentication with proper session handling
