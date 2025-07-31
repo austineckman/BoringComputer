@@ -59,6 +59,178 @@ interface CircuitExampleCreatorProps {
   existingExample?: CircuitExample | null;
 }
 
+// Circuit Builder Canvas Component for Oracle
+interface CircuitBuilderCanvasProps {
+  components: ComponentData[];
+  wires: WireConnection[];
+  onComponentsChange: (components: ComponentData[]) => void;
+  onWiresChange: (wires: WireConnection[]) => void;
+  selectedComponent: string | null;
+  onComponentSelect: (id: string | null) => void;
+  selectedWire: string | null;
+  onWireSelect: (id: string | null) => void;
+  zoom: number;
+  pan: { x: number; y: number };
+  isPanning: boolean;
+  onPanStart: (panning: boolean) => void;
+  canvasRef: React.RefObject<HTMLDivElement>;
+}
+
+const CircuitBuilderCanvas: React.FC<CircuitBuilderCanvasProps> = ({
+  components,
+  wires,
+  onComponentsChange,
+  onWiresChange,
+  selectedComponent,
+  onComponentSelect,
+  selectedWire,
+  onWireSelect,
+  zoom,
+  pan,
+  isPanning,
+  onPanStart,
+  canvasRef
+}) => {
+  const gridSize = 20;
+
+  const addComponent = (type: string) => {
+    const newComponent = createComponent(type, { x: 300, y: 200 });
+    onComponentsChange([...components, newComponent]);
+  };
+
+  const handleComponentClick = (componentId: string) => {
+    onComponentSelect(selectedComponent === componentId ? null : componentId);
+    onWireSelect(null);
+  };
+
+  const handleWireClick = (wireId: string) => {
+    onWireSelect(selectedWire === wireId ? null : wireId);
+    onComponentSelect(null);
+  };
+
+  const renderGrid = () => {
+    const gridLines = [];
+    const canvasWidth = 2000;
+    const canvasHeight = 1500;
+    
+    // Vertical lines
+    for (let x = 0; x <= canvasWidth; x += gridSize) {
+      gridLines.push(
+        <line
+          key={`v-${x}`}
+          x1={x}
+          y1={0}
+          x2={x}
+          y2={canvasHeight}
+          stroke="#374151"
+          strokeWidth="0.5"
+          opacity="0.3"
+        />
+      );
+    }
+    
+    // Horizontal lines
+    for (let y = 0; y <= canvasHeight; y += gridSize) {
+      gridLines.push(
+        <line
+          key={`h-${y}`}
+          x1={0}
+          y1={y}
+          x2={canvasWidth}
+          y2={y}
+          stroke="#374151"
+          strokeWidth="0.5"
+          opacity="0.3"
+        />
+      );
+    }
+    
+    return gridLines;
+  };
+
+  return (
+    <div className="relative w-full h-full bg-gray-900 overflow-hidden">
+      {/* Component Palette */}
+      <div className="absolute top-4 left-4 z-10 bg-gray-800 border border-gray-700 rounded-lg p-2">
+        <div className="grid grid-cols-4 gap-2">
+          {componentOptions.slice(0, 8).map((option) => (
+            <button
+              key={option.name}
+              onClick={() => addComponent(option.name)}
+              className="w-10 h-10 bg-gray-700 hover:bg-gray-600 rounded border border-gray-600 flex items-center justify-center"
+              title={option.name}
+            >
+              <img 
+                src={option.imagePath} 
+                alt={option.name}
+                className="w-6 h-6 object-contain"
+                style={{ imageRendering: 'pixelated' }}
+              />
+            </button>
+          ))}
+        </div>
+      </div>
+      
+      {/* Circuit Canvas */}
+      <div 
+        ref={canvasRef}
+        className="absolute inset-0 cursor-crosshair"
+        style={{
+          transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`,
+          transformOrigin: 'top left'
+        }}
+      >
+        <svg className="absolute inset-0 w-full h-full pointer-events-none">
+          {renderGrid()}
+          
+          {/* Render wires */}
+          {wires.map((wire) => (
+            <CircuitWire
+              key={wire.id}
+              wire={wire}
+              isSelected={selectedWire === wire.id}
+              onClick={() => handleWireClick(wire.id)}
+            />
+          ))}
+        </svg>
+        
+        {/* Render components */}
+        {components.map((component) => (
+          <div
+            key={component.id}
+            className={`absolute cursor-pointer ${
+              selectedComponent === component.id ? 'ring-2 ring-orange-500' : ''
+            }`}
+            style={{
+              left: component.attrs.posLeft,
+              top: component.attrs.posTop,
+              transform: `rotate(${component.attrs.rotate || 0}deg)`,
+              transformOrigin: 'center',
+              pointerEvents: 'auto'
+            }}
+            onClick={() => handleComponentClick(component.id)}
+          >
+            {renderComponent(component)}
+            
+            {/* Component pins */}
+            {component.pins?.map((pin) => (
+              <CircuitPin
+                key={pin.id}
+                pin={pin}
+                component={component}
+                onPinClick={(pinId) => {
+                  // Handle pin connections for wire creation
+                  console.log(`Pin clicked: ${pinId}`);
+                }}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const CircuitExampleCreator: React.FC<CircuitExampleCreatorProps> = ({ 
   onCancel, 
   onSave, 
@@ -310,7 +482,21 @@ void loop() {
 
               {/* Circuit Canvas */}
               <div className="flex-1 relative">
-                <CircuitBuilder />
+                <CircuitBuilderCanvas
+                  components={components}
+                  wires={wires}
+                  onComponentsChange={setComponents}
+                  onWiresChange={setWires}
+                  selectedComponent={selectedComponent}
+                  onComponentSelect={setSelectedComponent}
+                  selectedWire={selectedWire}
+                  onWireSelect={setSelectedWire}
+                  zoom={zoom}
+                  pan={pan}
+                  isPanning={isPanning}
+                  onPanStart={setIsPanning}
+                  canvasRef={canvasRef}
+                />
               </div>
             </div>
 
