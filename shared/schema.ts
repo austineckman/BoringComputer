@@ -279,7 +279,7 @@ export const missionDiagrams = pgTable("mission_diagrams", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Arduino Circuit Projects table - for saving user-created circuit designs
+// Arduino Circuit Projects table - for saving user-created circuit designs and founder examples
 export const circuitProjects = pgTable("circuit_projects", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
@@ -291,6 +291,8 @@ export const circuitProjects = pgTable("circuit_projects", {
   code: text("code").notNull(),
   thumbnail: text("thumbnail"), // Optional image representation
   isPublic: boolean("is_public").default(false),
+  isExample: boolean("is_example").default(false), // Founder-created examples
+  category: text("category").default('general'), // 'beginner', 'intermediate', 'advanced', 'general'
   tags: json("tags").$type<string[]>().default([]),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -542,6 +544,8 @@ export const insertCircuitProjectSchema = createInsertSchema(circuitProjects).pi
   code: true,
   thumbnail: true,
   isPublic: true,
+  isExample: true,
+  category: true,
   tags: true
 });
 

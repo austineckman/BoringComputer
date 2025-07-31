@@ -25,6 +25,7 @@ import oracleRoutes from './routes/oracle';
 import lootboxesRoutes from './routes/lootboxes';
 import lootboxRewardsRoutes from './routes/lootboxRewards';
 import circuitProjectsRoutes from './routes/circuit-projects';
+import circuitExamplesRoutes from './routes/circuit-examples';
 import arduinoComponentsRoutes from './routes/arduino-components';
 import missionRoutes from './routes/missions';
 import { authenticate, hashPassword } from './auth';
@@ -103,6 +104,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register circuit projects routes
   app.use("/api/circuit-projects", circuitProjectsRoutes);
+
+  // Register circuit examples routes
+  app.use("/api/circuit-examples", circuitExamplesRoutes);
 
   // Register Arduino components routes
   app.use("/api/arduino-components", arduinoComponentsRoutes);
