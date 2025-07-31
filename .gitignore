@@ -79,3 +79,9 @@ sessions/
 
 # Uploaded files (if storing locally)
 uploads/
+
+# Additional security items
+cookies.txt
+attached_assets/
+temp/
+*.txt
