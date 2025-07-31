@@ -294,7 +294,7 @@ export default function PixelCard({
     <div
       ref={containerRef}
       className={`relative overflow-hidden transition-all duration-300 ${
-        disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+        disabled ? 'cursor-not-allowed' : 'cursor-pointer'
       } ${className}`}
       style={{
         border: '1px solid #27272a',
@@ -312,7 +312,7 @@ export default function PixelCard({
       <canvas
         className="absolute inset-0 w-full h-full pointer-events-none"
         ref={canvasRef}
-        style={{ opacity: 0.15 }}
+        style={{ opacity: 0.05 }}
       />
       {children}
     </div>
