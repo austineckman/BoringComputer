@@ -18,8 +18,8 @@ This guide will help you set up your CraftingTable OS project on GitHub.
 After creating the repository, GitHub will show you commands. Use these commands in your Replit terminal:
 
 ```bash
-# Add the GitHub remote (replace YOUR_USERNAME with your GitHub username)
-git remote add origin https://github.com/YOUR_USERNAME/craftingtable-os.git
+# Add the GitHub remote to existing repository
+git remote add origin https://github.com/austineckman/boringcomputer.git
 
 # Stage all your files
 git add .

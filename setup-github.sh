@@ -24,8 +24,8 @@ if [ -z "$GITHUB_USERNAME" ]; then
 fi
 
 # Repository name
-REPO_NAME="craftingtable-os"
-REPO_URL="https://github.com/$GITHUB_USERNAME/$REPO_NAME.git"
+REPO_NAME="boringcomputer"
+REPO_URL="https://github.com/austineckman/$REPO_NAME.git"
 
 echo ""
 echo "🔗 Repository URL: $REPO_URL"
