@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability within this project, please send an email to security@example.com. All security vulnerabilities will be promptly addressed.
+If you discover a security vulnerability within this project, please send an email to austin@craftingtable.com All security vulnerabilities will be promptly addressed.
 
 Please do not disclose security vulnerabilities publicly until they have been handled by the team.
 
