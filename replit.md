@@ -10,6 +10,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Circuit Examples Database Integration (July 31, 2025)
+- **Complete Database Integration**: Connected "Load Example" dropdown in CircuitBuilderWindow to same database that Oracle manages
+- **Centralized Control**: Circuit examples are now fully controlled through Oracle interface, giving admin complete control over all examples
+- **Dynamic Loading**: Load Example dropdown shows both custom database examples and built-in hardcoded examples
+- **Visual Organization**: Database examples appear in "Custom Examples" section with descriptions, built-in examples in separate section
+- **Full Circuit Data Support**: Database examples load both Arduino code and circuit component/wiring data
+- **Real-time Updates**: Creating examples in Oracle immediately makes them available in CircuitBuilder Load Example dropdown
+- **Professional Interface**: Enhanced dropdown with better styling, descriptions, and loading states
+
 ### Profile Window Retro Integration (July 10, 2025)
 - Fixed architectural issue with duplicate popup windows in profile system
 - Converted ProfileWindow from modal overlay to proper retro window system integration

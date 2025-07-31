@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, RotateCcw, Trash2, ZoomIn, ZoomOut, Move, Play, Save, FileCode, Download, BookOpen, Eye, EyeOff, FolderOpen } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { apiRequest } from '@/lib/queryClient';
+import { useQuery } from '@tanstack/react-query';
 import CircuitExamplesWindow from './CircuitExamplesWindow';
 import AceEditor from 'react-ace';
 import ace from 'ace-builds';
@@ -73,6 +75,18 @@ interface CircuitBuilderWindowProps {
 interface NotificationType {
   message: string;
   type: string;
+}
+
+interface CircuitExample {
+  id: number;
+  name: string;
+  description: string;
+  code: string;
+  circuitData?: any;
+  isPublished: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface SaveExampleModalProps {
@@ -165,6 +179,12 @@ const SaveExampleModal: React.FC<SaveExampleModalProps> = ({ isOpen, onClose, on
 
 const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) => {
   const { user } = useAuth();
+  
+  // Fetch circuit examples from database
+  const { data: circuitExamples = [], isLoading: isLoadingExamples } = useQuery({
+    queryKey: ['/api/circuit-examples'],
+    retry: false,
+  });
   // State for components and wires
   const [components, setComponents] = useState<ComponentData[]>([]);
   const [wires, setWires] = useState<WireConnection[]>([]);
@@ -761,8 +781,33 @@ void loop() {
     console.log(`[Simulator] ${message}`);
   };
   
-  // Handle loading example code
+  // Handle loading example code (both hardcoded and database examples)
   const loadExampleCode = (exampleType: string) => {
+    // Check if it's a database example (numeric ID)
+    const exampleId = parseInt(exampleType);
+    if (!isNaN(exampleId)) {
+      const dbExample = circuitExamples.find((ex: CircuitExample) => ex.id === exampleId);
+      if (dbExample) {
+        // Load database example
+        setCode(dbExample.code);
+        updateSimulatorCode(dbExample.code);
+        
+        // Load circuit data if available
+        if (dbExample.circuitData) {
+          setComponents(dbExample.circuitData.components || []);
+          setWires(dbExample.circuitData.wires || []);
+          if (dbExample.circuitData.zoom) setZoom(dbExample.circuitData.zoom);
+          if (dbExample.circuitData.pan) setPan(dbExample.circuitData.pan);
+        }
+        
+        addSimulationLog(`Loaded database example: ${dbExample.name}`);
+        showNotification(`Loaded example: ${dbExample.name}`, 'success');
+        setShowExampleDropdown(false);
+        return;
+      }
+    }
+    
+    // Handle hardcoded examples
     let exampleCode;
     
     switch(exampleType) {
@@ -1074,56 +1119,89 @@ void loop() {
               </button>
               
               {showExampleDropdown && (
-                <div className="absolute right-0 mt-1 w-48 bg-gray-800 border border-gray-700 rounded shadow-lg z-50">
+                <div className="absolute right-0 mt-1 w-56 bg-gray-800 border border-gray-700 rounded shadow-lg z-50 max-h-64 overflow-y-auto">
                   <div className="py-1">
-                    <button
-                      onClick={() => loadExampleCode('default')}
-                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                    >
-                      Basic Blink
-                    </button>
-                    <button
-                      onClick={() => loadExampleCode('oled')}
-                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                    >
-                      OLED Display
-                    </button>
-                    <button
-                      onClick={() => loadExampleCode('rgbled')}
-                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                    >
-                      RGB LED Control
-                    </button>
-                    <button
-                      onClick={() => loadExampleCode('buzzer')}
-                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                    >
-                      Buzzer & Tones
-                    </button>
-                    <button
-                      onClick={() => loadExampleCode('sevenSegment')}
-                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                    >
-                      7-Segment Display
-                    </button>
-                    <button
-                      onClick={() => loadExampleCode('keypad')}
-                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                    >
-                      4x4 Keypad
-                    </button>
-                    <button
-                      onClick={() => loadExampleCode('encoder')}
-                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                    >
-                      Rotary Encoder
-                    </button>
-                    <button
-                      onClick={() => loadExampleCode('multi')}
-                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                    >
-                      Multi-Library Demo
-                    </button>
+                    {isLoadingExamples ? (
+                      <div className="px-4 py-2 text-sm text-gray-400">Loading examples...</div>
+                    ) : (
+                      <>
+                        {/* Database Examples */}
+                        {circuitExamples.length > 0 && (
+                          <>
+                            <div className="px-4 py-1 text-xs text-gray-400 font-semibold border-b border-gray-700">
+                              Custom Examples
+                            </div>
+                            {circuitExamples.map((example: CircuitExample) => (
+                              <button
+                                key={example.id}
+                                onClick={() => loadExampleCode(example.id.toString())}
+                                className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                                title={example.description}
+                              >
+                                <div className="font-medium">{example.name}</div>
+                                {example.description && (
+                                  <div className="text-xs text-gray-400 truncate">{example.description}</div>
+                                )}
+                              </button>
+                            ))}
+                            <div className="border-t border-gray-700 my-1"></div>
+                          </>
+                        )}
+                        
+                        {/* Built-in Examples */}
+                        <div className="px-4 py-1 text-xs text-gray-400 font-semibold">
+                          Built-in Examples
+                        </div>
+                        <button
+                          onClick={() => loadExampleCode('blink')}
+                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                        >
+                          Basic Blink
+                        </button>
+                        <button
+                          onClick={() => loadExampleCode('oled')}
+                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                        >
+                          OLED Display
+                        </button>
+                        <button
+                          onClick={() => loadExampleCode('rgbled')}
+                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                        >
+                          RGB LED Control
+                        </button>
+                        <button
+                          onClick={() => loadExampleCode('buzzer')}
+                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                        >
+                          Buzzer & Tones
+                        </button>
+                        <button
+                          onClick={() => loadExampleCode('sevenSegment')}
+                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                        >
+                          7-Segment Display
+                        </button>
+                        <button
+                          onClick={() => loadExampleCode('keypad')}
+                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                        >
+                          4x4 Keypad
+                        </button>
+                        <button
+                          onClick={() => loadExampleCode('encoder')}
+                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                        >
+                          Rotary Encoder
+                        </button>
+                        <button
+                          onClick={() => loadExampleCode('multi')}
+                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                        >
+                          Multi-Library Demo
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
