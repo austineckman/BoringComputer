@@ -19,7 +19,7 @@ After creating the repository, GitHub will show you commands. Use these commands
 
 ```bash
 # Add the GitHub remote to existing repository
-git remote add origin https://github.com/austineckman/boringcomputer.git
+git remote add origin https://github.com/austineckman/BoringComputer.git
 
 # Stage all your files
 git add .
