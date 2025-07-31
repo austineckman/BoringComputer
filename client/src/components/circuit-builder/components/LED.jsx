@@ -75,33 +75,57 @@ const LED = ({
     let connectedToPin = false;
     let pinValue = false;
     
-    // Find all wires directly connected to this LED
-    const connectedWires = Array.isArray(connectionWires) ? 
-      connectionWires.filter(wire => 
-        wire.sourceComponent === id || wire.targetComponent === id
-      ) : [];
-    
-    if (connectedWires.length > 0) {
-      // Check each connected wire for pin 13 connection
-      connectedWires.forEach(wire => {
-        const isLedSource = wire.sourceComponent === id;
-        const otherComponentId = isLedSource ? wire.targetComponent : wire.sourceComponent;
-        const otherPinName = isLedSource ? wire.targetName : wire.sourceName;
+    // Function to trace circuit path through multiple components (like resistors)
+    const traceCircuitPath = (startComponentId, visitedComponents = new Set()) => {
+      if (visitedComponents.has(startComponentId)) {
+        return null; // Avoid infinite loops
+      }
+      visitedComponents.add(startComponentId);
+      
+      // Find all wires connected to this component
+      const connectedWires = Array.isArray(connectionWires) ? 
+        connectionWires.filter(wire => 
+          wire.sourceComponent === startComponentId || wire.targetComponent === startComponentId
+        ) : [];
+      
+      // Check each connected wire
+      for (const wire of connectedWires) {
+        const isStartSource = wire.sourceComponent === startComponentId;
+        const otherComponentId = isStartSource ? wire.targetComponent : wire.sourceComponent;
+        const otherPinName = isStartSource ? wire.targetName : wire.sourceName;
         
-        // Check if connected to pin 13 of any Arduino/HeroBoard
-        if (otherComponentId && (otherComponentId.includes('heroboard') || otherComponentId.includes('arduino')) && 
+        // Skip if no other component (broken wire)
+        if (!otherComponentId) continue;
+        
+        // Check if we've reached an Arduino/HeroBoard with pin 13
+        if ((otherComponentId.includes('heroboard') || otherComponentId.includes('arduino')) && 
             otherPinName === '13') {
-          
-          // Find the board component state
+          // Found pin 13! Get its state
           const boardState = componentStates[otherComponentId];
           if (boardState && boardState.pins && typeof boardState.pins['13'] !== 'undefined') {
-            const pin13State = boardState.pins['13'];
-            setIsLit(!!pin13State);
-            connectedToPin = true;
-            pinValue = !!pin13State;
+            return boardState.pins['13'];
           }
         }
-      });
+        
+        // If this is an intermediate component (like resistor), continue tracing
+        if (otherComponentId.includes('resistor') || otherComponentId.includes('capacitor') || 
+            otherComponentId.includes('inductor')) {
+          const result = traceCircuitPath(otherComponentId, visitedComponents);
+          if (result !== null) {
+            return result;
+          }
+        }
+      }
+      
+      return null; // No path to pin 13 found
+    };
+    
+    // Start tracing from this LED
+    const pin13State = traceCircuitPath(id);
+    if (pin13State !== null) {
+      setIsLit(!!pin13State);
+      connectedToPin = true;
+      pinValue = !!pin13State;
     }
     
   }, [componentStates, id, isSimulationRunning, connectionWires]);

@@ -239,6 +239,14 @@ Preferred communication style: Simple, everyday language.
 - **Arduino Simulator Fix**: Added null check for `otherComponentId` in LED component to prevent crashes when adding resistors to circuits
 - **Better Text Visibility**: Quest cards now have clear, readable text without transparency issues while maintaining visual distinction between states
 
+### Arduino Multi-Hop Circuit Tracing Implementation (July 30, 2025)
+- **Enhanced Wire Tracing Logic**: Added multi-hop circuit path tracing to LED components for realistic resistor-based circuits
+- **Recursive Path Finding**: Implemented circuit tracing algorithm that follows wire connections through intermediate components like resistors
+- **Realistic Circuit Behavior**: LEDs now properly light up when connected to Arduino pins through resistors, capacitors, or other passive components
+- **SimulatorContext Enhancement**: Added comprehensive multi-hop tracing logic to simulator context for pin-to-component connection detection
+- **Educational Value**: Students can now build realistic circuits with proper current-limiting resistors and see authentic electrical behavior
+- **Circuit Integrity**: Fixed null component ID issues and improved wire connection reliability for complex multi-component circuits
+
 ### Wire Color Cheat Sheet Enhancement (July 30, 2025)
 - **Educational Wire Color Guide**: Added comprehensive cheat sheet in wire properties panel following standard electronics conventions
 - **Standard Color Mapping**: Black for ground, red for power, green for digital signals, blue for analog inputs, yellow for communication
