@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import EmulatedLEDComponent from './EmulatedLEDComponent';
 
 interface ComponentData {
   id: string;
@@ -201,11 +200,12 @@ export function CircuitBuilder({
             className={`component ${selectedComponent === component.id ? 'ring-2 ring-blue-500' : ''}`}
             data-component-id={component.id}
           >
-            <EmulatedLEDComponent
-              id={component.id}
-              anodePin={component.props.anodePin || '5'}
-              cathodePin={component.props.cathodePin || 'GND'}
-              color={component.props.color || 'red'}
+            <div 
+              className="w-8 h-8 rounded-full border-2"
+              style={{ 
+                backgroundColor: component.props.color || 'red',
+                borderColor: '#333'
+              }}
             />
           </div>
         );
