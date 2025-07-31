@@ -46,8 +46,8 @@ This application implements various security best practices, including:
 
 1. Clone the repository:
    ```
-   git clone https://github.com/austineckman/boringcomputer.git
-   cd boringcomputer
+   git clone https://github.com/austineckman/BoringComputer.git
+   cd BoringComputer
    ```
 
 2. Install dependencies:

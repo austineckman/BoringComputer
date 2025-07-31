@@ -24,7 +24,7 @@ if [ -z "$GITHUB_USERNAME" ]; then
 fi
 
 # Repository name
-REPO_NAME="boringcomputer"
+REPO_NAME="BoringComputer"
 REPO_URL="https://github.com/austineckman/$REPO_NAME.git"
 
 echo ""
