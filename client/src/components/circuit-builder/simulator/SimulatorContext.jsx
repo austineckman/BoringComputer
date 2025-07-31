@@ -711,17 +711,126 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             }
           });
           
-          // If no DipSwitch found, check for other input components or return LOW
+          // Look for Keypad components connected to this pin
+          components.forEach(component => {
+            if (component.type === 'keypad' || component.id.includes('keypad')) {
+              const keypadWires = wires.filter(wire => 
+                (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
+                (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString() ||
+                 wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}` ||
+                 wire.sourceName === `${pinNumber}` || wire.targetName === `${pinNumber}`)
+              );
+              
+              if (keypadWires.length > 0) {
+                const keypadState = componentStates[component.id];
+                if (keypadState && keypadState.pressedKey) {
+                  // Simulate key matrix scanning - for now, return HIGH if any key is pressed
+                  readValue = 'HIGH';
+                  console.log(`[Simulator] digitalRead(${pinNumber}) reading from Keypad ${component.id}: key pressed = ${keypadState.pressedKey} → ${readValue}`);
+                  addLog(`[${timestamp}] → digitalRead(${pinNumber}) reading Keypad: ${readValue} (key: ${keypadState.pressedKey})`);
+                  return 0;
+                }
+              }
+            }
+          });
+          
+          // Look for RotaryEncoder button press
+          components.forEach(component => {
+            if (component.type === 'rotary-encoder' || component.id.includes('rotary-encoder')) {
+              const encoderWires = wires.filter(wire => 
+                (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
+                (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString() ||
+                 wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}` ||
+                 wire.sourceName === `${pinNumber}` || wire.targetName === `${pinNumber}`)
+              );
+              
+              if (encoderWires.length > 0) {
+                const encoderState = componentStates[component.id];
+                if (encoderState && encoderState.buttonPressed) {
+                  readValue = 'HIGH';
+                  console.log(`[Simulator] digitalRead(${pinNumber}) reading from RotaryEncoder button ${component.id}: pressed = ${readValue}`);
+                  addLog(`[${timestamp}] → digitalRead(${pinNumber}) reading RotaryEncoder button: ${readValue}`);
+                  return 0;
+                }
+              }
+            }
+          });
+          
+          // If no input components found, return default LOW
           addLog(`[${timestamp}] → digitalRead(${pinNumber}) returned ${readValue}`);
-          console.log(`[Simulator] digitalRead(${pinNumber}) no DipSwitch connected, returning default: ${readValue}`);
+          console.log(`[Simulator] digitalRead(${pinNumber}) no input components connected, returning default: ${readValue}`);
           return 0;
         }
 
         if (instruction.function === 'analogRead') {
           const pinNumber = instruction.pin;
-          // For now, simulate analogRead as returning a random value (can be enhanced later)
-          const readValue = Math.floor(Math.random() * 1024); // 0-1023 range for Arduino analog read
+          
+          // Guard against null pin numbers
+          if (pinNumber === null || pinNumber === undefined) {
+            addLog(`[${timestamp}] → analogRead(UNKNOWN_PIN) - Pin variable not resolved`);
+            console.warn(`[Simulator] Skipping analogRead with null pin number`);
+            return 0;
+          }
+          
+          let readValue = 0; // Default to 0 if no components found
+          
+          // Look for Photoresistor components connected to this pin
+          components.forEach(component => {
+            if (component.type === 'photoresistor' || component.id.includes('photoresistor')) {
+              // Find wires connected to this Photoresistor and the target pin
+              const photoresistorWires = wires.filter(wire => 
+                (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
+                (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString() ||
+                 wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}` ||
+                 wire.sourceName === `A${pinNumber}` || wire.targetName === `A${pinNumber}` ||
+                 wire.sourceName === `${pinNumber}` || wire.targetName === `${pinNumber}`)
+              );
+              
+              if (photoresistorWires.length > 0) {
+                // Get the Photoresistor state from component states
+                const photoresistorState = componentStates[component.id];
+                if (photoresistorState && photoresistorState.lightLevel !== undefined) {
+                  readValue = photoresistorState.lightLevel; // 0-1023 range
+                  console.log(`[Simulator] analogRead(${pinNumber}) reading from Photoresistor ${component.id}: lightLevel = ${readValue}`);
+                  addLog(`[${timestamp}] → analogRead(${pinNumber}) reading Photoresistor: ${readValue} (${(readValue/1023*5).toFixed(2)}V)`);
+                  return 0;
+                } else {
+                  // Default photoresistor reading (medium light)
+                  readValue = 512;
+                  console.log(`[Simulator] analogRead(${pinNumber}) reading from Photoresistor ${component.id}: default value = ${readValue}`);
+                  addLog(`[${timestamp}] → analogRead(${pinNumber}) reading Photoresistor: ${readValue} (default)`);
+                  return 0;
+                }
+              }
+            }
+          });
+          
+          // Look for RotaryEncoder components connected to this pin
+          components.forEach(component => {
+            if (component.type === 'rotary-encoder' || component.id.includes('rotary-encoder')) {
+              const encoderWires = wires.filter(wire => 
+                (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
+                (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString() ||
+                 wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}` ||
+                 wire.sourceName === `A${pinNumber}` || wire.targetName === `A${pinNumber}` ||
+                 wire.sourceName === `${pinNumber}` || wire.targetName === `${pinNumber}`)
+              );
+              
+              if (encoderWires.length > 0) {
+                const encoderState = componentStates[component.id];
+                if (encoderState && encoderState.position !== undefined) {
+                  readValue = Math.abs(encoderState.position) % 1024; // Convert position to 0-1023 range
+                  console.log(`[Simulator] analogRead(${pinNumber}) reading from RotaryEncoder ${component.id}: position = ${encoderState.position} → ${readValue}`);
+                  addLog(`[${timestamp}] → analogRead(${pinNumber}) reading RotaryEncoder: ${readValue}`);
+                  return 0;
+                }
+              }
+            }
+          });
+          
+          // If no analog components found, return default reading
           addLog(`[${timestamp}] → analogRead(${pinNumber}) returned ${readValue} (${(readValue/1023*5).toFixed(2)}V)`);
+          console.log(`[Simulator] analogRead(${pinNumber}) no analog components connected, returning default: ${readValue}`);
           return 0;
         }
 
@@ -771,19 +880,92 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         if (instruction.function === 'tone') {
           const pinNumber = instruction.pin;
           const { frequency, duration } = instruction.params;
+          
+          // Guard against null pin numbers
+          if (pinNumber === null || pinNumber === undefined) {
+            addLog(`[${timestamp}] → tone(UNKNOWN_PIN, ${frequency}Hz) - Pin variable not resolved`);
+            console.warn(`[Simulator] Skipping tone with null pin number`);
+            return 0;
+          }
+          
+          // Look for Buzzer components connected to this pin
+          components.forEach(component => {
+            if (component.type === 'buzzer' || component.id.includes('buzzer')) {
+              const buzzerWires = wires.filter(wire => 
+                (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
+                (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString() ||
+                 wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}` ||
+                 wire.sourceName === `${pinNumber}` || wire.targetName === `${pinNumber}`)
+              );
+              
+              if (buzzerWires.length > 0) {
+                // Update buzzer state with tone information
+                updateComponentState(component.id, { 
+                  isPlaying: true,
+                  frequency: frequency,
+                  duration: duration || null,
+                  type: 'buzzer'
+                });
+                console.log(`[Simulator] tone(${pinNumber}, ${frequency}Hz${duration ? `, ${duration}ms` : ''}) → Buzzer ${component.id}`);
+                
+                // Schedule automatic stop if duration is specified
+                if (duration) {
+                  setTimeout(() => {
+                    updateComponentState(component.id, { 
+                      isPlaying: false,
+                      frequency: 0,
+                      duration: null,
+                      type: 'buzzer'
+                    });
+                    console.log(`[Simulator] Buzzer ${component.id} stopped after ${duration}ms`);
+                  }, duration);
+                }
+              }
+            }
+          });
+          
           if (duration) {
             addLog(`[${timestamp}] → tone(${pinNumber}, ${frequency}Hz, ${duration}ms) - Playing tone`);
           } else {
             addLog(`[${timestamp}] → tone(${pinNumber}, ${frequency}Hz) - Playing continuous tone`);
           }
-          // TODO: Implement actual buzzer/speaker component control
           return 0;
         }
 
         if (instruction.function === 'noTone') {
           const pinNumber = instruction.pin;
+          
+          // Guard against null pin numbers
+          if (pinNumber === null || pinNumber === undefined) {
+            addLog(`[${timestamp}] → noTone(UNKNOWN_PIN) - Pin variable not resolved`);
+            console.warn(`[Simulator] Skipping noTone with null pin number`);
+            return 0;
+          }
+          
+          // Look for Buzzer components connected to this pin and stop them
+          components.forEach(component => {
+            if (component.type === 'buzzer' || component.id.includes('buzzer')) {
+              const buzzerWires = wires.filter(wire => 
+                (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
+                (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString() ||
+                 wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}` ||
+                 wire.sourceName === `${pinNumber}` || wire.targetName === `${pinNumber}`)
+              );
+              
+              if (buzzerWires.length > 0) {
+                // Stop the buzzer
+                updateComponentState(component.id, { 
+                  isPlaying: false,
+                  frequency: 0,
+                  duration: null,
+                  type: 'buzzer'
+                });
+                console.log(`[Simulator] noTone(${pinNumber}) → Stopped Buzzer ${component.id}`);
+              }
+            }
+          });
+          
           addLog(`[${timestamp}] → noTone(${pinNumber}) - Stopping tone`);
-          // TODO: Implement actual buzzer/speaker component control
           return 0;
         }
 
@@ -950,6 +1132,163 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           }
           
           addLog(`[${timestamp}] → ${func}(${params.join(', ')}) - ${result}`);
+          return 0;
+        }
+
+        // Handle I2C/Wire library functions for OLED displays
+        if (['Wire.begin', 'Wire.beginTransmission', 'Wire.write', 'Wire.endTransmission'].includes(instruction.function)) {
+          const func = instruction.function;
+          
+          switch (func) {
+            case 'Wire.begin':
+              addLog(`[${timestamp}] → Wire.begin() - I2C initialized`);
+              // Update all OLED displays to initialized state
+              components.forEach(component => {
+                if (component.type === 'oled-display' || component.id.includes('oled')) {
+                  updateComponentState(component.id, { 
+                    i2cInitialized: true,
+                    type: 'oled-display'
+                  });
+                }
+              });
+              break;
+            case 'Wire.beginTransmission':
+              const address = instruction.params?.address || 0x3C;
+              addLog(`[${timestamp}] → Wire.beginTransmission(0x${address.toString(16)}) - Starting I2C transmission`);
+              break;
+            case 'Wire.write':
+              const data = instruction.params?.data || instruction.params?.value || 0;
+              addLog(`[${timestamp}] → Wire.write(${data}) - Sending I2C data`);
+              break;
+            case 'Wire.endTransmission':
+              addLog(`[${timestamp}] → Wire.endTransmission() - I2C transmission complete`);
+              break;
+          }
+          return 0;
+        }
+
+        // Handle OLED display functions (U8g2 library)
+        if (instruction.function && instruction.function.includes('display.')) {
+          const func = instruction.function.replace('display.', '');
+          
+          // Look for OLED display components
+          components.forEach(component => {
+            if (component.type === 'oled-display' || component.id.includes('oled')) {
+              const currentState = componentStates[component.id] || {};
+              
+              switch (func) {
+                case 'begin':
+                  updateComponentState(component.id, { 
+                    ...currentState,
+                    initialized: true,
+                    type: 'oled-display'
+                  });
+                  addLog(`[${timestamp}] → display.begin() - OLED ${component.id} initialized`);
+                  break;
+                case 'clear':
+                case 'clearBuffer':
+                  updateComponentState(component.id, { 
+                    ...currentState,
+                    buffer: [],
+                    type: 'oled-display'
+                  });
+                  addLog(`[${timestamp}] → display.${func}() - OLED ${component.id} cleared`);
+                  break;
+                case 'print':
+                case 'println':
+                  const text = instruction.params?.text || instruction.params?.value || '';
+                  const currentBuffer = currentState.buffer || [];
+                  updateComponentState(component.id, { 
+                    ...currentState,
+                    buffer: [...currentBuffer, text],
+                    type: 'oled-display'
+                  });
+                  addLog(`[${timestamp}] → display.${func}("${text}") - Text added to OLED ${component.id}`);
+                  break;
+                case 'sendBuffer':
+                case 'display':
+                  addLog(`[${timestamp}] → display.${func}() - OLED ${component.id} display updated`);
+                  break;
+                case 'setFont':
+                  const font = instruction.params?.font || 'default';
+                  updateComponentState(component.id, { 
+                    ...currentState,
+                    font: font,
+                    type: 'oled-display'
+                  });
+                  addLog(`[${timestamp}] → display.setFont(${font}) - OLED ${component.id} font set`);
+                  break;
+                case 'setCursor':
+                  const x = instruction.params?.x || 0;
+                  const y = instruction.params?.y || 0;
+                  updateComponentState(component.id, { 
+                    ...currentState,
+                    cursorX: x,
+                    cursorY: y,
+                    type: 'oled-display'
+                  });
+                  addLog(`[${timestamp}] → display.setCursor(${x}, ${y}) - OLED ${component.id} cursor set`);
+                  break;
+              }
+            }
+          });
+          return 0;
+        }
+
+        // Handle 7-segment display functions
+        if (instruction.function && (instruction.function.includes('showNumberDec') || instruction.function.includes('setBrightness'))) {
+          const func = instruction.function;
+          
+          // Look for 7-segment display components
+          components.forEach(component => {
+            if (component.type === 'segmented-display' || component.id.includes('segment')) {
+              const currentState = componentStates[component.id] || {};
+              
+              if (func.includes('showNumberDec')) {
+                const number = instruction.params?.number || instruction.params?.value || 0;
+                updateComponentState(component.id, { 
+                  ...currentState,
+                  displayValue: number.toString(),
+                  type: 'segmented-display'
+                });
+                addLog(`[${timestamp}] → ${func}(${number}) - 7-Segment ${component.id} showing "${number}"`);
+              }
+              
+              if (func.includes('setBrightness')) {
+                const brightness = instruction.params?.brightness || instruction.params?.value || 7;
+                updateComponentState(component.id, { 
+                  ...currentState,
+                  brightness: brightness,
+                  type: 'segmented-display'
+                });
+                addLog(`[${timestamp}] → ${func}(${brightness}) - 7-Segment ${component.id} brightness set`);
+              }
+            }
+          });
+          return 0;
+        }
+
+        // Handle Keypad library functions
+        if (instruction.function && instruction.function.includes('keypad.')) {
+          const func = instruction.function.replace('keypad.', '');
+          
+          if (func === 'getKey') {
+            // Look for keypad components and return pressed key
+            let pressedKey = null;
+            components.forEach(component => {
+              if (component.type === 'keypad' || component.id.includes('keypad')) {
+                const keypadState = componentStates[component.id];
+                if (keypadState && keypadState.pressedKey) {
+                  pressedKey = keypadState.pressedKey;
+                  addLog(`[${timestamp}] → keypad.getKey() returned '${pressedKey}' from ${component.id}`);
+                }
+              }
+            });
+            
+            if (!pressedKey) {
+              addLog(`[${timestamp}] → keypad.getKey() returned NO_KEY`);
+            }
+          }
           return 0;
         }
 
