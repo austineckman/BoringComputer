@@ -232,6 +232,13 @@ Preferred communication style: Simple, everyday language.
 - **Testing Workflow Enhancement**: Allows quest designers to quickly reset progress to test quest sequences from beginning
 - **Visual Feedback**: Purple-themed button with rotate icon and success/error notifications for clear user feedback
 
+### Quest Card Transparency Fix (July 30, 2025)
+- **Removed PixelCard Opacity**: Eliminated `opacity-60` from disabled PixelCard components to fix ghostly appearance
+- **Reduced Canvas Overlay**: Changed canvas overlay opacity from 15% to 5% for much clearer text readability
+- **Solid Card Backgrounds**: Changed `bg-gray-900/90` to `bg-gray-900` and `bg-gray-800/50` to `bg-gray-800` for full opacity
+- **Arduino Simulator Fix**: Added null check for `otherComponentId` in LED component to prevent crashes when adding resistors to circuits
+- **Better Text Visibility**: Quest cards now have clear, readable text without transparency issues while maintaining visual distinction between states
+
 ### Wire Color Cheat Sheet Enhancement (July 30, 2025)
 - **Educational Wire Color Guide**: Added comprehensive cheat sheet in wire properties panel following standard electronics conventions
 - **Standard Color Mapping**: Black for ground, red for power, green for digital signals, blue for analog inputs, yellow for communication

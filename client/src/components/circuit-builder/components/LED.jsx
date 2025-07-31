@@ -89,7 +89,7 @@ const LED = ({
         const otherPinName = isLedSource ? wire.targetName : wire.sourceName;
         
         // Check if connected to pin 13 of any Arduino/HeroBoard
-        if ((otherComponentId.includes('heroboard') || otherComponentId.includes('arduino')) && 
+        if (otherComponentId && (otherComponentId.includes('heroboard') || otherComponentId.includes('arduino')) && 
             otherPinName === '13') {
           
           // Find the board component state
