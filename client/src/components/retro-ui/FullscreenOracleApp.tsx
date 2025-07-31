@@ -7,7 +7,7 @@ import {
   ClipboardList, Grid3X3, ArrowRight, AlertCircle, Clock, User,
   BarChart2, PieChart, TrendingUp, Server, UserCheck, Activity,
   Calendar, Download, HardDrive, GitBranch, Heart, CheckSquare,
-  Copy, RotateCcw, Gavel, ChevronUp, ChevronDown
+  Copy, RotateCcw, Gavel, ChevronUp, ChevronDown, Cpu
 } from 'lucide-react';
 import { 
   BarChart, Bar, LineChart as RechartsLine, Line, PieChart as RechartsProChart, Pie, Cell, 
@@ -20,6 +20,8 @@ import wallbg from '@assets/wallbg.png';
 import oracleIconImage from '@assets/01_Fire_Grimoire.png'; // Using grimoire as placeholder for Oracle icon
 import theOracleLogo from '@assets/TheOracleLogo.png';
 import { apiRequest } from "@/lib/queryClient";
+import CircuitExamplesOracleView from './CircuitExamplesOracleView';
+import CircuitExampleCreator from './CircuitExampleCreator';
 
 // Define types for lootboxes and quests
 interface LootBox {
@@ -295,8 +297,8 @@ interface Recipe {
 }
 
 const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) => {
-  // State for tabs - include 'recipes' for crafting management and 'bmah' for auction management
-  const [activeTab, setActiveTab] = useState<'lootboxes' | 'quests' | 'users' | 'items' | 'kits' | 'recipes' | 'bmah' | 'settings'>('lootboxes');
+  // State for tabs - include 'recipes' for crafting management, 'bmah' for auction management, and 'circuits' for circuit examples
+  const [activeTab, setActiveTab] = useState<'lootboxes' | 'quests' | 'users' | 'items' | 'kits' | 'recipes' | 'bmah' | 'circuits' | 'settings'>('lootboxes');
   
   // State for data
   const [lootboxes, setLootboxes] = useState<LootBox[]>([]);
@@ -314,6 +316,11 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [questFlowMode, setQuestFlowMode] = useState(false);
   const [draggedQuest, setDraggedQuest] = useState<Quest | null>(null);
   const [questConnections, setQuestConnections] = useState<Record<string, string[]>>({});
+  
+  // Circuit Examples state
+  const [circuitExampleMode, setCircuitExampleMode] = useState<'list' | 'create' | 'edit'>('list');
+  const [editingCircuitExample, setEditingCircuitExample] = useState<any>(null);
+  const [showCircuitCreator, setShowCircuitCreator] = useState<boolean>(false);
   
   // State for modals and actions
   const [confirmDelete, setConfirmDelete] = useState<{ 
@@ -3528,6 +3535,23 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     );
   };
 
+  // Render Circuit Examples tab
+  const renderCircuitExamples = () => {
+    return (
+      <CircuitExamplesOracleView
+        onCreateNew={() => {
+          // Navigate to circuit example creator
+          setShowCircuitCreator(true);
+        }}
+        onEditExample={(example) => {
+          // Navigate to circuit example creator with example data
+          setEditingCircuitExample(example);
+          setShowCircuitCreator(true);
+        }}
+      />
+    );
+  };
+
   // Render BMAH tab for auction management
   const renderBMAH = () => {
     if (loadingAuctions) {
@@ -4855,6 +4879,20 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           </button>
           <button
             className={`px-4 py-2 text-sm font-medium rounded-t-md ${
+              activeTab === 'circuits' 
+                ? 'bg-brand-orange/20 text-brand-orange border-t border-l border-r border-brand-orange/30' 
+                : 'text-gray-400 hover:text-white'
+            }`}
+            onClick={() => handleTabChange('circuits')}
+            onMouseEnter={() => window.sounds?.hover()}
+          >
+            <div className="flex items-center">
+              <Cpu className="h-4 w-4 mr-1" />
+              Circuit Examples
+            </div>
+          </button>
+          <button
+            className={`px-4 py-2 text-sm font-medium rounded-t-md ${
               activeTab === 'settings' 
                 ? 'bg-brand-orange/20 text-brand-orange border-t border-l border-r border-brand-orange/30' 
                 : 'text-gray-400 hover:text-white'
@@ -4983,6 +5021,10 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   setEditingItem(newRecipe);
                   setEditingType('recipe');
                   setIsCreatingNewItem(true);
+                } else if (activeTab === 'circuits') {
+                  // Create a new circuit example
+                  setEditingCircuitExample(null); // Start with blank example
+                  setShowCircuitCreator(true);
                 } else {
                   console.log(`Create new ${activeTab.slice(0, -1)}`);
                 }
@@ -4996,6 +5038,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 activeTab === 'lootboxes' ? 'Lootbox' : 
                 activeTab === 'quests' ? 'Quest' : 
                 activeTab === 'kits' ? 'Kit' : 
+                activeTab === 'circuits' ? 'Circuit Example' :
                 'Item'
               }
             </button>
@@ -5009,6 +5052,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         {activeTab === 'items' && renderItems()}
         {activeTab === 'kits' && renderComponentKits()}
         {activeTab === 'bmah' && renderBMAH()}
+        {activeTab === 'circuits' && renderCircuitExamples()}
         {activeTab === 'recipes' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredRecipes.map(recipe => (
@@ -8183,6 +8227,27 @@ void loop() {
               </div>
             )}
           </div>
+        </div>
+      )}
+      
+      {/* Circuit Example Creator Overlay */}
+      {showCircuitCreator && (
+        <div className="fixed inset-0 z-50 bg-black">
+          <CircuitExampleCreator
+            example={editingCircuitExample}
+            onSave={(savedExample) => {
+              // Handle saving circuit example
+              console.log('Circuit example saved:', savedExample);
+              setShowCircuitCreator(false);
+              setEditingCircuitExample(null);
+              window.sounds?.success();
+            }}
+            onCancel={() => {
+              setShowCircuitCreator(false);
+              setEditingCircuitExample(null);
+              window.sounds?.click();
+            }}
+          />
         </div>
       )}
       
