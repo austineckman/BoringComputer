@@ -3,6 +3,7 @@ import {
   ReactBuzzerComponent
 } from "../lib/inventr-component-lib.es.js";
 import Moveable from "react-moveable";
+import { useSimulator } from '../simulator/SimulatorContext.jsx';
 
 // Define MOVE_SETTINGS to match what the original code expects
 const MOVE_SETTINGS = {
@@ -39,6 +40,11 @@ const Buzzer = ({
   const [posLeft, setPosLeft] = useState(initialX);
   const [initPosTop, setInitPosTop] = useState(initialY);
   const [initPosLeft, setInitPosLeft] = useState(initialX);
+  
+  // Simulator integration
+  const { componentStates } = useSimulator();
+  const [currentFrequency, setCurrentFrequency] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // Create a component data structure that matches what the original code expects
   const componentData = {
@@ -84,6 +90,18 @@ const Buzzer = ({
   const onPinInfoChange = (e) => {
     setPinInfo(e.detail);
   }
+
+  // Monitor simulator state for buzzer activity
+  useEffect(() => {
+    const buzzerState = componentStates[id];
+    if (buzzerState && buzzerState.type === 'buzzer') {
+      setIsPlaying(buzzerState.isPlaying || false);
+      setCurrentFrequency(buzzerState.frequency || 0);
+      setBuzzerActive(buzzerState.isPlaying || false);
+      
+      console.log(`[Buzzer ${id}] State updated: playing=${buzzerState.isPlaying}, frequency=${buzzerState.frequency}Hz`);
+    }
+  }, [componentStates, id]);
 
   // Trigger redraw function similar to the original
   const triggerRedraw = () => {
@@ -284,9 +302,117 @@ const Buzzer = ({
         hasSignal={buzzerActive}
       ></ReactBuzzerComponent>
 
+      {/* Visual feedback for tone playing */}
+      {isPlaying && (
+        <div 
+          className="absolute pointer-events-none animate-ping"
+          style={{
+            left: posLeft + 30,
+            top: posTop + 10,
+            width: '20px',
+            height: '20px',
+            backgroundColor: '#f59e0b',
+            borderRadius: '50%',
+            opacity: 0.6,
+            zIndex: 1000
+          }}
+        />
+      )}
+      
+      {/* Frequency indicator when playing */}
+      {isPlaying && currentFrequency > 0 && (
+        <div 
+          className="absolute pointer-events-none text-xs font-mono text-orange-500 bg-black bg-opacity-60 px-1 rounded"
+          style={{
+            left: posLeft + 50,
+            top: posTop + 5,
+            zIndex: 1001
+          }}
+        >
+          {currentFrequency}Hz
+        </div>
+      )}
+
       {/* Removed component-specific menu - now using centralized Properties panel */}
     </>
   );
 };
+
+// Export wiring guide for the properties panel
+export const BuzzerWiringGuide = () => (
+  <div className="space-y-3 text-sm">
+    <div className="bg-blue-50 p-3 rounded border border-blue-200">
+      <h4 className="font-semibold text-blue-800 mb-2">📋 Buzzer Wiring Guide</h4>
+      <div className="space-y-2 text-blue-700">
+        <div>
+          <span className="font-medium">Positive Pin (+):</span> Connect to any digital pin (2-13)
+        </div>
+        <div>
+          <span className="font-medium">Negative Pin (-):</span> Connect to GND
+        </div>
+      </div>
+    </div>
+    
+    <div className="bg-green-50 p-3 rounded border border-green-200">
+      <h4 className="font-semibold text-green-800 mb-2">🔧 Arduino Functions</h4>
+      <div className="space-y-2 text-green-700 font-mono text-xs">
+        <div>
+          <span className="font-semibold">tone(pin, frequency);</span>
+          <br />
+          <span className="text-green-600">Play continuous tone</span>
+        </div>
+        <div>
+          <span className="font-semibold">tone(pin, frequency, duration);</span>
+          <br />
+          <span className="text-green-600">Play tone for specific time</span>
+        </div>
+        <div>
+          <span className="font-semibold">noTone(pin);</span>
+          <br />
+          <span className="text-green-600">Stop playing tone</span>
+        </div>
+      </div>
+    </div>
+    
+    <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
+      <h4 className="font-semibold text-yellow-800 mb-2">💡 Example Code</h4>
+      <pre className="text-xs font-mono text-yellow-700 whitespace-pre-wrap">
+{`int buzzerPin = 8;
+
+void setup() {
+  pinMode(buzzerPin, OUTPUT);
+}
+
+void loop() {
+  tone(buzzerPin, 1000);    // Play 1kHz tone
+  delay(500);               // Wait 500ms
+  noTone(buzzerPin);        // Stop tone
+  delay(500);               // Wait 500ms
+}`}
+      </pre>
+    </div>
+    
+    <div className="bg-orange-50 p-3 rounded border border-orange-200">
+      <h4 className="font-semibold text-orange-800 mb-2">🎵 Common Frequencies</h4>
+      <div className="grid grid-cols-2 gap-2 text-xs text-orange-700">
+        <div><span className="font-medium">C4:</span> 262Hz</div>
+        <div><span className="font-medium">E4:</span> 330Hz</div>
+        <div><span className="font-medium">G4:</span> 392Hz</div>
+        <div><span className="font-medium">C5:</span> 523Hz</div>
+        <div><span className="font-medium">Beep:</span> 1000Hz</div>
+        <div><span className="font-medium">Alert:</span> 2000Hz</div>
+      </div>
+    </div>
+    
+    <div className="bg-gray-50 p-3 rounded border border-gray-200">
+      <h4 className="font-semibold text-gray-800 mb-2">⚡ Simulator Status</h4>
+      <div className="text-xs text-gray-700">
+        <div>• Orange pulse indicates active tone</div>
+        <div>• Frequency display shows current Hz</div>
+        <div>• Visual feedback matches tone() calls</div>
+      </div>
+    </div>
+  </div>
+);
 
 export default Buzzer;

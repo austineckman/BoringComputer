@@ -2,17 +2,44 @@
  * Utility functions for the Arduino simulator
  */
 
-// Default Arduino sketch for blinking the built-in LED
-export const defaultSketch = `
+// Default Arduino sketch (Buzzer melody example)
+export const defaultSketch = `// Arduino Buzzer Melody Example
+// This example plays a simple melody on a buzzer connected to pin 8
+
+int buzzerPin = 8;
+int melody[] = {262, 294, 330, 349, 392, 440, 494, 523}; // C, D, E, F, G, A, B, C
+int noteDurations[] = {4, 4, 4, 4, 4, 4, 4, 2}; // note durations: 4 = quarter note, 2 = half note
+
 void setup() {
-  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);
+  pinMode(13, OUTPUT); // Built-in LED for visual feedback
 }
 
 void loop() {
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(1000);
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(1000);
+  // Play the melody
+  for (int thisNote = 0; thisNote < 8; thisNote++) {
+    // Calculate note duration
+    int noteDuration = 1000 / noteDurations[thisNote];
+    
+    // Turn on LED while playing note
+    digitalWrite(13, HIGH);
+    
+    // Play the note
+    tone(buzzerPin, melody[thisNote], noteDuration);
+    
+    // Pause between notes (brief silence)
+    int pauseBetweenNotes = noteDuration * 1.30;
+    delay(pauseBetweenNotes);
+    
+    // Turn off LED
+    digitalWrite(13, LOW);
+    
+    // Stop the tone
+    noTone(buzzerPin);
+  }
+  
+  // Wait 2 seconds before repeating
+  delay(2000);
 }
 `;
 

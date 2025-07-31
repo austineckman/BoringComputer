@@ -17,7 +17,7 @@ import LED from './components/LED';
 import RGBLED from './components/RGBLED';
 import Resistor from './components/Resistor';
 import Photoresistor from './components/Photoresistor';
-import Buzzer from './components/Buzzer';
+import Buzzer, { BuzzerWiringGuide } from './components/Buzzer';
 import RotaryEncoder from './components/RotaryEncoder';
 import DipSwitch from './components/DipSwitch';
 import SegmentedDisplay from './components/SegmentedDisplay';
@@ -739,6 +739,10 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
                   <div className="mt-1 text-xs text-gray-400">Lower light = higher resistance</div>
                 </div>
               </div>
+            )}
+
+            {selectedComponent.type === 'buzzer' && (
+              <BuzzerWiringGuide />
             )}
             
             {selectedComponent.type === 'rgb-led' && (
