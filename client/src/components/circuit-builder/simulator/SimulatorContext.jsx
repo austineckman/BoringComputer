@@ -435,33 +435,31 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
               );
               
               for (const ledWire of ledWires) {
-                const connectedComponentId = ledWire.sourceComponent === componentId ? ledWire.targetComponent : ledWire.sourceComponent;
+                // Extract resistor ID from wire endpoint data since targetComponent might be undefined
+                let resistorId = null;
                 
-                // Check if connected to a resistor (handle both valid IDs and undefined cases)
-                if (connectedComponentId && (connectedComponentId.includes('resistor') || connectedComponentId === 'undefined')) {
-                  console.log(`[Simulator] ${componentId} connected to intermediate component ${connectedComponentId}`);
-                  
-                  // If the component ID is undefined, try to find it by checking wire endpoints
-                  let actualResistorId = connectedComponentId;
-                  if (connectedComponentId === 'undefined') {
-                    // Try to find the resistor by looking at the wire's target/source IDs
-                    if (ledWire.targetId && ledWire.targetId.includes('resistor')) {
-                      actualResistorId = ledWire.targetId.split('-').slice(1, -1).join('-'); // Extract resistor ID from pt-resistor-ID-pin
-                      console.log(`[Simulator] Found resistor ID from targetId: ${actualResistorId}`);
-                    } else if (ledWire.sourceId && ledWire.sourceId.includes('resistor')) {
-                      actualResistorId = ledWire.sourceId.split('-').slice(1, -1).join('-'); // Extract resistor ID from pt-resistor-ID-pin
-                      console.log(`[Simulator] Found resistor ID from sourceId: ${actualResistorId}`);
-                    }
+                if (ledWire.targetId && ledWire.targetId.includes('resistor')) {
+                  const match = ledWire.targetId.match(/pt-resistor-([^-]+)-/);
+                  if (match) {
+                    resistorId = match[1]; // Extract just the unique ID part (u4yl4n44)
                   }
+                } else if (ledWire.sourceId && ledWire.sourceId.includes('resistor')) {
+                  const match = ledWire.sourceId.match(/pt-resistor-([^-]+)-/);
+                  if (match) {
+                    resistorId = match[1]; // Extract just the unique ID part (u4yl4n44)
+                  }
+                }
+                
+                if (resistorId) {
+                  console.log(`[Simulator] ${componentId} connects through resistor ${resistorId}`);
                   
-                  // Check if this resistor connects to the target pin
+                  // Now find ALL wires that connect to this resistor (by checking wire IDs, not component fields)
                   const resistorWires = wires.filter(wire => 
-                    (wire.sourceComponent === actualResistorId || wire.targetComponent === actualResistorId ||
-                     wire.sourceId?.includes(actualResistorId) || wire.targetId?.includes(actualResistorId)) &&
+                    (wire.sourceId?.includes(resistorId) || wire.targetId?.includes(resistorId)) &&
                     wire.id !== ledWire.id
                   );
                   
-                  console.log(`[Simulator] Found ${resistorWires.length} wires connected to resistor ${actualResistorId}`);
+                  console.log(`[Simulator] Found ${resistorWires.length} other wires connected to resistor ${resistorId}`);
                   
                   for (const resistorWire of resistorWires) {
                     const pinConnected = (
@@ -473,7 +471,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                       resistorWire.targetName === `${pinNumber}`
                     );
                     
-                    console.log(`[Simulator] Checking resistor wire: ${resistorWire.sourceComponent}(${resistorWire.sourceName}) → ${resistorWire.targetComponent}(${resistorWire.targetName}), pinConnected: ${pinConnected}`);
+                    console.log(`[Simulator] Checking resistor connection: ${resistorWire.sourceComponent || 'unknown'}(${resistorWire.sourceName}) → ${resistorWire.targetComponent || 'unknown'}(${resistorWire.targetName}), connects to pin ${pinNumber}: ${pinConnected}`);
                     
                     if (pinConnected) {
                       const componentPinName = ledWire.sourceComponent === componentId ? ledWire.sourceName : ledWire.targetName;
@@ -482,7 +480,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                         type: componentId.includes('rgb') ? 'rgbled' : 'led',
                         pinName: componentPinName
                       });
-                      console.log(`[Simulator] Found component ${componentId} connected to pin ${pinNumber} through resistor ${actualResistorId}`);
+                      console.log(`[Simulator] SUCCESS: Found component ${componentId} connected to pin ${pinNumber} through resistor ${resistorId}`);
                       break;
                     }
                   }
