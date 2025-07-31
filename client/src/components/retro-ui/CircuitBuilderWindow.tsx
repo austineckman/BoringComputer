@@ -96,24 +96,21 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar with examples */}
-        <div className="w-80 bg-gray-50 border-r border-gray-300 overflow-y-auto">
-          <div className="p-4 space-y-4">
-            {/* Example Selector for all users */}
-            <ExampleSelector onLoadExample={handleLoadExample} />
-            
-            {/* Example Manager for founders only */}
-            <ExampleManager
-              components={components}
-              wires={wires}
-              code={code}
-              onLoadExample={handleLoadExample}
-              currentUser={currentUser}
-            />
-          </div>
-        </div>
+      {/* Example buttons along the top */}
+      <div className="bg-gray-800 border-b border-gray-700 p-2 flex items-center space-x-2 overflow-x-auto">
+        <ExampleSelector onLoadExample={handleLoadExample} />
+        {currentUser?.roles?.includes('Founder') && (
+          <ExampleManager
+            components={components}
+            wires={wires}
+            code={code}
+            onLoadExample={handleLoadExample}
+            currentUser={currentUser}
+          />
+        )}
+      </div>
 
+      <div className="flex flex-1 overflow-hidden">
         {/* Main Circuit Builder Area */}
         <div className="flex-1 flex flex-col">
           {/* Circuit Canvas */}
