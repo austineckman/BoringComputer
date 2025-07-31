@@ -4,6 +4,7 @@ import {
 } from "../lib/inventr-component-lib.es.js";
 import Moveable from "react-moveable";
 import { createPortal } from "react-dom";
+import { useSimulator } from '../simulator/SimulatorContext';
 
 // Define MOVE_SETTINGS to match what the original code expects
 const MOVE_SETTINGS = {
@@ -28,6 +29,7 @@ const DipSwitch = ({
   onPinConnect,
   initialValue = [false, false, false]
 }) => {
+  const { updateComponentState } = useSimulator();
   const targetRef = useRef();
   const moveableRef = useRef();
   const oldDataRef = useRef();
@@ -84,6 +86,9 @@ const DipSwitch = ({
   // Update position when dragged
   useEffect(() => {
     triggerRedraw();
+    // Keep initial positions in sync with current positions for consistent wiring
+    setInitPosTop(posTop);
+    setInitPosLeft(posLeft);
   }, [pinInfo, posTop, posLeft]);
 
   const onPinInfoChange = (e) => {
@@ -118,7 +123,27 @@ const DipSwitch = ({
     const newValue = [...value];
     newValue[index] = !newValue[index];
     setValue(newValue);
+    
+    // Update simulator state so digitalRead can access switch states
+    if (updateComponentState) {
+      updateComponentState(id, { 
+        value: newValue,
+        type: 'dip-switch-3'
+      });
+      console.log(`DipSwitch ${id}: Updated simulator state with value:`, newValue);
+    }
   };
+
+  // Initialize simulator state when component is created
+  useEffect(() => {
+    if (updateComponentState) {
+      updateComponentState(id, { 
+        value: value,
+        type: 'dip-switch-3'
+      });
+      console.log(`DipSwitch ${id}: Initialized simulator state with value:`, value);
+    }
+  }, []); // Run once on mount
 
   // Create context menu portal target if it doesn't exist
   useEffect(() => {
@@ -162,8 +187,15 @@ const DipSwitch = ({
           e.stopPropagation();
           if (onSelect) onSelect(id);
         }}
+        onClick={(e) => {
+          // Handle switch toggle clicks
+          e.stopPropagation();
+          // For now, toggle the first switch when clicked anywhere on the component
+          // This can be enhanced to detect which specific switch was clicked
+          toggleSwitch(0);
+        }}
         style={{
-          transform: `translate(${initPosLeft}px, ${initPosTop}px)`,
+          transform: `translate(${posLeft}px, ${posTop}px)`,
           zIndex: isDragged ? 99999 : 10
         }}
       ></ReactDipSwitch3Component>

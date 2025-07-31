@@ -669,9 +669,51 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
 
         if (instruction.function === 'digitalRead') {
           const pinNumber = instruction.pin;
-          // For now, simulate digitalRead as returning LOW (can be enhanced later with actual pin states)
-          const readValue = 'LOW'; // TODO: Read actual pin state from connected components
+          
+          // Guard against null pin numbers
+          if (pinNumber === null || pinNumber === undefined) {
+            addLog(`[${timestamp}] → digitalRead(UNKNOWN_PIN) - Pin variable not resolved`);
+            console.warn(`[Simulator] Skipping digitalRead with null pin number`);
+            return 0;
+          }
+          
+          // Check for DipSwitch components connected to this pin
+          let readValue = 'LOW'; // Default to LOW if no components found
+          
+          // Look for DipSwitch components connected to this pin
+          components.forEach(component => {
+            if (component.type === 'dip-switch-3' || component.id.includes('dip-switch')) {
+              // Find wires connected to this DipSwitch and the target pin
+              const dipSwitchWires = wires.filter(wire => 
+                (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
+                (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString() ||
+                 wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}` ||
+                 wire.sourceName === `${pinNumber}` || wire.targetName === `${pinNumber}`)
+              );
+              
+              if (dipSwitchWires.length > 0) {
+                // Get the DipSwitch state from component states
+                const dipSwitchState = componentStates[component.id];
+                if (dipSwitchState && dipSwitchState.value) {
+                  // Check which switch position corresponds to this pin
+                  // DipSwitch has 3 positions, we'll map them to different pins or use switch index
+                  const switchValues = dipSwitchState.value; // Array of [bool, bool, bool]
+                  
+                  // For now, use the first switch (index 0) - can be enhanced to map specific switches to pins
+                  const isHighState = switchValues[0]; 
+                  readValue = isHighState ? 'HIGH' : 'LOW';
+                  
+                  console.log(`[Simulator] digitalRead(${pinNumber}) reading from DipSwitch ${component.id}: switch[0] = ${isHighState} → ${readValue}`);
+                  addLog(`[${timestamp}] → digitalRead(${pinNumber}) reading DipSwitch: ${readValue}`);
+                  return 0;
+                }
+              }
+            }
+          });
+          
+          // If no DipSwitch found, check for other input components or return LOW
           addLog(`[${timestamp}] → digitalRead(${pinNumber}) returned ${readValue}`);
+          console.log(`[Simulator] digitalRead(${pinNumber}) no DipSwitch connected, returning default: ${readValue}`);
           return 0;
         }
 

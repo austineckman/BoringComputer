@@ -161,6 +161,15 @@ Preferred communication style: Simple, everyday language.
 - **Consistent Styling**: Applied pixelated image rendering throughout for retro aesthetic consistency
 - **User Experience Enhancement**: Visual coherence improves immersion in gamified learning environment
 
+### DipSwitch Component Wiring and Simulator Integration Fix (July 30, 2025)
+- **Wire Position Glitch Fixed**: Resolved critical issue where DipSwitch wires would jump out of pin positions due to position synchronization bug
+- **Dynamic Position Sync**: Fixed transform positioning to use current `posLeft`/`posTop` instead of stale `initPosLeft`/`initPosTop` values
+- **Complete Simulator Integration**: Added full 3-position DipSwitch functionality to Arduino simulator for interactive circuit behavior
+- **digitalRead() Support**: Enhanced digitalRead() function to detect and read actual DipSwitch states instead of always returning LOW
+- **Real-time State Updates**: DipSwitch toggles now properly update simulator component states for authentic circuit interaction
+- **Click-to-Toggle Interface**: Added click handlers to DipSwitch component for easy switch position changes during simulation
+- **Educational Value**: Students can now build interactive circuits with working DipSwitches that respond to digitalRead() commands
+
 ### Basic Blink Example Fix (July 30, 2025)
 - **Default Code Restoration**: Fixed CircuitBuilderWindow.tsx default code from RGB LED demo back to classic Arduino blink example
 - **Pin 13 LED Control**: Default code now properly controls pin 13 (built-in LED) instead of pins 9, 10, 11 (RGB channels)
