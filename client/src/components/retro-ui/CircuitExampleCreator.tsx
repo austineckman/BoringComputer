@@ -54,13 +54,13 @@ interface CircuitExample {
 }
 
 interface CircuitExampleCreatorProps {
-  onClose: () => void;
+  onCancel: () => void;
   onSave: (example: CircuitExample) => void;
   existingExample?: CircuitExample | null;
 }
 
 const CircuitExampleCreator: React.FC<CircuitExampleCreatorProps> = ({ 
-  onClose, 
+  onCancel, 
   onSave, 
   existingExample 
 }) => {
@@ -225,7 +225,7 @@ void loop() {
           <div className="bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-                onClick={onClose}
+                onClick={onCancel}
                 className="bg-gray-700 hover:bg-gray-600 p-2 rounded-lg"
               >
                 <ArrowLeft size={20} />

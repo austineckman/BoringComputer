@@ -8234,13 +8234,72 @@ void loop() {
       {showCircuitCreator && (
         <div className="fixed inset-0 z-50 bg-black">
           <CircuitExampleCreator
-            example={editingCircuitExample}
-            onSave={(savedExample) => {
-              // Handle saving circuit example
-              console.log('Circuit example saved:', savedExample);
-              setShowCircuitCreator(false);
-              setEditingCircuitExample(null);
-              window.sounds?.success();
+            existingExample={editingCircuitExample}
+            onSave={async (savedExample) => {
+              try {
+                window.sounds?.click();
+                setNotificationMessage({
+                  type: 'success',
+                  message: 'Saving circuit example...'
+                });
+
+                // Determine if we're creating or updating
+                const isUpdate = !!savedExample.id;
+                const endpoint = isUpdate 
+                  ? `/api/circuit-examples/${savedExample.id}`
+                  : '/api/circuit-examples';
+                const method = isUpdate ? 'PUT' : 'POST';
+
+                const response = await fetch(endpoint, {
+                  method,
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    name: savedExample.name,
+                    description: savedExample.description,
+                    arduinoCode: savedExample.arduinoCode,
+                    circuitData: savedExample.circuitData,
+                    isPublished: savedExample.isPublished
+                  })
+                });
+
+                if (response.ok) {
+                  const savedData = await response.json();
+                  setShowCircuitCreator(false);
+                  setEditingCircuitExample(null);
+                  window.sounds?.success();
+                  
+                  setNotificationMessage({
+                    type: 'success',
+                    message: `Circuit example "${savedExample.name}" ${isUpdate ? 'updated' : 'created'} successfully!`
+                  });
+                  
+                  setTimeout(() => {
+                    setNotificationMessage(null);
+                  }, 3000);
+                } else {
+                  const errorData = await response.json();
+                  window.sounds?.error();
+                  setNotificationMessage({
+                    type: 'error',
+                    message: errorData.message || 'Failed to save circuit example'
+                  });
+                  setTimeout(() => {
+                    setNotificationMessage(null);
+                  }, 3000);
+                }
+              } catch (error) {
+                console.error('Error saving circuit example:', error);
+                window.sounds?.error();
+                setNotificationMessage({
+                  type: 'error',
+                  message: 'An error occurred while saving the circuit example'
+                });
+                setTimeout(() => {
+                  setNotificationMessage(null);
+                }, 3000);
+              }
             }}
             onCancel={() => {
               setShowCircuitCreator(false);
