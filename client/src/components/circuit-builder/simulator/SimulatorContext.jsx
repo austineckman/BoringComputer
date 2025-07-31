@@ -232,8 +232,11 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     }
 
     if (instruction.instruction.includes('delay')) {
-      addLog(`[${timestamp}] → Waiting ${instruction.delayMs}ms...`);
-      return instruction.delayMs;
+      const delayMs = instruction.delayMs;
+      addLog(`[${timestamp}] → Waiting ${delayMs}ms...`);
+      console.log(`OUTER executeInstruction: delay found, delayMs = ${delayMs}, instruction =`, instruction);
+      console.log(`OUTER executeInstruction: returning delay value: ${delayMs}`);
+      return delayMs;
     }
 
     if (instruction.instruction.includes('Serial.print')) {
@@ -310,6 +313,12 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       const executeInstruction = (instruction) => {
         console.log('executeInstruction called with:', instruction);
         const timestamp = new Date().toLocaleTimeString();
+        
+        // Debug all possible instruction types
+        console.log(`executeInstruction: instruction.instruction = "${instruction.instruction}"`);
+        console.log(`executeInstruction: instruction.delayMs = ${instruction.delayMs}`);
+        console.log(`executeInstruction: instruction includes delay? ${instruction.instruction.includes('delay')}`);
+        console.log(`executeInstruction: has delayMs? ${!!instruction.delayMs}`);
         
         if (instruction.instruction.includes('pinMode')) {
           const pinNumber = instruction.pin;
@@ -649,9 +658,13 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           return Math.max(1, milliseconds); // Minimum 1ms delay for visibility
         }
 
-        if (instruction.instruction.includes('delay')) {
-          addLog(`[${timestamp}] → Waiting ${instruction.delayMs}ms...`);
-          return instruction.delayMs;
+        // Handle delay instructions - check both instruction text and delayMs property
+        if (instruction.instruction.includes('delay') || instruction.delayMs) {
+          const delayMs = instruction.delayMs;
+          addLog(`[${timestamp}] → Waiting ${delayMs}ms...`);
+          console.log(`executeInstruction: delay instruction found, delayMs = ${delayMs}, instruction =`, instruction);
+          console.log(`executeInstruction: returning delay value: ${delayMs}`);
+          return delayMs;
         }
 
         if (instruction.function === 'digitalRead') {
@@ -934,8 +947,14 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             const delayMs = executeInstruction(instruction);
             state.setupIndex++;
             
+            // Log the delay value for debugging
+            console.log(`executeNextInstruction: setup delayMs returned = ${delayMs}, using timeout = ${delayMs || 300}ms`);
+            
             setTimeout(() => {
-              if (executionStateRef.current.phase !== 'stopped') executeNextInstruction();
+              if (executionStateRef.current.phase !== 'stopped') {
+                console.log(`executeNextInstruction called, state.phase:`, executionStateRef.current.phase);
+                executeNextInstruction();
+              }
             }, delayMs || 300); // Slower for readability
           } else {
             // Setup complete, move to loop
@@ -957,8 +976,14 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             const delayMs = executeInstruction(instruction);
             state.loopIndex++;
             
+            // Log the delay value for debugging
+            console.log(`executeNextInstruction: delayMs returned = ${delayMs}, using timeout = ${delayMs || 300}ms`);
+            
             setTimeout(() => {
-              if (executionStateRef.current.phase !== 'stopped') executeNextInstruction();
+              if (executionStateRef.current.phase !== 'stopped') {
+                console.log(`executeNextInstruction called, state.phase:`, executionStateRef.current.phase);
+                executeNextInstruction();
+              }
             }, delayMs || 300);
           } else {
             // Loop complete, restart
