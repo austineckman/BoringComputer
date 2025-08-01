@@ -103,7 +103,7 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
   const userGold = user?.inventory?.gold || 0;
   const userXP = user?.xp || 0;
   const userLevel = user?.level || 1;
-  const lootboxArray = Array.isArray(lootboxes) ? lootboxes : [];
+  const lootboxArray = Array.isArray(lootboxes) ? lootboxes.filter((lootbox: any) => !lootbox.opened) : [];
   const lootboxCount = lootboxArray.length;
 
   // Enhanced RPG-style rarity classes with stronger glow effects
