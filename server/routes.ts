@@ -32,7 +32,7 @@ import { authenticate, hashPassword } from './auth';
 import { hasOracleAccess } from './middleware/auth';
 // CSRF protection removed - unnecessary complexity for educational gaming platform
 import { addSecurityHeaders } from './middleware/security-headers';
-import { componentKits, items, auctionListings, users, questComments } from '@shared/schema';
+import { componentKits, items, auctionListings, users, questComments, userQuests } from '@shared/schema';
 import { itemDatabase } from './itemDatabase';
 import { eq, desc } from 'drizzle-orm';
 
@@ -127,6 +127,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error resetting database:', error);
       return res.status(500).json({ message: "Failed to reset database" });
+    }
+  });
+
+  // Debug endpoint to fix quest progression (development only)
+  app.post('/api/debug/fix-quest-progression', authenticate, async (req, res) => {
+    try {
+      const userId = (req as any).user?.id;
+      const username = (req as any).user?.username;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Reset quest progression for user - clear completed quests and user_quests
+      await storage.updateUser(userId, {
+        completedQuests: []
+      });
+
+      // Clear any existing user_quests entries
+      await db.delete(userQuests).where(eq(userQuests.userId, userId));
+
+      console.log('Fixed quest progression for user:', username);
+      return res.json({ 
+        success: true, 
+        message: "Quest progression reset - first quest should now be available",
+        completedQuests: []
+      });
+    } catch (error) {
+      console.error('Error fixing quest progression:', error);
+      return res.status(500).json({ message: "Failed to fix quest progression" });
     }
   });
 
