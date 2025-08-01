@@ -42,6 +42,13 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
 // Middleware to check if the user has Oracle access (CraftingTable role)
 export const hasOracleAccess = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Bypass authentication in development mode (NODE_ENV not set or 'development')
+    if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
+      console.log('⚠️ Development mode: Oracle authentication bypassed');
+      next();
+      return;
+    }
+    
     const user = (req as any).user;
     if (!user) {
       return res.status(401).json({ message: 'Authentication required' });
