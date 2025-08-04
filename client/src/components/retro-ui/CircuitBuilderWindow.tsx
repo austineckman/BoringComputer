@@ -246,6 +246,22 @@ void loop() {
   - Keypad.h: For matrix keypads
   - BasicEncoder.h: For rotary encoders
 */`;
+
+  // Tab management state
+  const [activeTab, setActiveTab] = useState('main');
+  const [codeTabs, setCodeTabs] = useState<{[key: string]: {
+    name: string;
+    code: string;
+    type: string;
+    libraryName?: string;
+  }}>({
+    main: {
+      name: 'Main code',
+      code: defaultCode,
+      type: 'main'
+    }
+  });
+  const [showLibrarySelector, setShowLibrarySelector] = useState(false);
   
   // References
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -256,6 +272,57 @@ void loop() {
   useEffect(() => {
     setEditorReady(true);
   }, []);
+
+  // Function to add a new library tab
+  const addLibraryTab = (libraryName: string, libraryCode?: string) => {
+    const tabId = `lib_${libraryName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    setCodeTabs(prev => ({
+      ...prev,
+      [tabId]: {
+        name: libraryName,
+        code: libraryCode || `// ${libraryName} Library Code\n#include <${libraryName}.h>\n\n// Your ${libraryName} code here\n`,
+        type: 'library',
+        libraryName
+      }
+    }));
+    setActiveTab(tabId);
+    setShowLibrarySelector(false);
+  };
+
+  // Function to close a tab
+  const closeTab = (tabId: string) => {
+    if (tabId === 'main') return; // Can't close main tab
+    
+    const newTabs = { ...codeTabs };
+    delete newTabs[tabId];
+    setCodeTabs(newTabs);
+    
+    // Switch to main tab if closing active tab
+    if (activeTab === tabId) {
+      setActiveTab('main');
+    }
+  };
+
+  // Get current tab's code
+  const getCurrentCode = () => {
+    return codeTabs[activeTab]?.code || '';
+  };
+
+  // Update current tab's code
+  const updateCurrentCode = (newCode: string) => {
+    setCodeTabs(prev => ({
+      ...prev,
+      [activeTab]: {
+        ...prev[activeTab],
+        code: newCode
+      }
+    }));
+    
+    // Also update the main code state for compatibility
+    if (activeTab === 'main') {
+      setCode(newCode);
+    }
+  };
 
   // Generate a unique ID
   const generateId = () => {
@@ -657,7 +724,7 @@ void loop() {
   } = useSimulator();
 
   // Library manager hook
-  const { refreshLibraries } = useLibraryManager();
+  const { refreshLibraries, libraries = {} } = useLibraryManager();
 
   // Handle saving circuit example
   const handleSaveExample = async (name: string, description: string, isPublished: boolean) => {
@@ -1104,12 +1171,75 @@ void loop() {
       
       {/* Bottom Code Editor */}
       <div className="h-1/3 bg-gray-800 border-t border-gray-700 flex flex-col">
-        <div className="p-2 bg-gray-900 text-sm font-bold border-b border-gray-700 flex justify-between items-center">
+        {/* Tab Header */}
+        <div className="bg-gray-900 border-b border-gray-700 flex flex-col">
+          {/* Tab Bar */}
           <div className="flex items-center">
-            <FileCode size={16} className="mr-2 text-blue-400" />
-            <span>Arduino Code</span>
+            {Object.entries(codeTabs).map(([tabId, tab]) => (
+              <div
+                key={tabId}
+                className={`flex items-center px-3 py-2 cursor-pointer border-r border-gray-700 text-sm ${
+                  activeTab === tabId 
+                    ? 'bg-gray-800 text-white border-b-2 border-blue-400' 
+                    : 'bg-gray-900 text-gray-400 hover:text-white hover:bg-gray-800'
+                }`}
+                onClick={() => setActiveTab(tabId)}
+              >
+                <FileCode size={14} className="mr-2" />
+                <span>{tab.name}</span>
+                {tab.type === 'library' && (
+                  <button
+                    className="ml-2 text-gray-500 hover:text-red-400"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      closeTab(tabId);
+                    }}
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+            ))}
+            
+            {/* Add Tab Button */}
+            <div className="relative">
+              <button
+                className="flex items-center px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm"
+                onClick={() => setShowLibrarySelector(!showLibrarySelector)}
+                title="Add Library Tab"
+              >
+                <span className="text-lg">+</span>
+              </button>
+              
+              {/* Library Selector Dropdown */}
+              {showLibrarySelector && (
+                <div className="absolute top-full left-0 mt-1 w-64 bg-gray-800 border border-gray-700 rounded shadow-lg z-50 max-h-64 overflow-y-auto">
+                  <div className="p-2 border-b border-gray-700">
+                    <div className="text-xs text-gray-400 font-semibold">Select Library to Add</div>
+                  </div>
+                  <div className="py-1">
+                    {Object.entries(libraries).map(([libName, lib]) => (
+                      <button
+                        key={libName}
+                        onClick={() => addLibraryTab(libName)}
+                        className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                        disabled={Object.values(codeTabs).some(tab => tab.libraryName === libName)}
+                      >
+                        <div className="font-medium">{libName}</div>
+                        <div className="text-xs text-gray-400">
+                          {(lib as any)?.type === 'custom' ? 'Custom Library' : 'Built-in Library'}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
+          
+          {/* Toolbar */}
+          <div className="p-2 flex justify-between items-center border-t border-gray-700">
+            <div className="flex items-center space-x-2">
             <button 
               className={`px-2 py-1 rounded text-xs flex items-center ${isSimulationRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
               onClick={runSimulation}
@@ -1219,6 +1349,7 @@ void loop() {
                 </div>
               )}
             </div>
+            </div>
           </div>
         </div>
         
@@ -1229,8 +1360,8 @@ void loop() {
                 mode="c_cpp"
                 theme="monokai"
                 name="arduino-code-editor"
-                value={code}
-                onChange={(newCode) => setCode(newCode)}
+                value={getCurrentCode()}
+                onChange={(newCode) => updateCurrentCode(newCode)}
                 width="100%"
                 height="100%"
                 fontSize={14}
