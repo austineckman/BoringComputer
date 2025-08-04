@@ -97,19 +97,28 @@ export function setupAuth(app: any): void {
       return process.env.DISCORD_CALLBACK_URL;
     }
     
-    // In production, use the computer.craftingtable.com domain
-    if (process.env.NODE_ENV === "production") {
-      const callbackUrl = "https://computer.craftingtable.com/api/auth/discord/callback";
-      console.log("Using production Discord callback URL:", callbackUrl);
-      return callbackUrl;
-    }
-    
-    // Check for Replit domain environment variables
+    // Always use the production domain for live deployments
+    // Check if we're in a live deployment (not dev environment)
     const replitDomains = process.env.REPLIT_DOMAINS;
     if (replitDomains) {
       const primaryDomain = replitDomains.split(',')[0];
-      const callbackUrl = `https://${primaryDomain}/api/auth/discord/callback`;
-      console.log("Using Replit domain Discord callback URL:", callbackUrl);
+      // If the domain contains 'replit.dev', it's a development instance
+      if (primaryDomain.includes('replit.dev')) {
+        const callbackUrl = `https://${primaryDomain}/api/auth/discord/callback`;
+        console.log("Using Replit dev domain Discord callback URL:", callbackUrl);
+        return callbackUrl;
+      } else {
+        // For live deployments, always use the production domain
+        const callbackUrl = "https://computer.craftingtable.com/api/auth/discord/callback";
+        console.log("Using production Discord callback URL (live deployment):", callbackUrl);
+        return callbackUrl;
+      }
+    }
+    
+    // In explicit production environment, use the production domain
+    if (process.env.NODE_ENV === "production") {
+      const callbackUrl = "https://computer.craftingtable.com/api/auth/discord/callback";
+      console.log("Using production Discord callback URL:", callbackUrl);
       return callbackUrl;
     }
     
