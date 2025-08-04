@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { Key, Loader2, PackageOpen, ShoppingBag, Coins, Trophy, Package } from "lucide-react";
 import { ItemDetails } from "@/types";
@@ -7,6 +7,7 @@ import bagBackground from "@assets/bagbkg.png";
 import inventoryExeLogo from "@assets/Untitled design - 2025-04-28T130514.365.png";
 import goldCoinImage from "@assets/22_Leperchaun_Coin.png";
 import lootCrateImage from "@assets/loot crate.png";
+import HacklockWindow from "./HacklockWindow";
 
 // Define interfaces locally since we're having import issues
 interface InventoryItem {
@@ -30,11 +31,29 @@ interface User {
   };
 }
 
+interface Lootbox {
+  id: number;
+  userId: number;
+  type: string;
+  opened: boolean;
+  acquiredAt: string;
+  openedAt: string | null;
+  rewards: any[];
+  source: string;
+  sourceId: string | null;
+  image: string | null;
+  description: string | null;
+  name: string | null;
+  rarity: string | null;
+}
+
 interface InventoryWindowProps {
   openItemDetails: (itemId: string, quantity: number) => void;
 }
 
 const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) => {
+  const queryClient = useQueryClient();
+
   // Fetch user data for gold, XP, and level
   const { 
     data: user, 
@@ -73,10 +92,30 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
 
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [selectedLootbox, setSelectedLootbox] = useState<Lootbox | null>(null);
+  const [showHacklock, setShowHacklock] = useState(false);
 
   const handleItemClick = (itemId: string, quantity: number) => {
     openItemDetails(itemId, quantity);
     setSelectedItem(itemId);
+  };
+
+  const handleLootboxClick = (lootbox: Lootbox) => {
+    console.log('Lootbox clicked:', lootbox);
+    setSelectedLootbox(lootbox);
+    setShowHacklock(true);
+  };
+
+  const handleHacklockClose = () => {
+    setShowHacklock(false);
+    setSelectedLootbox(null);
+  };
+
+  const handleLootboxOpened = (lootboxId: number) => {
+    // Refresh lootboxes and inventory data after opening
+    queryClient.invalidateQueries({ queryKey: ["/api/lootboxes"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
   };
 
   if (inventoryLoading || itemsLoading || userLoading || lootboxesLoading) {
@@ -239,10 +278,7 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
               key={`lootbox-${index}`}
               className="relative w-14 h-14 rounded bg-purple-950/40 border border-purple-500 shadow-[0_0_8px_1px_rgba(163,53,238,0.4)] 
                 cursor-pointer hover:brightness-125 transition-all duration-200 hover:scale-105"
-              onClick={() => {
-                // Handle lootbox click - could open lootbox or show details
-                console.log('Lootbox clicked:', lootbox);
-              }}
+              onClick={() => handleLootboxClick(lootbox)}
             >
               <img 
                 src={lootCrateImage} 
@@ -434,6 +470,15 @@ const InventoryWindow: React.FC<InventoryWindowProps> = ({ openItemDetails }) =>
           </div>
         </div>
       </div>
+
+      {/* HackLock Window */}
+      {showHacklock && (
+        <HacklockWindow
+          lootbox={selectedLootbox}
+          onClose={handleHacklockClose}
+          onLootboxOpened={handleLootboxOpened}
+        />
+      )}
     </div>
   );
 };
