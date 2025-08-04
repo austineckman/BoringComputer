@@ -421,11 +421,12 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
             {quest.content?.videos && quest.content.videos.length > 0 ? (
               <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
                 <iframe
-                  src={`https://www.youtube.com/embed/${quest.content.videos[0]}`}
+                  src={`https://www.youtube.com/embed/${quest.content.videos[0]}?rel=0&modestbranding=1&fs=1&cc_load_policy=0&iv_load_policy=3&autohide=0`}
                   className="w-full h-full"
                   frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
                   title="Quest Tutorial Video"
                 ></iframe>
               </div>

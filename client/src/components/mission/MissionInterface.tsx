@@ -153,11 +153,12 @@ export default function MissionInterface({ quest, onComplete, onBack }: MissionI
                   <iframe
                     width="100%"
                     height="100%"
-                    src={`https://www.youtube.com/embed/${videoId}`}
+                    src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&fs=1&cc_load_policy=0&iv_load_policy=3&autohide=0`}
                     title="Mission Tutorial"
                     frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowFullScreen
+                    referrerPolicy="strict-origin-when-cross-origin"
                     className="w-full h-full"
                   />
                 </div>

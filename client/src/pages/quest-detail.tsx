@@ -22,10 +22,11 @@ const YouTubeEmbed = ({ videoId }: { videoId: string }) => {
     <div className="aspect-video w-full rounded-lg overflow-hidden mb-4">
       <iframe
         className="w-full h-full"
-        src={`https://www.youtube.com/embed/${videoId}`}
+        src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&fs=1&cc_load_policy=0&iv_load_policy=3&autohide=0`}
         title="YouTube video player"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowFullScreen
+        referrerPolicy="strict-origin-when-cross-origin"
       ></iframe>
     </div>
   );
