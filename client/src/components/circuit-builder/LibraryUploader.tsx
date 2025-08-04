@@ -1,14 +1,13 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Package, Check, X, Plus } from 'lucide-react';
+import { Package, Check, X } from 'lucide-react';
 import axios from 'axios';
 
 interface LibraryUploaderProps {
-  onLibraryAdded: (libraryName: string) => void;
+  onUploadComplete?: (success: boolean, message?: string) => void;
   className?: string;
 }
 
-const LibraryUploader: React.FC<LibraryUploaderProps> = ({ onLibraryAdded, className = '' }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+const LibraryUploader: React.FC<LibraryUploaderProps> = ({ onUploadComplete, className = '' }) => {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -19,7 +18,9 @@ const LibraryUploader: React.FC<LibraryUploaderProps> = ({ onLibraryAdded, class
 
     // Validate file type
     if (!file.name.endsWith('.zip')) {
-      setMessage({ type: 'error', text: 'Please upload a .zip library file' });
+      const errorMessage = 'Please upload a .zip library file';
+      setMessage({ type: 'error', text: errorMessage });
+      onUploadComplete?.(false, errorMessage);
       return;
     }
 
@@ -37,18 +38,22 @@ const LibraryUploader: React.FC<LibraryUploaderProps> = ({ onLibraryAdded, class
       });
 
       if (response.data.success) {
-        setMessage({ type: 'success', text: `${response.data.libraryName} added successfully` });
-        onLibraryAdded(response.data.libraryName);
-        setIsExpanded(false);
+        const successMessage = `${response.data.libraryName} added successfully`;
+        setMessage({ type: 'success', text: successMessage });
+        onUploadComplete?.(true, successMessage);
         
         // Clear message after 3 seconds
         setTimeout(() => setMessage(null), 3000);
       } else {
-        setMessage({ type: 'error', text: response.data.message || 'Upload failed' });
+        const errorMessage = response.data.message || 'Upload failed';
+        setMessage({ type: 'error', text: errorMessage });
+        onUploadComplete?.(false, errorMessage);
       }
     } catch (error) {
       console.error('Library upload error:', error);
-      setMessage({ type: 'error', text: 'Upload failed. Please try again.' });
+      const errorMessage = 'Network error occurred';
+      setMessage({ type: 'error', text: errorMessage });
+      onUploadComplete?.(false, errorMessage);
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
@@ -57,82 +62,50 @@ const LibraryUploader: React.FC<LibraryUploaderProps> = ({ onLibraryAdded, class
     }
   };
 
-  if (!isExpanded) {
-    return (
-      <div className={`relative ${className}`}>
-        <button
-          onClick={() => setIsExpanded(true)}
-          className="flex items-center space-x-1 px-2 py-1 text-xs bg-blue-600/20 hover:bg-blue-600/30 
-            border border-blue-500/30 rounded text-blue-300 transition-colors"
-          title="Add Arduino Library"
-        >
-          <Plus className="w-3 h-3" />
-          <span>Library</span>
-        </button>
-        
-        {message && (
-          <div className={`absolute top-8 left-0 z-50 px-2 py-1 text-xs rounded shadow-lg ${
-            message.type === 'success' 
-              ? 'bg-green-900/90 text-green-200 border border-green-500/50' 
-              : 'bg-red-900/90 text-red-200 border border-red-500/50'
-          }`}>
-            {message.text}
-          </div>
-        )}
-      </div>
-    );
-  }
-
   return (
-    <div className={`relative ${className}`}>
-      <div className="bg-gray-900/95 border border-gray-600 rounded-lg p-3 shadow-xl min-w-64">
-        <div className="flex items-center justify-between mb-2">
-          <h4 className="text-sm font-medium text-white flex items-center">
-            <Package className="w-4 h-4 mr-1" />
-            Add Library
-          </h4>
-          <button
-            onClick={() => setIsExpanded(false)}
-            className="text-gray-400 hover:text-white transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="space-y-2">
-          <p className="text-xs text-gray-400">
-            Upload Arduino library (.zip file)
+    <div className={`${className}`}>
+      <div className="space-y-4">
+        <div className="text-center">
+          <h3 className="text-lg font-medium text-white mb-2 flex items-center justify-center">
+            <Package className="w-5 h-5 mr-2" />
+            Upload Arduino Library
+          </h3>
+          <p className="text-sm text-gray-400">
+            Upload a .zip file containing your Arduino library
           </p>
-          
+        </div>
+        
+        <div className="space-y-3">
           <input
             ref={fileInputRef}
             type="file"
             accept=".zip"
             onChange={handleFileUpload}
             disabled={uploading}
-            className="block w-full text-xs text-gray-300 file:mr-2 file:py-1 file:px-2 
-              file:rounded file:border-0 file:text-xs file:bg-blue-600 file:text-white 
+            className="block w-full text-sm text-gray-300 file:mr-3 file:py-2 file:px-4 
+              file:rounded-lg file:border-0 file:text-sm file:bg-blue-600 file:text-white 
               file:hover:bg-blue-700 file:transition-colors file:cursor-pointer
-              disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled:opacity-50 disabled:cursor-not-allowed border border-gray-600 
+              rounded-lg bg-gray-800/50 p-2"
           />
 
           {uploading && (
-            <div className="flex items-center space-x-2 text-xs text-blue-300">
-              <div className="w-3 h-3 border-2 border-blue-300 border-t-transparent rounded-full animate-spin"></div>
-              <span>Uploading...</span>
+            <div className="flex items-center justify-center space-x-2 text-sm text-blue-300">
+              <div className="w-4 h-4 border-2 border-blue-300 border-t-transparent rounded-full animate-spin"></div>
+              <span>Uploading library...</span>
             </div>
           )}
 
           {message && (
-            <div className={`text-xs p-2 rounded ${
+            <div className={`text-sm p-3 rounded-lg flex items-center ${
               message.type === 'success' 
-                ? 'bg-green-900/50 text-green-200' 
-                : 'bg-red-900/50 text-red-200'
+                ? 'bg-green-900/50 text-green-200 border border-green-500/50' 
+                : 'bg-red-900/50 text-red-200 border border-red-500/50'
             }`}>
               {message.type === 'success' ? (
-                <Check className="w-3 h-3 inline mr-1" />
+                <Check className="w-4 h-4 mr-2 flex-shrink-0" />
               ) : (
-                <X className="w-3 h-3 inline mr-1" />
+                <X className="w-4 h-4 mr-2 flex-shrink-0" />
               )}
               {message.text}
             </div>
