@@ -7,7 +7,7 @@ import {
   ClipboardList, Grid3X3, ArrowRight, AlertCircle, Clock, User,
   BarChart2, PieChart, TrendingUp, Server, UserCheck, Activity,
   Calendar, Download, HardDrive, GitBranch, Heart, CheckSquare,
-  Copy, RotateCcw, Gavel, ChevronUp, ChevronDown, Cpu
+  Copy, RotateCcw, Gavel, ChevronUp, ChevronDown, Cpu, BookOpen
 } from 'lucide-react';
 import { 
   BarChart, Bar, LineChart as RechartsLine, Line, PieChart as RechartsProChart, Pie, Cell, 
@@ -22,6 +22,7 @@ import theOracleLogo from '@assets/TheOracleLogo.png';
 import { apiRequest } from "@/lib/queryClient";
 import CircuitExamplesOracleView from './CircuitExamplesOracleView';
 import CircuitExampleCreator from './CircuitExampleCreator';
+import LibraryUploader from '../circuit-builder/LibraryUploader';
 
 // Define types for lootboxes and quests
 interface LootBox {
@@ -297,8 +298,8 @@ interface Recipe {
 }
 
 const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) => {
-  // State for tabs - include 'recipes' for crafting management, 'bmah' for auction management, and 'circuits' for circuit examples
-  const [activeTab, setActiveTab] = useState<'lootboxes' | 'quests' | 'users' | 'items' | 'kits' | 'recipes' | 'bmah' | 'circuits' | 'settings'>('lootboxes');
+  // State for tabs - include 'recipes' for crafting management, 'bmah' for auction management, 'circuits' for circuit examples, and 'libraries' for Arduino library management
+  const [activeTab, setActiveTab] = useState<'lootboxes' | 'quests' | 'users' | 'items' | 'kits' | 'recipes' | 'bmah' | 'circuits' | 'libraries' | 'settings'>('lootboxes');
   
   // State for data
   const [lootboxes, setLootboxes] = useState<LootBox[]>([]);
@@ -322,6 +323,11 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   const [editingCircuitExample, setEditingCircuitExample] = useState<any>(null);
   const [showCircuitCreator, setShowCircuitCreator] = useState<boolean>(false);
   const [circuitExamplesRefreshTrigger, setCircuitExamplesRefreshTrigger] = useState<number>(0);
+  
+  // Arduino Libraries state
+  const [showLibraryUploader, setShowLibraryUploader] = useState<boolean>(false);
+  const [libraries, setLibraries] = useState<any[]>([]);
+  const [loadingLibraries, setLoadingLibraries] = useState<boolean>(false);
   
   // State for modals and actions
   const [confirmDelete, setConfirmDelete] = useState<{ 
@@ -555,6 +561,32 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       }
     };
 
+    const fetchLibraries = async () => {
+      try {
+        setLoadingLibraries(true);
+        const response = await fetch('/api/arduino-libraries');
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Arduino libraries data from API:', data);
+          if (data.success && Array.isArray(data.libraries)) {
+            setLibraries(data.libraries);
+            console.log(`Loaded ${data.libraries.length} Arduino libraries`);
+          } else {
+            console.error('Expected libraries array but got:', data);
+            setLibraries([]);
+          }
+        } else {
+          console.error('Failed to fetch Arduino libraries, status:', response.status);
+          setLibraries([]);
+        }
+      } catch (error) {
+        console.error('Error fetching Arduino libraries:', error);
+        setLibraries([]);
+      } finally {
+        setLoadingLibraries(false);
+      }
+    };
+
     fetchLootboxes();
     fetchQuests();
     fetchUsers();
@@ -562,6 +594,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     fetchComponentKits();
     fetchRecipes();
     fetchAuctions();
+    fetchLibraries();
   }, []);
 
   // Add debug logging to see what we're getting from the API
@@ -574,12 +607,12 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
   // Generate game statistics when data is loaded
   useEffect(() => {
     if (!loadingUsers && !loadingItems && !loadingLootboxes && 
-        !loadingQuests && !loadingKits && !loadingRecipes && !loadingAuctions) {
+        !loadingQuests && !loadingKits && !loadingRecipes && !loadingAuctions && !loadingLibraries) {
       generateGameStatistics();
     }
   }, [
     loadingUsers, loadingItems, loadingLootboxes, 
-    loadingQuests, loadingKits, loadingRecipes, loadingAuctions
+    loadingQuests, loadingKits, loadingRecipes, loadingAuctions, loadingLibraries
   ]);
   
   // Generate game statistics from available data
@@ -1536,6 +1569,44 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
       kitId: undefined,
       message: ''
     });
+  };
+
+  // Handle library deletion
+  const handleDeleteLibrary = async (libraryName: string) => {
+    try {
+      window.sounds?.click();
+      const response = await fetch(`/api/arduino-libraries/${encodeURIComponent(libraryName)}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        window.sounds?.success();
+        // Remove the library from state
+        setLibraries(prev => prev.filter(lib => lib.name !== libraryName));
+        setNotificationMessage({
+          type: 'success',
+          message: `Library "${libraryName}" deleted successfully!`
+        });
+        setTimeout(() => setNotificationMessage(null), 3000);
+      } else {
+        window.sounds?.error();
+        const errorData = await response.json();
+        setNotificationMessage({
+          type: 'error',
+          message: errorData.message || `Failed to delete library "${libraryName}"`
+        });
+        setTimeout(() => setNotificationMessage(null), 3000);
+      }
+    } catch (error) {
+      window.sounds?.error();
+      console.error('Error deleting library:', error);
+      setNotificationMessage({
+        type: 'error',
+        message: `Error deleting library "${libraryName}"`
+      });
+      setTimeout(() => setNotificationMessage(null), 3000);
+    }
   };
   
   const confirmDeleteItem = async () => {
@@ -3554,6 +3625,130 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
     );
   };
 
+  // Render Arduino Libraries management
+  const renderLibraries = () => {
+    if (loadingLibraries) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64">
+          <Loader2 className="h-10 w-10 animate-spin text-brand-orange mb-3" />
+          <p className="text-brand-orange">Loading Arduino libraries...</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 border-2 border-blue-600/50 rounded-lg p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="h-16 w-16 rounded-full bg-blue-600/20 border-3 border-blue-500 flex items-center justify-center mr-4">
+                <BookOpen className="h-8 w-8 text-blue-400" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold text-blue-400 mb-1">Arduino Libraries</h2>
+                <p className="text-blue-200/80 text-lg">Manage code libraries for the circuit simulator</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-blue-400">{libraries.length}</div>
+              <div className="text-blue-200/80 text-sm">Libraries Available</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Upload Button */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={() => setShowLibraryUploader(true)}
+            className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-lg transition-all border-2 border-blue-500 hover:border-blue-400"
+            onMouseEnter={() => window.sounds?.hover()}
+          >
+            <Upload className="h-5 w-5 mr-2" />
+            Upload Library
+          </button>
+        </div>
+
+        {/* Libraries Grid */}
+        {libraries.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+            <BookOpen className="h-12 w-12 mb-3 opacity-50" />
+            <p className="text-lg mb-2">No Arduino libraries found</p>
+            <p className="text-sm">Upload library ZIP files to get started</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {libraries.map((library, index) => (
+              <div 
+                key={`${library.name}-${index}`}
+                className="border border-gray-700 rounded-lg bg-black/40 p-4 hover:border-blue-500/60 transition-colors"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center">
+                    <div className="h-10 w-10 rounded bg-blue-600/20 flex items-center justify-center mr-3">
+                      <BookOpen className="h-5 w-5 text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-white">{library.name}</h3>
+                      <p className="text-xs text-gray-400">
+                        {library.type === 'custom' ? 'Custom Library' : 'Built-in Library'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex space-x-1">
+                    <button 
+                      className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                      title="Delete library"
+                      onClick={() => handleDeleteLibrary(library.name)}
+                      onMouseEnter={() => window.sounds?.hover()}
+                    >
+                      <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                    </button>
+                  </div>
+                </div>
+                
+                {library.description && (
+                  <p className="text-gray-300 text-sm mb-3 line-clamp-2">
+                    {library.description}
+                  </p>
+                )}
+                
+                {library.functions && library.functions.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-400 mb-2">Available Functions:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {library.functions.slice(0, 3).map((func, i) => (
+                        <span 
+                          key={i}
+                          className="bg-blue-900/30 text-blue-300 text-xs px-2 py-0.5 rounded"
+                        >
+                          {func}
+                        </span>
+                      ))}
+                      {library.functions.length > 3 && (
+                        <span className="bg-gray-800 text-gray-400 text-xs px-2 py-0.5 rounded">
+                          +{library.functions.length - 3} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {library.zipFileName && (
+                  <div className="mt-3 pt-3 border-t border-gray-700">
+                    <p className="text-xs text-gray-500">
+                      Source: {library.zipFileName}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Render BMAH tab for auction management
   const renderBMAH = () => {
     if (loadingAuctions) {
@@ -4895,6 +5090,20 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
           </button>
           <button
             className={`px-4 py-2 text-sm font-medium rounded-t-md ${
+              activeTab === 'libraries' 
+                ? 'bg-brand-orange/20 text-brand-orange border-t border-l border-r border-brand-orange/30' 
+                : 'text-gray-400 hover:text-white'
+            }`}
+            onClick={() => handleTabChange('libraries')}
+            onMouseEnter={() => window.sounds?.hover()}
+          >
+            <div className="flex items-center">
+              <BookOpen className="h-4 w-4 mr-1" />
+              Libraries
+            </div>
+          </button>
+          <button
+            className={`px-4 py-2 text-sm font-medium rounded-t-md ${
               activeTab === 'settings' 
                 ? 'bg-brand-orange/20 text-brand-orange border-t border-l border-r border-brand-orange/30' 
                 : 'text-gray-400 hover:text-white'
@@ -5027,6 +5236,9 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                   // Create a new circuit example
                   setEditingCircuitExample(null); // Start with blank example
                   setShowCircuitCreator(true);
+                } else if (activeTab === 'libraries') {
+                  // Handle library upload via the uploader
+                  setShowLibraryUploader(true);
                 } else {
                   console.log(`Create new ${activeTab.slice(0, -1)}`);
                 }
@@ -5041,6 +5253,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
                 activeTab === 'quests' ? 'Quest' : 
                 activeTab === 'kits' ? 'Kit' : 
                 activeTab === 'circuits' ? 'Circuit Example' :
+                activeTab === 'libraries' ? 'Library' :
                 'Item'
               }
             </button>
@@ -5055,6 +5268,7 @@ const FullscreenOracleApp: React.FC<FullscreenOracleAppProps> = ({ onClose }) =>
         {activeTab === 'kits' && renderComponentKits()}
         {activeTab === 'bmah' && renderBMAH()}
         {activeTab === 'circuits' && renderCircuitExamples()}
+        {activeTab === 'libraries' && renderLibraries()}
         {activeTab === 'recipes' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredRecipes.map(recipe => (
@@ -8312,6 +8526,61 @@ void loop() {
               window.sounds?.click();
             }}
           />
+        </div>
+      )}
+
+      {/* LibraryUploader Dialog */}
+      {showLibraryUploader && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-white">Upload Arduino Library</h2>
+                <button
+                  onClick={() => setShowLibraryUploader(false)}
+                  className="text-gray-400 hover:text-white"
+                  onMouseEnter={() => window.sounds?.hover()}
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <LibraryUploader
+                onUploadComplete={(success, message) => {
+                  if (success) {
+                    window.sounds?.success();
+                    setNotificationMessage({
+                      type: 'success',
+                      message: message || 'Library uploaded successfully!'
+                    });
+                    // Refresh libraries list
+                    const fetchLibraries = async () => {
+                      try {
+                        const response = await fetch('/api/arduino-libraries');
+                        if (response.ok) {
+                          const data = await response.json();
+                          if (data.success && Array.isArray(data.libraries)) {
+                            setLibraries(data.libraries);
+                          }
+                        }
+                      } catch (error) {
+                        console.error('Error refreshing libraries:', error);
+                      }
+                    };
+                    fetchLibraries();
+                  } else {
+                    window.sounds?.error();
+                    setNotificationMessage({
+                      type: 'error',
+                      message: message || 'Failed to upload library'
+                    });
+                  }
+                  setTimeout(() => setNotificationMessage(null), 3000);
+                  setShowLibraryUploader(false);
+                }}
+              />
+            </div>
+          </div>
         </div>
       )}
       
