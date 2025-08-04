@@ -33,6 +33,7 @@ import CircuitBuilder from '../circuit-builder/CircuitBuilder';
 // Import simulator components
 import { SimulatorProvider, useSimulator } from '../circuit-builder/simulator/SimulatorContext';
 import SimplifiedLogPanel from '../circuit-builder/simulator/SimplifiedLogPanel';
+import { useLibraryManager } from '../circuit-builder/simulator/LibraryManager';
 // Import only the proper simulator - legacy simulator removed to enforce hardware emulation
 // import AVR8Simulator from '../circuit-builder/simulator/AVR8Simulator'; // REMOVED - uses keyword-based shortcuts
 // Import our proper AVR8 simulator 
@@ -52,6 +53,7 @@ import {
 } from '../circuit-builder/ComponentGenerator';
 import CircuitWire from '../circuit-builder/CircuitWire';
 import CircuitPin from '../circuit-builder/CircuitPin';
+import LibraryUploader from '../circuit-builder/LibraryUploader';
 
 // Define the PinPosition interface
 interface PinPosition {
@@ -654,6 +656,9 @@ void loop() {
     setCode: updateSimulatorCode // Get the simulator's setCode function
   } = useSimulator();
 
+  // Library manager hook
+  const { refreshLibraries } = useLibraryManager();
+
   // Handle saving circuit example
   const handleSaveExample = async (name: string, description: string, isPublished: boolean) => {
     try {
@@ -965,6 +970,17 @@ void loop() {
             <Save size={18} />
           </button>
           
+          {/* Library Uploader */}
+          <LibraryUploader
+            onLibraryAdded={async (libraryName) => {
+              addSimulationLog(`✅ Library added: ${libraryName}`);
+              setNotification({ message: `Library "${libraryName}" added successfully`, type: 'success' });
+              // Refresh libraries to load the new one
+              await refreshLibraries();
+            }}
+            className="relative"
+          />
+
           {/* Admin-only Save Example button */}
           {hasAdminAccess && (
             <button 

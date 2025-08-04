@@ -42,15 +42,15 @@ export const LibraryManagerProvider = ({ children }) => {
   useEffect(() => {
     console.log('Starting to load libraries...');
     const loadAllLibraries = async () => {
+      // Load built-in libraries
       for (const [name, path] of Object.entries(supportedLibraries)) {
         try {
           console.log(`Loading library: ${name} from ${path.split('/').pop()}`);
-          // Simulate loading the library
-          // In a real implementation, we would fetch and parse the actual .zip file
           const libraryContent = {
             name,
             path,
             loaded: true,
+            type: 'built-in',
             functions: {} // This would contain the actual library API
           };
           
@@ -68,6 +68,43 @@ export const LibraryManagerProvider = ({ children }) => {
           console.error(`Failed to load library ${name}:`, error);
         }
       }
+
+      // Load custom uploaded libraries
+      try {
+        const response = await fetch('/api/arduino-libraries');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.libraries) {
+            for (const lib of data.libraries) {
+              console.log(`Loading custom library: ${lib.name} from ${lib.filename}`);
+              const libraryContent = {
+                name: lib.name,
+                path: lib.path,
+                loaded: true,
+                type: 'custom',
+                uploadedAt: lib.uploadedAt,
+                functions: {}
+              };
+              
+              // Add library to state
+              setLibraries(prevLibraries => ({
+                ...prevLibraries,
+                [lib.name]: libraryContent
+              }));
+              
+              // Add to loaded libraries
+              if (!loadedLibraries.includes(lib.name)) {
+                setLoadedLibraries(prev => [...prev, lib.name]);
+              }
+              
+              console.log(`Custom library ${lib.name} loaded successfully`);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load custom libraries:', error);
+      }
+
       console.log('All libraries loaded successfully');
     };
     
@@ -126,6 +163,44 @@ export const LibraryManagerProvider = ({ children }) => {
   const isLibraryLoaded = (libraryName) => {
     return !!libraries[libraryName];
   };
+
+  // Function to refresh and reload custom libraries
+  const refreshLibraries = async () => {
+    try {
+      const response = await fetch('/api/arduino-libraries');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.libraries) {
+          for (const lib of data.libraries) {
+            if (!libraries[lib.name]) {
+              console.log(`Loading new custom library: ${lib.name}`);
+              const libraryContent = {
+                name: lib.name,
+                path: lib.path,
+                loaded: true,
+                type: 'custom',
+                uploadedAt: lib.uploadedAt,
+                functions: {}
+              };
+              
+              // Add library to state
+              setLibraries(prevLibraries => ({
+                ...prevLibraries,
+                [lib.name]: libraryContent
+              }));
+              
+              // Add to loaded libraries
+              if (!loadedLibraries.includes(lib.name)) {
+                setLoadedLibraries(prev => [...prev, lib.name]);
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to refresh custom libraries:', error);
+    }
+  };
   
   // Context value
   const contextValue = {
@@ -133,7 +208,8 @@ export const LibraryManagerProvider = ({ children }) => {
     loadLibrary,
     getLibraryContent,
     isLibraryLoaded,
-    loadedLibraries
+    loadedLibraries,
+    refreshLibraries
   };
   
   return (

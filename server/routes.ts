@@ -108,6 +108,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register Arduino components routes
   app.use("/api/arduino-components", arduinoComponentsRoutes);
 
+  // Register Arduino libraries routes
+  const { default: arduinoLibrariesRoutes } = await import("./routes/arduino-libraries");
+  app.use("/api/arduino-libraries", arduinoLibrariesRoutes);
+
   // Register mission routes
   app.use("/api/missions", missionRoutes);
 
