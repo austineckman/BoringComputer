@@ -119,7 +119,16 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
             <img 
               src={user?.avatar || logoImage} 
               alt="Profile" 
-              className="w-20 h-20 rounded border-2 border-gray-400" 
+              className="w-20 h-20 rounded border-2 border-gray-400"
+              crossOrigin="anonymous"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                if (user?.username && e.currentTarget.src !== logoImage) {
+                  e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=random&color=fff&size=80`;
+                } else {
+                  e.currentTarget.src = logoImage;
+                }
+              }}
             />
           </div>
           <div className="text-xl font-bold text-black">{user?.username}</div>
