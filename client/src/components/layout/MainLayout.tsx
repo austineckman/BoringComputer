@@ -2,7 +2,7 @@ import React from "react";
 import NavigationBar from "./NavigationBar";
 import Footer from "./Footer";
 import StarBackground from "./StarBackground";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { Redirect, useLocation } from "wouter";
 
 interface MainLayoutProps {

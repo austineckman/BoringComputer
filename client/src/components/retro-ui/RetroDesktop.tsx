@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { X, Maximize2, Minimize2, Volume2, VolumeX, Trash2 } from "lucide-react";
 import { FaDiscord } from "react-icons/fa";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import RetroStartMenu from "./RetroStartMenu";
 import { Window, TaskBar, type ColorScheme } from "./WindowManager";

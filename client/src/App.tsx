@@ -4,7 +4,6 @@ import Home from "@/pages/home";
 import DesktopHome from "@/pages/desktop-home";
 import Desktop from "@/pages/desktop"; // Import the new Desktop page
 import AuthPage from "@/pages/auth-page";
-import Login from "@/pages/login";
 import Quests from "@/pages/quests";
 import QuestDetail from "@/pages/quest-detail";
 import MissionPage from "@/pages/mission";
@@ -46,18 +45,6 @@ import RetroBootScreen from "@/components/retro-ui/RetroBootScreen";
 
 function App() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [hasError, setHasError] = useState(false);
-  
-  // Error boundary
-  useEffect(() => {
-    const handleError = (event: ErrorEvent) => {
-      console.error('App Error:', event.error);
-      setHasError(true);
-    };
-    
-    window.addEventListener('error', handleError);
-    return () => window.removeEventListener('error', handleError);
-  }, []);
   
   // Check if there's a token in the URL (for Discord redirect)
   useEffect(() => {
@@ -95,35 +82,6 @@ function App() {
     }
   }, []);
 
-  if (hasError) {
-    return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        background: '#000',
-        color: '#fff',
-        fontFamily: 'monospace'
-      }}>
-        <h1>App Error</h1>
-        <button 
-          onClick={() => window.location.reload()}
-          style={{
-            padding: '10px 20px',
-            background: '#333',
-            color: '#fff',
-            border: 'none',
-            cursor: 'pointer'
-          }}
-        >
-          Reload Page
-        </button>
-      </div>
-    );
-  }
-
   if (isAuthenticating) {
     return (
       <RetroBootScreen 
@@ -138,24 +96,24 @@ function App() {
   return (
     <AudioPlayerProvider>
       <AuthProvider>
-
         <Switch>
         <Route path="/login">
-          <Login />
+          <AuthPage />
         </Route>
         
         <Route path="/auth">
-          <Login />
+          <AuthPage />
         </Route>
         
         <Route path="/logout">
           <Logout />
         </Route>
         
-        {/* Default route - show login if not authenticated, desktop if authenticated */}
-        <Route path="/">
-          <DesktopHome />
-        </Route>
+        {/* Protected routes */}
+        <ProtectedRoute 
+          path="/" 
+          component={DesktopHome} 
+        />
         
         <ProtectedRoute 
           path="/quests" 

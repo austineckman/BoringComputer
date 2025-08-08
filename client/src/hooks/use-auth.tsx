@@ -62,10 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       try {
-        const response = await fetch("/api/auth/me", {
-          credentials: "include",
-        });
-        
+        const response = await apiRequest("GET", "/api/auth/me");
         if (!response.ok) {
           if (response.status === 401) {
             return null; // Not authenticated, but not an error
@@ -205,8 +202,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Determine current user (real user or guest)
   const currentUser = guestUser || user || null;
   const isGuest = !!guestUser;
-
-
 
   // Value object that will be available in the context
   const value = {

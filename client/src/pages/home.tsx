@@ -6,7 +6,7 @@ import { Link } from "wouter";
 import PixelButton from "@/components/ui/pixel-button";
 import QuestCard from "@/components/quest/QuestCard";
 import ResourceItem from "@/components/ui/resource-item";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { useAdventureNavigation } from "@/hooks/useAdventureNavigation";
 import AdventureImage from "@/components/adventure/AdventureImage";

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import {

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronRight, LogOut, Settings, User, FileText, ShoppingBag, Wrench, Terminal, Globe, Music, Monitor, GamepadIcon, Bug, Folder, Cpu, HelpCircle, FileSpreadsheet, Calculator } from "lucide-react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import logoImage from "@assets/Asset 6@2x-8.png";
 import jukeboxIcon from "@assets/jukebox_icon.png";
 import bugHuntIcon from "@assets/Untitled design - 2025-05-01T164432.025.png";
