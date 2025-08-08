@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, ReactNode, useContext, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { User } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -16,13 +16,27 @@ type RegisterCredentials = {
   password: string;
 };
 
+// Guest user type
+type GuestUser = {
+  id: 'guest';
+  username: 'Guest';
+  displayName: 'Guest User';
+  email: null;
+  roles: ['guest'];
+  level: 1;
+  inventory: { gold: 0 };
+  isGuest: true;
+};
+
 // Auth context type
 type AuthContextType = {
-  user: User | null;
+  user: User | GuestUser | null;
   isLoading: boolean;
   error: Error | null;
+  isGuest: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (credentials: RegisterCredentials) => Promise<void>;
+  loginAsGuest: () => void;
   logout: () => Promise<void>;
 };
 
@@ -32,6 +46,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 // Provider component that wraps our app and makes auth object available to any child component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  const [guestUser, setGuestUser] = useState<GuestUser | null>(null);
 
   // Get current user
   const {
@@ -41,6 +56,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } = useQuery<User | null, Error>({
     queryKey: ["/api/auth/me"],
     queryFn: async () => {
+      // If we have a guest user, don't try to fetch from API
+      if (guestUser) {
+        return null;
+      }
+      
       try {
         const response = await apiRequest("GET", "/api/auth/me");
         if (!response.ok) {
@@ -57,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error("An unknown error occurred");
       }
     },
+    enabled: !guestUser, // Don't run query if we have a guest user
   });
 
   // Login mutation
@@ -111,15 +132,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // Guest login function
+  const loginAsGuest = () => {
+    const guest: GuestUser = {
+      id: 'guest',
+      username: 'Guest',
+      displayName: 'Guest User',
+      email: null,
+      roles: ['guest'],
+      level: 1,
+      inventory: { gold: 0 },
+      isGuest: true,
+    };
+    
+    setGuestUser(guest);
+    queryClient.setQueryData(["/api/auth/me"], null); // Clear any existing user data
+    
+    toast({
+      title: "Logged in as Guest",
+      description: "You can explore the desktop but progress won't be saved.",
+    });
+  };
+
   // Logout mutation
   const logoutMutation = useMutation({
     mutationFn: async () => {
+      // If guest user, just clear local state
+      if (guestUser) {
+        return;
+      }
+      
       const response = await apiRequest("POST", "/api/auth/logout");
       if (!response.ok) {
         throw new Error("Logout failed");
       }
     },
     onSuccess: () => {
+      setGuestUser(null); // Clear guest user
       queryClient.setQueryData(["/api/auth/me"], null);
       toast({
         title: "Logged out",
@@ -150,13 +199,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await logoutMutation.mutateAsync();
   };
 
+  // Determine current user (real user or guest)
+  const currentUser = guestUser || user || null;
+  const isGuest = !!guestUser;
+
   // Value object that will be available in the context
   const value = {
-    user,
+    user: currentUser,
     isLoading,
     error,
+    isGuest,
     login,
     register,
+    loginAsGuest,
     logout,
   };
 

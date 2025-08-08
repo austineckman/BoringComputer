@@ -133,6 +133,11 @@ const ProfileWindow: React.FC<ProfileWindowProps> = ({ onClose }) => {
           </div>
           <div className="text-xl font-bold text-black">{user?.username}</div>
           <div className="text-blue-600 mb-2">Level {user?.level || 1} Adventurer</div>
+          {(user as any)?.isGuest && (
+            <div className="inline-block px-3 py-1 bg-orange-200 border border-orange-400 text-orange-800 text-sm mb-2">
+              👤 Guest Mode - Progress Not Saved
+            </div>
+          )}
           {activeTitle && (
             <div className="inline-block px-3 py-1 bg-yellow-200 border border-yellow-400 text-yellow-800 text-sm">
               "{activeTitle}"

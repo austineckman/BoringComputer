@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ path, component: Component }: ProtectedRouteProps) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isGuest } = useAuth();
 
   return (
     <Route path={path}>
@@ -17,7 +17,7 @@ export function ProtectedRoute({ path, component: Component }: ProtectedRoutePro
         <div className="flex items-center justify-center min-h-screen">
           <Loader2 className="h-8 w-8 animate-spin text-border" />
         </div>
-      ) : user ? (
+      ) : (user || isGuest) ? (
         <Component />
       ) : (
         <Redirect to="/auth" />
@@ -27,8 +27,8 @@ export function ProtectedRoute({ path, component: Component }: ProtectedRoutePro
 }
 
 export function AdminRoute({ path, component: Component }: ProtectedRouteProps) {
-  const { user, isLoading } = useAuth();
-  const isAdmin = user?.roles?.includes("admin");
+  const { user, isLoading, isGuest } = useAuth();
+  const isAdmin = user?.roles?.includes("admin" as any) && !isGuest;
 
   return (
     <Route path={path}>
@@ -39,7 +39,7 @@ export function AdminRoute({ path, component: Component }: ProtectedRouteProps) 
       ) : isAdmin ? (
         <Component />
       ) : (
-        <Redirect to={user ? "/" : "/auth"} />
+        <Redirect to={user || isGuest ? "/" : "/auth"} />
       )}
     </Route>
   );

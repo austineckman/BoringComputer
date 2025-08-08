@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Redirect, useLocation } from "wouter";
 import PixelButton from "@/components/ui/pixel-button";
-import { FaDiscord, FaUser, FaLock } from "react-icons/fa";
+import { FaDiscord, FaUser, FaLock, FaUserFriends } from "react-icons/fa";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,11 +11,13 @@ import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { getQueryFn } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 
 const Login = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { sounds } = useSoundEffects();
+  const { loginAsGuest, user, isLoading } = useAuth();
   
   // State declarations - keep all state hooks together at the top
   const [username, setUsername] = useState("");
@@ -23,18 +25,7 @@ const Login = () => {
   const [adminPassword, setAdminPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   
-  // Query to check if user is already logged in
-  const { 
-    data: user, 
-    isLoading: loading,
-    isFetching,
-    error 
-  } = useQuery({
-    queryKey: ['/api/auth/me'],
-    queryFn: getQueryFn({ on401: 'returnNull' }),
-    retry: false,
-    refetchOnWindowFocus: true,
-  });
+  // Remove local user query since we're using useAuth hook
   
   // Login with credentials mutation
   const loginMutation = useMutation({
@@ -184,6 +175,21 @@ const Login = () => {
     adminLoginMutation.mutate(adminPassword);
   }, [sounds, adminLoginMutation, adminPassword]);
 
+  const handleGuestLogin = useCallback(() => {
+    try {
+      sounds.click?.();
+    } catch (e) {
+      console.warn('Could not play click sound', e);
+    }
+    
+    loginAsGuest();
+    
+    // Redirect to home page after a short delay
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 1000);
+  }, [sounds, loginAsGuest]);
+
   // Handle tab click sounds
   const handleTabClick = useCallback(() => {
     try {
@@ -193,7 +199,7 @@ const Login = () => {
     }
   }, [sounds]);
 
-  if (loading || isFetching || isLoggingIn || loginMutation.isPending || adminLoginMutation.isPending) {
+  if (isLoading || isLoggingIn || loginMutation.isPending || adminLoginMutation.isPending) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin w-12 h-12 border-4 border-brand-orange border-t-transparent rounded-full"></div>
@@ -229,8 +235,9 @@ const Login = () => {
           
           <CardContent className="space-y-4">
             <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid grid-cols-3 bg-space-dark">
+              <TabsList className="grid grid-cols-4 bg-space-dark">
                 <TabsTrigger value="login" onClick={handleTabClick}>Login</TabsTrigger>
+                <TabsTrigger value="guest" onClick={handleTabClick}>Guest</TabsTrigger>
                 <TabsTrigger value="discord" onClick={handleTabClick}>Discord</TabsTrigger>
                 <TabsTrigger value="admin" onClick={handleTabClick}>Admin</TabsTrigger>
               </TabsList>
@@ -294,6 +301,27 @@ const Login = () => {
                     <FaDiscord className="h-5 w-5" />
                     <span>LOGIN WITH DISCORD</span>
                   </PixelButton>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="guest" className="space-y-4 mt-4">
+                <div className="space-y-4">
+                  <p className="text-sm text-center text-brand-light/80">
+                    Explore the desktop as a guest user. Your progress won't be saved, but you can see all the features.
+                  </p>
+                  
+                  <PixelButton
+                    onClick={handleGuestLogin}
+                    className="w-full flex items-center justify-center gap-2"
+                    variant="secondary"
+                  >
+                    <FaUserFriends className="h-5 w-5" />
+                    <span>CONTINUE AS GUEST</span>
+                  </PixelButton>
+                  
+                  <div className="text-xs text-center text-brand-light/50">
+                    <p>No registration required • No progress saved • Full feature access</p>
+                  </div>
                 </div>
               </TabsContent>
               
