@@ -135,9 +135,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Guest login function
   const loginAsGuest = async () => {
     try {
-      // First, logout any existing session
+      // First, logout any existing session completely
       if (user && !guestUser) {
         await apiRequest("POST", "/api/auth/logout");
+        // Clear all query cache to remove cached auth state
+        await queryClient.invalidateQueries();
+        queryClient.clear();
       }
       
       const guest: GuestUser = {
@@ -159,6 +162,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Logged in as Guest",
         description: "You can explore the desktop but progress won't be saved.",
       });
+      
+      // Force a page reload to clear any cached state
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+      
     } catch (error) {
       console.error('Error during guest login:', error);
       toast({

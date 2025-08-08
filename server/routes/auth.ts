@@ -24,7 +24,17 @@ router.post("/logout", (req, res) => {
       return res.status(500).json({ message: "Logout failed" });
     }
     
-    res.json({ message: "Logout successful" });
+    // Destroy the session completely
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Session destruction error:', err);
+        return res.status(500).json({ message: "Session destruction failed" });
+      }
+      
+      // Clear the session cookie
+      res.clearCookie('connect.sid');
+      res.json({ message: "Logout successful" });
+    });
   });
 });
 
@@ -32,22 +42,6 @@ router.post("/logout", (req, res) => {
 
 // Get current user
 router.get("/me", (req, res) => {
-  // In development mode, bypass authentication for easier testing
-  if (process.env.NODE_ENV === 'development' && !req.isAuthenticated()) {
-    // Create a mock user for development
-    req.user = {
-      id: "22",
-      username: "austineckman",
-      displayName: "austineckman",
-      discordId: "511323492197597185",
-      email: "austin@inventr.io",
-      avatar: "https://cdn.discordapp.com/avatars/511323492197597185/7b894475b8ad9a842383159a44c5aa7a.png",
-      roles: ["admin", "Founder", "CraftingTable", "Academy", "Server Booster"],
-      level: 1,
-      inventory: { gold: 164 }
-    };
-  }
-  
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Not authenticated" });
   }
