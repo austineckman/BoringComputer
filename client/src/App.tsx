@@ -97,9 +97,7 @@ function App() {
   return (
     <AudioPlayerProvider>
       <AuthProvider>
-        <div style={{position: 'fixed', top: 0, left: 0, background: 'red', color: 'white', padding: '5px', zIndex: 9999}}>
-          App Loaded
-        </div>
+
         <Switch>
         <Route path="/login">
           <Login />
