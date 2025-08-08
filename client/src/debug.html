@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Auth</title>
+</head>
+<body>
+    <h1>Auth Debug</h1>
+    <div id="debug-info"></div>
+    
+    <script>
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/auth/me');
+                const data = await response.json();
+                document.getElementById('debug-info').innerHTML = `
+                    <h2>Auth Status: ${response.status}</h2>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('debug-info').innerHTML = `
+                    <h2>Error:</h2>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+        
+        checkAuth();
+    </script>
+</body>
+</html>

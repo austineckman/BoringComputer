@@ -56,6 +56,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } = useQuery<User | null, Error>({
     queryKey: ["/api/auth/me"],
     queryFn: async () => {
+      console.log("useAuth: Fetching user data, guestUser:", guestUser);
+      
       // If we have a guest user, don't try to fetch from API
       if (guestUser) {
         return null;
@@ -63,14 +65,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       try {
         const response = await apiRequest("GET", "/api/auth/me");
+        console.log("useAuth: API response status:", response.status);
+        
         if (!response.ok) {
           if (response.status === 401) {
+            console.log("useAuth: 401 - Not authenticated");
             return null; // Not authenticated, but not an error
           }
           throw new Error("Failed to fetch user data");
         }
-        return await response.json();
+        const userData = await response.json();
+        console.log("useAuth: Got user data:", userData);
+        return userData;
       } catch (error) {
+        console.error("useAuth: Error fetching user:", error);
         if (error instanceof Error) {
           throw error;
         }
@@ -202,6 +210,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Determine current user (real user or guest)
   const currentUser = guestUser || user || null;
   const isGuest = !!guestUser;
+
+  console.log("useAuth: Current state:", {
+    guestUser,
+    user,
+    currentUser,
+    isLoading,
+    error,
+    isGuest
+  });
 
   // Value object that will be available in the context
   const value = {
