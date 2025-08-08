@@ -46,7 +46,20 @@ const AuthContext = createContext<AuthContextType | null>(null);
 // Provider component that wraps our app and makes auth object available to any child component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-  const [guestUser, setGuestUser] = useState<GuestUser | null>(null);
+  const [guestUser, setGuestUser] = useState<GuestUser | null>(() => {
+    // Initialize guest user from localStorage if it exists
+    if (typeof window !== 'undefined') {
+      const savedGuest = localStorage.getItem('guestUser');
+      if (savedGuest) {
+        try {
+          return JSON.parse(savedGuest);
+        } catch (e) {
+          localStorage.removeItem('guestUser');
+        }
+      }
+    }
+    return null;
+  });
 
   // Get current user
   const {
@@ -158,15 +171,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/auth/me"], null);
       setGuestUser(guest);
       
+      // Save guest state to localStorage for persistence
+      localStorage.setItem('guestUser', JSON.stringify(guest));
+      
       toast({
         title: "Logged in as Guest",
         description: "You can explore the desktop but progress won't be saved.",
       });
-      
-      // Force a page reload to clear any cached state
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
       
     } catch (error) {
       console.error('Error during guest login:', error);
@@ -193,6 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       setGuestUser(null); // Clear guest user
+      localStorage.removeItem('guestUser'); // Clear from localStorage
       queryClient.setQueryData(["/api/auth/me"], null);
       toast({
         title: "Logged out",
