@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Test</title>
+    <style>
+        body { 
+            background: black; 
+            color: white; 
+            font-family: monospace; 
+            padding: 20px; 
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Test Page</h1>
+    <p>If you can see this, the server is working.</p>
+    <button onclick="testAuth()">Test Auth API</button>
+    <div id="result"></div>
+    
+    <script>
+        async function testAuth() {
+            try {
+                const response = await fetch('/api/auth/me');
+                const data = await response.json();
+                document.getElementById('result').innerHTML = 
+                    '<h2>Auth API Response:</h2><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    '<h2>Error:</h2><pre>' + error.message + '</pre>';
+            }
+        }
+    </script>
+</body>
+</html>
