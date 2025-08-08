@@ -2,6 +2,7 @@ import React from "react";
 import RetroDesktop from "@/components/retro-ui/RetroDesktop";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
+import Login from "@/pages/login";
 import "@/components/retro-ui/retro-ui.css";
 
 const DesktopHome: React.FC = () => {
@@ -16,7 +17,12 @@ const DesktopHome: React.FC = () => {
     );
   }
   
-  // Go directly to the desktop
+  // If no user and not a guest, show login
+  if (!user && !isGuest) {
+    return <Login />;
+  }
+  
+  // Otherwise show the desktop
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col">
       <RetroDesktop />

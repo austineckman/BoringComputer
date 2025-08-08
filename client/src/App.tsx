@@ -152,11 +152,10 @@ function App() {
           <Logout />
         </Route>
         
-        {/* Protected routes */}
-        <ProtectedRoute 
-          path="/" 
-          component={DesktopHome} 
-        />
+        {/* Default route - show login if not authenticated, desktop if authenticated */}
+        <Route path="/">
+          <DesktopHome />
+        </Route>
         
         <ProtectedRoute 
           path="/quests" 
