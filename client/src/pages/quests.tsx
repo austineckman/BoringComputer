@@ -11,6 +11,7 @@ import { themeConfig } from "@/lib/themeConfig";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import AdventureImage from "@/components/adventure/AdventureImage";
 import { Link, useLocation } from "wouter";
+import { MatrixLoading } from "@/components/ui/matrix-loading";
 
 const Quests = () => {
   const { quests, activeQuest, loading, startQuest, completeQuest, isStarting, isCompleting } = useQuests();
@@ -236,9 +237,7 @@ const Quests = () => {
       </section>
       
       {loading ? (
-        <div className="flex justify-center py-10">
-          <div className="animate-spin w-10 h-10 border-4 border-brand-orange border-t-transparent rounded-full"></div>
-        </div>
+        <MatrixLoading message="Loading Quests..." />
       ) : (
         <div className="space-y-12">
           {/* Active Quests */}

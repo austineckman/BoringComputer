@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, MapPin, Lock, Calendar, Star, Award } from "lucide-react";
 import { themeConfig } from "@/lib/themeConfig";
+import { MatrixLoading } from "@/components/ui/matrix-loading";
 
 const AdventureLine = () => {
   const [, params] = useRoute("/adventure/:id");
@@ -53,11 +54,7 @@ const AdventureLine = () => {
   };
   
   if (loading) {
-    return (
-      <div className="container mx-auto p-6 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-brand-orange border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <MatrixLoading message="Loading Adventure..." />;
   }
   
   if (!adventureConfig) {

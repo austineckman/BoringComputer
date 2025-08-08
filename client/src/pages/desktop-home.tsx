@@ -1,19 +1,15 @@
 import React from "react";
 import RetroDesktop from "@/components/retro-ui/RetroDesktop";
 import { useSimpleAuth as useAuth } from "@/hooks/use-simple-auth";
-import { Loader2 } from "lucide-react";
+import { MatrixLoading } from "@/components/ui/matrix-loading";
 import "@/components/retro-ui/retro-ui.css";
 
 const DesktopHome: React.FC = () => {
   const { user, isLoading } = useAuth();
   
-  // When auth is loading, show a simple spinner
+  // When auth is loading, show Matrix loading screen
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-      </div>
-    );
+    return <MatrixLoading message="Initializing Desktop..." />;
   }
   
   // Go directly to the desktop

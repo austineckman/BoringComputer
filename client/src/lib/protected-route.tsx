@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Redirect, Route } from "wouter";
 import { useSimpleAuth as useAuth } from "@/hooks/use-simple-auth";
-import { Loader2 } from "lucide-react";
+import { MatrixLoading } from "@/components/ui/matrix-loading";
 
 interface ProtectedRouteProps {
   path: string;
@@ -15,9 +15,7 @@ export function ProtectedRoute({ path, component: Component }: ProtectedRoutePro
   return (
     <Route path={path}>
       {isLoading ? (
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-8 w-8 animate-spin text-border" />
-        </div>
+        <MatrixLoading message="Authenticating..." />
       ) : (user || isGuest) ? (
         <Component />
       ) : (
@@ -35,9 +33,7 @@ export function AdminRoute({ path, component: Component }: ProtectedRouteProps) 
   return (
     <Route path={path}>
       {isLoading ? (
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-8 w-8 animate-spin text-border" />
-        </div>
+        <MatrixLoading message="Verifying Admin Access..." />
       ) : isAdmin ? (
         <Component />
       ) : (
