@@ -270,7 +270,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     addLog('🔄 Parsing Arduino code...');
     
     try {
-      // Parse the actual code from the editor
+      // Parse the actual code from the editor please fucking work fuck you holy shit fuck 
       console.log('SimulatorContext: About to parse code with ArduinoCodeParser');
       const parseResult = codeParserRef.current.parseCode(currentCode);
       console.log('SimulatorContext: Parse result:', parseResult);
