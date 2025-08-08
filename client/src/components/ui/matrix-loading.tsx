@@ -23,8 +23,8 @@ export function MatrixLoading({ message = "Loading...", className = "" }: Matrix
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // Matrix characters - mix of katakana, hiragana, and some ASCII
-    const matrixChars = "田由甲申甴电甶男甸甹町画甼甽甾甿畀畁畂畃畄畅畆畇畈畉畊畋界畍畎畏畐畑";
+    // Matrix characters - mix of katakana, numbers, and symbols for retro feel
+    const matrixChars = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789+-*/=<>[]{}";
     const chars = matrixChars.split("");
 
     const fontSize = 14;
@@ -40,22 +40,24 @@ export function MatrixLoading({ message = "Loading...", className = "" }: Matrix
 
     const draw = () => {
       // Black background with slight transparency for trailing effect
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = '#0F0'; // Matrix green
-      ctx.font = `${fontSize}px monospace`;
+      ctx.font = `${fontSize}px 'Courier New', monospace`;
 
       for (let i = 0; i < drops.length; i++) {
         // Random character
         const text = chars[Math.floor(Math.random() * chars.length)];
         
-        // Draw character
-        ctx.fillStyle = `rgba(0, 255, 0, ${Math.random() * 0.8 + 0.2})`;
+        // Vary the green intensity for better effect
+        const alpha = Math.random() * 0.6 + 0.4;
+        const brightness = Math.floor(100 + Math.random() * 155);
+        ctx.fillStyle = `rgba(0, ${brightness}, 0, ${alpha})`;
+        
         ctx.fillText(text, i * fontSize, drops[i] * fontSize);
 
         // Reset drop randomly or when it reaches bottom
-        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.98) {
           drops[i] = 0;
         }
         drops[i]++;

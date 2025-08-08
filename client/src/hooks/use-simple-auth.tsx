@@ -54,9 +54,14 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserData = async () => {
     try {
-      const response = await fetch('/api/auth/me', {
+      // Add a minimum loading time to show the Matrix effect
+      const fetchPromise = fetch('/api/auth/me', {
         credentials: 'include'
       });
+      
+      const minLoadTime = new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const [response] = await Promise.all([fetchPromise, minLoadTime]);
       
       if (response.ok) {
         const userData = await response.json();
