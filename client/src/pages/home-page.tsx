@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import RetroDesktop from "@/components/retro-ui/RetroDesktop";
 import RetroStartMenu from "@/components/retro-ui/RetroStartMenu";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import "@/components/retro-ui/retro-ui.css";
 

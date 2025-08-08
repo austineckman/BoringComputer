@@ -4,6 +4,7 @@ import Home from "@/pages/home";
 import DesktopHome from "@/pages/desktop-home";
 import Desktop from "@/pages/desktop"; // Import the new Desktop page
 import AuthPage from "@/pages/auth-page";
+import Login from "@/pages/login";
 import Quests from "@/pages/quests";
 import QuestDetail from "@/pages/quest-detail";
 import MissionPage from "@/pages/mission";
@@ -98,11 +99,11 @@ function App() {
       <AuthProvider>
         <Switch>
         <Route path="/login">
-          <AuthPage />
+          <Login />
         </Route>
         
         <Route path="/auth">
-          <AuthPage />
+          <Login />
         </Route>
         
         <Route path="/logout">
