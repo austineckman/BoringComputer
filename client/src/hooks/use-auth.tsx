@@ -36,7 +36,7 @@ type AuthContextType = {
   isGuest: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (credentials: RegisterCredentials) => Promise<void>;
-  loginAsGuest: () => void;
+  loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -133,25 +133,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   // Guest login function
-  const loginAsGuest = () => {
-    const guest: GuestUser = {
-      id: 'guest',
-      username: 'Guest',
-      displayName: 'Guest User',
-      email: null,
-      roles: ['guest'],
-      level: 1,
-      inventory: { gold: 0 },
-      isGuest: true,
-    };
-    
-    setGuestUser(guest);
-    queryClient.setQueryData(["/api/auth/me"], null); // Clear any existing user data
-    
-    toast({
-      title: "Logged in as Guest",
-      description: "You can explore the desktop but progress won't be saved.",
-    });
+  const loginAsGuest = async () => {
+    try {
+      // First, logout any existing session
+      if (user && !guestUser) {
+        await apiRequest("POST", "/api/auth/logout");
+      }
+      
+      const guest: GuestUser = {
+        id: 'guest',
+        username: 'Guest',
+        displayName: 'Guest User',
+        email: null,
+        roles: ['guest'],
+        level: 1,
+        inventory: { gold: 0 },
+        isGuest: true,
+      };
+      
+      // Clear existing user data and set guest
+      queryClient.setQueryData(["/api/auth/me"], null);
+      setGuestUser(guest);
+      
+      toast({
+        title: "Logged in as Guest",
+        description: "You can explore the desktop but progress won't be saved.",
+      });
+    } catch (error) {
+      console.error('Error during guest login:', error);
+      toast({
+        title: "Guest Login Failed",
+        description: "There was an error switching to guest mode.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Logout mutation

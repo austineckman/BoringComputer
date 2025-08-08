@@ -21,8 +21,8 @@ export default function AuthPage() {
     window.location.href = "/api/auth/discord";
   };
 
-  const handleGuestLogin = () => {
-    loginAsGuest();
+  const handleGuestLogin = async () => {
+    await loginAsGuest();
     // Redirect to desktop after a short delay
     setTimeout(() => {
       window.location.href = '/';

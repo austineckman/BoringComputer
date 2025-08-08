@@ -175,14 +175,14 @@ const Login = () => {
     adminLoginMutation.mutate(adminPassword);
   }, [sounds, adminLoginMutation, adminPassword]);
 
-  const handleGuestLogin = useCallback(() => {
+  const handleGuestLogin = useCallback(async () => {
     try {
       sounds.click?.();
     } catch (e) {
       console.warn('Could not play click sound', e);
     }
     
-    loginAsGuest();
+    await loginAsGuest();
     
     // Redirect to home page after a short delay
     setTimeout(() => {
