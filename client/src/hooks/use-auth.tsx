@@ -69,11 +69,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } = useQuery<User | null, Error>({
     queryKey: ["/api/auth/me"],
     queryFn: async () => {
-      // If we have a guest user, don't try to fetch from API
-      if (guestUser) {
-        return null;
-      }
-      
       try {
         const response = await apiRequest("GET", "/api/auth/me");
         if (!response.ok) {
@@ -91,6 +86,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     enabled: !guestUser, // Don't run query if we have a guest user
+    retry: false, // Don't retry failed auth requests
+    refetchOnWindowFocus: false, // Don't refetch when window gains focus
+    refetchOnMount: !guestUser, // Don't refetch on mount if guest user exists
   });
 
   // Login mutation
@@ -148,14 +146,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Guest login function
   const loginAsGuest = async () => {
     try {
-      // First, logout any existing session completely
-      if (user && !guestUser) {
-        await apiRequest("POST", "/api/auth/logout");
-        // Clear all query cache to remove cached auth state
-        await queryClient.invalidateQueries();
-        queryClient.clear();
-      }
-      
       const guest: GuestUser = {
         id: 'guest',
         username: 'Guest',
@@ -167,12 +157,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isGuest: true,
       };
       
-      // Clear existing user data and set guest
-      queryClient.setQueryData(["/api/auth/me"], null);
-      setGuestUser(guest);
-      
       // Save guest state to localStorage for persistence
       localStorage.setItem('guestUser', JSON.stringify(guest));
+      setGuestUser(guest);
+      
+      // Clear auth queries to stop any running requests
+      queryClient.setQueryData(["/api/auth/me"], null);
+      queryClient.cancelQueries({ queryKey: ["/api/auth/me"] });
       
       toast({
         title: "Logged in as Guest",
