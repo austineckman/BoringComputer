@@ -3,9 +3,11 @@ import React, { useState, useEffect } from "react";
 import wallpaper from "@assets/wallbg.png";
 import hoodedFigureImg from "@assets/hooded-figure.png";
 import "@/components/retro-ui/retro-ui.css";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function AuthPage() {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const { loginAsGuest } = useAuth();
   
   useEffect(() => {
     const timer = setInterval(() => {
@@ -17,6 +19,14 @@ export default function AuthPage() {
 
   const handleDiscordLogin = () => {
     window.location.href = "/api/auth/discord";
+  };
+
+  const handleGuestLogin = () => {
+    loginAsGuest();
+    // Redirect to desktop after a short delay
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 1000);
   };
   
   return (
@@ -92,6 +102,23 @@ export default function AuthPage() {
                   </svg>
                   <span>Login with Discord</span>
                 </button>
+              </div>
+
+              {/* Guest Login Button */}
+              <div className="flex justify-center mt-3">
+                <button 
+                  onClick={handleGuestLogin}
+                  className="w-full px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-normal text-sm border-2 border-t-white border-l-white border-r-gray-800 border-b-gray-800 active:border-t-gray-800 active:border-l-gray-800 active:border-r-white active:border-b-white flex items-center justify-center space-x-2"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                  <span>Continue as Guest</span>
+                </button>
+              </div>
+              
+              <div className="mt-2 text-center text-xs text-gray-600">
+                <p>Guest account - No progress will be saved</p>
               </div>
               
               <div className="mt-4 text-center text-xs text-gray-600">
