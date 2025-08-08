@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   });
 
-  // Get current user
+  // Get current user - completely disabled when guest user exists
   const {
     data: user,
     error,
@@ -69,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } = useQuery<User | null, Error>({
     queryKey: ["/api/auth/me"],
     queryFn: async () => {
+      // This should never run when guestUser exists due to enabled: false
       try {
         const response = await apiRequest("GET", "/api/auth/me");
         if (!response.ok) {
@@ -85,10 +86,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error("An unknown error occurred");
       }
     },
-    enabled: !guestUser, // Don't run query if we have a guest user
-    retry: false, // Don't retry failed auth requests
-    refetchOnWindowFocus: false, // Don't refetch when window gains focus
-    refetchOnMount: !guestUser, // Don't refetch on mount if guest user exists
+    enabled: false, // Completely disable this query for now to stop the loop
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchInterval: false,
+    refetchIntervalInBackground: false,
   });
 
   // Login mutation

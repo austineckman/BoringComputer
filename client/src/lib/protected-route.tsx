@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Redirect, Route } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { useSimpleAuth as useAuth } from "@/hooks/use-simple-auth";
 import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
@@ -9,7 +9,8 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ path, component: Component }: ProtectedRouteProps) {
-  const { user, isLoading, isGuest } = useAuth();
+  const { user, isLoading } = useAuth();
+  const isGuest = user?.isGuest || false;
 
   return (
     <Route path={path}>
@@ -27,7 +28,8 @@ export function ProtectedRoute({ path, component: Component }: ProtectedRoutePro
 }
 
 export function AdminRoute({ path, component: Component }: ProtectedRouteProps) {
-  const { user, isLoading, isGuest } = useAuth();
+  const { user, isLoading } = useAuth();
+  const isGuest = user?.isGuest || false;
   const isAdmin = user?.roles?.includes("admin" as any) && !isGuest;
 
   return (

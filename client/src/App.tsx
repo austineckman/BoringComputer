@@ -39,7 +39,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { ProtectedRoute, AdminRoute } from "@/lib/protected-route";
 import { SoundProvider } from "@/context/SoundContext";
-import { AuthProvider } from "@/hooks/use-auth";
+import { SimpleAuthProvider as AuthProvider } from "@/hooks/use-simple-auth";
 import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
 import RetroBootScreen from "@/components/retro-ui/RetroBootScreen";
 
@@ -109,11 +109,33 @@ function App() {
           <Logout />
         </Route>
         
-        {/* Protected routes */}
-        <ProtectedRoute 
-          path="/" 
-          component={DesktopHome} 
-        />
+        {/* Home route - check for guest mode */}
+        <Route path="/">
+          {(() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const isGuestMode = urlParams.get('guest') === 'true';
+            
+            if (isGuestMode) {
+              // Store guest mode in localStorage and render desktop
+              localStorage.setItem('guestMode', 'true');
+              return <DesktopHome />;
+            } else {
+              // Check if guest mode is stored in localStorage
+              const storedGuestMode = localStorage.getItem('guestMode');
+              if (storedGuestMode === 'true') {
+                return <DesktopHome />;
+              } else {
+                // Regular protected route behavior
+                return (
+                  <ProtectedRoute 
+                    path="/" 
+                    component={DesktopHome} 
+                  />
+                );
+              }
+            }
+          })()}
+        </Route>
         
         <ProtectedRoute 
           path="/quests" 

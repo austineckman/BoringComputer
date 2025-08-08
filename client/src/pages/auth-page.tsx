@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import wallpaper from "@assets/wallbg.png";
 import hoodedFigureImg from "@assets/hooded-figure.png";
 import "@/components/retro-ui/retro-ui.css";
-import { useAuth } from "@/hooks/use-auth";
+import { useSimpleAuth as useAuth } from "@/hooks/use-simple-auth";
 
 export default function AuthPage() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -21,12 +21,9 @@ export default function AuthPage() {
     window.location.href = "/api/auth/discord";
   };
 
-  const handleGuestLogin = async () => {
-    await loginAsGuest();
-    // Redirect to desktop after a short delay
-    setTimeout(() => {
-      window.location.href = '/';
-    }, 1000);
+  const handleGuestLogin = () => {
+    // Simple guest login - just redirect with a guest parameter
+    window.location.href = '/?guest=true';
   };
   
   return (

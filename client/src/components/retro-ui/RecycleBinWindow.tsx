@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, File, AlertCircle, Zap, FileText, Info, Code, Star, Gift, Search, CheckCircle } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { useSimpleAuth as useAuth } from '@/hooks/use-simple-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useTitles } from '@/hooks/useTitles';
 import axios from 'axios';

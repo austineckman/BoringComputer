@@ -175,20 +175,16 @@ const Login = () => {
     adminLoginMutation.mutate(adminPassword);
   }, [sounds, adminLoginMutation, adminPassword]);
 
-  const handleGuestLogin = useCallback(async () => {
+  const handleGuestLogin = useCallback(() => {
     try {
       sounds.click?.();
     } catch (e) {
       console.warn('Could not play click sound', e);
     }
     
-    await loginAsGuest();
-    
-    // Redirect to home page after a short delay
-    setTimeout(() => {
-      window.location.href = '/';
-    }, 1000);
-  }, [sounds, loginAsGuest]);
+    // Simple guest login - just redirect with a guest parameter
+    window.location.href = '/?guest=true';
+  }, [sounds]);
 
   // Handle tab click sounds
   const handleTabClick = useCallback(() => {

@@ -279,7 +279,15 @@ const RetroStartMenu: React.FC<RetroStartMenuProps> = ({ isOpen, onClose }) => {
           />
         </div>
         <div className="ml-3">
-          <div className="font-bold">{user?.username || "User"}</div>
+          <div className="font-bold">
+            {(() => {
+              const isGuestMode = localStorage.getItem('guestMode') === 'true';
+              if (isGuestMode) {
+                return "Guest";
+              }
+              return user?.username || "User";
+            })()}
+          </div>
           <div className="text-xs">Level {user?.level || 1} Adventurer</div>
         </div>
       </div>
