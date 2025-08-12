@@ -5,6 +5,7 @@ Inventr is an educational platform for electronics and maker education, combinin
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
+Platform compatibility: Works on Windows, compatibility issues noted on Mac.
 
 ## System Architecture
 ### Backend Architecture
