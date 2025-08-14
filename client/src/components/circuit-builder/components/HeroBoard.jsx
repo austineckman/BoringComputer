@@ -275,7 +275,7 @@ const HeroBoard = ({
             if (onSelect) onSelect(id);
           }}
           style={{
-            transform: `translate(${initPosLeft}px, ${initPosTop}px)`,
+            transform: `translate(${posLeft}px, ${posTop}px)`,
             zIndex: isDragged ? 99999 : 10,
             outline: isSelected ? '1px solid #3b82f6' : 'none' // Apply a single outline when selected
           }}
