@@ -116,12 +116,63 @@ const RotaryEncoder = ({
     setRotEncoderAngle(rotEncoderAngle - parseInt(encoderStepSize));
   };
 
-  // Handle pin click
+  // Handle pin click - using the exact same approach as HeroBoard
   const handlePinClicked = (e) => {
+    console.log("Pin clicked on RotaryEncoder:", e.detail);
+    
+    // Extract pin information from the event
     if (onPinConnect) {
-      const pinId = e.detail.pinId;
-      const pinType = e.detail.pinType;
-      onPinConnect(pinId, pinType, id);
+      try {
+        // Parse the pin data like HeroBoard does
+        let pinId, pinType;
+        
+        if (e.detail.data && typeof e.detail.data === 'string') {
+          // Parse the JSON string to get the pin data
+          const pinDataJson = e.detail.data;
+          const pinData = JSON.parse(pinDataJson);
+          
+          // Get pin ID from parsed data
+          pinId = pinData.name;
+          pinType = 'bidirectional'; // RotaryEncoder pins are typically bidirectional
+        } else {
+          // Fallback to direct properties
+          pinId = e.detail.pinId || 'pin1';
+          pinType = e.detail.pinType || 'bidirectional';
+        }
+        
+        // Get position information - this is the key fix!
+        const clientX = e.detail.clientX || 0;
+        const clientY = e.detail.clientY || 0;
+        
+        console.log(`RotaryEncoder pin clicked: ${pinId} (${pinType}) at (${clientX}, ${clientY})`);
+        
+        // Call the parent's onPinConnect handler
+        onPinConnect(pinId, pinType, id);
+        
+        // Send another event with the formatted pin ID to match our wire manager
+        const formattedPinId = `pt-rotaryencoder-${id}-${pinId}`;
+        
+        // Create a custom pin click event to trigger the wire manager
+        const pinClickEvent = new CustomEvent('pinClicked', {
+          detail: {
+            id: formattedPinId,
+            pinData: e.detail.data,
+            pinType: pinType,
+            parentId: id,
+            clientX,
+            clientY
+          }
+        });
+        
+        // Dispatch the event to be captured by the wire manager
+        document.dispatchEvent(pinClickEvent);
+      } catch (err) {
+        console.error("Error parsing rotary encoder pin data:", err);
+        // Fallback
+        const pinId = e.detail.pinId || 'pin1';
+        const pinType = e.detail.pinType || 'bidirectional';
+        onPinConnect(pinId, pinType, id);
+      }
     }
   };
 
