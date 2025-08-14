@@ -1388,6 +1388,10 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           const serialMatch = instruction.instruction.match(/Serial\.print(?:ln)?\s*\((.*)\)/);
           if (serialMatch) {
             let message = serialMatch[1].trim();
+            const originalMessage = message;
+            
+            console.log(`[Serial] Processing Serial output: ${originalMessage}`);
+            console.log(`[Serial] Available variables:`, Array.from((executionStateRef.current.variables || new Map()).entries()));
             
             // Check if it's a variable reference (no quotes)
             if (!((message.startsWith('"') && message.endsWith('"')) || 
@@ -1395,17 +1399,23 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
               // It's a variable - resolve it to its actual value
               const variables = executionStateRef.current.variables || new Map();
               const variableValue = variables.get(message);
+              
+              console.log(`[Serial] Looking for variable '${message}' in variables map`);
+              console.log(`[Serial] Found value:`, variableValue);
+              
               if (variableValue !== undefined) {
                 message = variableValue.toString();
-                console.log(`[Serial] Resolved variable '${serialMatch[1].trim()}' to value: ${message}`);
+                console.log(`[Serial] SUCCESS: Resolved variable '${originalMessage}' to value: ${message}`);
               } else {
-                // If variable not found, it might be a direct function call like analogRead(A0)
-                // For now, show the raw instruction and let user know
-                console.log(`[Serial] Variable '${message}' not found, showing raw instruction`);
+                console.log(`[Serial] ERROR: Variable '${message}' not found in variables map!`);
+                console.log(`[Serial] Variables available:`, Array.from(variables.keys()));
+                // Show the variable name as fallback for debugging
+                message = `<UNRESOLVED: ${message}>`;
               }
             } else {
               // Remove quotes if it's a string literal
               message = message.slice(1, -1);
+              console.log(`[Serial] String literal: ${message}`);
             }
             
             // Add to serial log (clean output like Arduino IDE)
