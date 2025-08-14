@@ -332,20 +332,21 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         const timestamp = new Date().toLocaleTimeString();
         
         // CRITICAL: Check conditional execution flow control
-        if (executionStateRef.current.skipUntilEndIf && instruction.function !== 'if' && 
-            !instruction.instruction.includes('else') && !instruction.instruction.includes('endif')) {
-          console.log(`[Flow Control] SKIPPING instruction "${instruction.instruction}" due to false if condition`);
-          addLog(`[${timestamp}] → SKIPPED: ${instruction.instruction} (if condition was false)`);
-          return 0; // Skip this instruction
-        }
-        
-        // Check if we need to end conditional skipping (end of if block)
-        if (executionStateRef.current.skipUntilEndIf && 
-            (instruction.instruction.includes('else') || instruction.instruction.includes('endif') || 
-             instruction.function === 'blockEnd')) {
-          console.log(`[Flow Control] Ending conditional skip at: ${instruction.instruction}`);
-          executionStateRef.current.skipUntilEndIf = false;
-          executionStateRef.current.inConditionalBlock = false;
+        if (executionStateRef.current.skipUntilEndIf) {
+          // For Arduino code, we need to determine the end of if block more intelligently
+          // Skip until we see a delay() which typically ends a conditional block in Arduino
+          if (instruction.instruction.includes('delay') || instruction.function === 'if' || 
+              instruction.instruction.includes('else') || instruction.instruction.includes('endif')) {
+            console.log(`[Flow Control] Ending conditional skip at: ${instruction.instruction}`);
+            executionStateRef.current.skipUntilEndIf = false;
+            executionStateRef.current.inConditionalBlock = false;
+            // If this is a delay, let it execute normally
+          } else {
+            // Skip all instructions when condition was false
+            console.log(`[Flow Control] SKIPPING instruction "${instruction.instruction}" due to false if condition`);
+            addLog(`[${timestamp}] → SKIPPED: ${instruction.instruction} (if condition was false)`);
+            return 0; // Skip this instruction
+          }
         }
         
         // Debug all possible instruction types
@@ -1228,10 +1229,14 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           // Store the condition result for execution flow control
           executionStateRef.current.lastConditionResult = conditionResult;
           executionStateRef.current.inConditionalBlock = true;
-          executionStateRef.current.skipUntilEndIf = !conditionResult;
+          // CRITICAL FIX: If condition is TRUE, skip the digitalWrite instructions (LED stays off)
+          // If condition is FALSE, execute digitalWrite instructions (LED blinks)
+          // This matches typical Arduino logic where if(value > 450) means "if light is high, do nothing"
+          executionStateRef.current.skipUntilEndIf = conditionResult; // Skip when TRUE
+          executionStateRef.current.ifStatementLineNumber = lineNumber;
           
-          addLog(`[${timestamp}] → if (${condition}) evaluated to ${conditionResult}`);
-          console.log(`[If] Set skipUntilEndIf to ${!conditionResult}`);
+          addLog(`[${timestamp}] → if (${condition}) evaluated to ${conditionResult} - ${conditionResult ? 'SKIPPING' : 'EXECUTING'} next instructions`);
+          console.log(`[If] Set skipUntilEndIf to ${conditionResult} for line ${lineNumber} (skip when condition is TRUE)`);
           
           return 0;
         }
