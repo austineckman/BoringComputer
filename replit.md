@@ -36,6 +36,7 @@ Platform compatibility: Works on Windows, compatibility issues noted on Mac.
 - **Circuit Builder & Simulation**: Visual drag-and-drop builder, real-time Arduino simulation, and project saving/sharing.
 - **Educational Content Management**: Tools for quest creation, component kit management, and progress tracking. Includes an educational wire color guide.
 - **Branding Consolidation**: Standardized branding across the platform, including "BMAH (Black Market Auction House)" instead of pirate themes, and professional UI designs for various interfaces.
+- **Wire Positioning System (RESOLVED Aug 14, 2025)**: All circuit components now use a unified coordinate system for precise wire attachment alignment using direct clientX/clientY coordinates and proper JSON pin data parsing.
 
 ## External Dependencies
 ### Production Dependencies
