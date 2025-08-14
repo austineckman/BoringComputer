@@ -1432,41 +1432,55 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             let message = serialMatch[1].trim();
             const originalMessage = message;
             
+            console.log(`[Serial] ====== SERIAL PROCESSING START ======`);
             console.log(`[Serial] Processing Serial output: ${originalMessage}`);
-            console.log(`[Serial] Available variables:`, Array.from((executionStateRef.current.variables || new Map()).entries()));
+            console.log(`[Serial] Execution state exists:`, !!executionStateRef.current);
+            console.log(`[Serial] Variables map exists:`, !!(executionStateRef.current?.variables));
+            console.log(`[Serial] Available variables:`, Array.from((executionStateRef.current?.variables || new Map()).entries()));
+            console.log(`[Serial] Global simulator variables:`, window.simulatorVariables);
+            console.log(`[Serial] Debug variables:`, window.debugVariables);
             
             // Check if it's a variable reference (no quotes)
             if (!((message.startsWith('"') && message.endsWith('"')) || 
                   (message.startsWith("'") && message.endsWith("'")))) {
-              // It's a variable - resolve it to its actual value
-              const variables = executionStateRef.current.variables || new Map();
-              const variableValue = variables.get(message);
+              console.log(`[Serial] This is a variable reference: '${message}'`);
               
-              console.log(`[Serial] Looking for variable '${message}' in variables map`);
-              console.log(`[Serial] Variables Map:`, variables);
-              console.log(`[Serial] Variables entries:`, Array.from(variables.entries()));
-              console.log(`[Serial] Found value for '${message}':`, variableValue);
+              // Get variables from execution state
+              const variables = executionStateRef.current?.variables || new Map();
+              const variableValue = variables.get(message);
               
               // Also check global and debug variables
               const globalValue = window.simulatorVariables?.[message];
               const debugValue = window.debugVariables?.[message];
-              console.log(`[Serial] Global value for '${message}':`, globalValue);
-              console.log(`[Serial] Debug backup value for '${message}':`, debugValue);
+              
+              console.log(`[Serial] Variables Map size:`, variables.size);
+              console.log(`[Serial] Variables Map contents:`, variables);
+              console.log(`[Serial] Looking for variable '${message}':`);
+              console.log(`[Serial]   - From execution state:`, variableValue);
+              console.log(`[Serial]   - From global storage:`, globalValue);
+              console.log(`[Serial]   - From debug backup:`, debugValue);
+              
+              // Try to resolve from any available source
+              let resolvedValue = undefined;
+              let source = 'none';
               
               if (variableValue !== undefined) {
-                message = variableValue.toString();
-                console.log(`[Serial] SUCCESS: Resolved variable '${originalMessage}' to value: ${message}`);
+                resolvedValue = variableValue;
+                source = 'execution-state';
               } else if (globalValue !== undefined) {
-                message = globalValue.toString();
-                console.log(`[Serial] SUCCESS: Using global value for '${originalMessage}': ${message}`);
+                resolvedValue = globalValue;
+                source = 'global-storage';
               } else if (debugValue !== undefined) {
-                message = debugValue.toString();
-                console.log(`[Serial] SUCCESS: Using debug backup value for '${originalMessage}': ${message}`);
+                resolvedValue = debugValue;
+                source = 'debug-backup';
+              }
+              
+              if (resolvedValue !== undefined) {
+                message = resolvedValue.toString();
+                console.log(`[Serial] ✅ SUCCESS: Resolved '${originalMessage}' from ${source} to value: ${message}`);
               } else {
-                console.log(`[Serial] ERROR: Variable '${message}' not found in variables map!`);
-                console.log(`[Serial] Variables available:`, Array.from(variables.keys()));
-                console.log(`[Serial] Execution state:`, executionStateRef.current);
-                // Show the variable name as fallback for debugging
+                console.log(`[Serial] ❌ ERROR: Variable '${message}' not found anywhere!`);
+                console.log(`[Serial] All execution state:`, executionStateRef.current);
                 message = `<UNRESOLVED: ${message}>`;
               }
             } else {
