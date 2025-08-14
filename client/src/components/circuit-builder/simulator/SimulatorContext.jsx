@@ -915,6 +915,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           }
           
           let readValue = 0; // Default to 0 if no components found
+          let componentFound = false; // Track if we found a component
           
           // Use the latest components and wires data from global storage
           const latestComponents = window.latestSimulatorData?.components || components;
@@ -981,7 +982,8 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                 window.lastAnalogReadValue.timestamp = Date.now();
                 
                 console.log(`[analogRead] STORED value globally: ${lightLevel} for immediate assignment access`);
-                return lightLevel;
+                readValue = lightLevel;
+                componentFound = true;
               }
             }
           });
@@ -1005,17 +1007,19 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                   addLog(`[${timestamp}] → analogRead(${pinNumber}) reading RotaryEncoder: ${readValue}`);
                   // Store the value for variable assignment
                   executionStateRef.current.lastAnalogValue = readValue;
-                  return readValue;
+                  componentFound = true;
                 }
               }
             }
           });
           
           // If no analog components found, return default reading
-          addLog(`[${timestamp}] → analogRead(${pinNumber}) returned ${readValue} (${(readValue/1023*5).toFixed(2)}V)`);
-          console.log(`[Simulator] analogRead(${pinNumber}) no analog components connected, returning default: ${readValue}`);
-          // Store the value for variable assignment
-          executionStateRef.current.lastAnalogValue = readValue;
+          if (!componentFound) {
+            addLog(`[${timestamp}] → analogRead(${pinNumber}) returned ${readValue} (${(readValue/1023*5).toFixed(2)}V)`);
+            console.log(`[Simulator] analogRead(${pinNumber}) no analog components connected, returning default: ${readValue}`);
+            // Store the value for variable assignment
+            executionStateRef.current.lastAnalogValue = readValue;
+          }
           return readValue;
         }
 
