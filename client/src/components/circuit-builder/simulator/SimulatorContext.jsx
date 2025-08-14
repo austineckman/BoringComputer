@@ -1064,15 +1064,43 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             if (pinMatch) {
               const pinNumber = parseInt(pinMatch[1]) + 14; // A0 = pin 14, A1 = pin 15, etc.
               
-              // Execute the analogRead call directly to get the current value
-              const analogInstruction = { function: 'analogRead', pin: pinNumber, instruction: value };
-              finalValue = executeInstruction(analogInstruction);
+              // Get the current components and wires from global storage
+              const latestComponents = window.latestSimulatorData?.components || [];
+              const latestWires = window.latestSimulatorData?.wires || [];
               
-              console.log(`[Simulator] Assignment: ${variable} = ${value} -> executed analogRead and got ${finalValue}`);
+              console.log(`[Assignment] Executing analogRead(${pinNumber}) with ${latestComponents.length} components and ${latestWires.length} wires`);
+              
+              // Execute analogRead logic directly here to get real-time value
+              let readValue = 0;
+              
+              // Look for photoresistor components connected to this pin
+              latestComponents.forEach(component => {
+                if (component.type === 'photoresistor' || component.id.includes('photoresistor')) {
+                  const analogPinName = `A${pinNumber - 14}`;
+                  const photoresistorWires = latestWires.filter(wire => 
+                    (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
+                    (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString() ||
+                     wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}` ||
+                     wire.sourceName === analogPinName || wire.targetName === analogPinName ||
+                     wire.sourceName === `${pinNumber}` || wire.targetName === `${pinNumber}`)
+                  );
+                  
+                  if (photoresistorWires.length > 0) {
+                    // Get the current light level from the component props
+                    const lightLevelPercent = component.props?.lightLevel || 50;
+                    readValue = Math.round((lightLevelPercent / 100) * 1023);
+                    
+                    console.log(`[Assignment] Found photoresistor ${component.id} with ${lightLevelPercent}% light -> ${readValue}`);
+                  }
+                }
+              });
+              
+              finalValue = readValue;
+              console.log(`[Assignment] ${variable} = ${value} -> direct execution returned ${finalValue}`);
             } else {
               // Fallback to last analog value
               finalValue = executionStateRef.current.lastAnalogValue || 0;
-              console.log(`[Simulator] Assignment: ${variable} = analogRead() (fallback) -> ${finalValue}`);
+              console.log(`[Assignment] ${variable} = analogRead() (fallback) -> ${finalValue}`);
             }
           } else if (typeof value === 'number') {
             finalValue = value;
@@ -1085,10 +1113,17 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           if (!executionStateRef.current.variables) {
             executionStateRef.current.variables = new Map();
           }
-          executionStateRef.current.variables.set(variable, finalValue);
           
-          console.log(`[Simulator] Stored variable '${variable}' with value ${finalValue} (type: ${typeof finalValue})`);
-          console.log(`[Simulator] Current variables map:`, Array.from(executionStateRef.current.variables.entries()));
+          // Ensure we store the actual number, not a string
+          const numericValue = typeof finalValue === 'string' ? parseInt(finalValue) || finalValue : finalValue;
+          executionStateRef.current.variables.set(variable, numericValue);
+          
+          console.log(`[Assignment] STORED variable '${variable}' with value ${numericValue} (type: ${typeof numericValue})`);
+          console.log(`[Assignment] Variables map now contains:`, Array.from(executionStateRef.current.variables.entries()));
+          
+          // Also store in a backup location for debugging
+          if (!window.debugVariables) window.debugVariables = {};
+          window.debugVariables[variable] = numericValue;
           
           if (type) {
             addLog(`[${timestamp}] → Declared ${type} variable '${variable}' = ${finalValue}`);
