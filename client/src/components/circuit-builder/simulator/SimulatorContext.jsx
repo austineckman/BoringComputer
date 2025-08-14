@@ -391,9 +391,11 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           if (conditionResult) {
             console.log(`[Arduino IDE] Condition TRUE - will execute if block`);
             executionStateRef.current.skipUntilEndIf = false; 
+            executionStateRef.current.skipNextElse = true; // NEW: Skip else block since if was true
           } else {
             console.log(`[Arduino IDE] Condition FALSE - will skip if block`);
             executionStateRef.current.skipUntilEndIf = true;
+            executionStateRef.current.skipNextElse = false; // NEW: Don't skip else block since if was false
           }
           
           return 0; // The if statement itself doesn't execute, just sets the condition
@@ -408,10 +410,31 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             console.log(`[Arduino IDE] Found delay - likely end of if block, resetting skip state`);
             executionStateRef.current.skipUntilEndIf = false;
             executionStateRef.current.inConditionalBlock = false;
+            executionStateRef.current.skipNextElse = false; // Reset else skip state too
             // Continue to execute this delay
           } else {
             addLog(`[${timestamp}] → SKIPPED: ${instruction.instruction} (if condition was false)`);
             return 0; // Skip this instruction
+          }
+        }
+        
+        // CRITICAL FIX: Handle else block skipping when if was TRUE
+        if (executionStateRef.current.skipNextElse && !executionStateRef.current.skipUntilEndIf) {
+          // We're in an else block but the if condition was true, so skip else instructions
+          console.log(`[Arduino IDE] In else block after TRUE if - checking if this should be skipped: ${instruction.instruction}`);
+          
+          // Determine if this instruction is part of the else block
+          // In typical Arduino if/else patterns, instructions between the if block end and a delay are usually else
+          if (!instruction.instruction.includes('delay(')) {
+            console.log(`[Arduino IDE] Skipping else instruction: ${instruction.instruction}`);
+            addLog(`[${timestamp}] → SKIPPED: ${instruction.instruction} (else block after true if)`);
+            return 0; // Skip this else instruction
+          } else {
+            // Delay likely ends the entire if/else structure
+            console.log(`[Arduino IDE] Found delay - end of if/else structure, resetting all states`);
+            executionStateRef.current.skipNextElse = false;
+            executionStateRef.current.inConditionalBlock = false;
+            // Continue to execute this delay
           }
         }
         
@@ -1753,10 +1776,12 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             // Loop complete, restart
             state.loopIndex = 0;
             state.loopCount++;
-            // Reset if statement state at start of new loop
+            // CRITICAL: Reset ALL conditional state at start of new loop iteration
             state.skipUntilEndIf = false;
             state.inConditionalBlock = false;
             state.skipNextElse = false;
+            state.lastConditionResult = false;
+            console.log(`[Arduino IDE] Loop ${state.loopCount} starting - all conditional states reset`);
             addLog(`🔄 loop() iteration ${state.loopCount} starting`);
             executeNextInstruction();
           }
