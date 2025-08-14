@@ -148,56 +148,50 @@ const Buzzer = ({
           pinType = e.detail.pinType || 'bidirectional';
         }
 
-        // Get the actual pin element directly
-        const pinElement = e.detail.target || e.target;
         let pinPosition;
         
-        // Get precise position from the DOM element
-        if (pinElement && canvasRef.current) {
-          const pinRect = pinElement.getBoundingClientRect();
-          const canvasRect = canvasRef.current.getBoundingClientRect();
-          
-          pinPosition = {
-            x: pinRect.left + (pinRect.width / 2) - canvasRect.left,
-            y: pinRect.top + (pinRect.height / 2) - canvasRect.top
-          };
-          
-          console.log(`Using pin element position for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
-        } 
-        // Fallback to event coordinates
-        else if (e.detail.clientX && e.detail.clientY) {
-          const clientX = e.detail.clientX;
-          const clientY = e.detail.clientY;
-          
-          // Calculate position relative to canvas
+        // Priority 1: Use coordinates from the event detail
+        if (e.detail.x !== undefined && e.detail.y !== undefined) {
           const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
           pinPosition = {
-            x: clientX - canvasRect.left,
-            y: clientY - canvasRect.top
+            x: e.detail.x - canvasRect.left,
+            y: e.detail.y - canvasRect.top
           };
-          
-          console.log(`Using event coordinates for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
-        } 
-        // Final fallback - use component position + approximated pin offset
+          console.log(`Using event detail coordinates for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
+        }
+        // Priority 2: Use event clientX/clientY if available
+        else if (e.detail.clientX !== undefined && e.detail.clientY !== undefined) {
+          const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+          pinPosition = {
+            x: e.detail.clientX - canvasRect.left,
+            y: e.detail.clientY - canvasRect.top
+          };
+          console.log(`Using event client coordinates for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
+        }
+        // Priority 3: Try to find the pin element in the DOM
         else {
-          // Try to find the actual pin element by ID pattern
-          const buzzerElement = document.getElementById(id);
-          if (buzzerElement) {
+          const buzzerElement = targetRef.current;
+          if (buzzerElement && canvasRef.current) {
             const buzzerRect = buzzerElement.getBoundingClientRect();
-            const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+            const canvasRect = canvasRef.current.getBoundingClientRect();
             
-            // Apply appropriate offset based on pin name if known
+            // Calculate pin positions based on buzzer position and standard pin layout
+            // Standard buzzer pins: left pin (negative) and right pin (positive)
             let offsetX = 0, offsetY = 0;
             
-            if (pinId === 'bz1') {
-              offsetX = 10;
-              offsetY = buzzerRect.height - 15;
-            } else if (pinId === 'bz2') {
-              offsetX = buzzerRect.width / 2;
-              offsetY = buzzerRect.height - 10;
-            } else if (pinId === 'bz3') {
-              offsetX = buzzerRect.width - 10;
-              offsetY = buzzerRect.height - 15;
+            // Buzzer typically has pins at the bottom
+            if (pinId === 'neg' || pinId === 'bz1' || pinId === '1') {
+              // Left/negative pin
+              offsetX = buzzerRect.width * 0.25;
+              offsetY = buzzerRect.height * 0.85;
+            } else if (pinId === 'pos' || pinId === 'bz2' || pinId === '2') {
+              // Right/positive pin
+              offsetX = buzzerRect.width * 0.75;
+              offsetY = buzzerRect.height * 0.85;
+            } else {
+              // Default to center bottom
+              offsetX = buzzerRect.width * 0.5;
+              offsetY = buzzerRect.height * 0.85;
             }
             
             pinPosition = {
@@ -205,13 +199,14 @@ const Buzzer = ({
               y: buzzerRect.top + offsetY - canvasRect.top
             };
             
-            console.log(`Using calculated offset for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
+            console.log(`Using calculated pin position for ${pinId}: (${pinPosition.x}, ${pinPosition.y}) with offsets (${offsetX}, ${offsetY})`);
           } else {
             // Last resort fallback
             pinPosition = {
-              x: posLeft + 20,
-              y: posTop + buzzerRect?.height || 100
+              x: posLeft + 30,
+              y: posTop + 40
             };
+            console.log(`Using fallback position for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
           }
         }
         
