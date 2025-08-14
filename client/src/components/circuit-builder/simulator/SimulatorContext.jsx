@@ -1045,6 +1045,12 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           if (typeof value === 'string' && value.includes('analogRead')) {
             // This assignment includes analogRead, use the last analog value from execution state
             finalValue = executionStateRef.current.lastAnalogValue || 0;
+            console.log(`[Simulator] Assignment: ${variable} = analogRead() -> ${finalValue}`);
+          } else if (typeof value === 'number') {
+            finalValue = value;
+            console.log(`[Simulator] Assignment: ${variable} = ${finalValue} (direct number)`);
+          } else {
+            console.log(`[Simulator] Assignment: ${variable} = ${value} (${typeof value})`);
           }
           
           // Store the variable in execution state for resolution in Serial.println
@@ -1052,6 +1058,9 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             executionStateRef.current.variables = new Map();
           }
           executionStateRef.current.variables.set(variable, finalValue);
+          
+          console.log(`[Simulator] Stored variable '${variable}' with value ${finalValue} (type: ${typeof finalValue})`);
+          console.log(`[Simulator] Current variables map:`, Array.from(executionStateRef.current.variables.entries()));
           
           if (type) {
             addLog(`[${timestamp}] → Declared ${type} variable '${variable}' = ${finalValue}`);
