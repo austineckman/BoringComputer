@@ -104,48 +104,47 @@ const Keypad = ({
   // Handle pin click with precise positioning
   const handlePinClicked = (e) => {
     if (onPinConnect) {
-      let pinId = e.detail.pinId || e.detail.pin;
-      let pinType = e.detail.pinType || 'bidirectional';
-      let pinName = e.detail.pinName || pinId;
+      // Parse the pin data like HeroBoard does
+      let pinId, pinType, pinName;
       
       // Log event details for debugging
       console.log('Keypad pin click event detail:', e.detail);
       console.log('Full keypad event object:', e);
       
       try {
+        // Extract pin information from the data JSON string (same as HeroBoard)
+        const pinDataJson = e.detail.data;
+        const pinData = JSON.parse(pinDataJson);
+        
+        // Get pin ID from parsed data
+        pinId = pinData.name;
+        pinType = 'bidirectional'; // Keypad pins are typically bidirectional
+        pinName = pinId;
+        
+        console.log(`Parsed keypad pin data: ${pinId} (${pinType})`);
+        
+      } catch (parseError) {
+        console.warn('Failed to parse keypad pin data, using fallbacks:', parseError);
+        // Fallback to direct properties
+        pinId = e.detail.pinId || e.detail.pin || 'unknown';
+        pinType = e.detail.pinType || 'bidirectional';
+        pinName = e.detail.pinName || pinId;
+      }
+      
+      try {
         let pinPosition;
         
-        // Priority 1: Try to get mouse coordinates from the original event
-        let mouseX, mouseY;
+        // Use direct client coordinates like HeroBoard (this is the key fix!)
+        const clientX = e.detail.clientX || 0;
+        const clientY = e.detail.clientY || 0;
         
-        // Check if we can access the original mouse event
-        if (e.detail.originalEvent) {
-          mouseX = e.detail.originalEvent.clientX;
-          mouseY = e.detail.originalEvent.clientY;
-          console.log('Found original event coordinates:', mouseX, mouseY);
-        } else if (e.detail.clientX !== undefined && e.detail.clientY !== undefined) {
-          mouseX = e.detail.clientX;
-          mouseY = e.detail.clientY;
-          console.log('Using event detail client coordinates:', mouseX, mouseY);
-        } else if (e.detail.x !== undefined && e.detail.y !== undefined) {
-          // Try converting from local coordinates to global
-          const keypadElement = targetRef.current;
-          if (keypadElement) {
-            const rect = keypadElement.getBoundingClientRect();
-            mouseX = rect.left + e.detail.x;
-            mouseY = rect.top + e.detail.y;
-            console.log('Converted local coordinates to global:', mouseX, mouseY);
-          }
-        }
-        
-        // If we have mouse coordinates, use them directly
-        if (mouseX !== undefined && mouseY !== undefined) {
+        if (clientX && clientY) {
           const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
           pinPosition = {
-            x: mouseX - canvasRect.left,
-            y: mouseY - canvasRect.top
+            x: clientX - canvasRect.left,
+            y: clientY - canvasRect.top
           };
-          console.log(`Using mouse coordinates for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
+          console.log(`Using direct client coordinates for ${pinId}: (${pinPosition.x}, ${pinPosition.y}) from (${clientX}, ${clientY})`);
         }
         // Priority 2: Use the exact same positioning system as the visual pin dots
         else {
