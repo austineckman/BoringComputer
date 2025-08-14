@@ -101,13 +101,183 @@ const Keypad = ({
     setRotationAngle((rotationAngle + 90) % 360);
   };
 
-  // Handle pin click
+  // Handle pin click with precise positioning
   const handlePinClicked = (e) => {
     if (onPinConnect) {
-      const pinId = e.detail.pinId;
-      const pinType = e.detail.pinType;
-      onPinConnect(pinId, pinType, id);
-      console.log(`Pin ${pinId} (${pinType}) of component ${id} clicked`);
+      let pinId = e.detail.pinId || e.detail.pin;
+      let pinType = e.detail.pinType || 'bidirectional';
+      let pinName = e.detail.pinName || pinId;
+      
+      // Log event details for debugging
+      console.log('Keypad pin click event detail:', e.detail);
+      console.log('Full keypad event object:', e);
+      
+      try {
+        let pinPosition;
+        
+        // Priority 1: Try to get mouse coordinates from the original event
+        let mouseX, mouseY;
+        
+        // Check if we can access the original mouse event
+        if (e.detail.originalEvent) {
+          mouseX = e.detail.originalEvent.clientX;
+          mouseY = e.detail.originalEvent.clientY;
+          console.log('Found original event coordinates:', mouseX, mouseY);
+        } else if (e.detail.clientX !== undefined && e.detail.clientY !== undefined) {
+          mouseX = e.detail.clientX;
+          mouseY = e.detail.clientY;
+          console.log('Using event detail client coordinates:', mouseX, mouseY);
+        } else if (e.detail.x !== undefined && e.detail.y !== undefined) {
+          // Try converting from local coordinates to global
+          const keypadElement = targetRef.current;
+          if (keypadElement) {
+            const rect = keypadElement.getBoundingClientRect();
+            mouseX = rect.left + e.detail.x;
+            mouseY = rect.top + e.detail.y;
+            console.log('Converted local coordinates to global:', mouseX, mouseY);
+          }
+        }
+        
+        // If we have mouse coordinates, use them directly
+        if (mouseX !== undefined && mouseY !== undefined) {
+          const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+          pinPosition = {
+            x: mouseX - canvasRect.left,
+            y: mouseY - canvasRect.top
+          };
+          console.log(`Using mouse coordinates for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
+        }
+        // Priority 2: Use the exact same positioning system as the visual pin dots
+        else {
+          const keypadElement = targetRef.current;
+          if (keypadElement && canvasRef.current) {
+            const keypadRect = keypadElement.getBoundingClientRect();
+            const canvasRect = canvasRef.current.getBoundingClientRect();
+            
+            // Get the component's position and dimensions like CircuitComponent does
+            const componentPosition = {
+              x: keypadRect.left - canvasRect.left,
+              y: keypadRect.top - canvasRect.top
+            };
+            const componentWidth = keypadRect.width;
+            const componentHeight = keypadRect.height;
+            
+            // Define keypad pin positions relative to component
+            // Keypad has 8 pins arranged in specific positions
+            let pinRelativeX = 0.5, pinRelativeY = 0.5;
+            
+            // Standard 4x4 keypad pin layout (8 pins total)
+            // Rows: R1, R2, R3, R4 (top edge, pins 1-4)
+            // Cols: C1, C2, C3, C4 (bottom edge, pins 5-8)
+            const normalizedRotation = rotationAngle % 360;
+            
+            if (normalizedRotation === 0) {
+              // Standard orientation
+              if (pinId === 'R1' || pinId === '1' || pinId === 'row1') {
+                pinRelativeX = 0.2; pinRelativeY = 0.1; // Top-left area
+              } else if (pinId === 'R2' || pinId === '2' || pinId === 'row2') {
+                pinRelativeX = 0.4; pinRelativeY = 0.1; // Top-center-left
+              } else if (pinId === 'R3' || pinId === '3' || pinId === 'row3') {
+                pinRelativeX = 0.6; pinRelativeY = 0.1; // Top-center-right
+              } else if (pinId === 'R4' || pinId === '4' || pinId === 'row4') {
+                pinRelativeX = 0.8; pinRelativeY = 0.1; // Top-right area
+              } else if (pinId === 'C1' || pinId === '5' || pinId === 'col1') {
+                pinRelativeX = 0.2; pinRelativeY = 0.9; // Bottom-left area
+              } else if (pinId === 'C2' || pinId === '6' || pinId === 'col2') {
+                pinRelativeX = 0.4; pinRelativeY = 0.9; // Bottom-center-left
+              } else if (pinId === 'C3' || pinId === '7' || pinId === 'col3') {
+                pinRelativeX = 0.6; pinRelativeY = 0.9; // Bottom-center-right
+              } else if (pinId === 'C4' || pinId === '8' || pinId === 'col4') {
+                pinRelativeX = 0.8; pinRelativeY = 0.9; // Bottom-right area
+              }
+            } else if (normalizedRotation === 90) {
+              // Rotated 90 degrees - pins move accordingly
+              if (pinId === 'R1' || pinId === '1' || pinId === 'row1') {
+                pinRelativeX = 0.9; pinRelativeY = 0.2; // Right-top area
+              } else if (pinId === 'R2' || pinId === '2' || pinId === 'row2') {
+                pinRelativeX = 0.9; pinRelativeY = 0.4; // Right-center-top
+              } else if (pinId === 'R3' || pinId === '3' || pinId === 'row3') {
+                pinRelativeX = 0.9; pinRelativeY = 0.6; // Right-center-bottom
+              } else if (pinId === 'R4' || pinId === '4' || pinId === 'row4') {
+                pinRelativeX = 0.9; pinRelativeY = 0.8; // Right-bottom area
+              } else if (pinId === 'C1' || pinId === '5' || pinId === 'col1') {
+                pinRelativeX = 0.1; pinRelativeY = 0.2; // Left-top area
+              } else if (pinId === 'C2' || pinId === '6' || pinId === 'col2') {
+                pinRelativeX = 0.1; pinRelativeY = 0.4; // Left-center-top
+              } else if (pinId === 'C3' || pinId === '7' || pinId === 'col3') {
+                pinRelativeX = 0.1; pinRelativeY = 0.6; // Left-center-bottom
+              } else if (pinId === 'C4' || pinId === '8' || pinId === 'col4') {
+                pinRelativeX = 0.1; pinRelativeY = 0.8; // Left-bottom area
+              }
+            } else if (normalizedRotation === 180) {
+              // Rotated 180 degrees - pins flip
+              if (pinId === 'R1' || pinId === '1' || pinId === 'row1') {
+                pinRelativeX = 0.8; pinRelativeY = 0.9; // Bottom-right area
+              } else if (pinId === 'R2' || pinId === '2' || pinId === 'row2') {
+                pinRelativeX = 0.6; pinRelativeY = 0.9; // Bottom-center-right
+              } else if (pinId === 'R3' || pinId === '3' || pinId === 'row3') {
+                pinRelativeX = 0.4; pinRelativeY = 0.9; // Bottom-center-left
+              } else if (pinId === 'R4' || pinId === '4' || pinId === 'row4') {
+                pinRelativeX = 0.2; pinRelativeY = 0.9; // Bottom-left area
+              } else if (pinId === 'C1' || pinId === '5' || pinId === 'col1') {
+                pinRelativeX = 0.8; pinRelativeY = 0.1; // Top-right area
+              } else if (pinId === 'C2' || pinId === '6' || pinId === 'col2') {
+                pinRelativeX = 0.6; pinRelativeY = 0.1; // Top-center-right
+              } else if (pinId === 'C3' || pinId === '7' || pinId === 'col3') {
+                pinRelativeX = 0.4; pinRelativeY = 0.1; // Top-center-left
+              } else if (pinId === 'C4' || pinId === '8' || pinId === 'col4') {
+                pinRelativeX = 0.2; pinRelativeY = 0.1; // Top-left area
+              }
+            } else if (normalizedRotation === 270) {
+              // Rotated 270 degrees
+              if (pinId === 'R1' || pinId === '1' || pinId === 'row1') {
+                pinRelativeX = 0.1; pinRelativeY = 0.8; // Left-bottom area
+              } else if (pinId === 'R2' || pinId === '2' || pinId === 'row2') {
+                pinRelativeX = 0.1; pinRelativeY = 0.6; // Left-center-bottom
+              } else if (pinId === 'R3' || pinId === '3' || pinId === 'row3') {
+                pinRelativeX = 0.1; pinRelativeY = 0.4; // Left-center-top
+              } else if (pinId === 'R4' || pinId === '4' || pinId === 'row4') {
+                pinRelativeX = 0.1; pinRelativeY = 0.2; // Left-top area
+              } else if (pinId === 'C1' || pinId === '5' || pinId === 'col1') {
+                pinRelativeX = 0.9; pinRelativeY = 0.8; // Right-bottom area
+              } else if (pinId === 'C2' || pinId === '6' || pinId === 'col2') {
+                pinRelativeX = 0.9; pinRelativeY = 0.6; // Right-center-bottom
+              } else if (pinId === 'C3' || pinId === '7' || pinId === 'col3') {
+                pinRelativeX = 0.9; pinRelativeY = 0.4; // Right-center-top
+              } else if (pinId === 'C4' || pinId === '8' || pinId === 'col4') {
+                pinRelativeX = 0.9; pinRelativeY = 0.2; // Right-top area
+              }
+            }
+            
+            // Calculate final position using the same method as CircuitComponent
+            const pinAbsoluteX = componentPosition.x + (pinRelativeX * componentWidth);
+            const pinAbsoluteY = componentPosition.y + (pinRelativeY * componentHeight);
+            
+            pinPosition = {
+              x: pinAbsoluteX,
+              y: pinAbsoluteY
+            };
+            
+            console.log(`Using CircuitComponent-style pin position for ${pinId} at rotation ${normalizedRotation}°: (${pinPosition.x}, ${pinPosition.y}) - relative: (${pinRelativeX}, ${pinRelativeY})`);
+          } else {
+            // Last resort fallback
+            pinPosition = {
+              x: posLeft + 30,
+              y: posTop + 30
+            };
+            console.log(`Using fallback position for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
+          }
+        }
+        
+        // Call the pin connection handler with the calculated position
+        onPinConnect(pinId, pinType, id, pinPosition, pinName);
+        console.log(`Keypad pin ${pinId} (${pinType}) of component ${id} clicked at position (${pinPosition.x}, ${pinPosition.y})`);
+        
+      } catch (error) {
+        console.error('Error handling keypad pin click:', error);
+        // Fallback call without position
+        onPinConnect(pinId, pinType, id);
+      }
     }
   };
 
