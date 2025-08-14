@@ -6,12 +6,14 @@ import { ArduinoCodeParser } from './ArduinoCodeParser';
 const SimulatorContext = createContext({
   code: '',
   logs: [],
+  serialLogs: [],
   components: [],
   wires: [],
   componentStates: {},
   startSimulation: () => {},
   stopSimulation: () => {},
   addLog: () => {},
+  addSerialLog: () => {},
   setCode: () => {},
   updateComponentState: () => {},
   updateComponentPins: () => {},
@@ -27,6 +29,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   // State variables
   const [code, setCode] = useState(initialCode);
   const [logs, setLogs] = useState([]);
+  const [serialLogs, setSerialLogs] = useState([]);
   const [isRunning, setIsRunning] = useState(false);
   const [components, setComponents] = useState([]);
   const [wires, setWires] = useState([]);
@@ -68,6 +71,18 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       .replace(/\[DIRECT\] /g, '');
     
     setLogs(prevLogs => [...prevLogs.slice(-99), cleanMessage]); // Keep last 100 entries
+  };
+
+  // Function to add a serial log entry
+  const addSerialLog = (message) => {
+    const timestamp = new Date().toLocaleTimeString();
+    const serialEntry = {
+      timestamp,
+      message: message,
+      data: message
+    };
+    
+    setSerialLogs(prevLogs => [...prevLogs.slice(-99), serialEntry]); // Keep last 100 entries
   };
   
   // Function to update the state of a component
@@ -1299,6 +1314,18 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         }
 
         if (instruction.instruction.includes('Serial.print')) {
+          // Extract the actual message from Serial.print(message) or Serial.println(message)
+          const serialMatch = instruction.instruction.match(/Serial\.print(?:ln)?\s*\((.*)\)/);
+          if (serialMatch) {
+            let message = serialMatch[1].trim();
+            // Remove quotes if it's a string literal
+            if ((message.startsWith('"') && message.endsWith('"')) || 
+                (message.startsWith("'") && message.endsWith("'"))) {
+              message = message.slice(1, -1);
+            }
+            addSerialLog(message);
+          }
+          // Also log to simulation logs for debugging
           addLog(`[${timestamp}] → Serial: ${instruction.instruction}`);
         }
 
@@ -1489,6 +1516,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   const contextValue = {
     code,
     logs,
+    serialLogs,
     isRunning,
     components,
     wires,
@@ -1496,6 +1524,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     startSimulation,
     stopSimulation,
     addLog,
+    addSerialLog,
     setCode,
     updateComponentState,
     updateComponentPins,

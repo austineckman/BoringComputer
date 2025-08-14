@@ -32,7 +32,7 @@ import CircuitBuilder from '../circuit-builder/CircuitBuilder';
 
 // Import simulator components
 import { SimulatorProvider, useSimulator } from '../circuit-builder/simulator/SimulatorContext';
-import SimplifiedLogPanel from '../circuit-builder/simulator/SimplifiedLogPanel';
+import TabbedLogPanel from '../circuit-builder/simulator/TabbedLogPanel';
 import { useLibraryManager } from '../circuit-builder/simulator/LibraryManager';
 // Import only the proper simulator - legacy simulator removed to enforce hardware emulation
 // import AVR8Simulator from '../circuit-builder/simulator/AVR8Simulator'; // REMOVED - uses keyword-based shortcuts
@@ -1390,7 +1390,7 @@ void loop() {
           
           <div className="w-1/3 p-2 overflow-auto">
             <div className="h-full">
-              <SimplifiedLogPanel />
+              <TabbedLogPanel />
             </div>
           </div>
         </div>
