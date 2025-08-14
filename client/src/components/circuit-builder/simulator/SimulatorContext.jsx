@@ -465,6 +465,11 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           const isHigh = instruction.value === 'HIGH';
           const pinNumber = instruction.pin;
           
+          // CRITICAL DEBUG: Log every digitalWrite attempt with conditional context
+          console.log(`[Arduino IDE] DIGITAL WRITE DEBUG:`);
+          console.log(`  - Pin: ${pinNumber}, Value: ${instruction.value}`);
+          console.log(`  - Conditional state: inConditionalBlock=${executionStateRef.current.inConditionalBlock}, executeIfBlock=${executionStateRef.current.executeIfBlock}, skipUntilEndIf=${executionStateRef.current.skipUntilEndIf}`);
+          
           // Guard against null pin numbers from failed variable resolution
           if (pinNumber === null || pinNumber === undefined) {
             addLog(`[${timestamp}] → digitalWrite(UNKNOWN_PIN, ${instruction.value}) - Pin variable not resolved`);
