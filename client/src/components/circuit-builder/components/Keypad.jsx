@@ -272,9 +272,29 @@ const Keypad = ({
           }
         }
         
-        // Call the pin connection handler with the calculated position
-        onPinConnect(pinId, pinType, id, pinPosition, pinName);
-        console.log(`Keypad pin ${pinId} (${pinType}) of component ${id} clicked at position (${pinPosition.x}, ${pinPosition.y})`);
+        // Call the parent's onPinConnect handler
+        onPinConnect(pinId, pinType, id);
+        
+        // Send another event with the formatted pin ID to match our wire manager
+        // Use the exact same format as the HeroBoard component
+        const formattedPinId = `pt-custom-keypad-${id}-${pinId}`;
+        
+        // Create a custom pin click event to trigger the wire manager
+        // Use the EXACT same event structure as the HeroBoard component
+        const pinClickEvent = new CustomEvent('pinClicked', {
+          detail: {
+            id: formattedPinId,
+            pinData: e.detail.data,
+            pinType: pinType,
+            parentId: id,
+            clientX,
+            clientY
+          }
+        });
+        
+        // Dispatch the event to be captured by the wire manager
+        document.dispatchEvent(pinClickEvent);
+        console.log(`Keypad pin ${pinId} (${pinType}) of component ${id} clicked at position (${clientX}, ${clientY})`);
         
       } catch (error) {
         console.error('Error handling keypad pin click:', error);
