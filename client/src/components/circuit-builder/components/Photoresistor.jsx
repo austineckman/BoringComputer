@@ -167,76 +167,76 @@ const Photoresistor = ({
           };
           console.log(`Using mouse coordinates for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
         }
-        // Priority 3: Calculate pin positions based on photoresistor layout
+        // Priority 3: Use the exact same positioning system as the visual pin dots
         else {
           const photoresistorElement = targetRef.current;
           if (photoresistorElement && canvasRef.current) {
             const photoresistorRect = photoresistorElement.getBoundingClientRect();
             const canvasRect = canvasRef.current.getBoundingClientRect();
             
-            // Calculate pin positions based on photoresistor position and standard pin layout
-            // Photoresistor pins are typically on opposite ends of the component
-            let offsetX = 0, offsetY = 0;
+            // Get the component's position and dimensions like CircuitComponent does
+            const componentPosition = {
+              x: photoresistorRect.left - canvasRect.left,
+              y: photoresistorRect.top - canvasRect.top
+            };
+            const componentWidth = photoresistorRect.width;
+            const componentHeight = photoresistorRect.height;
             
-            // Determine pin position based on rotation
+            // Define pin positions relative to component like CircuitComponent
+            // These percentages match the visual pin dots system
+            let pinRelativeX = 0.5, pinRelativeY = 0.5;
+            
+            // Standard photoresistor pin layout based on rotation
             const normalizedRotation = rotationAngle % 360;
             
             if (normalizedRotation === 0) {
-              // Horizontal orientation - pins on left and right
+              // Horizontal orientation - pins on ends
               if (pinId === 'pin1' || pinId === 'A' || pinId === '1') {
-                // Left pin
-                offsetX = photoresistorRect.width * 0.15;
-                offsetY = photoresistorRect.height * 0.5;
+                pinRelativeX = 0.1; // Left pin
+                pinRelativeY = 0.5; // Center vertically
               } else {
-                // Right pin (pin2, B, 2)
-                offsetX = photoresistorRect.width * 0.85;
-                offsetY = photoresistorRect.height * 0.5;
+                pinRelativeX = 0.9; // Right pin
+                pinRelativeY = 0.5; // Center vertically
               }
             } else if (normalizedRotation === 90) {
-              // Vertical orientation - pins on top and bottom
+              // Vertical orientation - pins on top/bottom
               if (pinId === 'pin1' || pinId === 'A' || pinId === '1') {
-                // Top pin
-                offsetX = photoresistorRect.width * 0.5;
-                offsetY = photoresistorRect.height * 0.15;
+                pinRelativeX = 0.5; // Center horizontally
+                pinRelativeY = 0.1; // Top pin
               } else {
-                // Bottom pin
-                offsetX = photoresistorRect.width * 0.5;
-                offsetY = photoresistorRect.height * 0.85;
+                pinRelativeX = 0.5; // Center horizontally
+                pinRelativeY = 0.9; // Bottom pin
               }
             } else if (normalizedRotation === 180) {
-              // Horizontal flipped - pins on right and left (reversed)
+              // Horizontal flipped
               if (pinId === 'pin1' || pinId === 'A' || pinId === '1') {
-                // Right pin
-                offsetX = photoresistorRect.width * 0.85;
-                offsetY = photoresistorRect.height * 0.5;
+                pinRelativeX = 0.9; // Right pin
+                pinRelativeY = 0.5; // Center vertically
               } else {
-                // Left pin
-                offsetX = photoresistorRect.width * 0.15;
-                offsetY = photoresistorRect.height * 0.5;
+                pinRelativeX = 0.1; // Left pin
+                pinRelativeY = 0.5; // Center vertically
               }
             } else if (normalizedRotation === 270) {
-              // Vertical flipped - pins on bottom and top (reversed)
+              // Vertical flipped
               if (pinId === 'pin1' || pinId === 'A' || pinId === '1') {
-                // Bottom pin
-                offsetX = photoresistorRect.width * 0.5;
-                offsetY = photoresistorRect.height * 0.85;
+                pinRelativeX = 0.5; // Center horizontally
+                pinRelativeY = 0.9; // Bottom pin
               } else {
-                // Top pin
-                offsetX = photoresistorRect.width * 0.5;
-                offsetY = photoresistorRect.height * 0.15;
+                pinRelativeX = 0.5; // Center horizontally
+                pinRelativeY = 0.1; // Top pin
               }
-            } else {
-              // Default to center for other angles
-              offsetX = photoresistorRect.width * 0.5;
-              offsetY = photoresistorRect.height * 0.5;
             }
             
+            // Calculate final position using the same method as CircuitComponent
+            const pinAbsoluteX = componentPosition.x + (pinRelativeX * componentWidth);
+            const pinAbsoluteY = componentPosition.y + (pinRelativeY * componentHeight);
+            
             pinPosition = {
-              x: photoresistorRect.left + offsetX - canvasRect.left,
-              y: photoresistorRect.top + offsetY - canvasRect.top
+              x: pinAbsoluteX,
+              y: pinAbsoluteY
             };
             
-            console.log(`Using calculated pin position for ${pinId} at rotation ${normalizedRotation}°: (${pinPosition.x}, ${pinPosition.y}) with offsets (${offsetX}, ${offsetY})`);
+            console.log(`Using CircuitComponent-style pin position for ${pinId} at rotation ${normalizedRotation}°: (${pinPosition.x}, ${pinPosition.y}) - relative: (${pinRelativeX}, ${pinRelativeY})`);
           } else {
             // Last resort fallback
             pinPosition = {
