@@ -313,25 +313,22 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog(`📋 Found ${parseResult.setup?.length || 0} lines in setup(), ${parseResult.loop?.length || 0} lines in loop()`);
       addLog(`✅ Code parsed: ${setupInstructions.length} setup instructions, ${loopInstructions.length} loop instructions`);
       
-      // REWRITE: Initialize execution state with block-based approach like Wokwi/Arduino IDE
-      const blockParser = new CodeBlockParser();
-      const { setup: setupBlocks, loop: loopBlocks } = blockParser.parseIntoBlocks(currentCode);
-      
+      // Initialize execution state - FIXED if statement logic
       executionStateRef.current = {
         phase: 'setup',
         setupIndex: 0,
         loopIndex: 0,
-        setupBlocks,
-        loopBlocks,
+        setupInstructions,
+        loopInstructions,
         loopCount: 0,
         variables: {},
-        currentContext: {
-          variables: {},
-          globalVars: window.simulatorGlobalVars || {}
-        }
+        skipUntilEndIf: false,
+        inConditionalBlock: false,
+        lastConditionResult: false,
+        skipNextElse: false // NEW: Track if we should skip else after executing if
       };
       
-      console.log('[SimulatorContext] BLOCK-BASED execution initialized:', executionStateRef.current);
+      console.log('[SimulatorContext] Execution state initialized with FIXED if logic:', executionStateRef.current);
       
       // Define the instruction execution function
       const executeInstruction = (instruction) => {
@@ -1632,27 +1629,26 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog('🔧 Starting Arduino execution...');
       addLog('⚡ Entering setup() function');
       
-      // REWRITE: Start the block-based execution loop like Arduino IDE/Wokwi
-      const executeNextBlock = () => {
+      // BACK TO WORKING: Original execution loop with FIXED if statement logic
+      const executeNextInstruction = () => {
         const state = executionStateRef.current;
-        console.log('[Block Execution] executeNextBlock called, phase:', state.phase);
+        console.log('executeNextInstruction called, state.phase:', state.phase);
         
         if (state.phase === 'stopped') {
-          console.log('[Block Execution] Stopped');
+          console.log('executeNextInstruction: stopped because phase is stopped');
           return;
         }
         
         if (state.phase === 'setup') {
-          if (state.setupIndex < state.setupBlocks.length) {
-            const block = state.setupBlocks[state.setupIndex];
-            console.log(`[Block Execution] Executing setup block ${state.setupIndex}:`, block);
-            
-            const delayMs = executeBlock(block, state.currentContext);
+          if (state.setupIndex < state.setupInstructions.length) {
+            const instruction = state.setupInstructions[state.setupIndex];
+            addLog(`[Setup] Line ${instruction.lineNumber}: ${instruction.instruction}`);
+            const delayMs = executeInstruction(instruction);
             state.setupIndex++;
             
             setTimeout(() => {
               if (executionStateRef.current.phase !== 'stopped') {
-                executeNextBlock();
+                executeNextInstruction();
               }
             }, delayMs || 300);
           } else {
@@ -1661,86 +1657,57 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             state.loopCount = 1;
             addLog('✅ setup() completed');
             addLog('🔄 Entering loop() function');
-            executeNextBlock();
+            executeNextInstruction();
           }
         } else if (state.phase === 'loop') {
-          if (state.loopBlocks.length === 0) {
+          if (state.loopInstructions.length === 0) {
             addLog('⚠️ loop() function is empty');
             return;
           }
           
-          if (state.loopIndex < state.loopBlocks.length) {
-            const block = state.loopBlocks[state.loopIndex];
-            console.log(`[Block Execution] Executing loop block ${state.loopIndex}:`, block);
+          if (state.loopIndex < state.loopInstructions.length) {
+            const instruction = state.loopInstructions[state.loopIndex];
             
-            const delayMs = executeBlock(block, state.currentContext);
+            // FIXED IF STATEMENT LOGIC: Check if we should skip this instruction
+            if (state.skipUntilEndIf) {
+              console.log(`[If Logic] Skipping instruction: ${instruction.instruction}`);
+              
+              // Check if this is the end of the if block (next instruction after the if block)
+              if (instruction.instruction.includes('delay(') || 
+                  instruction.instruction.includes('analogRead(') ||
+                  !instruction.instruction.includes('digitalWrite(')) {
+                console.log(`[If Logic] Reached end of if block, stopping skip`);
+                state.skipUntilEndIf = false;
+                state.inConditionalBlock = false;
+              } else {
+                // Still in if block, skip this instruction
+                state.loopIndex++;
+                executeNextInstruction();
+                return;
+              }
+            }
+            
+            addLog(`[Loop ${state.loopCount}] Line ${instruction.lineNumber}: ${instruction.instruction}`);
+            const delayMs = executeInstruction(instruction);
             state.loopIndex++;
             
             setTimeout(() => {
               if (executionStateRef.current.phase !== 'stopped') {
-                executeNextBlock();
+                executeNextInstruction();
               }
             }, delayMs || 300);
           } else {
             // Loop complete, restart
             state.loopIndex = 0;
             state.loopCount++;
+            // Reset if statement state at start of new loop
+            state.skipUntilEndIf = false;
+            state.inConditionalBlock = false;
+            state.skipNextElse = false;
             addLog(`🔄 loop() iteration ${state.loopCount} starting`);
-            executeNextBlock();
+            executeNextInstruction();
           }
         }
-      };
-      
-      // REWRITE: Execute a code block with proper conditional logic like Arduino IDE
-      const executeBlock = (block, context) => {
-        const blockParser = new CodeBlockParser();
-        
-        console.log(`[Block Execution] Executing ${block.type} block with ${block.instructions?.length || 0} instructions`);
-        addLog(`[Block] ${block.type.toUpperCase()} block (${block.instructions?.length || 0} instructions)`);
-        
-        if (block.type === 'if') {
-          // Evaluate condition like Arduino IDE
-          const shouldExecuteIf = blockParser.executeBlock(block, context);
-          console.log(`[Block Execution] If condition evaluated to: ${shouldExecuteIf}`);
-          
-          if (shouldExecuteIf) {
-            // Execute IF branch instructions
-            console.log(`[Block Execution] Executing IF branch (${block.instructions.length} instructions)`);
-            addLog(`[If] Condition TRUE - executing if block`);
-            return executeInstructionSequence(block.instructions, context);
-          } else {
-            // Execute ELSE branch if it exists
-            if (block.children && block.children.length > 0) {
-              const elseBlock = block.children[0];
-              console.log(`[Block Execution] Executing ELSE branch (${elseBlock.instructions.length} instructions)`);
-              addLog(`[If] Condition FALSE - executing else block`);
-              return executeInstructionSequence(elseBlock.instructions, context);
-            } else {
-              console.log(`[Block Execution] Condition FALSE, no else block - skipping`);
-              addLog(`[If] Condition FALSE - skipping (no else)`);
-              return 0;
-            }
-          }
-        } else if (block.type === 'statement') {
-          // Execute single statement
-          console.log(`[Block Execution] Executing statement: ${block.instructions[0]?.instruction}`);
-          return executeInstructionSequence(block.instructions, context);
-        }
-        
-        return 0;
-      };
-      
-      // REWRITE: Execute a sequence of instructions properly
-      const executeInstructionSequence = (instructions, context) => {
-        let totalDelay = 0;
-        
-        instructions.forEach((instruction, index) => {
-          console.log(`[Instruction Sequence] Executing ${index + 1}/${instructions.length}: ${instruction.instruction}`);
-          const instructionDelay = executeInstruction(instruction);
-          totalDelay = Math.max(totalDelay, instructionDelay); // Use the longest delay
-        });
-        
-        return totalDelay;
       };
       
       console.log('[Block Execution] About to start block-based execution, isRunning:', isRunning);
