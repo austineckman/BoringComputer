@@ -319,13 +319,34 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         loopIndex: 0,
         setupInstructions,
         loopInstructions,
-        loopCount: 0
+        loopCount: 0,
+        variables: new Map(),
+        skipUntilEndIf: false,
+        inConditionalBlock: false,
+        lastConditionResult: false
       };
       
       // Define the instruction execution function
       const executeInstruction = (instruction) => {
         console.log('executeInstruction called with:', instruction);
         const timestamp = new Date().toLocaleTimeString();
+        
+        // CRITICAL: Check conditional execution flow control
+        if (executionStateRef.current.skipUntilEndIf && instruction.function !== 'if' && 
+            !instruction.instruction.includes('else') && !instruction.instruction.includes('endif')) {
+          console.log(`[Flow Control] SKIPPING instruction "${instruction.instruction}" due to false if condition`);
+          addLog(`[${timestamp}] → SKIPPED: ${instruction.instruction} (if condition was false)`);
+          return 0; // Skip this instruction
+        }
+        
+        // Check if we need to end conditional skipping (end of if block)
+        if (executionStateRef.current.skipUntilEndIf && 
+            (instruction.instruction.includes('else') || instruction.instruction.includes('endif') || 
+             instruction.function === 'blockEnd')) {
+          console.log(`[Flow Control] Ending conditional skip at: ${instruction.instruction}`);
+          executionStateRef.current.skipUntilEndIf = false;
+          executionStateRef.current.inConditionalBlock = false;
+        }
         
         // Debug all possible instruction types
         console.log(`executeInstruction: instruction.instruction = "${instruction.instruction}"`);
@@ -1147,9 +1168,71 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           return 0;
         }
 
-        // Handle control structures (basic logging for now)
+        // Handle control structures with actual condition evaluation
         if (instruction.function === 'if') {
-          addLog(`[${timestamp}] → if (${instruction.condition}) - Evaluating condition`);
+          const condition = instruction.condition;
+          console.log(`[If] Processing condition: ${condition}`);
+          
+          // Evaluate the condition by resolving variables
+          let evaluatedCondition = condition;
+          
+          // Replace variables in the condition with their actual values
+          const variables = executionStateRef.current.variables || new Map();
+          const globalVars = window.simulatorVariables || {};
+          const debugVars = window.debugVariables || {};
+          const recentAnalogValue = window.lastAnalogReadValue?.value;
+          
+          console.log(`[If] Available variables for condition evaluation:`, {
+            variables: Array.from(variables.entries()),
+            globalVars,
+            debugVars,
+            recentAnalogValue
+          });
+          
+          // Replace variable names with their values
+          variables.forEach((value, name) => {
+            const regex = new RegExp(`\\b${name}\\b`, 'g');
+            evaluatedCondition = evaluatedCondition.replace(regex, value);
+          });
+          
+          // Also try global variables if not found in execution state
+          Object.entries(globalVars).forEach(([name, value]) => {
+            const regex = new RegExp(`\\b${name}\\b`, 'g');
+            evaluatedCondition = evaluatedCondition.replace(regex, value);
+          });
+          
+          // Also try debug variables as fallback
+          Object.entries(debugVars).forEach(([name, value]) => {
+            const regex = new RegExp(`\\b${name}\\b`, 'g');
+            evaluatedCondition = evaluatedCondition.replace(regex, value);
+          });
+          
+          // If still has unresolved variables and we have a recent analog value, try using that
+          if (recentAnalogValue !== undefined && evaluatedCondition.includes('value')) {
+            evaluatedCondition = evaluatedCondition.replace(/\bvalue\b/g, recentAnalogValue);
+          }
+          
+          console.log(`[If] Original condition: ${condition}`);
+          console.log(`[If] Evaluated condition: ${evaluatedCondition}`);
+          
+          // Evaluate the condition safely
+          let conditionResult = false;
+          try {
+            conditionResult = eval(evaluatedCondition);
+            console.log(`[If] Condition result: ${conditionResult}`);
+          } catch (error) {
+            console.error(`[If] Error evaluating condition "${evaluatedCondition}":`, error);
+            conditionResult = false;
+          }
+          
+          // Store the condition result for execution flow control
+          executionStateRef.current.lastConditionResult = conditionResult;
+          executionStateRef.current.inConditionalBlock = true;
+          executionStateRef.current.skipUntilEndIf = !conditionResult;
+          
+          addLog(`[${timestamp}] → if (${condition}) evaluated to ${conditionResult}`);
+          console.log(`[If] Set skipUntilEndIf to ${!conditionResult}`);
+          
           return 0;
         }
 
