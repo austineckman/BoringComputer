@@ -1292,6 +1292,13 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           const debugVars = window.debugVariables || {};
           const recentAnalogValue = window.lastAnalogReadValue?.value;
           
+          // CRITICAL DEBUG: Check variable types before using
+          console.log(`[If] Variable type check:`, {
+            variablesType: typeof variables,
+            isMap: variables instanceof Map,
+            hasGetMethod: typeof variables.get === 'function'
+          });
+          
           console.log(`[If] Available variables for condition evaluation:`, {
             variables: variables instanceof Map ? Array.from(variables.entries()) : 'NOT A MAP',
             globalVars,
@@ -1715,8 +1722,16 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
 
         return 0;
         } catch (error) {
-          console.error('[Simulator] Error executing instruction:', error);
-          console.error('[Simulator] Instruction that failed:', instruction);
+          console.error('🚨 [Simulator] CRITICAL ERROR executing instruction:', error);
+          console.error('🚨 [Simulator] Error stack trace:', error.stack);
+          console.error('🚨 [Simulator] Instruction that failed:', instruction);
+          console.error('🚨 [Simulator] ExecutionState at error:', executionStateRef.current);
+          console.error('🚨 [Simulator] Variables type check:', {
+            variablesExists: !!executionStateRef.current?.variables,
+            variablesType: typeof executionStateRef.current?.variables,
+            isMap: executionStateRef.current?.variables instanceof Map,
+            hasGetMethod: typeof executionStateRef.current?.variables?.get === 'function'
+          });
           addLog(`❌ Error executing instruction: ${error.message}`);
           return 0;
         }
