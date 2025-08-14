@@ -166,86 +166,90 @@ const Keypad = ({
             // Keypad has 8 pins arranged in specific positions
             let pinRelativeX = 0.5, pinRelativeY = 0.5;
             
+            // Debug: Log available pin information
+            console.log(`Processing keypad pin: ${pinId}, component dimensions: ${componentWidth}x${componentHeight}`);
+            console.log(`Component rect:`, keypadRect);
+            console.log(`Canvas rect:`, canvasRect);
+            
             // Standard 4x4 keypad pin layout (8 pins total)
-            // Rows: R1, R2, R3, R4 (top edge, pins 1-4)
-            // Cols: C1, C2, C3, C4 (bottom edge, pins 5-8)
+            // Based on actual keypad component layout - pins are closer to center
             const normalizedRotation = rotationAngle % 360;
             
             if (normalizedRotation === 0) {
-              // Standard orientation
+              // Standard orientation - adjust positions to match actual visual pins
               if (pinId === 'R1' || pinId === '1' || pinId === 'row1') {
-                pinRelativeX = 0.2; pinRelativeY = 0.1; // Top-left area
+                pinRelativeX = 0.25; pinRelativeY = 0.15; // Top row, pin 1
               } else if (pinId === 'R2' || pinId === '2' || pinId === 'row2') {
-                pinRelativeX = 0.4; pinRelativeY = 0.1; // Top-center-left
+                pinRelativeX = 0.42; pinRelativeY = 0.15; // Top row, pin 2
               } else if (pinId === 'R3' || pinId === '3' || pinId === 'row3') {
-                pinRelativeX = 0.6; pinRelativeY = 0.1; // Top-center-right
+                pinRelativeX = 0.58; pinRelativeY = 0.15; // Top row, pin 3
               } else if (pinId === 'R4' || pinId === '4' || pinId === 'row4') {
-                pinRelativeX = 0.8; pinRelativeY = 0.1; // Top-right area
+                pinRelativeX = 0.75; pinRelativeY = 0.15; // Top row, pin 4
               } else if (pinId === 'C1' || pinId === '5' || pinId === 'col1') {
-                pinRelativeX = 0.2; pinRelativeY = 0.9; // Bottom-left area
+                pinRelativeX = 0.25; pinRelativeY = 0.85; // Bottom row, pin 5
               } else if (pinId === 'C2' || pinId === '6' || pinId === 'col2') {
-                pinRelativeX = 0.4; pinRelativeY = 0.9; // Bottom-center-left
+                pinRelativeX = 0.42; pinRelativeY = 0.85; // Bottom row, pin 6
               } else if (pinId === 'C3' || pinId === '7' || pinId === 'col3') {
-                pinRelativeX = 0.6; pinRelativeY = 0.9; // Bottom-center-right
+                pinRelativeX = 0.58; pinRelativeY = 0.85; // Bottom row, pin 7
               } else if (pinId === 'C4' || pinId === '8' || pinId === 'col4') {
-                pinRelativeX = 0.8; pinRelativeY = 0.9; // Bottom-right area
+                pinRelativeX = 0.75; pinRelativeY = 0.85; // Bottom row, pin 8
               }
             } else if (normalizedRotation === 90) {
-              // Rotated 90 degrees - pins move accordingly
+              // Rotated 90 degrees - pins move to right and left edges
               if (pinId === 'R1' || pinId === '1' || pinId === 'row1') {
-                pinRelativeX = 0.9; pinRelativeY = 0.2; // Right-top area
+                pinRelativeX = 0.85; pinRelativeY = 0.25; // Right edge, pin 1
               } else if (pinId === 'R2' || pinId === '2' || pinId === 'row2') {
-                pinRelativeX = 0.9; pinRelativeY = 0.4; // Right-center-top
+                pinRelativeX = 0.85; pinRelativeY = 0.42; // Right edge, pin 2
               } else if (pinId === 'R3' || pinId === '3' || pinId === 'row3') {
-                pinRelativeX = 0.9; pinRelativeY = 0.6; // Right-center-bottom
+                pinRelativeX = 0.85; pinRelativeY = 0.58; // Right edge, pin 3
               } else if (pinId === 'R4' || pinId === '4' || pinId === 'row4') {
-                pinRelativeX = 0.9; pinRelativeY = 0.8; // Right-bottom area
+                pinRelativeX = 0.85; pinRelativeY = 0.75; // Right edge, pin 4
               } else if (pinId === 'C1' || pinId === '5' || pinId === 'col1') {
-                pinRelativeX = 0.1; pinRelativeY = 0.2; // Left-top area
+                pinRelativeX = 0.15; pinRelativeY = 0.25; // Left edge, pin 5
               } else if (pinId === 'C2' || pinId === '6' || pinId === 'col2') {
-                pinRelativeX = 0.1; pinRelativeY = 0.4; // Left-center-top
+                pinRelativeX = 0.15; pinRelativeY = 0.42; // Left edge, pin 6
               } else if (pinId === 'C3' || pinId === '7' || pinId === 'col3') {
-                pinRelativeX = 0.1; pinRelativeY = 0.6; // Left-center-bottom
+                pinRelativeX = 0.15; pinRelativeY = 0.58; // Left edge, pin 7
               } else if (pinId === 'C4' || pinId === '8' || pinId === 'col4') {
-                pinRelativeX = 0.1; pinRelativeY = 0.8; // Left-bottom area
+                pinRelativeX = 0.15; pinRelativeY = 0.75; // Left edge, pin 8
               }
             } else if (normalizedRotation === 180) {
-              // Rotated 180 degrees - pins flip
+              // Rotated 180 degrees - pins flip to opposite positions
               if (pinId === 'R1' || pinId === '1' || pinId === 'row1') {
-                pinRelativeX = 0.8; pinRelativeY = 0.9; // Bottom-right area
+                pinRelativeX = 0.75; pinRelativeY = 0.85; // Bottom row, pin 4 position
               } else if (pinId === 'R2' || pinId === '2' || pinId === 'row2') {
-                pinRelativeX = 0.6; pinRelativeY = 0.9; // Bottom-center-right
+                pinRelativeX = 0.58; pinRelativeY = 0.85; // Bottom row, pin 3 position
               } else if (pinId === 'R3' || pinId === '3' || pinId === 'row3') {
-                pinRelativeX = 0.4; pinRelativeY = 0.9; // Bottom-center-left
+                pinRelativeX = 0.42; pinRelativeY = 0.85; // Bottom row, pin 2 position
               } else if (pinId === 'R4' || pinId === '4' || pinId === 'row4') {
-                pinRelativeX = 0.2; pinRelativeY = 0.9; // Bottom-left area
+                pinRelativeX = 0.25; pinRelativeY = 0.85; // Bottom row, pin 1 position
               } else if (pinId === 'C1' || pinId === '5' || pinId === 'col1') {
-                pinRelativeX = 0.8; pinRelativeY = 0.1; // Top-right area
+                pinRelativeX = 0.75; pinRelativeY = 0.15; // Top row, pin 4 position
               } else if (pinId === 'C2' || pinId === '6' || pinId === 'col2') {
-                pinRelativeX = 0.6; pinRelativeY = 0.1; // Top-center-right
+                pinRelativeX = 0.58; pinRelativeY = 0.15; // Top row, pin 3 position
               } else if (pinId === 'C3' || pinId === '7' || pinId === 'col3') {
-                pinRelativeX = 0.4; pinRelativeY = 0.1; // Top-center-left
+                pinRelativeX = 0.42; pinRelativeY = 0.15; // Top row, pin 2 position
               } else if (pinId === 'C4' || pinId === '8' || pinId === 'col4') {
-                pinRelativeX = 0.2; pinRelativeY = 0.1; // Top-left area
+                pinRelativeX = 0.25; pinRelativeY = 0.15; // Top row, pin 1 position
               }
             } else if (normalizedRotation === 270) {
-              // Rotated 270 degrees
+              // Rotated 270 degrees - pins move to left and right edges (opposite of 90)
               if (pinId === 'R1' || pinId === '1' || pinId === 'row1') {
-                pinRelativeX = 0.1; pinRelativeY = 0.8; // Left-bottom area
+                pinRelativeX = 0.15; pinRelativeY = 0.75; // Left edge, pin 4 position
               } else if (pinId === 'R2' || pinId === '2' || pinId === 'row2') {
-                pinRelativeX = 0.1; pinRelativeY = 0.6; // Left-center-bottom
+                pinRelativeX = 0.15; pinRelativeY = 0.58; // Left edge, pin 3 position
               } else if (pinId === 'R3' || pinId === '3' || pinId === 'row3') {
-                pinRelativeX = 0.1; pinRelativeY = 0.4; // Left-center-top
+                pinRelativeX = 0.15; pinRelativeY = 0.42; // Left edge, pin 2 position
               } else if (pinId === 'R4' || pinId === '4' || pinId === 'row4') {
-                pinRelativeX = 0.1; pinRelativeY = 0.2; // Left-top area
+                pinRelativeX = 0.15; pinRelativeY = 0.25; // Left edge, pin 1 position
               } else if (pinId === 'C1' || pinId === '5' || pinId === 'col1') {
-                pinRelativeX = 0.9; pinRelativeY = 0.8; // Right-bottom area
+                pinRelativeX = 0.85; pinRelativeY = 0.75; // Right edge, pin 4 position
               } else if (pinId === 'C2' || pinId === '6' || pinId === 'col2') {
-                pinRelativeX = 0.9; pinRelativeY = 0.6; // Right-center-bottom
+                pinRelativeX = 0.85; pinRelativeY = 0.58; // Right edge, pin 3 position
               } else if (pinId === 'C3' || pinId === '7' || pinId === 'col3') {
-                pinRelativeX = 0.9; pinRelativeY = 0.4; // Right-center-top
+                pinRelativeX = 0.85; pinRelativeY = 0.42; // Right edge, pin 2 position
               } else if (pinId === 'C4' || pinId === '8' || pinId === 'col4') {
-                pinRelativeX = 0.9; pinRelativeY = 0.2; // Right-top area
+                pinRelativeX = 0.85; pinRelativeY = 0.25; // Right edge, pin 1 position
               }
             }
             
