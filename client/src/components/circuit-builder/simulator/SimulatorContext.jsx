@@ -843,8 +843,15 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                 console.log(`[Simulator] analogRead(${pinNumber}) reading from Photoresistor ${component.id}: lightLevel = ${lightLevel} (${lightLevelPercent}%)`);
                 addLog(`[${timestamp}] → analogRead(${pinNumber}) returned ${lightLevel} (${(lightLevel/1023*5).toFixed(2)}V from ${lightLevelPercent}% light)`);
                 
-                // Store the value for variable assignment
+                // Store the value for variable assignment AND make it immediately available
                 executionStateRef.current.lastAnalogValue = lightLevel;
+                
+                // CRITICAL: Store this value globally so assignments can access it immediately
+                if (!window.lastAnalogReadValue) window.lastAnalogReadValue = {};
+                window.lastAnalogReadValue.value = lightLevel;
+                window.lastAnalogReadValue.timestamp = Date.now();
+                
+                console.log(`[analogRead] STORED value globally: ${lightLevel} for immediate assignment access`);
                 return lightLevel;
               }
             }
@@ -1473,6 +1480,14 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
               } else if (debugValue !== undefined) {
                 resolvedValue = debugValue;
                 source = 'debug-backup';
+              } else if (window.lastAnalogReadValue && window.lastAnalogReadValue.value !== undefined) {
+                // CRITICAL FIX: If no variable found, but we have a recent analogRead, use that
+                const timeDiff = Date.now() - (window.lastAnalogReadValue.timestamp || 0);
+                if (timeDiff < 5000) { // Use value if it's less than 5 seconds old
+                  resolvedValue = window.lastAnalogReadValue.value;
+                  source = 'recent-analogRead';
+                  console.log(`[Serial] Using recent analogRead value ${resolvedValue} (${timeDiff}ms ago) for variable '${message}'`);
+                }
               }
               
               if (resolvedValue !== undefined) {
@@ -1481,6 +1496,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
               } else {
                 console.log(`[Serial] ❌ ERROR: Variable '${message}' not found anywhere!`);
                 console.log(`[Serial] All execution state:`, executionStateRef.current);
+                console.log(`[Serial] Recent analogRead:`, window.lastAnalogReadValue);
                 message = `<UNRESOLVED: ${message}>`;
               }
             } else {
