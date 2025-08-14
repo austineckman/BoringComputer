@@ -328,8 +328,17 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       
       // Define the instruction execution function
       const executeInstruction = (instruction) => {
-        console.log('executeInstruction called with:', instruction);
-        const timestamp = new Date().toLocaleTimeString();
+        try {
+          console.log('executeInstruction called with:', instruction);
+          
+          // Validate instruction exists and has required properties
+          if (!instruction || !instruction.instruction) {
+            console.error('[Simulator] Invalid instruction:', instruction);
+            addLog(`❌ Error: Invalid instruction received`);
+            return 0;
+          }
+          
+          const timestamp = new Date().toLocaleTimeString();
         
         // CRITICAL: Check conditional execution flow control
         if (executionStateRef.current.skipUntilEndIf) {
@@ -1604,6 +1613,12 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         }
 
         return 0;
+        } catch (error) {
+          console.error('[Simulator] Error executing instruction:', error);
+          console.error('[Simulator] Instruction that failed:', instruction);
+          addLog(`❌ Error executing instruction: ${error.message}`);
+          return 0;
+        }
       };
 
       setIsRunning(true);
