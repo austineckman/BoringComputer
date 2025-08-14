@@ -4,6 +4,7 @@ import {
 } from "../lib/inventr-component-lib.es.js";
 import Moveable from "react-moveable";
 import { createPortal } from "react-dom";
+import { useSimulator } from '../simulator/SimulatorContext.jsx';
 
 // Define MOVE_SETTINGS to match what the original code expects
 const MOVE_SETTINGS = {
