@@ -808,13 +808,17 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                   readValue = photoresistorState.lightLevel; // 0-1023 range
                   console.log(`[Simulator] analogRead(${pinNumber}) reading from Photoresistor ${component.id}: lightLevel = ${readValue}`);
                   addLog(`[${timestamp}] → analogRead(${pinNumber}) reading Photoresistor: ${readValue} (${(readValue/1023*5).toFixed(2)}V)`);
-                  return 0;
+                  // Store the value for variable assignment
+                  executionStateRef.current.lastAnalogValue = readValue;
+                  return readValue;
                 } else {
                   // Default photoresistor reading (medium light)
                   readValue = 512;
                   console.log(`[Simulator] analogRead(${pinNumber}) reading from Photoresistor ${component.id}: default value = ${readValue}`);
                   addLog(`[${timestamp}] → analogRead(${pinNumber}) reading Photoresistor: ${readValue} (default)`);
-                  return 0;
+                  // Store the value for variable assignment
+                  executionStateRef.current.lastAnalogValue = readValue;
+                  return readValue;
                 }
               }
             }
@@ -837,7 +841,9 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                   readValue = Math.abs(encoderState.position) % 1024; // Convert position to 0-1023 range
                   console.log(`[Simulator] analogRead(${pinNumber}) reading from RotaryEncoder ${component.id}: position = ${encoderState.position} → ${readValue}`);
                   addLog(`[${timestamp}] → analogRead(${pinNumber}) reading RotaryEncoder: ${readValue}`);
-                  return 0;
+                  // Store the value for variable assignment
+                  executionStateRef.current.lastAnalogValue = readValue;
+                  return readValue;
                 }
               }
             }
@@ -846,7 +852,9 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           // If no analog components found, return default reading
           addLog(`[${timestamp}] → analogRead(${pinNumber}) returned ${readValue} (${(readValue/1023*5).toFixed(2)}V)`);
           console.log(`[Simulator] analogRead(${pinNumber}) no analog components connected, returning default: ${readValue}`);
-          return 0;
+          // Store the value for variable assignment
+          executionStateRef.current.lastAnalogValue = readValue;
+          return readValue;
         }
 
         if (instruction.function === 'map') {
