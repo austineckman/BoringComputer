@@ -1247,28 +1247,11 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             console.log(`[Simulator] Assignment: ${variable} = ${value} (${typeof value})`);
           }
           
-          // Store the variable in execution state for resolution in Serial.println
-          if (!executionStateRef.current.variables) {
-            executionStateRef.current.variables = new Map();
-          }
-          
-          // Ensure we store the actual number, not a string
+          // Store variable - use ONLY the execution state Map (clean approach)
           const numericValue = typeof finalValue === 'string' ? parseInt(finalValue) || finalValue : finalValue;
-          
-          // Store in multiple locations to ensure persistence
           executionStateRef.current.variables.set(variable, numericValue);
           
-          // Also store globally for better persistence across execution cycles
-          if (!window.simulatorVariables) window.simulatorVariables = {};
-          window.simulatorVariables[variable] = numericValue;
-          
-          console.log(`[Assignment] STORED variable '${variable}' with value ${numericValue} (type: ${typeof numericValue})`);
-          console.log(`[Assignment] Variables map now contains:`, executionStateRef.current.variables instanceof Map ? Array.from(executionStateRef.current.variables.entries()) : 'NOT A MAP');
-          console.log(`[Assignment] Global variables:`, window.simulatorVariables);
-          
-          // Store in debug location too
-          if (!window.debugVariables) window.debugVariables = {};
-          window.debugVariables[variable] = numericValue;
+          console.log(`[Assignment] Stored variable '${variable}' = ${numericValue}`);
           
           if (type) {
             addLog(`[${timestamp}] → Declared ${type} variable '${variable}' = ${finalValue}`);
@@ -1286,48 +1269,16 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           // Evaluate the condition by resolving variables
           let evaluatedCondition = condition;
           
-          // Replace variables in the condition with their actual values
-          const variables = executionStateRef.current.variables || new Map();
-          const globalVars = window.simulatorVariables || {};
-          const debugVars = window.debugVariables || {};
-          const recentAnalogValue = window.lastAnalogReadValue?.value;
+          // Replace variables in the condition with their values (clean approach)
+          const variables = executionStateRef.current.variables;
           
-          // CRITICAL DEBUG: Check variable types before using
-          console.log(`[If] Variable type check:`, {
-            variablesType: typeof variables,
-            isMap: variables instanceof Map,
-            hasGetMethod: typeof variables.get === 'function'
-          });
-          
-          console.log(`[If] Available variables for condition evaluation:`, {
-            variables: variables instanceof Map ? Array.from(variables.entries()) : 'NOT A MAP',
-            globalVars,
-            debugVars,
-            recentAnalogValue
-          });
+          console.log(`[If] Variables available:`, Array.from(variables.entries()));
           
           // Replace variable names with their values
           variables.forEach((value, name) => {
             const regex = new RegExp(`\\b${name}\\b`, 'g');
             evaluatedCondition = evaluatedCondition.replace(regex, value);
           });
-          
-          // Also try global variables if not found in execution state
-          Object.entries(globalVars).forEach(([name, value]) => {
-            const regex = new RegExp(`\\b${name}\\b`, 'g');
-            evaluatedCondition = evaluatedCondition.replace(regex, value);
-          });
-          
-          // Also try debug variables as fallback
-          Object.entries(debugVars).forEach(([name, value]) => {
-            const regex = new RegExp(`\\b${name}\\b`, 'g');
-            evaluatedCondition = evaluatedCondition.replace(regex, value);
-          });
-          
-          // If still has unresolved variables and we have a recent analog value, try using that
-          if (recentAnalogValue !== undefined && evaluatedCondition.includes('value')) {
-            evaluatedCondition = evaluatedCondition.replace(/\bvalue\b/g, recentAnalogValue);
-          }
           
           console.log(`[If] Original condition: ${condition}`);
           console.log(`[If] Evaluated condition: ${evaluatedCondition}`);
@@ -1649,59 +1600,22 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             console.log(`[Serial] Variables map exists:`, !!(executionStateRef.current?.variables));
             const variablesMap = executionStateRef.current?.variables || new Map();
             console.log(`[Serial] Available variables:`, variablesMap instanceof Map ? Array.from(variablesMap.entries()) : 'NOT A MAP');
-            console.log(`[Serial] Global simulator variables:`, window.simulatorVariables);
-            console.log(`[Serial] Debug variables:`, window.debugVariables);
+            console.log(`[Serial] Processing message: ${originalMessage}`);
             
             // Check if it's a variable reference (no quotes)
             if (!((message.startsWith('"') && message.endsWith('"')) || 
                   (message.startsWith("'") && message.endsWith("'")))) {
               console.log(`[Serial] This is a variable reference: '${message}'`);
               
-              // Get variables from execution state
-              const variables = executionStateRef.current?.variables || new Map();
+              // Get variable from execution state (clean approach)
+              const variables = executionStateRef.current.variables;
               const variableValue = variables.get(message);
               
-              // Also check global and debug variables
-              const globalValue = window.simulatorVariables?.[message];
-              const debugValue = window.debugVariables?.[message];
-              
-              console.log(`[Serial] Variables Map size:`, variables.size);
-              console.log(`[Serial] Variables Map contents:`, variables);
-              console.log(`[Serial] Looking for variable '${message}':`);
-              console.log(`[Serial]   - From execution state:`, variableValue);
-              console.log(`[Serial]   - From global storage:`, globalValue);
-              console.log(`[Serial]   - From debug backup:`, debugValue);
-              
-              // Try to resolve from any available source
-              let resolvedValue = undefined;
-              let source = 'none';
-              
               if (variableValue !== undefined) {
-                resolvedValue = variableValue;
-                source = 'execution-state';
-              } else if (globalValue !== undefined) {
-                resolvedValue = globalValue;
-                source = 'global-storage';
-              } else if (debugValue !== undefined) {
-                resolvedValue = debugValue;
-                source = 'debug-backup';
-              } else if (window.lastAnalogReadValue && window.lastAnalogReadValue.value !== undefined) {
-                // CRITICAL FIX: If no variable found, but we have a recent analogRead, use that
-                const timeDiff = Date.now() - (window.lastAnalogReadValue.timestamp || 0);
-                if (timeDiff < 5000) { // Use value if it's less than 5 seconds old
-                  resolvedValue = window.lastAnalogReadValue.value;
-                  source = 'recent-analogRead';
-                  console.log(`[Serial] Using recent analogRead value ${resolvedValue} (${timeDiff}ms ago) for variable '${message}'`);
-                }
-              }
-              
-              if (resolvedValue !== undefined) {
-                message = resolvedValue.toString();
-                console.log(`[Serial] ✅ SUCCESS: Resolved '${originalMessage}' from ${source} to value: ${message}`);
+                message = variableValue.toString();
+                console.log(`[Serial] Resolved '${originalMessage}' to: ${message}`);
               } else {
-                console.log(`[Serial] ❌ ERROR: Variable '${message}' not found anywhere!`);
-                console.log(`[Serial] All execution state:`, executionStateRef.current);
-                console.log(`[Serial] Recent analogRead:`, window.lastAnalogReadValue);
+                console.log(`[Serial] Variable '${message}' not found`);
                 message = `<UNRESOLVED: ${message}>`;
               }
             } else {
