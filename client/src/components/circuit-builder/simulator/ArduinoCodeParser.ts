@@ -433,7 +433,7 @@ export class ArduinoCodeParser {
         this.variables.set(variable, resolvedValue);
       }
       
-      const instruction = {
+      const instruction: any = {
         lineNumber,
         instruction: `${type} ${variable} = ${resolvedValue}`,
         function: 'assignment',
@@ -457,7 +457,7 @@ export class ArduinoCodeParser {
         this.variables.set(variable, resolvedValue);
       }
       
-      const instruction = {
+      const instruction: any = {
         lineNumber,
         instruction: `${variable} = ${resolvedValue}`,
         function: 'assignment',
@@ -544,7 +544,7 @@ export class ArduinoCodeParser {
     const caseMatch = line.match(/case\s+(\w+|\d+)\s*:/);
     if (caseMatch) {
       const value = caseMatch[1];
-      const instruction = {
+      const instruction: any = {
         lineNumber,
         instruction: `case ${value}:`,
         function: 'case',
@@ -665,7 +665,7 @@ export class ArduinoCodeParser {
     const returnMatch = line.match(/return\s+(.*?);/);
     if (returnMatch) {
       const value = returnMatch[1];
-      const instruction = {
+      const instruction: any = {
         lineNumber,
         instruction: `return ${value};`,
         function: 'return',
