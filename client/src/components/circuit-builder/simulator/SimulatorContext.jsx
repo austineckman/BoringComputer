@@ -822,26 +822,17 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
               }
               
               if (finalPhotoresistorWires.length > 0) {
-                // Get the Photoresistor state from component states
-                const photoresistorState = componentStates[component.id];
-                console.log(`[Simulator] Photoresistor ${component.id} state:`, photoresistorState);
+                // Get the current light level from the component props (updated by the Properties panel)
+                const lightLevelPercent = component.props?.lightLevel || 50;
+                // Convert percentage (0-100) to analog value (0-1023), so high light = high value
+                const lightLevel = Math.round((lightLevelPercent / 100) * 1023);
                 
-                if (photoresistorState && photoresistorState.lightLevel !== undefined) {
-                  readValue = photoresistorState.lightLevel; // 0-1023 range
-                  console.log(`[Simulator] analogRead(${pinNumber}) reading from Photoresistor ${component.id}: lightLevel = ${readValue}`);
-                  addLog(`[${timestamp}] → analogRead(${pinNumber}) reading Photoresistor: ${readValue} (${(readValue/1023*5).toFixed(2)}V)`);
-                  // Store the value for variable assignment
-                  executionStateRef.current.lastAnalogValue = readValue;
-                  return readValue;
-                } else {
-                  // Default photoresistor reading (medium light)
-                  readValue = 512;
-                  console.log(`[Simulator] analogRead(${pinNumber}) reading from Photoresistor ${component.id}: default value = ${readValue}`);
-                  addLog(`[${timestamp}] → analogRead(${pinNumber}) reading Photoresistor: ${readValue} (default)`);
-                  // Store the value for variable assignment
-                  executionStateRef.current.lastAnalogValue = readValue;
-                  return readValue;
-                }
+                console.log(`[Simulator] analogRead(${pinNumber}) reading from Photoresistor ${component.id}: lightLevel = ${lightLevel} (${lightLevelPercent}%)`);
+                addLog(`[${timestamp}] → analogRead(${pinNumber}) returned ${lightLevel} (${(lightLevel/1023*5).toFixed(2)}V from ${lightLevelPercent}% light)`);
+                
+                // Store the value for variable assignment
+                executionStateRef.current.lastAnalogValue = lightLevel;
+                return lightLevel;
               }
             }
           });
