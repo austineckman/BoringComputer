@@ -63,10 +63,8 @@ const HeroBoard = ({
     }
   };
 
-  // Update position when dragged
-  useEffect(() => {
-    triggerRedraw();
-  }, [pinInfo, posTop, posLeft]);
+  // NOTE: Removed problematic useEffect that was causing infinite re-renders
+  // Position updates are now handled by React state and CSS transforms directly
   
   // Listen for global Arduino pin changes as fallback
   useEffect(() => {
