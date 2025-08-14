@@ -132,23 +132,40 @@ const Photoresistor = ({
 
         let pinPosition;
         
-        // Priority 1: Use coordinates from the event detail
-        if (e.detail.x !== undefined && e.detail.y !== undefined) {
-          const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
-          pinPosition = {
-            x: e.detail.x - canvasRect.left,
-            y: e.detail.y - canvasRect.top
-          };
-          console.log(`Using event detail coordinates for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
+        console.log('Pin click event detail:', e.detail);
+        console.log('Full event object:', e);
+        
+        // Priority 1: Try to get mouse coordinates from the original event
+        let mouseX, mouseY;
+        
+        // Check if we can access the original mouse event
+        if (e.detail.originalEvent) {
+          mouseX = e.detail.originalEvent.clientX;
+          mouseY = e.detail.originalEvent.clientY;
+          console.log('Found original event coordinates:', mouseX, mouseY);
+        } else if (e.detail.clientX !== undefined && e.detail.clientY !== undefined) {
+          mouseX = e.detail.clientX;
+          mouseY = e.detail.clientY;
+          console.log('Using event detail client coordinates:', mouseX, mouseY);
+        } else if (e.detail.x !== undefined && e.detail.y !== undefined) {
+          // Try converting from local coordinates to global
+          const photoresistorElement = targetRef.current;
+          if (photoresistorElement) {
+            const rect = photoresistorElement.getBoundingClientRect();
+            mouseX = rect.left + e.detail.x;
+            mouseY = rect.top + e.detail.y;
+            console.log('Converted local coordinates to global:', mouseX, mouseY);
+          }
         }
-        // Priority 2: Use event clientX/clientY if available
-        else if (e.detail.clientX !== undefined && e.detail.clientY !== undefined) {
+        
+        // If we have mouse coordinates, use them directly
+        if (mouseX !== undefined && mouseY !== undefined) {
           const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
           pinPosition = {
-            x: e.detail.clientX - canvasRect.left,
-            y: e.detail.clientY - canvasRect.top
+            x: mouseX - canvasRect.left,
+            y: mouseY - canvasRect.top
           };
-          console.log(`Using event client coordinates for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
+          console.log(`Using mouse coordinates for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
         }
         // Priority 3: Calculate pin positions based on photoresistor layout
         else {
