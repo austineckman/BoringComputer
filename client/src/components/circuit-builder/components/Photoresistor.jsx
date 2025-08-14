@@ -146,112 +146,39 @@ const Photoresistor = ({
             y: clientY - canvasRect.top
           };
           console.log(`Using direct client coordinates for ${pinId}: (${pinPosition.x}, ${pinPosition.y}) from (${clientX}, ${clientY})`);
-        }
-        // Priority 3: Use the exact same positioning system as the visual pin dots
-        else {
-          const photoresistorElement = targetRef.current;
-          if (photoresistorElement && canvasRef.current) {
-            const photoresistorRect = photoresistorElement.getBoundingClientRect();
-            const canvasRect = canvasRef.current.getBoundingClientRect();
-            
-            // Get the component's position and dimensions like CircuitComponent does
-            const componentPosition = {
-              x: photoresistorRect.left - canvasRect.left,
-              y: photoresistorRect.top - canvasRect.top
-            };
-            const componentWidth = photoresistorRect.width;
-            const componentHeight = photoresistorRect.height;
-            
-            // Define pin positions relative to component like CircuitComponent
-            // These percentages match the visual pin dots system
-            let pinRelativeX = 0.5, pinRelativeY = 0.5;
-            
-            // Standard photoresistor pin layout based on rotation
-            const normalizedRotation = rotationAngle % 360;
-            
-            if (normalizedRotation === 0) {
-              // Horizontal orientation - pins on ends
-              if (pinId === 'pin1' || pinId === 'A' || pinId === '1') {
-                pinRelativeX = 0.1; // Left pin
-                pinRelativeY = 0.5; // Center vertically
-              } else {
-                pinRelativeX = 0.9; // Right pin
-                pinRelativeY = 0.5; // Center vertically
-              }
-            } else if (normalizedRotation === 90) {
-              // Vertical orientation - pins on top/bottom
-              if (pinId === 'pin1' || pinId === 'A' || pinId === '1') {
-                pinRelativeX = 0.5; // Center horizontally
-                pinRelativeY = 0.1; // Top pin
-              } else {
-                pinRelativeX = 0.5; // Center horizontally
-                pinRelativeY = 0.9; // Bottom pin
-              }
-            } else if (normalizedRotation === 180) {
-              // Horizontal flipped
-              if (pinId === 'pin1' || pinId === 'A' || pinId === '1') {
-                pinRelativeX = 0.9; // Right pin
-                pinRelativeY = 0.5; // Center vertically
-              } else {
-                pinRelativeX = 0.1; // Left pin
-                pinRelativeY = 0.5; // Center vertically
-              }
-            } else if (normalizedRotation === 270) {
-              // Vertical flipped
-              if (pinId === 'pin1' || pinId === 'A' || pinId === '1') {
-                pinRelativeX = 0.5; // Center horizontally
-                pinRelativeY = 0.9; // Bottom pin
-              } else {
-                pinRelativeX = 0.5; // Center horizontally
-                pinRelativeY = 0.1; // Top pin
-              }
-            }
-            
-            // Calculate final position using the same method as CircuitComponent
-            const pinAbsoluteX = componentPosition.x + (pinRelativeX * componentWidth);
-            const pinAbsoluteY = componentPosition.y + (pinRelativeY * componentHeight);
-            
-            pinPosition = {
-              x: pinAbsoluteX,
-              y: pinAbsoluteY
-            };
-            
-            console.log(`Using CircuitComponent-style pin position for ${pinId} at rotation ${normalizedRotation}°: (${pinPosition.x}, ${pinPosition.y}) - relative: (${pinRelativeX}, ${pinRelativeY})`);
-          } else {
-            // Last resort fallback
-            pinPosition = {
-              x: posLeft + 18,
-              y: posTop + 18
-            };
-            console.log(`Using fallback position for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
-          }
+        } else {
+          // Fallback if no clientX/clientY - should rarely happen
+          console.warn('No clientX/clientY coordinates available for photoresistor pin');
+          const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+          pinPosition = {
+            x: 100, // Fallback position
+            y: 100
+          };
         }
         
-        // Generate formatted pin ID for consistent wire connections
+        // Call the parent's onPinConnect handler
+        onPinConnect(pinId, pinType, id);
+        
+        // Send another event with the formatted pin ID to match our wire manager
+        // Use the exact same format as the HeroBoard component
         const formattedPinId = `pt-photoresistor-${id}-${pinId}`;
         
-        // Create a custom pin click event with the correct position data
+        // Create a custom pin click event to trigger the wire manager
+        // Use the EXACT same event structure as the HeroBoard component
         const pinClickEvent = new CustomEvent('pinClicked', {
           detail: {
             id: formattedPinId,
-            pinName: pinId,
-            componentId: id,
-            componentType: 'photoresistor',
+            pinData: e.detail.data,
             pinType: pinType,
-            position: pinPosition,
-            x: pinPosition.x,
-            y: pinPosition.y
+            parentId: id,
+            clientX,
+            clientY
           }
         });
         
-        // Call the onPinConnect callback with enhanced data
-        onPinConnect(
-          formattedPinId,
-          pinType,
-          id,
-          pinPosition,
-          pinClickEvent
-        );
+        // Dispatch the event to be captured by the wire manager
+        document.dispatchEvent(pinClickEvent);
+        console.log(`Photoresistor pin ${pinId} (${pinType}) of component ${id} clicked at position (${clientX}, ${clientY})`);
         
       } catch (error) {
         console.error('Error handling photoresistor pin click:', error);
