@@ -1050,10 +1050,24 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         // Handle variable assignments
         if (instruction.function === 'assignment') {
           const { variable, value, type } = instruction;
+          
+          // Check if the value is a function call result (like analogRead)
+          let finalValue = value;
+          if (typeof value === 'string' && value.includes('analogRead')) {
+            // This assignment includes analogRead, use the last analog value from execution state
+            finalValue = executionStateRef.current.lastAnalogValue || 0;
+          }
+          
+          // Store the variable in execution state for resolution in Serial.println
+          if (!executionStateRef.current.variables) {
+            executionStateRef.current.variables = new Map();
+          }
+          executionStateRef.current.variables.set(variable, finalValue);
+          
           if (type) {
-            addLog(`[${timestamp}] → Declared ${type} variable '${variable}' = ${value}`);
+            addLog(`[${timestamp}] → Declared ${type} variable '${variable}' = ${finalValue}`);
           } else {
-            addLog(`[${timestamp}] → Variable '${variable}' = ${value}`);
+            addLog(`[${timestamp}] → Variable '${variable}' = ${finalValue}`);
           }
           return 0;
         }
@@ -1343,20 +1357,33 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           return 0;
         }
 
-        if (instruction.instruction.includes('Serial.print')) {
+        if (instruction.function === 'serial') {
           // Extract the actual message from Serial.print(message) or Serial.println(message)
           const serialMatch = instruction.instruction.match(/Serial\.print(?:ln)?\s*\((.*)\)/);
           if (serialMatch) {
             let message = serialMatch[1].trim();
-            // Remove quotes if it's a string literal
-            if ((message.startsWith('"') && message.endsWith('"')) || 
-                (message.startsWith("'") && message.endsWith("'"))) {
+            
+            // Check if it's a variable reference (no quotes)
+            if (!((message.startsWith('"') && message.endsWith('"')) || 
+                  (message.startsWith("'") && message.endsWith("'")))) {
+              // It's a variable - resolve it to its actual value
+              const variables = executionStateRef.current.variables || new Map();
+              const variableValue = variables.get(message);
+              if (variableValue !== undefined) {
+                message = variableValue.toString();
+                console.log(`[Serial] Resolved variable '${serialMatch[1].trim()}' to value: ${message}`);
+              } else {
+                console.log(`[Serial] Variable '${message}' not found, using literal`);
+              }
+            } else {
+              // Remove quotes if it's a string literal
               message = message.slice(1, -1);
             }
+            
             addSerialLog(message);
+            addLog(`[${timestamp}] → Serial: ${message}`);
           }
-          // Also log to simulation logs for debugging
-          addLog(`[${timestamp}] → Serial: ${instruction.instruction}`);
+          return 0;
         }
 
         return 0;
