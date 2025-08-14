@@ -111,10 +111,159 @@ const Photoresistor = ({
 
   // Handle pin click
   const handlePinClicked = (e) => {
+    console.log("Photoresistor pin clicked", e.detail);
+    
     if (onPinConnect) {
-      const pinId = e.detail.pinId;
-      const pinType = e.detail.pinType;
-      onPinConnect(pinId, pinType, id);
+      try {
+        // Parse pin data from the event
+        let pinId, pinType;
+        
+        // Check if this is data in JSON format (from the Web Component)
+        if (e.detail.data && typeof e.detail.data === 'string') {
+          // Parse the JSON string to get the pin data
+          const pinData = JSON.parse(e.detail.data);
+          pinId = pinData.name || 'pin1'; // Default to pin1 if no name is provided
+          pinType = 'bidirectional'; // Photoresistors are bidirectional
+        } else {
+          // Use the pin ID and type directly if available
+          pinId = e.detail.pinId || 'pin1';
+          pinType = e.detail.pinType || 'bidirectional';
+        }
+
+        let pinPosition;
+        
+        // Priority 1: Use coordinates from the event detail
+        if (e.detail.x !== undefined && e.detail.y !== undefined) {
+          const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+          pinPosition = {
+            x: e.detail.x - canvasRect.left,
+            y: e.detail.y - canvasRect.top
+          };
+          console.log(`Using event detail coordinates for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
+        }
+        // Priority 2: Use event clientX/clientY if available
+        else if (e.detail.clientX !== undefined && e.detail.clientY !== undefined) {
+          const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+          pinPosition = {
+            x: e.detail.clientX - canvasRect.left,
+            y: e.detail.clientY - canvasRect.top
+          };
+          console.log(`Using event client coordinates for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
+        }
+        // Priority 3: Calculate pin positions based on photoresistor layout
+        else {
+          const photoresistorElement = targetRef.current;
+          if (photoresistorElement && canvasRef.current) {
+            const photoresistorRect = photoresistorElement.getBoundingClientRect();
+            const canvasRect = canvasRef.current.getBoundingClientRect();
+            
+            // Calculate pin positions based on photoresistor position and standard pin layout
+            // Photoresistor pins are typically on opposite ends of the component
+            let offsetX = 0, offsetY = 0;
+            
+            // Determine pin position based on rotation
+            const normalizedRotation = rotationAngle % 360;
+            
+            if (normalizedRotation === 0) {
+              // Horizontal orientation - pins on left and right
+              if (pinId === 'pin1' || pinId === 'A' || pinId === '1') {
+                // Left pin
+                offsetX = photoresistorRect.width * 0.15;
+                offsetY = photoresistorRect.height * 0.5;
+              } else {
+                // Right pin (pin2, B, 2)
+                offsetX = photoresistorRect.width * 0.85;
+                offsetY = photoresistorRect.height * 0.5;
+              }
+            } else if (normalizedRotation === 90) {
+              // Vertical orientation - pins on top and bottom
+              if (pinId === 'pin1' || pinId === 'A' || pinId === '1') {
+                // Top pin
+                offsetX = photoresistorRect.width * 0.5;
+                offsetY = photoresistorRect.height * 0.15;
+              } else {
+                // Bottom pin
+                offsetX = photoresistorRect.width * 0.5;
+                offsetY = photoresistorRect.height * 0.85;
+              }
+            } else if (normalizedRotation === 180) {
+              // Horizontal flipped - pins on right and left (reversed)
+              if (pinId === 'pin1' || pinId === 'A' || pinId === '1') {
+                // Right pin
+                offsetX = photoresistorRect.width * 0.85;
+                offsetY = photoresistorRect.height * 0.5;
+              } else {
+                // Left pin
+                offsetX = photoresistorRect.width * 0.15;
+                offsetY = photoresistorRect.height * 0.5;
+              }
+            } else if (normalizedRotation === 270) {
+              // Vertical flipped - pins on bottom and top (reversed)
+              if (pinId === 'pin1' || pinId === 'A' || pinId === '1') {
+                // Bottom pin
+                offsetX = photoresistorRect.width * 0.5;
+                offsetY = photoresistorRect.height * 0.85;
+              } else {
+                // Top pin
+                offsetX = photoresistorRect.width * 0.5;
+                offsetY = photoresistorRect.height * 0.15;
+              }
+            } else {
+              // Default to center for other angles
+              offsetX = photoresistorRect.width * 0.5;
+              offsetY = photoresistorRect.height * 0.5;
+            }
+            
+            pinPosition = {
+              x: photoresistorRect.left + offsetX - canvasRect.left,
+              y: photoresistorRect.top + offsetY - canvasRect.top
+            };
+            
+            console.log(`Using calculated pin position for ${pinId} at rotation ${normalizedRotation}°: (${pinPosition.x}, ${pinPosition.y}) with offsets (${offsetX}, ${offsetY})`);
+          } else {
+            // Last resort fallback
+            pinPosition = {
+              x: posLeft + 18,
+              y: posTop + 18
+            };
+            console.log(`Using fallback position for ${pinId}: (${pinPosition.x}, ${pinPosition.y})`);
+          }
+        }
+        
+        // Generate formatted pin ID for consistent wire connections
+        const formattedPinId = `pt-photoresistor-${id}-${pinId}`;
+        
+        // Create a custom pin click event with the correct position data
+        const pinClickEvent = new CustomEvent('pinClicked', {
+          detail: {
+            id: formattedPinId,
+            pinName: pinId,
+            componentId: id,
+            componentType: 'photoresistor',
+            pinType: pinType,
+            position: pinPosition,
+            x: pinPosition.x,
+            y: pinPosition.y
+          }
+        });
+        
+        // Call the onPinConnect callback with enhanced data
+        onPinConnect(
+          formattedPinId,
+          pinType,
+          id,
+          pinPosition,
+          pinClickEvent
+        );
+        
+      } catch (error) {
+        console.error('Error handling photoresistor pin click:', error);
+        
+        // Fallback to original behavior
+        const pinId = e.detail.pinId || 'pin1';
+        const pinType = e.detail.pinType || 'bidirectional';
+        onPinConnect(pinId, pinType, id);
+      }
     }
   };
 
