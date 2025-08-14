@@ -324,7 +324,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog(`📋 Found ${parseResult.setup?.length || 0} lines in setup(), ${parseResult.loop?.length || 0} lines in loop()`);
       addLog(`✅ Code parsed: ${setupInstructions.length} setup instructions, ${loopInstructions.length} loop instructions`);
       
-      // Initialize execution state - FIXED if statement logic
+      // Initialize execution state with proper Map
       executionStateRef.current = {
         phase: 'setup',
         setupIndex: 0,
@@ -332,7 +332,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         setupInstructions,
         loopInstructions,
         loopCount: 0,
-        variables: {},
+        variables: new Map(), // FIX: Use Map instead of plain object
         skipUntilEndIf: false,
         inConditionalBlock: false,
         lastConditionResult: false,
@@ -369,10 +369,8 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             if (conditionMatch) {
               const [, variableName, operator, compareValue] = conditionMatch;
               
-              // Get variable value from execution state or global variables
-              const variableValue = executionStateRef.current.variables[variableName] || 
-                                   window.simulatorGlobalVars?.[variableName] ||
-                                   window.lastAnalogReadValue?.value ||
+              // Get variable value from execution state Map
+              const variableValue = executionStateRef.current.variables.get(variableName) ||
                                    450; // Default for testing
               
               const numValue = Number(variableValue);
@@ -1759,7 +1757,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       setupBlocks: [],
       loopBlocks: [],
       loopCount: 0,
-      variables: {},
+      variables: new Map(), // FIX: Use Map instead of plain object
       currentContext: {}
     };
     
