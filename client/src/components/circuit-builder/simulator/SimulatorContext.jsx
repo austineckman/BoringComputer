@@ -1594,11 +1594,8 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             
             console.log(`[Serial] ====== SERIAL PROCESSING START ======`);
             console.log(`[Serial] Processing Serial output: ${originalMessage}`);
-            console.log(`[Serial] Execution state exists:`, !!executionStateRef.current);
-            console.log(`[Serial] Variables map exists:`, !!(executionStateRef.current?.variables));
-            const variablesMap = executionStateRef.current?.variables || new Map();
-            console.log(`[Serial] Available variables:`, variablesMap instanceof Map ? Array.from(variablesMap.entries()) : 'NOT A MAP');
-            console.log(`[Serial] Processing message: ${originalMessage}`);
+            console.log(`[Serial] Execution state:`, executionStateRef.current);
+            console.log(`[Serial] Variables Map:`, Array.from(executionStateRef.current.variables.entries()));
             
             // Check if it's a variable reference (no quotes)
             if (!((message.startsWith('"') && message.endsWith('"')) || 
