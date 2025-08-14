@@ -1089,39 +1089,7 @@ void loop() {
           <div className="p-4 text-gray-400">
             <p>Emulator integration in progress...</p>
           </div>
-        </div>
-
-        {/* Right Side - Properties Panel */}
-        <div className="w-80 bg-gray-800 border-l border-gray-700 flex flex-col">
-          <div className="p-3 border-b border-gray-700">
-            <h3 className="text-white font-semibold text-sm">Properties</h3>
-          </div>
-          
-          {selectedComponent ? (
-            <div className="p-3 flex-1 overflow-auto">
-              <div className="space-y-4">
-                <div>
-                  <div className="text-white font-medium text-sm mb-1">
-                    Selected Component
-                  </div>
-                  <div className="text-gray-400 text-xs">
-                    ID: {selectedComponent}
-                  </div>
-                </div>
-                
-                <div className="text-gray-400 text-sm">
-                  Properties panel integration in progress...
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="p-3 text-gray-400 text-sm">
-              Select a component to view its properties
-            </div>
-          )}
-        </div>
-
-        {/* <ProperAVR8Simulator 
+          {/* <ProperAVR8Simulator 
             code={code}
             isRunning={isSimulationRunning}
             onPinChange={(pinOrComponent: any, isHigh: any) => {
@@ -1455,6 +1423,7 @@ void loop() {
           {notification.message}
         </div>
       )}
+      </div>
     </LibraryManagerProvider>
   );
 };
