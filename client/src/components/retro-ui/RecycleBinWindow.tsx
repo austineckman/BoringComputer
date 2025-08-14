@@ -20,6 +20,7 @@ const RecycleBinWindow: React.FC<RecycleBinWindowProps> = ({ onClose }) => {
   const [passwordInput, setPasswordInput] = useState("");
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [accessDeniedFile, setAccessDeniedFile] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   // Three simple text files
   const textFiles: TextFile[] = [
@@ -61,10 +62,12 @@ const RecycleBinWindow: React.FC<RecycleBinWindowProps> = ({ onClose }) => {
     if (selectedFile && passwordInput === selectedFile.password) {
       setShowPasswordDialog(false);
       setPasswordInput("");
+      setPasswordError(null);
       // File content will be shown in preview
     } else {
       setPasswordInput("");
-      alert("Incorrect password!");
+      setPasswordError("Incorrect password! Access denied.");
+      setTimeout(() => setPasswordError(null), 3000);
     }
   };
 
@@ -72,6 +75,7 @@ const RecycleBinWindow: React.FC<RecycleBinWindowProps> = ({ onClose }) => {
     setShowPasswordDialog(false);
     setSelectedFile(null);
     setPasswordInput("");
+    setPasswordError(null);
   };
 
   return (
@@ -149,7 +153,7 @@ const RecycleBinWindow: React.FC<RecycleBinWindowProps> = ({ onClose }) => {
             <p className="text-sm text-gray-600 mb-4">
               This file requires a password to access: {selectedFile.name}
             </p>
-            <div className="flex gap-2">
+            <div className="flex gap-2 mb-3">
               <Input
                 type="password"
                 placeholder="Enter password..."
@@ -163,6 +167,11 @@ const RecycleBinWindow: React.FC<RecycleBinWindowProps> = ({ onClose }) => {
                 Open
               </Button>
             </div>
+            {passwordError && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
+                {passwordError}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -173,8 +182,17 @@ const RecycleBinWindow: React.FC<RecycleBinWindowProps> = ({ onClose }) => {
           variant="outline" 
           className="w-full"
           onClick={() => {
-            // Simple message instead of complex rummaging
-            alert("You search through the bin but find nothing else of interest.");
+            // Simple non-intrusive feedback
+            const button = document.activeElement as HTMLButtonElement;
+            if (button) {
+              const originalText = button.textContent;
+              button.textContent = "Nothing found...";
+              button.disabled = true;
+              setTimeout(() => {
+                button.textContent = originalText;
+                button.disabled = false;
+              }, 2000);
+            }
           }}
         >
           Rummage Through Bin
