@@ -1195,49 +1195,9 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           
           // Check if the value is a function call result (like analogRead)
           if (typeof value === 'string' && value.includes('analogRead')) {
-            // Extract the pin number from analogRead call
-            const pinMatch = value.match(/analogRead\s*\(\s*A?(\d+)\s*\)/);
-            if (pinMatch) {
-              const pinNumber = parseInt(pinMatch[1]) + 14; // A0 = pin 14, A1 = pin 15, etc.
-              
-              // Get the current components and wires from global storage
-              const latestComponents = window.latestSimulatorData?.components || [];
-              const latestWires = window.latestSimulatorData?.wires || [];
-              
-              console.log(`[Assignment] Executing analogRead(${pinNumber}) with ${latestComponents.length} components and ${latestWires.length} wires`);
-              
-              // Execute analogRead logic directly here to get real-time value
-              let readValue = 0;
-              
-              // Look for photoresistor components connected to this pin
-              latestComponents.forEach(component => {
-                if (component.type === 'photoresistor' || component.id.includes('photoresistor')) {
-                  const analogPinName = `A${pinNumber - 14}`;
-                  const photoresistorWires = latestWires.filter(wire => 
-                    (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
-                    (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString() ||
-                     wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}` ||
-                     wire.sourceName === analogPinName || wire.targetName === analogPinName ||
-                     wire.sourceName === `${pinNumber}` || wire.targetName === `${pinNumber}`)
-                  );
-                  
-                  if (photoresistorWires.length > 0) {
-                    // Get the current light level from the component props
-                    const lightLevelPercent = component.props?.lightLevel || 50;
-                    readValue = Math.round((lightLevelPercent / 100) * 1023);
-                    
-                    console.log(`[Assignment] Found photoresistor ${component.id} with ${lightLevelPercent}% light -> ${readValue}`);
-                  }
-                }
-              });
-              
-              finalValue = readValue;
-              console.log(`[Assignment] ${variable} = ${value} -> direct execution returned ${finalValue}`);
-            } else {
-              // Fallback to last analog value
-              finalValue = executionStateRef.current.lastAnalogValue || 0;
-              console.log(`[Assignment] ${variable} = analogRead() (fallback) -> ${finalValue}`);
-            }
+            // Use the value from the main analogRead function that already executed
+            finalValue = executionStateRef.current.lastAnalogValue || 0;
+            console.log(`[Assignment] ${variable} = ${value} -> using last analogRead value: ${finalValue}`);
           } else if (typeof value === 'number') {
             finalValue = value;
             console.log(`[Simulator] Assignment: ${variable} = ${finalValue} (direct number)`);
