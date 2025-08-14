@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { CPU, AVRIOPort, portBConfig } from 'avr8js';
 import { ArduinoCodeParser } from './ArduinoCodeParser';
+import { CodeBlockParser } from './CodeBlockParser';
 
 // Create a context for the simulator
 const SimulatorContext = createContext({
@@ -312,19 +313,25 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog(`📋 Found ${parseResult.setup?.length || 0} lines in setup(), ${parseResult.loop?.length || 0} lines in loop()`);
       addLog(`✅ Code parsed: ${setupInstructions.length} setup instructions, ${loopInstructions.length} loop instructions`);
       
-      // Initialize execution state
+      // REWRITE: Initialize execution state with block-based approach like Wokwi/Arduino IDE
+      const blockParser = new CodeBlockParser();
+      const { setup: setupBlocks, loop: loopBlocks } = blockParser.parseIntoBlocks(currentCode);
+      
       executionStateRef.current = {
         phase: 'setup',
         setupIndex: 0,
         loopIndex: 0,
-        setupInstructions,
-        loopInstructions,
+        setupBlocks,
+        loopBlocks,
         loopCount: 0,
-        variables: new Map(),
-        skipUntilEndIf: false,
-        inConditionalBlock: false,
-        lastConditionResult: false
+        variables: {},
+        currentContext: {
+          variables: {},
+          globalVars: window.simulatorGlobalVars || {}
+        }
       };
+      
+      console.log('[SimulatorContext] BLOCK-BASED execution initialized:', executionStateRef.current);
       
       // Define the instruction execution function
       const executeInstruction = (instruction) => {
@@ -1625,61 +1632,53 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog('🔧 Starting Arduino execution...');
       addLog('⚡ Entering setup() function');
       
-      // Start the execution loop
-      const executeNextInstruction = () => {
+      // REWRITE: Start the block-based execution loop like Arduino IDE/Wokwi
+      const executeNextBlock = () => {
         const state = executionStateRef.current;
-        console.log('executeNextInstruction called, state.phase:', state.phase);
+        console.log('[Block Execution] executeNextBlock called, phase:', state.phase);
         
         if (state.phase === 'stopped') {
-          console.log('executeNextInstruction: stopped because phase is stopped');
+          console.log('[Block Execution] Stopped');
           return;
         }
         
-        console.log('executeNextInstruction: current state:', state);
-        
         if (state.phase === 'setup') {
-          if (state.setupIndex < state.setupInstructions.length) {
-            const instruction = state.setupInstructions[state.setupIndex];
-            addLog(`[Setup] Line ${instruction.lineNumber}: ${instruction.instruction}`);
-            const delayMs = executeInstruction(instruction);
-            state.setupIndex++;
+          if (state.setupIndex < state.setupBlocks.length) {
+            const block = state.setupBlocks[state.setupIndex];
+            console.log(`[Block Execution] Executing setup block ${state.setupIndex}:`, block);
             
-            // Log the delay value for debugging
-            console.log(`executeNextInstruction: setup delayMs returned = ${delayMs}, using timeout = ${delayMs || 300}ms`);
+            const delayMs = executeBlock(block, state.currentContext);
+            state.setupIndex++;
             
             setTimeout(() => {
               if (executionStateRef.current.phase !== 'stopped') {
-                console.log(`executeNextInstruction called, state.phase:`, executionStateRef.current.phase);
-                executeNextInstruction();
+                executeNextBlock();
               }
-            }, delayMs || 300); // Slower for readability
+            }, delayMs || 300);
           } else {
             // Setup complete, move to loop
             state.phase = 'loop';
             state.loopCount = 1;
             addLog('✅ setup() completed');
             addLog('🔄 Entering loop() function');
-            executeNextInstruction();
+            executeNextBlock();
           }
         } else if (state.phase === 'loop') {
-          if (state.loopInstructions.length === 0) {
+          if (state.loopBlocks.length === 0) {
             addLog('⚠️ loop() function is empty');
             return;
           }
           
-          if (state.loopIndex < state.loopInstructions.length) {
-            const instruction = state.loopInstructions[state.loopIndex];
-            addLog(`[Loop ${state.loopCount}] Line ${instruction.lineNumber}: ${instruction.instruction}`);
-            const delayMs = executeInstruction(instruction);
-            state.loopIndex++;
+          if (state.loopIndex < state.loopBlocks.length) {
+            const block = state.loopBlocks[state.loopIndex];
+            console.log(`[Block Execution] Executing loop block ${state.loopIndex}:`, block);
             
-            // Log the delay value for debugging
-            console.log(`executeNextInstruction: delayMs returned = ${delayMs}, using timeout = ${delayMs || 300}ms`);
+            const delayMs = executeBlock(block, state.currentContext);
+            state.loopIndex++;
             
             setTimeout(() => {
               if (executionStateRef.current.phase !== 'stopped') {
-                console.log(`executeNextInstruction called, state.phase:`, executionStateRef.current.phase);
-                executeNextInstruction();
+                executeNextBlock();
               }
             }, delayMs || 300);
           } else {
@@ -1687,13 +1686,65 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             state.loopIndex = 0;
             state.loopCount++;
             addLog(`🔄 loop() iteration ${state.loopCount} starting`);
-            executeNextInstruction();
+            executeNextBlock();
           }
         }
       };
       
-      console.log('About to call executeNextInstruction for the first time, isRunning:', isRunning);
-      setTimeout(() => executeNextInstruction(), 100); // Small delay to ensure state is set
+      // REWRITE: Execute a code block with proper conditional logic like Arduino IDE
+      const executeBlock = (block, context) => {
+        const blockParser = new CodeBlockParser();
+        
+        console.log(`[Block Execution] Executing ${block.type} block with ${block.instructions?.length || 0} instructions`);
+        addLog(`[Block] ${block.type.toUpperCase()} block (${block.instructions?.length || 0} instructions)`);
+        
+        if (block.type === 'if') {
+          // Evaluate condition like Arduino IDE
+          const shouldExecuteIf = blockParser.executeBlock(block, context);
+          console.log(`[Block Execution] If condition evaluated to: ${shouldExecuteIf}`);
+          
+          if (shouldExecuteIf) {
+            // Execute IF branch instructions
+            console.log(`[Block Execution] Executing IF branch (${block.instructions.length} instructions)`);
+            addLog(`[If] Condition TRUE - executing if block`);
+            return executeInstructionSequence(block.instructions, context);
+          } else {
+            // Execute ELSE branch if it exists
+            if (block.children && block.children.length > 0) {
+              const elseBlock = block.children[0];
+              console.log(`[Block Execution] Executing ELSE branch (${elseBlock.instructions.length} instructions)`);
+              addLog(`[If] Condition FALSE - executing else block`);
+              return executeInstructionSequence(elseBlock.instructions, context);
+            } else {
+              console.log(`[Block Execution] Condition FALSE, no else block - skipping`);
+              addLog(`[If] Condition FALSE - skipping (no else)`);
+              return 0;
+            }
+          }
+        } else if (block.type === 'statement') {
+          // Execute single statement
+          console.log(`[Block Execution] Executing statement: ${block.instructions[0]?.instruction}`);
+          return executeInstructionSequence(block.instructions, context);
+        }
+        
+        return 0;
+      };
+      
+      // REWRITE: Execute a sequence of instructions properly
+      const executeInstructionSequence = (instructions, context) => {
+        let totalDelay = 0;
+        
+        instructions.forEach((instruction, index) => {
+          console.log(`[Instruction Sequence] Executing ${index + 1}/${instructions.length}: ${instruction.instruction}`);
+          const instructionDelay = executeInstruction(instruction);
+          totalDelay = Math.max(totalDelay, instructionDelay); // Use the longest delay
+        });
+        
+        return totalDelay;
+      };
+      
+      console.log('[Block Execution] About to start block-based execution, isRunning:', isRunning);
+      setTimeout(() => executeNextBlock(), 100); // Small delay to ensure state is set
       
     } catch (error) {
       addLog(`❌ Code parsing error: ${error.message}`);
@@ -1705,14 +1756,16 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     addLog('🛑 Stopping Arduino simulation...');
     setIsRunning(false);
     
-    // Reset execution state
+    // Reset execution state for block-based approach
     executionStateRef.current = {
       phase: 'stopped',
       setupIndex: 0,
       loopIndex: 0,
-      setupInstructions: [],
-      loopInstructions: [],
-      loopCount: 0
+      setupBlocks: [],
+      loopBlocks: [],
+      loopCount: 0,
+      variables: {},
+      currentContext: {}
     };
     
     // Stop the AVR8JS simulation loop
