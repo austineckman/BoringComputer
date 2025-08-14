@@ -282,6 +282,8 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     if (!currentCode || currentCode.trim() === '') {
       addLog('❌ Error: No Arduino code to execute');
       console.log('SimulatorContext ERROR: code is:', JSON.stringify(currentCode));
+      console.log('SimulatorContext: Available components:', components.length);
+      console.log('SimulatorContext: Available wires:', wires.length);
       return;
     }
     
@@ -1617,7 +1619,13 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         }
       };
       
-      console.log('[FIXED] About to start corrected instruction execution, isRunning:', isRunning);
+      console.log('[SIMULATOR DEBUG] About to start execution with:');
+      console.log('[SIMULATOR DEBUG] - Setup instructions:', setupInstructions.length);
+      console.log('[SIMULATOR DEBUG] - Loop instructions:', loopInstructions.length);
+      console.log('[SIMULATOR DEBUG] - Components available:', components.length);
+      console.log('[SIMULATOR DEBUG] - Wires available:', wires.length);
+      console.log('[SIMULATOR DEBUG] - isRunning:', isRunning);
+      
       setTimeout(() => executeNextInstruction(), 100); // Small delay to ensure state is set
       
     } catch (error) {
