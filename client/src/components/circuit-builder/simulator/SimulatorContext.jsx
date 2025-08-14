@@ -787,18 +787,33 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           
           let readValue = 0; // Default to 0 if no components found
           
-          console.log(`[Simulator] analogRead(${pinNumber}) checking components:`, components.map(c => `${c.id}(${c.type})`));
-          console.log(`[Simulator] analogRead(${pinNumber}) checking wires:`, wires.length);
+          // Use the latest components and wires data from global storage
+          const latestComponents = window.latestSimulatorData?.components || components;
+          const latestWires = window.latestSimulatorData?.wires || wires;
+          
+          console.log(`[Simulator] ====== analogRead(${pinNumber}) DETAILED DEBUG ======`);
+          console.log(`[Simulator] CLOSURE - components.length:`, components.length);
+          console.log(`[Simulator] CLOSURE - wires.length:`, wires.length);
+          console.log(`[Simulator] LATEST - components.length:`, latestComponents.length);
+          console.log(`[Simulator] LATEST - wires.length:`, latestWires.length);
+          console.log(`[Simulator] Using LATEST components:`, latestComponents.map(c => ({ id: c.id, type: c.type, props: c.props })));
+          console.log(`[Simulator] Using LATEST wires:`, latestWires.map(w => ({ 
+            id: w.id, 
+            source: w.sourceComponent, 
+            target: w.targetComponent, 
+            sourceName: w.sourceName, 
+            targetName: w.targetName 
+          })));
           
           // Look for Photoresistor components connected to this pin
-          components.forEach(component => {
+          latestComponents.forEach(component => {
             if (component.type === 'photoresistor' || component.id.includes('photoresistor')) {
               console.log(`[Simulator] Found photoresistor component: ${component.id} (type: ${component.type})`);
               
               // Find wires connected to this Photoresistor and the target pin
               // Pin 14 = A0, Pin 15 = A1, etc.
               const analogPinName = `A${pinNumber - 14}`;
-              const photoresistorWires = wires.filter(wire => 
+              const photoresistorWires = latestWires.filter(wire => 
                 (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
                 (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString() ||
                  wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}` ||
@@ -806,16 +821,16 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                  wire.sourceName === `${pinNumber}` || wire.targetName === `${pinNumber}`)
               );
               
-              console.log(`[Simulator] Photoresistor ${component.id} has ${photoresistorWires.length} wires:`, photoresistorWires.map(w => `${w.sourceName} -> ${w.targetName}`));
+              console.log(`[Simulator] Photoresistor ${component.id} has ${photoresistorWires.length} exact wires:`, photoresistorWires.map(w => `${w.sourceName} -> ${w.targetName}`));
               console.log(`[Simulator] Looking for pin ${pinNumber} (analog pin ${analogPinName})`);
               
               // If no wires matched exactly, try more flexible matching
               let finalPhotoresistorWires = photoresistorWires;
               if (finalPhotoresistorWires.length === 0) {
-                const flexibleWires = wires.filter(wire => 
+                const flexibleWires = latestWires.filter(wire => 
                   (wire.sourceComponent === component.id || wire.targetComponent === component.id)
                 );
-                console.log(`[Simulator] Flexible match - photoresistor has ${flexibleWires.length} wires total`);
+                console.log(`[Simulator] Flexible match - photoresistor has ${flexibleWires.length} total wires:`, flexibleWires);
                 finalPhotoresistorWires = flexibleWires; // Use any wire connected to photoresistor
               }
               
@@ -836,9 +851,9 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           });
           
           // Look for RotaryEncoder components connected to this pin
-          components.forEach(component => {
+          latestComponents.forEach(component => {
             if (component.type === 'rotary-encoder' || component.id.includes('rotary-encoder')) {
-              const encoderWires = wires.filter(wire => 
+              const encoderWires = latestWires.filter(wire => 
                 (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
                 (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString() ||
                  wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}` ||
@@ -1520,9 +1535,16 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     addLog('✅ Simulation stopped - all components reset');
   };
   
-  // Log component and wire state changes for debugging
+  // Store the latest components and wires data globally for execution access
   useEffect(() => {
-    console.log('Simulator components updated:', components.length);
+    console.log(`[SimulatorContext] Components updated:`, components.length, components.map(c => `${c.id}(${c.type})`));
+    
+    // Store the latest arrays in global storage so they're always accessible during execution
+    if (!window.latestSimulatorData) {
+      window.latestSimulatorData = {};
+    }
+    window.latestSimulatorData.components = components;
+    console.log(`[SimulatorContext] Stored ${components.length} components globally`);
     
     // Add each component to the component states if it's not already there
     // This ensures components are registered in the simulator context immediately
@@ -1539,7 +1561,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             pins: {}
           };
           hasChanges = true;
-          console.log(`Registered component in simulator context: ${component.id} (${component.type})`);
+          console.log(`[SimulatorContext] Registered component: ${component.id} (${component.type})`);
         }
       });
       
@@ -1551,7 +1573,14 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   }, [components, componentStates]);
   
   useEffect(() => {
-    console.log('Simulator wires updated:', wires.length);
+    console.log(`[SimulatorContext] Wires updated:`, wires.length, wires.map(w => `${w.sourceComponent}->${w.targetComponent} (${w.sourceName}->${w.targetName})`));
+    
+    // Store the latest wires in global storage
+    if (!window.latestSimulatorData) {
+      window.latestSimulatorData = {};
+    }
+    window.latestSimulatorData.wires = wires;
+    console.log(`[SimulatorContext] Stored ${wires.length} wires globally`);
   }, [wires]);
   
   // Make the simulator context available globally for non-React components
