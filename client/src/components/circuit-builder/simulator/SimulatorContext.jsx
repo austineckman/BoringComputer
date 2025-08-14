@@ -325,7 +325,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         skipUntilEndIf: false,
         inConditionalBlock: false,
         lastConditionResult: false,
-        skipNextElse: false
+        executeIfBlock: false
       };
       
       console.log('[SimulatorContext] Execution state initialized with FIXED if logic:', executionStateRef.current);
@@ -390,10 +390,12 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           
           if (conditionResult) {
             console.log(`[Arduino IDE] Condition TRUE - will execute if block`);
-            executionStateRef.current.skipUntilEndIf = false; 
+            executionStateRef.current.skipUntilEndIf = false;
+            executionStateRef.current.executeIfBlock = true; // NEW: Track that we executed if
           } else {
             console.log(`[Arduino IDE] Condition FALSE - will skip if block`);
             executionStateRef.current.skipUntilEndIf = true;
+            executionStateRef.current.executeIfBlock = false; // NEW: Track that we didn't execute if
           }
           
           return 0; // The if statement itself doesn't execute, just sets the condition
@@ -403,21 +405,42 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         if (executionStateRef.current.skipUntilEndIf && executionStateRef.current.inConditionalBlock) {
           console.log(`[Arduino IDE] Skipping instruction in false if block: ${instruction.instruction}`);
           
-          // Check if we've reached the end of the if block (usually a delay or similar)
-          if (instruction.instruction.includes('delay(')) {
-            console.log(`[Arduino IDE] Found delay - likely end of if block, resetting skip state`);
+          // Check if we've reached the end of the if block (closing brace or delay)
+          if (instruction.instruction.includes('delay(') || instruction.instruction.includes('}')) {
+            console.log(`[Arduino IDE] Found end of if block, resetting skip state`);
             executionStateRef.current.skipUntilEndIf = false;
-            executionStateRef.current.inConditionalBlock = false;
-            // Reset else state
-            // Continue to execute this delay
+            // Keep inConditionalBlock=true to handle potential else
+            // Continue to execute this instruction
           } else {
             addLog(`[${timestamp}] → SKIPPED: ${instruction.instruction} (if condition was false)`);
             return 0; // Skip this instruction
           }
         }
         
-        // SIMPLIFIED: Just let normal execution happen after if condition is evaluated
-        // The skipUntilEndIf flag already handles the false case correctly
+        // CRITICAL: Handle else blocks - skip them if if condition was TRUE
+        if (executionStateRef.current.inConditionalBlock && 
+            executionStateRef.current.executeIfBlock && 
+            !executionStateRef.current.skipUntilEndIf) {
+          
+          // We executed the if block, now we need to check if this is an else instruction
+          // In typical Arduino if/else, the else instructions come after the if block ends
+          // and before the next control structure or delay
+          
+          if (!instruction.instruction.includes('delay(') && 
+              !instruction.instruction.includes('if(') &&
+              !instruction.instruction.includes('while(') &&
+              !instruction.instruction.includes('for(')) {
+            
+            console.log(`[Arduino IDE] CRITICAL: Skipping else instruction because if was executed: ${instruction.instruction}`);
+            addLog(`[${timestamp}] → SKIPPED ELSE: ${instruction.instruction} (if was true)`);
+            return 0; // Skip this else instruction
+          } else if (instruction.instruction.includes('delay(')) {
+            // Delay ends the entire if/else structure
+            console.log(`[Arduino IDE] Found delay - end of if/else structure, resetting states`);
+            executionStateRef.current.inConditionalBlock = false;
+            executionStateRef.current.executeIfBlock = false;
+          }
+        }
         
         // Debug all possible instruction types
         console.log(`executeInstruction: instruction.instruction = "${instruction.instruction}"`);
@@ -1761,6 +1784,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             state.skipUntilEndIf = false;
             state.inConditionalBlock = false;
             state.lastConditionResult = false;
+            state.executeIfBlock = false;
             console.log(`[Arduino IDE] Loop ${state.loopCount} starting - all conditional states reset`);
             addLog(`🔄 loop() iteration ${state.loopCount} starting`);
             executeNextInstruction();
