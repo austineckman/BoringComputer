@@ -356,6 +356,12 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             return 0;
           }
           
+          // Ensure lineNumber is defined
+          if (instruction.lineNumber === undefined || instruction.lineNumber === null) {
+            console.warn('[Simulator] Instruction missing lineNumber:', instruction);
+            instruction.lineNumber = 'Unknown';
+          }
+          
           const timestamp = new Date().toLocaleTimeString();
         
         // NOTE: Removed duplicate if statement implementation - using the corrected one later in the code
@@ -1525,7 +1531,11 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             isMap: executionStateRef.current?.variables instanceof Map,
             hasGetMethod: typeof executionStateRef.current?.variables?.get === 'function'
           });
-          addLog(`❌ Error executing instruction: ${error.message}`);
+          // More specific error information
+          const lineNum = instruction?.lineNumber || 'Unknown';
+          const instructionText = instruction?.instruction || 'Unknown instruction';
+          addLog(`❌ Error on line ${lineNum}: ${error.message}`);
+          addLog(`❌ Failed instruction: ${instructionText}`);
           return 0;
         }
       };

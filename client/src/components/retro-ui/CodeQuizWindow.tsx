@@ -65,17 +65,21 @@ const CodeQuizWindow: React.FC<CodeQuizWindowProps> = ({ onClose, onMinimize, is
     let isAnswerCorrect = false;
 
     // Debug logged to help understand what's happening with the comparison
+    console.log('=== BUGHUNT DEBUG ===');
     console.log('Question type:', currentQuestion.type);
-    console.log('User answer:', userAnswer);
-    console.log('Correct answer:', currentQuestion.correctAnswer);
-    console.log('Types:', typeof userAnswer, typeof currentQuestion.correctAnswer);
+    console.log('User answer:', userAnswer, '(type:', typeof userAnswer, ')');
+    console.log('Correct answer:', currentQuestion.correctAnswer, '(type:', typeof currentQuestion.correctAnswer, ')');
+    console.log('String conversion test:', userAnswer, '===', currentQuestion.correctAnswer.toString(), '?', userAnswer === currentQuestion.correctAnswer.toString());
     
     if (currentQuestion.type === 'output') {
       // Get the answer content based on whether correctAnswer is index or direct content
       if (typeof currentQuestion.correctAnswer === 'number') {
         // If it's a number (1, 2, 3, etc.) it means which option (by index) is correct
         // User selects radio buttons which give values like "1", "2", etc.
+        console.log('Comparing numeric answer:', userAnswer, 'vs', currentQuestion.correctAnswer.toString());
+        console.log('Comparison result:', userAnswer === currentQuestion.correctAnswer.toString());
         isAnswerCorrect = userAnswer === currentQuestion.correctAnswer.toString();
+        console.log('isAnswerCorrect set to:', isAnswerCorrect);
       } else if (!isNaN(Number(currentQuestion.correctAnswer))) {
         // If it's a numeric string ("1", "2", "3", etc.), convert both to numbers
         isAnswerCorrect = parseInt(userAnswer) === parseInt(currentQuestion.correctAnswer.toString());
@@ -114,6 +118,8 @@ const CodeQuizWindow: React.FC<CodeQuizWindowProps> = ({ onClose, onMinimize, is
       isAnswerCorrect = userAnswer.trim() === currentQuestion.correctAnswer.toString().trim();
     }
 
+    console.log('Final check - isAnswerCorrect:', isAnswerCorrect);
+    
     if (isAnswerCorrect) {
       setScore(score + 1);
       setFeedbackMessage(`CORRECT! +1 point added to your stash.\n\n"${cartelMessages[Math.floor(Math.random() * cartelMessages.length)]}" -Gizbo`);
