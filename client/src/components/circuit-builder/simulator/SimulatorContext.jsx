@@ -789,21 +789,31 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           
           let readValue = 0; // Default to 0 if no components found
           
+          console.log(`[Simulator] analogRead(${pinNumber}) checking components:`, components.map(c => `${c.id}(${c.type})`));
+          console.log(`[Simulator] analogRead(${pinNumber}) checking wires:`, wires.length);
+          
           // Look for Photoresistor components connected to this pin
           components.forEach(component => {
             if (component.type === 'photoresistor' || component.id.includes('photoresistor')) {
+              console.log(`[Simulator] Found photoresistor component: ${component.id} (type: ${component.type})`);
+              
               // Find wires connected to this Photoresistor and the target pin
               const photoresistorWires = wires.filter(wire => 
                 (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
                 (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString() ||
                  wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}` ||
                  wire.sourceName === `A${pinNumber}` || wire.targetName === `A${pinNumber}` ||
+                 wire.sourceName === `A${pinNumber - 14}` || wire.targetName === `A${pinNumber - 14}` ||
                  wire.sourceName === `${pinNumber}` || wire.targetName === `${pinNumber}`)
               );
+              
+              console.log(`[Simulator] Photoresistor ${component.id} has ${photoresistorWires.length} wires:`, photoresistorWires.map(w => `${w.sourceName} -> ${w.targetName}`));
               
               if (photoresistorWires.length > 0) {
                 // Get the Photoresistor state from component states
                 const photoresistorState = componentStates[component.id];
+                console.log(`[Simulator] Photoresistor ${component.id} state:`, photoresistorState);
+                
                 if (photoresistorState && photoresistorState.lightLevel !== undefined) {
                   readValue = photoresistorState.lightLevel; // 0-1023 range
                   console.log(`[Simulator] analogRead(${pinNumber}) reading from Photoresistor ${component.id}: lightLevel = ${readValue}`);
