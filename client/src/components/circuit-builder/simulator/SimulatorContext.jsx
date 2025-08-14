@@ -1055,12 +1055,25 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         if (instruction.function === 'assignment') {
           const { variable, value, type } = instruction;
           
-          // Check if the value is a function call result (like analogRead)
           let finalValue = value;
+          
+          // Check if the value is a function call result (like analogRead)
           if (typeof value === 'string' && value.includes('analogRead')) {
-            // This assignment includes analogRead, use the last analog value from execution state
-            finalValue = executionStateRef.current.lastAnalogValue || 0;
-            console.log(`[Simulator] Assignment: ${variable} = analogRead() -> ${finalValue}`);
+            // Extract the pin number from analogRead call
+            const pinMatch = value.match(/analogRead\s*\(\s*A?(\d+)\s*\)/);
+            if (pinMatch) {
+              const pinNumber = parseInt(pinMatch[1]) + 14; // A0 = pin 14, A1 = pin 15, etc.
+              
+              // Execute the analogRead call directly to get the current value
+              const analogInstruction = { function: 'analogRead', pin: pinNumber, instruction: value };
+              finalValue = executeInstruction(analogInstruction);
+              
+              console.log(`[Simulator] Assignment: ${variable} = ${value} -> executed analogRead and got ${finalValue}`);
+            } else {
+              // Fallback to last analog value
+              finalValue = executionStateRef.current.lastAnalogValue || 0;
+              console.log(`[Simulator] Assignment: ${variable} = analogRead() (fallback) -> ${finalValue}`);
+            }
           } else if (typeof value === 'number') {
             finalValue = value;
             console.log(`[Simulator] Assignment: ${variable} = ${finalValue} (direct number)`);
