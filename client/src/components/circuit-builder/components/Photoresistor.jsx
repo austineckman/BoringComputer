@@ -37,6 +37,10 @@ const Photoresistor = ({
   const moveableRef = useRef();
   const oldDataRef = useRef();
 
+  // Get simulator context for state management
+  // @ts-ignore - updateComponentState comes from context
+  const { updateComponentState } = useSimulator();
+
   const [isComponentMenuShowing, setIsComponentMenuShowing] = useState(false);
   const [lightValue, setLightValue] = useState(lightLevel);
   const [rotationAngle, setRotationAngle] = useState(initialRotation);
@@ -90,6 +94,34 @@ const Photoresistor = ({
   useEffect(() => {
     triggerRedraw();
   }, [pinInfo, posTop, posLeft]);
+
+  // Initialize photoresistor state in simulator when component mounts
+  useEffect(() => {
+    if (updateComponentState) {
+      const analogValue = Math.round((lightValue / 100) * 1023); // Convert 0-100% to 0-1023 analog range
+      updateComponentState(id, { 
+        lightLevel: analogValue,
+        lightPercentage: lightValue,
+        type: 'photoresistor'
+      });
+      console.log(`Photoresistor ${id}: Initialized simulator state with lightLevel=${analogValue} (${lightValue}%)`);
+    }
+  }, []); // Run once on mount
+
+  // Update light value and sync with simulator
+  const updateLightValue = (newValue) => {
+    setLightValue(newValue);
+    
+    if (updateComponentState) {
+      const analogValue = Math.round((newValue / 100) * 1023); // Convert 0-100% to 0-1023 analog range
+      updateComponentState(id, { 
+        lightLevel: analogValue,
+        lightPercentage: newValue,
+        type: 'photoresistor'
+      });
+      console.log(`Photoresistor ${id}: Updated simulator state with lightLevel=${analogValue} (${newValue}%)`);
+    }
+  };
 
   const onPinInfoChange = (e) => {
     setPinInfo(e.detail);
@@ -240,7 +272,47 @@ const Photoresistor = ({
         width="36px"
       ></ReactPhotoresistor>
 
-      {/* Removed component menu - settings now in the properties panel */}
+      {/* Light Level Control Panel */}
+      {isSelected && (
+        <>
+          {createPortal(
+            <div
+              className="fixed bg-gray-800 border border-gray-600 rounded-lg p-4 shadow-xl z-50"
+              style={{
+                left: `${posLeft + 50}px`,
+                top: `${posTop - 20}px`,
+                minWidth: '200px'
+              }}
+            >
+              <div className="text-white text-sm font-bold mb-2">
+                Photoresistor Settings
+              </div>
+              <div className="text-gray-300 text-xs mb-2">
+                Light Level: {lightValue}%
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={lightValue}
+                onChange={(e) => updateLightValue(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                style={{
+                  background: `linear-gradient(to right, #1f2937 0%, #fbbf24 ${lightValue}%, #1f2937 100%)`
+                }}
+              />
+              <div className="flex justify-between text-xs text-gray-400 mt-1">
+                <span>Dark</span>
+                <span>Bright</span>
+              </div>
+              <div className="text-xs text-gray-400 mt-2">
+                Analog Value: {Math.round((lightValue / 100) * 1023)}
+              </div>
+            </div>,
+            document.getElementById('component-context-menu') || document.body
+          )}
+        </>
+      )}
     </>
   );
 };
