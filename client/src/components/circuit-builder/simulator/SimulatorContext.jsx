@@ -1436,14 +1436,24 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
               const variableValue = variables.get(message);
               
               console.log(`[Serial] Looking for variable '${message}' in variables map`);
-              console.log(`[Serial] Found value:`, variableValue);
+              console.log(`[Serial] Variables Map:`, variables);
+              console.log(`[Serial] Variables entries:`, Array.from(variables.entries()));
+              console.log(`[Serial] Found value for '${message}':`, variableValue);
+              
+              // Also check the backup debug variables
+              const debugValue = window.debugVariables?.[message];
+              console.log(`[Serial] Debug backup value for '${message}':`, debugValue);
               
               if (variableValue !== undefined) {
                 message = variableValue.toString();
                 console.log(`[Serial] SUCCESS: Resolved variable '${originalMessage}' to value: ${message}`);
+              } else if (debugValue !== undefined) {
+                message = debugValue.toString();
+                console.log(`[Serial] SUCCESS: Using debug backup value for '${originalMessage}': ${message}`);
               } else {
                 console.log(`[Serial] ERROR: Variable '${message}' not found in variables map!`);
                 console.log(`[Serial] Variables available:`, Array.from(variables.keys()));
+                console.log(`[Serial] Execution state:`, executionStateRef.current);
                 // Show the variable name as fallback for debugging
                 message = `<UNRESOLVED: ${message}>`;
               }
