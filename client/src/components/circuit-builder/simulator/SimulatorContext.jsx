@@ -1116,12 +1116,19 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           
           // Ensure we store the actual number, not a string
           const numericValue = typeof finalValue === 'string' ? parseInt(finalValue) || finalValue : finalValue;
+          
+          // Store in multiple locations to ensure persistence
           executionStateRef.current.variables.set(variable, numericValue);
+          
+          // Also store globally for better persistence across execution cycles
+          if (!window.simulatorVariables) window.simulatorVariables = {};
+          window.simulatorVariables[variable] = numericValue;
           
           console.log(`[Assignment] STORED variable '${variable}' with value ${numericValue} (type: ${typeof numericValue})`);
           console.log(`[Assignment] Variables map now contains:`, Array.from(executionStateRef.current.variables.entries()));
+          console.log(`[Assignment] Global variables:`, window.simulatorVariables);
           
-          // Also store in a backup location for debugging
+          // Store in debug location too
           if (!window.debugVariables) window.debugVariables = {};
           window.debugVariables[variable] = numericValue;
           
@@ -1440,13 +1447,18 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
               console.log(`[Serial] Variables entries:`, Array.from(variables.entries()));
               console.log(`[Serial] Found value for '${message}':`, variableValue);
               
-              // Also check the backup debug variables
+              // Also check global and debug variables
+              const globalValue = window.simulatorVariables?.[message];
               const debugValue = window.debugVariables?.[message];
+              console.log(`[Serial] Global value for '${message}':`, globalValue);
               console.log(`[Serial] Debug backup value for '${message}':`, debugValue);
               
               if (variableValue !== undefined) {
                 message = variableValue.toString();
                 console.log(`[Serial] SUCCESS: Resolved variable '${originalMessage}' to value: ${message}`);
+              } else if (globalValue !== undefined) {
+                message = globalValue.toString();
+                console.log(`[Serial] SUCCESS: Using global value for '${originalMessage}': ${message}`);
               } else if (debugValue !== undefined) {
                 message = debugValue.toString();
                 console.log(`[Serial] SUCCESS: Using debug backup value for '${originalMessage}': ${message}`);
