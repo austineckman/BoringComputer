@@ -47,7 +47,11 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     loopIndex: 0,
     setupInstructions: [],
     loopInstructions: [],
-    loopCount: 0
+    loopCount: 0,
+    variables: new Map(), // Proper Map initialization
+    inConditionalBlock: false,
+    executeIfBlock: false,
+    skipUntilEndIf: false
   });
   
   // Function to add a log entry with timestamp
@@ -188,6 +192,13 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   // Execute a single Arduino instruction
   const executeInstruction = (instruction) => {
     const timestamp = new Date().toLocaleTimeString();
+    
+    // CRITICAL: Ensure variables Map is always properly initialized
+    if (!executionStateRef.current.variables || !(executionStateRef.current.variables instanceof Map)) {
+      console.warn(`[Simulator] Variables not properly initialized, recreating Map`);
+      executionStateRef.current.variables = new Map();
+    }
+    
     addLog(`[${timestamp}] Line ${instruction.lineNumber}: ${instruction.instruction}`);
 
     if (instruction.instruction.includes('pinMode')) {
@@ -1252,7 +1263,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           window.simulatorVariables[variable] = numericValue;
           
           console.log(`[Assignment] STORED variable '${variable}' with value ${numericValue} (type: ${typeof numericValue})`);
-          console.log(`[Assignment] Variables map now contains:`, Array.from(executionStateRef.current.variables.entries()));
+          console.log(`[Assignment] Variables map now contains:`, executionStateRef.current.variables instanceof Map ? Array.from(executionStateRef.current.variables.entries()) : 'NOT A MAP');
           console.log(`[Assignment] Global variables:`, window.simulatorVariables);
           
           // Store in debug location too
@@ -1282,7 +1293,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           const recentAnalogValue = window.lastAnalogReadValue?.value;
           
           console.log(`[If] Available variables for condition evaluation:`, {
-            variables: Array.from(variables.entries()),
+            variables: variables instanceof Map ? Array.from(variables.entries()) : 'NOT A MAP',
             globalVars,
             debugVars,
             recentAnalogValue
@@ -1629,7 +1640,8 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             console.log(`[Serial] Processing Serial output: ${originalMessage}`);
             console.log(`[Serial] Execution state exists:`, !!executionStateRef.current);
             console.log(`[Serial] Variables map exists:`, !!(executionStateRef.current?.variables));
-            console.log(`[Serial] Available variables:`, Array.from((executionStateRef.current?.variables || new Map()).entries()));
+            const variablesMap = executionStateRef.current?.variables || new Map();
+            console.log(`[Serial] Available variables:`, variablesMap instanceof Map ? Array.from(variablesMap.entries()) : 'NOT A MAP');
             console.log(`[Serial] Global simulator variables:`, window.simulatorVariables);
             console.log(`[Serial] Debug variables:`, window.debugVariables);
             
