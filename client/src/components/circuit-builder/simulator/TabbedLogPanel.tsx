@@ -42,27 +42,24 @@ const TabbedLogPanel: React.FC = () => {
   );
 
   const renderSerialMonitor = () => (
-    <div className="flex-1 overflow-y-auto p-2 space-y-1">
+    <div className="flex-1 overflow-y-auto p-3 font-mono text-sm bg-black text-white">
       {serialLogs.length === 0 ? (
         <div className="text-gray-500 italic">
           No serial output yet. Use Serial.print() or Serial.println() in your Arduino code...
         </div>
       ) : (
-        serialLogs.map((log: any, index: number) => {
-          const timestamp = log.timestamp || new Date().toLocaleTimeString();
-          const message = typeof log === 'string' ? log : (log.message || log.data || String(log));
-          
-          return (
-            <div key={index} className="flex">
-              <span className="text-blue-400 text-xs mr-2 flex-shrink-0 w-20">
-                {timestamp}
+        <div className="whitespace-pre-wrap">
+          {serialLogs.map((log: any, index: number) => {
+            const message = typeof log === 'string' ? log : (log.message || log.data || String(log));
+            const isNewline = log.newline !== false; // Default to newline unless explicitly false
+            
+            return (
+              <span key={index}>
+                {message}{isNewline ? '\n' : ''}
               </span>
-              <span className="flex-1 break-words text-green-400">
-                {message}
-              </span>
-            </div>
-          );
-        })
+            );
+          })}
+        </div>
       )}
     </div>
   );

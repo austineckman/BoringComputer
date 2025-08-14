@@ -73,13 +73,11 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     setLogs(prevLogs => [...prevLogs.slice(-99), cleanMessage]); // Keep last 100 entries
   };
 
-  // Function to add a serial log entry
-  const addSerialLog = (message) => {
-    const timestamp = new Date().toLocaleTimeString();
+  // Function to add a serial log entry (Arduino IDE style - clean output only)
+  const addSerialLog = (message, isNewline = true) => {
     const serialEntry = {
-      timestamp,
       message: message,
-      data: message
+      newline: isNewline
     };
     
     setSerialLogs(prevLogs => [...prevLogs.slice(-99), serialEntry]); // Keep last 100 entries
@@ -1364,15 +1362,21 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                 message = variableValue.toString();
                 console.log(`[Serial] Resolved variable '${serialMatch[1].trim()}' to value: ${message}`);
               } else {
-                console.log(`[Serial] Variable '${message}' not found, using literal`);
+                // If variable not found, it might be a direct function call like analogRead(A0)
+                // For now, show the raw instruction and let user know
+                console.log(`[Serial] Variable '${message}' not found, showing raw instruction`);
               }
             } else {
               // Remove quotes if it's a string literal
               message = message.slice(1, -1);
             }
             
-            addSerialLog(message);
-            addLog(`[${timestamp}] → Serial: ${message}`);
+            // Add to serial log (clean output like Arduino IDE)
+            const isNewline = instruction.instruction.includes('println');
+            addSerialLog(message, isNewline);
+            
+            // Also log for debugging (with timestamp)
+            addLog(`[${timestamp}] → Serial.${isNewline ? 'println' : 'print'}(${message})`);
           }
           return 0;
         }
