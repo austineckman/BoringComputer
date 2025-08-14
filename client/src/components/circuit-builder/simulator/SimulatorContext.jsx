@@ -798,18 +798,30 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
               console.log(`[Simulator] Found photoresistor component: ${component.id} (type: ${component.type})`);
               
               // Find wires connected to this Photoresistor and the target pin
+              // Pin 14 = A0, Pin 15 = A1, etc.
+              const analogPinName = `A${pinNumber - 14}`;
               const photoresistorWires = wires.filter(wire => 
                 (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
                 (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString() ||
                  wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}` ||
-                 wire.sourceName === `A${pinNumber}` || wire.targetName === `A${pinNumber}` ||
-                 wire.sourceName === `A${pinNumber - 14}` || wire.targetName === `A${pinNumber - 14}` ||
+                 wire.sourceName === analogPinName || wire.targetName === analogPinName ||
                  wire.sourceName === `${pinNumber}` || wire.targetName === `${pinNumber}`)
               );
               
               console.log(`[Simulator] Photoresistor ${component.id} has ${photoresistorWires.length} wires:`, photoresistorWires.map(w => `${w.sourceName} -> ${w.targetName}`));
+              console.log(`[Simulator] Looking for pin ${pinNumber} (analog pin ${analogPinName})`);
               
-              if (photoresistorWires.length > 0) {
+              // If no wires matched exactly, try more flexible matching
+              let finalPhotoresistorWires = photoresistorWires;
+              if (finalPhotoresistorWires.length === 0) {
+                const flexibleWires = wires.filter(wire => 
+                  (wire.sourceComponent === component.id || wire.targetComponent === component.id)
+                );
+                console.log(`[Simulator] Flexible match - photoresistor has ${flexibleWires.length} wires total`);
+                finalPhotoresistorWires = flexibleWires; // Use any wire connected to photoresistor
+              }
+              
+              if (finalPhotoresistorWires.length > 0) {
                 // Get the Photoresistor state from component states
                 const photoresistorState = componentStates[component.id];
                 console.log(`[Simulator] Photoresistor ${component.id} state:`, photoresistorState);
