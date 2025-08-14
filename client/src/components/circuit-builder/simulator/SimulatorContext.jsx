@@ -1258,14 +1258,20 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           // Store the condition result for execution flow control
           executionStateRef.current.lastConditionResult = conditionResult;
           executionStateRef.current.inConditionalBlock = true;
-          // CRITICAL FIX: If condition is TRUE, skip the digitalWrite instructions (LED stays off)
-          // If condition is FALSE, execute digitalWrite instructions (LED blinks)
-          // This matches typical Arduino logic where if(value > 450) means "if light is high, do nothing"
-          executionStateRef.current.skipUntilEndIf = conditionResult; // Skip when TRUE
+          
+          // CORRECT LOGIC: If condition is TRUE, EXECUTE the if block
+          // If condition is FALSE, SKIP the if block (and execute else if present)
+          if (conditionResult) {
+            executionStateRef.current.skipUntilEndIf = false; // Execute if block
+            executionStateRef.current.executeIfBlock = true;
+          } else {
+            executionStateRef.current.skipUntilEndIf = true;  // Skip if block
+            executionStateRef.current.executeIfBlock = false;
+          }
           executionStateRef.current.ifStatementLineNumber = lineNumber;
           
-          addLog(`[${timestamp}] → if (${condition}) evaluated to ${conditionResult} - ${conditionResult ? 'SKIPPING' : 'EXECUTING'} next instructions`);
-          console.log(`[If] Set skipUntilEndIf to ${conditionResult} for line ${lineNumber} (skip when condition is TRUE)`);
+          addLog(`[${timestamp}] → if (${condition}) evaluated to ${conditionResult} - ${conditionResult ? 'EXECUTING' : 'SKIPPING'} if block`);
+          console.log(`[If] Condition result: ${conditionResult} - ${conditionResult ? 'EXECUTING if block' : 'SKIPPING to else block'}`);
           
           return 0;
         }
