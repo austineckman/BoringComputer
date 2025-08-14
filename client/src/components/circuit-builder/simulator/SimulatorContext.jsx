@@ -199,7 +199,8 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       executionStateRef.current.variables = new Map();
     }
     
-    addLog(`[${timestamp}] Line ${instruction.lineNumber}: ${instruction.instruction}`);
+    const lineNum = instruction.lineNumber || 'Unknown';
+    addLog(`[${timestamp}] Line ${lineNum}: ${instruction.instruction}`);
 
     if (instruction.instruction.includes('pinMode')) {
       addLog(`[${timestamp}] → Pin ${instruction.pin} configured as ${instruction.instruction.includes('OUTPUT') ? 'OUTPUT' : 'INPUT'}`);
@@ -1544,7 +1545,8 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         if (state.phase === 'setup') {
           if (state.setupIndex < state.setupInstructions.length) {
             const instruction = state.setupInstructions[state.setupIndex];
-            addLog(`[Setup] Line ${instruction.lineNumber}: ${instruction.instruction}`);
+            const lineNum = instruction.lineNumber || 'Unknown';
+            addLog(`[Setup] Line ${lineNum}: ${instruction.instruction}`);
             const delayMs = executeInstruction(instruction);
             state.setupIndex++;
             
@@ -1589,7 +1591,8 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
               }
             }
             
-            addLog(`[Loop ${state.loopCount}] Line ${instruction.lineNumber}: ${instruction.instruction}`);
+            const lineNum = instruction.lineNumber || 'Unknown';
+            addLog(`[Loop ${state.loopCount}] Line ${lineNum}: ${instruction.instruction}`);
             const delayMs = executeInstruction(instruction);
             state.loopIndex++;
             
