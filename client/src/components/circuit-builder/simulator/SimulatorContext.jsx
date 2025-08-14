@@ -355,101 +355,12 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           
           const timestamp = new Date().toLocaleTimeString();
         
-        // REAL ARDUINO IDE LOGIC: Handle if statements properly
-        if (instruction.function === 'if') {
-          // This is an if statement - evaluate condition like Arduino IDE
-          const condition = instruction.condition;
-          console.log(`[Arduino IDE] Evaluating if condition: ${condition}`);
-          
-          // Get current variable values for condition evaluation
-          let conditionResult = false;
-          try {
-            // Parse condition like "value > 450"
-            const conditionMatch = condition.match(/(\w+)\s*([><=!]+)\s*(\d+)/);
-            if (conditionMatch) {
-              const [, variableName, operator, compareValue] = conditionMatch;
-              
-              // Get variable value from execution state Map
-              const variableValue = executionStateRef.current.variables.get(variableName) ||
-                                   450; // Default for testing
-              
-              const numValue = Number(variableValue);
-              const numCompare = Number(compareValue);
-              
-              switch (operator) {
-                case '>': conditionResult = numValue > numCompare; break;
-                case '<': conditionResult = numValue < numCompare; break;
-                case '>=': conditionResult = numValue >= numCompare; break;
-                case '<=': conditionResult = numValue <= numCompare; break;
-                case '==': conditionResult = numValue == numCompare; break;
-                case '!=': conditionResult = numValue != numCompare; break;
-              }
-              
-              console.log(`[Arduino IDE] ${variableName}=${numValue} ${operator} ${numCompare} = ${conditionResult}`);
-              addLog(`[If] ${variableName}=${numValue} ${operator} ${numCompare} → ${conditionResult ? 'TRUE' : 'FALSE'}`);
-            }
-          } catch (error) {
-            console.error(`[Arduino IDE] Error evaluating condition: ${error}`);
-            conditionResult = false;
-          }
-          
-          // Set execution state based on condition result
-          executionStateRef.current.lastConditionResult = conditionResult;
-          executionStateRef.current.inConditionalBlock = true;
-          
-          if (conditionResult) {
-            console.log(`[Arduino IDE] Condition TRUE - will execute if block`);
-            executionStateRef.current.skipUntilEndIf = false;
-            executionStateRef.current.executeIfBlock = true; // NEW: Track that we executed if
-          } else {
-            console.log(`[Arduino IDE] Condition FALSE - will skip if block`);
-            executionStateRef.current.skipUntilEndIf = true;
-            executionStateRef.current.executeIfBlock = false; // NEW: Track that we didn't execute if
-          }
-          
-          return 0; // The if statement itself doesn't execute, just sets the condition
-        }
+        // NOTE: Removed duplicate if statement implementation - using the corrected one later in the code
         
-        // Skip instructions when in false if block
-        if (executionStateRef.current.skipUntilEndIf && executionStateRef.current.inConditionalBlock) {
-          console.log(`[Arduino IDE] Skipping instruction in false if block: ${instruction.instruction}`);
-          
-          // Check if we've reached the end of the if block (closing brace or delay)
-          if (instruction.instruction.includes('delay(') || instruction.instruction.includes('}')) {
-            console.log(`[Arduino IDE] Found end of if block, resetting skip state`);
-            executionStateRef.current.skipUntilEndIf = false;
-            // Keep inConditionalBlock=true to handle potential else
-            // Continue to execute this instruction
-          } else {
-            addLog(`[${timestamp}] → SKIPPED: ${instruction.instruction} (if condition was false)`);
-            return 0; // Skip this instruction
-          }
-        }
+        // NOTE: Removed old skip logic - using the proper conditional logic system implemented later
         
-        // CRITICAL: Handle else blocks - skip them if if condition was TRUE
-        if (executionStateRef.current.inConditionalBlock && 
-            executionStateRef.current.executeIfBlock && 
-            !executionStateRef.current.skipUntilEndIf) {
-          
-          // We executed the if block, now we need to check if this is an else instruction
-          // In typical Arduino if/else, the else instructions come after the if block ends
-          // and before the next control structure or delay
-          
-          if (!instruction.instruction.includes('delay(') && 
-              !instruction.instruction.includes('if(') &&
-              !instruction.instruction.includes('while(') &&
-              !instruction.instruction.includes('for(')) {
-            
-            console.log(`[Arduino IDE] CRITICAL: Skipping else instruction because if was executed: ${instruction.instruction}`);
-            addLog(`[${timestamp}] → SKIPPED ELSE: ${instruction.instruction} (if was true)`);
-            return 0; // Skip this else instruction
-          } else if (instruction.instruction.includes('delay(')) {
-            // Delay ends the entire if/else structure
-            console.log(`[Arduino IDE] Found delay - end of if/else structure, resetting states`);
-            executionStateRef.current.inConditionalBlock = false;
-            executionStateRef.current.executeIfBlock = false;
-          }
-        }
+        // NOTE: Removed problematic "else block" logic that was incorrectly skipping if block instructions
+        // The conditional logic is now handled properly by the skipUntilEndIf flag system
         
         // Debug all possible instruction types
         console.log(`executeInstruction: instruction.instruction = "${instruction.instruction}"`);
