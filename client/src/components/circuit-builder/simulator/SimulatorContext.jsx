@@ -1135,29 +1135,82 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           addLog(`[${timestamp}] → ${instruction.type} ${variable} declared with default value ${value}`);
           return 0;
         }
+        
+        // Handle static variable declarations (static bool blink_on = true;)
+        if (instruction.function === 'static_declaration') {
+          const { variable, type, value, isStatic } = instruction;
+          
+          // Static variables persist across loop iterations
+          if (!executionStateRef.current.staticVariables.has(variable)) {
+            // First time initialization
+            let initialValue = value;
+            if (type === 'bool' || type === 'boolean') {
+              initialValue = value === true || value === 'true' || value === 1;
+            }
+            executionStateRef.current.staticVariables.set(variable, initialValue);
+            executionStateRef.current.variables.set(variable, initialValue);
+            addLog(`[${timestamp}] → Static ${type} ${variable} = ${initialValue}`);
+            console.log(`[Static] Initialized static variable ${variable} = ${initialValue}`);
+          } else {
+            // Static variable already exists, use its current value
+            const currentValue = executionStateRef.current.staticVariables.get(variable);
+            executionStateRef.current.variables.set(variable, currentValue);
+            console.log(`[Static] Using existing static variable ${variable} = ${currentValue}`);
+          }
+          
+          return 0;
+        }
 
         if (instruction.function === 'assignment') {
           const { variable, value, type } = instruction;
           
           let finalValue = value;
           
+          // Check for boolean toggle pattern (blink_on = !blink_on)
+          if (typeof value === 'string' && value.startsWith('!')) {
+            const varToToggle = value.substring(1).trim();
+            const currentValue = executionStateRef.current.variables.get(varToToggle);
+            finalValue = !currentValue;
+            console.log(`[Assignment] Toggling ${varToToggle}: ${currentValue} -> ${finalValue}`);
+            
+            // Update static variable if applicable
+            if (executionStateRef.current.staticVariables.has(varToToggle)) {
+              executionStateRef.current.staticVariables.set(varToToggle, finalValue);
+            }
+          }
           // Check if the value is a function call result (like analogRead)
-          if (typeof value === 'string' && value.includes('analogRead')) {
+          else if (typeof value === 'string' && value.includes('analogRead')) {
             // Use the value from the main analogRead function that already executed
             finalValue = executionStateRef.current.lastAnalogValue || 0;
             console.log(`[Assignment] ${variable} = ${value} -> using last analogRead value: ${finalValue}`);
-          } else if (typeof value === 'number') {
+          } else if (typeof value === 'string' && value.includes('getMaxCharHeight')) {
+            // Return font height for getMaxCharHeight
+            finalValue = 8;
+            console.log(`[Assignment] ${variable} = ${value} -> using font height: ${finalValue}`);
+          } else if (typeof value === 'string' && value.includes('getDisplayHeight')) {
+            // Return display height  
+            finalValue = 64;
+            console.log(`[Assignment] ${variable} = ${value} -> using display height: ${finalValue}`);
+          } else if (typeof value === 'string' && value.includes('getDisplayWidth')) {
+            // Return display width
+            finalValue = 128;
+            console.log(`[Assignment] ${variable} = ${value} -> using display width: ${finalValue}`);
+          } else if (typeof value === 'number' || typeof value === 'boolean') {
             finalValue = value;
-            console.log(`[Simulator] Assignment: ${variable} = ${finalValue} (direct number)`);
+            console.log(`[Simulator] Assignment: ${variable} = ${finalValue} (direct ${typeof value})`);
           } else {
             console.log(`[Simulator] Assignment: ${variable} = ${value} (${typeof value})`);
           }
           
-          // Store variable - use ONLY the execution state Map (clean approach)
-          const numericValue = typeof finalValue === 'string' ? parseInt(finalValue) || finalValue : finalValue;
-          executionStateRef.current.variables.set(variable, numericValue);
+          // Store variable - allow boolean and numeric values
+          executionStateRef.current.variables.set(variable, finalValue);
           
-          console.log(`[Assignment] Stored variable '${variable}' = ${numericValue}`);
+          // Update static variable if applicable
+          if (executionStateRef.current.staticVariables.has(variable)) {
+            executionStateRef.current.staticVariables.set(variable, finalValue);
+          }
+          
+          console.log(`[Assignment] Stored variable '${variable}' = ${finalValue}`);
           
           if (type) {
             addLog(`[${timestamp}] → Declared ${type} variable '${variable}' = ${finalValue}`);

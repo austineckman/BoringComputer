@@ -20,7 +20,8 @@ export class ArduinoCodeParser {
   private setupLines: CodeLine[] = [];
   private loopLines: CodeLine[] = [];
   private currentCode: string = '';
-  private variables: Map<string, number> = new Map(); // Store variable declarations
+  private variables: Map<string, any> = new Map(); // Store variable declarations (can be numbers or booleans)
+  private staticVariables: Map<string, any> = new Map(); // Store static variables that persist across loops
 
   parseCode(code: string): { setup: CodeLine[], loop: CodeLine[] } {
     console.log('ArduinoCodeParser: Starting to parse code');
@@ -491,6 +492,46 @@ export class ArduinoCodeParser {
       return instruction;
     }
 
+    // Parse static variable declarations (static bool blink_on = true;)
+    const staticMatch = line.match(/^\s*static\s+(int|float|long|byte|bool|boolean|char)\s+(\w+)\s*=\s*(.+?)\s*;?\s*$/);
+    if (staticMatch) {
+      const type = staticMatch[1];
+      const variable = staticMatch[2];
+      const value = staticMatch[3].trim();
+      
+      // Parse the initial value based on type
+      let parsedValue: any;
+      if (type === 'bool' || type === 'boolean') {
+        parsedValue = value === 'true' || value === '1';
+      } else if (type === 'int' || type === 'byte') {
+        parsedValue = parseInt(value) || 0;
+      } else if (type === 'float' || type === 'long') {
+        parsedValue = parseFloat(value) || 0;
+      } else if (type === 'char') {
+        parsedValue = value.replace(/['"]/g, '');
+      } else {
+        parsedValue = value;
+      }
+      
+      // Store static variable (will persist across loops)
+      if (!this.staticVariables.has(variable)) {
+        this.staticVariables.set(variable, parsedValue);
+      }
+      this.variables.set(variable, this.staticVariables.get(variable));
+      
+      const instruction: any = {
+        lineNumber,
+        instruction: line.trim(),
+        function: 'static_declaration',
+        variable: variable,
+        type: type,
+        value: this.staticVariables.get(variable),
+        isStatic: true
+      };
+      console.log(`ArduinoCodeParser: Found static variable declaration:`, instruction);
+      return instruction;
+    }
+
     // Parse variable declarations without assignment (bool blink_on;)
     const declMatch = line.match(/^\s*(int|float|long|byte|bool|boolean)\s+(\w+)\s*;?\s*$/);
     if (declMatch) {
@@ -498,9 +539,9 @@ export class ArduinoCodeParser {
       const variable = declMatch[2];
       
       // Default values for different types
-      let defaultValue = 0;
+      let defaultValue: any = 0;
       if (type === 'bool' || type === 'boolean') {
-        defaultValue = 0; // false
+        defaultValue = false; // Use actual boolean false
       }
       
       // Store the variable with default value
