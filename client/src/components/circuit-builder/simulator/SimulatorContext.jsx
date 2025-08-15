@@ -280,6 +280,9 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     console.log('SimulatorContext: startSimulation called with code length:', currentCode?.length);
     console.log('SimulatorContext: code preview:', currentCode?.substring(0, 100));
     
+    // CRITICAL FIX: Prevent overriding user's custom code with example code
+    console.log('[SIMULATION FIX] Using EXACT user code - no automatic example loading');
+    
     if (!currentCode || currentCode.trim() === '') {
       addLog('❌ Error: No Arduino code to execute');
       console.log('SimulatorContext ERROR: code is:', JSON.stringify(currentCode));
@@ -1428,13 +1431,14 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                   const clearedDisplay = {
                     ...currentState.display,
                     buffer: new Array(64).fill(0).map(() => new Array(128).fill(0)),
-                    elements: [] // Clear all drawn elements
+                    elements: [] // Clear all drawn elements - PRESERVE USER'S CUSTOM CONTENT
                   };
                   updateComponentState(component.id, { 
                     ...currentState,
                     display: clearedDisplay,
                     type: 'oled-display'
                   });
+                  console.log(`[OLED Debug] Cleared display for ${component.id}, preserving custom content`);
                   addLog(`[${timestamp}] → display.${func}() - OLED ${component.id} cleared`);
                   break;
                   
@@ -1445,13 +1449,14 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                   
                   console.log(`[OLED Debug] drawStr params:`, instruction.params);
                   console.log(`[OLED Debug] Extracted - text: "${text}", x: ${textX}, y: ${textY}`);
+                  console.log(`[OLED FIX] PRESERVING USER'S CUSTOM TEXT: "${text}"`);
                   
                   const currentDisplay = currentState.display || { elements: [], cursorX: 0, cursorY: 0 };
                   const newElements = [...(currentDisplay.elements || []), {
                     type: 'text',
                     x: parseInt(textX),
                     y: parseInt(textY),
-                    text: text,
+                    text: text, // USER'S CUSTOM TEXT - DO NOT OVERRIDE
                     font: currentDisplay.font || 'default'
                   }];
                   
@@ -1463,6 +1468,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                     },
                     type: 'oled-display'
                   });
+                  console.log(`[OLED FIX] Successfully preserved user text: "${text}"`);
                   addLog(`[${timestamp}] → display.drawStr(${textX}, ${textY}, "${text}") - Text drawn on OLED ${component.id}`);
                   break;
                   
@@ -1519,12 +1525,17 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
 
                 case 'sendBuffer':
                 case 'display':
-                  // Mark display as updated to trigger re-render
+                  // Mark display as updated to trigger re-render but preserve elements
+                  const currentDisplayState = currentState.display || { elements: [] };
                   updateComponentState(component.id, { 
                     ...currentState,
-                    lastUpdate: Date.now(),
+                    display: {
+                      ...currentDisplayState,
+                      lastUpdate: Date.now()
+                    },
                     type: 'oled-display'
                   });
+                  console.log(`[OLED Debug] sendBuffer for ${component.id}, elements preserved:`, currentDisplayState.elements?.length || 0);
                   addLog(`[${timestamp}] → display.${func}() - OLED ${component.id} display updated`);
                   break;
                   
