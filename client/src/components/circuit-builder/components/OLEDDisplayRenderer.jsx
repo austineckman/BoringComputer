@@ -158,8 +158,8 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
     if (displayState && displayState.display && displayState.display.elements) {
       console.log(`[OLED Renderer] Drawing ${displayState.display.elements.length} elements for ${displayId}:`, displayState.display.elements);
       
-      ctx.fillStyle = '#00ff41'; // Bright green for OLED pixels
-      ctx.strokeStyle = '#00ff41';
+      ctx.fillStyle = '#ffffff'; // White for OLED pixels
+      ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 1;
       
       displayState.display.elements.forEach((element, index) => {
@@ -791,12 +791,12 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
       className={isDisplayActive ? "oled-display-glow" : ""}
       style={{
         position: 'absolute',
-        top: '35px',     // Standard OLED screen position
-        left: '20px',    // Standard OLED screen position  
-        width: '88px',   // Standard OLED screen width
-        height: '64px',  // Standard OLED screen height
+        top: '35px',     // Keep top-left corner locked
+        left: '20px',    // Keep top-left corner locked
+        width: '132px',  // 88px * 1.5 = 132px (50% bigger)
+        height: '96px',  // 64px * 1.5 = 96px (50% bigger)
         backgroundColor: '#000',
-        border: '2px solid #00ff41',
+        border: '2px solid #ffffff',
         borderRadius: '2px',
         boxShadow: isDisplayActive ? '0 0 10px 2px rgba(0, 150, 255, 0.6)' : 'none',
         animation: isDisplayActive ? 'oled-glow 2s infinite ease-in-out' : 'none',
