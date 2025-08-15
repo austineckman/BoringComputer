@@ -1,0 +1,285 @@
+{
+  "name": "U8g2",
+  "version": "2.36.12",
+  "description": "Monochrome LCD, OLED and eInk Library. Simplified version focused on SSD1306 OLED displays over I2C.",
+  "author": "oliver <olikraus@gmail.com> (Simplified by Inventr Platform)",
+  "repository": "https://github.com/olikraus/u8g2",
+  "license": "BSD-2-Clause",
+  "mappedComponents": ["oled-display"],
+  "functions": [
+    {
+      "name": "U8G2",
+      "description": "Constructor for U8G2 display object",
+      "signature": "U8G2()",
+      "parameters": [],
+      "returnType": "void"
+    },
+    {
+      "name": "begin",
+      "description": "Initialize the display and prepare for drawing",
+      "signature": "bool begin()",
+      "parameters": [],
+      "returnType": "bool"
+    },
+    {
+      "name": "clearDisplay",
+      "description": "Clear the entire display immediately",
+      "signature": "void clearDisplay()",
+      "parameters": [],
+      "returnType": "void"
+    },
+    {
+      "name": "clearBuffer",
+      "description": "Clear the internal buffer (use with sendBuffer)",
+      "signature": "void clearBuffer()",
+      "parameters": [],
+      "returnType": "void"
+    },
+    {
+      "name": "sendBuffer",
+      "description": "Send the internal buffer to the display",
+      "signature": "void sendBuffer()",
+      "parameters": [],
+      "returnType": "void"
+    },
+    {
+      "name": "drawPixel",
+      "description": "Draw a single pixel at specified coordinates",
+      "signature": "void drawPixel(u8g2_uint_t x, u8g2_uint_t y)",
+      "parameters": [
+        {
+          "name": "x",
+          "type": "u8g2_uint_t",
+          "description": "X coordinate"
+        },
+        {
+          "name": "y",
+          "type": "u8g2_uint_t",
+          "description": "Y coordinate"
+        }
+      ],
+      "returnType": "void"
+    },
+    {
+      "name": "drawLine",
+      "description": "Draw a line between two points",
+      "signature": "void drawLine(u8g2_uint_t x1, u8g2_uint_t y1, u8g2_uint_t x2, u8g2_uint_t y2)",
+      "parameters": [
+        {
+          "name": "x1",
+          "type": "u8g2_uint_t",
+          "description": "Start X coordinate"
+        },
+        {
+          "name": "y1",
+          "type": "u8g2_uint_t",
+          "description": "Start Y coordinate"
+        },
+        {
+          "name": "x2",
+          "type": "u8g2_uint_t",
+          "description": "End X coordinate"
+        },
+        {
+          "name": "y2",
+          "type": "u8g2_uint_t",
+          "description": "End Y coordinate"
+        }
+      ],
+      "returnType": "void"
+    },
+    {
+      "name": "drawBox",
+      "description": "Draw a filled rectangle",
+      "signature": "void drawBox(u8g2_uint_t x, u8g2_uint_t y, u8g2_uint_t w, u8g2_uint_t h)",
+      "parameters": [
+        {
+          "name": "x",
+          "type": "u8g2_uint_t",
+          "description": "X coordinate of top-left corner"
+        },
+        {
+          "name": "y",
+          "type": "u8g2_uint_t",
+          "description": "Y coordinate of top-left corner"
+        },
+        {
+          "name": "w",
+          "type": "u8g2_uint_t",
+          "description": "Width of rectangle"
+        },
+        {
+          "name": "h",
+          "type": "u8g2_uint_t",
+          "description": "Height of rectangle"
+        }
+      ],
+      "returnType": "void"
+    },
+    {
+      "name": "drawFrame",
+      "description": "Draw a rectangle outline",
+      "signature": "void drawFrame(u8g2_uint_t x, u8g2_uint_t y, u8g2_uint_t w, u8g2_uint_t h)",
+      "parameters": [
+        {
+          "name": "x",
+          "type": "u8g2_uint_t",
+          "description": "X coordinate of top-left corner"
+        },
+        {
+          "name": "y",
+          "type": "u8g2_uint_t",
+          "description": "Y coordinate of top-left corner"
+        },
+        {
+          "name": "w",
+          "type": "u8g2_uint_t",
+          "description": "Width of rectangle"
+        },
+        {
+          "name": "h",
+          "type": "u8g2_uint_t",
+          "description": "Height of rectangle"
+        }
+      ],
+      "returnType": "void"
+    },
+    {
+      "name": "drawCircle",
+      "description": "Draw a circle outline",
+      "signature": "void drawCircle(u8g2_uint_t x0, u8g2_uint_t y0, u8g2_uint_t rad)",
+      "parameters": [
+        {
+          "name": "x0",
+          "type": "u8g2_uint_t",
+          "description": "X coordinate of center"
+        },
+        {
+          "name": "y0",
+          "type": "u8g2_uint_t",
+          "description": "Y coordinate of center"
+        },
+        {
+          "name": "rad",
+          "type": "u8g2_uint_t",
+          "description": "Radius of circle"
+        }
+      ],
+      "returnType": "void"
+    },
+    {
+      "name": "drawDisc",
+      "description": "Draw a filled circle",
+      "signature": "void drawDisc(u8g2_uint_t x0, u8g2_uint_t y0, u8g2_uint_t rad)",
+      "parameters": [
+        {
+          "name": "x0",
+          "type": "u8g2_uint_t",
+          "description": "X coordinate of center"
+        },
+        {
+          "name": "y0",
+          "type": "u8g2_uint_t",
+          "description": "Y coordinate of center"
+        },
+        {
+          "name": "rad",
+          "type": "u8g2_uint_t",
+          "description": "Radius of circle"
+        }
+      ],
+      "returnType": "void"
+    },
+    {
+      "name": "drawStr",
+      "description": "Draw a string at specified position",
+      "signature": "u8g2_uint_t drawStr(u8g2_uint_t x, u8g2_uint_t y, const char *s)",
+      "parameters": [
+        {
+          "name": "x",
+          "type": "u8g2_uint_t",
+          "description": "X coordinate"
+        },
+        {
+          "name": "y",
+          "type": "u8g2_uint_t",
+          "description": "Y coordinate"
+        },
+        {
+          "name": "s",
+          "type": "const char*",
+          "description": "String to draw"
+        }
+      ],
+      "returnType": "u8g2_uint_t"
+    },
+    {
+      "name": "setDrawColor",
+      "description": "Set the drawing color (0=black, 1=white)",
+      "signature": "void setDrawColor(uint8_t color_index)",
+      "parameters": [
+        {
+          "name": "color_index",
+          "type": "uint8_t",
+          "description": "Color index (0 or 1)"
+        }
+      ],
+      "returnType": "void"
+    },
+    {
+      "name": "setContrast",
+      "description": "Set display contrast (0-255)",
+      "signature": "void setContrast(uint8_t value)",
+      "parameters": [
+        {
+          "name": "value",
+          "type": "uint8_t",
+          "description": "Contrast value (0-255)"
+        }
+      ],
+      "returnType": "void"
+    },
+    {
+      "name": "setPowerSave",
+      "description": "Enable or disable power save mode",
+      "signature": "void setPowerSave(uint8_t is_enable)",
+      "parameters": [
+        {
+          "name": "is_enable",
+          "type": "uint8_t",
+          "description": "1 to enable power save, 0 to disable"
+        }
+      ],
+      "returnType": "void"
+    }
+  ],
+  "constants": [
+    {
+      "name": "U8G2_DRAW_COLOR_TRANSPARENT",
+      "value": "0",
+      "description": "Transparent drawing color"
+    },
+    {
+      "name": "U8G2_DRAW_COLOR_OPAQUE",
+      "value": "1",
+      "description": "Opaque drawing color"
+    }
+  ],
+  "examples": [
+    {
+      "name": "Basic OLED Text",
+      "description": "Display text on SSD1306 OLED",
+      "code": "#include <U8g2lib.h>\n#include <Wire.h>\n\nU8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(/* reset=*/ U8X8_PIN_NONE);\n\nvoid setup(void) {\n  u8g2.begin();\n}\n\nvoid loop(void) {\n  u8g2.clearBuffer();\n  u8g2.setFont(u8g2_font_6x10_tf);\n  u8g2.drawStr(0,10,\"Hello World!\");\n  u8g2.sendBuffer();\n  delay(1000);\n}"
+    },
+    {
+      "name": "Graphics Demo",
+      "description": "Draw shapes and lines",
+      "code": "#include <U8g2lib.h>\n#include <Wire.h>\n\nU8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(/* reset=*/ U8X8_PIN_NONE);\n\nvoid setup(void) {\n  u8g2.begin();\n}\n\nvoid loop(void) {\n  u8g2.clearBuffer();\n  \n  // Draw frame\n  u8g2.drawFrame(0, 0, 128, 64);\n  \n  // Draw circle\n  u8g2.drawCircle(32, 32, 20);\n  \n  // Draw filled box\n  u8g2.drawBox(80, 20, 30, 24);\n  \n  // Draw line\n  u8g2.drawLine(0, 0, 127, 63);\n  \n  u8g2.sendBuffer();\n  delay(2000);\n}"
+    },
+    {
+      "name": "Animated Counter",
+      "description": "Display counting numbers",
+      "code": "#include <U8g2lib.h>\n#include <Wire.h>\n\nU8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(/* reset=*/ U8X8_PIN_NONE);\nint counter = 0;\n\nvoid setup(void) {\n  u8g2.begin();\n}\n\nvoid loop(void) {\n  u8g2.clearBuffer();\n  u8g2.setFont(u8g2_font_6x10_tf);\n  u8g2.drawStr(0, 20, \"Counter:\");\n  \n  // Convert number to string\n  char buf[10];\n  sprintf(buf, \"%d\", counter);\n  u8g2.drawStr(60, 20, buf);\n  \n  u8g2.sendBuffer();\n  \n  counter++;\n  if (counter > 999) counter = 0;\n  delay(100);\n}"
+    }
+  ]
+}
