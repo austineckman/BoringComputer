@@ -313,6 +313,14 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       console.log('SimulatorContext: Setup instructions:', setupInstructions);
       console.log('SimulatorContext: Loop instructions:', loopInstructions);
       
+      // Debug: Check for U8g2 instantiation
+      setupInstructions.forEach(inst => {
+        if (inst.function === 'u8g2_instantiation') {
+          console.log('[OLED Debug] U8g2 object created:', inst.objectName);
+          addLog(`✅ U8g2 display object "${inst.objectName}" created`);
+        }
+      });
+      
       // DEBUG: Log what parser found
       console.log('DEBUG Parser Results:', { 
         setupLines: parseResult.setup?.length, 

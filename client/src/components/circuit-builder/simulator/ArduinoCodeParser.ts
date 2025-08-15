@@ -760,8 +760,8 @@ export class ArduinoCodeParser {
       return instruction;
     }
 
-    // Parse U8g2 OLED display object instantiation
-    const u8g2InstanceMatch = line.match(/U8G2_\w+\s+(\w+)\s*\((.*?)\)\s*;?/);
+    // Parse U8g2 OLED display object instantiation - handle various U8G2 constructor patterns
+    const u8g2InstanceMatch = line.match(/U8G2_\w+_\w+_\w+_\w+\s+(\w+)\s*\((.*?)\)\s*;?/);
     if (u8g2InstanceMatch) {
       const objectName = u8g2InstanceMatch[1];
       const params = u8g2InstanceMatch[2];

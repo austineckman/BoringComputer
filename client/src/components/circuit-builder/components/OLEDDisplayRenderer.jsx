@@ -154,8 +154,21 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
+    // Debug: Show initialization status
+    if (!displayState || !displayState.display) {
+      ctx.fillStyle = '#00ff00';
+      ctx.font = '10px monospace';
+      ctx.fillText('OLED Ready', 10, 20);
+      ctx.fillText('Awaiting Code...', 10, 35);
+      ctx.fillStyle = '#666666';
+      ctx.font = '8px monospace';
+      ctx.fillText('Run code to start', 10, 50);
+      console.log('[OLED Debug] Display not initialized yet');
+      return;
+    }
+    
     // If we have display state with elements, draw them
-    if (displayState && displayState.display && displayState.display.elements) {
+    if (displayState && displayState.display && displayState.display.elements && displayState.display.elements.length > 0) {
       console.log(`[OLED Renderer] Drawing ${displayState.display.elements.length} elements for ${displayId}:`, displayState.display.elements);
       
       ctx.fillStyle = '#ffffff'; // White for OLED pixels
@@ -217,6 +230,13 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
       });
       
       console.log(`[OLED Renderer] Rendered ${displayState.display.elements.length} elements for ${displayId}`);
+    } else if (displayState && displayState.display && displayState.display.initialized) {
+      // Display is initialized but no elements - show waiting message
+      ctx.fillStyle = '#00ff00';
+      ctx.font = '10px monospace';
+      ctx.fillText('Display Initialized', 10, 20);
+      ctx.fillText('Buffer Empty', 10, 35);
+      console.log('[OLED Debug] Display initialized but no elements to render');
     }
     
     // Draw cursor if set
