@@ -782,11 +782,50 @@ export class ArduinoCodeParser {
       const objectName = u8g2Match[1];
       const functionName = u8g2Match[2];
       const params = u8g2Match[3];
+      
+      // Enhanced parameter parsing for specific U8g2 functions
+      let parsedParams = this.parseParameters(params);
+      
+      // Special handling for drawStr to ensure proper text extraction
+      if (functionName === 'drawStr') {
+        const parts = params.split(',').map(p => p.trim());
+        if (parts.length >= 3) {
+          parsedParams = {
+            param0: (this.resolveVariable(parts[0]) ?? parseInt(parts[0])) || 0,
+            param1: (this.resolveVariable(parts[1]) ?? parseInt(parts[1])) || 0,
+            param2: parts[2].replace(/['"]/g, '') // Remove quotes from text
+          };
+        }
+      }
+      // Special handling for drawFrame
+      else if (functionName === 'drawFrame') {
+        const parts = params.split(',').map(p => p.trim());
+        if (parts.length >= 4) {
+          parsedParams = {
+            param0: (this.resolveVariable(parts[0]) ?? parseInt(parts[0])) || 0,
+            param1: (this.resolveVariable(parts[1]) ?? parseInt(parts[1])) || 0,
+            param2: (this.resolveVariable(parts[2]) ?? parseInt(parts[2])) || 50,
+            param3: (this.resolveVariable(parts[3]) ?? parseInt(parts[3])) || 50
+          };
+        }
+      }
+      // Special handling for drawCircle/drawDisc
+      else if (functionName === 'drawCircle' || functionName === 'drawDisc') {
+        const parts = params.split(',').map(p => p.trim());
+        if (parts.length >= 3) {
+          parsedParams = {
+            param0: (this.resolveVariable(parts[0]) ?? parseInt(parts[0])) || 0,
+            param1: (this.resolveVariable(parts[1]) ?? parseInt(parts[1])) || 0,
+            param2: (this.resolveVariable(parts[2]) ?? parseInt(parts[2])) || 5
+          };
+        }
+      }
+      
       const instruction = {
         lineNumber,
         instruction: `${objectName}.${functionName}(${params})`,
         function: `display.${functionName}`,
-        params: this.parseParameters(params)
+        params: parsedParams
       };
       console.log(`ArduinoCodeParser: Found U8g2 instruction:`, instruction);
       return instruction;

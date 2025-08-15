@@ -1407,53 +1407,148 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                   updateComponentState(component.id, { 
                     ...currentState,
                     initialized: true,
-                    type: 'oled-display'
+                    type: 'oled-display',
+                    display: {
+                      width: 128,
+                      height: 64,
+                      buffer: new Array(64).fill(0).map(() => new Array(128).fill(0)),
+                      cursorX: 0,
+                      cursorY: 0
+                    }
                   });
                   addLog(`[${timestamp}] → display.begin() - OLED ${component.id} initialized`);
                   break;
+                  
                 case 'clear':
                 case 'clearBuffer':
+                  const clearedDisplay = {
+                    ...currentState.display,
+                    buffer: new Array(64).fill(0).map(() => new Array(128).fill(0)),
+                    elements: [] // Clear all drawn elements
+                  };
                   updateComponentState(component.id, { 
                     ...currentState,
-                    buffer: [],
+                    display: clearedDisplay,
                     type: 'oled-display'
                   });
                   addLog(`[${timestamp}] → display.${func}() - OLED ${component.id} cleared`);
                   break;
-                case 'print':
-                case 'println':
-                  const text = instruction.params?.text || instruction.params?.value || '';
-                  const currentBuffer = currentState.buffer || [];
+                  
+                case 'drawStr':
+                  const text = instruction.params?.param1 || instruction.params?.text || '';
+                  const textX = instruction.params?.x || instruction.params?.param0 || currentState.display?.cursorX || 0;
+                  const textY = instruction.params?.y || instruction.params?.param1 || currentState.display?.cursorY || 10;
+                  
+                  const currentDisplay = currentState.display || { elements: [], cursorX: 0, cursorY: 0 };
+                  const newElements = [...(currentDisplay.elements || []), {
+                    type: 'text',
+                    x: parseInt(textX),
+                    y: parseInt(textY),
+                    text: text,
+                    font: currentDisplay.font || 'default'
+                  }];
+                  
                   updateComponentState(component.id, { 
                     ...currentState,
-                    buffer: [...currentBuffer, text],
+                    display: {
+                      ...currentDisplay,
+                      elements: newElements
+                    },
                     type: 'oled-display'
                   });
-                  addLog(`[${timestamp}] → display.${func}("${text}") - Text added to OLED ${component.id}`);
+                  addLog(`[${timestamp}] → display.drawStr(${textX}, ${textY}, "${text}") - Text drawn on OLED ${component.id}`);
                   break;
-                case 'sendBuffer':
-                case 'display':
-                  addLog(`[${timestamp}] → display.${func}() - OLED ${component.id} display updated`);
-                  break;
-                case 'setFont':
-                  const font = instruction.params?.font || 'default';
+                  
+                case 'drawFrame':
+                  const frameX = instruction.params?.x || instruction.params?.param0 || 0;
+                  const frameY = instruction.params?.y || instruction.params?.param1 || 0;
+                  const frameW = instruction.params?.param2 || 50;
+                  const frameH = instruction.params?.param3 || 50;
+                  
+                  const currentDisplayFrame = currentState.display || { elements: [] };
+                  const newFrameElements = [...(currentDisplayFrame.elements || []), {
+                    type: 'frame',
+                    x: parseInt(frameX),
+                    y: parseInt(frameY),
+                    width: parseInt(frameW),
+                    height: parseInt(frameH)
+                  }];
+                  
                   updateComponentState(component.id, { 
                     ...currentState,
-                    font: font,
+                    display: {
+                      ...currentDisplayFrame,
+                      elements: newFrameElements
+                    },
+                    type: 'oled-display'
+                  });
+                  addLog(`[${timestamp}] → display.drawFrame(${frameX}, ${frameY}, ${frameW}, ${frameH}) - Frame drawn on OLED ${component.id}`);
+                  break;
+                  
+                case 'drawDisc':
+                case 'drawCircle':
+                  const circleX = instruction.params?.x || instruction.params?.param0 || 0;
+                  const circleY = instruction.params?.y || instruction.params?.param1 || 0;
+                  const radius = instruction.params?.param2 || 5;
+                  
+                  const currentDisplayCircle = currentState.display || { elements: [] };
+                  const newCircleElements = [...(currentDisplayCircle.elements || []), {
+                    type: func === 'drawDisc' ? 'filledCircle' : 'circle',
+                    x: parseInt(circleX),
+                    y: parseInt(circleY),
+                    radius: parseInt(radius)
+                  }];
+                  
+                  updateComponentState(component.id, { 
+                    ...currentState,
+                    display: {
+                      ...currentDisplayCircle,
+                      elements: newCircleElements
+                    },
+                    type: 'oled-display'
+                  });
+                  addLog(`[${timestamp}] → display.${func}(${circleX}, ${circleY}, ${radius}) - Circle drawn on OLED ${component.id}`);
+                  break;
+
+                case 'sendBuffer':
+                case 'display':
+                  // Mark display as updated to trigger re-render
+                  updateComponentState(component.id, { 
+                    ...currentState,
+                    lastUpdate: Date.now(),
+                    type: 'oled-display'
+                  });
+                  addLog(`[${timestamp}] → display.${func}() - OLED ${component.id} display updated`);
+                  break;
+                  
+                case 'setFont':
+                  const font = instruction.params?.font || instruction.params?.param0 || 'default';
+                  const currentDisplayFont = currentState.display || {};
+                  updateComponentState(component.id, { 
+                    ...currentState,
+                    display: {
+                      ...currentDisplayFont,
+                      font: font
+                    },
                     type: 'oled-display'
                   });
                   addLog(`[${timestamp}] → display.setFont(${font}) - OLED ${component.id} font set`);
                   break;
+                  
                 case 'setCursor':
-                  const x = instruction.params?.x || 0;
-                  const y = instruction.params?.y || 0;
+                  const cursorX = instruction.params?.x || instruction.params?.param0 || 0;
+                  const cursorY = instruction.params?.y || instruction.params?.param1 || 0;
+                  const currentDisplayCursor = currentState.display || {};
                   updateComponentState(component.id, { 
                     ...currentState,
-                    cursorX: x,
-                    cursorY: y,
+                    display: {
+                      ...currentDisplayCursor,
+                      cursorX: parseInt(cursorX),
+                      cursorY: parseInt(cursorY)
+                    },
                     type: 'oled-display'
                   });
-                  addLog(`[${timestamp}] → display.setCursor(${x}, ${y}) - OLED ${component.id} cursor set`);
+                  addLog(`[${timestamp}] → display.setCursor(${cursorX}, ${cursorY}) - OLED ${component.id} cursor set`);
                   break;
               }
             }

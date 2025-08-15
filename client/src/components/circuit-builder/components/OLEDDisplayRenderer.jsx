@@ -143,45 +143,73 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
     }
   }, [displayId]); // Only run when displayId changes
   
-  // Update canvas when display buffer changes
+  // Update canvas when display state changes
   useEffect(() => {
-    if (!canvasRef.current || !displayBuffer) return;
+    if (!canvasRef.current) return;
     
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     
-    // Clear canvas
-    ctx.fillStyle = '#000000'; // Black background
+    // Clear canvas with black background (OLED style)
+    ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Set pixel color (blue for SSD1306 OLED display)
-    ctx.fillStyle = '#29B6F6'; // SSD1306 typical blue color
-    
-    // Draw pixels based on buffer
-    const pixelSize = Math.min(
-      canvas.width / displayWidth,
-      canvas.height / displayHeight
-    );
-    
-    // Draw active pixels
-    for (let y = 0; y < displayHeight; y++) {
-      for (let x = 0; x < displayWidth; x++) {
-        if (displayBuffer[y][x]) {
-          ctx.fillRect(
-            x * pixelSize,
-            y * pixelSize,
-            pixelSize,
-            pixelSize
-          );
+    // If we have display state with elements, draw them
+    if (displayState && displayState.display && displayState.display.elements) {
+      ctx.fillStyle = '#00ff41'; // Bright green for OLED pixels
+      ctx.strokeStyle = '#00ff41';
+      ctx.lineWidth = 1;
+      
+      displayState.display.elements.forEach((element) => {
+        switch (element.type) {
+          case 'text':
+            ctx.font = '8px monospace';
+            ctx.fillText(element.text, element.x, element.y);
+            break;
+            
+          case 'frame':
+            ctx.strokeRect(element.x, element.y, element.width, element.height);
+            break;
+            
+          case 'circle':
+            ctx.beginPath();
+            ctx.arc(element.x, element.y, element.radius, 0, 2 * Math.PI);
+            ctx.stroke();
+            break;
+            
+          case 'filledCircle':
+            ctx.beginPath();
+            ctx.arc(element.x, element.y, element.radius, 0, 2 * Math.PI);
+            ctx.fill();
+            break;
+            
+          case 'line':
+            ctx.beginPath();
+            ctx.moveTo(element.x1, element.y1);
+            ctx.lineTo(element.x2, element.y2);
+            ctx.stroke();
+            break;
+            
+          case 'pixel':
+            ctx.fillRect(element.x, element.y, 1, 1);
+            break;
         }
-      }
+      });
+      
+      console.log(`[OLED Renderer] Rendered ${displayState.display.elements.length} elements for ${displayId}`);
     }
-  }, [displayBuffer]);
+    
+    // Draw cursor if set
+    if (displayState && displayState.display && displayState.display.cursorX !== undefined && displayState.display.cursorY !== undefined) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(displayState.display.cursorX, displayState.display.cursorY, 1, 8);
+    }
+  }, [displayState, displayId, isRunning]);
   
   // Update from simulator state when it changes
   useEffect(() => {
-    if (displayState && displayState.buffer) {
-      setDisplayBuffer(displayState.buffer);
+    if (displayState && displayState.display && displayState.display.buffer) {
+      setDisplayBuffer(displayState.display.buffer);
     }
   }, [displayState]);
   
