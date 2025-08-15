@@ -327,14 +327,32 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     addLog('🔄 Parsing Arduino code...');
     
     try {
-      // Use proper execution engine for complex Arduino code
-      console.log('SimulatorContext: Using ArduinoExecutionEngine for proper code execution');
-      const executionEngine = new ArduinoExecutionEngine();
-      const allInstructions = executionEngine.executeProgram(currentCode);
+      // First try SimpleLoopExtractor for basic parsing
+      console.log('SimulatorContext: Attempting SimpleLoopExtractor first');
+      const simpleExtractor = new SimpleLoopExtractor();
+      const simpleResult = simpleExtractor.extract(currentCode);
       
-      // Split instructions into setup and loop based on lineNumber
-      const setupInstructions = allInstructions.filter(inst => inst.lineNumber < 1000);
-      const loopInstructions = allInstructions.filter(inst => inst.lineNumber >= 1000);
+      let setupInstructions = [];
+      let loopInstructions = [];
+      
+      if (simpleResult.loopLines.length > 0) {
+        // SimpleLoopExtractor found loop content
+        console.log('SimulatorContext: SimpleLoopExtractor found loop content:', simpleResult.loopLines.length, 'lines');
+        
+        // Convert to instructions
+        const parser = new ArduinoCodeParser();
+        setupInstructions = simpleResult.setupLines.map(line => parser.parseInstruction(line)).filter(Boolean);
+        loopInstructions = simpleResult.loopLines.map(line => parser.parseInstruction(line)).filter(Boolean);
+      } else {
+        // Fall back to execution engine for complex code
+        console.log('SimulatorContext: Using ArduinoExecutionEngine for complex code');
+        const executionEngine = new ArduinoExecutionEngine();
+        const allInstructions = executionEngine.executeProgram(currentCode);
+        
+        // Split instructions into setup and loop based on lineNumber
+        setupInstructions = allInstructions.filter(inst => inst.lineNumber < 1000);
+        loopInstructions = allInstructions.filter(inst => inst.lineNumber >= 1000);
+      }
       
       const parseResult = { 
         setup: setupInstructions.map((inst, idx) => ({ content: inst.instruction, lineNumber: idx + 1 })),
