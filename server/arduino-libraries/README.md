@@ -18,6 +18,13 @@ Each library directory should contain:
 - **Files**: `Keypad.h`, `Keypad.cpp`, `Key.h`, `Key.cpp`
 - **Key Functions**: `getKey()`, `getKeys()`, `isPressed()`, `setDebounceTime()`
 
+### BasicEncoder Library (v1.1.4)
+- **Location**: `basic-encoder/`
+- **Component**: Rotary Encoder
+- **Description**: Simple rotary encoder reading for control knobs (header-only)
+- **Files**: `BasicEncoder.h`
+- **Key Functions**: `service()`, `get_change()`, `get_count()`, `reset()`
+
 ## Adding New Libraries
 
 When adding a new library:
@@ -46,7 +53,6 @@ Libraries are automatically:
 
 - **U8g2** - OLED Display library
 - **TM1637** - 7-Segment Display library  
-- **BasicEncoder** - Rotary Encoder library
 - **Wire/I2C** - I2C communication library
 - **SPI** - SPI communication library
 

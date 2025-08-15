@@ -1,0 +1,97 @@
+{
+  "name": "BasicEncoder",
+  "version": "1.1.4",
+  "description": "BasicEncoder counts pulses from one or more simple rotary encoder control knobs. Not suited to motor encoders.",
+  "authors": [
+    "Peter Harrison <http://micromouseonline.com>"
+  ],
+  "license": "Apache-2.0",
+  "category": "Signal Input/Output",
+  "components": ["rotary-encoder"],
+  "includes": ["BasicEncoder.h"],
+  "examples": [
+    {
+      "name": "Basic Rotary Encoder",
+      "description": "Simple rotary encoder reading with timer interrupt",
+      "code": "#include <BasicEncoder.h>\n#include <TimerOne.h>\n\nBasicEncoder encoder(2, 3);\n\nvoid timer_service() {\n  encoder.service();\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  Timer1.initialize(1000); // 1kHz polling\n  Timer1.attachInterrupt(timer_service);\n}\n\nvoid loop() {\n  int encoder_change = encoder.get_change();\n  if (encoder_change) {\n    Serial.print(\"Encoder change: \");\n    Serial.println(encoder_change);\n  }\n}"
+    },
+    {
+      "name": "Polling Example",
+      "description": "Simple polling without interrupts",
+      "code": "#include <BasicEncoder.h>\n\nBasicEncoder encoder(2, 3);\n\nvoid setup() {\n  Serial.begin(115200);\n  Serial.println(\"Rotary Encoder Test\");\n}\n\nvoid loop() {\n  encoder.service(); // Poll for changes\n  \n  int change = encoder.get_change();\n  if (change != 0) {\n    Serial.print(\"Change: \");\n    Serial.print(change);\n    Serial.print(\", Total: \");\n    Serial.println(encoder.get_count());\n  }\n  \n  delay(1); // Small delay\n}"
+    }
+  ],
+  "functions": [
+    {
+      "name": "BasicEncoder",
+      "description": "Constructor for creating a BasicEncoder object",
+      "syntax": "BasicEncoder(int8_t pinA, int8_t pinB, uint8_t active_state = LOW, uint8_t steps = 4)",
+      "parameters": [
+        "pinA: Pin number for encoder channel A",
+        "pinB: Pin number for encoder channel B",
+        "active_state: Active logic level (LOW or HIGH), default LOW",
+        "steps: Steps per detent/click, default 4"
+      ],
+      "returns": "BasicEncoder object"
+    },
+    {
+      "name": "begin",
+      "description": "Initialize the encoder (resets count)",
+      "syntax": "void begin()",
+      "returns": "void"
+    },
+    {
+      "name": "service",
+      "description": "Check for encoder changes - call frequently or from timer interrupt",
+      "syntax": "void service()",
+      "returns": "void"
+    },
+    {
+      "name": "get_change",
+      "description": "Get number of clicks since last call (destructive read)",
+      "syntax": "int8_t get_change()",
+      "returns": "Number of clicks as signed integer"
+    },
+    {
+      "name": "get_count",
+      "description": "Get total accumulated clicks since reset (non-destructive)",
+      "syntax": "int get_count()",
+      "returns": "Total click count as integer"
+    },
+    {
+      "name": "reset",
+      "description": "Reset the encoder count to zero",
+      "syntax": "void reset()",
+      "returns": "void"
+    },
+    {
+      "name": "set_reverse",
+      "description": "Reverse the counting direction",
+      "syntax": "void set_reverse()",
+      "returns": "void"
+    },
+    {
+      "name": "set_forward",
+      "description": "Set normal counting direction",
+      "syntax": "void set_forward()",
+      "returns": "void"
+    }
+  ],
+  "constants": [
+    {
+      "name": "LOW",
+      "description": "Logic low level for active_state parameter"
+    },
+    {
+      "name": "HIGH", 
+      "description": "Logic high level for active_state parameter"
+    }
+  ],
+  "notes": [
+    "Header-only library - all code is in BasicEncoder.h",
+    "Best used with timer interrupt calling service() at 1kHz or higher",
+    "Handles contact bounce well for control knobs",
+    "Not suitable for high-speed motor encoders",
+    "Switch button (if present) needs separate button library"
+  ]
+}
