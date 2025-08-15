@@ -791,10 +791,10 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
       className={isDisplayActive ? "oled-display-glow" : ""}
       style={{
         position: 'absolute',
-        top: '43px',     // Move down 5px more
-        left: '13px',    // Move left 5px more
-        width: '176px',  // 160px * 1.1 = 176px (another 10% wider)
-        height: '96px',  // Keep height as requested
+        top: '41.6px',   // Adjusted to keep center (43 - (96*0.05)/2 = 41.6)
+        left: '8.6px',   // Adjusted to keep center (13 - (176*0.05)/2 = 8.6)
+        width: '184.8px', // 176px * 1.05 = 184.8px (5% larger)
+        height: '100.8px', // 96px * 1.05 = 100.8px (5% larger)
         backgroundColor: '#000',
         border: '2px solid #ffffff',
         borderRadius: '2px',
