@@ -1393,13 +1393,17 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           return 0;
         }
 
-        // Handle OLED display functions (U8g2 library)
+        // Handle OLED display functions (U8g2 library) - Enhanced with debugging
         if (instruction.function && instruction.function.includes('display.')) {
           const func = instruction.function.replace('display.', '');
+          console.log(`[OLED Sim] Processing ${func} function for components:`, components.length);
           
           // Look for OLED display components
+          let foundOLED = false;
           components.forEach(component => {
             if (component.type === 'oled-display' || component.id.includes('oled')) {
+              foundOLED = true;
+              console.log(`[OLED Sim] Found OLED component: ${component.id}, function: ${func}`);
               const currentState = componentStates[component.id] || {};
               
               switch (func) {
@@ -1435,9 +1439,12 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                   break;
                   
                 case 'drawStr':
-                  const text = instruction.params?.param1 || instruction.params?.text || '';
+                  const text = instruction.params?.param2 || instruction.params?.text || '';
                   const textX = instruction.params?.x || instruction.params?.param0 || currentState.display?.cursorX || 0;
                   const textY = instruction.params?.y || instruction.params?.param1 || currentState.display?.cursorY || 10;
+                  
+                  console.log(`[OLED Debug] drawStr params:`, instruction.params);
+                  console.log(`[OLED Debug] Extracted - text: "${text}", x: ${textX}, y: ${textY}`);
                   
                   const currentDisplay = currentState.display || { elements: [], cursorX: 0, cursorY: 0 };
                   const newElements = [...(currentDisplay.elements || []), {
@@ -1553,6 +1560,11 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
               }
             }
           });
+          
+          if (!foundOLED) {
+            console.warn(`[OLED Sim] No OLED components found for function ${func}. Available components:`, components.map(c => `${c.id}(${c.type})`));
+          }
+          
           return 0;
         }
 

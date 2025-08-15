@@ -156,15 +156,19 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
     
     // If we have display state with elements, draw them
     if (displayState && displayState.display && displayState.display.elements) {
+      console.log(`[OLED Renderer] Drawing ${displayState.display.elements.length} elements for ${displayId}:`, displayState.display.elements);
+      
       ctx.fillStyle = '#00ff41'; // Bright green for OLED pixels
       ctx.strokeStyle = '#00ff41';
       ctx.lineWidth = 1;
       
-      displayState.display.elements.forEach((element) => {
+      displayState.display.elements.forEach((element, index) => {
+        console.log(`[OLED Renderer] Drawing element ${index}:`, element);
         switch (element.type) {
           case 'text':
             ctx.font = '8px monospace';
             ctx.fillText(element.text, element.x, element.y);
+            console.log(`[OLED Renderer] Drew text "${element.text}" at (${element.x}, ${element.y})`);
             break;
             
           case 'frame':
@@ -787,16 +791,17 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
       className={isDisplayActive ? "oled-display-glow" : ""}
       style={{
         position: 'absolute',
-        top: '47px',     // 50px - 3px = 47px (moved up by another 3px)
-        left: '19px',    // 22px - 3px = 19px (moved left by another 3px)
-        width: '169.34px',  // 161.28px * 1.05 = 169.34px (increased by 5%)
-        height: '84.67px',  // 80.64px * 1.05 = 84.67px (increased by 5%)
+        top: '35px',     // Standard OLED screen position
+        left: '20px',    // Standard OLED screen position  
+        width: '88px',   // Standard OLED screen width
+        height: '64px',  // Standard OLED screen height
         backgroundColor: '#000',
+        border: '2px solid #00ff41',
         borderRadius: '2px',
         boxShadow: isDisplayActive ? '0 0 10px 2px rgba(0, 150, 255, 0.6)' : 'none',
         animation: isDisplayActive ? 'oled-glow 2s infinite ease-in-out' : 'none',
         overflow: 'hidden',
-        zIndex: 10
+        zIndex: 1000
       }}
     >
       <canvas

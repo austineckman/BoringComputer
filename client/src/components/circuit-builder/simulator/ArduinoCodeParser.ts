@@ -776,9 +776,10 @@ export class ArduinoCodeParser {
       return instruction;
     }
 
-    // Parse U8g2 OLED display functions (more flexible pattern)
-    const u8g2Match = line.match(/(\w*u8g2\w*)\.(begin|clearBuffer|clearDisplay|sendBuffer|drawStr|drawBox|drawFrame|drawCircle|drawDisc|drawLine|drawPixel|setFont|setCursor|setDrawColor|print|println|getDisplayWidth|getDisplayHeight)\s*\((.*?)\)/);
+    // Parse U8g2 OLED display functions (more flexible pattern to catch any object name)
+    const u8g2Match = line.match(/(\w+)\.(begin|clearBuffer|clearDisplay|sendBuffer|drawStr|drawBox|drawFrame|drawCircle|drawDisc|drawLine|drawPixel|setFont|setCursor|setDrawColor|print|println|getDisplayWidth|getDisplayHeight)\s*\((.*?)\)/);
     if (u8g2Match) {
+      console.log(`[ArduinoCodeParser] Potential U8g2 match found:`, u8g2Match);
       const objectName = u8g2Match[1];
       const functionName = u8g2Match[2];
       const params = u8g2Match[3];
@@ -828,6 +829,7 @@ export class ArduinoCodeParser {
         params: parsedParams
       };
       console.log(`ArduinoCodeParser: Found U8g2 instruction:`, instruction);
+      console.log(`ArduinoCodeParser: Parsed params for ${functionName}:`, parsedParams);
       return instruction;
     }
 
