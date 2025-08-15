@@ -687,6 +687,37 @@ export class ArduinoCodeParser {
       return instruction;
     }
 
+    // Parse U8g2 OLED display functions
+    const u8g2Match = line.match(/(\w*u8g2\w*)\.(begin|clearBuffer|clearDisplay|sendBuffer|drawStr|drawBox|drawFrame|drawCircle|drawDisc|drawLine|drawPixel|setFont|setCursor|setDrawColor|print|println|getDisplayWidth|getDisplayHeight)\s*\((.*?)\)/);
+    if (u8g2Match) {
+      const objectName = u8g2Match[1];
+      const functionName = u8g2Match[2];
+      const params = u8g2Match[3];
+      const instruction = {
+        lineNumber,
+        instruction: `${objectName}.${functionName}(${params})`,
+        function: `display.${functionName}`,
+        params: this.parseParameters(params)
+      };
+      console.log(`ArduinoCodeParser: Found U8g2 instruction:`, instruction);
+      return instruction;
+    }
+
+    // Parse Wire library functions for I2C communication
+    const wireMatch = line.match(/Wire\.(begin|beginTransmission|write|endTransmission|available|read)\s*\((.*?)\)/);
+    if (wireMatch) {
+      const functionName = wireMatch[1];
+      const params = wireMatch[2];
+      const instruction = {
+        lineNumber,
+        instruction: `Wire.${functionName}(${params})`,
+        function: `Wire.${functionName}`,
+        params: this.parseParameters(params)
+      };
+      console.log(`ArduinoCodeParser: Found Wire instruction:`, instruction);
+      return instruction;
+    }
+
     console.log(`ArduinoCodeParser: No instruction found for line ${lineNumber}: "${line}"`);
     return null;
   }
@@ -701,5 +732,32 @@ export class ArduinoCodeParser {
     return this.loopLines
       .map(line => this.parseInstruction(line))
       .filter(instruction => instruction !== null) as ArduinoInstruction[];
+  }
+
+  // Helper method to parse function parameters
+  private parseParameters(paramString: string): any {
+    if (!paramString || paramString.trim() === '') {
+      return {};
+    }
+
+    const params = paramString.split(',').map(p => p.trim());
+    const result: any = {};
+
+    // Handle common parameter patterns
+    params.forEach((param, index) => {
+      // Remove quotes for string literals
+      if (param.startsWith('"') && param.endsWith('"')) {
+        result[`param${index}`] = param.slice(1, -1);
+        if (index === 0) result.text = param.slice(1, -1);
+      } else if (!isNaN(parseInt(param))) {
+        result[`param${index}`] = parseInt(param);
+        if (index === 0) result.x = parseInt(param);
+        if (index === 1) result.y = parseInt(param);
+      } else {
+        result[`param${index}`] = param;
+      }
+    });
+
+    return result;
   }
 }
