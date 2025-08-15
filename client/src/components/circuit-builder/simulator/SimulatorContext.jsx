@@ -1,7 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { CPU, AVRIOPort, portBConfig } from 'avr8js';
 import { ArduinoCodeParser } from './ArduinoCodeParser';
-import { ArduinoExecutionEngine } from './ArduinoExecutionEngine';
 import { CodeBlockParser } from './CodeBlockParser';
 
 // Create a context for the simulator
@@ -271,30 +270,6 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog(`[${timestamp}] → Serial: ${instruction.instruction}`);
     }
 
-    // Handle OLED display function calls
-    if (instruction.function && instruction.function.startsWith('display.')) {
-      console.log(`[SimulatorContext] Processing OLED function: ${instruction.function}`, instruction);
-      
-      // Find OLED display components
-      const oledComponents = components.filter(comp => comp.type === 'oled-display' || comp.id.includes('oled'));
-      
-      oledComponents.forEach(oledComponent => {
-        console.log(`[SimulatorContext] Updating OLED component: ${oledComponent.id}`);
-        
-        // Update the component state with the display function call
-        updateComponentState(oledComponent.id, {
-          lastFunction: instruction.function,
-          lastParams: instruction.params,
-          lastTimestamp: Date.now(),
-          shouldDisplay: true, // Enable display when we receive function calls
-          hasOLEDCode: true, // Mark as having valid OLED code
-          isProperlyWired: true // Assume proper wiring for execution engine calls
-        });
-      });
-      
-      addLog(`[${timestamp}] → OLED: ${instruction.function}(${Object.values(instruction.params || {}).join(', ')})`);
-    }
-
     return 0;
   };
 
@@ -327,45 +302,16 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     addLog('🔄 Parsing Arduino code...');
     
     try {
-      // First try SimpleLoopExtractor for basic parsing
-      console.log('SimulatorContext: Attempting SimpleLoopExtractor first');
-      const simpleExtractor = new SimpleLoopExtractor();
-      const simpleResult = simpleExtractor.extract(currentCode);
+      // Parse the actual code from the editor please fucking work fuck you holy shit fuck 
+      console.log('SimulatorContext: About to parse code with ArduinoCodeParser');
+      const parseResult = codeParserRef.current.parseCode(currentCode);
+      console.log('SimulatorContext: Parse result:', parseResult);
       
-      let setupInstructions = [];
-      let loopInstructions = [];
+      const setupInstructions = codeParserRef.current.getSetupInstructions();
+      const loopInstructions = codeParserRef.current.getLoopInstructions();
       
-      if (simpleResult.loopLines.length > 0) {
-        // SimpleLoopExtractor found loop content
-        console.log('SimulatorContext: SimpleLoopExtractor found loop content:', simpleResult.loopLines.length, 'lines');
-        
-        // Convert to instructions
-        const parser = new ArduinoCodeParser();
-        setupInstructions = simpleResult.setupLines.map(line => parser.parseInstruction(line)).filter(Boolean);
-        loopInstructions = simpleResult.loopLines.map(line => parser.parseInstruction(line)).filter(Boolean);
-      } else {
-        // Fall back to execution engine for complex code
-        console.log('SimulatorContext: Using ArduinoExecutionEngine for complex code');
-        const executionEngine = new ArduinoExecutionEngine();
-        const allInstructions = executionEngine.executeProgram(currentCode);
-        
-        // Split instructions into setup and loop based on lineNumber
-        setupInstructions = allInstructions.filter(inst => inst.lineNumber < 1000);
-        loopInstructions = allInstructions.filter(inst => inst.lineNumber >= 1000);
-      }
-      
-      const parseResult = { 
-        setup: setupInstructions.map((inst, idx) => ({ content: inst.instruction, lineNumber: idx + 1 })),
-        loop: loopInstructions.map((inst, idx) => ({ content: inst.instruction, lineNumber: idx + 1 }))
-      };
-      
-      console.log('SimulatorContext: Setup instructions:', setupInstructions.length);
-      console.log('SimulatorContext: Loop instructions:', loopInstructions.length);
-      console.log('SimulatorContext: ALL INSTRUCTIONS from ExecutionEngine:', allInstructions.length);
-      
-      if (loopInstructions.length === 0) {
-        console.warn('SimulatorContext: WARNING - No loop instructions found! This means the execution engine could not parse your loop content.');
-      }
+      console.log('SimulatorContext: Setup instructions:', setupInstructions);
+      console.log('SimulatorContext: Loop instructions:', loopInstructions);
       
       // DEBUG: Log what parser found
       console.log('DEBUG Parser Results:', { 
