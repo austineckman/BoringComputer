@@ -175,6 +175,11 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
             ctx.strokeRect(element.x, element.y, element.width, element.height);
             break;
             
+          case 'filledRect':
+            ctx.fillRect(element.x, element.y, element.width, element.height);
+            console.log(`[OLED Renderer] Drew filled rectangle at (${element.x}, ${element.y}) size ${element.width}x${element.height}`);
+            break;
+            
           case 'circle':
             ctx.beginPath();
             ctx.arc(element.x, element.y, element.radius, 0, 2 * Math.PI);
@@ -187,11 +192,22 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
             ctx.fill();
             break;
             
+          case 'triangle':
+            ctx.beginPath();
+            ctx.moveTo(element.x1, element.y1);
+            ctx.lineTo(element.x2, element.y2);
+            ctx.lineTo(element.x3, element.y3);
+            ctx.closePath();
+            ctx.stroke();
+            console.log(`[OLED Renderer] Drew triangle: (${element.x1},${element.y1}) (${element.x2},${element.y2}) (${element.x3},${element.y3})`);
+            break;
+            
           case 'line':
             ctx.beginPath();
             ctx.moveTo(element.x1, element.y1);
             ctx.lineTo(element.x2, element.y2);
             ctx.stroke();
+            console.log(`[OLED Renderer] Drew line: (${element.x1},${element.y1}) to (${element.x2},${element.y2})`);
             break;
             
           case 'pixel':

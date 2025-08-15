@@ -777,7 +777,7 @@ export class ArduinoCodeParser {
     }
 
     // Parse U8g2 OLED display functions (more flexible pattern to catch any object name)
-    const u8g2Match = line.match(/(\w+)\.(begin|clearBuffer|clearDisplay|sendBuffer|drawStr|drawBox|drawFrame|drawCircle|drawDisc|drawLine|drawPixel|setFont|setCursor|setDrawColor|print|println|getDisplayWidth|getDisplayHeight)\s*\((.*?)\)/);
+    const u8g2Match = line.match(/(\w+)\.(begin|clearBuffer|clearDisplay|sendBuffer|drawStr|drawBox|drawFrame|drawCircle|drawDisc|drawLine|drawPixel|drawTriangle|drawRFrame|drawRBox|setFont|setCursor|setDrawColor|setFontDirection|setFontPosTop|setFontPosCenter|setFontRefHeightExtendedText|getMaxCharHeight|getMaxCharWidth|getStrWidth|getDisplayWidth|getDisplayHeight|setBitmapMode|drawXBMP|drawUTF8|print|println)\s*\((.*?)\)/);
     if (u8g2Match) {
       console.log(`[ArduinoCodeParser] Potential U8g2 match found:`, u8g2Match);
       const objectName = u8g2Match[1];
@@ -821,6 +821,44 @@ export class ArduinoCodeParser {
           };
         }
       }
+      // Special handling for drawBox (filled rectangle)
+      else if (functionName === 'drawBox') {
+        const parts = params.split(',').map(p => p.trim());
+        if (parts.length >= 4) {
+          parsedParams = {
+            param0: (this.resolveVariable(parts[0]) ?? parseInt(parts[0])) || 0,
+            param1: (this.resolveVariable(parts[1]) ?? parseInt(parts[1])) || 0,
+            param2: (this.resolveVariable(parts[2]) ?? parseInt(parts[2])) || 50,
+            param3: (this.resolveVariable(parts[3]) ?? parseInt(parts[3])) || 50
+          };
+        }
+      }
+      // Special handling for drawTriangle
+      else if (functionName === 'drawTriangle') {
+        const parts = params.split(',').map(p => p.trim());
+        if (parts.length >= 6) {
+          parsedParams = {
+            param0: (this.resolveVariable(parts[0]) ?? parseInt(parts[0])) || 0,
+            param1: (this.resolveVariable(parts[1]) ?? parseInt(parts[1])) || 0,
+            param2: (this.resolveVariable(parts[2]) ?? parseInt(parts[2])) || 10,
+            param3: (this.resolveVariable(parts[3]) ?? parseInt(parts[3])) || 10,
+            param4: (this.resolveVariable(parts[4]) ?? parseInt(parts[4])) || 20,
+            param5: (this.resolveVariable(parts[5]) ?? parseInt(parts[5])) || 20
+          };
+        }
+      }
+      // Special handling for drawLine
+      else if (functionName === 'drawLine') {
+        const parts = params.split(',').map(p => p.trim());
+        if (parts.length >= 4) {
+          parsedParams = {
+            param0: (this.resolveVariable(parts[0]) ?? parseInt(parts[0])) || 0,
+            param1: (this.resolveVariable(parts[1]) ?? parseInt(parts[1])) || 0,
+            param2: (this.resolveVariable(parts[2]) ?? parseInt(parts[2])) || 10,
+            param3: (this.resolveVariable(parts[3]) ?? parseInt(parts[3])) || 10
+          };
+        }
+      }
       
       const instruction = {
         lineNumber,
@@ -831,6 +869,44 @@ export class ArduinoCodeParser {
       console.log(`ArduinoCodeParser: Found U8g2 instruction:`, instruction);
       console.log(`ArduinoCodeParser: Parsed params for ${functionName}:`, parsedParams);
       return instruction;
+    }
+
+    // Parse custom functions like drawCenteredString
+    const customFunctionMatch = line.match(/(drawCenteredString|display_lander|display_test_\w+)\s*\((.*?)\)/);
+    if (customFunctionMatch) {
+      const functionName = customFunctionMatch[1];
+      const params = customFunctionMatch[2];
+      
+      // Convert custom functions to basic display operations
+      let instruction = null;
+      if (functionName === 'drawCenteredString') {
+        const parts = params.split(',').map(p => p.trim());
+        if (parts.length >= 3) {
+          instruction = {
+            lineNumber,
+            instruction: `drawCenteredString(${params})`,
+            function: 'display.drawStr',
+            params: {
+              param0: (this.resolveVariable(parts[0]) ?? parseInt(parts[0])) || 0,
+              param1: (this.resolveVariable(parts[1]) ?? parseInt(parts[1])) || 10,
+              param2: parts[2].replace(/['"]/g, '') // Remove quotes from text
+            }
+          };
+        }
+      } else {
+        // Other custom functions - just acknowledge them
+        instruction = {
+          lineNumber,
+          instruction: `${functionName}(${params})`,
+          function: `custom.${functionName}`,
+          params: this.parseParameters(params)
+        };
+      }
+      
+      if (instruction) {
+        console.log(`ArduinoCodeParser: Found custom function:`, instruction);
+        return instruction;
+      }
     }
 
     // Parse Wire library functions for I2C communication
