@@ -278,7 +278,8 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     // Use passed code or fall back to context code
     const currentCode = codeToExecute || code;
     console.log('SimulatorContext: startSimulation called with code length:', currentCode?.length);
-    console.log('SimulatorContext: code preview:', currentCode?.substring(0, 100));
+    console.log('SimulatorContext: code preview:', currentCode?.substring(0, 200));
+    console.log('🔍 [CODE DEBUG] Full user code being executed:', currentCode);
     
     // CRITICAL FIX: Prevent overriding user's custom code with example code
     console.log('[SIMULATION FIX] Using EXACT user code - no automatic example loading');
@@ -1399,15 +1400,18 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         // Handle OLED display functions (U8g2 library) - Enhanced with debugging
         if (instruction.function && instruction.function.includes('display.')) {
           const func = instruction.function.replace('display.', '');
-          console.log(`[OLED Sim] Processing ${func} function for components:`, components.length);
+          console.log(`🖥️ [OLED DEBUG] Processing ${func} function for components:`, components.length);
+          console.log(`🖥️ [OLED DEBUG] Full instruction:`, instruction);
+          console.log(`🖥️ [OLED DEBUG] Available components:`, components.map(c => `${c.id}(${c.type})`));
           
           // Look for OLED display components
           let foundOLED = false;
           components.forEach(component => {
             if (component.type === 'oled-display' || component.id.includes('oled')) {
               foundOLED = true;
-              console.log(`[OLED Sim] Found OLED component: ${component.id}, function: ${func}`);
+              console.log(`🖥️ [OLED DEBUG] Found OLED component: ${component.id}, function: ${func}`);
               const currentState = componentStates[component.id] || {};
+              console.log(`🖥️ [OLED DEBUG] Current state for ${component.id}:`, currentState);
               
               switch (func) {
                 case 'begin':
