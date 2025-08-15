@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect, useRef } from 'r
 import { CPU, AVRIOPort, portBConfig } from 'avr8js';
 import { ArduinoCodeParser } from './ArduinoCodeParser';
 import { ArduinoExecutionEngine } from './ArduinoExecutionEngine';
+import { ArduinoInterpreter } from './ArduinoInterpreter';
 import { CodeBlockParser } from './CodeBlockParser';
 
 // Create a context for the simulator
@@ -327,14 +328,61 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     addLog('🔄 Parsing Arduino code...');
     
     try {
-      // Use proper execution engine for complex Arduino code
-      console.log('SimulatorContext: Using ArduinoExecutionEngine for proper code execution');
-      const executionEngine = new ArduinoExecutionEngine();
-      const allInstructions = executionEngine.executeProgram(currentCode);
+      // First, try the new professional interpreter
+      let setupInstructions = [];
+      let loopInstructions = [];
+      let useInterpreter = false;
       
-      // Split instructions into setup and loop based on lineNumber
-      const setupInstructions = allInstructions.filter(inst => inst.lineNumber < 1000);
-      const loopInstructions = allInstructions.filter(inst => inst.lineNumber >= 1000);
+      try {
+        console.log('SimulatorContext: Attempting to use ArduinoInterpreter (professional grade)');
+        const interpreter = new ArduinoInterpreter();
+        interpreter.compile(currentCode);
+        
+        // Execute setup to get instructions
+        const setupOutput = interpreter.executeSetup();
+        console.log('ArduinoInterpreter: Setup output:', setupOutput);
+        
+        // Execute one loop iteration to get structure
+        const loopOutput = interpreter.executeLoop();
+        console.log('ArduinoInterpreter: Loop output:', loopOutput);
+        
+        // Convert interpreter output to our instruction format
+        if (setupOutput && setupOutput.length > 0) {
+          setupInstructions = setupOutput.map((out, idx) => ({
+            lineNumber: idx + 1,
+            instruction: `${out.type}(${out.value || ''})`,
+            function: out.type,
+            params: out.value ? { value: out.value } : {},
+            delayMs: out.type === 'delay' ? out.value : undefined
+          }));
+        }
+        
+        if (loopOutput && loopOutput.length > 0) {
+          loopInstructions = loopOutput.map((out, idx) => ({
+            lineNumber: 1000 + idx,
+            instruction: `${out.type}(${out.value || ''})`,
+            function: out.type,  
+            params: out.value ? { value: out.value } : {},
+            delayMs: out.type === 'delay' ? out.value : undefined
+          }));
+          useInterpreter = true;
+        }
+        
+        console.log('ArduinoInterpreter: Success! Setup:', setupInstructions.length, 'Loop:', loopInstructions.length);
+      } catch (interpreterError) {
+        console.warn('ArduinoInterpreter failed, falling back to execution engine:', interpreterError.message);
+      }
+      
+      // Fallback to execution engine if interpreter failed or found no loop
+      if (!useInterpreter) {
+        console.log('SimulatorContext: Using ArduinoExecutionEngine');
+        const executionEngine = new ArduinoExecutionEngine();
+        const allInstructions = executionEngine.executeProgram(currentCode);
+        
+        // Split instructions into setup and loop based on lineNumber
+        setupInstructions = allInstructions.filter(inst => inst.lineNumber < 1000);
+        loopInstructions = allInstructions.filter(inst => inst.lineNumber >= 1000);
+      }
       
       const parseResult = { 
         setup: setupInstructions.map((inst, idx) => ({ content: inst.instruction, lineNumber: idx + 1 })),
