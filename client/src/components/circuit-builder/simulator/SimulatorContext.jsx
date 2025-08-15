@@ -1253,31 +1253,40 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           const condition = instruction.condition;
           console.log(`[If] Processing condition: ${condition}`);
           
-          // Evaluate the condition by resolving variables
-          let evaluatedCondition = condition;
-          
-          // Replace variables in the condition with their values (clean approach)
-          const variables = executionStateRef.current.variables;
-          
-          console.log(`[If] Variables available:`, Array.from(variables.entries()));
-          
-          // Replace variable names with their values
-          variables.forEach((value, name) => {
-            const regex = new RegExp(`\\b${name}\\b`, 'g');
-            evaluatedCondition = evaluatedCondition.replace(regex, value);
-          });
-          
-          console.log(`[If] Original condition: ${condition}`);
-          console.log(`[If] Evaluated condition: ${evaluatedCondition}`);
-          
-          // Evaluate the condition safely
+          // Check if the condition is a simple variable (like "blink_on")
+          const simpleVarMatch = condition.match(/^\s*(\w+)\s*$/);
           let conditionResult = false;
-          try {
-            conditionResult = eval(evaluatedCondition);
-            console.log(`[If] Condition result: ${conditionResult}`);
-          } catch (error) {
-            console.error(`[If] Error evaluating condition "${evaluatedCondition}":`, error);
-            conditionResult = false;
+          
+          if (simpleVarMatch) {
+            // Simple variable condition
+            const varName = simpleVarMatch[1];
+            const varValue = executionStateRef.current.variables.get(varName);
+            conditionResult = !!varValue; // Convert to boolean
+            console.log(`[If] Simple variable condition: ${varName} = ${varValue} -> ${conditionResult}`);
+          } else {
+            // Complex condition - evaluate by replacing variables
+            let evaluatedCondition = condition;
+            const variables = executionStateRef.current.variables;
+            
+            console.log(`[If] Variables available:`, Array.from(variables.entries()));
+            
+            // Replace variable names with their values
+            variables.forEach((value, name) => {
+              const regex = new RegExp(`\\b${name}\\b`, 'g');
+              evaluatedCondition = evaluatedCondition.replace(regex, value);
+            });
+            
+            console.log(`[If] Original condition: ${condition}`);
+            console.log(`[If] Evaluated condition: ${evaluatedCondition}`);
+            
+            // Evaluate the condition safely
+            try {
+              conditionResult = eval(evaluatedCondition);
+              console.log(`[If] Condition result: ${conditionResult}`);
+            } catch (error) {
+              console.error(`[If] Error evaluating condition "${evaluatedCondition}":`, error);
+              conditionResult = false;
+            }
           }
           
           // Store the condition result for execution flow control

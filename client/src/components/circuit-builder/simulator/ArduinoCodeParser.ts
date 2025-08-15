@@ -930,13 +930,20 @@ export class ArduinoCodeParser {
             textParam = textParam.slice(1, -1);
           }
           
+          // Parse the Y position correctly
+          let yPos = 10;
+          if (parts[0]) {
+            const yValue = parts[0].trim();
+            yPos = this.resolveVariable(yValue) ?? parseInt(yValue) ?? 10;
+          }
+          
           instruction = {
             lineNumber,
             instruction: `drawCenteredString(${params})`,
             function: 'display.drawStr',
             params: {
-              param0: 30, // Approximate center position
-              param1: (this.resolveVariable(parts[0]) ?? parseInt(parts[0])) || 10,
+              param0: 30, // Approximate center position for X
+              param1: yPos, // Use the actual Y position from the first parameter
               param2: textParam
             }
           };
