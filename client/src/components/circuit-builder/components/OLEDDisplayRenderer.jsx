@@ -792,7 +792,7 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
       style={{
         position: 'absolute',
         top: '38px',     // Move down a few pixels
-        left: '18px',    // Move left a tiny amount
+        left: '13px',    // Move left 5px more
         width: '176px',  // 160px * 1.1 = 176px (another 10% wider)
         height: '96px',  // Keep height as requested
         backgroundColor: '#000',
