@@ -57,13 +57,54 @@ export class ArduinoExecutionEngine {
   private executeLoopWithFlowControl(loopLines: CodeLine[], fullCode: string): ArduinoInstruction[] {
     const instructions: ArduinoInstruction[] = [];
     
-    // Look for for-loop pattern in the full code - be more flexible with whitespace and syntax
-    const forLoopPattern = /for\s*\(\s*(?:unsigned\s+int\s+|const\s+byte\s+)?(\w+)\s*=\s*(\d+);\s*\1\s*<\s*\(([^)]+)\);\s*\1\+\+\s*\)\s*\{([\s\S]*?)(?=\n\s*}\s*(?:\n|$))/;
+    console.log('ArduinoExecutionEngine: executeLoopWithFlowControl called with', loopLines.length, 'loop lines');
+    
+    // First, just process the loop lines directly if we have them
+    if (loopLines.length > 0) {
+      console.log('ArduinoExecutionEngine: Processing', loopLines.length, 'loop lines directly');
+      
+      // Process each loop line and check for control structures
+      for (let i = 0; i < loopLines.length; i++) {
+        const line = loopLines[i];
+        const content = line.content.trim();
+        
+        // Check for for-loop
+        if (content.startsWith('for') && content.includes('(')) {
+          console.log('ArduinoExecutionEngine: Found for-loop at line', line.lineNumber);
+          const forLoopInstructions = this.processForLoop(loopLines, i, fullCode);
+          instructions.push(...forLoopInstructions);
+          // Skip the lines that were part of the for-loop
+          while (i < loopLines.length && !loopLines[i].content.includes('}')) {
+            i++;
+          }
+        }
+        // Check for if statement
+        else if (content.startsWith('if') && content.includes('(')) {
+          console.log('ArduinoExecutionEngine: Found if statement at line', line.lineNumber);
+          const ifInstructions = this.processIfStatement(loopLines, i);
+          instructions.push(...ifInstructions);
+          // Skip the lines that were part of the if statement
+          while (i < loopLines.length && !loopLines[i].content.includes('}')) {
+            i++;
+          }
+        }
+        // Regular instruction
+        else {
+          const instruction = this.parser.parseInstruction(line);
+          if (instruction) {
+            instructions.push(instruction);
+          }
+        }
+      }
+      
+      return instructions;
+    }
+    
+    // Fallback: Look for for-loop pattern in the full code
+    const forLoopPattern = /for\s*\(\s*(?:unsigned\s+int\s+|const\s+byte\s+)?(\w+)\s*=\s*(\d+);\s*\1\s*<\s*([^;]+);\s*\1\+\+\s*\)\s*\{([\s\S]*?)(?=\n\s*}\s*(?:\n|$))/;
     const forLoopMatch = fullCode.match(forLoopPattern);
     
-    console.log('ArduinoExecutionEngine: Looking for for-loop in code');
-    console.log('ArduinoExecutionEngine: Full code length:', fullCode.length);
-    console.log('ArduinoExecutionEngine: Code sample for pattern matching:', fullCode.substring(fullCode.indexOf('for'), fullCode.indexOf('for') + 200));
+    console.log('ArduinoExecutionEngine: Looking for for-loop pattern in full code');
     
     if (forLoopMatch) {
       const [, loopVar, startValue, limitExpr, loopBody] = forLoopMatch;
@@ -145,6 +186,134 @@ export class ArduinoExecutionEngine {
     }
     
     return instructions;
+  }
+
+  // Process a for-loop structure
+  private processForLoop(loopLines: CodeLine[], startIndex: number, fullCode: string): ArduinoInstruction[] {
+    const instructions: ArduinoInstruction[] = [];
+    const forLine = loopLines[startIndex].content;
+    
+    // Parse for-loop header: for(int i = 0; i < 10; i++)
+    const forMatch = forLine.match(/for\s*\(\s*(?:int|unsigned\s+int|const\s+byte)?\s*(\w+)\s*=\s*(\d+);\s*\1\s*<\s*([^;]+);\s*\1\+\+\s*\)/);
+    
+    if (forMatch) {
+      const [, loopVar, startValue, limitExpr] = forMatch;
+      const start = parseInt(startValue);
+      const limit = this.evaluateExpression(limitExpr);
+      
+      console.log(`ArduinoExecutionEngine: Processing for-loop: ${loopVar} from ${start} to ${limit}`);
+      
+      // Find the body of the for-loop
+      const bodyLines: CodeLine[] = [];
+      let braceCount = 0;
+      let foundStart = false;
+      
+      for (let i = startIndex; i < loopLines.length; i++) {
+        const line = loopLines[i].content;
+        if (line.includes('{')) {
+          braceCount++;
+          foundStart = true;
+        }
+        if (foundStart && braceCount > 0 && i > startIndex) {
+          bodyLines.push(loopLines[i]);
+        }
+        if (line.includes('}')) {
+          braceCount--;
+          if (braceCount === 0) break;
+        }
+      }
+      
+      // Execute the loop body multiple times
+      const maxIterations = Math.min(limit, 10); // Limit iterations for performance
+      for (let iteration = start; iteration < maxIterations; iteration++) {
+        this.state.variables.set(loopVar, iteration);
+        
+        // Process each line in the loop body
+        bodyLines.forEach(line => {
+          if (!line.content.includes('}')) {
+            const instruction = this.parser.parseInstruction(line);
+            if (instruction) {
+              instructions.push(instruction);
+            }
+          }
+        });
+      }
+    }
+    
+    return instructions;
+  }
+
+  // Process an if statement
+  private processIfStatement(loopLines: CodeLine[], startIndex: number): ArduinoInstruction[] {
+    const instructions: ArduinoInstruction[] = [];
+    const ifLine = loopLines[startIndex].content;
+    
+    // Parse if condition
+    const ifMatch = ifLine.match(/if\s*\(([^)]+)\)/);
+    
+    if (ifMatch) {
+      const condition = ifMatch[1];
+      const conditionResult = this.evaluateCondition(condition);
+      
+      console.log(`ArduinoExecutionEngine: Processing if statement: ${condition} = ${conditionResult}`);
+      
+      // Find the body of the if statement
+      const bodyLines: CodeLine[] = [];
+      let braceCount = 0;
+      let foundStart = false;
+      
+      for (let i = startIndex; i < loopLines.length; i++) {
+        const line = loopLines[i].content;
+        if (line.includes('{')) {
+          braceCount++;
+          foundStart = true;
+        }
+        if (foundStart && braceCount > 0 && i > startIndex) {
+          bodyLines.push(loopLines[i]);
+        }
+        if (line.includes('}')) {
+          braceCount--;
+          if (braceCount === 0) break;
+        }
+      }
+      
+      // Execute the if body only if condition is true
+      if (conditionResult) {
+        bodyLines.forEach(line => {
+          if (!line.content.includes('}')) {
+            const instruction = this.parser.parseInstruction(line);
+            if (instruction) {
+              instructions.push(instruction);
+            }
+          }
+        });
+      }
+    }
+    
+    return instructions;
+  }
+
+  // Evaluate a condition (returns true/false)
+  private evaluateCondition(condition: string): boolean {
+    // Handle simple comparisons
+    const comparisonMatch = condition.match(/(\w+)\s*([<>=!]+)\s*(.+)/);
+    if (comparisonMatch) {
+      const [, left, operator, right] = comparisonMatch;
+      const leftValue = this.state.variables.get(left) || 0;
+      const rightValue = this.evaluateExpression(right);
+      
+      switch (operator) {
+        case '<': return leftValue < rightValue;
+        case '>': return leftValue > rightValue;
+        case '<=': return leftValue <= rightValue;
+        case '>=': return leftValue >= rightValue;
+        case '==': return leftValue === rightValue;
+        case '!=': return leftValue !== rightValue;
+      }
+    }
+    
+    // Default to true for demonstration
+    return true;
   }
 
   // Execute specific switch case

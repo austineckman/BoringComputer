@@ -14,6 +14,10 @@ export interface ArduinoInstruction {
   pin?: number;
   value?: 'HIGH' | 'LOW' | number;
   delayMs?: number;
+  function?: string;  // Add function property for OLED and other function calls
+  params?: any;       // Add params for function parameters
+  variable?: string;  // Add variable for assignments
+  condition?: string; // Add condition for if statements
 }
 
 export class ArduinoCodeParser {
@@ -34,11 +38,12 @@ export class ArduinoCodeParser {
     // First pass: extract variable declarations and constants
     this.extractVariables(code);
     this.extractAdvancedFeatures(code);
-    this.parseLoopStructures(code);
 
     const lines = code.split('\n');
     let currentSection: 'none' | 'setup' | 'loop' = 'none';
     let braceDepth = 0;
+    let setupBraceDepth = 0;
+    let loopBraceDepth = 0;
 
     console.log('ArduinoCodeParser: Total lines to process:', lines.length);
 
@@ -62,8 +67,8 @@ export class ArduinoCodeParser {
       if (trimmedLine.includes('void setup()') || trimmedLine.includes('void setup(')) {
         console.log('ArduinoCodeParser: Found void setup() function');
         currentSection = 'setup';
-        braceDepth = braceDelta;
-        console.log(`ArduinoCodeParser: Setup function found, initial braceDepth: ${braceDepth}`);
+        setupBraceDepth = braceDelta;
+        console.log(`ArduinoCodeParser: Setup function found, initial setupBraceDepth: ${setupBraceDepth}`);
         return;
       }
 
@@ -71,29 +76,33 @@ export class ArduinoCodeParser {
       if (trimmedLine.includes('void loop()') || trimmedLine.includes('void loop(')) {
         console.log('ArduinoCodeParser: Found void loop() function');
         currentSection = 'loop';
-        braceDepth = braceDelta;
-        console.log(`ArduinoCodeParser: Loop function found, initial braceDepth: ${braceDepth}`);
-        
-        console.log(`ArduinoCodeParser: Loop function found, initial braceDepth: ${braceDepth}`);
+        loopBraceDepth = braceDelta;
+        console.log(`ArduinoCodeParser: Loop function found, initial loopBraceDepth: ${loopBraceDepth}`);
         return;
       }
 
-      // Update brace depth for regular lines
-      braceDepth += braceDelta;
+      // Update brace depth for the current section
+      if (currentSection === 'setup') {
+        setupBraceDepth += braceDelta;
+        braceDepth = setupBraceDepth;
+      } else if (currentSection === 'loop') {
+        loopBraceDepth += braceDelta;
+        braceDepth = loopBraceDepth;
+      }
       
       if (braceDelta !== 0) {
-        console.log(`ArduinoCodeParser: Brace change: +${openBraces} -{closeBraces} = ${braceDelta}, new depth: ${braceDepth}`);
+        console.log(`ArduinoCodeParser: Brace change in ${currentSection}: +${openBraces} -{closeBraces} = ${braceDelta}, new depth: ${braceDepth}`);
       }
 
-      // Add lines to appropriate section
-      if (currentSection === 'setup' && braceDepth > 0) {
+      // Add lines to appropriate section - don't skip lines with braces!
+      if (currentSection === 'setup' && setupBraceDepth > 0 && trimmedLine !== '}') {
         console.log(`ArduinoCodeParser: Adding line ${lineNumber} to SETUP: "${trimmedLine}"`);
         this.setupLines.push({
           lineNumber,
           content: trimmedLine,
           type: 'setup'
         });
-      } else if (currentSection === 'loop' && braceDepth > 0) {
+      } else if (currentSection === 'loop' && loopBraceDepth > 0 && trimmedLine !== '}') {
         console.log(`ArduinoCodeParser: Adding line ${lineNumber} to LOOP: "${trimmedLine}"`);
         this.loopLines.push({
           lineNumber,
@@ -103,8 +112,11 @@ export class ArduinoCodeParser {
       }
 
       // Reset section when we exit the function
-      if (braceDepth === 0 && currentSection !== 'none') {
-        console.log(`ArduinoCodeParser: Exiting ${currentSection} section (braceDepth = 0)`);
+      if (currentSection === 'setup' && setupBraceDepth === 0) {
+        console.log(`ArduinoCodeParser: Exiting setup section (setupBraceDepth = 0)`);
+        currentSection = 'none';
+      } else if (currentSection === 'loop' && loopBraceDepth === 0) {
+        console.log(`ArduinoCodeParser: Exiting loop section (loopBraceDepth = 0)`);
         currentSection = 'none';
       }
     });
