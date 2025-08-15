@@ -742,10 +742,15 @@ void loop() {
   const { refreshLibraries, libraries = {} } = useLibraryManager();
   
   // Query for Arduino libraries from our API
-  const { data: arduinoLibraries = [], isLoading: isLoadingArduinoLibraries } = useQuery({
+  const { data: arduinoLibrariesResponse, isLoading: isLoadingArduinoLibraries } = useQuery({
     queryKey: ['/api/arduino-libraries'],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+  
+  // Extract libraries array from the response
+  const arduinoLibraries = arduinoLibrariesResponse?.libraries || [];
+  
+
 
   // Handle saving circuit example
   const handleSaveExample = async (name: string, description: string, isPublished: boolean) => {
@@ -1288,6 +1293,8 @@ void loop() {
                     {isLoadingArduinoLibraries && Object.keys(libraries).length === 0 && (
                       <div className="px-4 py-2 text-sm text-gray-400">Loading libraries...</div>
                     )}
+                    
+
                     
                     {/* Empty state */}
                     {!isLoadingArduinoLibraries && arduinoLibraries.length === 0 && Object.keys(libraries).length === 0 && (
