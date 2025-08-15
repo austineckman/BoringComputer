@@ -1526,7 +1526,28 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                 case 'drawStr':
                   const text = instruction.params?.param2 || instruction.params?.text || '';
                   const textX = instruction.params?.x || instruction.params?.param0 || currentState.display?.cursorX || 0;
-                  const textY = instruction.params?.y || instruction.params?.param1 || currentState.display?.cursorY || 10;
+                  let textY = instruction.params?.y || instruction.params?.param1 || currentState.display?.cursorY || 10;
+                  
+                  // Handle runtime Y position evaluation for drawCenteredString
+                  if (instruction.originalYParam) {
+                    const yParam = instruction.originalYParam;
+                    
+                    // Check for variable references
+                    if (yParam === 'font_height') {
+                      textY = executionStateRef.current.variables.get('font_height') || 8;
+                    } else if (yParam === 'centered_y') {
+                      textY = executionStateRef.current.variables.get('centered_y') || 40;
+                    } else if (!isNaN(parseInt(yParam))) {
+                      textY = parseInt(yParam);
+                    } else {
+                      // Try to get from variables
+                      const varValue = executionStateRef.current.variables.get(yParam);
+                      if (varValue !== undefined) {
+                        textY = varValue;
+                      }
+                    }
+                    console.log(`[OLED Debug] Runtime Y evaluation: ${yParam} -> ${textY}`);
+                  }
                   
                   console.log(`[OLED Debug] drawStr params:`, instruction.params);
                   console.log(`[OLED Debug] Extracted - text: "${text}", x: ${textX}, y: ${textY}`);

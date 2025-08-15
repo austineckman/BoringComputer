@@ -934,8 +934,26 @@ export class ArduinoCodeParser {
           let yPos = 10;
           if (parts[0]) {
             const yValue = parts[0].trim();
-            yPos = this.resolveVariable(yValue) ?? parseInt(yValue) ?? 10;
+            
+            // Check for simple number
+            if (!isNaN(parseInt(yValue))) {
+              yPos = parseInt(yValue);
+            }
+            // Check for variable reference
+            else if (yValue === 'font_height') {
+              yPos = 8; // Standard font height for u8g2_font_ncenB08_tr
+            }
+            // Check for calculated expression like centered_y
+            else if (yValue === 'centered_y') {
+              yPos = 40; // Approximate center of 64px display
+            }
+            // Try to resolve as variable
+            else {
+              yPos = this.resolveVariable(yValue) ?? 10;
+            }
           }
+          
+          console.log(`ArduinoCodeParser: drawCenteredString Y position: ${parts[0]} -> ${yPos}`);
           
           instruction = {
             lineNumber,
@@ -945,7 +963,9 @@ export class ArduinoCodeParser {
               param0: 30, // Approximate center position for X
               param1: yPos, // Use the actual Y position from the first parameter
               param2: textParam
-            }
+            },
+            // Store the original Y parameter for runtime evaluation
+            originalYParam: parts[0]?.trim()
           };
         }
       } else {
