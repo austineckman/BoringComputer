@@ -34,6 +34,8 @@ router.get('/', async (req, res) => {
           const files = await fs.readdir(libraryDir);
           
           const sourceFiles = [];
+          let keywords = null;
+          
           for (const file of files) {
             if (file.endsWith('.h') || file.endsWith('.cpp')) {
               const filePath = path.join(libraryDir, file);
@@ -43,12 +45,20 @@ router.get('/', async (req, res) => {
                 content,
                 type: file.endsWith('.h') ? 'header' : 'source'
               });
+            } else if (file === 'keywords.txt') {
+              try {
+                const keywordsPath = path.join(libraryDir, file);
+                keywords = await fs.readFile(keywordsPath, 'utf-8');
+              } catch (error) {
+                console.warn(`Could not read keywords.txt for ${dir.name}:`, error);
+              }
             }
           }
 
           libraries.push({
             ...libraryMetadata,
             files: sourceFiles,
+            keywords,
             directory: dir.name
           });
         } catch (error) {
@@ -89,6 +99,7 @@ router.get('/:libraryName', async (req, res) => {
     // Read source files
     const files = await fs.readdir(libraryDir);
     const sourceFiles = [];
+    let keywords = null;
     
     for (const file of files) {
       if (file.endsWith('.h') || file.endsWith('.cpp')) {
@@ -99,6 +110,13 @@ router.get('/:libraryName', async (req, res) => {
           content,
           type: file.endsWith('.h') ? 'header' : 'source'
         });
+      } else if (file === 'keywords.txt') {
+        try {
+          const keywordsPath = path.join(libraryDir, file);
+          keywords = await fs.readFile(keywordsPath, 'utf-8');
+        } catch (error) {
+          console.warn(`Could not read keywords.txt for ${libraryName}:`, error);
+        }
       }
     }
 
@@ -107,6 +125,7 @@ router.get('/:libraryName', async (req, res) => {
       library: {
         ...libraryMetadata,
         files: sourceFiles,
+        keywords,
         directory: libraryName
       }
     });
