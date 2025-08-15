@@ -7,6 +7,7 @@ This directory contains Arduino libraries that are integrated with the circuit s
 Each library directory should contain:
 - **Source files** (.h and .cpp files)
 - **library.json** - Metadata including functions, examples, and component mappings
+- **keywords.txt** (optional) - Arduino IDE syntax highlighting keywords
 - **README.md** (optional) - Additional documentation
 
 ## Current Libraries
