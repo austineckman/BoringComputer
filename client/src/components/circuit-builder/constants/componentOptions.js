@@ -14,7 +14,7 @@ import customKeypadImg from '@assets/custom-keypad.icon.png';
 import rotaryEncoderImg from '@assets/rotary-encoder.icon.png';
 import dipSwitchImg from '@assets/dip-switch-3.icon.png';
 import buzzerImg from '@assets/buzzer.icon.png';
-import breadboardMiniImg from '@assets/breadboard-mini.icon.png';
+
 
 // List of available components with their properties and pin configurations
 export const componentOptions = [
@@ -193,27 +193,6 @@ export const componentOptions = [
       { id: 'out2', type: 'bidirectional', label: 'Output 2' },
       { id: 'in3', type: 'bidirectional', label: 'Input 3' },
       { id: 'out3', type: 'bidirectional', label: 'Output 3' }
-    ]
-  },
-  // Add breadboard mini component
-  {
-    name: 'breadboard-mini',
-    displayName: 'Mini Breadboard',
-    description: 'Miniature solderless breadboard',
-    category: 'passives',
-    imagePath: breadboardMiniImg,
-    pinConfig: [
-      // Nodes for the mini breadboard (simplified)
-      { id: 'row1-1', type: 'bidirectional', label: 'Node 1' },
-      { id: 'row1-2', type: 'bidirectional', label: 'Node 2' },
-      { id: 'row1-3', type: 'bidirectional', label: 'Node 3' },
-      { id: 'row1-4', type: 'bidirectional', label: 'Node 4' },
-      { id: 'row1-5', type: 'bidirectional', label: 'Node 5' },
-      { id: 'row2-1', type: 'bidirectional', label: 'Node 6' },
-      { id: 'row2-2', type: 'bidirectional', label: 'Node 7' },
-      { id: 'row2-3', type: 'bidirectional', label: 'Node 8' },
-      { id: 'row2-4', type: 'bidirectional', label: 'Node 9' },
-      { id: 'row2-5', type: 'bidirectional', label: 'Node 10' }
     ]
   }
 ];
