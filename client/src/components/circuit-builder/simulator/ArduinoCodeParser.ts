@@ -420,6 +420,28 @@ export class ArduinoCodeParser {
       return instruction;
     }
 
+    // Parse opening braces (start of code blocks)
+    if (line.trim() === '{') {
+      const instruction = {
+        lineNumber,
+        instruction: '{',
+        function: 'block_start'
+      };
+      console.log(`ArduinoCodeParser: Found opening brace:`, instruction);
+      return instruction;
+    }
+
+    // Parse closing braces (end of code blocks)
+    if (line.trim() === '}') {
+      const instruction = {
+        lineNumber,
+        instruction: '}',
+        function: 'block_end'
+      };
+      console.log(`ArduinoCodeParser: Found closing brace:`, instruction);
+      return instruction;
+    }
+
     // Parse variable assignments (int/float/etc variable = value;)
     const assignMatch = line.match(/^\s*(int|float|long|byte|bool|boolean)\s+(\w+)\s*=\s*(.*?);?\s*$/);
     if (assignMatch) {
@@ -687,7 +709,23 @@ export class ArduinoCodeParser {
       return instruction;
     }
 
-    // Parse U8g2 OLED display functions
+    // Parse U8g2 OLED display object instantiation
+    const u8g2InstanceMatch = line.match(/U8G2_\w+\s+(\w+)\s*\((.*?)\)\s*;?/);
+    if (u8g2InstanceMatch) {
+      const objectName = u8g2InstanceMatch[1];
+      const params = u8g2InstanceMatch[2];
+      const instruction = {
+        lineNumber,
+        instruction: line.trim(),
+        function: 'u8g2_instantiation',
+        objectName: objectName,
+        params: this.parseParameters(params)
+      };
+      console.log(`ArduinoCodeParser: Found U8g2 object instantiation:`, instruction);
+      return instruction;
+    }
+
+    // Parse U8g2 OLED display functions (more flexible pattern)
     const u8g2Match = line.match(/(\w*u8g2\w*)\.(begin|clearBuffer|clearDisplay|sendBuffer|drawStr|drawBox|drawFrame|drawCircle|drawDisc|drawLine|drawPixel|setFont|setCursor|setDrawColor|print|println|getDisplayWidth|getDisplayHeight)\s*\((.*?)\)/);
     if (u8g2Match) {
       const objectName = u8g2Match[1];

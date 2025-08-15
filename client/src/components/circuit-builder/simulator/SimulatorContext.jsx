@@ -51,7 +51,8 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     variables: new Map(), // Proper Map initialization
     inConditionalBlock: false,
     executeIfBlock: false,
-    skipUntilEndIf: false
+    skipUntilEndIf: false,
+    blockDepth: 0
   });
   
   // Function to add a log entry with timestamp
@@ -1144,6 +1145,34 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         }
 
         // Handle control structures with actual condition evaluation
+        // Handle block start (opening brace)
+        if (instruction.function === 'block_start') {
+          if (!executionStateRef.current.blockDepth) {
+            executionStateRef.current.blockDepth = 0;
+          }
+          executionStateRef.current.blockDepth++;
+          console.log(`[Block] Opening brace - depth now: ${executionStateRef.current.blockDepth}`);
+          return 0;
+        }
+
+        // Handle block end (closing brace)
+        if (instruction.function === 'block_end') {
+          if (!executionStateRef.current.blockDepth) {
+            executionStateRef.current.blockDepth = 0;
+          }
+          executionStateRef.current.blockDepth--;
+          console.log(`[Block] Closing brace - depth now: ${executionStateRef.current.blockDepth}`);
+          
+          // If we're at the end of an if block, reset conditional state
+          if (executionStateRef.current.blockDepth === 0 && executionStateRef.current.inConditionalBlock) {
+            console.log(`[Block] Resetting conditional state - if block ended`);
+            executionStateRef.current.inConditionalBlock = false;
+            executionStateRef.current.skipUntilEndIf = false;
+            executionStateRef.current.executeIfBlock = false;
+          }
+          return 0;
+        }
+
         if (instruction.function === 'if') {
           const condition = instruction.condition;
           console.log(`[If] Processing condition: ${condition}`);
@@ -1178,6 +1207,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           // Store the condition result for execution flow control
           executionStateRef.current.lastConditionResult = conditionResult;
           executionStateRef.current.inConditionalBlock = true;
+          executionStateRef.current.blockDepth = 0; // Initialize block depth tracking
           
           // CORRECT LOGIC: If condition is TRUE, EXECUTE the if block
           // If condition is FALSE, SKIP the if block (and execute else if present)
@@ -1341,6 +1371,13 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
               addLog(`[${timestamp}] → Wire.endTransmission() - I2C transmission complete`);
               break;
           }
+          return 0;
+        }
+
+        // Handle U8g2 object instantiation
+        if (instruction.function === 'u8g2_instantiation') {
+          const objectName = instruction.objectName;
+          addLog(`[${timestamp}] → U8G2 object ${objectName} instantiated`);
           return 0;
         }
 
@@ -1585,22 +1622,12 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             const instruction = state.loopInstructions[state.loopIndex];
             
             // FIXED IF STATEMENT LOGIC: Check if we should skip this instruction
-            if (state.skipUntilEndIf) {
+            if (state.skipUntilEndIf && instruction.function !== 'block_end') {
               console.log(`[If Logic] Skipping instruction: ${instruction.instruction}`);
-              
-              // Check if this is the end of the if block (next instruction after the if block)
-              if (instruction.instruction.includes('delay(') || 
-                  instruction.instruction.includes('analogRead(') ||
-                  !instruction.instruction.includes('digitalWrite(')) {
-                console.log(`[If Logic] Reached end of if block, stopping skip`);
-                state.skipUntilEndIf = false;
-                state.inConditionalBlock = false;
-              } else {
-                // Still in if block, skip this instruction
-                state.loopIndex++;
-                executeNextInstruction();
-                return;
-              }
+              // Skip this instruction and move to next
+              state.loopIndex++;
+              executeNextInstruction();
+              return;
             }
             
             const lineNum = instruction.lineNumber || 'Unknown';
