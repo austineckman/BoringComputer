@@ -790,16 +790,12 @@ export class ArduinoCodeParser {
       // Special handling for drawStr to ensure proper text extraction
       if (functionName === 'drawStr') {
         const parts = params.split(',').map(p => p.trim());
-        console.log(`🔍 [PARSER DEBUG] drawStr parts:`, parts);
         if (parts.length >= 3) {
-          const textValue = parts[2].replace(/['"]/g, ''); // Remove quotes from text
           parsedParams = {
             param0: (this.resolveVariable(parts[0]) ?? parseInt(parts[0])) || 0,
             param1: (this.resolveVariable(parts[1]) ?? parseInt(parts[1])) || 0,
-            param2: textValue
+            param2: parts[2].replace(/['"]/g, '') // Remove quotes from text
           };
-          console.log(`🔍 [PARSER DEBUG] drawStr extracted text: "${textValue}"`);
-          console.log(`🔍 [PARSER DEBUG] drawStr parsed params:`, parsedParams);
         }
       }
       // Special handling for drawFrame
