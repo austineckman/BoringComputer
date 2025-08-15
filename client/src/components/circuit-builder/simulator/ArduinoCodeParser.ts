@@ -130,6 +130,35 @@ export class ArduinoCodeParser {
     this.variables.set('A4', 18);
     this.variables.set('A5', 19);
     
+    // Add constants from the advanced OLED test code
+    this.variables.set('TEST_PAGE_COUNT', 13);
+    this.variables.set('LANDER_HEIGHT', 25);
+    this.variables.set('LANDER_WIDTH', 20);
+    this.variables.set('BOX1_WIDTH', 20);
+    this.variables.set('BOX1_HEIGHT', 10);
+    this.variables.set('BOX1_X_OFFSET', 5);
+    this.variables.set('BOX2_WIDTH', 30);
+    this.variables.set('BOX2_HEIGHT', 8);
+    this.variables.set('BOX2_X_OFFSET', 10);
+    this.variables.set('BOX2_Y_OFFSET', 5);
+    this.variables.set('CIRCLE1_RADIUS', 8);
+    this.variables.set('CIRCLE1_DIAMETER', 17);
+    this.variables.set('CIRCLE1_X_OFFSET', 8);
+    this.variables.set('CIRCLE2_RADIUS', 7);
+    this.variables.set('CIRCLE2_X_OFFSET', 24);
+    this.variables.set('RBOX1_WIDTH', 40);
+    this.variables.set('RBOX1_HEIGHT', 30);
+    this.variables.set('RBOX1_X_OFFSET', 5);
+    this.variables.set('RBOX2_WIDTH', 25);
+    this.variables.set('RBOX2_HEIGHT', 40);
+    this.variables.set('RBOX2_X_OFFSET', 50);
+    this.variables.set('STRING_X_OFFSET', 30);
+    this.variables.set('LINE_X_OFFSET', 7);
+    this.variables.set('LINE_Y_MAX', 55);
+    this.variables.set('y_offset', 8);
+    this.variables.set('frame', 1);
+    this.variables.set('display_frame', 1);
+    
     // Match variable declarations like: int redPin = 9; bool flag = true; and #define RED_PIN 9
     const variableRegex = /(?:int|const\s+int|float|long|byte|bool|boolean)\s+(\w+)\s*=\s*(\d+(?:\.\d+)?|true|false|HIGH|LOW)|(?:bool|boolean)\s+(\w+)\s*;|#define\s+(\w+)\s+(\d+|HIGH|LOW|INPUT|OUTPUT|INPUT_PULLUP|true|false)/g;
     
