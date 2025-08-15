@@ -274,13 +274,28 @@ void loop() {
   }, []);
 
   // Function to add a new library tab
-  const addLibraryTab = (libraryName: string, libraryCode?: string) => {
+  const addLibraryTab = (libraryName: string, libraryCode?: string, isArduinoLibrary = false) => {
     const tabId = `lib_${libraryName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    
+    // If it's an Arduino library, fetch the library details for better code template
+    let code = libraryCode;
+    if (!code && isArduinoLibrary) {
+      const arduinoLib = arduinoLibraries.find((lib: any) => lib.name === libraryName);
+      if (arduinoLib && arduinoLib.examples && arduinoLib.examples.length > 0) {
+        // Use the first example as the template
+        code = arduinoLib.examples[0].code;
+      } else {
+        code = `// ${libraryName} Library Code\n#include <${libraryName}.h>\n\n// Your ${libraryName} code here\nvoid setup() {\n  // Initialize library\n}\n\nvoid loop() {\n  // Main code\n}`;
+      }
+    } else if (!code) {
+      code = `// ${libraryName} Library Code\n#include <${libraryName}.h>\n\n// Your ${libraryName} code here\n`;
+    }
+    
     setCodeTabs(prev => ({
       ...prev,
       [tabId]: {
         name: libraryName,
-        code: libraryCode || `// ${libraryName} Library Code\n#include <${libraryName}.h>\n\n// Your ${libraryName} code here\n`,
+        code,
         type: 'library',
         libraryName
       }
@@ -725,6 +740,12 @@ void loop() {
 
   // Library manager hook
   const { refreshLibraries, libraries = {} } = useLibraryManager();
+  
+  // Query for Arduino libraries from our API
+  const { data: arduinoLibraries = [], isLoading: isLoadingArduinoLibraries } = useQuery({
+    queryKey: ['/api/arduino-libraries'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   // Handle saving circuit example
   const handleSaveExample = async (name: string, description: string, isPublished: boolean) => {
@@ -1218,19 +1239,60 @@ void loop() {
                     <div className="text-xs text-gray-400 font-semibold">Select Library to Add</div>
                   </div>
                   <div className="py-1">
-                    {Object.entries(libraries).map(([libName, lib]) => (
-                      <button
-                        key={libName}
-                        onClick={() => addLibraryTab(libName)}
-                        className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                        disabled={Object.values(codeTabs).some(tab => tab.libraryName === libName)}
-                      >
-                        <div className="font-medium">{libName}</div>
-                        <div className="text-xs text-gray-400">
-                          {(lib as any)?.type === 'custom' ? 'Custom Library' : 'Built-in Library'}
+                    {/* Arduino Libraries Section */}
+                    {arduinoLibraries.length > 0 && (
+                      <>
+                        <div className="px-4 py-1 text-xs text-gray-400 font-semibold border-b border-gray-700">
+                          Arduino Libraries
                         </div>
-                      </button>
-                    ))}
+                        {arduinoLibraries.map((lib: any) => (
+                          <button
+                            key={lib.name}
+                            onClick={() => addLibraryTab(lib.name, undefined, true)}
+                            className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                            disabled={Object.values(codeTabs).some(tab => tab.libraryName === lib.name)}
+                          >
+                            <div className="font-medium">{lib.name}</div>
+                            <div className="text-xs text-gray-400">
+                              v{lib.version} - {lib.description?.split('.')[0]}
+                            </div>
+                          </button>
+                        ))}
+                        {Object.keys(libraries).length > 0 && <div className="border-t border-gray-700 my-1"></div>}
+                      </>
+                    )}
+                    
+                    {/* Custom Libraries Section */}
+                    {Object.keys(libraries).length > 0 && (
+                      <>
+                        <div className="px-4 py-1 text-xs text-gray-400 font-semibold">
+                          Custom Libraries
+                        </div>
+                        {Object.entries(libraries).map(([libName, lib]) => (
+                          <button
+                            key={libName}
+                            onClick={() => addLibraryTab(libName)}
+                            className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                            disabled={Object.values(codeTabs).some(tab => tab.libraryName === libName)}
+                          >
+                            <div className="font-medium">{libName}</div>
+                            <div className="text-xs text-gray-400">
+                              {(lib as any)?.type === 'custom' ? 'Custom Library' : 'Built-in Library'}
+                            </div>
+                          </button>
+                        ))}
+                      </>
+                    )}
+                    
+                    {/* Loading state */}
+                    {isLoadingArduinoLibraries && Object.keys(libraries).length === 0 && (
+                      <div className="px-4 py-2 text-sm text-gray-400">Loading libraries...</div>
+                    )}
+                    
+                    {/* Empty state */}
+                    {!isLoadingArduinoLibraries && arduinoLibraries.length === 0 && Object.keys(libraries).length === 0 && (
+                      <div className="px-4 py-2 text-sm text-gray-400">No libraries available</div>
+                    )}
                   </div>
                 </div>
               )}
