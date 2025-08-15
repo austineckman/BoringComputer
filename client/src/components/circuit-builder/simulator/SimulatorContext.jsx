@@ -49,6 +49,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     loopInstructions: [],
     loopCount: 0,
     variables: new Map(), // Proper Map initialization
+    staticVariables: new Map(), // For static variable persistence
     inConditionalBlock: false,
     executeIfBlock: false,
     skipUntilEndIf: false,
@@ -340,6 +341,9 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog(`✅ Code parsed: ${setupInstructions.length} setup instructions, ${loopInstructions.length} loop instructions`);
       
       // Initialize execution state with proper Map
+      // Preserve staticVariables across resets
+      const previousStaticVars = executionStateRef.current?.staticVariables || new Map();
+      
       executionStateRef.current = {
         phase: 'setup',
         setupIndex: 0,
@@ -348,6 +352,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         loopInstructions,
         loopCount: 0,
         variables: new Map(), // FIX: Use Map instead of plain object
+        staticVariables: previousStaticVars, // Preserve static variables
         skipUntilEndIf: false,
         inConditionalBlock: false,
         lastConditionResult: false,
@@ -2030,6 +2035,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       loopBlocks: [],
       loopCount: 0,
       variables: new Map(), // FIX: Use Map instead of plain object
+      staticVariables: new Map(), // Clear static variables on stop
       currentContext: {}
     };
     
