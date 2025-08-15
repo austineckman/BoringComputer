@@ -271,6 +271,30 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog(`[${timestamp}] → Serial: ${instruction.instruction}`);
     }
 
+    // Handle OLED display function calls
+    if (instruction.function && instruction.function.startsWith('display.')) {
+      console.log(`[SimulatorContext] Processing OLED function: ${instruction.function}`, instruction);
+      
+      // Find OLED display components
+      const oledComponents = components.filter(comp => comp.type === 'oled-display' || comp.id.includes('oled'));
+      
+      oledComponents.forEach(oledComponent => {
+        console.log(`[SimulatorContext] Updating OLED component: ${oledComponent.id}`);
+        
+        // Update the component state with the display function call
+        updateComponentState(oledComponent.id, {
+          lastFunction: instruction.function,
+          lastParams: instruction.params,
+          lastTimestamp: Date.now(),
+          shouldDisplay: true, // Enable display when we receive function calls
+          hasOLEDCode: true, // Mark as having valid OLED code
+          isProperlyWired: true // Assume proper wiring for execution engine calls
+        });
+      });
+      
+      addLog(`[${timestamp}] → OLED: ${instruction.function}(${Object.values(instruction.params || {}).join(', ')})`);
+    }
+
     return 0;
   };
 
@@ -319,6 +343,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       
       console.log('SimulatorContext: Setup instructions:', setupInstructions);
       console.log('SimulatorContext: Loop instructions:', loopInstructions);
+      console.log('SimulatorContext: ALL INSTRUCTIONS from ExecutionEngine:', allInstructions);
       
       // DEBUG: Log what parser found
       console.log('DEBUG Parser Results:', { 

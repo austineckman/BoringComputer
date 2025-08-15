@@ -270,6 +270,15 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
       animationInterval.current = null;
     }
     
+    // Check for new OLED function calls from the execution engine
+    if (displayState && displayState.lastFunction && displayState.lastParams) {
+      console.log(`OLED Processing function: ${displayState.lastFunction}`, displayState.lastParams);
+      
+      // Process the display function call immediately
+      processDisplayFunction(displayState.lastFunction, displayState.lastParams);
+      return;
+    }
+    
     // Check if the component state indicates we should display content
     const shouldDisplay = displayState && displayState.shouldDisplay;
     
