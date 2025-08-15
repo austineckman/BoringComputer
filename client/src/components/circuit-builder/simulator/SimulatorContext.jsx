@@ -1113,6 +1113,18 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         }
 
         // Handle variable assignments
+        // Handle variable declarations (bool blink_on;)
+        if (instruction.function === 'declaration') {
+          const variable = instruction.variable;
+          const value = instruction.value;
+          const variables = executionStateRef.current.variables;
+          
+          variables.set(variable, value);
+          console.log(`[Declaration] Declared variable ${variable} with default value ${value}`);
+          addLog(`[${timestamp}] → ${instruction.type} ${variable} declared with default value ${value}`);
+          return 0;
+        }
+
         if (instruction.function === 'assignment') {
           const { variable, value, type } = instruction;
           
@@ -1218,7 +1230,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             executionStateRef.current.skipUntilEndIf = true;  // Skip if block
             executionStateRef.current.executeIfBlock = false;
           }
-          executionStateRef.current.ifStatementLineNumber = lineNumber;
+          executionStateRef.current.ifStatementLineNumber = instruction.lineNumber;
           
           addLog(`[${timestamp}] → if (${condition}) evaluated to ${conditionResult} - ${conditionResult ? 'EXECUTING' : 'SKIPPING'} if block`);
           console.log(`[If] Condition result: ${conditionResult} - ${conditionResult ? 'EXECUTING if block' : 'SKIPPING to else block'}`);

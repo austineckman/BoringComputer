@@ -130,24 +130,39 @@ export class ArduinoCodeParser {
     this.variables.set('A4', 18);
     this.variables.set('A5', 19);
     
-    // Match variable declarations like: int redPin = 9; and #define RED_PIN 9
-    const variableRegex = /(?:int|const\s+int|float|long|byte|bool|boolean)\s+(\w+)\s*=\s*(\d+(?:\.\d+)?)|#define\s+(\w+)\s+(\d+|HIGH|LOW|INPUT|OUTPUT|INPUT_PULLUP)/g;
+    // Match variable declarations like: int redPin = 9; bool flag = true; and #define RED_PIN 9
+    const variableRegex = /(?:int|const\s+int|float|long|byte|bool|boolean)\s+(\w+)\s*=\s*(\d+(?:\.\d+)?|true|false|HIGH|LOW)|(?:bool|boolean)\s+(\w+)\s*;|#define\s+(\w+)\s+(\d+|HIGH|LOW|INPUT|OUTPUT|INPUT_PULLUP|true|false)/g;
     
     let match;
     while ((match = variableRegex.exec(code)) !== null) {
       let variableName, value;
       
       if (match[1] && match[2]) {
-        // int/const int format: int redPin = 9;
+        // Variable with assignment: int redPin = 9; bool flag = true;
         variableName = match[1];
-        value = parseFloat(match[2]);
-      } else if (match[3] && match[4]) {
-        // #define format: #define RED_PIN 9 or #define LED_PIN HIGH
+        const valueStr = match[2];
+        
+        // Convert Arduino constants and boolean values
+        switch (valueStr) {
+          case 'true': value = 1; break;
+          case 'false': value = 0; break;
+          case 'HIGH': value = 1; break;
+          case 'LOW': value = 0; break;
+          default: value = parseFloat(valueStr); break;
+        }
+      } else if (match[3]) {
+        // Boolean variable without assignment: bool blink_on;
         variableName = match[3];
-        const valueStr = match[4];
+        value = 0; // Default boolean variables to false (0)
+      } else if (match[4] && match[5]) {
+        // #define format: #define RED_PIN 9 or #define LED_PIN HIGH
+        variableName = match[4];
+        const valueStr = match[5];
         
         // Convert Arduino constants to numeric values
         switch (valueStr) {
+          case 'true': value = 1; break;
+          case 'false': value = 0; break;
           case 'HIGH': value = 1; break;
           case 'LOW': value = 0; break;
           case 'INPUT': value = 0; break;
@@ -448,7 +463,16 @@ export class ArduinoCodeParser {
       const type = assignMatch[1];
       const variable = assignMatch[2];
       const value = assignMatch[3];
-      const resolvedValue = this.resolveVariable(value) ?? (isNaN(parseFloat(value)) ? value : parseFloat(value));
+      
+      let resolvedValue;
+      // Handle boolean values specially
+      if (value === 'true') {
+        resolvedValue = 1;
+      } else if (value === 'false') {
+        resolvedValue = 0;
+      } else {
+        resolvedValue = this.resolveVariable(value) ?? (isNaN(parseFloat(value)) ? value : parseFloat(value));
+      }
       
       // Store the variable for future resolution
       if (typeof resolvedValue === 'number') {
@@ -464,6 +488,33 @@ export class ArduinoCodeParser {
         value: resolvedValue
       };
       console.log(`ArduinoCodeParser: Found variable assignment:`, instruction);
+      return instruction;
+    }
+
+    // Parse variable declarations without assignment (bool blink_on;)
+    const declMatch = line.match(/^\s*(int|float|long|byte|bool|boolean)\s+(\w+)\s*;?\s*$/);
+    if (declMatch) {
+      const type = declMatch[1];
+      const variable = declMatch[2];
+      
+      // Default values for different types
+      let defaultValue = 0;
+      if (type === 'bool' || type === 'boolean') {
+        defaultValue = 0; // false
+      }
+      
+      // Store the variable with default value
+      this.variables.set(variable, defaultValue);
+      
+      const instruction: any = {
+        lineNumber,
+        instruction: `${type} ${variable}`,
+        function: 'declaration',
+        variable: variable,
+        type: type,
+        value: defaultValue
+      };
+      console.log(`ArduinoCodeParser: Found variable declaration:`, instruction);
       return instruction;
     }
 
