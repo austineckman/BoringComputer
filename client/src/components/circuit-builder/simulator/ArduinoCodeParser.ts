@@ -761,7 +761,7 @@ export class ArduinoCodeParser {
     }
 
     // Parse U8g2 OLED display object instantiation - handle various U8G2 constructor patterns
-    const u8g2InstanceMatch = line.match(/U8G2_\w+_\w+_\w+_\w+\s+(\w+)\s*\((.*?)\)\s*;?/);
+    const u8g2InstanceMatch = line.match(/U8G2_[\w_]+\s+(\w+)\s*\((.*?)\)\s*;?/);
     if (u8g2InstanceMatch) {
       const objectName = u8g2InstanceMatch[1];
       const params = u8g2InstanceMatch[2];
@@ -881,15 +881,22 @@ export class ArduinoCodeParser {
       let instruction = null;
       if (functionName === 'drawCenteredString') {
         const parts = params.split(',').map(p => p.trim());
-        if (parts.length >= 3) {
+        if (parts.length >= 2) {
+          // Get the text parameter - it's the second parameter
+          let textParam = parts[1];
+          // Remove quotes if present
+          if (textParam.startsWith('"') && textParam.endsWith('"')) {
+            textParam = textParam.slice(1, -1);
+          }
+          
           instruction = {
             lineNumber,
             instruction: `drawCenteredString(${params})`,
             function: 'display.drawStr',
             params: {
-              param0: (this.resolveVariable(parts[0]) ?? parseInt(parts[0])) || 0,
-              param1: (this.resolveVariable(parts[1]) ?? parseInt(parts[1])) || 10,
-              param2: parts[2].replace(/['"]/g, '') // Remove quotes from text
+              param0: 30, // Approximate center position
+              param1: (this.resolveVariable(parts[0]) ?? parseInt(parts[0])) || 10,
+              param2: textParam
             }
           };
         }
