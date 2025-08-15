@@ -1,0 +1,213 @@
+{
+  "name": "TM1637Display",
+  "version": "1.4.0",
+  "description": "Arduino library for TM1637 4-digit 7-segment LED displays",
+  "author": "Avishay Orpaz",
+  "repository": "https://github.com/avishorp/TM1637",
+  "license": "LGPL-2.1",
+  "mappedComponents": ["segmented-display"],
+  "functions": [
+    {
+      "name": "TM1637Display",
+      "description": "Constructor. Initialize display with CLK and DIO pins",
+      "signature": "TM1637Display(uint8_t pinClk, uint8_t pinDIO, unsigned int bitDelay = DEFAULT_BIT_DELAY)",
+      "parameters": [
+        {
+          "name": "pinClk",
+          "type": "uint8_t",
+          "description": "Digital pin connected to the clock pin of the module"
+        },
+        {
+          "name": "pinDIO", 
+          "type": "uint8_t",
+          "description": "Digital pin connected to the DIO pin of the module"
+        },
+        {
+          "name": "bitDelay",
+          "type": "unsigned int",
+          "description": "Delay in microseconds between bit transitions (default: 100)",
+          "optional": true
+        }
+      ],
+      "returnType": "void"
+    },
+    {
+      "name": "setBrightness",
+      "description": "Set the brightness of the display (0-7)",
+      "signature": "void setBrightness(uint8_t brightness, bool on = true)",
+      "parameters": [
+        {
+          "name": "brightness",
+          "type": "uint8_t", 
+          "description": "Brightness level from 0 (lowest) to 7 (highest)"
+        },
+        {
+          "name": "on",
+          "type": "bool",
+          "description": "Turn display on or off (default: true)",
+          "optional": true
+        }
+      ],
+      "returnType": "void"
+    },
+    {
+      "name": "showNumberDec",
+      "description": "Display a decimal number on the 7-segment display",
+      "signature": "void showNumberDec(int num, bool leading_zero = false, uint8_t length = 4, uint8_t pos = 0)",
+      "parameters": [
+        {
+          "name": "num",
+          "type": "int",
+          "description": "The number to display"
+        },
+        {
+          "name": "leading_zero",
+          "type": "bool", 
+          "description": "Show leading zeros (default: false)",
+          "optional": true
+        },
+        {
+          "name": "length",
+          "type": "uint8_t",
+          "description": "Number of digits to display (default: 4)",
+          "optional": true
+        },
+        {
+          "name": "pos",
+          "type": "uint8_t",
+          "description": "Starting position (0=leftmost, default: 0)",
+          "optional": true
+        }
+      ],
+      "returnType": "void"
+    },
+    {
+      "name": "showNumberDecEx",
+      "description": "Display a decimal number with dot/colon control",
+      "signature": "void showNumberDecEx(int num, uint8_t dots = 0, bool leading_zero = false, uint8_t length = 4, uint8_t pos = 0)",
+      "parameters": [
+        {
+          "name": "num",
+          "type": "int",
+          "description": "The number to display"
+        },
+        {
+          "name": "dots",
+          "type": "uint8_t",
+          "description": "Bitmask for dots/colon (0b01000000 for colon)",
+          "optional": true
+        },
+        {
+          "name": "leading_zero",
+          "type": "bool",
+          "description": "Show leading zeros (default: false)", 
+          "optional": true
+        },
+        {
+          "name": "length",
+          "type": "uint8_t",
+          "description": "Number of digits to display (default: 4)",
+          "optional": true
+        },
+        {
+          "name": "pos",
+          "type": "uint8_t",
+          "description": "Starting position (0=leftmost, default: 0)",
+          "optional": true
+        }
+      ],
+      "returnType": "void"
+    },
+    {
+      "name": "clear",
+      "description": "Clear all segments on the display",
+      "signature": "void clear()",
+      "parameters": [],
+      "returnType": "void"
+    },
+    {
+      "name": "setSegments",
+      "description": "Set raw segment data for custom display patterns",
+      "signature": "void setSegments(const uint8_t segments[], uint8_t length = 4, uint8_t pos = 0)",
+      "parameters": [
+        {
+          "name": "segments",
+          "type": "const uint8_t[]",
+          "description": "Array of segment data (bit 0=A, bit 1=B, etc.)"
+        },
+        {
+          "name": "length",
+          "type": "uint8_t",
+          "description": "Number of digits to modify (default: 4)",
+          "optional": true
+        },
+        {
+          "name": "pos",
+          "type": "uint8_t", 
+          "description": "Starting position (0=leftmost, default: 0)",
+          "optional": true
+        }
+      ],
+      "returnType": "void"
+    }
+  ],
+  "constants": [
+    {
+      "name": "SEG_A",
+      "value": "0b00000001",
+      "description": "Segment A bitmask"
+    },
+    {
+      "name": "SEG_B", 
+      "value": "0b00000010",
+      "description": "Segment B bitmask"
+    },
+    {
+      "name": "SEG_C",
+      "value": "0b00000100", 
+      "description": "Segment C bitmask"
+    },
+    {
+      "name": "SEG_D",
+      "value": "0b00001000",
+      "description": "Segment D bitmask"
+    },
+    {
+      "name": "SEG_E",
+      "value": "0b00010000",
+      "description": "Segment E bitmask"
+    },
+    {
+      "name": "SEG_F",
+      "value": "0b00100000",
+      "description": "Segment F bitmask"
+    },
+    {
+      "name": "SEG_G",
+      "value": "0b01000000",
+      "description": "Segment G bitmask"
+    },
+    {
+      "name": "SEG_DP",
+      "value": "0b10000000",
+      "description": "Decimal point bitmask"
+    }
+  ],
+  "examples": [
+    {
+      "name": "Basic Number Display",
+      "description": "Display numbers on 7-segment display",
+      "code": "#include <TM1637Display.h>\n\n// Define pins\n#define CLK 2\n#define DIO 3\n\nTM1637Display display(CLK, DIO);\n\nvoid setup() {\n  display.setBrightness(0x0a);  // Set brightness (0-15)\n}\n\nvoid loop() {\n  // Display number 1234\n  display.showNumberDec(1234);\n  delay(1000);\n  \n  // Display with colon (like clock)\n  display.showNumberDecEx(1234, 0b01000000);\n  delay(1000);\n}"
+    },
+    {
+      "name": "Clock Display",
+      "description": "Create a digital clock display",
+      "code": "#include <TM1637Display.h>\n\n#define CLK 2\n#define DIO 3\n\nTM1637Display display(CLK, DIO);\n\nvoid setup() {\n  display.setBrightness(0x0a);\n}\n\nvoid loop() {\n  int hours = 12;\n  int minutes = 34;\n  \n  // Combine hours and minutes\n  int timeValue = hours * 100 + minutes;\n  \n  // Show with blinking colon\n  display.showNumberDecEx(timeValue, 0b01000000, true);\n  delay(500);\n  display.showNumberDecEx(timeValue, 0b00000000, true);\n  delay(500);\n}"
+    },
+    {
+      "name": "Custom Segments",
+      "description": "Display custom patterns using raw segments",
+      "code": "#include <TM1637Display.h>\n\n#define CLK 2\n#define DIO 3\n\nTM1637Display display(CLK, DIO);\n\nvoid setup() {\n  display.setBrightness(0x0a);\n}\n\nvoid loop() {\n  // Custom pattern: \"HELo\"\n  uint8_t segments[] = {\n    SEG_F | SEG_G | SEG_B | SEG_E | SEG_C,  // H\n    SEG_A | SEG_F | SEG_G | SEG_E | SEG_D,  // E\n    SEG_F | SEG_E | SEG_D,                  // L\n    SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_G  // o\n  };\n  \n  display.setSegments(segments);\n  delay(2000);\n  \n  display.clear();\n  delay(1000);\n}"
+    }
+  ]
+}
