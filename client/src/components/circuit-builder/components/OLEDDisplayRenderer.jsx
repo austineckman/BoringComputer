@@ -156,13 +156,7 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
     
     // Debug: Show initialization status
     if (!displayState || !displayState.display) {
-      ctx.fillStyle = '#00ff00';
-      ctx.font = '10px monospace';
-      ctx.fillText('OLED Ready', 10, 20);
-      ctx.fillText('Awaiting Code...', 10, 35);
-      ctx.fillStyle = '#666666';
-      ctx.font = '8px monospace';
-      ctx.fillText('Run code to start', 10, 50);
+      // Don't show debug text - just keep display black until initialized
       console.log('[OLED Debug] Display not initialized yet');
       return;
     }

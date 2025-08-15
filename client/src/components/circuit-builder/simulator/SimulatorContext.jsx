@@ -1401,6 +1401,12 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         if (instruction.function === 'u8g2_instantiation') {
           const objectName = instruction.objectName;
           addLog(`[${timestamp}] → U8G2 object ${objectName} instantiated`);
+          
+          // Initialize the display object in variables
+          if (!executionStateRef.current.variables.has(objectName)) {
+            executionStateRef.current.variables.set(objectName, 'display_object');
+          }
+          
           return 0;
         }
 
@@ -1676,14 +1682,31 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
 
                 // Getter functions (return dimensions)
                 case 'getMaxCharHeight':
+                  // Store the return value in the variable if it's an assignment
+                  console.log(`[OLED Debug] Getter function: ${func} returning 8`);
+                  addLog(`[${timestamp}] → display.${func}() - Returning 8`);
+                  return 8; // Return actual value for font height
+                  
                 case 'getMaxCharWidth':
+                  console.log(`[OLED Debug] Getter function: ${func} returning 6`);
+                  addLog(`[${timestamp}] → display.${func}() - Returning 6`);
+                  return 6;
+                  
                 case 'getStrWidth':
+                  const strWidth = (instruction.params?.param0?.length || 10) * 6;
+                  console.log(`[OLED Debug] Getter function: ${func} returning ${strWidth}`);
+                  addLog(`[${timestamp}] → display.${func}() - Returning ${strWidth}`);
+                  return strWidth;
+                  
                 case 'getDisplayWidth':
+                  console.log(`[OLED Debug] Getter function: ${func} returning 128`);
+                  addLog(`[${timestamp}] → display.${func}() - Returning 128`);
+                  return 128;
+                  
                 case 'getDisplayHeight':
-                  // These functions return values - simulate typical values
-                  console.log(`[OLED Debug] Getter function: ${func} (returning default value)`);
-                  addLog(`[${timestamp}] → display.${func}() - Returning display property`);
-                  break;
+                  console.log(`[OLED Debug] Getter function: ${func} returning 64`);
+                  addLog(`[${timestamp}] → display.${func}() - Returning 64`);
+                  return 64;
 
                 // Advanced drawing functions
                 case 'drawRFrame':
