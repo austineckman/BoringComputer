@@ -1,0 +1,107 @@
+{
+  "name": "Keypad",
+  "version": "3.1.0",
+  "description": "Matrix keypad library for Arduino - supports multiple keypresses with user selectable pins and definable keymaps",
+  "authors": [
+    "Mark Stanley <mstanley@technologist.com>",
+    "Alexander Brevig <alexanderbrevig@gmail.com>"
+  ],
+  "license": "LGPL-2.1",
+  "category": "Input",
+  "components": ["custom-keypad"],
+  "includes": ["Keypad.h"],
+  "examples": [
+    {
+      "name": "Basic 4x4 Keypad",
+      "description": "Simple 4x4 matrix keypad example",
+      "code": "#include <Keypad.h>\n\nconst byte ROWS = 4;\nconst byte COLS = 4;\n\nchar keys[ROWS][COLS] = {\n  {'1','2','3','A'},\n  {'4','5','6','B'},\n  {'7','8','9','C'},\n  {'*','0','#','D'}\n};\n\nbyte rowPins[ROWS] = {9, 8, 7, 6};\nbyte colPins[COLS] = {5, 4, 3, 2};\n\nKeypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);\n\nvoid setup() {\n  Serial.begin(9600);\n  Serial.println(\"4x4 Keypad Test\");\n}\n\nvoid loop() {\n  char key = keypad.getKey();\n  \n  if (key) {\n    Serial.print(\"Key pressed: \");\n    Serial.println(key);\n  }\n}"
+    }
+  ],
+  "functions": [
+    {
+      "name": "Keypad",
+      "description": "Constructor for creating a keypad object",
+      "syntax": "Keypad(char *userKeymap, byte *row, byte *col, byte numRows, byte numCols)",
+      "parameters": [
+        "userKeymap: 2D array of characters representing the keymap",
+        "row: Array of row pin numbers",
+        "col: Array of column pin numbers", 
+        "numRows: Number of rows in the keypad",
+        "numCols: Number of columns in the keypad"
+      ],
+      "returns": "Keypad object"
+    },
+    {
+      "name": "getKey",
+      "description": "Get a single key press (blocking)",
+      "syntax": "char getKey()",
+      "returns": "Character of the pressed key, or NO_KEY if no key is pressed"
+    },
+    {
+      "name": "getKeys",
+      "description": "Get multiple key presses (non-blocking)",
+      "syntax": "bool getKeys()",
+      "returns": "True if any key activity detected"
+    },
+    {
+      "name": "isPressed",
+      "description": "Check if a specific key is currently pressed",
+      "syntax": "bool isPressed(char keyChar)",
+      "parameters": ["keyChar: Character to check"],
+      "returns": "True if the key is pressed"
+    },
+    {
+      "name": "setDebounceTime",
+      "description": "Set the debounce time in milliseconds",
+      "syntax": "void setDebounceTime(uint debounce)",
+      "parameters": ["debounce: Debounce time in milliseconds (minimum 1ms)"]
+    },
+    {
+      "name": "setHoldTime", 
+      "description": "Set the hold time in milliseconds",
+      "syntax": "void setHoldTime(uint hold)",
+      "parameters": ["hold: Hold time in milliseconds"]
+    },
+    {
+      "name": "addEventListener",
+      "description": "Set an event listener function for key events",
+      "syntax": "void addEventListener(void (*listener)(char))",
+      "parameters": ["listener: Function to call when a key event occurs"]
+    },
+    {
+      "name": "waitForKey",
+      "description": "Wait for a key press (blocking)",
+      "syntax": "char waitForKey()",
+      "returns": "Character of the pressed key"
+    },
+    {
+      "name": "keyStateChanged",
+      "description": "Check if any key state has changed",
+      "syntax": "bool keyStateChanged()",
+      "returns": "True if any key state has changed"
+    }
+  ],
+  "constants": [
+    {
+      "name": "NO_KEY",
+      "value": "'\\0'",
+      "description": "Returned when no key is pressed"
+    },
+    {
+      "name": "IDLE",
+      "description": "Key state: not pressed"
+    },
+    {
+      "name": "PRESSED", 
+      "description": "Key state: just pressed"
+    },
+    {
+      "name": "HOLD",
+      "description": "Key state: being held down"
+    },
+    {
+      "name": "RELEASED",
+      "description": "Key state: just released"
+    }
+  ]
+}
