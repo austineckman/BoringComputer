@@ -2,8 +2,8 @@ import React, { createContext, useState, useContext, useEffect, useRef } from 'r
 import { CPU, AVRIOPort, portBConfig } from 'avr8js';
 import { ArduinoCodeParser } from './ArduinoCodeParser';
 import { ArduinoExecutionEngine } from './ArduinoExecutionEngine';
-import { ArduinoInterpreter } from './ArduinoInterpreter';
 import { CodeBlockParser } from './CodeBlockParser';
+import { SimpleLoopExtractor } from './SimpleLoopExtractor';
 
 // Create a context for the simulator
 const SimulatorContext = createContext({
@@ -328,61 +328,31 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     addLog('🔄 Parsing Arduino code...');
     
     try {
-      // First, try the new professional interpreter
-      let setupInstructions = [];
-      let loopInstructions = [];
-      let useInterpreter = false;
+      // Use the simple, efficient loop extractor
+      console.log('SimulatorContext: Using SimpleLoopExtractor for efficient parsing');
+      const extractor = new SimpleLoopExtractor();
       
-      try {
-        console.log('SimulatorContext: Attempting to use ArduinoInterpreter (professional grade)');
-        const interpreter = new ArduinoInterpreter();
-        interpreter.compile(currentCode);
-        
-        // Execute setup to get instructions
-        const setupOutput = interpreter.executeSetup();
-        console.log('ArduinoInterpreter: Setup output:', setupOutput);
-        
-        // Execute one loop iteration to get structure
-        const loopOutput = interpreter.executeLoop();
-        console.log('ArduinoInterpreter: Loop output:', loopOutput);
-        
-        // Convert interpreter output to our instruction format
-        if (setupOutput && setupOutput.length > 0) {
-          setupInstructions = setupOutput.map((out, idx) => ({
-            lineNumber: idx + 1,
-            instruction: `${out.type}(${out.value || ''})`,
-            function: out.type,
-            params: out.value ? { value: out.value } : {},
-            delayMs: out.type === 'delay' ? out.value : undefined
-          }));
-        }
-        
-        if (loopOutput && loopOutput.length > 0) {
-          loopInstructions = loopOutput.map((out, idx) => ({
-            lineNumber: 1000 + idx,
-            instruction: `${out.type}(${out.value || ''})`,
-            function: out.type,  
-            params: out.value ? { value: out.value } : {},
-            delayMs: out.type === 'delay' ? out.value : undefined
-          }));
-          useInterpreter = true;
-        }
-        
-        console.log('ArduinoInterpreter: Success! Setup:', setupInstructions.length, 'Loop:', loopInstructions.length);
-      } catch (interpreterError) {
-        console.warn('ArduinoInterpreter failed, falling back to execution engine:', interpreterError.message);
+      // Extract setup and loop content
+      const setupLines = extractor.extractSetup(currentCode);
+      const loopLines = extractor.extractLoop(currentCode);
+      
+      console.log('SimpleLoopExtractor found setup lines:', setupLines.length);
+      console.log('SimpleLoopExtractor found loop lines:', loopLines.length);
+      
+      if (loopLines.length > 0) {
+        console.log('Loop content preview:', loopLines.slice(0, 3).join(' | '));
       }
       
-      // Fallback to execution engine if interpreter failed or found no loop
-      if (!useInterpreter) {
-        console.log('SimulatorContext: Using ArduinoExecutionEngine');
-        const executionEngine = new ArduinoExecutionEngine();
-        const allInstructions = executionEngine.executeProgram(currentCode);
-        
-        // Split instructions into setup and loop based on lineNumber
-        setupInstructions = allInstructions.filter(inst => inst.lineNumber < 1000);
-        loopInstructions = allInstructions.filter(inst => inst.lineNumber >= 1000);
-      }
+      // Convert lines to instructions
+      const setupInstructions = setupLines.map((line, idx) => 
+        extractor.parseLineToInstruction(line, idx + 1)
+      );
+      
+      const loopInstructions = loopLines.map((line, idx) => 
+        extractor.parseLineToInstruction(line, 1000 + idx)
+      );
+      
+      console.log('Converted to instructions - Setup:', setupInstructions.length, 'Loop:', loopInstructions.length);
       
       const parseResult = { 
         setup: setupInstructions.map((inst, idx) => ({ content: inst.instruction, lineNumber: idx + 1 })),
