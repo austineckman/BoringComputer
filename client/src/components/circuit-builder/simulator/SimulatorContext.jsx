@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { CPU, AVRIOPort, portBConfig } from 'avr8js';
 import { ArduinoCodeParser } from './ArduinoCodeParser';
+import { ArduinoExecutionEngine } from './ArduinoExecutionEngine';
 import { CodeBlockParser } from './CodeBlockParser';
 
 // Create a context for the simulator
@@ -302,13 +303,19 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     addLog('🔄 Parsing Arduino code...');
     
     try {
-      // Parse the actual code from the editor please fucking work fuck you holy shit fuck 
-      console.log('SimulatorContext: About to parse code with ArduinoCodeParser');
-      const parseResult = codeParserRef.current.parseCode(currentCode);
-      console.log('SimulatorContext: Parse result:', parseResult);
+      // Use proper execution engine for complex Arduino code
+      console.log('SimulatorContext: Using ArduinoExecutionEngine for proper code execution');
+      const executionEngine = new ArduinoExecutionEngine();
+      const allInstructions = executionEngine.executeProgram(currentCode);
       
-      const setupInstructions = codeParserRef.current.getSetupInstructions();
-      const loopInstructions = codeParserRef.current.getLoopInstructions();
+      // Split instructions into setup and loop based on lineNumber
+      const setupInstructions = allInstructions.filter(inst => inst.lineNumber < 1000);
+      const loopInstructions = allInstructions.filter(inst => inst.lineNumber >= 1000);
+      
+      const parseResult = { 
+        setup: setupInstructions.map((inst, idx) => ({ content: inst.instruction, lineNumber: idx + 1 })),
+        loop: loopInstructions.map((inst, idx) => ({ content: inst.instruction, lineNumber: idx + 1 }))
+      };
       
       console.log('SimulatorContext: Setup instructions:', setupInstructions);
       console.log('SimulatorContext: Loop instructions:', loopInstructions);

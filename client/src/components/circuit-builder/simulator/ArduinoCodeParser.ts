@@ -34,6 +34,7 @@ export class ArduinoCodeParser {
     // First pass: extract variable declarations and constants
     this.extractVariables(code);
     this.extractAdvancedFeatures(code);
+    this.parseLoopStructures(code);
 
     const lines = code.split('\n');
     let currentSection: 'none' | 'setup' | 'loop' = 'none';
@@ -73,8 +74,7 @@ export class ArduinoCodeParser {
         braceDepth = braceDelta;
         console.log(`ArduinoCodeParser: Loop function found, initial braceDepth: ${braceDepth}`);
         
-        // For advanced code with complex loops, expand the loop content
-        this.expandAdvancedLoop(code, lines, index);
+        console.log(`ArduinoCodeParser: Loop function found, initial braceDepth: ${braceDepth}`);
         return;
       }
 
@@ -261,6 +261,31 @@ export class ArduinoCodeParser {
         }
       }
 
+      // Handle bitwise operations like "display_frame >> 3" and "display_frame & 0b00000111"
+      const bitwiseMatch = expr.match(/(\w+)\s*(>>|<<|&|\|)\s*(.+)/);
+      if (bitwiseMatch) {
+        const [, varName, operator, operandExpr] = bitwiseMatch;
+        const varValue = this.variables.get(varName) || 0;
+        let operandValue = 0;
+        
+        // Handle binary literals like 0b00000111
+        if (operandExpr.startsWith('0b')) {
+          operandValue = parseInt(operandExpr.substring(2), 2);
+        } else if (operandExpr.includes('*')) {
+          // Handle expressions like "TEST_PAGE_COUNT * 8"
+          operandValue = this.evaluateAdvancedExpression(operandExpr) || 0;
+        } else {
+          operandValue = parseInt(operandExpr) || 0;
+        }
+        
+        switch (operator) {
+          case '>>': return varValue >> operandValue;
+          case '<<': return varValue << operandValue;
+          case '&': return varValue & operandValue;
+          case '|': return varValue | operandValue;
+        }
+      }
+
       // Handle complex expressions like "(CIRCLE1_RADIUS * 2) + 1"
       const complexMatch = expr.match(/\((\w+)\s*\*\s*(\d+)\)\s*\+\s*(\d+)/);
       if (complexMatch) {
@@ -289,56 +314,46 @@ export class ArduinoCodeParser {
     }
   }
 
-  // Expand advanced loop content for complex Arduino programs
-  private expandAdvancedLoop(code: string, lines: string[], loopStartIndex: number): void {
-    console.log('ArduinoCodeParser: Expanding advanced loop with graphics functions');
+  // Parse loop control structures properly
+  private parseLoopStructures(code: string): void {
+    console.log('ArduinoCodeParser: Parsing loop control structures');
     
-    // For the advanced OLED test program, create simplified test sequences
-    // that will demonstrate the graphics capabilities
-    
-    const testSequences = [
-      // Basic test - title and simple graphics
-      { instruction: 'lander_display.clearBuffer();', function: 'display.clearBuffer', params: {} },
-      { instruction: 'lander_display.setFont(u8g_font_6x10);', function: 'display.setFont', params: { font: 'u8g_font_6x10' } },
-      { instruction: 'drawCenteredString(0, 0, "Exploration Lander");', function: 'display.drawStr', params: { param0: 32, param1: 8, param2: 'Exploration Lander' } },
+    // Extract for loops with proper variable handling
+    const forLoopRegex = /for\s*\(([^)]+)\)\s*\{/g;
+    let match;
+    while ((match = forLoopRegex.exec(code)) !== null) {
+      const loopCondition = match[1];
+      console.log(`ArduinoCodeParser: Found for loop: ${loopCondition}`);
       
-      // Box test sequence
-      { instruction: 'drawCenteredString(0, 16, "drawBox");', function: 'display.drawStr', params: { param0: 32, param1: 16, param2: 'drawBox' } },
-      { instruction: 'lander_display.drawBox(5, 24, 20, 10);', function: 'display.drawBox', params: { param0: 5, param1: 24, param2: 20, param3: 10 } },
-      { instruction: 'lander_display.drawBox(12, 29, 30, 8);', function: 'display.drawBox', params: { param0: 12, param1: 29, param2: 30, param3: 8 } },
-      
-      // Frame test sequence
-      { instruction: 'drawCenteredString(0, 40, "drawFrame");', function: 'display.drawStr', params: { param0: 32, param1: 40, param2: 'drawFrame' } },
-      { instruction: 'lander_display.drawFrame(5, 48, 20, 10);', function: 'display.drawFrame', params: { param0: 5, param1: 48, param2: 20, param3: 10 } },
-      { instruction: 'lander_display.drawFrame(12, 53, 30, 8);', function: 'display.drawFrame', params: { param0: 12, param1: 53, param2: 30, param3: 8 } },
-      
-      // Circle test sequence
-      { instruction: 'drawCenteredString(50, 16, "drawDisc");', function: 'display.drawStr', params: { param0: 80, param1: 16, param2: 'drawDisc' } },
-      { instruction: 'lander_display.drawDisc(60, 32, 8);', function: 'display.drawDisc', params: { param0: 60, param1: 32, param2: 8 } },
-      { instruction: 'lander_display.drawDisc(85, 32, 7);', function: 'display.drawDisc', params: { param0: 85, param1: 32, param2: 7 } },
-      
-      { instruction: 'drawCenteredString(50, 40, "drawCircle");', function: 'display.drawStr', params: { param0: 80, param1: 40, param2: 'drawCircle' } },
-      { instruction: 'lander_display.drawCircle(60, 56, 8);', function: 'display.drawCircle', params: { param0: 60, param1: 56, param2: 8 } },
-      { instruction: 'lander_display.drawCircle(85, 56, 7);', function: 'display.drawCircle', params: { param0: 85, param1: 56, param2: 7 } },
-      
-      // Triangle and line tests
-      { instruction: 'lander_display.drawTriangle(100, 20, 110, 20, 105, 35);', function: 'display.drawTriangle', params: { param0: 100, param1: 20, param2: 110, param3: 20, param4: 105, param5: 35 } },
-      { instruction: 'lander_display.drawLine(10, 55, 50, 45);', function: 'display.drawLine', params: { param0: 10, param1: 55, param2: 50, param3: 45 } },
-      
-      // Display the results
-      { instruction: 'lander_display.sendBuffer();', function: 'display.sendBuffer', params: {} }
-    ];
+      // Parse loop variables and conditions
+      this.parseLoopCondition(loopCondition);
+    }
+  }
 
-    // Add these simplified test sequences to the loop
-    testSequences.forEach((seq, index) => {
-      this.loopLines.push({
-        lineNumber: loopStartIndex + index + 1,
-        content: seq.instruction,
-        type: 'loop'
-      });
-    });
+  private parseLoopCondition(condition: string): void {
+    // Parse conditions like "unsigned int display_frame = 0; display_frame < (TEST_PAGE_COUNT * 8); display_frame++"
+    const parts = condition.split(';').map(p => p.trim());
     
-    console.log(`ArduinoCodeParser: Added ${testSequences.length} simplified graphics test instructions`);
+    if (parts.length >= 3) {
+      // Initialize variable
+      const initMatch = parts[0].match(/(\w+)\s+(\w+)\s*=\s*(\d+)/);
+      if (initMatch) {
+        const [, type, varName, value] = initMatch;
+        this.variables.set(varName, parseInt(value));
+        console.log(`ArduinoCodeParser: Loop variable ${varName} initialized to ${value}`);
+      }
+      
+      // Parse condition
+      const conditionMatch = parts[1].match(/(\w+)\s*<\s*(.+)/);
+      if (conditionMatch) {
+        const [, varName, limitExpr] = conditionMatch;
+        const limit = this.evaluateAdvancedExpression(limitExpr);
+        if (limit !== null) {
+          this.variables.set(`${varName}_limit`, limit);
+          console.log(`ArduinoCodeParser: Loop limit for ${varName}: ${limit}`);
+        }
+      }
+    }
   }
 
   // Resolve a variable name to its value
@@ -356,11 +371,78 @@ export class ArduinoCodeParser {
     return null;
   }
 
+  // Execute a single iteration of the loop with proper variable tracking
+  executeLoopIteration(loopVariable: string, iterationValue: number, loopBody: CodeLine[]): ArduinoInstruction[] {
+    console.log(`ArduinoCodeParser: Executing loop iteration ${iterationValue} for variable ${loopVariable}`);
+    
+    // Update loop variable
+    this.variables.set(loopVariable, iterationValue);
+    this.variables.set('frame', iterationValue % 8); // Common pattern in your code
+    this.variables.set('display_frame', iterationValue);
+    
+    const instructions: ArduinoInstruction[] = [];
+    
+    // Parse each line in the loop body with current variable values
+    loopBody.forEach(codeLine => {
+      const instruction = this.parseInstruction(codeLine);
+      if (instruction) {
+        instructions.push(instruction);
+      }
+    });
+    
+    return instructions;
+  }
+
+  // Parse switch statements to extract cases
+  parseSwitchStatement(switchCode: string): Map<number, CodeLine[]> {
+    const cases = new Map<number, CodeLine[]>();
+    console.log('ArduinoCodeParser: Parsing switch statement');
+    
+    // Extract each case block
+    const caseRegex = /case\s+(\d+):\s*([^b]+?)break;/gs;
+    let match;
+    while ((match = caseRegex.exec(switchCode)) !== null) {
+      const caseNumber = parseInt(match[1]);
+      const caseCode = match[2].trim();
+      
+      // Parse the case code into lines
+      const caseLines = caseCode.split('\n')
+        .map((line, index) => ({
+          lineNumber: index + 1,
+          content: line.trim(),
+          type: 'loop' as const
+        }))
+        .filter(line => line.content.length > 0);
+      
+      cases.set(caseNumber, caseLines);
+      console.log(`ArduinoCodeParser: Found case ${caseNumber} with ${caseLines.length} lines`);
+    }
+    
+    return cases;
+  }
+
   parseInstruction(codeLine: CodeLine): ArduinoInstruction | null {
     const line = codeLine.content;
     const lineNumber = codeLine.lineNumber;
 
     console.log(`ArduinoCodeParser: Parsing line ${lineNumber}: "${line}"`);
+
+    // Handle variable assignments and updates
+    const assignmentMatch = line.match(/(\w+)\s*([+\-*/]?=)\s*(.+);/);
+    if (assignmentMatch) {
+      const [, varName, operator, expression] = assignmentMatch;
+      const value = this.evaluateAdvancedExpression(expression.trim());
+      
+      if (value !== null) {
+        if (operator === '+=') {
+          this.variables.set(varName, (this.variables.get(varName) || 0) + value);
+        } else if (operator === '=') {
+          this.variables.set(varName, value);
+        }
+        console.log(`ArduinoCodeParser: Updated variable ${varName} to ${this.variables.get(varName)}`);
+      }
+      return null; // Variable assignments don't produce instructions
+    }
 
     // Parse pinMode(pin, mode)
     const pinModeMatch = line.match(/pinMode\s*\(\s*(\w+|\d+)\s*,\s*(\w+)\s*\)/);
