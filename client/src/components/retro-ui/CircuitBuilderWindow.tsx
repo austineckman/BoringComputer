@@ -53,7 +53,7 @@ import {
 } from '../circuit-builder/ComponentGenerator';
 import CircuitWire from '../circuit-builder/CircuitWire';
 import CircuitPin from '../circuit-builder/CircuitPin';
-import LibraryUploader from '../circuit-builder/LibraryUploader';
+
 
 // Define the PinPosition interface
 interface PinPosition {
@@ -1063,16 +1063,7 @@ void loop() {
             <Save size={18} />
           </button>
           
-          {/* Library Uploader */}
-          <LibraryUploader
-            onLibraryAdded={async (libraryName) => {
-              addSimulationLog(`✅ Library added: ${libraryName}`);
-              setNotification({ message: `Library "${libraryName}" added successfully`, type: 'success' });
-              // Refresh libraries to load the new one
-              await refreshLibraries();
-            }}
-            className="relative"
-          />
+
 
           {/* Admin-only Save Example button */}
           {hasAdminAccess && (
