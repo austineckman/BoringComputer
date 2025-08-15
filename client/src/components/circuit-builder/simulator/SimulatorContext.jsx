@@ -341,9 +341,13 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         loop: loopInstructions.map((inst, idx) => ({ content: inst.instruction, lineNumber: idx + 1 }))
       };
       
-      console.log('SimulatorContext: Setup instructions:', setupInstructions);
-      console.log('SimulatorContext: Loop instructions:', loopInstructions);
-      console.log('SimulatorContext: ALL INSTRUCTIONS from ExecutionEngine:', allInstructions);
+      console.log('SimulatorContext: Setup instructions:', setupInstructions.length);
+      console.log('SimulatorContext: Loop instructions:', loopInstructions.length);
+      console.log('SimulatorContext: ALL INSTRUCTIONS from ExecutionEngine:', allInstructions.length);
+      
+      if (loopInstructions.length === 0) {
+        console.warn('SimulatorContext: WARNING - No loop instructions found! This means the execution engine could not parse your loop content.');
+      }
       
       // DEBUG: Log what parser found
       console.log('DEBUG Parser Results:', { 

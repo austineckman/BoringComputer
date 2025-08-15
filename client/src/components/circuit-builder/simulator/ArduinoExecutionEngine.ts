@@ -29,8 +29,11 @@ export class ArduinoExecutionEngine {
   // Execute the complete Arduino program
   executeProgram(code: string): ArduinoInstruction[] {
     console.log('ArduinoExecutionEngine: Starting program execution');
+    console.log('ArduinoExecutionEngine: Code preview:', code.substring(0, 500) + '...');
     
     const { setup, loop } = this.parser.parseCode(code);
+    console.log('ArduinoExecutionEngine: Parser results - Setup lines:', setup.length, 'Loop lines:', loop.length);
+    
     const allInstructions: ArduinoInstruction[] = [];
 
     // Execute setup once
@@ -54,11 +57,17 @@ export class ArduinoExecutionEngine {
   private executeLoopWithFlowControl(loopLines: CodeLine[], fullCode: string): ArduinoInstruction[] {
     const instructions: ArduinoInstruction[] = [];
     
-    // Look for for-loop pattern in the full code
-    const forLoopMatch = fullCode.match(/for\s*\(\s*unsigned\s+int\s+(\w+)\s*=\s*(\d+);\s*\1\s*<\s*\(([^)]+)\);\s*\1\+\+\s*\)\s*\{([\s\S]*?)\}/);
+    // Look for for-loop pattern in the full code - be more flexible with whitespace and syntax
+    const forLoopPattern = /for\s*\(\s*(?:unsigned\s+int\s+|const\s+byte\s+)?(\w+)\s*=\s*(\d+);\s*\1\s*<\s*\(([^)]+)\);\s*\1\+\+\s*\)\s*\{([\s\S]*?)(?=\n\s*}\s*(?:\n|$))/;
+    const forLoopMatch = fullCode.match(forLoopPattern);
+    
+    console.log('ArduinoExecutionEngine: Looking for for-loop in code');
+    console.log('ArduinoExecutionEngine: Full code length:', fullCode.length);
+    console.log('ArduinoExecutionEngine: Code sample for pattern matching:', fullCode.substring(fullCode.indexOf('for'), fullCode.indexOf('for') + 200));
     
     if (forLoopMatch) {
       const [, loopVar, startValue, limitExpr, loopBody] = forLoopMatch;
+      console.log('ArduinoExecutionEngine: Found for-loop:', { loopVar, startValue, limitExpr, loopBodyLength: loopBody.length });
       
       // Evaluate loop limit
       this.state.variables.set('TEST_PAGE_COUNT', 13);
@@ -105,13 +114,34 @@ export class ArduinoExecutionEngine {
         });
       }
     } else {
-      // Fallback: execute loop lines directly
-      loopLines.forEach(line => {
-        const instruction = this.parser.parseInstruction(line);
-        if (instruction) {
-          instructions.push(instruction);
-        }
-      });
+      console.log('ArduinoExecutionEngine: No for-loop found, checking for basic loop structure');
+      
+      // Look for loop() function content more directly
+      const loopFunctionPattern = /void\s+loop\s*\(\s*void\s*\)\s*\{([\s\S]*)\}/;
+      const loopFunctionMatch = fullCode.match(loopFunctionPattern);
+      
+      if (loopFunctionMatch) {
+        const loopBodyCode = loopFunctionMatch[1];
+        console.log('ArduinoExecutionEngine: Found loop() function body:', loopBodyCode.substring(0, 200) + '...');
+        
+        // Parse the loop body into individual lines and convert to instructions
+        const bodyLines = this.parseLoopBody(loopBodyCode);
+        bodyLines.forEach(line => {
+          const instruction = this.parser.parseInstruction(line);
+          if (instruction) {
+            instructions.push(instruction);
+          }
+        });
+      } else {
+        // Fallback: execute loop lines directly
+        console.log('ArduinoExecutionEngine: Using fallback - direct loop lines');
+        loopLines.forEach(line => {
+          const instruction = this.parser.parseInstruction(line);
+          if (instruction) {
+            instructions.push(instruction);
+          }
+        });
+      }
     }
     
     return instructions;
