@@ -23,97 +23,136 @@ export class ArduinoCodeParser {
   private variables: Map<string, number> = new Map(); // Store variable declarations
 
   parseCode(code: string): { setup: CodeLine[], loop: CodeLine[] } {
-    console.log('ArduinoCodeParser: Starting to parse advanced Arduino code');
-    console.log('ArduinoCodeParser: Code length:', code.length);
-    
-    this.currentCode = code;
     this.setupLines = [];
     this.loopLines = [];
-    this.variables.clear();
+    
+    console.log('ArduinoCodeParser: Starting to parse code');
+    console.log('ArduinoCodeParser: Code length:', code.length);
+    
+    // More robust approach: use regex to extract function bodies directly
+    const setupMatch = code.match(/void\s+setup\s*\(\s*(?:void)?\s*\)\s*\{([\s\S]*?)(?=\nvoid\s+loop|$)/);
+    const loopMatch = code.match(/void\s+loop\s*\(\s*(?:void)?\s*\)\s*\{([\s\S]*?)(?=\n\s*\}?\s*$|$)/);
+    
+    console.log('ArduinoCodeParser: Setup match found:', !!setupMatch);
+    console.log('ArduinoCodeParser: Loop match found:', !!loopMatch);
+    
+    if (setupMatch) {
+      const setupBody = setupMatch[1];
+      console.log('ArduinoCodeParser: Setup body length:', setupBody.length);
+      console.log('ArduinoCodeParser: Setup body preview:', setupBody.substring(0, 200) + '...');
+      
+      const setupLines = setupBody.split('\n');
+      setupLines.forEach((line, index) => {
+        const trimmedLine = line.trim();
+        if (trimmedLine && !trimmedLine.startsWith('//') && trimmedLine !== '{' && trimmedLine !== '}') {
+          this.setupLines.push({
+            lineNumber: index + 1,
+            content: trimmedLine,
+            type: 'setup'
+          });
+          console.log(`ArduinoCodeParser: Added to setup: "${trimmedLine}"`);
+        }
+      });
+    }
+    
+    if (loopMatch) {
+      const loopBody = loopMatch[1];
+      console.log('ArduinoCodeParser: Loop body length:', loopBody.length);
+      console.log('ArduinoCodeParser: Loop body preview:', loopBody.substring(0, 200) + '...');
+      
+      const loopLines = loopBody.split('\n');
+      loopLines.forEach((line, index) => {
+        const trimmedLine = line.trim();
+        if (trimmedLine && !trimmedLine.startsWith('//') && trimmedLine !== '{' && trimmedLine !== '}') {
+          this.loopLines.push({
+            lineNumber: index + 1,
+            content: trimmedLine,
+            type: 'loop'
+          });
+          console.log(`ArduinoCodeParser: Added to loop: "${trimmedLine}"`);
+        }
+      });
+    }
+    
+    // Fallback: if regex didn't work, try the old line-by-line approach
+    if (this.setupLines.length === 0 && this.loopLines.length === 0) {
+      console.log('ArduinoCodeParser: Regex parsing failed, falling back to line-by-line');
+      this.parseCodeLineByLine(code);
+    }
 
-    // First pass: extract variable declarations and constants
-    this.extractVariables(code);
-    this.extractAdvancedFeatures(code);
-    this.parseLoopStructures(code);
+    console.log(`ArduinoCodeParser: Parsing complete. Setup: ${this.setupLines.length} lines, Loop: ${this.loopLines.length} lines`);
+    
+    return {
+      setup: this.setupLines,
+      loop: this.loopLines
+    };
+  }
 
+  // Fallback line-by-line parsing method
+  private parseCodeLineByLine(code: string): void {
     const lines = code.split('\n');
     let currentSection: 'none' | 'setup' | 'loop' = 'none';
     let braceDepth = 0;
-
-    console.log('ArduinoCodeParser: Total lines to process:', lines.length);
-
-    lines.forEach((line, index) => {
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
       const trimmedLine = line.trim();
-      const lineNumber = index + 1;
-
-      // Skip empty lines and comments
-      if (!trimmedLine || trimmedLine.startsWith('//') || trimmedLine.startsWith('/*')) {
-        return;
-      }
-
-      console.log(`ArduinoCodeParser: Line ${lineNumber}: "${trimmedLine}" (Section: ${currentSection}, Depth: ${braceDepth})`);
-
-      // Track braces
-      const openBraces = (trimmedLine.match(/\{/g) || []).length;
-      const closeBraces = (trimmedLine.match(/\}/g) || []).length;
-      const braceDelta = openBraces - closeBraces;
-
-      // Detect setup() function
-      if (trimmedLine.includes('void setup()') || trimmedLine.includes('void setup(')) {
-        console.log('ArduinoCodeParser: Found void setup() function');
-        currentSection = 'setup';
-        braceDepth = braceDelta;
-        console.log(`ArduinoCodeParser: Setup function found, initial braceDepth: ${braceDepth}`);
-        return;
-      }
-
-      // Detect loop() function
-      if (trimmedLine.includes('void loop()') || trimmedLine.includes('void loop(')) {
-        console.log('ArduinoCodeParser: Found void loop() function');
-        currentSection = 'loop';
-        braceDepth = braceDelta;
-        console.log(`ArduinoCodeParser: Loop function found, initial braceDepth: ${braceDepth}`);
-        
-        console.log(`ArduinoCodeParser: Loop function found, initial braceDepth: ${braceDepth}`);
-        return;
-      }
-
-      // Update brace depth for regular lines
-      braceDepth += braceDelta;
+      const lineNumber = i + 1;
       
-      if (braceDelta !== 0) {
-        console.log(`ArduinoCodeParser: Brace change: +${openBraces} -{closeBraces} = ${braceDelta}, new depth: ${braceDepth}`);
+      if (!trimmedLine || trimmedLine.startsWith('//')) continue;
+      
+      // Check for setup function
+      if (trimmedLine.includes('void setup()') || trimmedLine.includes('void setup(void)')) {
+        currentSection = 'setup';
+        braceDepth = 0;
+        console.log(`ArduinoCodeParser: Found setup() at line ${lineNumber}`);
+        continue;
       }
-
-      // Add lines to appropriate section
+      
+      // Check for loop function
+      if (trimmedLine.includes('void loop()') || trimmedLine.includes('void loop(void)')) {
+        currentSection = 'loop';
+        braceDepth = 0;
+        console.log(`ArduinoCodeParser: Found loop() at line ${lineNumber}`);
+        continue;
+      }
+      
+      // Track braces
+      braceDepth += (trimmedLine.match(/\{/g) || []).length;
+      braceDepth -= (trimmedLine.match(/\}/g) || []).length;
+      
+      // If we've closed all braces, we're out of the current function
+      if (braceDepth <= 0 && currentSection !== 'none') {
+        console.log(`ArduinoCodeParser: Exiting ${currentSection} section at line ${lineNumber}, brace depth: ${braceDepth}`);
+        currentSection = 'none';
+        continue;
+      }
+      
+      // In setup or loop section, add lines to appropriate arrays
       if (currentSection === 'setup' && braceDepth > 0) {
-        console.log(`ArduinoCodeParser: Adding line ${lineNumber} to SETUP: "${trimmedLine}"`);
         this.setupLines.push({
           lineNumber,
           content: trimmedLine,
           type: 'setup'
         });
+        console.log(`ArduinoCodeParser: Added to setup: Line ${lineNumber}: "${trimmedLine}"`);
       } else if (currentSection === 'loop' && braceDepth > 0) {
-        console.log(`ArduinoCodeParser: Adding line ${lineNumber} to LOOP: "${trimmedLine}"`);
         this.loopLines.push({
           lineNumber,
           content: trimmedLine,
           type: 'loop'
         });
+        console.log(`ArduinoCodeParser: Added to loop: Line ${lineNumber}: "${trimmedLine}"`);
+      } else if (currentSection === 'loop' && trimmedLine && !trimmedLine.startsWith('//')) {
+        // Also capture lines even if brace depth is wrong - complex code might have nested structures
+        this.loopLines.push({
+          lineNumber,
+          content: trimmedLine,
+          type: 'loop'
+        });
+        console.log(`ArduinoCodeParser: Added to loop (fallback): Line ${lineNumber}: "${trimmedLine}"`);
       }
-
-      // Reset section when we exit the function
-      if (braceDepth === 0 && currentSection !== 'none') {
-        console.log(`ArduinoCodeParser: Exiting ${currentSection} section (braceDepth = 0)`);
-        currentSection = 'none';
-      }
-    });
-
-    console.log(`ArduinoCodeParser: Parsing complete. Setup lines: ${this.setupLines.length}, Loop lines: ${this.loopLines.length}`);
-    console.log('ArduinoCodeParser: Setup lines:', this.setupLines);
-    console.log('ArduinoCodeParser: Loop lines:', this.loopLines);
-
-    return { setup: this.setupLines, loop: this.loopLines };
+    }
   }
 
   // Extract variable declarations from the entire code
