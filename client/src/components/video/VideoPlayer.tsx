@@ -105,7 +105,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     <div className={`relative aspect-video bg-black rounded-lg overflow-hidden ${className}`}>
       {/* YouTube Embed with Multiple Fallback Strategies */}
       <iframe
-        src={`https://www.youtube-nocookie.com/embed/${processedVideoId}?rel=0&modestbranding=1&origin=${window.location.origin}`}
+        src={`https://www.youtube-nocookie.com/embed/${processedVideoId}?rel=0&modestbranding=1&enablejsapi=1&origin=${window.location.origin}`}
         className="w-full h-full"
         title={title}
         frameBorder="0"
@@ -115,7 +115,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         onError={handleEmbedError}
         onLoad={handleIframeLoad}
         loading="lazy"
-        sandbox="allow-same-origin allow-scripts allow-presentation allow-popups allow-top-navigation"
+        sandbox="allow-same-origin allow-scripts allow-presentation allow-popups allow-top-navigation allow-forms"
       />
       
       {/* Loading state overlay */}
