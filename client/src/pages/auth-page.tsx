@@ -63,7 +63,7 @@ export default function AuthPage() {
             <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white py-1.5 px-3 flex items-center select-none">
               <div className="flex items-center">
                 <span className="mr-2 text-lg">💻</span>
-                <span className="font-bold tracking-tight">CraftingTableOS</span>
+                <span className="font-bold tracking-tight">BoringComputer OS</span>
               </div>
             </div>
             
