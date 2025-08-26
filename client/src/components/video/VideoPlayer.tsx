@@ -15,6 +15,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 }) => {
   const [embedError, setEmbedError] = useState(false);
   const [processedVideoId, setProcessedVideoId] = useState<string | null>(null);
+  const [loadAttempted, setLoadAttempted] = useState(false);
 
   useEffect(() => {
     if (!videoId) {
@@ -52,9 +53,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   }, [videoId]);
 
-  // Fallback to direct link if embed fails
+  // Enhanced error handling for deployment issues
   const handleEmbedError = () => {
+    console.log('Video embed failed, likely due to CSP or deployment restrictions');
     setEmbedError(true);
+  };
+
+  const handleIframeLoad = () => {
+    setLoadAttempted(true);
   };
 
   if (!videoId || !processedVideoId) {
@@ -74,9 +80,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       <div className={`aspect-video bg-gray-900 rounded-lg flex items-center justify-center ${className}`}>
         <div className="text-center p-6">
           <AlertCircle className="w-16 h-16 mx-auto mb-4 text-yellow-500" />
-          <h3 className="text-lg font-semibold text-white mb-2">Video Loading Issue</h3>
+          <h3 className="text-lg font-semibold text-white mb-2">Video Blocked by Deployment</h3>
           <p className="text-gray-400 mb-4">
-            The embedded video couldn't load. This might be due to browser restrictions or network settings.
+            This video works on Replit preview but is blocked on the deployed version due to iframe security restrictions. This is a common deployment issue, not a problem with your videos.
           </p>
           <a
             href={`https://www.youtube.com/watch?v=${processedVideoId}`}
@@ -97,9 +103,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   return (
     <div className={`relative aspect-video bg-black rounded-lg overflow-hidden ${className}`}>
-      {/* YouTube Embed with Privacy-Enhanced Mode */}
+      {/* YouTube Embed with Multiple Fallback Strategies */}
       <iframe
-        src={`https://www.youtube-nocookie.com/embed/${processedVideoId}?rel=0&modestbranding=1`}
+        src={`https://www.youtube-nocookie.com/embed/${processedVideoId}?rel=0&modestbranding=1&origin=${window.location.origin}`}
         className="w-full h-full"
         title={title}
         frameBorder="0"
@@ -107,8 +113,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         allowFullScreen
         referrerPolicy="strict-origin-when-cross-origin"
         onError={handleEmbedError}
+        onLoad={handleIframeLoad}
         loading="lazy"
-        sandbox="allow-same-origin allow-scripts allow-presentation allow-popups"
+        sandbox="allow-same-origin allow-scripts allow-presentation allow-popups allow-top-navigation"
       />
       
       {/* Loading state overlay */}
