@@ -105,6 +105,12 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       }
       setIsPlaying(true);
       startTimeUpdateInterval();
+    } else if (currentTrack && playlist.length > 0) {
+      // If no sound is loaded but we have a current track, load and play it
+      console.log("No sound loaded, initializing current track");
+      playTrack(currentTrackIndex);
+    } else {
+      console.log("No track available to play");
     }
   };
 
@@ -192,11 +198,17 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
           }, 100);
         } else {
           console.log('Autoplay is disabled');
+          setIsPlaying(false);
+          setCurrentTime(0);
+          setProgress(0);
         }
       },
       onload: () => {
         console.log('Track loaded');
-        setDuration(newSound.duration());
+        // Always use the actual audio duration from Howler instead of preset values
+        const actualDuration = newSound.duration();
+        console.log('Actual track duration:', actualDuration, 'seconds');
+        setDuration(actualDuration);
       },
       onloaderror: (id, error) => {
         console.error('Error loading track:', error);
@@ -219,8 +231,10 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     
     soundRef.current = newSound;
     
-    // Auto-play when track is selected
+    // For manual track selection, start playing immediately
+    // For auto-advance, this ensures smooth transitions
     soundIdRef.current = newSound.play();
+    console.log("Track loaded and playing");
   };
 
   const nextTrack = () => {
@@ -279,10 +293,27 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   const setPlaylist = (tracks: Track[]) => {
     setPlaylistState(tracks);
     
-    // If we now have tracks but had none before, select the first one
+    // If we now have tracks but had none before, properly initialize the first track
     if (tracks.length > 0 && !currentTrack) {
       setCurrentTrack(tracks[0]);
       setCurrentTrackIndex(0);
+      
+      // Pre-load the first track without auto-playing to fix play button issue
+      const firstTrackPath = tracks[0].path;
+      const preloadSound = new Howl({
+        src: [firstTrackPath],
+        html5: true,
+        volume: volume,
+        preload: true,
+        onload: () => {
+          // Update duration with actual audio duration instead of preset value
+          setDuration(preloadSound.duration());
+          preloadSound.unload(); // Clean up the preload instance
+        },
+        onloaderror: (id, error) => {
+          console.error('Error preloading first track:', error);
+        }
+      });
     }
   };
   
