@@ -263,6 +263,10 @@ export function setupAuth(app: any): void {
               roles: discordRoles,
               level: 1,
               inventory: {},
+              completedQuests: [], // Explicitly initialize completedQuests for new users
+              xp: 0,
+              xpToNextLevel: 300,
+              titles: [],
             });
           } else {
             // Update existing user info and roles

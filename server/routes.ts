@@ -164,6 +164,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug endpoint to fix user data structure for quest visibility
+  app.post('/api/debug/fix-user-data', authenticate, async (req, res) => {
+    try {
+      const userId = (req as any).user?.id;
+      const username = (req as any).user?.username;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Fix missing or undefined fields that could cause quest visibility issues
+      const updatedData: any = {};
+      
+      // Ensure completedQuests is an array
+      if (!user.completedQuests || !Array.isArray(user.completedQuests)) {
+        updatedData.completedQuests = [];
+      }
+      
+      // Ensure roles is an array
+      if (!user.roles || !Array.isArray(user.roles)) {
+        updatedData.roles = [];
+      }
+      
+      // Ensure inventory is an object
+      if (!user.inventory || typeof user.inventory !== 'object') {
+        updatedData.inventory = {};
+      }
+      
+      // Ensure titles is an array
+      if (!user.titles || !Array.isArray(user.titles)) {
+        updatedData.titles = [];
+      }
+
+      // Only update if we have changes to make
+      if (Object.keys(updatedData).length > 0) {
+        await storage.updateUser(userId, updatedData);
+        console.log('Fixed user data structure for:', username, 'Updated fields:', Object.keys(updatedData));
+        
+        return res.json({ 
+          success: true, 
+          message: "User data structure fixed - quests should now be visible",
+          updatedFields: Object.keys(updatedData)
+        });
+      } else {
+        return res.json({ 
+          success: true, 
+          message: "User data structure is already correct",
+          updatedFields: []
+        });
+      }
+    } catch (error) {
+      console.error('Error fixing user data:', error);
+      return res.status(500).json({ message: "Failed to fix user data" });
+    }
+  });
+
   // Debug endpoint to fix roles for current user (development only)
   app.get('/api/debug/fix-roles', authenticate, async (req, res) => {
     try {
@@ -819,8 +880,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const userQuest = userQuests.find(uq => uq.questId === quest.id);
         let status = 'locked';
 
+        // Ensure completedQuests is always an array (safety check for existing users)
+        const completedQuests = user.completedQuests || [];
+        
         // Check completed quests FIRST (highest priority)
-        if (user.completedQuests && user.completedQuests.includes(quest.id)) {
+        if (completedQuests.includes(quest.id)) {
           status = 'completed';
         }
         // Then check user quest status (active takes precedence over available)
@@ -842,7 +906,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else if (questIndex > 0) {
             // Check if previous quest is completed
             const previousQuest = adventureLineQuests[questIndex - 1];
-            if (user.completedQuests && user.completedQuests.includes(previousQuest.id)) {
+            if (completedQuests.includes(previousQuest.id)) {
               status = 'available';
             } else {
               status = 'locked';
