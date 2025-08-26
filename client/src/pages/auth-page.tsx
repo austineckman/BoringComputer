@@ -80,7 +80,7 @@ export default function AuthPage() {
                 </div>
                 <div className="flex flex-col justify-center">
                   <h1 className="text-xl font-bold text-black">
-                    Welcome to CraftingTableOS
+                    Welcome To BoringComputer
                   </h1>
                   <p className="text-gray-700 text-sm">
                     Please authenticate to continue
