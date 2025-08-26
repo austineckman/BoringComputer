@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, AlertCircle, ExternalLink } from 'lucide-react';
+import { Play, AlertCircle, ExternalLink, Youtube } from 'lucide-react';
 
 interface VideoPlayerProps {
   videoId?: string;
@@ -15,6 +15,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 }) => {
   const [embedError, setEmbedError] = useState(false);
   const [processedVideoId, setProcessedVideoId] = useState<string | null>(null);
+  const [showClickToPlay, setShowClickToPlay] = useState(false);
 
   useEffect(() => {
     if (!videoId) {
@@ -46,6 +47,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (extractedId && extractedId.length >= 10 && extractedId.length <= 12) {
       setProcessedVideoId(extractedId);
       setEmbedError(false);
+      // Check if we're in a restricted environment
+      setShowClickToPlay(true); // Default to click-to-play for better compatibility
     } else {
       setProcessedVideoId(null);
       setEmbedError(true);
@@ -95,11 +98,57 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     );
   }
 
+  // Use click-to-play approach for better compatibility with CSP restrictions
+  if (showClickToPlay) {
+    return (
+      <div className={`relative aspect-video bg-gray-900 rounded-lg overflow-hidden ${className}`}>
+        {/* YouTube Thumbnail with click to play */}
+        <a
+          href={`https://www.youtube.com/watch?v=${processedVideoId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full h-full relative group"
+        >
+          {/* Video thumbnail */}
+          <img 
+            src={`https://img.youtube.com/vi/${processedVideoId}/maxresdefault.jpg`}
+            alt={title}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              // Fallback to standard quality if maxres doesn't exist
+              (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${processedVideoId}/hqdefault.jpg`;
+            }}
+          />
+          
+          {/* Play button overlay */}
+          <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center group-hover:bg-opacity-50 transition-all">
+            <div className="bg-red-600 rounded-full p-4 group-hover:bg-red-700 transform group-hover:scale-110 transition-all shadow-xl">
+              <Play className="w-12 h-12 text-white fill-white ml-1" />
+            </div>
+          </div>
+          
+          {/* YouTube branding */}
+          <div className="absolute top-4 left-4 bg-black bg-opacity-75 rounded-lg px-3 py-1.5 flex items-center space-x-2">
+            <Youtube className="w-5 h-5 text-red-500" />
+            <span className="text-white text-sm font-medium">Watch on YouTube</span>
+          </div>
+          
+          {/* Video title */}
+          <div className="absolute bottom-4 left-4 right-4">
+            <h3 className="text-white text-lg font-semibold drop-shadow-lg bg-black bg-opacity-50 rounded px-2 py-1 inline-block">
+              {title}
+            </h3>
+          </div>
+        </a>
+      </div>
+    );
+  }
+  
+  // Fallback to iframe (kept for cases where CSP might allow it)
   return (
     <div className={`relative aspect-video bg-black rounded-lg overflow-hidden ${className}`}>
-      {/* YouTube Embed with Privacy-Enhanced Mode */}
       <iframe
-        src={`https://www.youtube-nocookie.com/embed/${processedVideoId}?rel=0&modestbranding=1`}
+        src={`https://www.youtube.com/embed/${processedVideoId}?rel=0&modestbranding=1`}
         className="w-full h-full"
         title={title}
         frameBorder="0"
@@ -108,15 +157,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         referrerPolicy="strict-origin-when-cross-origin"
         onError={handleEmbedError}
         loading="lazy"
-        sandbox="allow-same-origin allow-scripts allow-presentation allow-popups"
       />
-      
-      {/* Loading state overlay */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="animate-pulse">
-          <Play className="w-20 h-20 text-white opacity-20" />
-        </div>
-      </div>
     </div>
   );
 };
