@@ -39,6 +39,7 @@ Platform compatibility: Works on Windows, compatibility issues noted on Mac.
 - **Branding Consolidation**: Standardized branding across the platform, including "BMAH (Black Market Auction House)" instead of pirate themes, and professional UI designs for various interfaces.
 - **Wire Positioning System (RESOLVED Aug 14, 2025)**: All circuit components now use a unified coordinate system for precise wire attachment alignment using direct clientX/clientY coordinates and proper JSON pin data parsing.
 - **OLED Visual Display System (COMPLETED Aug 15, 2025)**: Fully functional OLED simulation with real-time visual output. Supports U8g2 library functions including drawStr(), drawFrame(), drawCircle(), and drawDisc(). Features white text rendering on black background with proper canvas-based display that overlays the physical OLED component. Enhanced Arduino code parsing with comprehensive parameter extraction and visual debugging capabilities.
+- **Video Display Enhancement (COMPLETED Aug 26, 2025)**: Replaced basic YouTube iframe embeds with robust VideoPlayer component that handles multiple YouTube URL formats, provides fallback links when embeds fail due to CSP/HTTPS restrictions, uses YouTube's privacy-enhanced nocookie domain for better compliance, includes proper error handling with user-friendly fallback UI, and validates video IDs to prevent malformed embeds. Component deployed across all video display locations: ActiveQuestScreen, MissionInterface, mission.tsx, and quest-detail.tsx.
 
 ## External Dependencies
 ### Production Dependencies

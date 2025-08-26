@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/useAuth';
 import { Quest, MissionComment, MissionDiagram } from '@shared/schema';
+import { VideoPlayer } from '@/components/video/VideoPlayer';
 
 interface MissionInterfaceProps {
   quest: Quest;
@@ -149,18 +150,11 @@ export default function MissionInterface({ quest, onComplete, onBack }: MissionI
                   <Play className="w-5 h-5 mr-2 text-red-500" />
                   Tutorial Video
                 </h2>
-                <div className="aspect-video rounded-lg overflow-hidden bg-black">
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    src={`https://www.youtube.com/embed/${videoId}`}
-                    title="Mission Tutorial"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="w-full h-full"
-                  />
-                </div>
+                <VideoPlayer 
+                  videoId={videoId} 
+                  title="Mission Tutorial"
+                  className="rounded-lg"
+                />
               </div>
             )}
 

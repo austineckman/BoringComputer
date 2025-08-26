@@ -5,6 +5,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { QuestCompletionConfirmDialog, QuestRewardsDialog } from './QuestCompletionDialog';
+import { VideoPlayer } from '@/components/video/VideoPlayer';
 
 interface ActiveQuestScreenProps {
   questId: string;
@@ -418,25 +419,10 @@ const ActiveQuestScreen: React.FC<ActiveQuestScreenProps> = ({
           {/* Video Section */}
           <div className="bg-gray-900 rounded-lg p-3 sm:p-6">
             <h2 className="text-lg sm:text-xl font-bold text-brand-orange mb-3 sm:mb-4">Tutorial Video</h2>
-            {quest.content?.videos && quest.content.videos.length > 0 ? (
-              <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-                <iframe
-                  src={`https://www.youtube.com/embed/${quest.content.videos[0]}`}
-                  className="w-full h-full"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  title="Quest Tutorial Video"
-                ></iframe>
-              </div>
-            ) : (
-              <div className="aspect-video bg-gray-800 rounded-lg flex items-center justify-center">
-                <div className="text-center text-gray-400">
-                  <Play className="w-16 h-16 mx-auto mb-2" />
-                  <p>Video tutorial coming soon</p>
-                </div>
-              </div>
-            )}
+            <VideoPlayer 
+              videoId={quest.content?.videos?.[0]} 
+              title="Quest Tutorial Video"
+            />
           </div>
 
           {/* Mission Brief Section */}

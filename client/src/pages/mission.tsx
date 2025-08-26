@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/useAuth';
 import { Quest } from '@shared/schema';
+import { VideoPlayer } from '@/components/video/VideoPlayer';
 
 interface MissionPageProps {}
 
@@ -200,40 +201,17 @@ void loop() {
             </div>
 
             {/* YouTube Video Section */}
-            {videoId ? (
-              <div className="bg-gray-800 rounded-xl p-6">
-                <h2 className="text-xl font-semibold mb-4 flex items-center">
-                  <Play className="w-5 h-5 mr-2 text-red-500" />
-                  Tutorial Video
-                </h2>
-                <div className="aspect-video rounded-lg overflow-hidden bg-black">
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    src={`https://www.youtube.com/embed/${videoId}`}
-                    title="Mission Tutorial"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="w-full h-full"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="bg-gray-800 rounded-xl p-6">
-                <h2 className="text-xl font-semibold mb-4 flex items-center">
-                  <Play className="w-5 h-5 mr-2 text-red-500" />
-                  Tutorial Video
-                </h2>
-                <div className="aspect-video rounded-lg bg-gray-700 flex items-center justify-center">
-                  <div className="text-center">
-                    <Play className="w-12 h-12 text-gray-500 mx-auto mb-2" />
-                    <p className="text-gray-400">Video content coming soon</p>
-                    <p className="text-sm text-gray-500">YouTube embed will appear here</p>
-                  </div>
-                </div>
-              </div>
-            )}
+            <div className="bg-gray-800 rounded-xl p-6">
+              <h2 className="text-xl font-semibold mb-4 flex items-center">
+                <Play className="w-5 h-5 mr-2 text-red-500" />
+                Tutorial Video
+              </h2>
+              <VideoPlayer 
+                videoId={videoId || undefined} 
+                title="Mission Tutorial"
+                className="rounded-lg"
+              />
+            </div>
 
             {/* Interactive Diagrams */}
             <div className="bg-gray-800 rounded-xl p-6">

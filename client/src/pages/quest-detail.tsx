@@ -15,18 +15,17 @@ import { themeConfig } from '@/lib/themeConfig';
 import MainLayout from '@/components/layout/MainLayout';
 import { queryClient } from '@/lib/queryClient';
 import ThirtyDaysPixelArt from '@/assets/30-days-pixelart.png';
+import { VideoPlayer } from '@/components/video/VideoPlayer';
 
-// YouTube embed component
+// YouTube embed component - using VideoPlayer for better compatibility
 const YouTubeEmbed = ({ videoId }: { videoId: string }) => {
   return (
-    <div className="aspect-video w-full rounded-lg overflow-hidden mb-4">
-      <iframe
-        className="w-full h-full"
-        src={`https://www.youtube.com/embed/${videoId}`}
+    <div className="mb-4">
+      <VideoPlayer 
+        videoId={videoId} 
         title="YouTube video player"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-      ></iframe>
+        className="w-full"
+      />
     </div>
   );
 };
