@@ -24,48 +24,41 @@ declare global {
   }
 }
 
-// Authentication middleware
+// Authentication middleware - STRICT: No development bypasses
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
-  // DEVELOPMENT MODE: Create mock user if not authenticated in development
-  if (process.env.NODE_ENV === 'development' && !req.isAuthenticated()) {
-    console.log('Development mode: Creating mock user for endpoint access');
-    req.user = {
-      id: "22",
-      username: "austineckman",
-      displayName: "austineckman",
-      discordId: "511323492197597185",
-      email: "austin@inventr.io",
-      avatar: "https://cdn.discordapp.com/avatars/511323492197597185/7b894475b8ad9a842383159a44c5aa7a.png",
-      roles: ["admin", "Founder", "CraftingTable", "Academy", "Server Booster"],
-      level: 1,
-      inventory: { gold: 164 },
-      completedQuests: [],
-      xp: 0,
-      xpToNextLevel: 300,
-      titles: [],
-      activeTitle: null
-    };
-  }
+  console.log('Authentication check - isAuthenticated:', req.isAuthenticated());
+  console.log('Authentication check - user exists:', !!req.user);
+  console.log('Authentication check - session exists:', !!req.session);
   
   if (!req.isAuthenticated()) {
+    console.log('Authentication denied - user not authenticated');
     return res.status(401).json({ message: "Authentication required" });
   }
   
+  console.log('Authentication successful for user:', req.user?.username);
   next();
 };
 
-// Admin-only middleware
+// Admin-only middleware - STRICT: No development bypasses for admin access
 export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+  console.log('Admin check - isAuthenticated:', req.isAuthenticated());
+  console.log('Admin check - user exists:', !!req.user);
+  
   if (!req.isAuthenticated()) {
+    console.log('Admin access denied - user not authenticated');
     return res.status(401).json({ message: "Authentication required" });
   }
 
   // Check if user has admin role (either explicit admin or Founder)
   const user = req.user as User;
+  console.log('Admin check - user roles:', user.roles);
+  
   if (!user.roles?.includes('admin') && !user.roles?.includes('Founder')) {
+    console.log('Admin access denied - user lacks admin role');
     return res.status(403).json({ message: "Admin access required" });
   }
 
+  console.log('Admin access granted for user:', user.username);
   next();
 };
 

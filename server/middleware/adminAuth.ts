@@ -11,50 +11,29 @@ declare global {
 
 /**
  * Middleware to check if user has admin role
+ * CRITICAL SECURITY: NO DEVELOPMENT BYPASSES FOR ADMIN ACCESS
  */
 export const adminAuth = (req: Request, res: Response, next: NextFunction) => {
-  // For development purposes, temporarily skip admin check
-  const BYPASS_AUTH = process.env.NODE_ENV === 'development';
+  console.log('Admin auth check - isAuthenticated:', req.isAuthenticated());
+  console.log('Admin auth check - user exists:', !!req.user);
   
-  if (BYPASS_AUTH) {
-    console.log("⚠️ Development mode: Admin authentication bypassed");
-    
-    // If there's no user yet, create a mock admin user for development
-    if (!req.user) {
-      (req as any).user = {
-        id: 999,
-        username: "devadmin",
-        email: "dev@example.com",
-        roles: ["admin", "user"],
-        level: 10,
-        inventory: {
-          "copper": 10,
-          "crystal": 5,
-          "techscrap": 3,
-          "circuit_board": 2,
-          "cloth": 8
-        }
-      };
-      console.log("⚠️ Development mode: Created mock admin user");
-    }
-    
-    return next();
-  }
-  
-  // Normal admin auth check for production
-  
-  // Check if user is authenticated
-  if (!req.user) {
+  // Check if user is authenticated via Passport
+  if (!req.isAuthenticated()) {
+    console.log('Admin access denied - user not authenticated');
     return res.status(401).json({ message: 'Authentication required' });
   }
 
   // Check if user has admin role
-  const isAdmin = req.user.roles && Array.isArray(req.user.roles) && req.user.roles.includes('admin');
+  const user = req.user as any;
+  console.log('Admin auth check - user roles:', user?.roles);
+  
+  const isAdmin = user.roles && Array.isArray(user.roles) && (user.roles.includes('admin') || user.roles.includes('Founder'));
   
   if (!isAdmin) {
+    console.log('Admin access denied - user lacks admin role');
     return res.status(403).json({ message: 'Admin access required' });
   }
 
-  // User is authenticated and has admin role
+  console.log('Admin access granted for user:', user.username);
   next();
 };

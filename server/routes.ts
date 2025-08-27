@@ -2583,23 +2583,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin routes
-  app.use('/api/admin', authenticate, adminRoutes);
+  // Admin routes - secured with adminAuth middleware only
+  app.use('/api/admin', adminRoutes);
 
-  // Admin upload routes
-  app.use('/api/admin/upload', authenticate, adminUploadRoutes);
+  // Admin upload routes - secured with adminAuth middleware only  
+  app.use('/api/admin/upload', adminUploadRoutes);
 
-  // Admin kits routes
-  app.use('/api/admin', authenticate, adminKitsRoutes);
+  // Admin kits routes - secured with adminAuth middleware only
+  app.use('/api/admin', adminKitsRoutes);
 
-  // Admin recipes routes - ensure we also apply admin authorization
-  app.use('/api/admin/recipes', authenticate, adminAuth, adminRecipesRoutes);
+  // Admin recipes routes - secured with adminAuth middleware only
+  app.use('/api/admin/recipes', adminRecipesRoutes);
 
-  // Register the admin routes for quest generator with specific path prefix
-  app.use('/api/admin/quest-generator', authenticate, adminAuth, adminQuestGeneratorRoutes);
+  // Register the admin routes for quest generator - secured with adminAuth middleware only
+  app.use('/api/admin/quest-generator', adminQuestGeneratorRoutes);
 
-  // Register the admin routes for saving quests with specific path prefix
-  app.use('/api/admin/quest-save', authenticate, adminAuth, adminQuestsSaveRoutes);
+  // Register the admin routes for saving quests - secured with adminAuth middleware only
+  app.use('/api/admin/quest-save', adminQuestsSaveRoutes);
 
   // Register adventure lines routes with specific path prefix
   app.use('/api/adventure-lines', adventureLinesRoutes);

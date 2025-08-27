@@ -498,7 +498,7 @@ router.get('/kits-with-components', async (req, res) => {
 // Get all quests with their component requirements
 router.get('/quests-with-components', async (req, res) => {
   try {
-    console.log('⚠️ Development mode: Bypassing authentication for Oracle quest access');
+    // SECURITY FIXED: No more authentication bypasses
     const quests = await db.select().from(schema.quests);
     
     const questsWithComponents = await Promise.all(

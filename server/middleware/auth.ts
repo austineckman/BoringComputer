@@ -40,29 +40,29 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
 };
 
 // Middleware to check if the user has Oracle access (CraftingTable role)
+// CRITICAL SECURITY: NO DEVELOPMENT BYPASSES FOR ORACLE ACCESS
 export const hasOracleAccess = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Bypass authentication in development mode (NODE_ENV not set or 'development')
-    if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
-      console.log('⚠️ Development mode: Oracle authentication bypassed');
-      next();
-      return;
-    }
+    console.log('Oracle access check - isAuthenticated:', req.isAuthenticated());
+    console.log('Oracle access check - user exists:', !!req.user);
     
-    const user = (req as any).user;
-    if (!user) {
+    if (!req.isAuthenticated()) {
+      console.log('Oracle access denied - user not authenticated');
       return res.status(401).json({ message: 'Authentication required' });
     }
     
-    // Check if user has CraftingTable role
+    const user = (req as any).user;
+    console.log('Oracle access check - user roles:', user?.roles);
+    
+    // Check if user has Oracle access (ONLY CraftingTable role)
     const hasAccess = user.roles && user.roles.includes('CraftingTable');
     
     if (!hasAccess) {
+      console.log('Oracle access denied - user lacks required role');
       return res.status(403).json({ message: 'Oracle access denied. Requires CraftingTable role.' });
     }
     
-    // Add user to the request object for downstream handlers
-    req.user = user;
+    console.log('Oracle access granted for user:', user.username);
     next();
   } catch (error) {
     console.error('Oracle access authentication error:', error);
