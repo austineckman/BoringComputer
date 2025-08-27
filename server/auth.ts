@@ -26,9 +26,9 @@ declare global {
 
 // Authentication middleware
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
-  // In development mode, bypass authentication for easier testing
+  // DEVELOPMENT MODE: Create mock user if not authenticated in development
   if (process.env.NODE_ENV === 'development' && !req.isAuthenticated()) {
-    // Create a mock user for development
+    console.log('Development mode: Creating mock user for endpoint access');
     req.user = {
       id: "22",
       username: "austineckman",
@@ -38,13 +38,19 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
       avatar: "https://cdn.discordapp.com/avatars/511323492197597185/7b894475b8ad9a842383159a44c5aa7a.png",
       roles: ["admin", "Founder", "CraftingTable", "Academy", "Server Booster"],
       level: 1,
-      inventory: { gold: 164 }
+      inventory: { gold: 164 },
+      completedQuests: [],
+      xp: 0,
+      xpToNextLevel: 300,
+      titles: [],
+      activeTitle: null
     };
   }
   
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Authentication required" });
   }
+  
   next();
 };
 
@@ -292,15 +298,17 @@ export function setupAuth(app: any): void {
 
   // Serialize user to the session
   passport.serializeUser((user, done) => {
+    console.log('Serializing user to session - ID:', user.id, 'Username:', user.username);
     done(null, user.id);
   });
 
   // Deserialize user from the session
   passport.deserializeUser(async (id: number, done) => {
     try {
-      // Only log if we encounter an error or can't find the user
+      console.log('Deserializing user from session - ID:', id, 'Type:', typeof id);
       const user = await storage.getUser(id);
       if (user) {
+        console.log('Successfully deserialized user:', user.username, 'Roles:', user.roles);
         done(null, user);
       } else {
         console.log('User not found during session deserialization:', id);
