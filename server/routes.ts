@@ -28,7 +28,7 @@ import circuitProjectsRoutes from './routes/circuit-projects';
 import arduinoComponentsRoutes from './routes/arduino-components';
 import missionRoutes from './routes/missions';
 import circuitExamplesRoutes from './routes/circuit-examples';
-import { authenticate, allowGuests, hashPassword } from './auth';
+import { authenticate, hashPassword } from './auth';
 import { hasOracleAccess } from './middleware/auth';
 // CSRF protection removed - unnecessary complexity for educational gaming platform
 import { addSecurityHeaders } from './middleware/security-headers';
@@ -347,8 +347,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Quest comments endpoints - allow guests to view comments
-  app.get('/api/quests/:questId/comments', allowGuests, async (req, res) => {
+  // Quest comments endpoints
+  app.get('/api/quests/:questId/comments', authenticate, async (req, res) => {
     try {
       const { questId } = req.params;
       const comments = await db.select({
@@ -830,24 +830,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Quests routes - allow guests to view quests
-  app.get('/api/quests', allowGuests, async (req, res) => {
+  // Quests routes
+  app.get('/api/quests', authenticate, async (req, res) => {
     try {
       console.log('GET /api/quests - Request received');
       const user = (req as any).user;
-      const isGuest = !req.isAuthenticated();
-      
-      if (isGuest) {
-        console.log('Guest user accessing quests');
-      } else {
-        console.log('Authenticated user - ID:', user?.id, 'Username:', user?.username);
-      }
+      console.log('User ID:', user.id, 'Username:', user.username);
 
       // Get available quests based on user's progression
       console.log('Fetching available quests');
-      const availableQuests = isGuest ? [] : await storage.getAvailableQuestsForUser(user.id);
+      const availableQuests = await storage.getAvailableQuestsForUser(user.id);
       console.log('Fetching user quests');
-      const userQuests = isGuest ? [] : await storage.getUserQuests(user.id);
+      const userQuests = await storage.getUserQuests(user.id);
       console.log('Fetching all quests');
       const allQuests = await storage.getQuests();
       console.log(`Found ${allQuests.length} total quests in database`);
@@ -886,46 +880,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const userQuest = userQuests.find(uq => uq.questId === quest.id);
         let status = 'locked';
 
-        if (isGuest) {
-          // For guest users, all quests are available for exploration
-          status = 'available';
-        } else {
-          // For authenticated users, use normal progression logic
-          const completedQuests = user.completedQuests || [];
+        // Ensure completedQuests is always an array (safety check for existing users)
+        const completedQuests = user.completedQuests || [];
+        
+        // Check completed quests FIRST (highest priority)
+        if (completedQuests.includes(quest.id)) {
+          status = 'completed';
+        }
+        // Then check user quest status (active takes precedence over available)
+        else if (userQuest) {
+          status = userQuest.status; // active or completed
+        }
+        // Check if quest should be available based on sequential ordering
+        else {
+          // Get all quests in the same adventure line, sorted by order
+          const adventureLineQuests = allQuests.filter(q => 
+            q.adventureLine === quest.adventureLine && q.active
+          ).sort((a, b) => a.orderInLine - b.orderInLine);
           
-          // Check completed quests FIRST (highest priority)
-          if (completedQuests.includes(quest.id)) {
-            status = 'completed';
-          }
-          // Then check user quest status (active takes precedence over available)
-          else if (userQuest) {
-            status = userQuest.status; // active or completed
-          }
-          // Check if quest should be available based on sequential ordering
-          else {
-            // Get all quests in the same adventure line, sorted by order
-            const adventureLineQuests = allQuests.filter(q => 
-              q.adventureLine === quest.adventureLine && q.active
-            ).sort((a, b) => a.orderInLine - b.orderInLine);
-            
-            const questIndex = adventureLineQuests.findIndex(q => q.id === quest.id);
-            
-            if (questIndex === 0) {
-              // First quest in line is always available
+          const questIndex = adventureLineQuests.findIndex(q => q.id === quest.id);
+          
+          if (questIndex === 0) {
+            // First quest in line is always available
+            status = 'available';
+          } else if (questIndex > 0) {
+            // Check if previous quest is completed
+            const previousQuest = adventureLineQuests[questIndex - 1];
+            if (completedQuests.includes(previousQuest.id)) {
               status = 'available';
-            } else if (questIndex > 0) {
-              // Check if previous quest is completed
-              const previousQuest = adventureLineQuests[questIndex - 1];
-              if (completedQuests.includes(previousQuest.id)) {
-                status = 'available';
-              } else {
-                status = 'locked';
-              }
+            } else {
+              status = 'locked';
             }
           }
         }
 
-        console.log(`Processing quest: ${quest.id} - ${quest.title} with status ${status} (${isGuest ? 'guest' : 'authenticated'} user)`);
+        console.log(`Processing quest: ${quest.id} - ${quest.title} with status ${status}`);
 
         questsByAdventureLine[adventureLine].push({
           id: quest.id.toString(),
