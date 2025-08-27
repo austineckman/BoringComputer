@@ -845,9 +845,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get available quests based on user's progression
       console.log('Fetching available quests');
-      const availableQuests = isGuest ? [] : await storage.getAvailableQuestsForUser(user?.id);
+      const availableQuests = isGuest ? [] : await storage.getAvailableQuestsForUser(user.id);
       console.log('Fetching user quests');
-      const userQuests = isGuest ? [] : await storage.getUserQuests(user?.id);
+      const userQuests = isGuest ? [] : await storage.getUserQuests(user.id);
       console.log('Fetching all quests');
       const allQuests = await storage.getQuests();
       console.log(`Found ${allQuests.length} total quests in database`);
