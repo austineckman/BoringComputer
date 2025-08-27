@@ -109,20 +109,19 @@ function App() {
           <Logout />
         </Route>
         
-        {/* Home route - check for guest mode */}
+        {/* Home route - guest mode only if explicitly requested */}
         <Route path="/">
           {(() => {
             const urlParams = new URLSearchParams(window.location.search);
             const isGuestMode = urlParams.get('guest') === 'true';
             
             if (isGuestMode) {
-              // Store guest mode in localStorage and render desktop
-              localStorage.setItem('guestMode', 'true');
+              // Only use guest mode if explicitly requested
               return <DesktopHome />;
             } else {
-              // Check if guest mode is stored in localStorage
+              // Always check for authenticated user first
               const storedGuestMode = localStorage.getItem('guestMode');
-              if (storedGuestMode === 'true') {
+              if (storedGuestMode === 'true' && !window.location.search.includes('from=discord')) {
                 return <DesktopHome />;
               } else {
                 // Regular protected route behavior

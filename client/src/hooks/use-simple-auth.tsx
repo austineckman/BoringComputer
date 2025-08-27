@@ -26,30 +26,16 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if we're in guest mode on app start
+    // Clear guest mode if we just authenticated
     const urlParams = new URLSearchParams(window.location.search);
-    const isGuestMode = urlParams.get('guest') === 'true';
-    const storedGuestMode = localStorage.getItem('guestMode') === 'true';
-
-    if (isGuestMode || storedGuestMode) {
-      // Set up guest user
-      const guestUser: SimpleAuthUser = {
-        id: 'guest',
-        username: 'Guest',
-        displayName: 'Guest User',
-        email: null,
-        roles: ['guest'],
-        level: 1,
-        inventory: { gold: 0 },
-        isGuest: true,
-      };
-      setUser(guestUser);
-      localStorage.setItem('guestMode', 'true');
-      setIsLoading(false);
-    } else {
-      // Try to fetch real user data (but only once, not in a loop)
-      fetchUserData();
+    if (urlParams.get('authenticated') === 'true') {
+      localStorage.removeItem('guestMode');
+      // Clean up the URL
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
+    
+    // ALWAYS try to fetch real user data first - Discord auth takes priority
+    fetchUserData();
   }, []);
 
   const fetchUserData = async () => {
@@ -65,9 +51,30 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
       
       if (response.ok) {
         const userData = await response.json();
+        // Clear guest mode if we have a real user
+        localStorage.removeItem('guestMode');
         setUser(userData);
       } else {
-        setUser(null);
+        // Only use guest mode if explicitly requested via URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const isGuestMode = urlParams.get('guest') === 'true';
+        
+        if (isGuestMode) {
+          const guestUser: SimpleAuthUser = {
+            id: 'guest',
+            username: 'Guest',
+            displayName: 'Guest User',
+            email: null,
+            roles: ['guest'],
+            level: 1,
+            inventory: { gold: 0 },
+            isGuest: true,
+          };
+          setUser(guestUser);
+          localStorage.setItem('guestMode', 'true');
+        } else {
+          setUser(null);
+        }
       }
     } catch (error) {
       console.error('Error fetching user data:', error);

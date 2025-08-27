@@ -14,8 +14,8 @@ router.get("/discord/callback",
     console.log('Discord OAuth callback - isAuthenticated:', req.isAuthenticated());
     console.log('Discord OAuth callback - user object:', req.user);
     
-    // Successful authentication, redirect to home
-    res.redirect("/");
+    // Successful authentication, redirect to home with flag to clear guest mode
+    res.redirect("/?authenticated=true");
   }
 );
 
