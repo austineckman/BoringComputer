@@ -887,13 +887,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let status = 'locked';
 
         if (isGuest) {
-          // For guest users, only the first quest in each line is available
-          const adventureLineQuests = allQuests.filter(q => 
-            q.adventureLine === quest.adventureLine && q.active
-          ).sort((a, b) => a.orderInLine - b.orderInLine);
-          
-          const questIndex = adventureLineQuests.findIndex(q => q.id === quest.id);
-          status = questIndex === 0 ? 'available' : 'locked';
+          // For guest users, all quests are available for exploration
+          status = 'available';
         } else {
           // For authenticated users, use normal progression logic
           const completedQuests = user.completedQuests || [];
