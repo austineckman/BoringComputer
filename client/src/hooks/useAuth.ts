@@ -27,13 +27,17 @@ export const useAuth = () => {
   const { sounds } = useSoundEffects();
   const previousLevel = useRef<number>(0);
 
-  // Get current user
+  // Get current user (null for guests, user object for Discord users)
   const { data: user, isLoading: loading, refetch } = useQuery<User | null>({
     queryKey: ['/api/auth/me'],
     retry: false,
     initialData: null,
     refetchOnWindowFocus: true
   });
+
+  // Determine if user is authenticated (Discord user) or guest
+  const isAuthenticated = user !== null;
+  const isGuest = user === null && !loading;
 
   // Function to safely play sounds
   const playSoundSafely = useCallback((soundType: string) => {
@@ -300,6 +304,8 @@ export const useAuth = () => {
   return {
     user,
     loading: loading || isLoggingIn,
+    isAuthenticated,
+    isGuest,
     login,
     loginWithCredentials,
     authenticate,

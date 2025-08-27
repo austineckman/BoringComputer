@@ -24,33 +24,19 @@ declare global {
   }
 }
 
-// Authentication middleware
+// Authentication middleware for Discord users only
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
-  // DEVELOPMENT MODE: Create mock user if not authenticated in development
-  if (process.env.NODE_ENV === 'development' && !req.isAuthenticated()) {
-    console.log('Development mode: Creating mock user for endpoint access');
-    req.user = {
-      id: "22",
-      username: "austineckman",
-      displayName: "austineckman",
-      discordId: "511323492197597185",
-      email: "austin@inventr.io",
-      avatar: "https://cdn.discordapp.com/avatars/511323492197597185/7b894475b8ad9a842383159a44c5aa7a.png",
-      roles: ["admin", "Founder", "CraftingTable", "Academy", "Server Booster"],
-      level: 1,
-      inventory: { gold: 164 },
-      completedQuests: [],
-      xp: 0,
-      xpToNextLevel: 300,
-      titles: [],
-      activeTitle: null
-    };
-  }
-  
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Authentication required" });
   }
   
+  next();
+};
+
+// Guest-friendly middleware that allows both authenticated and guest users
+export const allowGuests = (req: Request, res: Response, next: NextFunction) => {
+  // For guest users, we don't require authentication
+  // The endpoints will handle guest vs authenticated logic internally
   next();
 };
 
