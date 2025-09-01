@@ -105,58 +105,80 @@ void loop() {
   
   // Red
   Serial.println("→ RED");
-  setColor(255, 0, 0);
+  analogWrite(redPin, 255);
+  analogWrite(greenPin, 0);
+  analogWrite(bluePin, 0);
   delay(2000);
   
   // Green  
   Serial.println("→ GREEN");
-  setColor(0, 255, 0);
+  analogWrite(redPin, 0);
+  analogWrite(greenPin, 255);
+  analogWrite(bluePin, 0);
   delay(2000);
   
   // Blue
   Serial.println("→ BLUE");
-  setColor(0, 0, 255);
+  analogWrite(redPin, 0);
+  analogWrite(greenPin, 0);
+  analogWrite(bluePin, 255);
   delay(2000);
   
   // Yellow (Red + Green)
   Serial.println("→ YELLOW");
-  setColor(255, 255, 0);
+  analogWrite(redPin, 255);
+  analogWrite(greenPin, 255);
+  analogWrite(bluePin, 0);
   delay(2000);
   
   // Cyan (Green + Blue)
   Serial.println("→ CYAN");
-  setColor(0, 255, 255);
+  analogWrite(redPin, 0);
+  analogWrite(greenPin, 255);
+  analogWrite(bluePin, 255);
   delay(2000);
   
   // Magenta (Red + Blue)
   Serial.println("→ MAGENTA");
-  setColor(255, 0, 255);
+  analogWrite(redPin, 255);
+  analogWrite(greenPin, 0);
+  analogWrite(bluePin, 255);
   delay(2000);
   
   // White (All colors)
   Serial.println("→ WHITE");
-  setColor(255, 255, 255);
+  analogWrite(redPin, 255);
+  analogWrite(greenPin, 255);
+  analogWrite(bluePin, 255);
   delay(2000);
   
   // Turn off
   Serial.println("→ OFF");
-  setColor(0, 0, 0);
+  analogWrite(redPin, 0);
+  analogWrite(greenPin, 0);
+  analogWrite(bluePin, 0);
   delay(1000);
   
-  Serial.println("Starting color fade...");
+  Serial.println("Starting simple color fade...");
   
-  // Smooth color transitions (faster)
-  for(int i = 0; i < 255; i += 5) {
-    setColor(255 - i, i, 0);  // Red to Green
-    delay(50);
+  // Simple color transitions 
+  for(int i = 0; i < 255; i += 10) {
+    analogWrite(redPin, 255 - i);
+    analogWrite(greenPin, i);
+    analogWrite(bluePin, 0);
+    delay(100);
   }
-  for(int i = 0; i < 255; i += 5) {
-    setColor(0, 255 - i, i);  // Green to Blue
-    delay(50);
+  for(int i = 0; i < 255; i += 10) {
+    analogWrite(redPin, 0);
+    analogWrite(greenPin, 255 - i);
+    analogWrite(bluePin, i);
+    delay(100);
   }
-  for(int i = 0; i < 255; i += 5) {
-    setColor(i, 0, 255 - i);  // Blue to Red
-    delay(50);
+  for(int i = 0; i < 255; i += 10) {
+    analogWrite(redPin, i);
+    analogWrite(greenPin, 0);
+    analogWrite(bluePin, 255 - i);
+    delay(100);
   }
   
   Serial.println("Color cycle complete!");
