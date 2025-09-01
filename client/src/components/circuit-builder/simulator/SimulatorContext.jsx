@@ -665,7 +665,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             
             console.log(`[Simulator] analogWrite: Component ${componentId} has ${componentWires.length} wires:`, componentWires);
             
-            // Check if any wire connects this component to the pin we're setting
+            // Check if any wire connects this component directly to the pin we're setting
             componentWires.forEach(wire => {
               const isConnectedToPin = (
                 (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString()) ||
@@ -682,9 +682,72 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                   type: componentId.includes('rgb') ? 'rgbled' : 'led',
                   pinName: componentPinName
                 });
-                console.log(`[Simulator] analogWrite: Found component ${componentId} connected to pin ${pinNumber} via wire (component pin: ${componentPinName})`);
+                console.log(`[Simulator] analogWrite: Found component ${componentId} connected directly to pin ${pinNumber} via wire (component pin: ${componentPinName})`);
               }
             });
+            
+            // If no direct connection found, try multi-hop tracing through resistors
+            if (connectedComponents.filter(c => c.id === componentId).length === 0) {
+              console.log(`[Simulator] analogWrite: No direct connection for ${componentId}, trying multi-hop trace...`);
+              
+              // Find if this RGB LED is connected through resistors to the target pin
+              const componentWires2 = wires.filter(wire => 
+                wire.sourceComponent === componentId || wire.targetComponent === componentId
+              );
+              
+              for (const componentWire of componentWires2) {
+                // Extract resistor ID from wire endpoint data
+                let resistorId = null;
+                
+                if (componentWire.targetId && componentWire.targetId.includes('resistor')) {
+                  const match = componentWire.targetId.match(/pt-resistor-([^-]+)-/);
+                  if (match) {
+                    resistorId = match[1];
+                  }
+                } else if (componentWire.sourceId && componentWire.sourceId.includes('resistor')) {
+                  const match = componentWire.sourceId.match(/pt-resistor-([^-]+)-/);
+                  if (match) {
+                    resistorId = match[1];
+                  }
+                }
+                
+                if (resistorId) {
+                  console.log(`[Simulator] analogWrite: ${componentId} connects through resistor ${resistorId}`);
+                  
+                  // Find ALL wires that connect to this resistor
+                  const resistorWires = wires.filter(wire => 
+                    (wire.sourceId?.includes(resistorId) || wire.targetId?.includes(resistorId)) &&
+                    wire.id !== componentWire.id
+                  );
+                  
+                  console.log(`[Simulator] analogWrite: Found ${resistorWires.length} other wires connected to resistor ${resistorId}`);
+                  
+                  for (const resistorWire of resistorWires) {
+                    const pinConnected = (
+                      resistorWire.sourceName === pinNumber.toString() || 
+                      resistorWire.targetName === pinNumber.toString() ||
+                      resistorWire.sourceName === `pin-${pinNumber}` || 
+                      resistorWire.targetName === `pin-${pinNumber}` ||
+                      resistorWire.sourceName === `${pinNumber}` || 
+                      resistorWire.targetName === `${pinNumber}`
+                    );
+                    
+                    console.log(`[Simulator] analogWrite: Checking resistor connection: ${resistorWire.sourceComponent || 'unknown'}(${resistorWire.sourceName}) → ${resistorWire.targetComponent || 'unknown'}(${resistorWire.targetName}), connects to pin ${pinNumber}: ${pinConnected}`);
+                    
+                    if (pinConnected) {
+                      const componentPinName = componentWire.sourceComponent === componentId ? componentWire.sourceName : componentWire.targetName;
+                      connectedComponents.push({ 
+                        id: componentId, 
+                        type: componentId.includes('rgb') ? 'rgbled' : 'led',
+                        pinName: componentPinName
+                      });
+                      console.log(`[Simulator] analogWrite: SUCCESS: Found component ${componentId} connected to pin ${pinNumber} through resistor ${resistorId} (component pin: ${componentPinName})`);
+                      break;
+                    }
+                  }
+                }
+              }
+            }
           });
           
           // Update all connected components
