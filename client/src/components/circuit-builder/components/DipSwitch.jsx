@@ -242,7 +242,7 @@ const DipSwitch = ({
       
       <ReactDipSwitch3Component
         id={id}
-        value={value}
+        values={[value[0] ? 1 : 0, value[1] ? 1 : 0, value[2] ? 1 : 0]}
         className="min-w-min cursor-pointer absolute"
         ref={targetRef}
         isActive={isSelected}
@@ -250,11 +250,13 @@ const DipSwitch = ({
         onPinClicked={handlePinClicked}
         onPininfoChange={(e) => onPinInfoChange(e)}
         rotationTransform={rotationAngle}
-        onValueChange={(e) => {
-          // Handle value change event from the component
-          console.log(`DipSwitch ${id}: Value changed event:`, e.detail);
-          if (e.detail && e.detail.value) {
-            const newValue = e.detail.value;
+        onSwitchChange={(e) => {
+          // Handle switch change event from the component
+          console.log(`DipSwitch ${id}: Switch changed event:`, e.detail);
+          const switchIndex = e.detail;
+          if (switchIndex !== undefined) {
+            const newValue = [...value];
+            newValue[switchIndex] = !newValue[switchIndex];
             setValue(newValue);
             
             // Update simulator state immediately
@@ -271,7 +273,7 @@ const DipSwitch = ({
                   'S3': newValue[2] ? 'HIGH' : 'LOW'
                 }
               });
-              console.log(`DipSwitch ${id}: Updated state from value change:`, newValue);
+              console.log(`DipSwitch ${id}: Updated switch ${switchIndex + 1} to ${newValue[switchIndex]}`);
             }
           }
         }}

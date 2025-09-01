@@ -2083,7 +2083,8 @@ const xe = b({
   react: $,
   events: {
     onPininfoChange: "pininfo-change",
-    onPinClicked: "pin-clicked"
+    onPinClicked: "pin-clicked",
+    onSwitchChange: "switch-change"
   }
 });
 var Lt = Object.defineProperty, Ut = Object.getOwnPropertyDescriptor, f0 = (t, e, i, n) => {
