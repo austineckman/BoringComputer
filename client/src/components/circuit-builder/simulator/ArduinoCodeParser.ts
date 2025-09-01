@@ -1027,6 +1027,49 @@ export class ArduinoCodeParser {
       return instruction;
     }
 
+    // Parse TM1637 display function calls
+    const tm1637Match = line.match(/(\w+)\.(showNumberDec|showNumberDecEx|setBrightness|clear|setSegments)\s*\((.*?)\)/);
+    if (tm1637Match) {
+      console.log(`[ArduinoCodeParser] TM1637 match found:`, tm1637Match);
+      const objectName = tm1637Match[1];
+      const functionName = tm1637Match[2];
+      const params = tm1637Match[3];
+      
+      let parsedParams = {};
+      
+      // Parse TM1637 function parameters
+      if (functionName === 'showNumberDec') {
+        const parts = params.split(',').map(p => p.trim());
+        parsedParams = {
+          number: parts[0] ? (this.resolveVariable(parts[0]) ?? (parseInt(parts[0]) || 0)) : 0,
+          leadingZeros: parts[1] ? (this.resolveVariable(parts[1]) ?? (parts[1] === 'true')) : false
+        };
+      } else if (functionName === 'showNumberDecEx') {
+        const parts = params.split(',').map(p => p.trim());
+        parsedParams = {
+          number: parts[0] ? (this.resolveVariable(parts[0]) ?? (parseInt(parts[0]) || 0)) : 0,
+          dots: parts[1] ? (this.resolveVariable(parts[1]) ?? (parseInt(parts[1]) || 0)) : 0,
+          leadingZeros: parts[2] ? (this.resolveVariable(parts[2]) ?? (parts[2] === 'true')) : false
+        };
+      } else if (functionName === 'setBrightness') {
+        const parts = params.split(',').map(p => p.trim());
+        parsedParams = {
+          brightness: parts[0] ? (this.resolveVariable(parts[0]) ?? (parseInt(parts[0]) || 7)) : 7
+        };
+      }
+      
+      const instruction = {
+        lineNumber,
+        instruction: `${objectName}.${functionName}(${params})`,
+        function: functionName,
+        params: parsedParams,
+        objectName: objectName
+      };
+      
+      console.log(`ArduinoCodeParser: Found TM1637 function:`, instruction);
+      return instruction;
+    }
+
     console.log(`ArduinoCodeParser: No instruction found for line ${lineNumber}: "${line}"`);
     return null;
   }

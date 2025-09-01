@@ -1961,8 +1961,14 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           return 0;
         }
 
-        // Handle 7-segment display functions
-        if (instruction.function && (instruction.function.includes('showNumberDec') || instruction.function.includes('setBrightness'))) {
+        // Handle TM1637 7-segment display functions
+        if (instruction.function && (
+          instruction.function.includes('showNumberDec') || 
+          instruction.function.includes('setBrightness') ||
+          instruction.function.includes('clear') ||
+          instruction.function.includes('showNumberDecEx') ||
+          instruction.function.includes('setSegments')
+        )) {
           const func = instruction.function;
           
           // Look for 7-segment display components
@@ -1972,22 +1978,64 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
               
               if (func.includes('showNumberDec')) {
                 const number = instruction.params?.number || instruction.params?.value || 0;
+                const leadingZeros = instruction.params?.leadingZeros || false;
+                let displayStr = number.toString();
+                
+                // Handle leading zeros for 4-digit display
+                if (leadingZeros && displayStr.length < 4) {
+                  displayStr = displayStr.padStart(4, '0');
+                }
+                
                 updateComponentState(component.id, { 
                   ...currentState,
-                  displayValue: number.toString(),
+                  displayValue: displayStr,
+                  isActive: true,
                   type: 'segmented-display'
                 });
-                addLog(`[${timestamp}] → ${func}(${number}) - 7-Segment ${component.id} showing "${number}"`);
+                addLog(`[${timestamp}] → ${func}(${number}) - TM1637 ${component.id} showing "${displayStr}"`);
+                console.log(`[TM1637 ${component.id}] Displaying number: ${displayStr}`);
+              }
+              
+              if (func.includes('showNumberDecEx')) {
+                const number = instruction.params?.number || instruction.params?.value || 0;
+                const dots = instruction.params?.dots || 0;
+                const leadingZeros = instruction.params?.leadingZeros || false;
+                let displayStr = number.toString();
+                
+                if (leadingZeros && displayStr.length < 4) {
+                  displayStr = displayStr.padStart(4, '0');
+                }
+                
+                updateComponentState(component.id, { 
+                  ...currentState,
+                  displayValue: displayStr,
+                  isActive: true,
+                  dots: dots,
+                  type: 'segmented-display'
+                });
+                addLog(`[${timestamp}] → ${func}(${number}, ${dots}) - TM1637 ${component.id} showing "${displayStr}" with dots`);
               }
               
               if (func.includes('setBrightness')) {
                 const brightness = instruction.params?.brightness || instruction.params?.value || 7;
                 updateComponentState(component.id, { 
                   ...currentState,
-                  brightness: brightness,
+                  brightness: Math.max(0, Math.min(7, brightness)), // Clamp 0-7
                   type: 'segmented-display'
                 });
-                addLog(`[${timestamp}] → ${func}(${brightness}) - 7-Segment ${component.id} brightness set`);
+                addLog(`[${timestamp}] → ${func}(${brightness}) - TM1637 ${component.id} brightness set to ${brightness}`);
+                console.log(`[TM1637 ${component.id}] Brightness set to: ${brightness}`);
+              }
+              
+              if (func.includes('clear')) {
+                updateComponentState(component.id, { 
+                  ...currentState,
+                  displayValue: "    ",
+                  isActive: false,
+                  type: 'segmented-display'
+                });
+                addLog(`[${timestamp}] → ${func}() - TM1637 ${component.id} cleared`);
+                console.log(`[TM1637 ${component.id}] Display cleared`);
               }
             }
           });

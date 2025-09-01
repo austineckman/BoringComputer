@@ -4,6 +4,7 @@ import {
 } from "../lib/inventr-component-lib.es.js";
 import Moveable from "react-moveable";
 import { createPortal } from "react-dom";
+import { useSimulator } from '../simulator/SimulatorContext.jsx';
 
 // Define MOVE_SETTINGS to match what the original code expects
 const MOVE_SETTINGS = {
@@ -43,6 +44,12 @@ const SegmentedDisplay = ({
   const [initPosLeft, setInitPosLeft] = useState(initialX);
   const [digitCount, setDigitCount] = useState(digits);
   const [pinLayout, setPinLayout] = useState(pins);
+  
+  // Simulator integration
+  const { componentStates, updateComponentState } = useSimulator();
+  const [displayValue, setDisplayValue] = useState("    "); // 4 spaces for blank display
+  const [brightness, setBrightness] = useState(7); // Default max brightness
+  const [isActive, setIsActive] = useState(false);
 
   // Create a component data structure that matches what the original code expects
   const componentData = {
@@ -92,6 +99,57 @@ const SegmentedDisplay = ({
   const onPinInfoChange = (e) => {
     setPinInfo(e.detail);
   }
+
+  // Monitor simulator state for display updates
+  useEffect(() => {
+    const displayState = componentStates[id];
+    if (displayState && displayState.type === 'segmented-display') {
+      if (displayState.displayValue !== undefined) {
+        setDisplayValue(displayState.displayValue);
+        setIsActive(true);
+      }
+      if (displayState.brightness !== undefined) {
+        setBrightness(displayState.brightness);
+      }
+      
+      console.log(`[SegmentedDisplay ${id}] State updated: value="${displayState.displayValue}", brightness=${displayState.brightness}`);
+    }
+  }, [componentStates, id]);
+
+  // Initialize component state (only once)
+  useEffect(() => {
+    if (updateComponentState && !componentStates[id]) {
+      updateComponentState(id, { 
+        displayValue: "    ",
+        brightness: 7,
+        type: 'segmented-display'
+      });
+      console.log(`[SegmentedDisplay ${id}] Initialized with 4 digits`);
+    }
+  }, [id]);
+
+  // Function to format display value for 7-segment style
+  const formatDisplayValue = (value) => {
+    if (!value) return "    ";
+    
+    // Convert number to string and pad/truncate to 4 characters
+    let formatted = value.toString();
+    
+    // Handle numbers - pad with leading spaces if needed
+    if (!isNaN(value)) {
+      formatted = formatted.padStart(4, ' ');
+    }
+    
+    // Truncate to 4 characters if too long
+    if (formatted.length > 4) {
+      formatted = formatted.substring(0, 4);
+    }
+    
+    // Pad to 4 characters if too short
+    formatted = formatted.padEnd(4, ' ');
+    
+    return formatted;
+  };
 
   // Trigger redraw function similar to the original
   const triggerRedraw = () => {
@@ -209,11 +267,32 @@ const SegmentedDisplay = ({
         }}
         style={{
           transform: `translate(${initPosLeft}px, ${initPosTop}px) rotate(${rotationAngle}deg)`,
-          zIndex: isDragged ? 99999 : 10
+          zIndex: isDragged ? 99999 : 10,
+          filter: isActive ? `brightness(${Math.min(brightness / 7 * 1.5, 2)})` : 'brightness(0.3)'
         }}
         digits={digitCount}
         pins={pinLayout}
       ></ReactSevenSegmentComponent>
+      
+      {/* Visual display overlay */}
+      {isActive && (
+        <div
+          className="absolute pointer-events-none font-mono font-bold text-center"
+          style={{
+            left: posLeft + 15,
+            top: posTop + 25,
+            fontSize: '18px',
+            color: '#ff4400',
+            textShadow: '0 0 8px #ff4400',
+            letterSpacing: '8px',
+            zIndex: 99998,
+            filter: `brightness(${brightness / 7})`,
+            fontFamily: 'monospace'
+          }}
+        >
+          {formatDisplayValue(displayValue)}
+        </div>
+      )}
 
       {/* Removed component menu - settings now in the properties panel */}
     </>
