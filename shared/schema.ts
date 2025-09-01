@@ -21,6 +21,7 @@ export const users = pgTable("users", {
   titles: json("titles").$type<string[]>().default([]), // List of unlocked titles
   activeTitle: text("active_title"), // Currently displayed title
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
   lastLogin: timestamp("last_login").defaultNow(),
 });
 

@@ -1,25 +1,34 @@
 import { Request, Response, NextFunction } from "express";
 import passport from "passport";
+// @ts-ignore - passport-discord types not available
 import { Strategy as DiscordStrategy } from "passport-discord";
 import session from "express-session";
 import { storage } from "./storage";
 import { User } from "@shared/schema";
 
-// Type definitions for Express
+// Type definitions for Express  
 declare global {
   namespace Express {
-    // Define user type for passport
+    // Define user type for passport - matches database User type
     interface User {
-      id: string;
+      id: number;
       username: string;
       displayName: string | null;
-      discordId: string;
+      discordId: string | null;
       email: string | null;
       avatar: string | null;
       roles: string[] | null;
       level: number | null;
       inventory: Record<string, number> | null;
-      // Add any other properties you need from User type
+      xp: number | null;
+      xpToNextLevel: number | null;
+      completedQuests: number[] | null;
+      titles: string[] | null;
+      activeTitle: string | null;
+      lastLogin: Date | null;
+      password: string | null;
+      createdAt: Date | null;
+      updatedAt: Date | null;
     }
   }
 }
@@ -138,7 +147,7 @@ export function setupAuth(app: any): void {
         callbackURL: callbackURL,
         scope: ["identify", "email", "guilds"],
       },
-      async (accessToken, refreshToken, profile, done) => {
+      async (accessToken: string, refreshToken: string, profile: any, done: any) => {
         try {
           console.log("Discord authentication for user:", profile.username);
           console.log("Discord profile ID:", profile.id);
@@ -256,7 +265,6 @@ export function setupAuth(app: any): void {
             user = await storage.createUser({
               discordId: profile.id,
               username: profile.username,
-              displayName: profile.displayName || profile.globalName || profile.username, // Use Discord display name if available
               email: profile.email || null,
               avatar: profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png` : null,
               roles: discordRoles,
@@ -272,14 +280,13 @@ export function setupAuth(app: any): void {
             console.log("Updating existing Discord user:", profile.username);
             user = await storage.updateUser(user.id, {
               username: profile.username,
-              displayName: profile.displayName || profile.globalName || profile.username, // Update display name from Discord
               email: profile.email || user.email,
               roles: discordRoles, // Update roles from Discord
               avatar: profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png` : user.avatar,
             });
           }
 
-          console.log("Discord authentication successful for user:", user.username);
+          console.log("Discord authentication successful for user:", user?.username);
           return done(null, user);
         } catch (error) {
           console.error("Discord authentication error:", error);
@@ -290,7 +297,7 @@ export function setupAuth(app: any): void {
   );
 
   // Serialize user to the session
-  passport.serializeUser((user, done) => {
+  passport.serializeUser((user: Express.User, done) => {
     console.log('Serializing user to session - ID:', user.id, 'Username:', user.username);
     done(null, user.id);
   });
