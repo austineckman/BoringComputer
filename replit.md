@@ -22,12 +22,21 @@ Platform compatibility: Works on Windows, compatibility issues noted on Mac.
 - **Routing**: Wouter for client-side routing.
 - **UI/UX Decisions**: Incorporates a retro Windows 95 aesthetic, pixel art gold coin assets, CS:GO-inspired lootbox animations, and RuneScape-style quest interfaces. Wire drawing uses a click-based system with smooth Bezier curves for a natural, hand-drawn look.
 
-### Circuit Simulation Engine
+### Circuit Simulation Engine (Enhanced Jan 17, 2025)
 - **Core Technology**: AVR8js for authentic Arduino microcontroller emulation.
 - **Architecture**: Worker-based to prevent UI blocking.
 - **Component System**: Modular library with visual representations, supporting multi-pin components and real-time state updates (e.g., RGB LEDs, DipSwitches).
 - **Code Editor**: Monaco Editor integration for an Arduino IDE-like experience, supporting comprehensive Arduino function libraries, advanced C++ syntax, and variable declaration.
-- **Simulator Capabilities**: Implements `analogRead()`, `digitalRead()`, `tone()`, `noTone()`, I2C/Wire library, OLED display functions, 7-segment display support, `analogWrite()` (PWM), and multi-hop circuit tracing for realistic resistor-based circuits.
+- **Simulator Capabilities**: 
+  - Core I/O: `analogRead()`, `digitalRead()`, `analogWrite()` (PWM), `digitalWrite()`, `pinMode()`
+  - Timing: `delay()`, `delayMicroseconds()`, `millis()`
+  - Math functions: `map()`, `constrain()`, `random()`
+  - Serial output: `Serial.print()`, `Serial.println()` with ternary operator evaluation
+  - Display: OLED display functions, 7-segment display support
+  - Input: DIP switch state reading, keypad matrix scanning, rotary encoder support
+  - Audio: `tone()`, `noTone()` for buzzer control
+  - Communication: I2C/Wire library support
+  - Advanced: Multi-hop circuit tracing, variable assignment tracking, conditional execution
 
 ### Key Features and System Design
 - **Authentication & User Management**: Secure session management, role-based access control, user profiles with XP, levels, and inventory tracking. Includes Discord OAuth integration for roles.

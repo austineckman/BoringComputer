@@ -12,11 +12,16 @@ export interface ArduinoInstruction {
   lineNumber: number;
   instruction: string;
   pin?: number;
-  value?: 'HIGH' | 'LOW' | number;
+  value?: 'HIGH' | 'LOW' | number | string;
   delayMs?: number;
+  delayMicros?: number;
   function?: string;
   assignTo?: string | null;
   params?: any;
+  originalYParam?: string;
+  objectName?: string;
+  variableName?: string;
+  condition?: string;
 }
 
 export class ArduinoCodeParser {

@@ -41,6 +41,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   const portBRef = useRef(null);
   const animationRef = useRef(null);
   const codeParserRef = useRef(new ArduinoCodeParser());
+  const simulationStartTimeRef = useRef(0);
   const executionStateRef = useRef({
     phase: 'stopped', // 'setup', 'loop', 'stopped'
     setupIndex: 0,
@@ -737,6 +738,58 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           return Math.max(1, milliseconds); // Minimum 1ms delay for visibility
         }
 
+        // Handle millis() function
+        if (instruction.function === 'millis') {
+          const millis = Date.now() - simulationStartTimeRef.current;
+          if (instruction.assignTo) {
+            executionStateRef.current.variables.set(instruction.assignTo, millis);
+            addLog(`[${timestamp}] → ${instruction.assignTo} = millis() = ${millis}`);
+          } else {
+            addLog(`[${timestamp}] → millis() returned ${millis}`);
+          }
+          return 0;
+        }
+        
+        // Handle random() function
+        if (instruction.function === 'random') {
+          const min = instruction.params?.min || 0;
+          const max = instruction.params?.max || 100;
+          const randomValue = Math.floor(Math.random() * (max - min)) + min;
+          if (instruction.assignTo) {
+            executionStateRef.current.variables.set(instruction.assignTo, randomValue);
+            addLog(`[${timestamp}] → ${instruction.assignTo} = random(${min}, ${max}) = ${randomValue}`);
+          } else {
+            addLog(`[${timestamp}] → random(${min}, ${max}) returned ${randomValue}`);
+          }
+          return 0;
+        }
+        
+        // Handle map() function
+        if (instruction.function === 'map') {
+          const { value, fromLow, fromHigh, toLow, toHigh } = instruction.params || {};
+          const mappedValue = Math.round(((value - fromLow) * (toHigh - toLow)) / (fromHigh - fromLow) + toLow);
+          if (instruction.assignTo) {
+            executionStateRef.current.variables.set(instruction.assignTo, mappedValue);
+            addLog(`[${timestamp}] → ${instruction.assignTo} = map(${value}, ${fromLow}, ${fromHigh}, ${toLow}, ${toHigh}) = ${mappedValue}`);
+          } else {
+            addLog(`[${timestamp}] → map() returned ${mappedValue}`);
+          }
+          return 0;
+        }
+        
+        // Handle constrain() function
+        if (instruction.function === 'constrain') {
+          const { value, min, max } = instruction.params || {};
+          const constrainedValue = Math.max(min, Math.min(max, value));
+          if (instruction.assignTo) {
+            executionStateRef.current.variables.set(instruction.assignTo, constrainedValue);
+            addLog(`[${timestamp}] → ${instruction.assignTo} = constrain(${value}, ${min}, ${max}) = ${constrainedValue}`);
+          } else {
+            addLog(`[${timestamp}] → constrain() returned ${constrainedValue}`);
+          }
+          return 0;
+        }
+        
         // Handle delay instructions - check both instruction text and delayMs property
         if (instruction.instruction.includes('delay') || instruction.delayMs) {
           const delayMs = instruction.delayMs;
@@ -1921,9 +1974,10 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
 
         if (instruction.function === 'serial') {
           // Extract the actual message from Serial.print(message) or Serial.println(message)
-          const serialMatch = instruction.instruction.match(/Serial\.print(?:ln)?\s*\((.*)\)/);
+          const serialMatch = instruction.instruction.match(/Serial\.(print|println)\s*\((.*)\)/);
           if (serialMatch) {
-            let message = serialMatch[1].trim();
+            const printType = serialMatch[1]; // 'print' or 'println'
+            let message = serialMatch[2].trim(); // Use index 2 for the actual message content
             const originalMessage = message;
             
             console.log(`[Serial] ====== SERIAL PROCESSING START ======`);
@@ -1931,8 +1985,36 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             console.log(`[Serial] Execution state:`, executionStateRef.current);
             console.log(`[Serial] Variables Map:`, Array.from(executionStateRef.current.variables.entries()));
             
+            // Check if it contains a ternary operator (e.g., sw1 ? "ON" : "OFF")
+            if (message.includes('?') && message.includes(':')) {
+              console.log(`[Serial] Ternary operator detected: ${message}`);
+              
+              // Parse ternary: condition ? trueValue : falseValue
+              const ternaryMatch = message.match(/(\w+)\s*\?\s*"?([^":\s]+)"?\s*:\s*"?([^":\s]+)"?/);
+              if (ternaryMatch) {
+                const conditionVar = ternaryMatch[1];
+                const trueValue = ternaryMatch[2].replace(/"/g, '');
+                const falseValue = ternaryMatch[3].replace(/"/g, '');
+                
+                // Get the condition variable value
+                const variables = executionStateRef.current.variables;
+                const conditionValue = variables.get(conditionVar);
+                
+                console.log(`[Serial] Ternary evaluation: ${conditionVar}=${conditionValue} ? "${trueValue}" : "${falseValue}"`);
+                
+                // Evaluate the ternary
+                if (conditionValue !== undefined) {
+                  // In Arduino, any non-zero value is true
+                  message = conditionValue ? trueValue : falseValue;
+                  console.log(`[Serial] Ternary result: ${message}`);
+                } else {
+                  console.log(`[Serial] Variable '${conditionVar}' not found for ternary`);
+                  message = `<UNRESOLVED: ${conditionVar}>`;
+                }
+              }
+            }
             // Check if it's a variable reference (no quotes)
-            if (!((message.startsWith('"') && message.endsWith('"')) || 
+            else if (!((message.startsWith('"') && message.endsWith('"')) || 
                   (message.startsWith("'") && message.endsWith("'")))) {
               console.log(`[Serial] This is a variable reference: '${message}'`);
               
@@ -1985,6 +2067,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       };
 
       setIsRunning(true);
+      simulationStartTimeRef.current = Date.now(); // Track simulation start time for millis()
       addLog('🔧 Starting Arduino execution...');
       addLog('⚡ Entering setup() function');
       
