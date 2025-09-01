@@ -18,13 +18,17 @@ import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
 
 import { 
+  allExamples,
+  ledExample,
   oledDisplayExample, 
   sevenSegmentExample, 
   keypadExample, 
   rotaryEncoderExample, 
   multiLibraryExample,
   rgbLedExample,
-  buzzerExample
+  buzzerExample,
+  dipSwitchExample,
+  photoresistorExample
 } from '../circuit-builder/simulator/exampleLibraryCode';
 
 // Import our CircuitBuilder component
@@ -902,45 +906,60 @@ void loop() {
       return;
     }
     
-    // Handle hardcoded examples
+    // Handle hardcoded examples - find the example from allExamples array
+    const builtInExample = allExamples.find(ex => ex.id === exampleType);
     let exampleCode;
     
-    switch(exampleType) {
-      case 'oled':
-        exampleCode = oledDisplayExample;
-        addSimulationLog('Loaded OLED Display example');
-        break;
-      case 'sevenSegment':
-        exampleCode = sevenSegmentExample;
-        addSimulationLog('Loaded 7-Segment Display example');
-        break;
-      case 'keypad':
-        exampleCode = keypadExample;
-        addSimulationLog('Loaded Keypad example');
-        break;
-      case 'encoder':
-        exampleCode = rotaryEncoderExample;
-        addSimulationLog('Loaded Rotary Encoder example');
-        break;
-      case 'multi':
-        exampleCode = multiLibraryExample;
-        addSimulationLog('Loaded multi-library example');
-        break;
-      case 'rgbled':
-        exampleCode = rgbLedExample;
-        addSimulationLog('Loaded RGB LED example');
-        break;
-      case 'buzzer':
-        exampleCode = buzzerExample;
-        addSimulationLog('Loaded Buzzer example');
-        break;
-      case 'blink':
-        exampleCode = defaultCode; // Use the basic blink example
-        addSimulationLog('Loaded Basic Blink example');
-        break;
-      default:
-        exampleCode = defaultCode;
-        addSimulationLog('Loaded default blink example');
+    if (builtInExample) {
+      exampleCode = builtInExample.code;
+      addSimulationLog(`Loaded ${builtInExample.name} example`);
+    } else {
+      // Legacy support for individual examples
+      switch(exampleType) {
+        case 'oled':
+          exampleCode = oledDisplayExample;
+          addSimulationLog('Loaded OLED Display example');
+          break;
+        case 'sevenSegment':
+          exampleCode = sevenSegmentExample;
+          addSimulationLog('Loaded 7-Segment Display example');
+          break;
+        case 'keypad':
+          exampleCode = keypadExample;
+          addSimulationLog('Loaded Keypad example');
+          break;
+        case 'encoder':
+          exampleCode = rotaryEncoderExample;
+          addSimulationLog('Loaded Rotary Encoder example');
+          break;
+        case 'multi':
+          exampleCode = multiLibraryExample;
+          addSimulationLog('Loaded multi-library example');
+          break;
+        case 'rgbled':
+          exampleCode = rgbLedExample;
+          addSimulationLog('Loaded RGB LED example');
+          break;
+        case 'buzzer':
+          exampleCode = buzzerExample;
+          addSimulationLog('Loaded Buzzer example');
+          break;
+        case 'led':
+          exampleCode = ledExample;
+          addSimulationLog('Loaded LED example');
+          break;
+        case 'dipswitch':
+          exampleCode = dipSwitchExample;
+          addSimulationLog('Loaded DIP Switch example');
+          break;
+        case 'photoresistor':
+          exampleCode = photoresistorExample;
+          addSimulationLog('Loaded Photoresistor example');
+          break;
+        default:
+          exampleCode = ledExample; // Use LED example as default
+          addSimulationLog('Loaded default LED example');
+      }
     }
     
     // Detect libraries in the loaded example
@@ -1353,56 +1372,17 @@ void loop() {
                         
                         {/* Built-in Examples */}
                         <div className="px-4 py-1 text-xs text-gray-400 font-semibold">
-                          Built-in Examples
+                          Component Examples (with Wiring Instructions)
                         </div>
-                        <button
-                          onClick={() => loadExampleCode('blink')}
-                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                        >
-                          Basic Blink
-                        </button>
-                        <button
-                          onClick={() => loadExampleCode('oled')}
-                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                        >
-                          OLED Display
-                        </button>
-                        <button
-                          onClick={() => loadExampleCode('rgbled')}
-                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                        >
-                          RGB LED Control
-                        </button>
-                        <button
-                          onClick={() => loadExampleCode('buzzer')}
-                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                        >
-                          Buzzer & Tones
-                        </button>
-                        <button
-                          onClick={() => loadExampleCode('sevenSegment')}
-                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                        >
-                          7-Segment Display
-                        </button>
-                        <button
-                          onClick={() => loadExampleCode('keypad')}
-                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                        >
-                          4x4 Keypad
-                        </button>
-                        <button
-                          onClick={() => loadExampleCode('encoder')}
-                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                        >
-                          Rotary Encoder
-                        </button>
-                        <button
-                          onClick={() => loadExampleCode('multi')}
-                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                        >
-                          Multi-Library Demo
-                        </button>
+                        {allExamples.map((example) => (
+                          <button
+                            key={example.id}
+                            onClick={() => loadExampleCode(example.id)}
+                            className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                          >
+                            {example.name}
+                          </button>
+                        ))}
                       </>
                     )}
                   </div>
