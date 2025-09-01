@@ -250,16 +250,34 @@ const DipSwitch = ({
         onPinClicked={handlePinClicked}
         onPininfoChange={(e) => onPinInfoChange(e)}
         rotationTransform={rotationAngle}
+        onValueChange={(e) => {
+          // Handle value change event from the component
+          console.log(`DipSwitch ${id}: Value changed event:`, e.detail);
+          if (e.detail && e.detail.value) {
+            const newValue = e.detail.value;
+            setValue(newValue);
+            
+            // Update simulator state immediately
+            if (updateComponentState) {
+              updateComponentState(id, { 
+                value: newValue,
+                type: 'dip-switch-3',
+                pins: {
+                  '1': newValue[0] ? 'HIGH' : 'LOW',
+                  '2': newValue[1] ? 'HIGH' : 'LOW', 
+                  '3': newValue[2] ? 'HIGH' : 'LOW',
+                  'S1': newValue[0] ? 'HIGH' : 'LOW',
+                  'S2': newValue[1] ? 'HIGH' : 'LOW',
+                  'S3': newValue[2] ? 'HIGH' : 'LOW'
+                }
+              });
+              console.log(`DipSwitch ${id}: Updated state from value change:`, newValue);
+            }
+          }
+        }}
         onMouseDown={(e) => {
           e.stopPropagation();
           if (onSelect) onSelect(id);
-        }}
-        onClick={(e) => {
-          // Handle switch toggle clicks
-          e.stopPropagation();
-          // For now, toggle the first switch when clicked anywhere on the component
-          // This can be enhanced to detect which specific switch was clicked
-          toggleSwitch(0);
         }}
         style={{
           transform: `translate(${posLeft}px, ${posTop}px)`,

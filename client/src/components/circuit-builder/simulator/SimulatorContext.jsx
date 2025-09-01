@@ -814,48 +814,79 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           let numericValue = 0; // Numeric representation for variable storage
           
           // Look for DipSwitch components connected to this pin
+          let dipSwitchFound = false;
           components.forEach(component => {
-            if (component.type === 'dip-switch-3' || component.id.includes('dip-switch')) {
-              // Find wires connected to this DipSwitch and the target pin
-              const dipSwitchWires = wires.filter(wire => 
-                (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
-                (wire.sourceName === pinNumber.toString() || wire.targetName === pinNumber.toString() ||
-                 wire.sourceName === `pin-${pinNumber}` || wire.targetName === `pin-${pinNumber}` ||
-                 wire.sourceName === `${pinNumber}` || wire.targetName === `${pinNumber}`)
-              );
+            if (!dipSwitchFound && (component.type === 'dip-switch-3' || component.id.includes('dip-switch'))) {
+              // Find wires where this component is connected to the specified pin
+              const dipSwitchWires = wires.filter(wire => {
+                // Check if one end is the DipSwitch and the other end is our pin
+                const isDipSwitchSource = wire.sourceComponent === component.id;
+                const isDipSwitchTarget = wire.targetComponent === component.id;
+                
+                // Check if the other end connects to our pin (on HeroBoard)
+                const connectsToPin = (
+                  wire.sourceName === pinNumber.toString() || 
+                  wire.targetName === pinNumber.toString() ||
+                  wire.sourceName === `${pinNumber}` || 
+                  wire.targetName === `${pinNumber}`
+                );
+                
+                return (isDipSwitchSource || isDipSwitchTarget) && connectsToPin;
+              });
               
               if (dipSwitchWires.length > 0) {
+                dipSwitchFound = true;
+                
                 // Get the DipSwitch state from component states
                 const dipSwitchState = componentStates[component.id];
+                console.log(`[Simulator] DipSwitch ${component.id} state:`, dipSwitchState);
+                
                 if (dipSwitchState && dipSwitchState.value) {
-                  // DipSwitch has 3 switches, we need to determine which one is connected to this pin
+                  // DipSwitch has 3 switches, we need to determine which one is connected
                   const switchValues = dipSwitchState.value; // Array of [bool, bool, bool]
                   
                   // Find which specific pin on the DipSwitch is connected
                   const wire = dipSwitchWires[0];
                   let dipSwitchPin = '';
                   
+                  // Get the pin name from the DipSwitch side of the wire
                   if (wire.sourceComponent === component.id) {
                     dipSwitchPin = wire.sourceName;
-                  } else {
+                  } else if (wire.targetComponent === component.id) {
                     dipSwitchPin = wire.targetName;
                   }
                   
+                  console.log(`[Simulator] Wire connection: DipSwitch pin "${dipSwitchPin}" → Arduino pin ${pinNumber}`);
+                  
                   // Map DIP switch pins to switch indices
-                  // Common pin naming: 1,2,3 or S1,S2,S3 or SW1,SW2,SW3
-                  let switchIndex = 0;
-                  if (dipSwitchPin.includes('1')) {
+                  // Pin naming from component: "1", "2", "3" or "S1", "S2", "S3"
+                  let switchIndex = -1;
+                  
+                  // Clean the pin name to get just the number
+                  const cleanPin = dipSwitchPin.replace(/[^0-9]/g, '');
+                  if (cleanPin === '1') {
                     switchIndex = 0;
-                  } else if (dipSwitchPin.includes('2')) {
+                  } else if (cleanPin === '2') {
                     switchIndex = 1;
-                  } else if (dipSwitchPin.includes('3')) {
+                  } else if (cleanPin === '3') {
                     switchIndex = 2;
-                  } else {
-                    // Try to parse as a number
-                    const pinNum = parseInt(dipSwitchPin);
-                    if (!isNaN(pinNum) && pinNum >= 1 && pinNum <= 3) {
-                      switchIndex = pinNum - 1;
+                  }
+                  
+                  // Fallback: check for S1, S2, S3 pattern
+                  if (switchIndex === -1) {
+                    if (dipSwitchPin.includes('1')) {
+                      switchIndex = 0;
+                    } else if (dipSwitchPin.includes('2')) {
+                      switchIndex = 1;
+                    } else if (dipSwitchPin.includes('3')) {
+                      switchIndex = 2;
                     }
+                  }
+                  
+                  // If we still can't determine, default to first switch
+                  if (switchIndex === -1) {
+                    console.warn(`[Simulator] Could not determine switch index from pin "${dipSwitchPin}", defaulting to SW1`);
+                    switchIndex = 0;
                   }
                   
                   // Get the state of the specific switch
@@ -863,8 +894,8 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                   readValue = isHighState ? 'HIGH' : 'LOW';
                   numericValue = isHighState ? 1 : 0;
                   
-                  console.log(`[Simulator] digitalRead(${pinNumber}) reading from DipSwitch ${component.id}: switch[${switchIndex}] (pin ${dipSwitchPin}) = ${isHighState} → ${readValue}`);
-                  addLog(`[${timestamp}] → digitalRead(${pinNumber}) reading DipSwitch SW${switchIndex + 1}: ${readValue}`);
+                  console.log(`[Simulator] digitalRead(${pinNumber}) → DipSwitch ${component.id} SW${switchIndex + 1} (pin "${dipSwitchPin}"): ${isHighState} → ${readValue}`);
+                  addLog(`[${timestamp}] → digitalRead(${pinNumber}) = ${readValue} (DipSwitch SW${switchIndex + 1}: ${isHighState ? 'ON' : 'OFF'})`);
                 }
               }
             }
@@ -917,15 +948,17 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           
           // Store the result in a variable if this is an assignment
           if (instruction.assignTo) {
+            // CRITICAL: Update the variable with the actual read value
             executionStateRef.current.variables.set(instruction.assignTo, numericValue);
-            addLog(`[${timestamp}] → ${instruction.assignTo} = digitalRead(${pinNumber}) = ${readValue} (${numericValue})`);
-            console.log(`[Simulator] Stored variable ${instruction.assignTo} = ${numericValue}`);
+            console.log(`[Simulator] VARIABLE UPDATE: ${instruction.assignTo} = ${numericValue} (from digitalRead(${pinNumber}))`);
+            console.log(`[Simulator] Current variables after update:`, Array.from(executionStateRef.current.variables.entries()));
+            addLog(`[${timestamp}] → ${instruction.assignTo} = ${numericValue} (digitalRead pin ${pinNumber}: ${readValue})`);
           } else {
-            // If no input components found, return default LOW
-            addLog(`[${timestamp}] → digitalRead(${pinNumber}) returned ${readValue}`);
+            // Just a digitalRead without assignment
+            console.log(`[Simulator] digitalRead(${pinNumber}) returned ${readValue} (${numericValue}) - no variable assignment`);
           }
           
-          console.log(`[Simulator] digitalRead(${pinNumber}) result: ${readValue} (${numericValue})`);
+          console.log(`[Simulator] digitalRead(${pinNumber}) complete: ${readValue} (${numericValue})`);
           return 0;
         }
 
