@@ -74,14 +74,9 @@ export const useAuth = () => {
   const login = useCallback(() => {
     setIsLoggingIn(true);
     
-    // For demo purposes only - this would be replaced with actual Discord OAuth flow
-    toast({
-      title: "Discord Login",
-      description: "Discord authentication is not available in demo mode. Please use username/password login.",
-      variant: "destructive",
-    });
-    setIsLoggingIn(false);
-  }, [toast]);
+    // Redirect to Discord OAuth
+    window.location.href = '/api/auth/discord';
+  }, []);
 
   // Login with username and password
   const loginWithCredentialsMutation = useMutation({

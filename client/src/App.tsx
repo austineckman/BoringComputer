@@ -46,52 +46,17 @@ import RetroBootScreen from "@/components/retro-ui/RetroBootScreen";
 function App() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   
-  // Check if there's a token in the URL (for Discord redirect)
+  // Check for Discord OAuth callback success
   useEffect(() => {
-    const hashParams = new URLSearchParams(window.location.hash.substr(1));
-    const accessToken = hashParams.get("access_token");
+    const urlParams = new URLSearchParams(window.location.search);
+    const authenticated = urlParams.get("authenticated");
     
-    if (accessToken) {
-      setIsAuthenticating(true);
-      
-      // Make API call to authenticate with Discord token
-      const authenticateWithDiscord = async () => {
-        try {
-          const response = await fetch('/api/auth/discord', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ token: accessToken }),
-          });
-          
-          if (response.ok) {
-            // If authentication successful, redirect to home
-            window.location.href = '/';
-          }
-        } catch (error) {
-          console.error('Error authenticating with Discord:', error);
-        } finally {
-          setIsAuthenticating(false);
-          // Clean up the URL
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
-      };
-      
-      authenticateWithDiscord();
+    if (authenticated === "true") {
+      // Clear the URL parameter and refresh user data
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setIsAuthenticating(false);
     }
   }, []);
-
-  if (isAuthenticating) {
-    return (
-      <RetroBootScreen 
-        onComplete={() => {
-          // Allow the boot screen to complete naturally
-          // The authentication process will handle the redirect
-        }}
-      />
-    );
-  }
 
   return (
     <AudioPlayerProvider>
