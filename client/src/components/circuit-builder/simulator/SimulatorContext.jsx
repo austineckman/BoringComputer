@@ -758,6 +758,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           
           // Check for DipSwitch components connected to this pin
           let readValue = 'LOW'; // Default to LOW if no components found
+          let numericValue = 0; // Numeric representation for variable storage
           
           // Look for DipSwitch components connected to this pin
           components.forEach(component => {
@@ -807,10 +808,10 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                   // Get the state of the specific switch
                   const isHighState = switchValues[switchIndex];
                   readValue = isHighState ? 'HIGH' : 'LOW';
+                  numericValue = isHighState ? 1 : 0;
                   
                   console.log(`[Simulator] digitalRead(${pinNumber}) reading from DipSwitch ${component.id}: switch[${switchIndex}] (pin ${dipSwitchPin}) = ${isHighState} → ${readValue}`);
                   addLog(`[${timestamp}] → digitalRead(${pinNumber}) reading DipSwitch SW${switchIndex + 1}: ${readValue}`);
-                  return 0;
                 }
               }
             }
@@ -831,9 +832,9 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                 if (keypadState && keypadState.pressedKey) {
                   // Simulate key matrix scanning - for now, return HIGH if any key is pressed
                   readValue = 'HIGH';
+                  numericValue = 1;
                   console.log(`[Simulator] digitalRead(${pinNumber}) reading from Keypad ${component.id}: key pressed = ${keypadState.pressedKey} → ${readValue}`);
                   addLog(`[${timestamp}] → digitalRead(${pinNumber}) reading Keypad: ${readValue} (key: ${keypadState.pressedKey})`);
-                  return 0;
                 }
               }
             }
@@ -853,17 +854,25 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                 const encoderState = componentStates[component.id];
                 if (encoderState && encoderState.buttonPressed) {
                   readValue = 'HIGH';
+                  numericValue = 1;
                   console.log(`[Simulator] digitalRead(${pinNumber}) reading from RotaryEncoder button ${component.id}: pressed = ${readValue}`);
                   addLog(`[${timestamp}] → digitalRead(${pinNumber}) reading RotaryEncoder button: ${readValue}`);
-                  return 0;
                 }
               }
             }
           });
           
-          // If no input components found, return default LOW
-          addLog(`[${timestamp}] → digitalRead(${pinNumber}) returned ${readValue}`);
-          console.log(`[Simulator] digitalRead(${pinNumber}) no input components connected, returning default: ${readValue}`);
+          // Store the result in a variable if this is an assignment
+          if (instruction.assignTo) {
+            executionStateRef.current.variables.set(instruction.assignTo, numericValue);
+            addLog(`[${timestamp}] → ${instruction.assignTo} = digitalRead(${pinNumber}) = ${readValue} (${numericValue})`);
+            console.log(`[Simulator] Stored variable ${instruction.assignTo} = ${numericValue}`);
+          } else {
+            // If no input components found, return default LOW
+            addLog(`[${timestamp}] → digitalRead(${pinNumber}) returned ${readValue}`);
+          }
+          
+          console.log(`[Simulator] digitalRead(${pinNumber}) result: ${readValue} (${numericValue})`);
           return 0;
         }
 

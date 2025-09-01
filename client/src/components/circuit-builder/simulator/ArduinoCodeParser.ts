@@ -14,6 +14,9 @@ export interface ArduinoInstruction {
   pin?: number;
   value?: 'HIGH' | 'LOW' | number;
   delayMs?: number;
+  function?: string;
+  assignTo?: string | null;
+  params?: any;
 }
 
 export class ArduinoCodeParser {
@@ -131,51 +134,57 @@ export class ArduinoCodeParser {
     this.variables.set('A4', 18);
     this.variables.set('A5', 19);
     
-    // Match variable declarations like: int redPin = 9; bool flag = true; and #define RED_PIN 9
-    const variableRegex = /(?:int|const\s+int|float|long|byte|bool|boolean)\s+(\w+)\s*=\s*(\d+(?:\.\d+)?|true|false|HIGH|LOW)|(?:bool|boolean)\s+(\w+)\s*;|#define\s+(\w+)\s+(\d+|HIGH|LOW|INPUT|OUTPUT|INPUT_PULLUP|true|false)/g;
+    // Enhanced regex to match more variable declaration patterns
+    // Matches: int sw1 = 2; const int sw2 = 3; #define SW3 4; int switch1Pin = 2;
+    const variableRegex = /(?:(?:const\s+)?(?:int|byte|char|unsigned\s+int|uint8_t|uint16_t)\s+(\w+)\s*=\s*(\d+)|#define\s+(\w+)\s+(\d+)|(?:bool|boolean)\s+(\w+)\s*=\s*(true|false)|(?:bool|boolean)\s+(\w+)\s*;)/g;
     
     let match;
     while ((match = variableRegex.exec(code)) !== null) {
       let variableName, value;
       
       if (match[1] && match[2]) {
-        // Variable with assignment: int redPin = 9; bool flag = true;
+        // Integer variable with assignment: int sw1 = 2;
         variableName = match[1];
-        const valueStr = match[2];
-        
-        // Convert Arduino constants and boolean values
-        switch (valueStr) {
-          case 'true': value = 1; break;
-          case 'false': value = 0; break;
-          case 'HIGH': value = 1; break;
-          case 'LOW': value = 0; break;
-          default: value = parseFloat(valueStr); break;
-        }
-      } else if (match[3]) {
-        // Boolean variable without assignment: bool blink_on;
+        value = parseInt(match[2]);
+        console.log(`ArduinoCodeParser: Found int variable ${variableName} = ${value}`);
+      } else if (match[3] && match[4]) {
+        // #define format: #define SW1 2
         variableName = match[3];
-        value = 0; // Default boolean variables to false (0)
-      } else if (match[4] && match[5]) {
-        // #define format: #define RED_PIN 9 or #define LED_PIN HIGH
-        variableName = match[4];
-        const valueStr = match[5];
-        
-        // Convert Arduino constants to numeric values
-        switch (valueStr) {
-          case 'true': value = 1; break;
-          case 'false': value = 0; break;
-          case 'HIGH': value = 1; break;
-          case 'LOW': value = 0; break;
-          case 'INPUT': value = 0; break;
-          case 'OUTPUT': value = 1; break;
-          case 'INPUT_PULLUP': value = 2; break;
-          default: value = parseFloat(valueStr); break;
-        }
+        value = parseInt(match[4]);
+        console.log(`ArduinoCodeParser: Found #define ${variableName} = ${value}`);
+      } else if (match[5] && match[6]) {
+        // Boolean with assignment: bool flag = true;
+        variableName = match[5];
+        value = match[6] === 'true' ? 1 : 0;
+        console.log(`ArduinoCodeParser: Found bool variable ${variableName} = ${value}`);
+      } else if (match[7]) {
+        // Boolean without assignment: bool flag;
+        variableName = match[7];
+        value = 0; // Default to false
+        console.log(`ArduinoCodeParser: Found bool variable ${variableName} (defaulted to 0)`);
       }
       
       if (variableName && value !== undefined && !isNaN(value)) {
         this.variables.set(variableName, value);
-        console.log(`ArduinoCodeParser: Found variable ${variableName} = ${value}`);
+      }
+    }
+    
+    // Also look for common DIP switch variable patterns
+    const dipSwitchPatterns = [
+      /int\s+(sw\d+|switch\d+|SW\d+|SWITCH\d+)\s*=\s*(\d+)/g,
+      /int\s+(switch\d+Pin|sw\d+Pin)\s*=\s*(\d+)/g,
+      /const\s+int\s+(sw\d+|switch\d+)\s*=\s*(\d+)/g
+    ];
+    
+    for (const pattern of dipSwitchPatterns) {
+      let match;
+      while ((match = pattern.exec(code)) !== null) {
+        const variableName = match[1];
+        const value = parseInt(match[2]);
+        if (!this.variables.has(variableName)) {
+          this.variables.set(variableName, value);
+          console.log(`ArduinoCodeParser: Found DIP switch variable ${variableName} = ${value}`);
+        }
       }
     }
     
@@ -258,15 +267,29 @@ export class ArduinoCodeParser {
       return instruction;
     }
 
-    // Parse digitalRead(pin)
-    const digitalReadMatch = line.match(/digitalRead\s*\(\s*(\w+|\d+)\s*\)/);
+    // Parse digitalRead(pin) with optional assignment
+    // Matches: bool sw1 = digitalRead(2); or just digitalRead(2);
+    const digitalReadMatch = line.match(/(?:(?:bool|boolean|int)\s+)?(\w+)\s*=\s*digitalRead\s*\(\s*(\w+|\d+)\s*\)|digitalRead\s*\(\s*(\w+|\d+)\s*\)/);
     if (digitalReadMatch) {
-      const pin = this.resolveVariable(digitalReadMatch[1]);
+      let variableName = null;
+      let pinParam;
+      
+      if (digitalReadMatch[1] && digitalReadMatch[2]) {
+        // Assignment format: sw1 = digitalRead(2)
+        variableName = digitalReadMatch[1];
+        pinParam = digitalReadMatch[2];
+      } else if (digitalReadMatch[3]) {
+        // Standalone format: digitalRead(2)
+        pinParam = digitalReadMatch[3];
+      }
+      
+      const pin = this.resolveVariable(pinParam || '');
       const instruction = {
         lineNumber,
-        instruction: `digitalRead(${pin})`,
+        instruction: variableName ? `${variableName} = digitalRead(${pin})` : `digitalRead(${pin})`,
         pin: pin ?? undefined,
-        function: 'digitalRead'
+        function: 'digitalRead',
+        assignTo: variableName
       };
       console.log(`ArduinoCodeParser: Found digitalRead instruction:`, instruction);
       return instruction;
