@@ -889,6 +889,7 @@ void loop() {
     const dbExample = circuitExamples.find((ex: CircuitExample) => ex.id === exampleType);
     if (dbExample) {
       // Load database example
+      updateCurrentCode(dbExample.arduinoCode);
       setCode(dbExample.arduinoCode);
       updateSimulatorCode(dbExample.arduinoCode);
       
@@ -981,7 +982,10 @@ void loop() {
       addSimulationLog(`Detected pins: ${pins.join(', ')}`);
     }
     
-    // Update the code in the editor
+    // Update the code in the current tab (this is what the editor displays)
+    updateCurrentCode(exampleCode);
+    
+    // Also update the standalone code state for compatibility
     setCode(exampleCode);
     
     // Update the simulator code
