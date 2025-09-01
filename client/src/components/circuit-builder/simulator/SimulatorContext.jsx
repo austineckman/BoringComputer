@@ -837,9 +837,28 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
               if (dipSwitchWires.length > 0) {
                 dipSwitchFound = true;
                 
-                // Get the DipSwitch state from component states
-                const dipSwitchState = componentStates[component.id];
-                console.log(`[Simulator] DipSwitch ${component.id} state:`, dipSwitchState);
+                // Get the CURRENT DipSwitch state in real-time from the DOM element
+                let dipSwitchState = null;
+                try {
+                  // Find the actual DIP switch element in the DOM
+                  const dipSwitchElement = document.querySelector(`dip-switch-3-component[id="${component.id}"]`);
+                  if (dipSwitchElement && dipSwitchElement.values) {
+                    // Get current values directly from the component
+                    const currentValues = dipSwitchElement.values;
+                    dipSwitchState = {
+                      value: currentValues.map(v => v === 1) // Convert 1/0 to true/false
+                    };
+                    console.log(`[Simulator] DipSwitch ${component.id} REAL-TIME state from DOM:`, dipSwitchState);
+                  } else {
+                    // Fallback to cached state if DOM access fails
+                    dipSwitchState = componentStates[component.id];
+                    console.log(`[Simulator] DipSwitch ${component.id} CACHED state (DOM not available):`, dipSwitchState);
+                  }
+                } catch (error) {
+                  // Fallback to cached state if DOM access fails
+                  dipSwitchState = componentStates[component.id];
+                  console.log(`[Simulator] DipSwitch ${component.id} CACHED state (DOM error):`, dipSwitchState, error);
+                }
                 
                 if (dipSwitchState && dipSwitchState.value) {
                   // DipSwitch has 3 switches, we need to determine which one is connected
