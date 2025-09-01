@@ -913,10 +913,47 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
                   </div>
                 </div>
                 
+                {/* Wiring instructions */}
+                <div className="mb-3 p-3 bg-blue-50 rounded-md border border-blue-200">
+                  <h4 className="font-medium text-sm text-blue-900 mb-2">🔌 Wiring Instructions:</h4>
+                  <ul className="text-xs text-blue-800 space-y-1 list-disc pl-4">
+                    <li><span className="font-medium">Switch 1 Pin:</span> Connect to any digital pin (e.g., pin 2)</li>
+                    <li><span className="font-medium">Switch 2 Pin:</span> Connect to any digital pin (e.g., pin 3)</li>
+                    <li><span className="font-medium">Switch 3 Pin:</span> Connect to any digital pin (e.g., pin 4)</li>
+                    <li><span className="font-medium">Common Pin:</span> Connect to either GND or 5V</li>
+                  </ul>
+                  
+                  <div className="mt-3 p-2 bg-white rounded border border-blue-100">
+                    <div className="font-medium text-xs text-blue-900 mb-1">📝 Example Arduino Code:</div>
+                    <div className="text-xs bg-gray-100 p-2 rounded font-mono text-gray-700">
+                      <div className="text-green-600">// Define switch pins</div>
+                      <div>int sw1 = 2;</div>
+                      <div>int sw2 = 3;</div>
+                      <div>int sw3 = 4;</div>
+                      <div></div>
+                      <div className="text-green-600">// Setup pins as inputs with pull-up</div>
+                      <div>pinMode(sw1, INPUT_PULLUP);</div>
+                      <div>pinMode(sw2, INPUT_PULLUP);</div>
+                      <div>pinMode(sw3, INPUT_PULLUP);</div>
+                      <div></div>
+                      <div className="text-green-600">// Read switch states (LOW = ON)</div>
+                      <div>bool switch1On = !digitalRead(sw1);</div>
+                      <div>bool switch2On = !digitalRead(sw2);</div>
+                      <div>bool switch3On = !digitalRead(sw3);</div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-2 text-xs text-blue-700 italic">
+                    💡 Tip: Use INPUT_PULLUP mode if common pin is connected to GND, or INPUT mode with external pull-down resistors if connected to 5V.
+                  </div>
+                </div>
+                
                 <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded">
-                  <div className="font-medium mb-1">Component Information</div>
-                  <div>A 3-position DIP switch with independent toggle control.</div>
-                  <div className="mt-1">Each switch can be connected to a digital input pin.</div>
+                  <div className="font-medium mb-1">How It Works:</div>
+                  <div>• Each switch acts as an independent digital input</div>
+                  <div>• ON position connects the switch pin to common</div>
+                  <div>• OFF position leaves the switch pin disconnected</div>
+                  <div className="mt-1">• Perfect for configuration settings or mode selection</div>
                 </div>
               </div>
             )}
