@@ -179,7 +179,15 @@ const DipSwitch = ({
     if (updateComponentState) {
       updateComponentState(id, { 
         value: newValue,
-        type: 'dip-switch-3'
+        type: 'dip-switch-3',
+        pins: {
+          '1': newValue[0] ? 'HIGH' : 'LOW',
+          '2': newValue[1] ? 'HIGH' : 'LOW', 
+          '3': newValue[2] ? 'HIGH' : 'LOW',
+          'S1': newValue[0] ? 'HIGH' : 'LOW',
+          'S2': newValue[1] ? 'HIGH' : 'LOW',
+          'S3': newValue[2] ? 'HIGH' : 'LOW'
+        }
       });
       console.log(`DipSwitch ${id}: Updated simulator state with value:`, newValue);
     }
@@ -190,7 +198,15 @@ const DipSwitch = ({
     if (updateComponentState) {
       updateComponentState(id, { 
         value: value,
-        type: 'dip-switch-3'
+        type: 'dip-switch-3',
+        pins: {
+          '1': value[0] ? 'HIGH' : 'LOW',
+          '2': value[1] ? 'HIGH' : 'LOW',
+          '3': value[2] ? 'HIGH' : 'LOW',
+          'S1': value[0] ? 'HIGH' : 'LOW',
+          'S2': value[1] ? 'HIGH' : 'LOW',
+          'S3': value[2] ? 'HIGH' : 'LOW'
+        }
       });
       console.log(`DipSwitch ${id}: Initialized simulator state with value:`, value);
     }

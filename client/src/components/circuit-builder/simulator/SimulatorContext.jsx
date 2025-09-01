@@ -774,16 +774,42 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
                 // Get the DipSwitch state from component states
                 const dipSwitchState = componentStates[component.id];
                 if (dipSwitchState && dipSwitchState.value) {
-                  // Check which switch position corresponds to this pin
-                  // DipSwitch has 3 positions, we'll map them to different pins or use switch index
+                  // DipSwitch has 3 switches, we need to determine which one is connected to this pin
                   const switchValues = dipSwitchState.value; // Array of [bool, bool, bool]
                   
-                  // For now, use the first switch (index 0) - can be enhanced to map specific switches to pins
-                  const isHighState = switchValues[0]; 
+                  // Find which specific pin on the DipSwitch is connected
+                  const wire = dipSwitchWires[0];
+                  let dipSwitchPin = '';
+                  
+                  if (wire.sourceComponent === component.id) {
+                    dipSwitchPin = wire.sourceName;
+                  } else {
+                    dipSwitchPin = wire.targetName;
+                  }
+                  
+                  // Map DIP switch pins to switch indices
+                  // Common pin naming: 1,2,3 or S1,S2,S3 or SW1,SW2,SW3
+                  let switchIndex = 0;
+                  if (dipSwitchPin.includes('1')) {
+                    switchIndex = 0;
+                  } else if (dipSwitchPin.includes('2')) {
+                    switchIndex = 1;
+                  } else if (dipSwitchPin.includes('3')) {
+                    switchIndex = 2;
+                  } else {
+                    // Try to parse as a number
+                    const pinNum = parseInt(dipSwitchPin);
+                    if (!isNaN(pinNum) && pinNum >= 1 && pinNum <= 3) {
+                      switchIndex = pinNum - 1;
+                    }
+                  }
+                  
+                  // Get the state of the specific switch
+                  const isHighState = switchValues[switchIndex];
                   readValue = isHighState ? 'HIGH' : 'LOW';
                   
-                  console.log(`[Simulator] digitalRead(${pinNumber}) reading from DipSwitch ${component.id}: switch[0] = ${isHighState} → ${readValue}`);
-                  addLog(`[${timestamp}] → digitalRead(${pinNumber}) reading DipSwitch: ${readValue}`);
+                  console.log(`[Simulator] digitalRead(${pinNumber}) reading from DipSwitch ${component.id}: switch[${switchIndex}] (pin ${dipSwitchPin}) = ${isHighState} → ${readValue}`);
+                  addLog(`[${timestamp}] → digitalRead(${pinNumber}) reading DipSwitch SW${switchIndex + 1}: ${readValue}`);
                   return 0;
                 }
               }
