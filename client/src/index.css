@@ -43,6 +43,18 @@ img[alt*="Breadboard"], img[alt*="Resistor"], img[alt*="Encoder"], img[alt*="Swi
   }
 }
 
+/* Buzzer pulse animation for audio feedback */
+@keyframes buzzer-pulse {
+  0% { 
+    opacity: 0.6; 
+    transform: scale(1); 
+  }
+  100% { 
+    opacity: 1; 
+    transform: scale(1.1); 
+  }
+}
+
 /* HERO board built-in pin 13 LED */
 .heroboard-pin13-led {
   width: 4px;

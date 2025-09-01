@@ -45,6 +45,11 @@ const Buzzer = ({
   const { componentStates } = useSimulator();
   const [currentFrequency, setCurrentFrequency] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  
+  // Web Audio API for sound generation
+  const audioContextRef = useRef(null);
+  const oscillatorRef = useRef(null);
+  const gainNodeRef = useRef(null);
 
   // Create a component data structure that matches what the original code expects
   const componentData = {
@@ -91,17 +96,117 @@ const Buzzer = ({
     setPinInfo(e.detail);
   }
 
-  // Monitor simulator state for buzzer activity
+  // Initialize Web Audio API
+  useEffect(() => {
+    const initAudio = () => {
+      try {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+        gainNodeRef.current = audioContextRef.current.createGain();
+        gainNodeRef.current.connect(audioContextRef.current.destination);
+        gainNodeRef.current.gain.value = 0.1; // Low volume to avoid ear damage
+        console.log(`[Buzzer ${id}] Audio context initialized`);
+      } catch (error) {
+        console.warn(`[Buzzer ${id}] Web Audio API not supported:`, error);
+      }
+    };
+
+    initAudio();
+
+    // Cleanup on unmount
+    return () => {
+      if (oscillatorRef.current) {
+        try {
+          oscillatorRef.current.stop();
+          oscillatorRef.current.disconnect();
+        } catch (e) {
+          // Oscillator may already be stopped
+        }
+        oscillatorRef.current = null;
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+    };
+  }, [id]);
+
+  // Monitor simulator state for buzzer activity and control audio
   useEffect(() => {
     const buzzerState = componentStates[id];
     if (buzzerState && buzzerState.type === 'buzzer') {
-      setIsPlaying(buzzerState.isPlaying || false);
-      setCurrentFrequency(buzzerState.frequency || 0);
-      setBuzzerActive(buzzerState.isPlaying || false);
+      const newIsPlaying = buzzerState.isPlaying || false;
+      const newFrequency = buzzerState.frequency || 0;
       
-      console.log(`[Buzzer ${id}] State updated: playing=${buzzerState.isPlaying}, frequency=${buzzerState.frequency}Hz`);
+      setIsPlaying(newIsPlaying);
+      setCurrentFrequency(newFrequency);
+      setBuzzerActive(newIsPlaying);
+      
+      // Control audio based on state
+      if (newIsPlaying && newFrequency > 0) {
+        const duration = buzzerState.duration || 0; // Get duration if specified
+        startTone(newFrequency, duration);
+      } else {
+        stopTone();
+      }
+      
+      console.log(`[Buzzer ${id}] State updated: playing=${newIsPlaying}, frequency=${newFrequency}Hz`);
     }
   }, [componentStates, id]);
+
+  // Function to start playing a tone
+  const startTone = (frequency, duration) => {
+    if (!audioContextRef.current) return;
+
+    try {
+      // Stop any existing oscillator
+      if (oscillatorRef.current) {
+        oscillatorRef.current.stop();
+        oscillatorRef.current.disconnect();
+      }
+
+      // Resume audio context if suspended (required by browsers)
+      if (audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
+
+      // Create new oscillator
+      oscillatorRef.current = audioContextRef.current.createOscillator();
+      oscillatorRef.current.connect(gainNodeRef.current);
+      
+      // Set frequency and waveform
+      oscillatorRef.current.frequency.setValueAtTime(frequency, audioContextRef.current.currentTime);
+      oscillatorRef.current.type = 'square'; // Square wave for buzzer-like sound
+      
+      // Start the tone
+      oscillatorRef.current.start();
+      
+      // If duration is specified, stop after the duration
+      if (duration && duration > 0) {
+        setTimeout(() => {
+          stopTone();
+        }, duration);
+        console.log(`[Buzzer ${id}] Started tone at ${frequency}Hz for ${duration}ms`);
+      } else {
+        console.log(`[Buzzer ${id}] Started continuous tone at ${frequency}Hz`);
+      }
+    } catch (error) {
+      console.warn(`[Buzzer ${id}] Error starting tone:`, error);
+    }
+  };
+
+  // Function to stop the tone
+  const stopTone = () => {
+    if (oscillatorRef.current) {
+      try {
+        oscillatorRef.current.stop();
+        oscillatorRef.current.disconnect();
+        oscillatorRef.current = null;
+        console.log(`[Buzzer ${id}] Stopped tone`);
+      } catch (error) {
+        console.warn(`[Buzzer ${id}] Error stopping tone:`, error);
+      }
+    }
+  };
 
   // Trigger redraw function similar to the original
   const triggerRedraw = () => {
@@ -292,7 +397,9 @@ const Buzzer = ({
         }}
         style={{
           transform: `translate(${initPosLeft}px, ${initPosTop}px)`,
-          zIndex: isDragged ? 99999 : 10
+          zIndex: isDragged ? 99999 : 10,
+          filter: isPlaying ? 'drop-shadow(0 0 8px #ffaa00) brightness(1.3)' : 'none',
+          transition: 'filter 0.2s ease-in-out'
         }}
         hasSignal={buzzerActive}
       ></ReactBuzzerComponent>
@@ -300,16 +407,18 @@ const Buzzer = ({
       {/* Visual feedback for tone playing */}
       {isPlaying && (
         <div 
-          className="absolute pointer-events-none animate-ping"
+          className="absolute pointer-events-none"
           style={{
             left: posLeft + 30,
             top: posTop + 10,
             width: '20px',
             height: '20px',
-            backgroundColor: '#f59e0b',
+            backgroundColor: '#ffaa00',
             borderRadius: '50%',
-            opacity: 0.6,
-            zIndex: 1000
+            opacity: 0.8,
+            zIndex: 1000,
+            animation: 'buzzer-pulse 0.3s ease-in-out infinite alternate',
+            boxShadow: '0 0 10px #ffaa00'
           }}
         />
       )}
