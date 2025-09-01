@@ -105,79 +105,79 @@ void loop() {
   
   // Red
   Serial.println("→ RED");
-  analogWrite(redPin, 255);
-  analogWrite(greenPin, 0);
-  analogWrite(bluePin, 0);
+  analogWrite(9, 255);
+  analogWrite(10, 0);
+  analogWrite(11, 0);
   delay(2000);
   
   // Green  
   Serial.println("→ GREEN");
-  analogWrite(redPin, 0);
-  analogWrite(greenPin, 255);
-  analogWrite(bluePin, 0);
+  analogWrite(9, 0);
+  analogWrite(10, 255);
+  analogWrite(11, 0);
   delay(2000);
   
   // Blue
   Serial.println("→ BLUE");
-  analogWrite(redPin, 0);
-  analogWrite(greenPin, 0);
-  analogWrite(bluePin, 255);
+  analogWrite(9, 0);
+  analogWrite(10, 0);
+  analogWrite(11, 255);
   delay(2000);
   
   // Yellow (Red + Green)
   Serial.println("→ YELLOW");
-  analogWrite(redPin, 255);
-  analogWrite(greenPin, 255);
-  analogWrite(bluePin, 0);
+  analogWrite(9, 255);
+  analogWrite(10, 255);
+  analogWrite(11, 0);
   delay(2000);
   
   // Cyan (Green + Blue)
   Serial.println("→ CYAN");
-  analogWrite(redPin, 0);
-  analogWrite(greenPin, 255);
-  analogWrite(bluePin, 255);
+  analogWrite(9, 0);
+  analogWrite(10, 255);
+  analogWrite(11, 255);
   delay(2000);
   
   // Magenta (Red + Blue)
   Serial.println("→ MAGENTA");
-  analogWrite(redPin, 255);
-  analogWrite(greenPin, 0);
-  analogWrite(bluePin, 255);
+  analogWrite(9, 255);
+  analogWrite(10, 0);
+  analogWrite(11, 255);
   delay(2000);
   
   // White (All colors)
   Serial.println("→ WHITE");
-  analogWrite(redPin, 255);
-  analogWrite(greenPin, 255);
-  analogWrite(bluePin, 255);
+  analogWrite(9, 255);
+  analogWrite(10, 255);
+  analogWrite(11, 255);
   delay(2000);
   
   // Turn off
   Serial.println("→ OFF");
-  analogWrite(redPin, 0);
-  analogWrite(greenPin, 0);
-  analogWrite(bluePin, 0);
+  analogWrite(9, 0);
+  analogWrite(10, 0);
+  analogWrite(11, 0);
   delay(1000);
   
   Serial.println("Starting simple color fade...");
   
   // Simple color transitions 
   for(int i = 0; i < 255; i += 10) {
-    analogWrite(redPin, 255 - i);
-    analogWrite(greenPin, i);
-    analogWrite(bluePin, 0);
+    analogWrite(9, 255 - i);
+    analogWrite(10, i);
+    analogWrite(11, 0);
     delay(100);
   }
   for(int i = 0; i < 255; i += 10) {
-    analogWrite(redPin, 0);
-    analogWrite(greenPin, 255 - i);
-    analogWrite(bluePin, i);
+    analogWrite(9, 0);
+    analogWrite(10, 255 - i);
+    analogWrite(11, i);
     delay(100);
   }
   for(int i = 0; i < 255; i += 10) {
-    analogWrite(redPin, i);
-    analogWrite(greenPin, 0);
-    analogWrite(bluePin, 255 - i);
+    analogWrite(9, i);
+    analogWrite(10, 0);
+    analogWrite(11, 255 - i);
     delay(100);
   }
   
