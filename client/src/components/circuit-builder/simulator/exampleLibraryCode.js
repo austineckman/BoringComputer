@@ -52,11 +52,11 @@ export const rgbLedExample = `/*
  * 
  * WIRING DIAGRAM:
  * ---------------
- * Common Cathode RGB LED:
- * 1. Connect common pin (longest leg) to GND
- * 2. Connect Red pin through 220Ω resistor to Pin 9
- * 3. Connect Green pin through 220Ω resistor to Pin 10
- * 4. Connect Blue pin through 220Ω resistor to Pin 11
+ * 1. Add an RGB LED component to your circuit
+ * 2. Connect RGB LED red pin to Arduino Pin 9
+ * 3. Connect RGB LED green pin to Arduino Pin 10  
+ * 4. Connect RGB LED blue pin to Arduino Pin 11
+ * 5. Connect RGB LED common pin to GND (common cathode)
  * 
  * HOW IT WORKS:
  * -------------
@@ -64,6 +64,13 @@ export const rgbLedExample = `/*
  * By mixing different intensities of each color using PWM (analogWrite),
  * we can create millions of different colors.
  * PWM values range from 0 (off) to 255 (full brightness).
+ * 
+ * TROUBLESHOOTING:
+ * ----------------
+ * - Make sure you have an RGB LED component on the canvas
+ * - Ensure the RGB LED pins are connected to Arduino pins 9, 10, 11
+ * - Check that the RGB LED common pin is connected to GND
+ * - If colors don't change, verify your wiring connections
  */
 
 const int redPin = 9;    // Red LED pin (PWM)
@@ -76,6 +83,8 @@ void setup() {
   pinMode(bluePin, OUTPUT);
   Serial.begin(9600);
   Serial.println("RGB LED Color Cycle Started!");
+  Serial.println("Make sure RGB LED is wired:");
+  Serial.println("Red -> Pin 9, Green -> Pin 10, Blue -> Pin 11");
 }
 
 void setColor(int red, int green, int blue) {
@@ -83,7 +92,7 @@ void setColor(int red, int green, int blue) {
   analogWrite(greenPin, green);
   analogWrite(bluePin, blue);
   
-  Serial.print("Color - R:");
+  Serial.print("Setting Color - R:");
   Serial.print(red);
   Serial.print(" G:");
   Serial.print(green);
@@ -92,47 +101,66 @@ void setColor(int red, int green, int blue) {
 }
 
 void loop() {
-  // Red
-  setColor(255, 0, 0);
-  delay(1000);
+  Serial.println("Cycling through colors...");
   
-  // Green
+  // Red
+  Serial.println("→ RED");
+  setColor(255, 0, 0);
+  delay(2000);
+  
+  // Green  
+  Serial.println("→ GREEN");
   setColor(0, 255, 0);
-  delay(1000);
+  delay(2000);
   
   // Blue
+  Serial.println("→ BLUE");
   setColor(0, 0, 255);
-  delay(1000);
+  delay(2000);
   
   // Yellow (Red + Green)
+  Serial.println("→ YELLOW");
   setColor(255, 255, 0);
-  delay(1000);
+  delay(2000);
   
   // Cyan (Green + Blue)
+  Serial.println("→ CYAN");
   setColor(0, 255, 255);
-  delay(1000);
+  delay(2000);
   
   // Magenta (Red + Blue)
+  Serial.println("→ MAGENTA");
   setColor(255, 0, 255);
-  delay(1000);
+  delay(2000);
   
   // White (All colors)
+  Serial.println("→ WHITE");
   setColor(255, 255, 255);
+  delay(2000);
+  
+  // Turn off
+  Serial.println("→ OFF");
+  setColor(0, 0, 0);
   delay(1000);
   
-  // Fade through rainbow
-  for(int i = 0; i < 255; i++) {
+  Serial.println("Starting color fade...");
+  
+  // Smooth color transitions (faster)
+  for(int i = 0; i < 255; i += 5) {
     setColor(255 - i, i, 0);  // Red to Green
-    delay(10);
+    delay(50);
   }
-  for(int i = 0; i < 255; i++) {
+  for(int i = 0; i < 255; i += 5) {
     setColor(0, 255 - i, i);  // Green to Blue
-    delay(10);
+    delay(50);
   }
-  for(int i = 0; i < 255; i++) {
+  for(int i = 0; i < 255; i += 5) {
     setColor(i, 0, 255 - i);  // Blue to Red
-    delay(10);
+    delay(50);
   }
+  
+  Serial.println("Color cycle complete!");
+  delay(1000);
 }`;
 
 // ==================== BUZZER EXAMPLE ====================
