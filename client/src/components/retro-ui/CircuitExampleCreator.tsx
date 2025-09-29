@@ -231,7 +231,7 @@ void loop() {
   };
 
   // Run simulation
-  const runSimulation = () => {
+  const runSimulation = async () => {
     if (isSimulationRunning) {
       addSimulatorLog('Stopping simulation...');
       stopSimulation();
@@ -240,14 +240,14 @@ void loop() {
         (window as any).isSimulationRunning = false;
       }
     } else {
-      addSimulatorLog('Starting simulation...');
+      addSimulatorLog('Compiling and starting simulation...');
       const currentCode = code;
       updateSimulatorCode(currentCode);
       setIsSimulationRunning(true);
       if (typeof window !== 'undefined') {
         (window as any).isSimulationRunning = true;
       }
-      startSimulation(currentCode);
+      await startSimulation(currentCode);
     }
   };
 

@@ -22,21 +22,14 @@ Platform compatibility: Works on Windows, compatibility issues noted on Mac.
 - **Routing**: Wouter for client-side routing.
 - **UI/UX Decisions**: Incorporates a retro Windows 95 aesthetic, pixel art gold coin assets, CS:GO-inspired lootbox animations, and RuneScape-style quest interfaces. Wire drawing uses a click-based system with smooth Bezier curves for a natural, hand-drawn look.
 
-### Circuit Simulation Engine (Enhanced Jan 17, 2025)
-- **Core Technology**: AVR8js for authentic Arduino microcontroller emulation.
-- **Architecture**: Worker-based to prevent UI blocking.
+### Circuit Simulation Engine (Enhanced Sep 29, 2025)
+- **Core Technology**: AVR8js for authentic Arduino microcontroller emulation with real compiled machine code execution.
+- **Compilation Architecture**: Server-side Arduino compilation using DigitalOcean-hosted avr-gcc compiler (http://134.209.45.87:3000/compile). Supports ANY valid Arduino C++ code, not limited to pattern matching.
+- **Compilation Flow**: Frontend → POST to compiler server → Intel HEX binary → AVR8js emulator → Real hardware execution.
 - **Component System**: Modular library with visual representations, supporting multi-pin components and real-time state updates (e.g., RGB LEDs, DipSwitches).
-- **Code Editor**: Monaco Editor integration for an Arduino IDE-like experience, supporting comprehensive Arduino function libraries, advanced C++ syntax, and variable declaration.
-- **Simulator Capabilities**: 
-  - Core I/O: `analogRead()`, `digitalRead()`, `analogWrite()` (PWM), `digitalWrite()`, `pinMode()`
-  - Timing: `delay()`, `delayMicroseconds()`, `millis()`
-  - Math functions: `map()`, `constrain()`, `random()`
-  - Serial output: `Serial.print()`, `Serial.println()` with ternary operator evaluation
-  - Display: OLED display functions, 7-segment display support
-  - Input: DIP switch state reading, keypad matrix scanning, rotary encoder support
-  - Audio: `tone()`, `noTone()` for buzzer control
-  - Communication: I2C/Wire library support
-  - Advanced: Multi-hop circuit tracing, variable assignment tracking, conditional execution
+- **Code Editor**: Ace Editor integration for Arduino IDE-like experience with syntax highlighting and error reporting.
+- **Emulation Capabilities**: Full AVR microcontroller emulation with authentic 16MHz clock execution, real pin state changes, and hardware-accurate timing.
+- **Future-Proof Design**: Architecture supports adding Python, MicroPython, and other programming languages via additional compiler endpoints.
 
 ### Key Features and System Design
 - **Authentication & User Management**: Secure session management, role-based access control, user profiles with XP, levels, and inventory tracking. Includes Discord OAuth integration for roles.

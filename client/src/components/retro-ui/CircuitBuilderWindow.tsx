@@ -823,7 +823,7 @@ void loop() {
   };
   
   // Run the simulation
-  const runSimulation = () => {
+  const runSimulation = async () => {
     if (isSimulationRunning) {
       // Stop the simulation
       addSimulationLog('Stopping simulation...');
@@ -836,7 +836,7 @@ void loop() {
       showNotification('Simulation stopped successfully', 'info');
     } else {
       // Show a notification that we're starting compilation
-      showNotification('Starting Arduino simulation...', 'info');
+      showNotification('Compiling Arduino code...', 'info');
       
       // Get the current code from the editor
       const currentCode = getCode();
@@ -856,9 +856,9 @@ void loop() {
         (window as any).isSimulationRunning = true; // Set global flag for components
       }
       
-      // Start the simulation with the current code directly
-      startSimulation(currentCode);
-      showNotification('Arduino simulation started!', 'success');
+      // Start the simulation with the current code directly (now async)
+      await startSimulation(currentCode);
+      showNotification('Simulation running!', 'success');
     }
   };
   
