@@ -112,6 +112,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { default: arduinoLibrariesRoutes } = await import("./routes/arduino-libraries");
   app.use("/api/arduino-libraries", arduinoLibrariesRoutes);
 
+  // Register Arduino compiler proxy routes
+  const { default: arduinoCompilerRoutes } = await import("./routes/arduino-compiler");
+  app.use("/api/arduino-compiler", arduinoCompilerRoutes);
+
   // Register mission routes
   app.use("/api/missions", missionRoutes);
 

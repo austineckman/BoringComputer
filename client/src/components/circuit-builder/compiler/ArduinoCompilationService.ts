@@ -1,10 +1,10 @@
 /**
  * ArduinoCompilationService.ts
  * 
- * Service for compiling Arduino code using the DigitalOcean compiler server
+ * Service for compiling Arduino code using the backend compiler proxy
  */
 
-const COMPILER_URL = 'http://134.209.45.87:3000/compile';
+const COMPILER_URL = '/api/arduino-compiler/compile';
 
 export interface CompilationResult {
   success: boolean;
@@ -16,11 +16,11 @@ export interface CompilationResult {
 
 export class ArduinoCompilationService {
   /**
-   * Compile Arduino code using the remote compiler
+   * Compile Arduino code using the backend compiler proxy
    */
   public static async compile(code: string): Promise<CompilationResult> {
     try {
-      console.log('[Compiler] Sending code to DigitalOcean compiler...');
+      console.log('[Compiler] Sending code to backend compiler proxy...');
       
       const response = await fetch(COMPILER_URL, {
         method: 'POST',
