@@ -192,26 +192,18 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
     retry: false,
   });
   // State for components and wires
-  const [components, setComponentsLocal] = useState<ComponentData[]>([]);
+  const [components, setComponents] = useState<ComponentData[]>([]);
+  const [wires, setWires] = useState<WireConnection[]>([]);
   
-  // Wrapper to sync components to both local and simulator context
-  const setComponents = (newComponents: ComponentData[] | ((prev: ComponentData[]) => ComponentData[])) => {
-    const componentsToSet = typeof newComponents === 'function' 
-      ? newComponents(components) 
-      : newComponents;
-    setComponentsLocal(componentsToSet);
-    setSimulatorComponents(componentsToSet);
-  };
-  const [wires, setWiresLocal] = useState<WireConnection[]>([]);
+  // Sync components to simulator context whenever they change
+  useEffect(() => {
+    setSimulatorComponents(components);
+  }, [components, setSimulatorComponents]);
   
-  // Wrapper to sync wires to both local and simulator context
-  const setWires = (newWires: WireConnection[] | ((prev: WireConnection[]) => WireConnection[])) => {
-    const wiresToSet = typeof newWires === 'function' 
-      ? newWires(wires) 
-      : newWires;
-    setWiresLocal(wiresToSet);
-    setSimulatorWires(wiresToSet);
-  };
+  // Sync wires to simulator context whenever they change
+  useEffect(() => {
+    setSimulatorWires(wires);
+  }, [wires, setSimulatorWires]);
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
   const [selectedWire, setSelectedWire] = useState<string | null>(null);
   const [draggingComponent, setDraggingComponent] = useState<string | null>(null);
