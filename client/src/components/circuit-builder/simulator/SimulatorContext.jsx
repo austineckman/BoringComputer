@@ -128,20 +128,24 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     }
     
     // Compile the code
+    console.log('[Simulator] Starting compilation...');
     addLog('🔧 Compiling Arduino code on server...');
     setIsCompiling(true);
     
     try {
       const result = await ArduinoCompilationService.compileAndParse(currentCode);
       
+      console.log('[Simulator] Compilation result:', result.success, result);
       setIsCompiling(false);
       
       if (!result.success) {
+        console.error('[Simulator] Compilation failed:', result.errors);
         addLog('❌ Compilation failed:');
         result.errors?.forEach(error => addLog(`   ${error}`));
         return;
       }
       
+      console.log('[Simulator] Program size:', result.program?.length, 'words');
       addLog('✅ Compilation successful');
       addLog('🚀 Loading program into AVR8 emulator...');
       
@@ -188,6 +192,14 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     const latestWires = window.latestSimulatorData?.wires || [];
     
     console.log(`[AVR8] Checking ${latestComponents.length} components and ${latestWires.length} wires`);
+    
+    // Update the heroboard/Arduino pin states (needed for LED circuit tracing)
+    latestComponents.forEach(component => {
+      if (component.type === 'heroboard' || component.id.includes('heroboard') || component.id.includes('arduino')) {
+        updateComponentPins(component.id, { [pin]: isHigh });
+        console.log(`[AVR8] Updated ${component.id} pin ${pin} to ${isHigh ? 'HIGH' : 'LOW'}`);
+      }
+    });
     
     // Update components connected to this pin
     latestComponents.forEach(component => {
