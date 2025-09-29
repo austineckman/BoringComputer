@@ -1,6 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import CircuitBuilderWindow from './CircuitBuilderWindow';
+// @ts-ignore - SimulatorContext is JSX without type definitions
 import { SimulatorProvider } from '../circuit-builder/simulator/SimulatorContext';
 
 interface FullscreenCircuitBuilderAppProps {

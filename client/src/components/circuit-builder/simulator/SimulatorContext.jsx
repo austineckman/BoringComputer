@@ -2,6 +2,8 @@ import React, { createContext, useState, useContext, useEffect, useRef } from 'r
 import { CPU, AVRIOPort, portBConfig } from 'avr8js';
 import { ArduinoCodeParser } from './ArduinoCodeParser';
 import { CodeBlockParser } from './CodeBlockParser';
+import { ArduinoCompiler } from '../avr8js/ArduinoCompiler';
+import { ArduinoEmulator } from '../avr8js/ArduinoEmulator';
 
 // Create a context for the simulator
 const SimulatorContext = createContext({
@@ -42,6 +44,9 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   const animationRef = useRef(null);
   const codeParserRef = useRef(new ArduinoCodeParser());
   const simulationStartTimeRef = useRef(0);
+  const compilerRef = useRef(new ArduinoCompiler());
+  const emulatorRef = useRef(null);
+  const useAVR8Ref = useRef(false);
   const executionStateRef = useRef({
     phase: 'stopped', // 'setup', 'loop', 'stopped'
     setupIndex: 0,
@@ -301,10 +306,60 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     // Clear previous logs
     setLogs([]);
     
+    // Try AVR8 compilation first
+    addLog('🔧 Attempting AVR8 compilation...');
+    const compilationResult = compilerRef.current.compile(currentCode);
+    
+    if (compilationResult.success) {
+      addLog('✅ AVR8 compilation successful!');
+      addLog(`📦 Program size: ${compilationResult.programSize} words`);
+      
+      // Create emulator with pin change callback
+      emulatorRef.current = new ArduinoEmulator({
+        onPinChange: (pin, isHigh) => {
+          console.log(`[AVR8] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+          
+          // Update components connected to this pin
+          components.forEach(component => {
+            if (component.type === 'led' || component.id.includes('led')) {
+              const connectedWires = wires.filter(wire => 
+                (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
+                (wire.sourceName === pin.toString() || wire.targetName === pin.toString())
+              );
+              
+              if (connectedWires.length > 0) {
+                updateComponentState(component.id, { 
+                  isOn: isHigh,
+                  brightness: isHigh ? 1.0 : 0.0 
+                });
+                addLog(`💡 Pin ${pin} → ${component.id} ${isHigh ? 'ON' : 'OFF'}`);
+              }
+            }
+          });
+        },
+        onLog: (message) => {
+          addLog(`[AVR8] ${message}`);
+        }
+      });
+      
+      // Load and start the program
+      emulatorRef.current.loadProgram(compilationResult.program);
+      emulatorRef.current.start();
+      useAVR8Ref.current = true;
+      setIsRunning(true);
+      addLog('▶️ AVR8 simulation started');
+      return;
+    } else {
+      addLog('⚠️ AVR8 compilation failed, using text parser fallback');
+      console.log('[AVR8] Compilation errors:', compilationResult.errors);
+    }
+    
+    // Fallback to text parser
     addLog('🔄 Parsing Arduino code...');
+    useAVR8Ref.current = false;
     
     try {
-      // Parse the actual code from the editor please fucking work fuck you holy shit fuck 
+      // Parse the actual code from the editor
       console.log('SimulatorContext: About to parse code with ArduinoCodeParser');
       const parseResult = codeParserRef.current.parseCode(currentCode);
       console.log('SimulatorContext: Parse result:', parseResult);
@@ -2327,6 +2382,14 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   const stopSimulation = () => {
     addLog('🛑 Stopping Arduino simulation...');
     setIsRunning(false);
+    
+    // Stop AVR8 emulator if running
+    if (useAVR8Ref.current && emulatorRef.current) {
+      emulatorRef.current.stop();
+      emulatorRef.current = null;
+      useAVR8Ref.current = false;
+      addLog('⏹️ AVR8 emulator stopped');
+    }
     
     // Reset execution state for block-based approach
     executionStateRef.current = {

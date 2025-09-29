@@ -73,14 +73,17 @@ export class ArduinoCompiler {
       
       if (sketchType.isBlinkSketch) {
         program = this.generateBlinkProgram(analysis);
-        console.log('Generated blink program');
+        console.log('[ArduinoCompiler] Generated blink program');
       } else if (sketchType.isRgbLedSketch) {
         program = this.generateRgbLedProgram(analysis);
-        console.log('Generated RGB LED program');
+        console.log('[ArduinoCompiler] Generated RGB LED program');
       } else {
-        // Default to a simple blink program for now
-        program = this.generateDefaultProgram();
-        console.log('Generated default program');
+        // Return failure for unrecognized sketches so SimulatorContext can fall back to text parser
+        console.log('[ArduinoCompiler] Sketch type not recognized, falling back to parser');
+        return {
+          success: false,
+          errors: ['Sketch pattern not recognized for AVR8 compilation - will use interpreter fallback']
+        };
       }
       
       return {
