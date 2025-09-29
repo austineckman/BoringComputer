@@ -192,8 +192,26 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
     retry: false,
   });
   // State for components and wires
-  const [components, setComponents] = useState<ComponentData[]>([]);
-  const [wires, setWires] = useState<WireConnection[]>([]);
+  const [components, setComponentsLocal] = useState<ComponentData[]>([]);
+  
+  // Wrapper to sync components to both local and simulator context
+  const setComponents = (newComponents: ComponentData[] | ((prev: ComponentData[]) => ComponentData[])) => {
+    const componentsToSet = typeof newComponents === 'function' 
+      ? newComponents(components) 
+      : newComponents;
+    setComponentsLocal(componentsToSet);
+    setSimulatorComponents(componentsToSet);
+  };
+  const [wires, setWiresLocal] = useState<WireConnection[]>([]);
+  
+  // Wrapper to sync wires to both local and simulator context
+  const setWires = (newWires: WireConnection[] | ((prev: WireConnection[]) => WireConnection[])) => {
+    const wiresToSet = typeof newWires === 'function' 
+      ? newWires(wires) 
+      : newWires;
+    setWiresLocal(wiresToSet);
+    setSimulatorWires(wiresToSet);
+  };
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
   const [selectedWire, setSelectedWire] = useState<string | null>(null);
   const [draggingComponent, setDraggingComponent] = useState<string | null>(null);
@@ -727,19 +745,21 @@ void loop() {
     showNotification('Project saved!');
   };
 
-  // Local simulation state
-  const [isSimulationRunning, setIsSimulationRunning] = useState(false);
+  // Local UI state
   const [showExampleDropdown, setShowExampleDropdown] = useState(false);
 
-  // Use simulator context
+  // Use simulator context - isRunning comes from here, not local state!
   const { 
     startSimulation,
     stopSimulation,
+    isRunning: isSimulationRunning,  // Get isRunning from context and alias it
     addLog: addSimulatorLog,
     logs: simulatorLogs,
     updateComponentState,  // Access the updateComponentState function
     updateComponentPins,   // Access the updateComponentPins function for pin-specific updates
-    setCode: updateSimulatorCode // Get the simulator's setCode function
+    setCode: updateSimulatorCode, // Get the simulator's setCode function
+    setComponents: setSimulatorComponents,  // Sync components to simulator
+    setWires: setSimulatorWires  // Sync wires to simulator
   } = useSimulator();
 
   // Library manager hook
@@ -824,11 +844,15 @@ void loop() {
   
   // Run the simulation
   const runSimulation = async () => {
+    console.log('[CircuitBuilderWindow] runSimulation called');
+    console.log('[CircuitBuilderWindow] isSimulationRunning:', isSimulationRunning);
+    console.log('[CircuitBuilderWindow] startSimulation exists:', typeof startSimulation);
+    console.log('[CircuitBuilderWindow] stopSimulation exists:', typeof stopSimulation);
+    
     if (isSimulationRunning) {
       // Stop the simulation
       addSimulationLog('Stopping simulation...');
       stopSimulation();
-      setIsSimulationRunning(false);
       if (typeof window !== 'undefined') {
         (window as any).isSimulationRunning = false; // Set global flag for components
       }
@@ -851,12 +875,12 @@ void loop() {
       // Update the simulator context with current code BEFORE starting simulation
       updateSimulatorCode(currentCode);
       
-      setIsSimulationRunning(true);
       if (typeof window !== 'undefined') {
         (window as any).isSimulationRunning = true; // Set global flag for components
       }
       
       // Start the simulation with the current code directly (now async)
+      // This will set isRunning to true in the context
       await startSimulation(currentCode);
       showNotification('Simulation running!', 'success');
     }
