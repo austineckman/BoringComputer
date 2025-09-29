@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const router = Router();
 
-const COMPILER_URL = 'http://134.209.45.87:3000/compile';
+const COMPILER_URL = 'https://compiler.craftingtable.com/compile';
 
 // Proxy endpoint for Arduino compilation
 router.post('/compile', async (req, res) => {

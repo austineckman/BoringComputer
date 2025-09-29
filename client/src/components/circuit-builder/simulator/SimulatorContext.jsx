@@ -183,13 +183,21 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   const handlePinChange = (pin, isHigh) => {
     console.log(`[AVR8] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
     
+    // Get the latest components and wires from global storage (avoiding stale closure)
+    const latestComponents = window.latestSimulatorData?.components || [];
+    const latestWires = window.latestSimulatorData?.wires || [];
+    
+    console.log(`[AVR8] Checking ${latestComponents.length} components and ${latestWires.length} wires`);
+    
     // Update components connected to this pin
-    components.forEach(component => {
+    latestComponents.forEach(component => {
       if (component.type === 'led' || component.id.includes('led')) {
-        const connectedWires = wires.filter(wire => 
+        const connectedWires = latestWires.filter(wire => 
           (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
           (wire.sourceName === pin.toString() || wire.targetName === pin.toString())
         );
+        
+        console.log(`[AVR8] Component ${component.id} has ${connectedWires.length} wires connected to pin ${pin}`);
         
         if (connectedWires.length > 0) {
           updateComponentState(component.id, { 
