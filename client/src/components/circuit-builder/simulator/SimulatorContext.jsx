@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
-import { ArduinoCompiler } from '../avr8js/ArduinoCompiler';
-import { ArduinoEmulator } from '../avr8js/ArduinoEmulator';
+import { ArduinoInterpreter } from './ArduinoInterpreter';
 
 // Create a context for the simulator
 const SimulatorContext = createContext({
@@ -35,10 +34,8 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   const [wires, setWires] = useState([]);
   const [componentStates, setComponentStates] = useState({});
   
-  // AVR8 simulation state
-  const compilerRef = useRef(new ArduinoCompiler());
-  const emulatorRef = useRef(null);
-  const useAVR8Ref = useRef(false);
+  // Arduino interpreter state
+  const interpreterRef = useRef(null);
   
   // Function to add a log entry with timestamp
   const addLog = (message) => {
@@ -98,11 +95,11 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     });
   };
   
-  // Function to start the simulation - AVR8 ONLY
+  // Function to start the simulation using interpreter
   const startSimulation = (codeToExecute) => {
     // Use passed code or fall back to context code
     const currentCode = codeToExecute || code;
-    console.log('[AVR8] startSimulation called with code length:', currentCode?.length);
+    console.log('[Interpreter] startSimulation called with code length:', currentCode?.length);
     
     if (!currentCode || currentCode.trim() === '') {
       addLog('❌ Error: No Arduino code to execute');
@@ -117,27 +114,11 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     // Clear previous logs
     setLogs([]);
     
-    // Compile with AVR8
-    addLog('🔧 Compiling Arduino code...');
-    const compilationResult = compilerRef.current.compile(currentCode);
-    
-    if (!compilationResult.success) {
-      addLog('❌ Compilation failed!');
-      compilationResult.errors.forEach(error => {
-        addLog(`   ${error}`);
-      });
-      addLog('');
-      addLog('💡 Tip: Make sure your code follows Arduino syntax');
-      return;
-    }
-    
-    addLog('✅ Compilation successful!');
-    addLog(`📦 Program size: ${compilationResult.programSize} words`);
-    
-    // Create emulator with pin change callback
-    emulatorRef.current = new ArduinoEmulator({
-      onPinChange: (pin, isHigh) => {
-        console.log(`[AVR8] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+    // Create interpreter with callbacks
+    addLog('🔧 Starting Arduino interpreter...');
+    interpreterRef.current = new ArduinoInterpreter({
+      onPinChange: (pin, isHigh, pwmValue) => {
+        console.log(`[Interpreter] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}${pwmValue !== undefined ? ` (PWM: ${pwmValue})` : ''}`);
         
         // Update components connected to this pin
         components.forEach(component => {
@@ -148,24 +129,30 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             );
             
             if (connectedWires.length > 0) {
+              const brightness = pwmValue !== undefined ? pwmValue / 255 : (isHigh ? 1.0 : 0.0);
               updateComponentState(component.id, { 
                 isOn: isHigh,
-                brightness: isHigh ? 1.0 : 0.0 
+                brightness: brightness,
+                pwmValue: pwmValue
               });
-              addLog(`💡 Pin ${pin} → ${component.id} ${isHigh ? 'ON' : 'OFF'}`);
+              addLog(`💡 Pin ${pin} → ${component.id} ${isHigh ? 'ON' : 'OFF'}${pwmValue !== undefined ? ` (${Math.round(brightness * 100)}%)` : ''}`);
             }
           }
         });
       },
       onLog: (message) => {
-        addLog(`[AVR8] ${message}`);
+        addLog(message);
       }
     });
     
-    // Load and start the program
-    emulatorRef.current.loadProgram(compilationResult.program);
-    emulatorRef.current.start();
-    useAVR8Ref.current = true;
+    // Parse and start executing the code
+    if (!interpreterRef.current.parseCode(currentCode)) {
+      addLog('❌ Failed to parse Arduino code');
+      return;
+    }
+    
+    addLog('✅ Code parsed successfully');
+    interpreterRef.current.start();
     setIsRunning(true);
     addLog('▶️ Simulation started');
   };
@@ -175,12 +162,11 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     addLog('🛑 Stopping Arduino simulation...');
     setIsRunning(false);
     
-    // Stop AVR8 emulator if running
-    if (useAVR8Ref.current && emulatorRef.current) {
-      emulatorRef.current.stop();
-      emulatorRef.current = null;
-      useAVR8Ref.current = false;
-      addLog('⏹️ AVR8 emulator stopped');
+    // Stop interpreter if running
+    if (interpreterRef.current) {
+      interpreterRef.current.stop();
+      interpreterRef.current = null;
+      addLog('⏹️ Interpreter stopped');
     }
     
     // Reset all component states when stopping
@@ -190,7 +176,6 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           isOn: false,
           brightness: 0.0 
         });
-        addLog(`💡 LED ${component.id} turned OFF`);
       }
       
       if (component.type === 'heroboard' || component.id.includes('heroboard')) {
