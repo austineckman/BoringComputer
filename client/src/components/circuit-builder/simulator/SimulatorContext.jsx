@@ -306,61 +306,61 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     // Clear previous logs
     setLogs([]);
     
-    // Try AVR8 compilation first
-    addLog('🔧 Attempting AVR8 compilation...');
+    // AVR8 is the ONLY execution engine - text parser is for debug visualization only
+    addLog('🔧 Compiling Arduino code with AVR8...');
     const compilationResult = compilerRef.current.compile(currentCode);
     
-    if (compilationResult.success) {
-      addLog('✅ AVR8 compilation successful!');
-      addLog(`📦 Program size: ${compilationResult.programSize} words`);
-      
-      // Create emulator with pin change callback
-      emulatorRef.current = new ArduinoEmulator({
-        onPinChange: (pin, isHigh) => {
-          console.log(`[AVR8] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
-          
-          // Update components connected to this pin
-          components.forEach(component => {
-            if (component.type === 'led' || component.id.includes('led')) {
-              const connectedWires = wires.filter(wire => 
-                (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
-                (wire.sourceName === pin.toString() || wire.targetName === pin.toString())
-              );
-              
-              if (connectedWires.length > 0) {
-                updateComponentState(component.id, { 
-                  isOn: isHigh,
-                  brightness: isHigh ? 1.0 : 0.0 
-                });
-                addLog(`💡 Pin ${pin} → ${component.id} ${isHigh ? 'ON' : 'OFF'}`);
-              }
-            }
-          });
-        },
-        onLog: (message) => {
-          addLog(`[AVR8] ${message}`);
-        }
-      });
-      
-      // Load and start the program
-      emulatorRef.current.loadProgram(compilationResult.program);
-      emulatorRef.current.start();
-      useAVR8Ref.current = true;
-      setIsRunning(true);
-      addLog('▶️ AVR8 simulation started');
+    if (!compilationResult.success) {
+      addLog('❌ AVR8 compilation failed:');
+      compilationResult.errors.forEach(err => addLog(`   ${err}`));
+      console.error('[AVR8] Compilation errors:', compilationResult.errors);
       return;
-    } else {
-      addLog('⚠️ AVR8 compilation failed, using text parser fallback');
-      console.log('[AVR8] Compilation errors:', compilationResult.errors);
     }
     
-    // Fallback to text parser
-    addLog('🔄 Parsing Arduino code...');
-    useAVR8Ref.current = false;
+    addLog('✅ AVR8 compilation successful!');
+    addLog(`📦 Program size: ${compilationResult.programSize} words`);
+    
+    // Create emulator with pin change callback
+    emulatorRef.current = new ArduinoEmulator({
+      onPinChange: (pin, isHigh) => {
+        console.log(`[AVR8] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+        
+        // Update components connected to this pin
+        components.forEach(component => {
+          if (component.type === 'led' || component.id.includes('led')) {
+            const connectedWires = wires.filter(wire => 
+              (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
+              (wire.sourceName === pin.toString() || wire.targetName === pin.toString())
+            );
+            
+            if (connectedWires.length > 0) {
+              updateComponentState(component.id, { 
+                isOn: isHigh,
+                brightness: isHigh ? 1.0 : 0.0 
+              });
+              addLog(`💡 Pin ${pin} → ${component.id} ${isHigh ? 'ON' : 'OFF'}`);
+            }
+          }
+        });
+      },
+      onLog: (message) => {
+        addLog(`[AVR8] ${message}`);
+      }
+    });
+    
+    // Load and start the AVR8 program
+    emulatorRef.current.loadProgram(compilationResult.program);
+    emulatorRef.current.start();
+    useAVR8Ref.current = true;
+    setIsRunning(true);
+    addLog('▶️ AVR8 simulation started');
+    
+    // Run text parser for debugging/visualization only (doesn't control simulation)
+    addLog('🔍 Running debug parser for visualization...');
     
     try {
-      // Parse the actual code from the editor
-      console.log('SimulatorContext: About to parse code with ArduinoCodeParser');
+      // Parse the code for debug output
+      console.log('[DEBUG PARSER] Parsing code for visualization only');
       const parseResult = codeParserRef.current.parseCode(currentCode);
       console.log('SimulatorContext: Parse result:', parseResult);
       
@@ -387,70 +387,29 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       });
       console.log('DEBUG Raw Loop Lines:', parseResult.loop);
       
-      if (!parseResult || (!setupInstructions.length && !loopInstructions.length)) {
-        addLog('❌ Error: ArduinoCodeParser failed to extract any instructions');
-        console.log('SimulatorContext: Parser returned empty instructions');
-        return;
+      // Debug output only - text parser doesn't execute anything
+      if (parseResult && (setupInstructions.length || loopInstructions.length)) {
+        addLog(`📋 [DEBUG] Parser found ${parseResult.setup?.length || 0} setup lines, ${parseResult.loop?.length || 0} loop lines`);
+        addLog(`🔍 [DEBUG] Extracted ${setupInstructions.length} setup instructions, ${loopInstructions.length} loop instructions`);
+        
+        // Log parsed instructions for debugging
+        setupInstructions.forEach((inst, i) => {
+          console.log(`[DEBUG PARSER] Setup[${i}]:`, inst.instruction);
+        });
+        loopInstructions.forEach((inst, i) => {
+          console.log(`[DEBUG PARSER] Loop[${i}]:`, inst.instruction);
+        });
+      } else {
+        addLog('🔍 [DEBUG] Parser found no instructions');
       }
       
-      addLog(`📋 Found ${parseResult.setup?.length || 0} lines in setup(), ${parseResult.loop?.length || 0} lines in loop()`);
-      addLog(`✅ Code parsed: ${setupInstructions.length} setup instructions, ${loopInstructions.length} loop instructions`);
-      
-      // Initialize execution state with proper Map
-      // Preserve staticVariables across resets
-      const previousStaticVars = executionStateRef.current?.staticVariables || new Map();
-      
-      executionStateRef.current = {
-        phase: 'setup',
-        setupIndex: 0,
-        loopIndex: 0,
-        setupInstructions,
-        loopInstructions,
-        loopCount: 0,
-        variables: new Map(), // FIX: Use Map instead of plain object
-        staticVariables: previousStaticVars, // Preserve static variables
-        skipUntilEndIf: false,
-        inConditionalBlock: false,
-        lastConditionResult: false,
-        executeIfBlock: false
-      };
-      
-      console.log('[SimulatorContext] Execution state initialized with FIXED if logic:', executionStateRef.current);
-      
-      // Define the instruction execution function
-      const executeInstruction = (instruction) => {
-        try {
-          console.log('executeInstruction called with:', instruction);
-          
-          // Validate instruction exists and has required properties
-          if (!instruction || !instruction.instruction) {
-            console.error('[Simulator] Invalid instruction:', instruction);
-            addLog(`❌ Error: Invalid instruction received`);
-            return 0;
-          }
-          
-          // Ensure lineNumber is defined
-          if (instruction.lineNumber === undefined || instruction.lineNumber === null) {
-            console.warn('[Simulator] Instruction missing lineNumber:', instruction);
-            instruction.lineNumber = 'Unknown';
-          }
-          
-          const timestamp = new Date().toLocaleTimeString();
-        
-        // NOTE: Removed duplicate if statement implementation - using the corrected one later in the code
-        
-        // NOTE: Removed old skip logic - using the proper conditional logic system implemented later
-        
-        // NOTE: Removed problematic "else block" logic that was incorrectly skipping if block instructions
-        // The conditional logic is now handled properly by the skipUntilEndIf flag system
-        
-        // Debug all possible instruction types
-        console.log(`executeInstruction: instruction.instruction = "${instruction.instruction}"`);
-        console.log(`executeInstruction: instruction.delayMs = ${instruction.delayMs}`);
-        console.log(`executeInstruction: instruction includes delay? ${instruction.instruction.includes('delay')}`);
-        console.log(`executeInstruction: has delayMs? ${!!instruction.delayMs}`);
-        
-        if (instruction.instruction.includes('pinMode')) {
+    } catch (error) {
+      console.error('[DEBUG PARSER] Error parsing code for visualization:', error);
+      addLog(`🔍 [DEBUG] Parser error: ${error.message}`);
+    }
+  };
+
+  // Function to stop the simulation
           const pinNumber = instruction.pin;
           
           // Guard against null pin numbers from failed variable resolution
