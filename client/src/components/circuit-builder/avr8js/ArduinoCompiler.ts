@@ -159,9 +159,9 @@ export class ArduinoCompiler {
    */
   private analyzeSketchType(code: string, analysis: CodeAnalysis): SketchAnalysis {
     return {
-      // Is it a basic blink sketch?
+      // Is it a basic blink sketch? (ANY pin with digitalWrite and delay)
       isBlinkSketch: 
-        analysis.pinsUsed.includes(13) && 
+        analysis.pinsUsed.length > 0 && 
         analysis.delays.length > 0 &&
         code.includes('digitalWrite') &&
         !code.includes('analogWrite'),
@@ -169,9 +169,9 @@ export class ArduinoCompiler {
       // Is it an RGB LED sketch?
       isRgbLedSketch: 
         analysis.pinsUsed.length >= 3 &&
-        analysis.pinsUsed.some(pin => [9, 10, 11].includes(pin)) &&
         code.includes('digitalWrite') &&
-        !analysis.usesSerial,
+        !analysis.usesSerial &&
+        !this.isSimpleBlink(code, analysis),
       
       // Is it a button sketch?
       isButtonSketch: 
@@ -184,35 +184,66 @@ export class ArduinoCompiler {
   }
   
   /**
-   * Generate a simple blink program (for pin 13)
+   * Helper to detect simple blink patterns
+   */
+  private isSimpleBlink(code: string, analysis: CodeAnalysis): boolean {
+    // Simple blink: single pin, toggles HIGH/LOW with delays
+    const hasHigh = code.includes('HIGH');
+    const hasLow = code.includes('LOW');
+    const hasSinglePin = analysis.pinsUsed.length === 1;
+    return hasSinglePin && hasHigh && hasLow;
+  }
+  
+  /**
+   * Generate a simple blink program for ANY pin
    */
   private generateBlinkProgram(analysis: CodeAnalysis): Uint16Array {
-    // This is a simplified Arduino blink program in hex format
-    // Based on the classic blink sketch compiled for ATmega328P
+    // Get the first pin used (most likely the LED pin)
+    const targetPin = analysis.pinsUsed[0] || 13;
     
     // Get the primary delay from analysis, default to 1000ms
     const delayMs = analysis.delays.length > 0 ? analysis.delays[0] : 1000;
     
-    // Create a realistic blink program that toggles pin 13 (PB5)
-    // This is a hand-crafted hex program that mimics compiled Arduino code
+    // Convert Arduino pin to AVR port/bit
+    const { port, bit } = this.arduinoPinToAVR(targetPin);
+    
+    console.log(`[Compiler] Generating blink for pin ${targetPin} (${port}${bit})`);
+    
+    // Calculate port addresses based on the port
+    let ddrAddress, portAddress, bitMask;
+    
+    if (port === 'B') {
+      ddrAddress = 0x24;  // DDRB
+      portAddress = 0x25; // PORTB
+    } else if (port === 'C') {
+      ddrAddress = 0x27;  // DDRC
+      portAddress = 0x28; // PORTC
+    } else { // Port D
+      ddrAddress = 0x2A;  // DDRD
+      portAddress = 0x2B; // PORTD
+    }
+    
+    bitMask = 1 << bit;  // Create bit mask for the specific pin
+    
+    // Create a blink program for the target pin
     const program = new Uint16Array([
-      // Setup code (like setup() function)
+      // Setup: Set pin as output
       0x24BE, // eor r11, r11 (clear r11)
       0x2400, // nop
-      0xE5A5, // ldi r26, 0x25 (DDRB address)
+      0xE5A0 + (ddrAddress & 0x0F), // ldi r26, ddr_address
       0xE0B0, // ldi r27, 0x00 
-      0xE020, // ldi r18, 0x20 (bit 5 for pin 13)
-      0x9312, // st X, r18 (set DDRB bit 5 to output)
+      0xE020 + (bitMask & 0x0F), // ldi r18, bit_mask
+      0x9312, // st X, r18 (set DDR bit to output)
       
-      // Main loop (like loop() function)
-      0xE5A4, // ldi r26, 0x24 (PORTB address) - Loop start
+      // Main loop: Toggle pin
+      0xE5A0 + (portAddress & 0x0F), // ldi r26, port_address - Loop start
       0xE0B0, // ldi r27, 0x00
-      0x911C, // ld r17, X (read current PORTB)
-      0xE020, // ldi r18, 0x20 (bit 5 mask)
-      0x2712, // eor r17, r18 (toggle bit 5)
-      0x931C, // st X, r17 (write back to PORTB)
+      0x911C, // ld r17, X (read current PORT)
+      0xE020 + (bitMask & 0x0F), // ldi r18, bit_mask
+      0x2712, // eor r17, r18 (toggle bit)
+      0x931C, // st X, r17 (write back to PORT)
       
-      // Delay loop (simplified delay implementation)
+      // Delay loop
       0xE5F0 + ((delayMs >> 8) & 0x0F), // ldi r31, high(delay_count)
       0xE0E0 + (delayMs & 0x0F),        // ldi r30, low(delay_count)
       0x97E1, // sbiw r30, 1 (delay loop start)
@@ -229,6 +260,21 @@ export class ArduinoCompiler {
     ]);
     
     return program;
+  }
+  
+  /**
+   * Convert Arduino pin number to AVR port and bit
+   */
+  private arduinoPinToAVR(pin: number): { port: string, bit: number } {
+    if (pin >= 0 && pin <= 7) {
+      return { port: 'D', bit: pin };  // PD0-PD7
+    } else if (pin >= 8 && pin <= 13) {
+      return { port: 'B', bit: pin - 8 }; // PB0-PB5
+    } else if (pin >= 14 && pin <= 19) {
+      return { port: 'C', bit: pin - 14 }; // PC0-PC5
+    }
+    // Default to pin 13 (PB5) if unknown
+    return { port: 'B', bit: 5 };
   }
   
   /**
