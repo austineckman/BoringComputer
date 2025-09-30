@@ -165,6 +165,15 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       
       // Start execution loop (16 MHz = 16000 cycles per ms)
       addLog('▶️ Starting AVR8 execution...');
+      
+      // Debug: Check if components and wires are in global storage
+      const debugComponents = window.latestSimulatorData?.components || [];
+      const debugWires = window.latestSimulatorData?.wires || [];
+      addLog(`📊 Found ${debugComponents.length} components and ${debugWires.length} wires in storage`);
+      if (debugComponents.length > 0) {
+        addLog(`   Components: ${debugComponents.map(c => `${c.id}(${c.type})`).join(', ')}`);
+      }
+      
       setIsRunning(true);
       
       executionIntervalRef.current = setInterval(() => {
