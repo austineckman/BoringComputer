@@ -297,7 +297,6 @@ function App() {
         </Route>
       </Switch>
       <div className="App">
-          <AppRouter />
           <Toaster />
           <ShadcnToaster />
         </div>
