@@ -282,12 +282,12 @@ void loop() {
     const tabId = `lib_${libraryName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
     
     // If it's an Arduino library, fetch the library details for better code template
-    let code = libraryCode;
+    let code = libraryCode || '';
     if (!code && isArduinoLibrary) {
       const arduinoLib = arduinoLibraries.find((lib: any) => lib.name === libraryName);
       if (arduinoLib && arduinoLib.examples && arduinoLib.examples.length > 0) {
         // Use the first example as the template
-        code = arduinoLib.examples[0].code;
+        code = arduinoLib.examples[0].code || '';
       } else {
         code = `// ${libraryName} Library Code\n#include <${libraryName}.h>\n\n// Your ${libraryName} code here\nvoid setup() {\n  // Initialize library\n}\n\nvoid loop() {\n  // Main code\n}`;
       }
@@ -299,7 +299,7 @@ void loop() {
       ...prev,
       [tabId]: {
         name: libraryName,
-        code,
+        code: code || '', // Ensure code is never undefined
         type: 'library',
         libraryName
       }
@@ -670,6 +670,30 @@ void loop() {
   const getCode = () => {
     return code;
   };
+  
+  // Get combined code from all tabs (main + libraries)
+  const getCombinedCode = () => {
+    let combinedCode = '';
+    
+    // Add library tabs first (they may contain functions/classes that main code uses)
+    Object.entries(codeTabs).forEach(([tabId, tab]) => {
+      if (tabId !== 'main' && tab.code.trim()) {
+        combinedCode += `// ===== Library: ${tab.name} =====\n`;
+        combinedCode += tab.code + '\n\n';
+      }
+    });
+    
+    // Add main code last
+    if (codeTabs.main) {
+      combinedCode += `// ===== Main Code =====\n`;
+      combinedCode += codeTabs.main.code;
+    } else {
+      // Fallback to standalone code state
+      combinedCode += code;
+    }
+    
+    return combinedCode;
+  };
 
   // Notification system
   const [notification, setNotification] = useState<NotificationType | null>(null);
@@ -854,10 +878,16 @@ void loop() {
       // Show a notification that we're starting compilation
       showNotification('Compiling Arduino code...', 'info');
       
-      // Get the current code from the editor
-      const currentCode = getCode();
-      console.log('CircuitBuilderWindow: Getting code for simulation, length:', currentCode?.length);
+      // Get the combined code from all tabs (main + libraries)
+      const currentCode = getCombinedCode();
+      console.log('CircuitBuilderWindow: Getting combined code for simulation, length:', currentCode?.length);
       console.log('CircuitBuilderWindow: Code preview:', currentCode?.substring(0, 100));
+      
+      // Count library tabs
+      const libraryTabCount = Object.keys(codeTabs).filter(k => k !== 'main').length;
+      if (libraryTabCount > 0) {
+        console.log(`CircuitBuilderWindow: Including ${libraryTabCount} library tab(s) in compilation`);
+      }
       
       if (!currentCode || currentCode.trim() === '') {
         showNotification('Please write some Arduino code in the editor first!', 'error');
