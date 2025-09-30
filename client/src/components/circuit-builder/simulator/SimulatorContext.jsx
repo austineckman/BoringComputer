@@ -169,38 +169,11 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog('✅ Pin callbacks registered');
       console.log('[Simulator] Pin callbacks set up successfully');
       
-      try {
-        // Start execution loop (16 MHz = 16000 cycles per ms)
-        addLog('▶️ Starting AVR8 execution...');
-        console.log('[Simulator] About to start execution loop...');
-        
-        // Debug: Check if components and wires are in global storage
-        const debugComponents = window.latestSimulatorData?.components || [];
-        const debugWires = window.latestSimulatorData?.wires || [];
-        addLog(`📊 Found ${debugComponents.length} components and ${debugWires.length} wires in storage`);
-        console.log(`[Simulator] Components in storage:`, debugComponents);
-        console.log(`[Simulator] Wires in storage:`, debugWires);
-        if (debugComponents.length > 0) {
-          addLog(`   Components: ${debugComponents.map(c => `${c.id}(${c.type})`).join(', ')}`);
-        }
-        
-        setIsRunning(true);
-        console.log('[Simulator] Set isRunning to true');
-        
-        executionIntervalRef.current = setInterval(() => {
-          if (avrCoreRef.current) {
-            // Execute 16000 cycles (1ms of real time)
-            avrCoreRef.current.execute(16000);
-          }
-        }, 1);
-        console.log('[Simulator] Execution interval started');
-        
-        addLog('✅ Simulation running');
-        console.log('[Simulator] Simulation running successfully');
-      } catch (execError) {
-        console.error('[Simulator] Error starting execution:', execError);
-        addLog(`❌ Execution error: ${execError.message}`);
-      }
+      // Trigger execution via useEffect by setting isRunning to true
+      // The useEffect hook will start the interval when it sees isRunning change
+      setIsCompiling(false);
+      setIsRunning(true);
+      console.log('[Simulator] Set isRunning to true - useEffect will start execution');
       
     } catch (error) {
       setIsCompiling(false);
@@ -334,6 +307,42 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     window.latestSimulatorData.wires = wires;
     console.log(`[SimulatorContext] Stored ${wires.length} wires globally`);
   }, [wires]);
+  
+  // Execute AVR8js when simulation is running
+  useEffect(() => {
+    if (isRunning && avrCoreRef.current && !executionIntervalRef.current) {
+      console.log('[Simulator] Starting execution interval...');
+      addLog('▶️ Starting AVR8 execution...');
+      
+      // Debug: Check if components and wires are in global storage
+      const debugComponents = window.latestSimulatorData?.components || [];
+      const debugWires = window.latestSimulatorData?.wires || [];
+      addLog(`📊 Found ${debugComponents.length} components and ${debugWires.length} wires in storage`);
+      console.log(`[Simulator] Components in storage:`, debugComponents);
+      console.log(`[Simulator] Wires in storage:`, debugWires);
+      if (debugComponents.length > 0) {
+        addLog(`   Components: ${debugComponents.map(c => `${c.id}(${c.type})`).join(', ')}`);
+      }
+      
+      executionIntervalRef.current = setInterval(() => {
+        if (avrCoreRef.current) {
+          // Execute 16000 cycles (1ms of execution at 16MHz)
+          avrCoreRef.current.execute(16000);
+        }
+      }, 1);
+      
+      console.log('[Simulator] ✅ Execution interval started');
+      addLog('✅ Simulation running');
+    }
+    
+    // Cleanup when isRunning changes or component unmounts
+    return () => {
+      if (executionIntervalRef.current) {
+        clearInterval(executionIntervalRef.current);
+        executionIntervalRef.current = null;
+      }
+    };
+  }, [isRunning]);
   
   // Make the simulator context available globally for non-React components
   useEffect(() => {
