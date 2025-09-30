@@ -213,29 +213,58 @@ export class AVR8Core implements IAVR8Core {
       console.warn(`[AVR8Core] Program too large: ${program.length} > ${this.cpu.progMem.length}`);
     }
 
+    // Clear all program memory first
+    for (let i = 0; i < this.cpu.progMem.length; i++) {
+      this.cpu.progMem[i] = 0;
+    }
+
     // Copy program into CPU memory
     for (let i = 0; i < Math.min(program.length, this.cpu.progMem.length); i++) {
       this.cpu.progMem[i] = program[i];
     }
 
-    // Clear any remaining program memory
-    for (let i = program.length; i < this.cpu.progMem.length; i++) {
-      this.cpu.progMem[i] = 0;
-    }
-
     // Reset the CPU to start execution from address 0
     this.cpu.reset();
+    
+    // Force PC to 0 and clear any CPU state
+    this.cpu.pc = 0;
+    this.cpu.cycles = 0;
+    
+    // Initialize CPU registers
+    this.cpu.data.fill(0);
+    
+    // Set up stack pointer to end of SRAM (ATmega328P has SRAM from 0x100 to 0x8FF)
+    this.cpu.data[0x5D] = 0xFF; // SPL
+    this.cpu.data[0x5E] = 0x08; // SPH
 
     console.log(`[AVR8Core] Program loaded (${program.length} words), CPU reset to PC=${this.cpu.pc}`);
     console.log(`[AVR8Core] Verification - progMem[0-2]: 0x${this.cpu.progMem[0]?.toString(16)}, 0x${this.cpu.progMem[1]?.toString(16)}, 0x${this.cpu.progMem[2]?.toString(16)}`);
+    
+    // Test execute one cycle to see if it works
+    try {
+      const testPC = this.cpu.pc;
+      this.cpu.tick();
+      console.log(`[AVR8Core] Test execution: PC ${testPC} → ${this.cpu.pc}, instruction: 0x${this.cpu.progMem[testPC]?.toString(16)}`);
+      // Reset back to start
+      this.cpu.pc = 0;
+      this.cpu.cycles = 0;
+    } catch (error) {
+      console.error('[AVR8Core] Test execution failed:', error);
+    }
   }
 
   /**
    * Execute a certain number of CPU cycles
    */
   public execute(cycles: number): void {
-    if (!this.cpu || this.cpu.progMem.length === 0) {
-      console.warn('[AVR8Core] No program loaded, skipping execution');
+    if (!this.cpu) {
+      console.warn('[AVR8Core] No CPU available, skipping execution');
+      return;
+    }
+
+    // Check if we have a valid program loaded
+    if (!this.cpu.progMem || this.cpu.progMem.length === 0 || this.cpu.progMem[0] === 0) {
+      console.warn('[AVR8Core] No valid program loaded, skipping execution');
       return;
     }
 
@@ -247,37 +276,30 @@ export class AVR8Core implements IAVR8Core {
     const prevPortC = this.cpu.data[0x28] || 0;
     const prevPortD = this.cpu.data[0x2B] || 0;
 
-    // Run the CPU for the specified number of cycles
-    // Use a more efficient execution approach
-    const startTime = performance.now();
+    // Execute the specified number of cycles
     let cyclesExecuted = 0;
+    const maxCyclesPerExecution = Math.min(cycles, 1000); // Limit to prevent freezing
     
     try {
-      while (cyclesExecuted < cycles) {
-        // Check if we're stuck in an infinite loop (PC not advancing)
-        const beforePC = this.cpu.pc;
-        
-        // Execute one instruction
+      // Simple execution loop - just run the cycles
+      for (let i = 0; i < maxCyclesPerExecution; i++) {
+        // Execute one CPU cycle
         this.cpu.tick();
         cyclesExecuted++;
         
-        // Safety check: if PC hasn't changed after many cycles, we might be stuck
-        if (cyclesExecuted % 1000 === 0) {
-          const currentTime = performance.now();
-          if (currentTime - startTime > 10) { // Don't spend more than 10ms per execution
-            console.log(`[AVR8Core] Breaking execution after ${cyclesExecuted} cycles (time limit)`);
-            break;
-          }
-          
-          // Check if program counter is advancing
-          if (beforePC === this.cpu.pc && cyclesExecuted > 100) {
-            // PC stuck, might be in a tight loop - this is actually normal for delay loops
-            // Don't break, just continue
+        // Check every 100 cycles if we need to log progress
+        if (cyclesExecuted % 100 === 0) {
+          const currentPC = this.cpu.pc;
+          // Only log if PC has actually changed or if we're at the start
+          if (currentPC !== initialPC || cyclesExecuted === 100) {
+            console.log(`[AVR8Core] Executed ${cyclesExecuted} cycles, PC: ${initialPC}→${currentPC}`);
           }
         }
       }
     } catch (error) {
       console.error('[AVR8Core] Execution error:', error);
+      console.error('[AVR8Core] PC was at:', this.cpu.pc);
+      console.error('[AVR8Core] Program at PC:', this.cpu.progMem[this.cpu.pc]?.toString(16));
       return;
     }
 
