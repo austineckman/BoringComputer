@@ -104,6 +104,7 @@ export class AVR8Core implements IAVR8Core {
   private setupPinChangeListeners(): void {
     // Monitor port B pins
     this.portB.addListener((pinValue, port) => {
+      console.log(`[AVR8Core] Port B listener fired! Value: ${pinValue.toString(2).padStart(8, '0')}`);
       for (let pin = 0; pin < 8; pin++) {
         const pinMask = 1 << pin;
         const isHigh = (pinValue & pinMask) !== 0;
