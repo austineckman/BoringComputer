@@ -169,11 +169,19 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog('✅ Pin callbacks registered');
       console.log('[Simulator] Pin callbacks set up successfully');
       
-      // Trigger execution via useEffect by setting isRunning to true
-      // The useEffect hook will start the interval when it sees isRunning change
+      // SIMPLE APPROACH: Just start the execution interval directly
+      // No React hooks, no state updates - just run it
+      console.log('[Simulator] Starting execution interval DIRECTLY...');
+      
+      executionIntervalRef.current = setInterval(() => {
+        if (avrCoreRef.current) {
+          avrCoreRef.current.execute(16000); // 1ms worth of cycles at 16MHz
+        }
+      }, 1);
+      
+      console.log('[Simulator] ✅ EXECUTION INTERVAL STARTED - AVR8js is running!');
       setIsCompiling(false);
       setIsRunning(true);
-      console.log('[Simulator] Set isRunning to true - useEffect will start execution');
       
     } catch (error) {
       setIsCompiling(false);
