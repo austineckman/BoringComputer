@@ -346,17 +346,6 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
 
       console.log('[Simulator] ✅ EXECUTION INTERVAL STARTED - AVR8js is running!');
 
-      // TEMPORARY: Manually blink pin 13 to prove the LED chain works
-      let manualBlinkState = false;
-      const manualBlinkInterval = setInterval(() => {
-        manualBlinkState = !manualBlinkState;
-        console.log(`[MANUAL BLINK] Pin 13 → ${manualBlinkState ? 'HIGH' : 'LOW'}`);
-        handlePinChange(13, manualBlinkState);
-      }, 1000);
-
-      // Store the manual blink interval so we can clear it
-      window._manualBlinkInterval = manualBlinkInterval;
-
       setIsCompiling(false);
       setIsRunning(true);
 
@@ -429,12 +418,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       executionIntervalRef.current = null;
     }
 
-    // Stop manual blink interval (temporary debugging)
-    if (window._manualBlinkInterval) {
-      clearInterval(window._manualBlinkInterval);
-      window._manualBlinkInterval = null;
-      console.log('[Simulator] Cleared manual blink interval');
-    }
+    
 
     // Reset all component states when stopping
     components.forEach(component => {
