@@ -12,24 +12,24 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
   const { componentStates, isRunning } = useSimulator();
   const [displayBuffer, setDisplayBuffer] = useState(null);
   const [displayRect, setDisplayRect] = useState(null);
-  
+
   // Handle either id or componentId being passed (defensive programming)
   const displayId = id || componentId;
-  
+
   // Canvas dimensions to match SSD1306 OLED dimensions (128x64 pixels)
   const displayWidth = 128;
   const displayHeight = 64;
-  
+
   // Get the current state of this specific OLED display
   const displayState = displayId ? componentStates[displayId] : null;
-  
+
   // Log for debugging
   useEffect(() => {
     if (!displayId) {
       console.warn("OLEDDisplayRenderer: No valid ID provided (id or componentId)");
     }
   }, [displayId]);
-  
+
   // Initialize display buffer on mount
   useEffect(() => {
     // Create empty buffer (all pixels off)
@@ -46,7 +46,7 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
       // First try to find the parent component with the image
       let currentElement = canvasRef.current;
       if (!currentElement) return null;
-      
+
       // Walk up the DOM to find the component container
       let parent = currentElement.parentElement;
       while (parent) {
@@ -54,7 +54,7 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
         if (parent.classList.contains('circuit-component') || 
             parent.dataset.componentId ||
             parent.id === displayId) {
-          
+
           // Look for the image within the component
           const img = parent.querySelector('img');
           if (img && img.src) {
@@ -89,7 +89,7 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
           console.log("Analyzing OLED image:", imageSrc);
           const rect = await findRectangleWithCache(imageSrc);
           console.log("Found black rectangle in OLED:", rect);
-          
+
           // Verify that the detected rectangle is reasonable
           // Avoid results that are too large (whole component) or too small
           if (rect.width < 15 || rect.height < 15) {
@@ -142,21 +142,21 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
       setTimeout(analyzeComponentImage, 200);
     }
   }, [displayId]); // Only run when displayId changes
-  
+
   // Update canvas when display buffer changes
   useEffect(() => {
     if (!canvasRef.current || !displayBuffer) return;
-    
+
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    
+
     // Clear canvas with black background (OLED style)
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
+
     // Draw pixels from buffer
     ctx.fillStyle = '#00ff41'; // Green for OLED pixels (more realistic)
-    
+
     for (let y = 0; y < displayHeight; y++) {
       for (let x = 0; x < displayWidth; x++) {
         if (displayBuffer[y] && displayBuffer[y][x]) {
@@ -164,47 +164,47 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
         }
       }
     }
-    
+
     // Also handle display state elements if they exist (for advanced users)
     if (displayState && displayState.display && displayState.display.elements && displayState.display.elements.length > 0) {
       ctx.fillStyle = '#00ff41'; // Green for OLED pixels
       ctx.strokeStyle = '#00ff41';
       ctx.lineWidth = 1;
-      
+
       displayState.display.elements.forEach((element) => {
         switch (element.type) {
           case 'text':
             ctx.font = '8px monospace';
             ctx.fillText(element.text, element.x, element.y);
             break;
-            
+
           case 'frame':
             ctx.strokeRect(element.x, element.y, element.width, element.height);
             break;
-            
+
           case 'filledRect':
             ctx.fillRect(element.x, element.y, element.width, element.height);
             break;
-            
+
           case 'circle':
             ctx.beginPath();
             ctx.arc(element.x, element.y, element.radius, 0, 2 * Math.PI);
             ctx.stroke();
             break;
-            
+
           case 'filledCircle':
             ctx.beginPath();
             ctx.arc(element.x, element.y, element.radius, 0, 2 * Math.PI);
             ctx.fill();
             break;
-            
+
           case 'line':
             ctx.beginPath();
             ctx.moveTo(element.x1, element.y1);
             ctx.lineTo(element.x2, element.y2);
             ctx.stroke();
             break;
-            
+
           case 'pixel':
             ctx.fillRect(element.x, element.y, 1, 1);
             break;
@@ -212,20 +212,20 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
       });
     }
   }, [displayBuffer, displayState, displayId]);
-  
+
   // Update from simulator state when it changes
   useEffect(() => {
     if (displayState && displayState.display && displayState.display.buffer) {
       setDisplayBuffer(displayState.display.buffer);
     }
   }, [displayState]);
-  
+
   // Clean up any animation intervals when the component unmounts or simulation stops
   useEffect(() => {
     // Only set up cleanup when simulation is running
     if (isRunning) {
       // No setup needed here, setup happens in the other useEffect
-      
+
       // Return cleanup function
       return () => {
         if (animationInterval.current) {
@@ -243,106 +243,66 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
       }
     }
   }, [isRunning]);
-  
+
   // Reference to store animation interval
   const animationInterval = useRef(null);
-  
-  // Handle display updates based on simulation state
+
+  // Render display content based on simulator state
   useEffect(() => {
-    if (!isRunning) {
-      // Clear any existing animation when simulation stops
-      if (animationInterval.current) {
-        clearInterval(animationInterval.current);
-        animationInterval.current = null;
+    if (!isRunning || !displayId) {
+      // Clear display when simulation stops
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, displayWidth, displayHeight);
       }
-      
-      // Create blank buffer when not running
-      const blankBuffer = new Array(displayHeight).fill(0).map(() => 
-        new Array(displayWidth).fill(0)
-      );
-      setDisplayBuffer(blankBuffer);
       return;
     }
-    
-    // Always clear any existing animation when display state changes
-    if (animationInterval.current) {
-      clearInterval(animationInterval.current);
-      animationInterval.current = null;
-    }
-    
-    console.log(`[OLED Debug] Simulation running for display ${displayId}`);
+
     console.log("OLED Display State:", displayState);
-    
-    // For testing/demo purposes, always show the animation when simulation is running
-    // Later this can be made conditional based on proper code detection
-    console.log(`[OLED Debug] Starting demo animation for ${displayId}`);
-    
-    // Create a bouncing ball animation to demonstrate OLED functionality
-    let x = 44;
-    let y = 24;
-    let dx = 1;
-    let dy = 1;
-    let frameCount = 0;
-    
-    animationInterval.current = setInterval(() => {
-      // Create new empty buffer
+
+    // ONLY show OLED content if we have actual display elements from Arduino code
+    if (displayState && displayState.display && displayState.display.elements && displayState.display.elements.length > 0) {
+      console.log(`[OLED Debug] Rendering ${displayState.display.elements.length} display elements`);
+
+      // Render the actual OLED commands from Arduino code
       const newBuffer = new Array(displayHeight).fill(0).map(() => 
         new Array(displayWidth).fill(0)
       );
-      
-      // Move the ball
-      x += dx;
-      y += dy;
-      
-      // Bounce off edges
-      if (x <= 4 || x >= displayWidth - 4) dx = -dx;
-      if (y <= 4 || y >= displayHeight - 4) dy = -dy;
-      
-      // Draw a circle (ball)
-      for (let yy = -3; yy <= 3; yy++) {
-        for (let xx = -3; xx <= 3; xx++) {
-          if (xx*xx + yy*yy <= 9) { // Circle equation
-            const drawX = Math.floor(x + xx);
-            const drawY = Math.floor(y + yy);
-            
-            // Make sure we're within bounds
-            if (drawX >= 0 && drawX < displayWidth && 
-                drawY >= 0 && drawY < displayHeight) {
-              newBuffer[drawY][drawX] = 1;
-            }
-          }
+
+      // Process each display element
+      displayState.display.elements.forEach(element => {
+        switch (element.type) {
+          case 'text':
+            drawText(newBuffer, element.text, element.x, element.y);
+            break;
+          case 'frame':
+            drawFrame(newBuffer, element.x, element.y, element.width, element.height);
+            break;
+          case 'filledRect':
+            drawFilledRect(newBuffer, element.x, element.y, element.width, element.height);
+            break;
+          case 'circle':
+            drawCircle(newBuffer, element.x, element.y, element.radius);
+            break;
+          case 'filledCircle':
+            drawFilledCircle(newBuffer, element.x, element.y, element.radius);
+            break;
         }
-      }
-      
-      // Draw "OLED" text in corner
-      const text = `OLED`;
-      for (let i = 0; i < text.length; i++) {
-        const charX = 3 + i * 6;
-        const charY = 2;
-        drawChar(newBuffer, text.charAt(i), charX, charY);
-      }
-      
-      // Draw frame counter
-      const countText = `F:${frameCount++}`;
-      for (let i = 0; i < countText.length; i++) {
-        const charX = 5 + i * 6;
-        const charY = 55;
-        drawChar(newBuffer, countText.charAt(i), charX, charY);
-      }
-      
-      // Update the display buffer
+      });
+
       setDisplayBuffer(newBuffer);
-      console.log(`[OLED] Frame ${frameCount} rendered for ${displayId}`);
-    }, 150); // Update every 150ms
-    
-    return () => {
-      if (animationInterval.current) {
-        clearInterval(animationInterval.current);
-        animationInterval.current = null;
-      }
-    };
+    } else {
+      console.log(`[OLED Debug] No display elements found - keeping display blank`);
+      // Keep display blank if no Arduino OLED commands received
+      const emptyBuffer = new Array(displayHeight).fill(0).map(() => 
+        new Array(displayWidth).fill(0)
+      );
+      setDisplayBuffer(emptyBuffer);
+    }
   }, [isRunning, displayState]);
-  
+
   // Helper function to draw a character (simple 5x7 font)
   const drawChar = (buffer, char, x, y) => {
     // Simple 5x7 font for digits and basic characters
@@ -745,10 +705,10 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
         [0,0,0,0]
       ]
     };
-    
+
     // Get font data for this char (default to space if not found)
     const charData = fontData[char] || fontData[' '];
-    
+
     // Draw the character pixel by pixel
     for (let row = 0; row < charData.length; row++) {
       for (let col = 0; col < charData[row].length; col++) {
@@ -762,13 +722,73 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
       }
     }
   };
-  
+
+  // Helper function to draw text
+  const drawText = (buffer, text, x, y) => {
+    for (let i = 0; i < text.length; i++) {
+      drawChar(buffer, text.charAt(i), x + i * 6, y);
+    }
+  };
+
+  // Helper function to draw a rectangle frame
+  const drawFrame = (buffer, x, y, width, height) => {
+    for (let i = 0; i < width; i++) {
+      buffer[y][x + i] = 1; // Top
+      buffer[y + height - 1][x + i] = 1; // Bottom
+    }
+    for (let i = 0; i < height; i++) {
+      buffer[y + i][x] = 1; // Left
+      buffer[y + i][x + width - 1] = 1; // Right
+    }
+  };
+
+  // Helper function to draw a filled rectangle
+  const drawFilledRect = (buffer, x, y, width, height) => {
+    for (let yy = 0; yy < height; yy++) {
+      for (let xx = 0; xx < width; xx++) {
+        const drawX = Math.floor(x + xx);
+        const drawY = Math.floor(y + yy);
+        if (drawX >= 0 && drawX < displayWidth && drawY >= 0 && drawY < displayHeight) {
+          buffer[drawY][drawX] = 1;
+        }
+      }
+    }
+  };
+
+  // Helper function to draw a circle
+  const drawCircle = (buffer, x, y, radius) => {
+    for (let angle = 0; angle < 2 * Math.PI; angle += 0.1) {
+      const xx = radius * Math.cos(angle);
+      const yy = radius * Math.sin(angle);
+      const drawX = Math.floor(x + xx);
+      const drawY = Math.floor(y + yy);
+      if (drawX >= 0 && drawX < displayWidth && drawY >= 0 && drawY < displayHeight) {
+        buffer[drawY][drawX] = 1;
+      }
+    }
+  };
+
+  // Helper function to draw a filled circle
+  const drawFilledCircle = (buffer, x, y, radius) => {
+    for (let yy = -radius; yy <= radius; yy++) {
+      for (let xx = -radius; xx <= radius; xx++) {
+        if (xx*xx + yy*yy <= radius*radius) {
+          const drawX = Math.floor(x + xx);
+          const drawY = Math.floor(y + yy);
+          if (drawX >= 0 && drawX < displayWidth && drawY >= 0 && drawY < displayHeight) {
+            buffer[drawY][drawX] = 1;
+          }
+        }
+      }
+    }
+  };
+
   // Per user request, use specific manual positioning instead of image analysis
   // Double the size and adjust position (lower 10px, right 3px)
   // Check if the OLED is properly configured (for visuals)
   // Added extra defensive checks 
   const isDisplayActive = displayState && displayState.shouldDisplay === true;
-  
+
   return (
     <div
       ref={containerRef}
