@@ -673,26 +673,16 @@ void loop() {
   
   // Get combined code from all tabs (main + libraries)
   const getCombinedCode = () => {
-    let combinedCode = '';
+    // Since libraries are now installed on the compiler server,
+    // we only need to send the main code with #include statements
+    // The server will find the libraries automatically
     
-    // Add library tabs first (they may contain functions/classes that main code uses)
-    Object.entries(codeTabs).forEach(([tabId, tab]) => {
-      if (tabId !== 'main' && tab.code.trim()) {
-        combinedCode += `// ===== Library: ${tab.name} =====\n`;
-        combinedCode += tab.code + '\n\n';
-      }
-    });
-    
-    // Add main code last
     if (codeTabs.main) {
-      combinedCode += `// ===== Main Code =====\n`;
-      combinedCode += codeTabs.main.code;
+      return codeTabs.main.code;
     } else {
       // Fallback to standalone code state
-      combinedCode += code;
+      return code;
     }
-    
-    return combinedCode;
   };
 
   // Notification system
