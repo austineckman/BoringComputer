@@ -191,21 +191,14 @@ export class AVR8Core implements IAVR8Core {
       this.cpu.tick();
     }
     
-    // Debug: Log every 16000 cycles (once per ms)
-    if (cycles === 16000) {
-      const finalPC = this.cpu.pc;
-      const finalCycles = this.cpu.cycles;
-      
-      console.log(`[AVR8Core] CPU - PC: ${initialPC} → ${finalPC}, Cycles: ${initialCycles} → ${finalCycles}`);
-      
-      // Check the first instruction in program memory
-      const firstInstruction = this.cpu.progMem[0];
-      console.log(`[AVR8Core] First instruction at PC=0: 0x${firstInstruction?.toString(16).padStart(4, '0')}`);
-      
-      // Also check Port B PORTB register directly
-      const portBValue = this.cpu.data[0x25]; // PORTB is at address 0x25
-      const portBDir = this.cpu.data[0x24];   // DDRB is at address 0x24
-      console.log(`[AVR8Core] PORTB=0x${portBValue?.toString(16).padStart(2, '0')} DDRB=0x${portBDir?.toString(16).padStart(2, '0')}`);
+    const finalPC = this.cpu.pc;
+    const finalCycles = this.cpu.cycles;
+    
+    // Debug every second execution
+    if (cycles === 16000 && finalCycles % 32000 < 16000) {
+      console.log(`[AVR8Core] PC: ${initialPC}→${finalPC}, Cycles: ${initialCycles}→${finalCycles}`);
+      console.log(`[AVR8Core] progMem[0-2]: 0x${this.cpu.progMem[0]?.toString(16)}, 0x${this.cpu.progMem[1]?.toString(16)}, 0x${this.cpu.progMem[2]?.toString(16)}`);
+      console.log(`[AVR8Core] PORTB=${this.cpu.data[0x25]?.toString(16)} DDRB=${this.cpu.data[0x24]?.toString(16)}`);
     }
   }
   
