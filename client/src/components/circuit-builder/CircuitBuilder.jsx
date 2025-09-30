@@ -96,6 +96,15 @@ const CircuitBuilder = () => {
         return;
       }
       
+      // Check if trying to add a Hero Board when one already exists
+      if (type === 'heroboard') {
+        const existingHeroBoard = components.find(c => c.type === 'heroboard');
+        if (existingHeroBoard) {
+          alert('Only one Hero Board is allowed per circuit. Please remove the existing Hero Board first if you want to add a new one.');
+          return;
+        }
+      }
+      
       // Find component details in our componentOptions
       const componentInfo = componentOptions.find(c => c.name === type);
       if (!componentInfo) {
