@@ -169,27 +169,38 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog('✅ Pin callbacks registered');
       console.log('[Simulator] Pin callbacks set up successfully');
       
-      // Start execution loop (16 MHz = 16000 cycles per ms)
-      addLog('▶️ Starting AVR8 execution...');
-      
-      // Debug: Check if components and wires are in global storage
-      const debugComponents = window.latestSimulatorData?.components || [];
-      const debugWires = window.latestSimulatorData?.wires || [];
-      addLog(`📊 Found ${debugComponents.length} components and ${debugWires.length} wires in storage`);
-      if (debugComponents.length > 0) {
-        addLog(`   Components: ${debugComponents.map(c => `${c.id}(${c.type})`).join(', ')}`);
-      }
-      
-      setIsRunning(true);
-      
-      executionIntervalRef.current = setInterval(() => {
-        if (avrCoreRef.current) {
-          // Execute 16000 cycles (1ms of real time)
-          avrCoreRef.current.execute(16000);
+      try {
+        // Start execution loop (16 MHz = 16000 cycles per ms)
+        addLog('▶️ Starting AVR8 execution...');
+        console.log('[Simulator] About to start execution loop...');
+        
+        // Debug: Check if components and wires are in global storage
+        const debugComponents = window.latestSimulatorData?.components || [];
+        const debugWires = window.latestSimulatorData?.wires || [];
+        addLog(`📊 Found ${debugComponents.length} components and ${debugWires.length} wires in storage`);
+        console.log(`[Simulator] Components in storage:`, debugComponents);
+        console.log(`[Simulator] Wires in storage:`, debugWires);
+        if (debugComponents.length > 0) {
+          addLog(`   Components: ${debugComponents.map(c => `${c.id}(${c.type})`).join(', ')}`);
         }
-      }, 1);
-      
-      addLog('✅ Simulation running');
+        
+        setIsRunning(true);
+        console.log('[Simulator] Set isRunning to true');
+        
+        executionIntervalRef.current = setInterval(() => {
+          if (avrCoreRef.current) {
+            // Execute 16000 cycles (1ms of real time)
+            avrCoreRef.current.execute(16000);
+          }
+        }, 1);
+        console.log('[Simulator] Execution interval started');
+        
+        addLog('✅ Simulation running');
+        console.log('[Simulator] Simulation running successfully');
+      } catch (execError) {
+        console.error('[Simulator] Error starting execution:', execError);
+        addLog(`❌ Execution error: ${execError.message}`);
+      }
       
     } catch (error) {
       setIsCompiling(false);
