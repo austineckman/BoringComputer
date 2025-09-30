@@ -105,33 +105,65 @@ export class AVR8Core implements IAVR8Core {
    * Set up pin change listeners for all ports
    */
   private setupPinChangeListeners(): void {
-    // Monitor port B pins
-    this.portB.addListener((pinValue, port) => {
-      console.log(`[AVR8Core] Port B listener fired! Value: ${pinValue.toString(2).padStart(8, '0')}`);
+    // Store previous port values for change detection
+    let prevPortB = 0;
+    let prevPortC = 0;
+    let prevPortD = 0;
+
+    // Monitor port B pins - listen to PORT register changes
+    this.portB.addListener((pinValue) => {
+      console.log(`[AVR8Core] Port B listener fired! Value: 0x${pinValue.toString(16)} (binary: ${pinValue.toString(2).padStart(8, '0')})`);
+      
+      // Check each pin for changes
       for (let pin = 0; pin < 8; pin++) {
         const pinMask = 1 << pin;
+        const wasHigh = (prevPortB & pinMask) !== 0;
         const isHigh = (pinValue & pinMask) !== 0;
-        this.handlePinChange('B', pin, isHigh);
+        
+        if (wasHigh !== isHigh) {
+          console.log(`[AVR8Core] Port B Pin ${pin} changed: ${wasHigh ? 'HIGH' : 'LOW'} → ${isHigh ? 'HIGH' : 'LOW'}`);
+          this.handlePinChange('B', pin, isHigh);
+        }
       }
+      
+      prevPortB = pinValue;
     });
 
     // Monitor port C pins
-    this.portC.addListener((pinValue, port) => {
+    this.portC.addListener((pinValue) => {
+      console.log(`[AVR8Core] Port C listener fired! Value: 0x${pinValue.toString(16)}`);
+      
       for (let pin = 0; pin < 8; pin++) {
         const pinMask = 1 << pin;
+        const wasHigh = (prevPortC & pinMask) !== 0;
         const isHigh = (pinValue & pinMask) !== 0;
-        this.handlePinChange('C', pin, isHigh);
+        
+        if (wasHigh !== isHigh) {
+          this.handlePinChange('C', pin, isHigh);
+        }
       }
+      
+      prevPortC = pinValue;
     });
 
     // Monitor port D pins
-    this.portD.addListener((pinValue, port) => {
+    this.portD.addListener((pinValue) => {
+      console.log(`[AVR8Core] Port D listener fired! Value: 0x${pinValue.toString(16)}`);
+      
       for (let pin = 0; pin < 8; pin++) {
         const pinMask = 1 << pin;
+        const wasHigh = (prevPortD & pinMask) !== 0;
         const isHigh = (pinValue & pinMask) !== 0;
-        this.handlePinChange('D', pin, isHigh);
+        
+        if (wasHigh !== isHigh) {
+          this.handlePinChange('D', pin, isHigh);
+        }
       }
+      
+      prevPortD = pinValue;
     });
+
+    console.log('[AVR8Core] Port listeners set up successfully');
   }
 
   /**

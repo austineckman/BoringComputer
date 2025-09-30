@@ -363,6 +363,11 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   // Handle pin state changes from AVR8 core
   const handlePinChange = (pin, isHigh) => {
     console.log(`[AVR8] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+    
+    // Special logging for pin 13
+    if (pin === 13) {
+      console.log(`🔴 PIN 13 CHANGE DETECTED: ${isHigh ? 'HIGH' : 'LOW'}`);
+    }
 
     // Get the latest components and wires from global storage (avoiding stale closure)
     const latestComponents = window.latestSimulatorData?.components || [];
@@ -378,13 +383,22 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
 
         // Special handling for pin 13 - Arduino boards have an onboard LED on pin 13
         if (pin === 13) {
+          // Update multiple state properties for pin 13
           updateComponentState(component.id, { 
             pin13: isHigh,
             onboardLED: isHigh,
             pin13LED: isHigh 
           });
+          
+          // Also update the pins object
+          updateComponentPins(component.id, { 
+            '13': isHigh,
+            'd13': isHigh 
+          });
+          
           addLog(`🔴 Onboard LED (Pin 13) ${isHigh ? 'ON' : 'OFF'}`);
-          console.log(`[AVR8] Pin 13 LED state updated: ${component.id} -> ${isHigh ? 'HIGH' : 'LOW'}`);
+          console.log(`🔴 [AVR8] Pin 13 LED state updated: ${component.id} -> ${isHigh ? 'HIGH' : 'LOW'}`);
+          console.log(`🔴 [AVR8] Component state after update:`, componentStates[component.id]);
         }
       }
     });

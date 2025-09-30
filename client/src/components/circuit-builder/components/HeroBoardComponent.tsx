@@ -29,11 +29,17 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
   // Access simulator context to get the pin states
   const { componentStates } = useSimulator();
   
-  // Get pin states from simulator context
-  const pinStates = componentStates[id]?.pins || {};
+  // Get component state from simulator context
+  const componentState = componentStates[id] || {};
   
-  // Check if pin 13 is HIGH
-  const pin13IsHigh = pinStates['13']?.isHigh || pinStates['d13']?.isHigh || false;
+  // Check multiple possible sources for pin 13 state
+  const pin13IsHigh = 
+    componentState.pin13 || 
+    componentState.onboardLED || 
+    componentState.pin13LED ||
+    componentState.pins?.['13'] ||
+    componentState.pins?.['d13'] ||
+    false;
   
   // Define pins based on Arduino layout
   const basePins: PinDefinition[] = [
