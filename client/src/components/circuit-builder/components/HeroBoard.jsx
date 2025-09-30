@@ -68,58 +68,81 @@ const HeroBoard = ({
   // Listen for global Arduino pin changes as fallback
   useEffect(() => {
     const handleArduinoPinChange = (event) => {
-      if (event.detail.pin === 13) {
-        setPin13State(event.detail.value);
-        console.log(`[HeroBoard ${id}] Pin 13 state changed via global event to ${event.detail.value ? 'HIGH' : 'LOW'}`);
+      if (event.detail.pin === 13 || event.detail.pin === '13') {
+        const newState = !!event.detail.value;
+        setPin13State(newState);
+        console.log(`[HeroBoard ${id}] Pin 13 state changed via global event to ${newState ? 'HIGH' : 'LOW'}`);
       }
     };
 
+    // Listen for both event types
     document.addEventListener('arduinoPinChange', handleArduinoPinChange);
-    return () => document.removeEventListener('arduinoPinChange', handleArduinoPinChange);
+    document.addEventListener('pinStateChanged', handleArduinoPinChange);
+    
+    return () => {
+      document.removeEventListener('arduinoPinChange', handleArduinoPinChange);
+      document.removeEventListener('pinStateChanged', handleArduinoPinChange);
+    };
   }, [id]);
 
   // Track pin states from the emulator signals - responsive to ALL pins
   useEffect(() => {
-    // This effect listens for pin state changes from the emulator
-    // and updates the HeroBoard display accordingly
-    if (!componentStates) return;
+    if (!componentStates || !isRunning) {
+      // Reset pin 13 when not running
+      setPin13State(false);
+      return;
+    }
 
-    // More robust lookup for this board or fallbacks
-    const boardKeys = Object.keys(componentStates).filter(key => 
-      key === id || 
-      key === 'heroboard' || 
-      key.startsWith('heroboard-') ||
-      key.includes('arduino')
-    );
+    // Check multiple possible sources for pin 13 state
+    let pin13Found = false;
+    let pin13Value = false;
 
-    // No relevant board state found
-    if (boardKeys.length === 0) return;
-
-    // Use this board's state or the first fallback
-    const stateKey = boardKeys[0];
-    const boardState = componentStates[stateKey];
-
-    if (boardState) {
-      // Check both formats: direct pin13 property or nested in pins object
-
-      // 1. Check direct pin13 property (from SimulatorContext's guaranteed blink)
-      if (boardState.pin13 !== undefined) {
-        setPin13State(!!boardState.pin13);
-        console.log(`[HeroBoard ${id}] Pin 13 state changed to ${boardState.pin13 ? 'HIGH' : 'LOW'} (direct)`);
+    // 1. Check this specific board's state
+    const myBoardState = componentStates[id];
+    if (myBoardState) {
+      // Check direct pin13 property
+      if (myBoardState.pin13 !== undefined) {
+        pin13Value = !!myBoardState.pin13;
+        pin13Found = true;
+        console.log(`[HeroBoard ${id}] Pin 13 from direct property: ${pin13Value ? 'HIGH' : 'LOW'}`);
       }
-
-      // 2. Check pins['13'] for backward compatibility with other code
-      else if (boardState.pins && boardState.pins['13'] !== undefined) {
-        // Handle cases where pin state might be object or boolean
-        const isHigh = typeof boardState.pins['13'] === 'object' 
-          ? boardState.pins['13'].isHigh 
-          : !!boardState.pins['13'];
-
-        setPin13State(isHigh);
-        console.log(`[HeroBoard ${id}] Pin 13 state changed to ${isHigh ? 'HIGH' : 'LOW'} (pins obj)`);
+      // Check onboardLED property
+      else if (myBoardState.onboardLED !== undefined) {
+        pin13Value = !!myBoardState.onboardLED;
+        pin13Found = true;
+        console.log(`[HeroBoard ${id}] Pin 13 from onboardLED: ${pin13Value ? 'HIGH' : 'LOW'}`);
+      }
+      // Check pins['13'] 
+      else if (myBoardState.pins && myBoardState.pins['13'] !== undefined) {
+        pin13Value = !!myBoardState.pins['13'];
+        pin13Found = true;
+        console.log(`[HeroBoard ${id}] Pin 13 from pins object: ${pin13Value ? 'HIGH' : 'LOW'}`);
       }
     }
-  }, [componentStates, id]);
+
+    // 2. Fallback: check any heroboard state
+    if (!pin13Found) {
+      const allHeroboardKeys = Object.keys(componentStates).filter(key => 
+        key.includes('heroboard') || key.includes('arduino')
+      );
+
+      for (const key of allHeroboardKeys) {
+        const boardState = componentStates[key];
+        if (boardState && (boardState.pin13 !== undefined || boardState.onboardLED !== undefined || 
+                          (boardState.pins && boardState.pins['13'] !== undefined))) {
+          pin13Value = !!(boardState.pin13 || boardState.onboardLED || boardState.pins?.['13']);
+          pin13Found = true;
+          console.log(`[HeroBoard ${id}] Pin 13 from fallback ${key}: ${pin13Value ? 'HIGH' : 'LOW'}`);
+          break;
+        }
+      }
+    }
+
+    // Update the pin 13 state if we found it
+    if (pin13Found) {
+      setPin13State(pin13Value);
+    }
+  }, [componentStates, id, isRunning]);
 
   // Notify about component movement for wire position updates
   useEffect(() => {

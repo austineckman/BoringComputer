@@ -383,10 +383,12 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         // Special handling for pin 13 - Arduino boards have an onboard LED on pin 13
         if (pin === 13) {
           updateComponentState(component.id, { 
+            pin13: isHigh,
             onboardLED: isHigh,
             pin13LED: isHigh 
           });
           addLog(`🔴 Onboard LED (Pin 13) ${isHigh ? 'ON' : 'OFF'}`);
+          console.log(`[AVR8] Pin 13 LED state updated: ${component.id} -> ${isHigh ? 'HIGH' : 'LOW'}`);
         }
       }
     });
