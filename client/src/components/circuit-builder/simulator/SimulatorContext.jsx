@@ -337,20 +337,12 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog('✅ Serial monitoring active');
       console.log('[Simulator] Serial monitoring set up successfully');
 
-      // SIMPLE APPROACH: Just start the execution interval directly
-      // No React hooks, no state updates - just run it
-      console.log('[Simulator] Starting execution interval DIRECTLY...');
-
-      executionIntervalRef.current = setInterval(() => {
-        if (avrCoreRef.current) {
-          avrCoreRef.current.execute(16000); // 1ms worth of cycles at 16MHz
-        }
-      }, 1);
-
-      console.log('[Simulator] ✅ EXECUTION INTERVAL STARTED - AVR8js is running!');
-
+      // Set isRunning first, then let the useEffect handle the execution interval
+      console.log('[Simulator] Setting isRunning to true...');
       setIsCompiling(false);
       setIsRunning(true);
+      
+      console.log('[Simulator] ✅ Simulation state set to running - execution will start via useEffect');
 
       // Initialize OLED displays after a short delay to ensure components are loaded
       setTimeout(() => {
