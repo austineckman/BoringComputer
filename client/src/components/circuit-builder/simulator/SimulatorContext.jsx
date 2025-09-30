@@ -341,12 +341,19 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog('✅ Serial monitoring active');
       console.log('[Simulator] Serial monitoring set up successfully');
 
-      // Set isRunning first, then let the useEffect handle the execution interval
-      console.log('[Simulator] Setting isRunning to true...');
+      // Start the execution interval directly
+      console.log('[Simulator] Starting execution interval...');
+
+      executionIntervalRef.current = setInterval(() => {
+        if (avrCoreRef.current) {
+          avrCoreRef.current.execute(16000); // 1ms worth of cycles at 16MHz
+        }
+      }, 1);
+
+      console.log('[Simulator] ✅ EXECUTION INTERVAL STARTED - AVR8js is running!');
+
       setIsCompiling(false);
       setIsRunning(true);
-
-      console.log('[Simulator] ✅ Simulation state set to running - execution will start via useEffect');
 
       // Initialize OLED displays after a short delay to ensure components are loaded
       setTimeout(() => {
@@ -511,42 +518,17 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     console.log(`[SimulatorContext] Stored ${wires.length} wires globally`);
   }, [wires]);
 
-  // Execute AVR8js when simulation is running
+  // Cleanup execution interval when simulation stops
   useEffect(() => {
     console.log('[Simulator useEffect] isRunning changed to:', isRunning);
-    console.log('[Simulator useEffect] avrCoreRef.current exists:', !!avrCoreRef.current);
-    console.log('[Simulator useEffect] executionIntervalRef.current exists:', !!executionIntervalRef.current);
 
-    if (isRunning && avrCoreRef.current && !executionIntervalRef.current) {
-      console.log('[Simulator] ✅ Starting execution interval...');
-
-      // Debug: Check if components and wires are in global storage
-      const debugComponents = window.latestSimulatorData?.components || [];
-      const debugWires = window.latestSimulatorData?.wires || [];
-      console.log(`[Simulator] Components in storage:`, debugComponents.length);
-      console.log(`[Simulator] Wires in storage:`, debugWires.length);
-
-      // No React hooks, no state updates - just run it
-      console.log('[Simulator] Starting execution interval DIRECTLY...');
-
-      executionIntervalRef.current = setInterval(() => {
-        if (avrCoreRef.current) {
-          // Execute the AVR core - it will handle pin change detection internally
-          avrCoreRef.current.execute(16000); // 1ms worth of cycles at 16MHz
-        }
-      }, 1);
-
-      console.log('[Simulator] ✅ Execution interval started - AVR8js is now running!');
+    // Only cleanup when stopping - interval is started directly in startSimulation()
+    if (!isRunning && executionIntervalRef.current) {
+      console.log('[Simulator] Cleaning up execution interval...');
+      clearInterval(executionIntervalRef.current);
+      executionIntervalRef.current = null;
+      console.log('[Simulator] Execution interval cleared');
     }
-
-    // Cleanup when isRunning changes or component unmounts
-    return () => {
-      if (executionIntervalRef.current) {
-        clearInterval(executionIntervalRef.current);
-        executionIntervalRef.current = null;
-        console.log('[Simulator] Execution interval cleared');
-      }
-    };
   }, [isRunning]);
 
   // Make the simulator context available globally for non-React components
