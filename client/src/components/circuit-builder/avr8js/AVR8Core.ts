@@ -67,10 +67,13 @@ export class AVR8Core implements IAVR8Core {
   
   constructor(clockFrequency: number = CLOCK_FREQUENCY) {
     this.clockFrequency = clockFrequency;
-    // Create the CPU
+    
+    // Create the CPU with empty program memory (will be loaded later)
     this.cpu = new CPU(new Uint16Array(0x8000));
     
-    // Create IO ports
+    console.log('[AVR8Core] CPU created, PC:', this.cpu.pc, 'cycles:', this.cpu.cycles);
+    
+    // Create IO ports - these MUST be created before running the CPU
     this.portB = new AVRIOPort(this.cpu, portBConfig);
     this.portC = new AVRIOPort(this.cpu, portCConfig);
     this.portD = new AVRIOPort(this.cpu, portDConfig);
@@ -181,6 +184,7 @@ export class AVR8Core implements IAVR8Core {
    */
   public execute(cycles: number): void {
     const initialPC = this.cpu.pc;
+    const initialCycles = this.cpu.cycles;
     
     // Run the CPU for the specified number of cycles
     for (let i = 0; i < cycles; i++) {
@@ -190,9 +194,13 @@ export class AVR8Core implements IAVR8Core {
     // Debug: Log every 16000 cycles (once per ms)
     if (cycles === 16000) {
       const finalPC = this.cpu.pc;
-      if (finalPC !== initialPC) {
-        console.log(`[AVR8Core] CPU executing - PC: ${initialPC} → ${finalPC}`);
-      }
+      const finalCycles = this.cpu.cycles;
+      
+      console.log(`[AVR8Core] CPU - PC: ${initialPC} → ${finalPC}, Cycles: ${initialCycles} → ${finalCycles}`);
+      
+      // Check the first instruction in program memory
+      const firstInstruction = this.cpu.progMem[0];
+      console.log(`[AVR8Core] First instruction at PC=0: 0x${firstInstruction?.toString(16).padStart(4, '0')}`);
       
       // Also check Port B PORTB register directly
       const portBValue = this.cpu.data[0x25]; // PORTB is at address 0x25
