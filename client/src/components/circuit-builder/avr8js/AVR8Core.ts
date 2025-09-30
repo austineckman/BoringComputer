@@ -178,9 +178,24 @@ export class AVR8Core implements IAVR8Core {
    * Execute a certain number of CPU cycles
    */
   public execute(cycles: number): void {
+    const initialPC = this.cpu.pc;
+    
     // Run the CPU for the specified number of cycles
     for (let i = 0; i < cycles; i++) {
       this.cpu.tick();
+    }
+    
+    // Debug: Log every 16000 cycles (once per ms)
+    if (cycles === 16000) {
+      const finalPC = this.cpu.pc;
+      if (finalPC !== initialPC) {
+        console.log(`[AVR8Core] CPU executing - PC: ${initialPC} → ${finalPC}`);
+      }
+      
+      // Also check Port B PORTB register directly
+      const portBValue = this.cpu.data[0x25]; // PORTB is at address 0x25
+      const portBDir = this.cpu.data[0x24];   // DDRB is at address 0x24
+      console.log(`[AVR8Core] PORTB=0x${portBValue?.toString(16).padStart(2, '0')} DDRB=0x${portBDir?.toString(16).padStart(2, '0')}`);
     }
   }
   
