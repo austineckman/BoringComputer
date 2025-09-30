@@ -180,6 +180,18 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       }, 1);
       
       console.log('[Simulator] ✅ EXECUTION INTERVAL STARTED - AVR8js is running!');
+      
+      // TEMPORARY: Manually blink pin 13 to prove the LED chain works
+      let manualBlinkState = false;
+      const manualBlinkInterval = setInterval(() => {
+        manualBlinkState = !manualBlinkState;
+        console.log(`[MANUAL BLINK] Pin 13 → ${manualBlinkState ? 'HIGH' : 'LOW'}`);
+        handlePinChange(13, manualBlinkState);
+      }, 1000);
+      
+      // Store the manual blink interval so we can clear it
+      window._manualBlinkInterval = manualBlinkInterval;
+      
       setIsCompiling(false);
       setIsRunning(true);
       
