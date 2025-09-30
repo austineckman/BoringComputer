@@ -99,6 +99,125 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     });
   };
   
+  // Parse OLED commands from serial output
+  const parseOLEDCommand = (line) => {
+    // Format: OLED:type:params...
+    const parts = line.split(':');
+    if (parts.length < 2) return;
+    
+    const commandType = parts[1];
+    
+    // Find all OLED display components
+    const latestComponents = window.latestSimulatorData?.components || [];
+    const oledComponents = latestComponents.filter(c => 
+      c.type === 'oled-display' || c.id.includes('oled')
+    );
+    
+    if (oledComponents.length === 0) {
+      console.warn('[OLED Parser] No OLED components found');
+      return;
+    }
+    
+    // Update each OLED display
+    oledComponents.forEach(oledComponent => {
+      const currentState = componentStates[oledComponent.id] || {};
+      const currentDisplay = currentState.display || { elements: [] };
+      
+      let newElements = [...(currentDisplay.elements || [])];
+      
+      switch (commandType) {
+        case 'init':
+          console.log('[OLED Parser] Initializing OLED display');
+          updateComponentState(oledComponent.id, {
+            display: { elements: [] }
+          });
+          break;
+          
+        case 'clear':
+          console.log('[OLED Parser] Clearing OLED display');
+          updateComponentState(oledComponent.id, {
+            display: { elements: [] }
+          });
+          break;
+          
+        case 'text':
+          // Format: OLED:text:Hello World:10:20
+          if (parts.length >= 5) {
+            const text = parts[2];
+            const x = parseInt(parts[3]);
+            const y = parseInt(parts[4]);
+            console.log(`[OLED Parser] Drawing text "${text}" at (${x}, ${y})`);
+            newElements.push({ type: 'text', text, x, y });
+            updateComponentState(oledComponent.id, {
+              display: { elements: newElements }
+            });
+          }
+          break;
+          
+        case 'frame':
+          // Format: OLED:frame:0:0:100:50
+          if (parts.length >= 6) {
+            const x = parseInt(parts[2]);
+            const y = parseInt(parts[3]);
+            const width = parseInt(parts[4]);
+            const height = parseInt(parts[5]);
+            console.log(`[OLED Parser] Drawing frame at (${x}, ${y}) size ${width}x${height}`);
+            newElements.push({ type: 'frame', x, y, width, height });
+            updateComponentState(oledComponent.id, {
+              display: { elements: newElements }
+            });
+          }
+          break;
+          
+        case 'filledRect':
+          // Format: OLED:filledRect:0:0:100:50
+          if (parts.length >= 6) {
+            const x = parseInt(parts[2]);
+            const y = parseInt(parts[3]);
+            const width = parseInt(parts[4]);
+            const height = parseInt(parts[5]);
+            console.log(`[OLED Parser] Drawing filled rect at (${x}, ${y}) size ${width}x${height}`);
+            newElements.push({ type: 'filledRect', x, y, width, height });
+            updateComponentState(oledComponent.id, {
+              display: { elements: newElements }
+            });
+          }
+          break;
+          
+        case 'circle':
+          // Format: OLED:circle:64:32:10
+          if (parts.length >= 5) {
+            const x = parseInt(parts[2]);
+            const y = parseInt(parts[3]);
+            const radius = parseInt(parts[4]);
+            console.log(`[OLED Parser] Drawing circle at (${x}, ${y}) radius ${radius}`);
+            newElements.push({ type: 'circle', x, y, radius });
+            updateComponentState(oledComponent.id, {
+              display: { elements: newElements }
+            });
+          }
+          break;
+          
+        case 'filledCircle':
+          // Format: OLED:filledCircle:64:32:10
+          if (parts.length >= 5) {
+            const x = parseInt(parts[2]);
+            const y = parseInt(parts[3]);
+            const radius = parseInt(parts[4]);
+            console.log(`[OLED Parser] Drawing filled circle at (${x}, ${y}) radius ${radius}`);
+            newElements.push({ type: 'filledCircle', x, y, radius });
+            updateComponentState(oledComponent.id, {
+              display: { elements: newElements }
+            });
+          }
+          break;
+          
+        default:
+          console.warn('[OLED Parser] Unknown command type:', commandType);
+      }
+    });
+  };
+  
   // Function to start the simulation using real compilation and AVR8js
   const startSimulation = async (codeToExecute) => {
     // Use passed code or fall back to context code
@@ -168,6 +287,35 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       
       addLog('✅ Pin callbacks registered');
       console.log('[Simulator] Pin callbacks set up successfully');
+      
+      // Set up serial monitoring for OLED commands
+      addLog('📡 Setting up serial monitoring...');
+      let serialBuffer = '';
+      
+      avrCoreRef.current.onSerialData((byte) => {
+        const char = String.fromCharCode(byte);
+        
+        // Accumulate characters until we get a newline
+        if (char === '\n') {
+          const line = serialBuffer.trim();
+          serialBuffer = '';
+          
+          // Parse OLED commands
+          if (line.startsWith('OLED:')) {
+            console.log('[OLED Serial] Received command:', line);
+            parseOLEDCommand(line);
+          } else {
+            // Regular serial output
+            addSerialLog(line);
+          }
+        } else if (char !== '\r') {
+          // Accumulate non-carriage-return characters
+          serialBuffer += char;
+        }
+      });
+      
+      addLog('✅ Serial monitoring active');
+      console.log('[Simulator] Serial monitoring set up successfully');
       
       // SIMPLE APPROACH: Just start the execution interval directly
       // No React hooks, no state updates - just run it

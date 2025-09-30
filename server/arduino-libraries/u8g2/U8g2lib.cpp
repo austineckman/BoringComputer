@@ -55,6 +55,12 @@ U8G2::U8G2(void) {
 }
 
 bool U8G2::begin(void) {
+  // Initialize serial for simulator communication
+  Serial.begin(115200);
+  
+  // Output initialization command for the simulator
+  Serial.println("OLED:init");
+  
   Wire.begin();
   initDisplay();
   clearDisplay();
@@ -118,6 +124,9 @@ void U8G2::clearDisplay(void) {
 }
 
 void U8G2::clearBuffer(void) {
+  // Output a serial command for the simulator to parse
+  Serial.println("OLED:clear");
+  
   memset(_buffer, 0, sizeof(_buffer));
 }
 
@@ -215,6 +224,16 @@ void U8G2::drawLine(u8g2_uint_t x1, u8g2_uint_t y1, u8g2_uint_t x2, u8g2_uint_t 
 }
 
 void U8G2::drawFrame(u8g2_uint_t x, u8g2_uint_t y, u8g2_uint_t w, u8g2_uint_t h) {
+  // Output a serial command for the simulator to parse
+  Serial.print("OLED:frame:");
+  Serial.print(x);
+  Serial.print(":");
+  Serial.print(y);
+  Serial.print(":");
+  Serial.print(w);
+  Serial.print(":");
+  Serial.println(h);
+  
   drawHLine(x, y, w);
   drawHLine(x, y + h - 1, w);
   drawVLine(x, y, h);
@@ -222,6 +241,16 @@ void U8G2::drawFrame(u8g2_uint_t x, u8g2_uint_t y, u8g2_uint_t w, u8g2_uint_t h)
 }
 
 void U8G2::drawBox(u8g2_uint_t x, u8g2_uint_t y, u8g2_uint_t w, u8g2_uint_t h) {
+  // Output a serial command for the simulator to parse
+  Serial.print("OLED:filledRect:");
+  Serial.print(x);
+  Serial.print(":");
+  Serial.print(y);
+  Serial.print(":");
+  Serial.print(w);
+  Serial.print(":");
+  Serial.println(h);
+  
   for (u8g2_uint_t i = 0; i < h; i++) {
     drawHLine(x, y + i, w);
   }
@@ -238,6 +267,14 @@ void U8G2::drawRBox(u8g2_uint_t x, u8g2_uint_t y, u8g2_uint_t w, u8g2_uint_t h, 
 }
 
 void U8G2::drawCircle(u8g2_uint_t x0, u8g2_uint_t y0, u8g2_uint_t rad) {
+  // Output a serial command for the simulator to parse
+  Serial.print("OLED:circle:");
+  Serial.print(x0);
+  Serial.print(":");
+  Serial.print(y0);
+  Serial.print(":");
+  Serial.println(rad);
+  
   // Bresenham's circle algorithm (simplified)
   int x = rad;
   int y = 0;
@@ -265,6 +302,14 @@ void U8G2::drawCircle(u8g2_uint_t x0, u8g2_uint_t y0, u8g2_uint_t rad) {
 }
 
 void U8G2::drawDisc(u8g2_uint_t x0, u8g2_uint_t y0, u8g2_uint_t rad) {
+  // Output a serial command for the simulator to parse
+  Serial.print("OLED:filledCircle:");
+  Serial.print(x0);
+  Serial.print(":");
+  Serial.print(y0);
+  Serial.print(":");
+  Serial.println(rad);
+  
   // Filled circle - simplified implementation
   for (int y = -rad; y <= rad; y++) {
     for (int x = -rad; x <= rad; x++) {
@@ -304,7 +349,14 @@ void U8G2::setFontPosCenter(void) {
 }
 
 u8g2_uint_t U8G2::drawStr(u8g2_uint_t x, u8g2_uint_t y, const char *s) {
-  // Simplified text rendering - just return string length for now
+  // Output a serial command for the simulator to parse
+  Serial.print("OLED:text:");
+  Serial.print(s);
+  Serial.print(":");
+  Serial.print(x);
+  Serial.print(":");
+  Serial.println(y);
+  
   return strlen(s) * 6; // Assuming 6-pixel wide characters
 }
 
