@@ -42,6 +42,7 @@ import { SoundProvider } from "@/context/SoundContext";
 import { SimpleAuthProvider as AuthProvider } from "@/hooks/use-simple-auth";
 import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
 import RetroBootScreen from "@/components/retro-ui/RetroBootScreen";
+import { Toaster } from 'react-hot-toast';
 import { Toaster as ShadcnToaster } from '@/components/ui/toaster';
 
 
