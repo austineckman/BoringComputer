@@ -40,6 +40,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   // AVR8 emulator state
   const avrCoreRef = useRef(null);
   const executionIntervalRef = useRef(null);
+  const isRunningRef = useRef(false); // Use a ref to track running state within intervals
 
   // Function to add a log entry with timestamp
   const addLog = (message) => {
@@ -47,7 +48,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     const formattedMessage = `[${timestamp}] ${message}`;
 
     // Skip noisy system messages that aren't useful to the user
-    if (message.includes('Refreshing component states') || 
+    if (message.includes('Refreshing component states') ||
         message.includes('updated:') ||
         message.includes('FALLBACK') ||
         message.includes('current_component_state')) {
@@ -109,7 +110,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
 
     // Find all OLED display components
     const latestComponents = window.latestSimulatorData?.components || [];
-    const oledComponents = latestComponents.filter(c => 
+    const oledComponents = latestComponents.filter(c =>
       c.type === 'oled-display' || c.id.includes('oled')
     );
 
@@ -221,7 +222,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   // Initialize all OLED displays when simulation starts
   const initializeOLEDDisplays = () => {
     const latestComponents = window.latestSimulatorData?.components || [];
-    const oledComponents = latestComponents.filter(c => 
+    const oledComponents = latestComponents.filter(c =>
       c.type === 'oled-display' || c.id.includes('oled')
     );
 
@@ -231,7 +232,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         display: { elements: [] } // Reset display elements
       });
       // Optionally send an 'init' command if your backend expects it
-      // parseOLEDCommand('OLED:init'); 
+      // parseOLEDCommand('OLED:init');
     });
   };
 
@@ -343,17 +344,21 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
 
       // Start the execution interval directly
       console.log('[Simulator] Starting execution interval...');
+      setIsRunning(true); // Set isRunning state
+      isRunningRef.current = true; // Update ref
 
+      // Run simulation in intervals with throttling to prevent lag
       executionIntervalRef.current = setInterval(() => {
-        if (avrCoreRef.current) {
-          avrCoreRef.current.execute(16000); // 1ms worth of cycles at 16MHz
+        if (avrCoreRef.current && isRunningRef.current) {
+          // Execute fewer cycles per frame and less frequently to prevent lag
+          avrCoreRef.current.execute(800); // Reduced from 1600 to 800 cycles
         }
-      }, 1);
+      }, 33); // Reduced from 60 FPS to ~30 FPS to prevent lag
 
       console.log('[Simulator] ✅ EXECUTION INTERVAL STARTED - AVR8js is running!');
 
       setIsCompiling(false);
-      setIsRunning(true);
+
 
       // Initialize OLED displays after a short delay to ensure components are loaded
       setTimeout(() => {
@@ -370,7 +375,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   // Handle pin state changes from AVR8 core
   const handlePinChange = (pin, isHigh) => {
     console.log(`[AVR8] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
-    
+
     // Special logging for pin 13
     if (pin === 13) {
       console.log(`🔴 PIN 13 CHANGE DETECTED: ${isHigh ? 'HIGH' : 'LOW'}`);
@@ -391,18 +396,18 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         // Special handling for pin 13 - Arduino boards have an onboard LED on pin 13
         if (pin === 13) {
           // Update multiple state properties for pin 13
-          updateComponentState(component.id, { 
+          updateComponentState(component.id, {
             pin13: isHigh,
             onboardLED: isHigh,
-            pin13LED: isHigh 
+            pin13LED: isHigh
           });
-          
+
           // Also update the pins object
-          updateComponentPins(component.id, { 
+          updateComponentPins(component.id, {
             '13': isHigh,
-            'd13': isHigh 
+            'd13': isHigh
           });
-          
+
           addLog(`🔴 Onboard LED (Pin 13) ${isHigh ? 'ON' : 'OFF'}`);
           console.log(`🔴 [AVR8] Pin 13 LED state updated: ${component.id} -> ${isHigh ? 'HIGH' : 'LOW'}`);
           console.log(`🔴 [AVR8] Component state after update:`, componentStates[component.id]);
@@ -413,7 +418,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     // Update components connected to this pin
     latestComponents.forEach(component => {
       if (component.type === 'led' || component.id.includes('led')) {
-        const connectedWires = latestWires.filter(wire => 
+        const connectedWires = latestWires.filter(wire =>
           (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
           (wire.sourceName === pin.toString() || wire.targetName === pin.toString())
         );
@@ -421,7 +426,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         console.log(`[AVR8] Component ${component.id} has ${connectedWires.length} wires connected to pin ${pin}`);
 
         if (connectedWires.length > 0) {
-          updateComponentState(component.id, { 
+          updateComponentState(component.id, {
             isOn: isHigh,
             brightness: isHigh ? 1.0 : 0.0
           });
@@ -435,6 +440,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   const stopSimulation = () => {
     addLog('🛑 Stopping AVR8 simulation...');
     setIsRunning(false);
+    isRunningRef.current = false; // Update ref
 
     // Stop AVR8 core if running
     if (avrCoreRef.current) {
@@ -452,9 +458,9 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     // Reset all component states when stopping
     components.forEach(component => {
       if (component.type === 'led' || component.id.includes('led')) {
-        updateComponentState(component.id, { 
+        updateComponentState(component.id, {
           isOn: false,
-          brightness: 0.0 
+          brightness: 0.0
         });
       }
 

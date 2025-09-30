@@ -330,13 +330,17 @@ export class AVR8Core implements IAVR8Core {
     const prevPortC = this.cpu.data[0x28] || 0;
     const prevPortD = this.cpu.data[0x2B] || 0;
 
-    // Execute the specified number of cycles
-    // Use a simple approach - just call cpu.tick() for each cycle
+    // Execute cycles with proper limits to prevent browser lag
     let actualCyclesExecuted = 0;
+    let instructionsExecuted = 0;
+    const maxCycles = Math.min(cycles, 10000); // Limit to 10k cycles per execution
+    const maxInstructions = Math.min(cycles / 2, 5000); // Limit instructions executed
+    let stuckCounter = 0;
+    let lastPC = this.cpu.pc;
     
     try {
-      // Run cycles directly without complex logic
-      for (let i = 0; i < cycles; i++) {
+      // Execute cycles with safety limits
+      while (actualCyclesExecuted < maxCycles && instructionsExecuted < maxInstructions) {
         const beforePC = this.cpu.pc;
         const beforeCycles = this.cpu.cycles;
         
@@ -352,27 +356,52 @@ export class AVR8Core implements IAVR8Core {
         const afterPC = this.cpu.pc;
         const afterCycles = this.cpu.cycles;
         
-        actualCyclesExecuted++;
+        // Count actual cycles that were executed
+        const cyclesDelta = afterCycles - beforeCycles;
+        actualCyclesExecuted += Math.max(cyclesDelta, 1); // Always count at least 1
+        instructionsExecuted++;
         
-        // Log progress every 1000 cycles
-        if (actualCyclesExecuted % 1000 === 0) {
-          console.log(`[AVR8Core] PC: ${beforePC}→${afterPC}, Cycles: ${beforeCycles}→${afterCycles}`);
+        // Detect if CPU is stuck (PC not advancing)
+        if (beforePC === afterPC) {
+          stuckCounter++;
+          if (stuckCounter > 1000) {
+            console.warn(`[AVR8Core] CPU appears stuck at PC=${beforePC}, breaking execution to prevent lag`);
+            break;
+          }
+        } else {
+          stuckCounter = 0; // Reset stuck counter if PC advances
+        }
+        
+        // Log progress every 100 instructions (not cycles to reduce spam)
+        if (instructionsExecuted % 100 === 0) {
+          console.log(`[AVR8Core] Instructions: ${instructionsExecuted}, Cycles: ${actualCyclesExecuted}, PC: ${beforePC}→${afterPC}`);
           
-          // Check port states
+          // Check port states less frequently
           const currentPortB = this.cpu.data[0x25] || 0;
           const currentDDRB = this.cpu.data[0x24] || 0;
           console.log(`[AVR8Core] PORTB=0x${currentPortB.toString(16)} DDRB=0x${currentDDRB.toString(16)}`);
           
           // Force port change detection
           this.checkPortChanges(prevPortB, prevPortC, prevPortD);
-        }
-        
-        // Break if we hit an error condition
-        if (afterCycles === beforeCycles && afterPC === beforePC && actualCyclesExecuted > 100) {
-          // CPU might be in a tight loop or stuck
-          // This is actually normal for delay loops, so continue
+          
+          // Yield control back to browser periodically
+          if (instructionsExecuted % 500 === 0) {
+            // Break execution to prevent browser lag
+            console.log(`[AVR8Core] Yielding control after ${instructionsExecuted} instructions`);
+            break;
+          }
         }
       }
+      
+      // Log why execution stopped
+      if (actualCyclesExecuted >= maxCycles) {
+        console.log(`[AVR8Core] Execution stopped: reached max cycles (${maxCycles})`);
+      } else if (instructionsExecuted >= maxInstructions) {
+        console.log(`[AVR8Core] Execution stopped: reached max instructions (${maxInstructions})`);
+      } else if (stuckCounter > 1000) {
+        console.log(`[AVR8Core] Execution stopped: CPU appears stuck`);
+      }
+      
     } catch (error) {
       console.error('[AVR8Core] Execution error:', error);
       console.error('[AVR8Core] PC was at:', this.cpu.pc);
