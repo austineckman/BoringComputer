@@ -29,6 +29,11 @@ router.post('/compile', async (req, res) => {
     });
 
     console.log('[Arduino Compiler Proxy] Received response:', response.data.success ? 'SUCCESS' : 'FAILURE');
+    
+    // Log full error details for debugging
+    if (!response.data.success) {
+      console.log('[Arduino Compiler Proxy] Error details:', JSON.stringify(response.data, null, 2));
+    }
 
     // Forward the response back to the client
     res.json(response.data);
