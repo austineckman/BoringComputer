@@ -330,73 +330,64 @@ export class AVR8Core implements IAVR8Core {
     const prevPortC = this.cpu.data[0x28] || 0;
     const prevPortD = this.cpu.data[0x2B] || 0;
 
-    let cyclesExecuted = 0;
-    let instructionsExecuted = 0;
-    const maxInstructions = Math.min(cycles, 500); // Limit instructions to prevent infinite loops
+    // Execute the specified number of cycles
+    // Use a simple approach - just call cpu.tick() for each cycle
+    let actualCyclesExecuted = 0;
     
     try {
-      // Execute instructions one by one with proper error handling
-      while (cyclesExecuted < cycles && instructionsExecuted < maxInstructions) {
+      // Run cycles directly without complex logic
+      for (let i = 0; i < cycles; i++) {
         const beforePC = this.cpu.pc;
         const beforeCycles = this.cpu.cycles;
         
-        // Check if PC is valid
+        // Check bounds
         if (this.cpu.pc >= this.cpu.progMem.length) {
-          console.error(`[AVR8Core] PC out of bounds: ${this.cpu.pc} >= ${this.cpu.progMem.length}`);
+          console.error(`[AVR8Core] PC out of bounds: ${this.cpu.pc}`);
           break;
         }
         
-        const instruction = this.cpu.progMem[this.cpu.pc];
-        
-        // Execute one CPU instruction
+        // Execute one CPU tick
         this.cpu.tick();
         
         const afterPC = this.cpu.pc;
         const afterCycles = this.cpu.cycles;
         
-        // Count cycles that actually executed
-        const cyclesDelta = afterCycles - beforeCycles;
-        cyclesExecuted += cyclesDelta;
-        instructionsExecuted++;
+        actualCyclesExecuted++;
         
-        // Log detailed execution info every 50 instructions
-        if (instructionsExecuted % 50 === 0) {
-          console.log(`[AVR8Core] Executed ${instructionsExecuted} instructions, ${cyclesExecuted} cycles`);
-          console.log(`[AVR8Core] PC: ${beforePC}→${afterPC}, instruction: 0x${instruction?.toString(16)}`);
+        // Log progress every 1000 cycles
+        if (actualCyclesExecuted % 1000 === 0) {
+          console.log(`[AVR8Core] PC: ${beforePC}→${afterPC}, Cycles: ${beforeCycles}→${afterCycles}`);
           
           // Check port states
           const currentPortB = this.cpu.data[0x25] || 0;
           const currentDDRB = this.cpu.data[0x24] || 0;
-          console.log(`[AVR8Core] PORTB: 0x${currentPortB.toString(16)}, DDRB: 0x${currentDDRB.toString(16)}`);
+          console.log(`[AVR8Core] PORTB=0x${currentPortB.toString(16)} DDRB=0x${currentDDRB.toString(16)}`);
           
-          // Check pin 13 specifically
-          const pin13Output = (currentDDRB & 0x20) !== 0; // Bit 5 of DDRB
-          const pin13State = (currentPortB & 0x20) !== 0; // Bit 5 of PORTB
-          console.log(`[AVR8Core] Pin 13: OUTPUT=${pin13Output}, STATE=${pin13State ? 'HIGH' : 'LOW'}`);
+          // Force port change detection
+          this.checkPortChanges(prevPortB, prevPortC, prevPortD);
         }
         
-        // Safety check for stuck PC (but allow tight loops)
-        if (beforePC === afterPC && cyclesDelta === 0) {
-          console.warn(`[AVR8Core] CPU appears stuck at PC=${beforePC}, instruction=0x${instruction?.toString(16)}`);
-          // Don't break immediately - might be a valid single-cycle instruction
+        // Break if we hit an error condition
+        if (afterCycles === beforeCycles && afterPC === beforePC && actualCyclesExecuted > 100) {
+          // CPU might be in a tight loop or stuck
+          // This is actually normal for delay loops, so continue
         }
       }
     } catch (error) {
       console.error('[AVR8Core] Execution error:', error);
       console.error('[AVR8Core] PC was at:', this.cpu.pc);
-      console.error('[AVR8Core] Instruction at PC:', this.cpu.progMem[this.cpu.pc]?.toString(16));
+      console.error('[AVR8Core] Instruction:', this.cpu.progMem[this.cpu.pc]?.toString(16));
       return;
     }
 
     const finalPC = this.cpu.pc;
     const finalCycles = this.cpu.cycles;
 
-    // Manual port change detection since listeners might not fire
+    // Always check for port changes after execution
     this.checkPortChanges(prevPortB, prevPortC, prevPortD);
 
     // Log execution summary
-    console.log(`[AVR8Core] Execution complete: ${instructionsExecuted} instructions, ${cyclesExecuted} cycles`);
-    console.log(`[AVR8Core] PC: ${initialPC}→${finalPC}, Total cycles: ${initialCycles}→${finalCycles}`);
+    console.log(`[AVR8Core] Executed ${actualCyclesExecuted} cycles: PC ${initialPC}→${finalPC}, Cycles ${initialCycles}→${finalCycles}`);
   }
 
   /**
