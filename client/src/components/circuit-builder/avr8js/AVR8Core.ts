@@ -165,13 +165,15 @@ export class AVR8Core implements IAVR8Core {
    * Load compiled program bytes into the emulator
    */
   public loadProgram(program: Uint16Array): void {
-    // Reset the CPU and load the program
-    this.cpu.reset();
-    // Copy program into CPU memory
+    // Copy program into CPU memory FIRST
     for (let i = 0; i < program.length; i++) {
       this.cpu.progMem[i] = program[i];
     }
-    console.log(`[AVR8Core] Program loaded (${program.length} words)`);
+    
+    // THEN reset the CPU to start execution from address 0
+    this.cpu.reset();
+    
+    console.log(`[AVR8Core] Program loaded (${program.length} words), CPU reset to PC=0`);
   }
   
   /**
