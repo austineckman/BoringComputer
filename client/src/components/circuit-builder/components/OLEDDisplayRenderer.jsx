@@ -143,9 +143,9 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
     }
   }, [displayId]); // Only run when displayId changes
   
-  // Update canvas when display state changes
+  // Update canvas when display buffer changes
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current || !displayBuffer) return;
     
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -154,28 +154,28 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Debug: Show initialization status
-    if (!displayState || !displayState.display) {
-      // Don't show debug text - just keep display black until initialized
-      console.log('[OLED Debug] Display not initialized yet');
-      return;
+    // Draw pixels from buffer
+    ctx.fillStyle = '#00ff41'; // Green for OLED pixels (more realistic)
+    
+    for (let y = 0; y < displayHeight; y++) {
+      for (let x = 0; x < displayWidth; x++) {
+        if (displayBuffer[y] && displayBuffer[y][x]) {
+          ctx.fillRect(x, y, 1, 1);
+        }
+      }
     }
     
-    // If we have display state with elements, draw them
+    // Also handle display state elements if they exist (for advanced users)
     if (displayState && displayState.display && displayState.display.elements && displayState.display.elements.length > 0) {
-      console.log(`[OLED Renderer] Drawing ${displayState.display.elements.length} elements for ${displayId}:`, displayState.display.elements);
-      
-      ctx.fillStyle = '#ffffff'; // White for OLED pixels
-      ctx.strokeStyle = '#ffffff';
+      ctx.fillStyle = '#00ff41'; // Green for OLED pixels
+      ctx.strokeStyle = '#00ff41';
       ctx.lineWidth = 1;
       
-      displayState.display.elements.forEach((element, index) => {
-        console.log(`[OLED Renderer] Drawing element ${index}:`, element);
+      displayState.display.elements.forEach((element) => {
         switch (element.type) {
           case 'text':
             ctx.font = '8px monospace';
             ctx.fillText(element.text, element.x, element.y);
-            console.log(`[OLED Renderer] Drew text "${element.text}" at (${element.x}, ${element.y})`);
             break;
             
           case 'frame':
@@ -184,7 +184,6 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
             
           case 'filledRect':
             ctx.fillRect(element.x, element.y, element.width, element.height);
-            console.log(`[OLED Renderer] Drew filled rectangle at (${element.x}, ${element.y}) size ${element.width}x${element.height}`);
             break;
             
           case 'circle':
@@ -199,22 +198,11 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
             ctx.fill();
             break;
             
-          case 'triangle':
-            ctx.beginPath();
-            ctx.moveTo(element.x1, element.y1);
-            ctx.lineTo(element.x2, element.y2);
-            ctx.lineTo(element.x3, element.y3);
-            ctx.closePath();
-            ctx.stroke();
-            console.log(`[OLED Renderer] Drew triangle: (${element.x1},${element.y1}) (${element.x2},${element.y2}) (${element.x3},${element.y3})`);
-            break;
-            
           case 'line':
             ctx.beginPath();
             ctx.moveTo(element.x1, element.y1);
             ctx.lineTo(element.x2, element.y2);
             ctx.stroke();
-            console.log(`[OLED Renderer] Drew line: (${element.x1},${element.y1}) to (${element.x2},${element.y2})`);
             break;
             
           case 'pixel':
@@ -222,23 +210,8 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
             break;
         }
       });
-      
-      console.log(`[OLED Renderer] Rendered ${displayState.display.elements.length} elements for ${displayId}`);
-    } else if (displayState && displayState.display && displayState.display.initialized) {
-      // Display is initialized but no elements - show waiting message
-      ctx.fillStyle = '#00ff00';
-      ctx.font = '10px monospace';
-      ctx.fillText('Display Initialized', 10, 20);
-      ctx.fillText('Buffer Empty', 10, 35);
-      console.log('[OLED Debug] Display initialized but no elements to render');
     }
-    
-    // Draw cursor if set
-    if (displayState && displayState.display && displayState.display.cursorX !== undefined && displayState.display.cursorY !== undefined) {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(displayState.display.cursorX, displayState.display.cursorY, 1, 8);
-    }
-  }, [displayState, displayId, isRunning]);
+  }, [displayBuffer, displayState, displayId]);
   
   // Update from simulator state when it changes
   useEffect(() => {
@@ -276,7 +249,20 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
   
   // Handle display updates based on simulation state
   useEffect(() => {
-    if (!isRunning) return;
+    if (!isRunning) {
+      // Clear any existing animation when simulation stops
+      if (animationInterval.current) {
+        clearInterval(animationInterval.current);
+        animationInterval.current = null;
+      }
+      
+      // Create blank buffer when not running
+      const blankBuffer = new Array(displayHeight).fill(0).map(() => 
+        new Array(displayWidth).fill(0)
+      );
+      setDisplayBuffer(blankBuffer);
+      return;
+    }
     
     // Always clear any existing animation when display state changes
     if (animationInterval.current) {
@@ -284,46 +270,13 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
       animationInterval.current = null;
     }
     
-    // Check if the component state indicates we should display content
-    const shouldDisplay = displayState && displayState.shouldDisplay;
+    console.log(`[OLED Debug] Simulation running for display ${displayId}`);
+    console.log("OLED Display State:", displayState);
     
-    console.log("OLED Display State:", {
-      shouldDisplay,
-      hasRequiredLibraries: displayState?.hasRequiredLibraries,
-      hasOLEDCode: displayState?.hasOLEDCode,
-      isProperlyWired: displayState?.isProperlyWired
-    });
+    // For testing/demo purposes, always show the animation when simulation is running
+    // Later this can be made conditional based on proper code detection
+    console.log(`[OLED Debug] Starting demo animation for ${displayId}`);
     
-    // Check if the OLED is properly configured
-    if (!shouldDisplay) {
-      // Create a completely blank buffer - the OLED should be OFF when not properly configured
-      const blankBuffer = new Array(displayHeight).fill(0).map(() => 
-        new Array(displayWidth).fill(0)
-      );
-      
-      // Set the blank buffer - no pixels lit
-      setDisplayBuffer(blankBuffer);
-      
-      // Log the appropriate error but don't show anything on screen
-      // This is more realistic - an OLED with no power or no proper code would be blank
-      if (displayState) {
-        if (!displayState.hasRequiredLibraries) {
-          console.error("OLED Error E01: Missing required libraries");
-        } else if (!displayState.hasOLEDCode) {
-          console.error("OLED Error E02: No display code detected");
-        } else if (!displayState.isProperlyWired) {
-          console.error("OLED Error E03: Display not properly wired");
-          
-          if (window.simulatorContext && window.simulatorContext.wires) {
-            console.log("Current circuit wires:", window.simulatorContext.wires.length);
-          }
-        }
-      }
-      
-      return;
-    }
-    
-    // If we get here, we should display a demo animation
     // Create a bouncing ball animation to demonstrate OLED functionality
     let x = 44;
     let y = 24;
@@ -348,7 +301,7 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
       // Draw a circle (ball)
       for (let yy = -3; yy <= 3; yy++) {
         for (let xx = -3; xx <= 3; xx++) {
-          if (xx*xx + yy*yy <= 9) { // Circle equation - smaller circle
+          if (xx*xx + yy*yy <= 9) { // Circle equation
             const drawX = Math.floor(x + xx);
             const drawY = Math.floor(y + yy);
             
@@ -361,7 +314,7 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
         }
       }
       
-      // Draw text in corner
+      // Draw "OLED" text in corner
       const text = `OLED`;
       for (let i = 0; i < text.length; i++) {
         const charX = 3 + i * 6;
@@ -369,8 +322,8 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
         drawChar(newBuffer, text.charAt(i), charX, charY);
       }
       
-      // Draw a frame count at the bottom
-      const countText = `${frameCount++}`;
+      // Draw frame counter
+      const countText = `F:${frameCount++}`;
       for (let i = 0; i < countText.length; i++) {
         const charX = 5 + i * 6;
         const charY = 55;
@@ -379,7 +332,8 @@ const OLEDDisplayRenderer = ({ id, componentId }) => {
       
       // Update the display buffer
       setDisplayBuffer(newBuffer);
-    }, 100); // Update every 100ms for smoother animation
+      console.log(`[OLED] Frame ${frameCount} rendered for ${displayId}`);
+    }, 150); // Update every 150ms
     
     return () => {
       if (animationInterval.current) {
