@@ -259,6 +259,13 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       executionIntervalRef.current = null;
     }
     
+    // Stop manual blink interval (temporary debugging)
+    if (window._manualBlinkInterval) {
+      clearInterval(window._manualBlinkInterval);
+      window._manualBlinkInterval = null;
+      console.log('[Simulator] Cleared manual blink interval');
+    }
+    
     // Reset all component states when stopping
     components.forEach(component => {
       if (component.type === 'led' || component.id.includes('led')) {
