@@ -921,13 +921,30 @@ void loop() {
   
   // Handle loading example code (both hardcoded and database examples)
   const loadExampleCode = (exampleType: string) => {
+    // Stop any running simulation first
+    if (isSimulationRunning) {
+      stopSimulation();
+    }
+    
     // Check if it's a database example (UUID format)
     const dbExample = circuitExamples.find((ex: CircuitExample) => ex.id === exampleType);
     if (dbExample) {
       // Load database example
-      updateCurrentCode(dbExample.arduinoCode);
-      setCode(dbExample.arduinoCode);
-      updateSimulatorCode(dbExample.arduinoCode);
+      const newCode = dbExample.arduinoCode;
+      
+      // Update ALL code states synchronously
+      updateCurrentCode(newCode);
+      setCode(newCode);
+      updateSimulatorCode(newCode);
+      
+      // Force update the main tab
+      setCodeTabs(prev => ({
+        ...prev,
+        main: {
+          ...prev.main,
+          code: newCode
+        }
+      }));
       
       // Load circuit data if available
       if (dbExample.circuitData) {
@@ -1018,14 +1035,19 @@ void loop() {
       addSimulationLog(`Detected pins: ${pins.join(', ')}`);
     }
     
-    // Update the code in the current tab (this is what the editor displays)
+    // Update ALL code states synchronously
     updateCurrentCode(exampleCode);
-    
-    // Also update the standalone code state for compatibility
     setCode(exampleCode);
-    
-    // Update the simulator code
     updateSimulatorCode(exampleCode);
+    
+    // Force update the main tab
+    setCodeTabs(prev => ({
+      ...prev,
+      main: {
+        ...prev.main,
+        code: exampleCode
+      }
+    }));
     
     // Close the dropdown
     setShowExampleDropdown(false);

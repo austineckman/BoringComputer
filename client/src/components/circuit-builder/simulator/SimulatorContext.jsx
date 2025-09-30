@@ -246,10 +246,13 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       return;
     }
 
-    // Update the context code if we received code as parameter
-    if (codeToExecute && codeToExecute !== code) {
-      setCode(codeToExecute);
-    }
+    // Always update the context code and force a refresh
+    setCode(currentCode);
+    
+    // Clear any cached state
+    setComponentStates({});
+    
+    console.log('[Simulator] Using code:', currentCode.substring(0, 100) + '...');
 
     // Clear previous logs
     setLogs([]);
