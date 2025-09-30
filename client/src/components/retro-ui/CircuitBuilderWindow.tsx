@@ -194,16 +194,6 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
   // State for components and wires
   const [components, setComponents] = useState<ComponentData[]>([]);
   const [wires, setWires] = useState<WireConnection[]>([]);
-  
-  // Sync components to simulator context whenever they change
-  useEffect(() => {
-    setSimulatorComponents(components);
-  }, [components, setSimulatorComponents]);
-  
-  // Sync wires to simulator context whenever they change
-  useEffect(() => {
-    setSimulatorWires(wires);
-  }, [wires, setSimulatorWires]);
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
   const [selectedWire, setSelectedWire] = useState<string | null>(null);
   const [draggingComponent, setDraggingComponent] = useState<string | null>(null);
@@ -753,6 +743,16 @@ void loop() {
     setComponents: setSimulatorComponents,  // Sync components to simulator
     setWires: setSimulatorWires  // Sync wires to simulator
   } = useSimulator();
+
+  // Sync components to simulator context whenever they change
+  useEffect(() => {
+    setSimulatorComponents(components);
+  }, [components, setSimulatorComponents]);
+  
+  // Sync wires to simulator context whenever they change
+  useEffect(() => {
+    setSimulatorWires(wires);
+  }, [wires, setSimulatorWires]);
 
   // Library manager hook
   const { refreshLibraries, libraries = {} } = useLibraryManager();
