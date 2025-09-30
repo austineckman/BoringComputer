@@ -310,19 +310,18 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   
   // Execute AVR8js when simulation is running
   useEffect(() => {
+    console.log('[Simulator useEffect] isRunning changed to:', isRunning);
+    console.log('[Simulator useEffect] avrCoreRef.current exists:', !!avrCoreRef.current);
+    console.log('[Simulator useEffect] executionIntervalRef.current exists:', !!executionIntervalRef.current);
+    
     if (isRunning && avrCoreRef.current && !executionIntervalRef.current) {
-      console.log('[Simulator] Starting execution interval...');
-      addLog('▶️ Starting AVR8 execution...');
+      console.log('[Simulator] ✅ Starting execution interval...');
       
       // Debug: Check if components and wires are in global storage
       const debugComponents = window.latestSimulatorData?.components || [];
       const debugWires = window.latestSimulatorData?.wires || [];
-      addLog(`📊 Found ${debugComponents.length} components and ${debugWires.length} wires in storage`);
-      console.log(`[Simulator] Components in storage:`, debugComponents);
-      console.log(`[Simulator] Wires in storage:`, debugWires);
-      if (debugComponents.length > 0) {
-        addLog(`   Components: ${debugComponents.map(c => `${c.id}(${c.type})`).join(', ')}`);
-      }
+      console.log(`[Simulator] Components in storage:`, debugComponents.length);
+      console.log(`[Simulator] Wires in storage:`, debugWires.length);
       
       executionIntervalRef.current = setInterval(() => {
         if (avrCoreRef.current) {
@@ -331,8 +330,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         }
       }, 1);
       
-      console.log('[Simulator] ✅ Execution interval started');
-      addLog('✅ Simulation running');
+      console.log('[Simulator] ✅ Execution interval started - AVR8js is now running!');
     }
     
     // Cleanup when isRunning changes or component unmounts
@@ -340,6 +338,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       if (executionIntervalRef.current) {
         clearInterval(executionIntervalRef.current);
         executionIntervalRef.current = null;
+        console.log('[Simulator] Execution interval cleared');
       }
     };
   }, [isRunning]);
