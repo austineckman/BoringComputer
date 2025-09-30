@@ -1,3 +1,4 @@
+
 /**
  * AVR8Core.ts - Core AVR8 microcontroller emulation
  *
@@ -64,12 +65,13 @@ export class AVR8Core implements IAVR8Core {
   private serialCallback: ((data: number) => void) | null = null;
   private pinStates: {[portPin: string]: boolean} = {};
   private clockFrequency: number;
+  private isInitialized: boolean = false;
 
   constructor(clockFrequency: number = CLOCK_FREQUENCY) {
     this.clockFrequency = clockFrequency;
 
-    // Create the CPU with empty program memory (will be loaded later)
-    this.cpu = new CPU(new Uint16Array(0x8000));
+    // Create the CPU with proper program memory size (32KB for ATmega328P)
+    this.cpu = new CPU(new Uint16Array(0x4000)); // 16K words = 32KB
 
     console.log('[AVR8Core] CPU created, PC:', this.cpu.pc, 'cycles:', this.cpu.cycles);
 
@@ -86,6 +88,8 @@ export class AVR8Core implements IAVR8Core {
 
     // Set up pin change listeners for all ports
     this.setupPinChangeListeners();
+    
+    this.isInitialized = true;
   }
 
   /**
@@ -214,40 +218,84 @@ export class AVR8Core implements IAVR8Core {
     }
 
     // Clear all program memory first
-    for (let i = 0; i < this.cpu.progMem.length; i++) {
-      this.cpu.progMem[i] = 0;
-    }
+    this.cpu.progMem.fill(0);
 
     // Copy program into CPU memory
     for (let i = 0; i < Math.min(program.length, this.cpu.progMem.length); i++) {
       this.cpu.progMem[i] = program[i];
     }
 
-    // Reset the CPU to start execution from address 0
-    this.cpu.reset();
-    
-    // Force PC to 0 and clear any CPU state
-    this.cpu.pc = 0;
-    this.cpu.cycles = 0;
-    
-    // Initialize CPU registers
-    this.cpu.data.fill(0);
-    
-    // Set up stack pointer to end of SRAM (ATmega328P has SRAM from 0x100 to 0x8FF)
-    this.cpu.data[0x5D] = 0xFF; // SPL
-    this.cpu.data[0x5E] = 0x08; // SPH
+    // Properly reset the CPU
+    this.resetCPU();
 
     console.log(`[AVR8Core] Program loaded (${program.length} words), CPU reset to PC=${this.cpu.pc}`);
     console.log(`[AVR8Core] Verification - progMem[0-2]: 0x${this.cpu.progMem[0]?.toString(16)}, 0x${this.cpu.progMem[1]?.toString(16)}, 0x${this.cpu.progMem[2]?.toString(16)}`);
     
-    // Test execute one cycle to see if it works
+    // Test execute one instruction to verify it's working
+    this.testExecution();
+  }
+
+  /**
+   * Properly reset the CPU to initial state
+   */
+  private resetCPU(): void {
+    // Reset CPU using built-in method
+    this.cpu.reset();
+    
+    // Force critical registers to known good state
+    this.cpu.pc = 0;
+    this.cpu.cycles = 0;
+    
+    // Clear data memory (SRAM + registers)
+    this.cpu.data.fill(0);
+    
+    // Set up stack pointer properly for ATmega328P
+    // SRAM ends at 0x8FF (2303), so stack starts at 0x8FF
+    this.cpu.data[0x5D] = 0xFF; // SPL - Stack Pointer Low
+    this.cpu.data[0x5E] = 0x08; // SPH - Stack Pointer High
+    
+    // Set up proper I/O register initialization
+    // Initialize critical registers to their power-on reset values
+    this.cpu.data[0x24] = 0x00; // DDRB (Data Direction Register B)
+    this.cpu.data[0x25] = 0x00; // PORTB
+    this.cpu.data[0x27] = 0x00; // DDRC
+    this.cpu.data[0x28] = 0x00; // PORTC
+    this.cpu.data[0x2A] = 0x00; // DDRD
+    this.cpu.data[0x2B] = 0x00; // PORTD
+    
+    console.log(`[AVR8Core] CPU properly reset - PC: ${this.cpu.pc}, Cycles: ${this.cpu.cycles}`);
+    console.log(`[AVR8Core] Stack pointer set to: 0x${((this.cpu.data[0x5E] << 8) | this.cpu.data[0x5D]).toString(16)}`);
+  }
+
+  /**
+   * Test execution to verify the CPU is working
+   */
+  private testExecution(): void {
     try {
       const testPC = this.cpu.pc;
+      const testCycles = this.cpu.cycles;
+      const instruction = this.cpu.progMem[testPC];
+      
+      console.log(`[AVR8Core] Test execution: PC=${testPC}, instruction=0x${instruction?.toString(16)}, cycles=${testCycles}`);
+      
+      // Execute one instruction
       this.cpu.tick();
-      console.log(`[AVR8Core] Test execution: PC ${testPC} → ${this.cpu.pc}, instruction: 0x${this.cpu.progMem[testPC]?.toString(16)}`);
-      // Reset back to start
+      
+      const newPC = this.cpu.pc;
+      const newCycles = this.cpu.cycles;
+      
+      console.log(`[AVR8Core] After test execution: PC=${testPC}→${newPC}, cycles=${testCycles}→${newCycles}`);
+      
+      if (newPC !== testPC || newCycles !== testCycles) {
+        console.log(`[AVR8Core] ✅ CPU execution is working! PC advanced or cycles incremented`);
+      } else {
+        console.error(`[AVR8Core] ❌ CPU execution appears stuck - PC and cycles unchanged`);
+      }
+      
+      // Reset back to start for actual program execution
       this.cpu.pc = 0;
       this.cpu.cycles = 0;
+      
     } catch (error) {
       console.error('[AVR8Core] Test execution failed:', error);
     }
@@ -257,14 +305,20 @@ export class AVR8Core implements IAVR8Core {
    * Execute a certain number of CPU cycles
    */
   public execute(cycles: number): void {
-    if (!this.cpu) {
-      console.warn('[AVR8Core] No CPU available, skipping execution');
+    if (!this.cpu || !this.isInitialized) {
+      console.warn('[AVR8Core] CPU not initialized, skipping execution');
       return;
     }
 
     // Check if we have a valid program loaded
-    if (!this.cpu.progMem || this.cpu.progMem.length === 0 || this.cpu.progMem[0] === 0) {
-      console.warn('[AVR8Core] No valid program loaded, skipping execution');
+    if (!this.cpu.progMem || this.cpu.progMem.length === 0) {
+      console.warn('[AVR8Core] No program memory available');
+      return;
+    }
+
+    // Check if the first instruction is valid (not 0x0000 which would be NOP)
+    if (this.cpu.progMem[0] === 0) {
+      console.warn('[AVR8Core] Program appears to be empty (first instruction is 0x0000)');
       return;
     }
 
@@ -276,52 +330,91 @@ export class AVR8Core implements IAVR8Core {
     const prevPortC = this.cpu.data[0x28] || 0;
     const prevPortD = this.cpu.data[0x2B] || 0;
 
-    // Execute the specified number of cycles
     let cyclesExecuted = 0;
-    const maxCyclesPerExecution = Math.min(cycles, 1000); // Limit to prevent freezing
+    let instructionsExecuted = 0;
+    const maxInstructions = Math.min(cycles, 500); // Limit instructions to prevent infinite loops
     
     try {
-      // Simple execution loop - just run the cycles
-      for (let i = 0; i < maxCyclesPerExecution; i++) {
-        // Execute one CPU cycle
-        this.cpu.tick();
-        cyclesExecuted++;
+      // Execute instructions one by one with proper error handling
+      while (cyclesExecuted < cycles && instructionsExecuted < maxInstructions) {
+        const beforePC = this.cpu.pc;
+        const beforeCycles = this.cpu.cycles;
         
-        // Check every 100 cycles if we need to log progress
-        if (cyclesExecuted % 100 === 0) {
-          const currentPC = this.cpu.pc;
-          // Only log if PC has actually changed or if we're at the start
-          if (currentPC !== initialPC || cyclesExecuted === 100) {
-            console.log(`[AVR8Core] Executed ${cyclesExecuted} cycles, PC: ${initialPC}→${currentPC}`);
-          }
+        // Check if PC is valid
+        if (this.cpu.pc >= this.cpu.progMem.length) {
+          console.error(`[AVR8Core] PC out of bounds: ${this.cpu.pc} >= ${this.cpu.progMem.length}`);
+          break;
+        }
+        
+        const instruction = this.cpu.progMem[this.cpu.pc];
+        
+        // Execute one CPU instruction
+        this.cpu.tick();
+        
+        const afterPC = this.cpu.pc;
+        const afterCycles = this.cpu.cycles;
+        
+        // Count cycles that actually executed
+        const cyclesDelta = afterCycles - beforeCycles;
+        cyclesExecuted += cyclesDelta;
+        instructionsExecuted++;
+        
+        // Log detailed execution info every 50 instructions
+        if (instructionsExecuted % 50 === 0) {
+          console.log(`[AVR8Core] Executed ${instructionsExecuted} instructions, ${cyclesExecuted} cycles`);
+          console.log(`[AVR8Core] PC: ${beforePC}→${afterPC}, instruction: 0x${instruction?.toString(16)}`);
+          
+          // Check port states
+          const currentPortB = this.cpu.data[0x25] || 0;
+          const currentDDRB = this.cpu.data[0x24] || 0;
+          console.log(`[AVR8Core] PORTB: 0x${currentPortB.toString(16)}, DDRB: 0x${currentDDRB.toString(16)}`);
+          
+          // Check pin 13 specifically
+          const pin13Output = (currentDDRB & 0x20) !== 0; // Bit 5 of DDRB
+          const pin13State = (currentPortB & 0x20) !== 0; // Bit 5 of PORTB
+          console.log(`[AVR8Core] Pin 13: OUTPUT=${pin13Output}, STATE=${pin13State ? 'HIGH' : 'LOW'}`);
+        }
+        
+        // Safety check for stuck PC (but allow tight loops)
+        if (beforePC === afterPC && cyclesDelta === 0) {
+          console.warn(`[AVR8Core] CPU appears stuck at PC=${beforePC}, instruction=0x${instruction?.toString(16)}`);
+          // Don't break immediately - might be a valid single-cycle instruction
         }
       }
     } catch (error) {
       console.error('[AVR8Core] Execution error:', error);
       console.error('[AVR8Core] PC was at:', this.cpu.pc);
-      console.error('[AVR8Core] Program at PC:', this.cpu.progMem[this.cpu.pc]?.toString(16));
+      console.error('[AVR8Core] Instruction at PC:', this.cpu.progMem[this.cpu.pc]?.toString(16));
       return;
     }
 
     const finalPC = this.cpu.pc;
     const finalCycles = this.cpu.cycles;
 
-    // Check for port changes after execution and manually trigger callbacks
+    // Manual port change detection since listeners might not fire
+    this.checkPortChanges(prevPortB, prevPortC, prevPortD);
+
+    // Log execution summary
+    console.log(`[AVR8Core] Execution complete: ${instructionsExecuted} instructions, ${cyclesExecuted} cycles`);
+    console.log(`[AVR8Core] PC: ${initialPC}→${finalPC}, Total cycles: ${initialCycles}→${finalCycles}`);
+  }
+
+  /**
+   * Manually check for port changes and trigger callbacks
+   */
+  private checkPortChanges(prevPortB: number, prevPortC: number, prevPortD: number): void {
     const currentPortB = this.cpu.data[0x25] || 0;
     const currentPortC = this.cpu.data[0x28] || 0;
     const currentPortD = this.cpu.data[0x2B] || 0;
 
     // Check PORTB changes
     if (currentPortB !== prevPortB) {
-      console.log(`[AVR8Core] PORTB changed from 0x${prevPortB.toString(16)} to 0x${currentPortB.toString(16)}`);
-
+      console.log(`[AVR8Core] PORTB changed: 0x${prevPortB.toString(16)} → 0x${currentPortB.toString(16)}`);
       for (let pin = 0; pin < 8; pin++) {
         const pinMask = 1 << pin;
         const wasHigh = (prevPortB & pinMask) !== 0;
         const isHigh = (currentPortB & pinMask) !== 0;
-
         if (wasHigh !== isHigh) {
-          console.log(`[AVR8Core] Pin B${pin} changed: ${wasHigh ? 'HIGH' : 'LOW'} → ${isHigh ? 'HIGH' : 'LOW'}`);
           this.handlePinChange('B', pin, isHigh);
         }
       }
@@ -329,13 +422,11 @@ export class AVR8Core implements IAVR8Core {
 
     // Check PORTC changes
     if (currentPortC !== prevPortC) {
-      console.log(`[AVR8Core] PORTC changed from 0x${prevPortC.toString(16)} to 0x${currentPortC.toString(16)}`);
-
+      console.log(`[AVR8Core] PORTC changed: 0x${prevPortC.toString(16)} → 0x${currentPortC.toString(16)}`);
       for (let pin = 0; pin < 8; pin++) {
         const pinMask = 1 << pin;
         const wasHigh = (prevPortC & pinMask) !== 0;
         const isHigh = (currentPortC & pinMask) !== 0;
-
         if (wasHigh !== isHigh) {
           this.handlePinChange('C', pin, isHigh);
         }
@@ -344,30 +435,15 @@ export class AVR8Core implements IAVR8Core {
 
     // Check PORTD changes
     if (currentPortD !== prevPortD) {
-      console.log(`[AVR8Core] PORTD changed from 0x${prevPortD.toString(16)} to 0x${currentPortD.toString(16)}`);
-
+      console.log(`[AVR8Core] PORTD changed: 0x${prevPortD.toString(16)} → 0x${currentPortD.toString(16)}`);
       for (let pin = 0; pin < 8; pin++) {
         const pinMask = 1 << pin;
         const wasHigh = (prevPortD & pinMask) !== 0;
         const isHigh = (currentPortD & pinMask) !== 0;
-
         if (wasHigh !== isHigh) {
           this.handlePinChange('D', pin, isHigh);
         }
       }
-    }
-
-    // Debug every 1000 cycles instead of every second
-    if (cyclesExecuted >= 1000 && finalCycles % 16000 < 1000) {
-      console.log(`[AVR8Core] Executed ${cyclesExecuted}/${cycles} cycles`);
-      console.log(`[AVR8Core] PC: ${initialPC}→${finalPC}, Cycles: ${initialCycles}→${finalCycles}`);
-      console.log(`[AVR8Core] progMem[${finalPC}]: 0x${this.cpu.progMem[finalPC]?.toString(16) || '??'}`);
-      console.log(`[AVR8Core] PORTB=0x${currentPortB.toString(16)} DDRB=0x${this.cpu.data[0x24]?.toString(16)} (Pin 13 = B5)`);
-      
-      // Check if pin 13 (Port B pin 5) should be on
-      const pin13State = (currentPortB & 0x20) !== 0; // Bit 5 of PORTB
-      const pin13Direction = (this.cpu.data[0x24] & 0x20) !== 0; // Bit 5 of DDRB
-      console.log(`[AVR8Core] Pin 13: DIR=${pin13Direction ? 'OUT' : 'IN'}, STATE=${pin13State ? 'HIGH' : 'LOW'}`);
     }
   }
 
@@ -384,6 +460,7 @@ export class AVR8Core implements IAVR8Core {
 
     // Add the callback
     this.pinStateCallbacks[pinKey].push(callback);
+    console.log(`[AVR8Core] Registered callback for pin ${pinKey}, total callbacks: ${this.pinStateCallbacks[pinKey].length}`);
   }
 
   /**
@@ -407,6 +484,7 @@ export class AVR8Core implements IAVR8Core {
     // Clear our pin state callbacks
     this.pinStateCallbacks = {};
     this.serialCallback = null;
+    console.log('[AVR8Core] Emulation stopped, callbacks cleared');
   }
 
   /**
