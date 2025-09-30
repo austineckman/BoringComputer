@@ -153,6 +153,9 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       avrCoreRef.current = new AVR8Core();
       avrCoreRef.current.loadProgram(result.program);
       
+      addLog('🔌 Setting up pin callbacks...');
+      console.log('[Simulator] Setting up pin change callbacks...');
+      
       // Set up pin change callbacks
       for (let arduinoPin = 0; arduinoPin <= 19; arduinoPin++) {
         const mapping = AVR8Core.mapArduinoPin(arduinoPin);
@@ -162,6 +165,9 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           });
         }
       }
+      
+      addLog('✅ Pin callbacks registered');
+      console.log('[Simulator] Pin callbacks set up successfully');
       
       // Start execution loop (16 MHz = 16000 cycles per ms)
       addLog('▶️ Starting AVR8 execution...');
