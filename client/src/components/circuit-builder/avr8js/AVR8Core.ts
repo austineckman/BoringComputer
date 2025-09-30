@@ -141,15 +141,22 @@ export class AVR8Core implements IAVR8Core {
       // Update our stored pin state
       this.pinStates[pinKey] = isHigh;
       
+      // Log pin change (especially for port B pin 5 which is Arduino pin 13)
+      if (port === 'B' && pin === 5) {
+        console.log(`[AVR8Core] 🔴 PIN 13 (B5) changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+      } else {
+        console.log(`[AVR8Core] Pin ${port}${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+      }
+      
       // Call any registered callbacks for this pin
       if (this.pinStateCallbacks[pinKey]) {
+        console.log(`[AVR8Core] Calling ${this.pinStateCallbacks[pinKey].length} callbacks for ${pinKey}`);
         for (const callback of this.pinStateCallbacks[pinKey]) {
           callback(isHigh);
         }
+      } else {
+        console.log(`[AVR8Core] No callbacks registered for ${pinKey}`);
       }
-      
-      // Log pin change
-      console.log(`[AVR8Core] Pin ${port}${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
     }
   }
   
