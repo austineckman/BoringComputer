@@ -272,9 +272,9 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     setIsCompiling(true);
 
     try {
+      console.log('[Simulator] About to call ArduinoCompilationService.compileAndParse...');
       const result = await ArduinoCompilationService.compileAndParse(currentCode);
-
-      console.log('[Simulator] Compilation result:', result.success, result);
+      console.log('[Simulator] ✅ Received compilation result:', result.success, result);
       setIsCompiling(false);
 
       if (!result.success) {
