@@ -248,10 +248,10 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
 
     // Always update the context code and force a refresh
     setCode(currentCode);
-    
+
     // Clear any cached state
     setComponentStates({});
-    
+
     console.log('[Simulator] Using code:', currentCode.substring(0, 100) + '...');
 
     // Clear previous logs
@@ -299,6 +299,10 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       for (let arduinoPin = 0; arduinoPin <= 19; arduinoPin++) {
         const mapping = AVR8Core.mapArduinoPin(arduinoPin);
         if (mapping) {
+          // The AVR8Core now handles pin change detection internally.
+          // We only need to register a callback to receive notifications.
+          // The callback signature expects `port`, `pin`, and a `callback` function.
+          // The `callback` function receives `isHigh` as an argument.
           avrCoreRef.current.onPinChange(mapping.port, mapping.pin, (isHigh) => {
             handlePinChange(arduinoPin, isHigh);
           });
@@ -341,7 +345,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       console.log('[Simulator] Setting isRunning to true...');
       setIsCompiling(false);
       setIsRunning(true);
-      
+
       console.log('[Simulator] ✅ Simulation state set to running - execution will start via useEffect');
 
       // Initialize OLED displays after a short delay to ensure components are loaded
@@ -371,7 +375,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       if (component.type === 'heroboard' || component.id.includes('heroboard') || component.id.includes('arduino')) {
         updateComponentPins(component.id, { [pin]: isHigh });
         console.log(`[AVR8] Updated ${component.id} pin ${pin} to ${isHigh ? 'HIGH' : 'LOW'}`);
-        
+
         // Special handling for pin 13 - Arduino boards have an onboard LED on pin 13
         if (pin === 13) {
           updateComponentState(component.id, { 
@@ -423,8 +427,6 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       clearInterval(executionIntervalRef.current);
       executionIntervalRef.current = null;
     }
-
-    
 
     // Reset all component states when stopping
     components.forEach(component => {
@@ -510,10 +512,13 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       console.log(`[Simulator] Components in storage:`, debugComponents.length);
       console.log(`[Simulator] Wires in storage:`, debugWires.length);
 
+      // No React hooks, no state updates - just run it
+      console.log('[Simulator] Starting execution interval DIRECTLY...');
+
       executionIntervalRef.current = setInterval(() => {
         if (avrCoreRef.current) {
-          // Execute 16000 cycles (1ms of execution at 16MHz)
-          avrCoreRef.current.execute(16000);
+          // Execute the AVR core - it will handle pin change detection internally
+          avrCoreRef.current.execute(16000); // 1ms worth of cycles at 16MHz
         }
       }, 1);
 
