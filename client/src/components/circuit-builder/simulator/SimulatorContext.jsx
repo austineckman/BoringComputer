@@ -293,6 +293,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           case 'pinChange':
             // Handle pin state change from worker
             if (typeof data.pin !== 'undefined' && typeof data.isHigh !== 'undefined') {
+              console.log(`[SimulatorContext] Worker reported pin ${data.pin} change to ${data.isHigh ? 'HIGH' : 'LOW'}`);
               handlePinChange(data.pin, data.isHigh);
             }
             break;

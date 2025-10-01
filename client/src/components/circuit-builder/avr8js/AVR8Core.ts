@@ -558,6 +558,22 @@ export class AVR8Core implements IAVR8Core {
   }
 
   /**
+   * Register a callback for Arduino pin changes using Arduino pin numbering
+   */
+  public onArduinoPinChange(arduinoPin: number, callback: (state: boolean) => void): void {
+    const pinKey = `arduino-${arduinoPin}`;
+
+    // Initialize the array if it doesn't exist
+    if (!this.pinStateCallbacks[pinKey]) {
+      this.pinStateCallbacks[pinKey] = [];
+    }
+
+    // Add the callback
+    this.pinStateCallbacks[pinKey].push(callback);
+    console.log(`[AVR8Core] Registered Arduino pin callback for pin ${arduinoPin}, total callbacks: ${this.pinStateCallbacks[pinKey].length}`);
+  }
+
+  /**
    * Register a callback for serial data
    */
   public onSerialData(callback: (data: number) => void): void {
