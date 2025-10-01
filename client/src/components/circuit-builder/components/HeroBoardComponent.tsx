@@ -44,17 +44,17 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
 
   // Debug logging for pin 13 state
   React.useEffect(() => {
-    if (componentState.pins?.[13] !== undefined || componentState.pin13 !== undefined) {
-      console.log(`🔴 HeroBoard ${id} Pin 13 State Update:`, {
-        pin13: componentState.pin13,
-        onboardLED: componentState.onboardLED,
-        pin13LED: componentState.pin13LED,
-        'pins.13': componentState.pins?.['13'],
-        'pins[13]': componentState.pins?.[13],
-        'pins.d13': componentState.pins?.['d13'],
-        finalState: pin13IsHigh
-      });
-    }
+    console.log(`🔴 HeroBoard ${id} Pin 13 State Update:`, {
+      pin13: componentState.pin13,
+      onboardLED: componentState.onboardLED,
+      pin13LED: componentState.pin13LED,
+      'pins.13': componentState.pins?.['13'],
+      'pins[13]': componentState.pins?.[13],
+      'pins.d13': componentState.pins?.['d13'],
+      finalState: pin13IsHigh,
+      componentStateExists: !!componentState,
+      hasAnyPinData: Object.keys(componentState).length > 0
+    });
   }, [componentState, pin13IsHigh, id]);
   
   // Define pins based on Arduino layout
@@ -154,15 +154,17 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
           style={{
             left: '135px',
             top: '75px',
-            width: '8px',
-            height: '8px',
-            backgroundColor: pin13IsHigh ? '#ff3300' : '#330000',
+            width: '10px',
+            height: '10px',
+            backgroundColor: pin13IsHigh ? '#ff0000' : '#440000',
             borderRadius: '50%',
-            boxShadow: pin13IsHigh ? '0 0 10px 2px rgba(255, 50, 0, 0.8)' : 'none',
-            transition: 'background-color 0.05s, box-shadow 0.05s',
-            border: '1px solid #661100',
+            boxShadow: pin13IsHigh ? '0 0 15px 3px rgba(255, 0, 0, 0.9), inset 0 0 5px rgba(255, 255, 255, 0.3)' : '0 0 2px rgba(68, 0, 0, 0.5)',
+            transition: 'all 0.1s ease',
+            border: pin13IsHigh ? '2px solid #ff6666' : '2px solid #220000',
             zIndex: 999,
+            opacity: 1,
           }}
+          title={`Built-in LED (Pin 13): ${pin13IsHigh ? 'ON' : 'OFF'}`}
         />
         
         {/* Debug info overlay to show pin 13 state */}
