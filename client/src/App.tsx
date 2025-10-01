@@ -42,17 +42,15 @@ import { SoundProvider } from "@/context/SoundContext";
 import { SimpleAuthProvider as AuthProvider } from "@/hooks/use-simple-auth";
 import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
 import RetroBootScreen from "@/components/retro-ui/RetroBootScreen";
-import { Toaster as ShadcnToaster } from '@/components/ui/toaster';
-
 
 function App() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-
+  
   // Check for Discord OAuth callback success
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const authenticated = urlParams.get("authenticated");
-
+    
     if (authenticated === "true") {
       // Clear the URL parameter and refresh user data
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -67,21 +65,21 @@ function App() {
         <Route path="/login">
           <AuthPage />
         </Route>
-
+        
         <Route path="/auth">
           <AuthPage />
         </Route>
-
+        
         <Route path="/logout">
           <Logout />
         </Route>
-
+        
         {/* Home route - guest mode only if explicitly requested */}
         <Route path="/">
           {(() => {
             const urlParams = new URLSearchParams(window.location.search);
             const isGuestMode = urlParams.get('guest') === 'true';
-
+            
             if (isGuestMode) {
               // Only use guest mode if explicitly requested
               return <DesktopHome />;
@@ -102,7 +100,7 @@ function App() {
             }
           })()}
         </Route>
-
+        
         <ProtectedRoute 
           path="/quests" 
           component={() => (
@@ -134,22 +132,22 @@ function App() {
           path="/mission/:questId" 
           component={() => <MissionPage />} 
         />
-
+        
         <ProtectedRoute 
           path="/simulator-demo" 
           component={() => <SimulatorDemo />} 
         />
-
+        
         <ProtectedRoute 
           path="/blink-demo" 
           component={() => <SimpleBlinkDemo />} 
         />
-
+        
         <ProtectedRoute 
           path="/rgb-demo" 
           component={() => <RGBLEDDemo />} 
         />
-
+        
         <ProtectedRoute 
           path="/inventory" 
           component={() => (
@@ -158,7 +156,7 @@ function App() {
             </MainLayout>
           )} 
         />
-
+        
         <ProtectedRoute 
           path="/unified-inventory" 
           component={() => (
@@ -167,7 +165,7 @@ function App() {
             </MainLayout>
           )} 
         />
-
+        
         <ProtectedRoute 
           path="/loot-box-preview/:id" 
           component={() => (
@@ -176,7 +174,7 @@ function App() {
             </MainLayout>
           )} 
         />
-
+        
         <ProtectedRoute 
           path="/character" 
           component={() => (
@@ -185,7 +183,7 @@ function App() {
             </MainLayout>
           )} 
         />
-
+        
         <ProtectedRoute 
           path="/forge" 
           component={() => (
@@ -194,7 +192,7 @@ function App() {
             </MainLayout>
           )} 
         />
-
+        
         {/* Redirect workshop to forge */}
         <ProtectedRoute 
           path="/workshop" 
@@ -204,7 +202,7 @@ function App() {
             </MainLayout>
           )} 
         />
-
+        
         <ProtectedRoute 
           path="/achievements" 
           component={() => (
@@ -213,47 +211,47 @@ function App() {
             </MainLayout>
           )} 
         />
-
+        
         <AdminRoute 
           path="/admin" 
           component={Admin} 
         />
-
+        
         <AdminRoute 
           path="/admin-items" 
           component={AdminItems} 
         />
-
+        
         <AdminRoute 
           path="/admin-recipes" 
           component={AdminRecipes} 
         />
-
+        
         <AdminRoute 
           path="/admin-quests" 
           component={AdminQuests} 
         />
-
+        
         <AdminRoute 
           path="/admin-lootboxes" 
           component={AdminLootboxes} 
         />
-
+        
         <AdminRoute 
           path="/admin-basic" 
           component={AdminBasic} 
         />
-
+        
         <AdminRoute 
           path="/admin-simple" 
           component={AdminSimple} 
         />
-
+        
         <AdminRoute 
           path="/admin-kits" 
           component={AdminKits} 
         />
-
+        
         <AdminRoute 
           path="/admin-users" 
           component={AdminUsers} 
@@ -263,17 +261,17 @@ function App() {
           path="/admin-stats" 
           component={AdminStats} 
         />
-
+        
         <AdminRoute 
           path="/admin-settings" 
           component={AdminSettings} 
         />
-
+        
         <AdminRoute 
           path="/admin-quest-generator" 
           component={AdminQuestGenerator} 
         />
-
+        
         <ProtectedRoute 
           path="/settings" 
           component={() => (
@@ -289,16 +287,13 @@ function App() {
             <FullscreenUniversalEmulatorApp onClose={() => window.location.href = '/'} />
           )}
         />
+        
 
-
-
+        
         <Route>
           <NotFound />
         </Route>
       </Switch>
-      <div className="App">
-          <ShadcnToaster />
-        </div>
     </AuthProvider>
     </AudioPlayerProvider>
   );

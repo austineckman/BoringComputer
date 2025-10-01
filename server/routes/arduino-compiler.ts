@@ -17,10 +17,10 @@ router.post('/compile', async (req, res) => {
       });
     }
 
-    console.log('[Arduino Compiler Proxy] Forwarding compilation request to compiler server...');
+    console.log('[Arduino Compiler Proxy] Forwarding compilation request to DigitalOcean server...');
     console.log('[Arduino Compiler Proxy] Code length:', code.length);
 
-    // Forward the request to the compiler server (libraries are installed there)
+    // Forward the request to the DigitalOcean compiler server
     const response = await axios.post(COMPILER_URL, { code }, {
       timeout: 30000, // 30 second timeout
       headers: {
@@ -29,11 +29,6 @@ router.post('/compile', async (req, res) => {
     });
 
     console.log('[Arduino Compiler Proxy] Received response:', response.data.success ? 'SUCCESS' : 'FAILURE');
-    
-    // Log full error details for debugging
-    if (!response.data.success) {
-      console.log('[Arduino Compiler Proxy] Error details:', JSON.stringify(response.data, null, 2));
-    }
 
     // Forward the response back to the client
     res.json(response.data);

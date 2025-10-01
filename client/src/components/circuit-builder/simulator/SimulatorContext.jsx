@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { ArduinoCompilationService } from '../compiler/ArduinoCompilationService';
-import AVR8Worker from '../../desktop/emulator/AVR8Worker.ts?worker';
+import { AVR8Core } from '../avr8js/AVR8Core';
 
 // Create a context for the simulator
 const SimulatorContext = createContext({
@@ -36,24 +36,24 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   const [components, setComponents] = useState([]);
   const [wires, setWires] = useState([]);
   const [componentStates, setComponentStates] = useState({});
-
-  // AVR8 worker state
-  const workerRef = useRef(null);
-  const isRunningRef = useRef(false);
-
+  
+  // AVR8 emulator state
+  const avrCoreRef = useRef(null);
+  const executionIntervalRef = useRef(null);
+  
   // Function to add a log entry with timestamp
   const addLog = (message) => {
     const timestamp = new Date().toLocaleTimeString();
     const formattedMessage = `[${timestamp}] ${message}`;
-
+    
     // Skip noisy system messages that aren't useful to the user
-    if (message.includes('Refreshing component states') ||
+    if (message.includes('Refreshing component states') || 
         message.includes('updated:') ||
         message.includes('FALLBACK') ||
         message.includes('current_component_state')) {
       return; // Skip these messages
     }
-
+    
     // Clean up the message and add to logs
     const cleanMessage = formattedMessage
       .replace('[Arduino] ', '')
@@ -61,7 +61,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       .replace(/\[Simulator\] /g, '')
       .replace(/\[FALLBACK\] /g, '')
       .replace(/\[DIRECT\] /g, '');
-
+    
     setLogs(prevLogs => [...prevLogs.slice(-99), cleanMessage]); // Keep last 100 entries
   };
 
@@ -71,10 +71,10 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       message: message,
       newline: isNewline
     };
-
+    
     setSerialLogs(prevLogs => [...prevLogs.slice(-99), serialEntry]); // Keep last 100 entries
   };
-
+  
   // Function to update the state of a component
   const updateComponentState = (componentId, newState) => {
     setComponentStates(prevStates => ({
@@ -85,12 +85,12 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       }
     }));
   };
-
+  
   // Function to update pin states for a component
   const updateComponentPins = (componentId, pinStates) => {
     const currentState = componentStates[componentId] || {};
     const currentPins = currentState.pins || {};
-
+    
     updateComponentState(componentId, {
       pins: {
         ...currentPins,
@@ -98,351 +98,109 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       }
     });
   };
-
-  // Parse OLED commands from serial output
-  const parseOLEDCommand = (line) => {
-    // Format: OLED:type:params...
-    const parts = line.split(':');
-    if (parts.length < 2) return;
-
-    const commandType = parts[1];
-
-    // Find all OLED display components
-    const latestComponents = window.latestSimulatorData?.components || [];
-    const oledComponents = latestComponents.filter(c =>
-      c.type === 'oled-display' || c.id.includes('oled')
-    );
-
-    if (oledComponents.length === 0) {
-      console.warn('[OLED Parser] No OLED components found');
-      return;
-    }
-
-    // Update each OLED display
-    oledComponents.forEach(oledComponent => {
-      const currentState = componentStates[oledComponent.id] || {};
-      const currentDisplay = currentState.display || { elements: [] };
-
-      let newElements = [...(currentDisplay.elements || [])];
-
-      switch (commandType) {
-        case 'init':
-          console.log('[OLED Parser] Initializing OLED display');
-          updateComponentState(oledComponent.id, {
-            display: { elements: [] }
-          });
-          break;
-
-        case 'clear':
-          console.log('[OLED Parser] Clearing OLED display');
-          updateComponentState(oledComponent.id, {
-            display: { elements: [] }
-          });
-          break;
-
-        case 'text':
-          // Format: OLED:text:Hello World:10:20
-          if (parts.length >= 5) {
-            const text = parts[2];
-            const x = parseInt(parts[3]);
-            const y = parseInt(parts[4]);
-            console.log(`[OLED Parser] Drawing text "${text}" at (${x}, ${y})`);
-            newElements.push({ type: 'text', text, x, y });
-            updateComponentState(oledComponent.id, {
-              display: { elements: newElements }
-            });
-          }
-          break;
-
-        case 'frame':
-          // Format: OLED:frame:0:0:100:50
-          if (parts.length >= 6) {
-            const x = parseInt(parts[2]);
-            const y = parseInt(parts[3]);
-            const width = parseInt(parts[4]);
-            const height = parseInt(parts[5]);
-            console.log(`[OLED Parser] Drawing frame at (${x}, ${y}) size ${width}x${height}`);
-            newElements.push({ type: 'frame', x, y, width, height });
-            updateComponentState(oledComponent.id, {
-              display: { elements: newElements }
-            });
-          }
-          break;
-
-        case 'filledRect':
-          // Format: OLED:filledRect:0:0:100:50
-          if (parts.length >= 6) {
-            const x = parseInt(parts[2]);
-            const y = parseInt(parts[3]);
-            const width = parseInt(parts[4]);
-            const height = parseInt(parts[5]);
-            console.log(`[OLED Parser] Drawing filled rect at (${x}, ${y}) size ${width}x${height}`);
-            newElements.push({ type: 'filledRect', x, y, width, height });
-            updateComponentState(oledComponent.id, {
-              display: { elements: newElements }
-            });
-          }
-          break;
-
-        case 'circle':
-          // Format: OLED:circle:64:32:10
-          if (parts.length >= 5) {
-            const x = parseInt(parts[2]);
-            const y = parseInt(parts[3]);
-            const radius = parseInt(parts[4]);
-            console.log(`[OLED Parser] Drawing circle at (${x}, ${y}) radius ${radius}`);
-            newElements.push({ type: 'circle', x, y, radius });
-            updateComponentState(oledComponent.id, {
-              display: { elements: newElements }
-            });
-          }
-          break;
-
-        case 'filledCircle':
-          // Format: OLED:filledCircle:64:32:10
-          if (parts.length >= 5) {
-            const x = parseInt(parts[2]);
-            const y = parseInt(parts[3]);
-            const radius = parseInt(parts[4]);
-            console.log(`[OLED Parser] Drawing filled circle at (${x}, ${y}) radius ${radius}`);
-            newElements.push({ type: 'filledCircle', x, y, radius });
-            updateComponentState(oledComponent.id, {
-              display: { elements: newElements }
-            });
-          }
-          break;
-
-        default:
-          console.warn('[OLED Parser] Unknown command type:', commandType);
-      }
-    });
-  };
-
-  // Initialize all OLED displays when simulation starts
-  const initializeOLEDDisplays = () => {
-    const latestComponents = window.latestSimulatorData?.components || [];
-    const oledComponents = latestComponents.filter(c =>
-      c.type === 'oled-display' || c.id.includes('oled')
-    );
-
-    oledComponents.forEach(oledComponent => {
-      console.log(`[OLED Initializer] Initializing OLED component: ${oledComponent.id}`);
-      updateComponentState(oledComponent.id, {
-        display: { elements: [] } // Reset display elements
-      });
-      // Optionally send an 'init' command if your backend expects it
-      // parseOLEDCommand('OLED:init');
-    });
-  };
-
-  // Function to start the simulation using real compilation and AVR8js Worker
+  
+  // Function to start the simulation using real compilation and AVR8js
   const startSimulation = async (codeToExecute) => {
+    // Use passed code or fall back to context code
     const currentCode = codeToExecute || code;
     console.log('[Simulator] startSimulation called with code length:', currentCode?.length);
-
+    
     if (!currentCode || currentCode.trim() === '') {
       addLog('❌ Error: No Arduino code to execute');
       return;
     }
-
-    // Update context code
-    setCode(currentCode);
-    setComponentStates({});
+    
+    // Update the context code if we received code as parameter
+    if (codeToExecute && codeToExecute !== code) {
+      setCode(codeToExecute);
+    }
+    
+    // Clear previous logs
     setLogs([]);
     setSerialLogs([]);
-
-    // Stop and terminate old worker if exists
-    if (workerRef.current) {
-      console.log('[Simulator] Terminating old worker...');
-      workerRef.current.postMessage({ type: 'stop' });
-      workerRef.current.terminate();
-      workerRef.current = null;
+    
+    // Stop any running simulation
+    if (avrCoreRef.current) {
+      avrCoreRef.current.stop();
     }
-
+    if (executionIntervalRef.current) {
+      clearInterval(executionIntervalRef.current);
+    }
+    
     // Compile the code
-    console.log('[Simulator] Starting compilation...');
-    addLog('🔧 Compiling Arduino code...');
+    addLog('🔧 Compiling Arduino code on server...');
     setIsCompiling(true);
-
+    
     try {
       const result = await ArduinoCompilationService.compileAndParse(currentCode);
-      console.log('[Simulator] Compilation result:', result.success);
-
+      
+      setIsCompiling(false);
+      
       if (!result.success) {
-        console.error('[Simulator] Compilation failed:', result.errors);
         addLog('❌ Compilation failed:');
         result.errors?.forEach(error => addLog(`   ${error}`));
         return;
       }
-
-      console.log('[Simulator] Program size:', result.program?.length, 'words');
+      
       addLog('✅ Compilation successful');
-      addLog('🚀 Starting AVR8 emulator worker...');
-
-      // Create new worker
-      workerRef.current = new AVR8Worker();
-
-      // Set up serial buffer for message accumulation
-      let serialBuffer = '';
-
-      // Set up worker message handler
-      workerRef.current.onmessage = (event) => {
-        const { type, data } = event.data;
-
-        switch (type) {
-          case 'pinChange':
-            // Handle pin state change from worker
-            if (typeof data.pin !== 'undefined' && typeof data.isHigh !== 'undefined') {
-              console.log(`[SimulatorContext] Worker reported pin ${data.pin} change to ${data.isHigh ? 'HIGH' : 'LOW'}`);
-              handlePinChange(data.pin, data.isHigh);
-            }
-            break;
-
-          case 'serialData':
-            // Handle serial data from worker
-            const char = typeof data === 'string' ? data : String.fromCharCode(data);
-            
-            if (char === '\n') {
-              const line = serialBuffer.trim();
-              serialBuffer = '';
-
-              if (line.startsWith('OLED:')) {
-                console.log('[OLED Serial] Received command:', line);
-                parseOLEDCommand(line);
-              } else if (line) {
-                addSerialLog(line);
-              }
-            } else if (char !== '\r') {
-              serialBuffer += char;
-            }
-            break;
-
-          case 'log':
-            // Handle log messages from worker
-            const message = typeof data === 'string' ? data : data.message;
-            if (message) {
-              addLog(message);
-            }
-            break;
-
-          default:
-            console.warn('[Simulator] Unknown worker message type:', type);
+      addLog('🚀 Loading program into AVR8 emulator...');
+      
+      // Create AVR8 core and load program
+      avrCoreRef.current = new AVR8Core();
+      avrCoreRef.current.loadProgram(result.program);
+      
+      // Set up pin change callbacks
+      for (let arduinoPin = 0; arduinoPin <= 19; arduinoPin++) {
+        const mapping = AVR8Core.mapArduinoPin(arduinoPin);
+        if (mapping) {
+          avrCoreRef.current.onPinChange(mapping.port, mapping.pin, (isHigh) => {
+            handlePinChange(arduinoPin, isHigh);
+          });
         }
-      };
-
-      workerRef.current.onerror = (error) => {
-        console.error('[Simulator] Worker error:', error);
-        addLog(`❌ Worker error: ${error.message}`);
-        setIsCompiling(false);
-        setIsRunning(false);
-      };
-
-      // Send program to worker
-      console.log('[Simulator] Sending program to worker...');
-      workerRef.current.postMessage({
-        type: 'loadProgram',
-        data: { program: result.program }
-      });
-
-      setIsCompiling(false);
+      }
+      
+      // Start execution loop (16 MHz = 16000 cycles per ms)
+      addLog('▶️ Starting AVR8 execution...');
       setIsRunning(true);
-      isRunningRef.current = true;
-
-      addLog('✅ AVR8 emulator running');
-      console.log('[Simulator] ✅ Worker started and running');
-
-      // Initialize OLED displays
-      setTimeout(() => {
-        initializeOLEDDisplays();
-      }, 100);
-
+      
+      executionIntervalRef.current = setInterval(() => {
+        if (avrCoreRef.current) {
+          // Execute 16000 cycles (1ms of real time)
+          avrCoreRef.current.execute(16000);
+        }
+      }, 1);
+      
+      addLog('✅ Simulation running');
+      
     } catch (error) {
       setIsCompiling(false);
       addLog(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       console.error('[Simulator] Error:', error);
-    } finally {
-      setIsCompiling(false);
     }
   };
-
+  
   // Handle pin state changes from AVR8 core
   const handlePinChange = (pin, isHigh) => {
-    console.log(`🔴 [PIN CHANGE] Arduino Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
-
-    // Add log entry
-    addLog(`Pin ${pin} ${isHigh ? 'HIGH' : 'LOW'}`);
-
-    // Special logging for pin 13
-    if (pin === 13) {
-      console.log(`🔴🔴🔴 PIN 13 ONBOARD LED CHANGE DETECTED: ${isHigh ? 'HIGH' : 'LOW'}`);
-      addLog(`🔴 Built-in LED ${isHigh ? 'ON' : 'OFF'}`);
-    }
-
-    // IMMEDIATELY dispatch global pin change event
-    const pinChangeEvent = new CustomEvent('pinChange', {
-      detail: { pin, isHigh }
-    });
-    window.dispatchEvent(pinChangeEvent);
-
-    // Get the latest components
+    console.log(`[AVR8] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+    
+    // Get the latest components and wires from global storage (avoiding stale closure)
     const latestComponents = window.latestSimulatorData?.components || [];
     const latestWires = window.latestSimulatorData?.wires || [];
-
-    // Update ALL heroboard components for pin 13
-    if (pin === 13) {
-      latestComponents.forEach(component => {
-        if (component.type === 'heroboard' || component.id.includes('heroboard')) {
-          console.log(`🔴 [PIN 13] Updating heroboard ${component.id}`);
-          
-          // Update component state immediately
-          updateComponentState(component.id, {
-            pin13: isHigh,
-            onboardLED: isHigh,
-            pin13LED: isHigh,
-            pins: { 13: isHigh, 'd13': isHigh }
-          });
-
-          // Also dispatch specific state change event
-          setTimeout(() => {
-            const stateChangeEvent = new CustomEvent('componentStateChange', {
-              detail: { 
-                componentId: component.id, 
-                pin: 13, 
-                isHigh
-              }
-            });
-            window.dispatchEvent(stateChangeEvent);
-          }, 0);
-        }
-      });
-    }
-
-    // Update other pins normally
-    latestComponents.forEach(component => {
-      if (component.type === 'heroboard' || component.id.includes('heroboard')) {
-        updateComponentPins(component.id, { [pin]: isHigh });
-      }
-    });
-
-    // Update connected LEDs via wires
+    
+    console.log(`[AVR8] Checking ${latestComponents.length} components and ${latestWires.length} wires`);
+    
+    // Update components connected to this pin
     latestComponents.forEach(component => {
       if (component.type === 'led' || component.id.includes('led')) {
-        const connectedWires = latestWires.filter(wire => {
-          const isSourceConnected = wire.sourceComponent === component.id && 
-                                   (wire.sourceName === pin.toString() || wire.sourceName === `pin${pin}`);
-          const isTargetConnected = wire.targetComponent === component.id && 
-                                   (wire.targetName === pin.toString() || wire.targetName === `pin${pin}`);
-          
-          const isPin13Connected = pin === 13 && (
-            (wire.sourceComponent.includes('heroboard') && wire.sourceName === '13') ||
-            (wire.targetComponent.includes('heroboard') && wire.targetName === '13')
-          );
-          
-          return isSourceConnected || isTargetConnected || isPin13Connected;
-        });
-
+        const connectedWires = latestWires.filter(wire => 
+          (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
+          (wire.sourceName === pin.toString() || wire.targetName === pin.toString())
+        );
+        
+        console.log(`[AVR8] Component ${component.id} has ${connectedWires.length} wires connected to pin ${pin}`);
+        
         if (connectedWires.length > 0) {
-          updateComponentState(component.id, {
+          updateComponentState(component.id, { 
             isOn: isHigh,
             brightness: isHigh ? 1.0 : 0.0
           });
@@ -451,30 +209,34 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       }
     });
   };
-
+  
   // Function to stop the simulation
   const stopSimulation = () => {
     addLog('🛑 Stopping AVR8 simulation...');
     setIsRunning(false);
-    isRunningRef.current = false;
-
-    // Terminate worker if running
-    if (workerRef.current) {
-      workerRef.current.postMessage({ type: 'stop' });
-      workerRef.current.terminate();
-      workerRef.current = null;
-      addLog('⏹️ AVR8 worker stopped');
+    
+    // Stop AVR8 core if running
+    if (avrCoreRef.current) {
+      avrCoreRef.current.stop();
+      avrCoreRef.current = null;
+      addLog('⏹️ AVR8 core stopped');
     }
-
+    
+    // Stop execution loop
+    if (executionIntervalRef.current) {
+      clearInterval(executionIntervalRef.current);
+      executionIntervalRef.current = null;
+    }
+    
     // Reset all component states when stopping
     components.forEach(component => {
       if (component.type === 'led' || component.id.includes('led')) {
-        updateComponentState(component.id, {
+        updateComponentState(component.id, { 
           isOn: false,
-          brightness: 0.0
+          brightness: 0.0 
         });
       }
-
+      
       if (component.type === 'heroboard' || component.id.includes('heroboard')) {
         const pins = {};
         for (let i = 0; i <= 13; i++) {
@@ -483,27 +245,27 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         updateComponentState(component.id, { pins: pins });
       }
     });
-
+    
     addLog('✅ Simulation stopped - all components reset');
   };
-
+  
   // Store the latest components and wires data globally for execution access
   useEffect(() => {
     console.log(`[SimulatorContext] Components updated:`, components.length, components.map(c => `${c.id}(${c.type})`));
-
+    
     // Store the latest arrays in global storage so they're always accessible during execution
     if (!window.latestSimulatorData) {
       window.latestSimulatorData = {};
     }
     window.latestSimulatorData.components = components;
     console.log(`[SimulatorContext] Stored ${components.length} components globally`);
-
+    
     // Add each component to the component states if it's not already there
     // This ensures components are registered in the simulator context immediately
     if (components.length > 0) {
       const newStates = { ...componentStates };
       let hasChanges = false;
-
+      
       components.forEach(component => {
         if (!componentStates[component.id]) {
           // Initialize component state with empty values
@@ -516,17 +278,17 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           console.log(`[SimulatorContext] Registered component: ${component.id} (${component.type})`);
         }
       });
-
+      
       // Only update state if we have new components
       if (hasChanges) {
         setComponentStates(newStates);
       }
     }
   }, [components, componentStates]);
-
+  
   useEffect(() => {
     console.log(`[SimulatorContext] Wires updated:`, wires.length, wires.map(w => `${w.sourceComponent}->${w.targetComponent} (${w.sourceName}->${w.targetName})`));
-
+    
     // Store the latest wires in global storage
     if (!window.latestSimulatorData) {
       window.latestSimulatorData = {};
@@ -534,17 +296,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     window.latestSimulatorData.wires = wires;
     console.log(`[SimulatorContext] Stored ${wires.length} wires globally`);
   }, [wires]);
-
-  // Cleanup worker on unmount
-  useEffect(() => {
-    return () => {
-      if (workerRef.current) {
-        workerRef.current.terminate();
-        workerRef.current = null;
-      }
-    };
-  }, []);
-
+  
   // Make the simulator context available globally for non-React components
   useEffect(() => {
     window.simulatorContext = {
@@ -555,15 +307,15 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       // Add a debug function to list all components
       listComponents: () => console.log('All simulator components:', Object.keys(componentStates))
     };
-
+    
     // Log all components for debugging
     console.log('Current component states:', Object.keys(componentStates));
-
+    
     return () => {
       delete window.simulatorContext;
     };
   }, [componentStates, wires]);
-
+  
   // Create an object with all the context values
   const contextValue = {
     code,
@@ -584,7 +336,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     setComponents,
     setWires
   };
-
+  
   return (
     <SimulatorContext.Provider value={contextValue}>
       {children}

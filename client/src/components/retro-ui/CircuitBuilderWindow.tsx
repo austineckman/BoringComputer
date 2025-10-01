@@ -282,12 +282,12 @@ void loop() {
     const tabId = `lib_${libraryName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
     
     // If it's an Arduino library, fetch the library details for better code template
-    let code = libraryCode || '';
+    let code = libraryCode;
     if (!code && isArduinoLibrary) {
       const arduinoLib = arduinoLibraries.find((lib: any) => lib.name === libraryName);
       if (arduinoLib && arduinoLib.examples && arduinoLib.examples.length > 0) {
         // Use the first example as the template
-        code = arduinoLib.examples[0].code || '';
+        code = arduinoLib.examples[0].code;
       } else {
         code = `// ${libraryName} Library Code\n#include <${libraryName}.h>\n\n// Your ${libraryName} code here\nvoid setup() {\n  // Initialize library\n}\n\nvoid loop() {\n  // Main code\n}`;
       }
@@ -299,7 +299,7 @@ void loop() {
       ...prev,
       [tabId]: {
         name: libraryName,
-        code: code || '', // Ensure code is never undefined
+        code,
         type: 'library',
         libraryName
       }
@@ -670,20 +670,6 @@ void loop() {
   const getCode = () => {
     return code;
   };
-  
-  // Get combined code from all tabs (main + libraries)
-  const getCombinedCode = () => {
-    // Since libraries are now installed on the compiler server,
-    // we only need to send the main code with #include statements
-    // The server will find the libraries automatically
-    
-    if (codeTabs.main) {
-      return codeTabs.main.code;
-    } else {
-      // Fallback to standalone code state
-      return code;
-    }
-  };
 
   // Notification system
   const [notification, setNotification] = useState<NotificationType | null>(null);
@@ -741,32 +727,20 @@ void loop() {
     showNotification('Project saved!');
   };
 
-  // Local UI state
+  // Local simulation state
+  const [isSimulationRunning, setIsSimulationRunning] = useState(false);
   const [showExampleDropdown, setShowExampleDropdown] = useState(false);
 
-  // Use simulator context - isRunning comes from here, not local state!
+  // Use simulator context
   const { 
     startSimulation,
     stopSimulation,
-    isRunning: isSimulationRunning,  // Get isRunning from context and alias it
     addLog: addSimulatorLog,
     logs: simulatorLogs,
     updateComponentState,  // Access the updateComponentState function
     updateComponentPins,   // Access the updateComponentPins function for pin-specific updates
-    setCode: updateSimulatorCode, // Get the simulator's setCode function
-    setComponents: setSimulatorComponents,  // Sync components to simulator
-    setWires: setSimulatorWires  // Sync wires to simulator
+    setCode: updateSimulatorCode // Get the simulator's setCode function
   } = useSimulator();
-
-  // Sync components to simulator context whenever they change
-  useEffect(() => {
-    setSimulatorComponents(components);
-  }, [components, setSimulatorComponents]);
-  
-  // Sync wires to simulator context whenever they change
-  useEffect(() => {
-    setSimulatorWires(wires);
-  }, [wires, setSimulatorWires]);
 
   // Library manager hook
   const { refreshLibraries, libraries = {} } = useLibraryManager();
@@ -850,15 +824,11 @@ void loop() {
   
   // Run the simulation
   const runSimulation = async () => {
-    console.log('[CircuitBuilderWindow] runSimulation called');
-    console.log('[CircuitBuilderWindow] isSimulationRunning:', isSimulationRunning);
-    console.log('[CircuitBuilderWindow] startSimulation exists:', typeof startSimulation);
-    console.log('[CircuitBuilderWindow] stopSimulation exists:', typeof stopSimulation);
-    
     if (isSimulationRunning) {
       // Stop the simulation
       addSimulationLog('Stopping simulation...');
       stopSimulation();
+      setIsSimulationRunning(false);
       if (typeof window !== 'undefined') {
         (window as any).isSimulationRunning = false; // Set global flag for components
       }
@@ -868,16 +838,10 @@ void loop() {
       // Show a notification that we're starting compilation
       showNotification('Compiling Arduino code...', 'info');
       
-      // Get the combined code from all tabs (main + libraries)
-      const currentCode = getCombinedCode();
-      console.log('CircuitBuilderWindow: Getting combined code for simulation, length:', currentCode?.length);
+      // Get the current code from the editor
+      const currentCode = getCode();
+      console.log('CircuitBuilderWindow: Getting code for simulation, length:', currentCode?.length);
       console.log('CircuitBuilderWindow: Code preview:', currentCode?.substring(0, 100));
-      
-      // Count library tabs
-      const libraryTabCount = Object.keys(codeTabs).filter(k => k !== 'main').length;
-      if (libraryTabCount > 0) {
-        console.log(`CircuitBuilderWindow: Including ${libraryTabCount} library tab(s) in compilation`);
-      }
       
       if (!currentCode || currentCode.trim() === '') {
         showNotification('Please write some Arduino code in the editor first!', 'error');
@@ -887,12 +851,12 @@ void loop() {
       // Update the simulator context with current code BEFORE starting simulation
       updateSimulatorCode(currentCode);
       
+      setIsSimulationRunning(true);
       if (typeof window !== 'undefined') {
         (window as any).isSimulationRunning = true; // Set global flag for components
       }
       
       // Start the simulation with the current code directly (now async)
-      // This will set isRunning to true in the context
       await startSimulation(currentCode);
       showNotification('Simulation running!', 'success');
     }
@@ -921,30 +885,13 @@ void loop() {
   
   // Handle loading example code (both hardcoded and database examples)
   const loadExampleCode = (exampleType: string) => {
-    // Stop any running simulation first
-    if (isSimulationRunning) {
-      stopSimulation();
-    }
-    
     // Check if it's a database example (UUID format)
     const dbExample = circuitExamples.find((ex: CircuitExample) => ex.id === exampleType);
     if (dbExample) {
       // Load database example
-      const newCode = dbExample.arduinoCode;
-      
-      // Update ALL code states synchronously
-      updateCurrentCode(newCode);
-      setCode(newCode);
-      updateSimulatorCode(newCode);
-      
-      // Force update the main tab
-      setCodeTabs(prev => ({
-        ...prev,
-        main: {
-          ...prev.main,
-          code: newCode
-        }
-      }));
+      updateCurrentCode(dbExample.arduinoCode);
+      setCode(dbExample.arduinoCode);
+      updateSimulatorCode(dbExample.arduinoCode);
       
       // Load circuit data if available
       if (dbExample.circuitData) {
@@ -1035,19 +982,14 @@ void loop() {
       addSimulationLog(`Detected pins: ${pins.join(', ')}`);
     }
     
-    // Update ALL code states synchronously
+    // Update the code in the current tab (this is what the editor displays)
     updateCurrentCode(exampleCode);
-    setCode(exampleCode);
-    updateSimulatorCode(exampleCode);
     
-    // Force update the main tab
-    setCodeTabs(prev => ({
-      ...prev,
-      main: {
-        ...prev.main,
-        code: exampleCode
-      }
-    }));
+    // Also update the standalone code state for compatibility
+    setCode(exampleCode);
+    
+    // Update the simulator code
+    updateSimulatorCode(exampleCode);
     
     // Close the dropdown
     setShowExampleDropdown(false);

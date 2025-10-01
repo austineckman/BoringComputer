@@ -3,14 +3,15 @@ import {
   ReactHeroBoardElement
 } from "../lib/inventr-component-lib.es.js";
 import Moveable from "react-moveable";
-import { useSimulator } from '../simulator/SimulatorContext';
+import heroboardImg from '@assets/hero-board.icon.png';
+import { useSimulator } from "../simulator/SimulatorContext";
 
-// Define MOVE_SETTINGS to match what the original code expects
+// Define MOVE_SETTINGS - remove rotation
 const MOVE_SETTINGS = {
   DRAGGABLE: true,
   SNAPPABLE: true,
   THROTTLE_DRAG: 0,
-  ROTATABLE: true
+  ROTATABLE: false // Disable rotation
 };
 
 /**
@@ -39,8 +40,8 @@ const HeroBoard = ({
   const [pin13State, setPin13State] = useState(false); // Track the state of pin 13
 
   // Access simulator context for simulation state
-  const { isRunning, componentStates } = useSimulator();
-
+  const { isRunning: isSimulationRunning, componentStates } = useSimulator();
+  
   // Create a component data structure that matches what the original code expects
   const componentData = {
     id,
@@ -49,7 +50,7 @@ const HeroBoard = ({
       top: posTop,
       left: posLeft,
       zIndex: 10,
-      ledPower: isRunning // Power LED only lit when simulation is running
+      ledPower: isSimulationRunning // Power LED only lit when simulation is running
     }
   };
 
@@ -64,109 +65,89 @@ const HeroBoard = ({
 
   // NOTE: Removed problematic useEffect that was causing infinite re-renders
   // Position updates are now handled by React state and CSS transforms directly
-
+  
   // Listen for global Arduino pin changes as fallback
   useEffect(() => {
     const handleArduinoPinChange = (event) => {
-      if (event.detail.pin === 13 || event.detail.pin === '13') {
-        const newState = !!event.detail.value;
-        setPin13State(newState);
-        console.log(`[HeroBoard ${id}] Pin 13 state changed via global event to ${newState ? 'HIGH' : 'LOW'}`);
+      if (event.detail.pin === 13) {
+        setPin13State(event.detail.value);
+        console.log(`[HeroBoard ${id}] Pin 13 state changed via global event to ${event.detail.value ? 'HIGH' : 'LOW'}`);
       }
     };
 
-    // Listen for both event types
     document.addEventListener('arduinoPinChange', handleArduinoPinChange);
-    document.addEventListener('pinStateChanged', handleArduinoPinChange);
-    
-    return () => {
-      document.removeEventListener('arduinoPinChange', handleArduinoPinChange);
-      document.removeEventListener('pinStateChanged', handleArduinoPinChange);
-    };
+    return () => document.removeEventListener('arduinoPinChange', handleArduinoPinChange);
   }, [id]);
 
   // Track pin states from the emulator signals - responsive to ALL pins
   useEffect(() => {
-    if (!componentStates || !isRunning) {
-      // Reset pin 13 when not running
-      setPin13State(false);
-      return;
-    }
-
-    // Check multiple possible sources for pin 13 state
-    let pin13Found = false;
-    let pin13Value = false;
-
-    // 1. Check this specific board's state
-    const myBoardState = componentStates[id];
-    if (myBoardState) {
-      // Check direct pin13 property
-      if (myBoardState.pin13 !== undefined) {
-        pin13Value = !!myBoardState.pin13;
-        pin13Found = true;
-        console.log(`[HeroBoard ${id}] Pin 13 from direct property: ${pin13Value ? 'HIGH' : 'LOW'}`);
+    // This effect listens for pin state changes from the emulator
+    // and updates the HeroBoard display accordingly
+    if (!componentStates) return;
+    
+    // More robust lookup for this board or fallbacks
+    const boardKeys = Object.keys(componentStates).filter(key => 
+      key === id || 
+      key === 'heroboard' || 
+      key.startsWith('heroboard-') ||
+      key.includes('arduino')
+    );
+    
+    // No relevant board state found
+    if (boardKeys.length === 0) return;
+    
+    // Use this board's state or the first fallback
+    const stateKey = boardKeys[0];
+    const boardState = componentStates[stateKey];
+    
+    if (boardState) {
+      // Check both formats: direct pin13 property or nested in pins object
+      
+      // 1. Check direct pin13 property (from SimulatorContext's guaranteed blink)
+      if (boardState.pin13 !== undefined) {
+        setPin13State(!!boardState.pin13);
+        console.log(`[HeroBoard ${id}] Pin 13 state changed to ${boardState.pin13 ? 'HIGH' : 'LOW'} (direct)`);
       }
-      // Check onboardLED property
-      else if (myBoardState.onboardLED !== undefined) {
-        pin13Value = !!myBoardState.onboardLED;
-        pin13Found = true;
-        console.log(`[HeroBoard ${id}] Pin 13 from onboardLED: ${pin13Value ? 'HIGH' : 'LOW'}`);
+      
+      // 2. Check pins['13'] for backward compatibility with other code
+      else if (boardState.pins && boardState.pins['13'] !== undefined) {
+        // Handle cases where pin state might be object or boolean
+        const isHigh = typeof boardState.pins['13'] === 'object' 
+          ? boardState.pins['13'].isHigh 
+          : !!boardState.pins['13'];
+          
+        setPin13State(isHigh);
+        console.log(`[HeroBoard ${id}] Pin 13 state changed to ${isHigh ? 'HIGH' : 'LOW'} (pins obj)`);
       }
-      // Check pins['13'] 
-      else if (myBoardState.pins && myBoardState.pins['13'] !== undefined) {
-        pin13Value = !!myBoardState.pins['13'];
-        pin13Found = true;
-        console.log(`[HeroBoard ${id}] Pin 13 from pins object: ${pin13Value ? 'HIGH' : 'LOW'}`);
-      }
+      
+      // No need to log anything when pin state is missing
+      // The hardware emulator is driving pin updates now, so we don't need fallbacks
     }
-
-    // 2. Fallback: check any heroboard state
-    if (!pin13Found) {
-      const allHeroboardKeys = Object.keys(componentStates).filter(key => 
-        key.includes('heroboard') || key.includes('arduino')
-      );
-
-      for (const key of allHeroboardKeys) {
-        const boardState = componentStates[key];
-        if (boardState && (boardState.pin13 !== undefined || boardState.onboardLED !== undefined || 
-                          (boardState.pins && boardState.pins['13'] !== undefined))) {
-          pin13Value = !!(boardState.pin13 || boardState.onboardLED || boardState.pins?.['13']);
-          pin13Found = true;
-          console.log(`[HeroBoard ${id}] Pin 13 from fallback ${key}: ${pin13Value ? 'HIGH' : 'LOW'}`);
-          break;
-        }
-      }
-    }
-
-    // Update the pin 13 state if we found it
-    if (pin13Found) {
-      setPin13State(pin13Value);
-    }
-  }, [componentStates, id, isRunning]);
-
+  }, [componentStates, id]);
+  
   // Notify about component movement for wire position updates
   useEffect(() => {
     // After drag, notify the Canvas about our new position
     if (!isDragged && posLeft !== undefined && posTop !== undefined) {
       // Only notify once the drag is complete
       console.log(`HeroBoard ${id} moved to ${posLeft}, ${posTop}`);
-
+      
       // Get all pin elements for this component
       const heroboardPins = [...document.querySelectorAll(`[id^="pt-heroboard-${id}-"]`)];
       const pinPositions = {};
-
+      
       // The offset correction for HERO board pins - critical fix
       // This offset accounts for the discrepancy between the web component's
       // internal pin positioning and our DOM/canvas coordinate system
       const OFFSET_CORRECTION_X = 256; // Experimentally determined for HERO board 
       const OFFSET_CORRECTION_Y = 304; // Experimentally determined for HERO board
-
+      
       // Calculate updated pin positions
       heroboardPins.forEach(pinElement => {
         if (pinElement && pinElement.id) {
           const rect = pinElement.getBoundingClientRect();
           const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
-
+          
           // Apply the offset correction specifically for HERO board
           pinPositions[pinElement.id] = {
             x: rect.left + rect.width/2 - canvasRect.left + OFFSET_CORRECTION_X,
@@ -174,7 +155,7 @@ const HeroBoard = ({
           };
         }
       });
-
+      
       // Dispatch component moved event to update wire positions
       const event = new CustomEvent('componentMovedFinal', {
         detail: {
@@ -204,14 +185,14 @@ const HeroBoard = ({
   // Handle pin click - identical to the LED component approach
   const handlePinClicked = (e) => {
     console.log("Pin clicked on HeroBoard:", e.detail);
-
+    
     // Extract pin information from the event
     if (onPinConnect) {
       try {
         // The data is a JSON string inside the detail object
         const pinDataJson = e.detail.data;
         const pinData = JSON.parse(pinDataJson);
-
+        
         // Get pin ID and type from the parsed data
         const pinId = pinData.name;
         // Determine pin type based on signals if available
@@ -226,20 +207,20 @@ const HeroBoard = ({
             pinType = 'analog';
           }
         }
-
+        
         // Get position information
         const clientX = e.detail.clientX || 0;
         const clientY = e.detail.clientY || 0;
-
+        
         console.log(`Pin clicked: ${pinId} (${pinType})`);
-
+        
         // Call the parent's onPinConnect handler
         onPinConnect(pinId, pinType, id);
-
+        
         // Send another event with the formatted pin ID to match our wire manager
         // Use the exact same format as the LED component
         const formattedPinId = `pt-heroboard-${id}-${pinId}`;
-
+        
         // Create a custom pin click event to trigger the wire manager
         // Use the EXACT same event structure as the LED component
         const pinClickEvent = new CustomEvent('pinClicked', {
@@ -252,7 +233,7 @@ const HeroBoard = ({
             clientY
           }
         });
-
+        
         // Dispatch the event to be captured by the wire manager
         document.dispatchEvent(pinClickEvent);
       } catch (err) {
@@ -278,7 +259,7 @@ const HeroBoard = ({
           onDragEnd={() => setIsDragged(false)}
         ></Moveable>
       )}
-
+      
       <div className="relative">
         <ReactHeroBoardElement
           id={id}
@@ -298,29 +279,48 @@ const HeroBoard = ({
             zIndex: isDragged ? 99999 : 10,
             outline: isSelected ? '1px solid #3b82f6' : 'none' // Apply a single outline when selected
           }}
-          ledPower={isRunning} // Power LED only on when simulation is running
-          >
-        </ReactHeroBoardElement>
-
-        {/* Onboard LED indicator for pin 13 */}
-        {isRunning && (
-          <div
-            style={{
-              position: 'absolute',
-              top: '45%',
-              right: '15%',
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: pin13State ? '#ff0000' : '#330000',
-              boxShadow: pin13State ? '0 0 10px #ff0000' : 'none',
-              transition: 'all 0.1s ease',
-              zIndex: 1000,
-              pointerEvents: 'none'
-            }}
-            title={`Onboard LED (Pin 13): ${pin13State ? 'ON' : 'OFF'}`}
-          />
-        )}
+          ledPower={isSimulationRunning} // Power LED only on when simulation is running
+        ></ReactHeroBoardElement>
+        
+        {/* Power LED removed - we'll only use the built-in pin 13 LED */}
+        
+        {/* Built-in RED LED for pin 13 - using CSS class for better compatibility */}
+        <div 
+          className={`heroboard-pin13-led absolute ${pin13State ? 'pin13-on' : ''}`}
+          style={{
+            // Always visible during simulation, but with lower opacity when off
+            opacity: 1, // Always fully visible for testing 
+            backgroundColor: pin13State ? '#ff3300' : '#330000', // Darker red when off
+            boxShadow: pin13State ? '0 0 12px 5px rgba(255, 0, 0, 0.8)' : 'none', // Glow only when on
+            animation: pin13State ? 'pulse 1s infinite alternate ease-in-out' : 'none',
+            top: `${posTop + 43}px`, 
+            left: `${posLeft + 107}px`,
+            zIndex: 1000, // Higher z-index to ensure visibility
+            width: '10px', 
+            height: '10px',
+            // Add a border to make it more visible when off
+            border: '1px solid #661100'
+          }}
+        />
+        
+        {/* Debug indicator for Pin 13 state */}
+        <div
+          style={{
+            position: 'absolute',
+            top: `${posTop + 60}px`,
+            left: `${posLeft + 105}px`,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            color: pin13State ? '#ff3300' : '#aaaaaa',
+            fontSize: '8px',
+            padding: '1px 3px',
+            borderRadius: '2px',
+            fontFamily: 'monospace',
+            pointerEvents: 'none',
+            zIndex: 1000,
+          }}
+        >
+          13: {pin13State ? 'HIGH' : 'LOW'}
+        </div>
       </div>
     </>
   );

@@ -11,9 +11,6 @@ import './lib/pin-tooltips.js'; // Import pin tooltip enhancer
 // Import simulator context to pass down simulation state to components
 import { useSimulator } from './simulator/SimulatorContext';
 
-// Import toast for better notifications
-import { useToast } from '@/hooks/use-toast';
-
 // Import specialized component implementations
 import HeroBoard from './components/HeroBoard';
 import LED from './components/LED';
@@ -34,9 +31,6 @@ import OLEDDisplay from './components/OLEDDisplay';
 const CircuitBuilder = () => {
   // Access simulator context to share component data
   const { setComponents: setSimulationComponents } = useSimulator();
-  
-  // Add toast for better notifications
-  const { toast } = useToast();
   
   // State for circuit components
   const [components, setComponents] = useState([]);
@@ -102,19 +96,6 @@ const CircuitBuilder = () => {
         return;
       }
       
-      // Check if trying to add a Hero Board when one already exists
-      if (type === 'heroboard') {
-        const existingHeroBoard = components.find(c => c.type === 'heroboard');
-        if (existingHeroBoard) {
-          toast({
-            title: "Hero Board Limit Reached",
-            description: "Only one Hero Board is allowed per circuit. Please remove the existing Hero Board first if you want to add a new one.",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-      
       // Find component details in our componentOptions
       const componentInfo = componentOptions.find(c => c.name === type);
       if (!componentInfo) {
@@ -168,11 +149,7 @@ const CircuitBuilder = () => {
     } catch (error) {
       console.error('Error adding component:', error);
       // Provide user feedback that something went wrong
-      toast({
-        title: "Component Error",
-        description: "There was an error adding the component. Please try again.",
-        variant: "destructive",
-      });
+      alert('There was an error adding the component. Please try again.');
     }
   };
   

@@ -37,28 +37,7 @@ export class ArduinoCompilationService {
       const result = await response.json();
       console.log('[Compiler] Received response:', result.success ? 'SUCCESS' : 'FAILURE');
       
-      // Normalize stderr/stdout into errors array if not already present
-      if (!result.success) {
-        if (!result.errors || result.errors.length === 0) {
-          result.errors = [];
-          
-          // Add stderr if present
-          if (result.stderr) {
-            const stderrLines = result.stderr.split('\n').filter((line: string) => line.trim());
-            result.errors.push(...stderrLines);
-          }
-          
-          // Add error field if present
-          if (result.error) {
-            result.errors.push(result.error);
-          }
-          
-          // Fallback message if still no errors
-          if (result.errors.length === 0) {
-            result.errors.push('Compilation failed with unknown error');
-          }
-        }
-        
+      if (!result.success && result.errors) {
         console.error('[Compiler] Compilation errors:', result.errors);
       }
 
