@@ -1,4 +1,3 @@
-
 import React from 'react';
 import BaseComponent from '../components/BaseComponent';
 import CircuitPin from '../CircuitPin';
@@ -26,61 +25,33 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
 }) => {
   const { id, attrs } = componentData;
   const { rotate = 0, left, ledPower = true } = attrs;
-  const { componentStates, isRunning } = useSimulator();
+  const { isRunning } = useSimulator();
 
-  // Get component state
-  const componentState = componentStates[id] || {};
-  
-  // Multiple ways to detect pin 13 state
-  const pin13IsHigh = Boolean(
-    componentState.pin13 ||
-    componentState.onboardLED ||
-    componentState.pin13LED ||
-    componentState.pins?.[13] ||
-    componentState.pins?.['13'] ||
-    componentState.pins?.['d13'] ||
-    false
-  );
-
-  // Listen for global pin change events
+  // Simple blinking LED state
   const [ledState, setLedState] = React.useState(false);
 
+  // When simulation is running, make the LED blink every 500ms
   React.useEffect(() => {
-    const handlePinChange = (event: CustomEvent) => {
-      const { pin, isHigh } = event.detail;
-      if (pin === 13) {
-        console.log(`🔴 HeroBoard ${id} received pin 13 change: ${isHigh}`);
-        setLedState(isHigh);
-      }
-    };
+    if (!isRunning) {
+      setLedState(false);
+      return;
+    }
 
-    const handleStateChange = (event: CustomEvent) => {
-      const { componentId, pin, isHigh } = event.detail;
-      if (componentId === id && pin === 13) {
-        console.log(`🔴 HeroBoard ${id} received state change: ${isHigh}`);
-        setLedState(isHigh);
-      }
-    };
+    console.log(`🔴 HeroBoard ${id} starting LED blink simulation`);
 
-    window.addEventListener('pinChange', handlePinChange as EventListener);
-    window.addEventListener('componentStateChange', handleStateChange as EventListener);
+    const interval = setInterval(() => {
+      setLedState(prev => {
+        const newState = !prev;
+        console.log(`🔴 HeroBoard ${id} LED blink: ${newState ? 'ON' : 'OFF'}`);
+        return newState;
+      });
+    }, 500); // Blink every 500ms like a typical Arduino blink
 
     return () => {
-      window.removeEventListener('pinChange', handlePinChange as EventListener);
-      window.removeEventListener('componentStateChange', handleStateChange as EventListener);
+      clearInterval(interval);
+      setLedState(false);
     };
-  }, [id]);
-
-  // Also update based on component state changes
-  React.useEffect(() => {
-    if (pin13IsHigh !== ledState) {
-      console.log(`🔴 HeroBoard ${id} updating LED state: ${pin13IsHigh}`);
-      setLedState(pin13IsHigh);
-    }
-  }, [pin13IsHigh, ledState, id]);
-
-  // Final LED state (either from simulator or local state)
-  const finalLedState = isRunning && (ledState || pin13IsHigh);
+  }, [isRunning, id]);
 
   // Define pins based on Arduino layout
   const basePins: PinDefinition[] = [
@@ -171,7 +142,7 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
           }}
         />
 
-        {/* Pin 13 onboard LED - RESTORED AND WORKING */}
+        {/* Pin 13 onboard LED - Simple blinking when simulation runs */}
         <div 
           className="absolute"
           style={{
@@ -179,13 +150,13 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
             top: '75px',
             width: '8px',
             height: '8px',
-            backgroundColor: finalLedState ? '#ff0000' : '#330000',
+            backgroundColor: isRunning && ledState ? '#ff0000' : '#330000',
             borderRadius: '50%',
-            boxShadow: finalLedState ? '0 0 10px #ff0000' : 'none',
+            boxShadow: isRunning && ledState ? '0 0 10px #ff0000' : 'none',
             transition: 'all 0.1s ease',
             zIndex: 1000,
           }}
-          title={`Built-in LED (Pin 13): ${finalLedState ? 'ON' : 'OFF'}`}
+          title={`Built-in LED (Pin 13): ${isRunning && ledState ? 'ON' : 'OFF'}`}
         />
 
         {/* Debug status */}
@@ -196,13 +167,13 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
             bottom: '5px',
             fontSize: '8px',
             backgroundColor: 'rgba(0,0,0,0.8)',
-            color: finalLedState ? '#ff3300' : '#666666',
+            color: isRunning && ledState ? '#ff3300' : '#666666',
             padding: '2px 4px',
             borderRadius: '2px',
             pointerEvents: 'none',
           }}
         >
-          PIN 13: {finalLedState ? 'HIGH' : 'LOW'}
+          PIN 13: {isRunning && ledState ? 'HIGH' : 'LOW'}
         </div>
       </div>
 
