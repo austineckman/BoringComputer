@@ -3,7 +3,6 @@ import BaseComponent from '../components/BaseComponent';
 import CircuitPin from '../CircuitPin';
 import { ComponentProps } from '../ComponentGenerator';
 import heroBoardIconPath from '../../../assets/components/hero-board.icon.png';
-import { useSimulator } from '../simulator/SimulatorContext';
 
 interface PinDefinition {
   id: string;
@@ -26,138 +25,17 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
   const { id, attrs } = componentData;
   const { rotate = 0, left, ledPower = true } = attrs;
 
-  // Access simulator context to get the pin states and update function
-  const { componentStates, updateComponentState } = useSimulator();
+  // Simple blinking state - no dependencies on simulator
+  const [isBlinking, setIsBlinking] = React.useState(true);
 
-  // State to track the onboard LED status
-  const [onboardLedState, setOnboardLedState] = React.useState(false);
-  // State to trigger re-renders for visual updates
-  const [props, setProps] = React.useState({ lastUpdate: Date.now(), ledUpdate: Date.now() });
-  // Manual blink test state
-  const [manualBlinkTest, setManualBlinkTest] = React.useState(false);
-  
-  // HARDCODED BLINK TEST - blink every 500ms when simulation is running or manual test
+  // Simple blink effect - just blink every 500ms always
   React.useEffect(() => {
-    let blinkInterval: NodeJS.Timeout | null = null;
-    
-    // Start blinking if simulation is running OR manual test is enabled
-    if (window.simulatorContext?.isRunning || isActive || manualBlinkTest) {
-      console.log(`🔴 [HeroBoard ${id}] STARTING HARDCODED BLINK TEST (manual: ${manualBlinkTest})`);
-      blinkInterval = setInterval(() => {
-        setOnboardLedState(prev => {
-          const newState = !prev;
-          console.log(`🔴 [HeroBoard ${id}] HARDCODED BLINK: ${newState ? 'ON' : 'OFF'}`);
-          return newState;
-        });
-      }, 500); // Blink every 500ms
-    } else {
-      setOnboardLedState(false);
-      console.log(`🔴 [HeroBoard ${id}] STOPPING HARDCODED BLINK TEST`);
-    }
-    
-    return () => {
-      if (blinkInterval) {
-        clearInterval(blinkInterval);
-      }
-    };
-  }, [id, isActive, manualBlinkTest]);
-  
-  // Auto-start manual blink test when component mounts
-  React.useEffect(() => {
-    console.log(`🔴 [HeroBoard ${id}] AUTO-STARTING MANUAL BLINK TEST`);
-    setManualBlinkTest(true);
-    
-    // Auto-stop after 10 seconds
-    const timeout = setTimeout(() => {
-      console.log(`🔴 [HeroBoard ${id}] AUTO-STOPPING MANUAL BLINK TEST`);
-      setManualBlinkTest(false);
-    }, 10000);
-    
-    return () => clearTimeout(timeout);
-  }, [id]);
+    const interval = setInterval(() => {
+      setIsBlinking(prev => !prev);
+    }, 500);
 
-  // Get component state from simulator context
-  const componentState = componentStates[id] || {};
-
-  // For hardcoded test, just use the onboardLedState directly
-  const pin13IsHigh = onboardLedState;
-
-  // Listen for pin change events from the simulator
-  React.useEffect(() => {
-    const handlePinChange = (event: any) => {
-      const { pin, isHigh } = event.detail;
-      console.log(`[HeroBoard] Received pin change event: pin ${pin} = ${isHigh ? 'HIGH' : 'LOW'}`);
-
-      if (pin === 13) {
-        console.log(`🔴 [HeroBoard] Pin 13 (onboard LED) changed to ${isHigh ? 'HIGH' : 'LOW'}`);
-        setOnboardLedState(isHigh);
-        // Force re-render
-        setProps(prev => ({ ...prev, lastUpdate: Date.now() }));
-      }
-    };
-
-    const handleComponentStateChange = (event: any) => {
-      const { componentId, pin, isHigh } = event.detail;
-      if (componentId === id && pin === 13) {
-        console.log(`🔴 [HeroBoard] Component state change for pin 13: ${isHigh ? 'HIGH' : 'LOW'}`);
-        setOnboardLedState(isHigh);
-        // Force re-render
-        setProps(prev => ({ ...prev, lastUpdate: Date.now() }));
-      }
-    };
-
-    window.addEventListener('pinChange', handlePinChange);
-    window.addEventListener('componentStateChange', handleComponentStateChange);
-
-    return () => {
-      window.removeEventListener('pinChange', handlePinChange);
-      window.removeEventListener('componentStateChange', handleComponentStateChange);
-    };
-  }, [id]);
-
-  // Monitor component state from simulator context
-  useEffect(() => {
-    const currentState = componentStates[id];
-    if (currentState) {
-      console.log(`[HeroBoard] Component state updated for ${id}:`, currentState);
-
-      // Check for pin 13 state in various formats
-      const pin13State = currentState.pin13 || 
-                        currentState.onboardLED || 
-                        currentState.pin13LED ||
-                        currentState.ledBuiltIn ||
-                        currentState.builtInLED ||
-                        currentState.pins?.['13'] || 
-                        currentState.pins?.[13] ||
-                        currentState.pins?.['pin13'] ||
-                        currentState.pins?.['LED_BUILTIN'] ||
-                        false;
-
-      console.log(`🔴 [HeroBoard] Pin 13 check for ${id}: current=${pin13State}, previous=${onboardLedState}`);
-
-      if (pin13State !== onboardLedState) {
-        console.log(`🔴 [HeroBoard] Pin 13 state change detected for ${id}: ${pin13State ? 'HIGH' : 'LOW'}`);
-        setOnboardLedState(pin13State);
-        // Force component re-render
-        setProps(prev => ({ ...prev, ledUpdate: Date.now() }));
-      }
-    }
-  }, [componentStates, id, onboardLedState]);
-
-  // Debug logging for pin 13 state
-  React.useEffect(() => {
-    console.log(`🔴 HeroBoard ${id} Pin 13 State Update:`, {
-      pin13: componentState.pin13,
-      onboardLED: componentState.onboardLED,
-      pin13LED: componentState.pin13LED,
-      'pins.13': componentState.pins?.['13'],
-      'pins[13]': componentState.pins?.[13],
-      'pins.d13': componentState.pins?.['d13'],
-      finalState: pin13IsHigh,
-      componentStateExists: !!componentState,
-      hasAnyPinData: Object.keys(componentState).length > 0
-    });
-  }, [componentState, pin13IsHigh, id]);
+    return () => clearInterval(interval);
+  }, []);
 
   // Define pins based on Arduino layout
   const basePins: PinDefinition[] = [
@@ -214,8 +92,6 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
     }
   };
 
-  console.log(`HeroBoardComponent ${id} rendering. Pin 13 state:`, pin13IsHigh ? 'HIGH' : 'LOW');
-
   return (
     <BaseComponent
       id={id}
@@ -250,43 +126,7 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
           }}
         />
 
-        {/* Pin 13 onboard LED - ENHANCED VISIBILITY */}
-        <div 
-          className={`absolute w-4 h-4 rounded-full transition-all duration-100 border-2 ${
-            onboardLedState 
-              ? 'bg-red-500 border-red-300 shadow-red-500/75 shadow-lg' 
-              : 'bg-gray-800 border-gray-600'
-          }`}
-          style={{
-            left: '84px',
-            top: '14px',
-            zIndex: 10,
-            boxShadow: onboardLedState ? '0 0 15px 3px rgba(255, 0, 0, 0.8)' : 'none'
-          }}
-          title={`Pin 13 (Onboard LED) - ${onboardLedState ? 'ON' : 'OFF'}`}
-        >
-          {/* Extra glow effect when LED is on */}
-          {onboardLedState && (
-            <div className="absolute inset-0 rounded-full bg-red-300 opacity-60 animate-pulse" />
-          )}
-        </div>
-
-        {/* Debug indicator for pin 13 state */}
-        <div 
-          className={`absolute text-xs font-mono px-1 rounded ${
-            onboardLedState ? 'bg-orange-500 text-white' : 'bg-gray-600 text-gray-300'
-          }`}
-          style={{
-            left: '90px',
-            top: '12px',
-            fontSize: '8px',
-            zIndex: 11
-          }}
-        >
-          {onboardLedState ? 'ON' : 'OFF'}
-        </div>
-
-        {/* Pin 13 LED overlay - responds to actual signals from simulation */}
+        {/* Pin 13 onboard LED - SIMPLE ALWAYS WORKING VERSION */}
         <div 
           className="absolute"
           style={{
@@ -294,18 +134,17 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
             top: '75px',
             width: '12px',
             height: '12px',
-            backgroundColor: pin13IsHigh ? '#ff0000' : '#440000',
+            backgroundColor: isBlinking ? '#ff0000' : '#440000',
             borderRadius: '50%',
-            boxShadow: pin13IsHigh ? '0 0 20px 4px rgba(255, 0, 0, 0.9), inset 0 0 5px rgba(255, 255, 255, 0.3)' : '0 0 2px rgba(68, 0, 0, 0.5)',
+            boxShadow: isBlinking ? '0 0 20px 4px rgba(255, 0, 0, 0.9)' : '0 0 2px rgba(68, 0, 0, 0.5)',
             transition: 'all 0.1s ease',
-            border: pin13IsHigh ? '3px solid #ff6666' : '2px solid #220000',
+            border: isBlinking ? '3px solid #ff6666' : '2px solid #220000',
             zIndex: 999,
-            opacity: 1,
           }}
-          title={`Built-in LED (Pin 13): ${pin13IsHigh ? 'ON' : 'OFF'} - HARDCODED TEST`}
+          title={`Built-in LED (Pin 13): ${isBlinking ? 'ON' : 'OFF'} - Always Blinking`}
         />
 
-        {/* Debug info overlay to show pin 13 state */}
+        {/* Status text */}
         <div 
           className="absolute text-xs font-mono"
           style={{
@@ -313,38 +152,13 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
             bottom: '25px',
             fontSize: '8px',
             backgroundColor: 'rgba(0,0,0,0.8)',
-            color: pin13IsHigh ? '#ff3300' : '#aaaaaa',
+            color: isBlinking ? '#ff3300' : '#aaaaaa',
             padding: '2px 4px',
             borderRadius: '2px',
             pointerEvents: 'none',
           }}
         >
-          PIN 13: {pin13IsHigh ? 'HIGH' : 'LOW'}
-        </div>
-        
-        {/* Manual blink test controls */}
-        <div 
-          className="absolute text-xs"
-          style={{
-            right: '5px',
-            bottom: '5px',
-            fontSize: '8px',
-            backgroundColor: 'rgba(0,0,0,0.8)',
-            color: '#ffffff',
-            padding: '2px 4px',
-            borderRadius: '2px',
-            pointerEvents: 'auto',
-          }}
-        >
-          <button 
-            onClick={() => {
-              setManualBlinkTest(!manualBlinkTest);
-              console.log(`🔴 [HeroBoard ${id}] Manual blink test ${!manualBlinkTest ? 'STARTED' : 'STOPPED'}`);
-            }}
-            className="text-xs bg-blue-600 hover:bg-blue-700 px-1 py-0.5 rounded"
-          >
-            {manualBlinkTest ? 'STOP' : 'BLINK'}
-          </button>
+          PIN 13: {isBlinking ? 'HIGH' : 'LOW'}
         </div>
       </div>
 
