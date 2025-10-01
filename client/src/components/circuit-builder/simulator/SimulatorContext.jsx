@@ -367,13 +367,13 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       setIsRunning(true); // Set isRunning state
       isRunningRef.current = true; // Update ref
 
-      // Run simulation in intervals with throttling to prevent lag
+      // Run simulation in intervals - need enough cycles for Arduino delay() functions to work
       executionIntervalRef.current = setInterval(() => {
         if (avrCoreRef.current && isRunningRef.current) {
-          // Execute very few cycles per frame to prevent lag but maintain responsiveness
-          avrCoreRef.current.execute(200); // Further reduced to 200 cycles
+          // Execute more cycles to allow delay() functions and loops to work properly
+          avrCoreRef.current.execute(10000); // Increased to 10k cycles per interval
         }
-      }, 50); // Reduced to 20 FPS to prevent lag
+      }, 100); // Run at 10 FPS to allow more computation per frame
 
       console.log('[Simulator] ✅ EXECUTION INTERVAL STARTED - AVR8js is running!');
 
