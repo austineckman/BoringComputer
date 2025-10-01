@@ -5,20 +5,11 @@
 import {
   CPU,
   AVRIOPort,
-  AVRSPI,
-  AVRTWI,
-  AVRUSART,
   AVRTimer,
-  AVRTimer16,
   portBConfig,
   portCConfig,
   portDConfig,
-  spiConfig,
-  twiConfig,
-  usart0Config,
-  timer0Config,
-  timer1Config,
-  timer2Config
+  timer0Config
 } from 'avr8js';
 
 // Constants for Arduino UNO pin mapping
@@ -51,11 +42,6 @@ let portB: AVRIOPort | null = null;
 let portC: AVRIOPort | null = null;
 let portD: AVRIOPort | null = null;
 let timer0: AVRTimer | null = null;
-let timer1: AVRTimer16 | null = null;
-let timer2: AVRTimer | null = null;
-let usart: AVRUSART | null = null;
-let spi: AVRSPI | null = null;
-let twi: AVRTWI | null = null;
 
 // Program memory
 let program = new Uint16Array(0x8000); // 32KB program memory
@@ -73,44 +59,34 @@ function initEmulator() {
   portC = new AVRIOPort(cpu, portCConfig);
   portD = new AVRIOPort(cpu, portDConfig);
   
-  // Create timers
+  // Create timer
   timer0 = new AVRTimer(cpu, timer0Config);
-  timer1 = new AVRTimer16(cpu, timer1Config);
-  timer2 = new AVRTimer(cpu, timer2Config);
   
-  // Create serial interface
-  usart = new AVRUSART(cpu, usart0Config, (value) => {
-    // Handle serial output
-    const char = String.fromCharCode(value);
-    self.postMessage({
-      type: 'serialData',
-      data: { data: char }
-    });
-  });
-  
-  // Create SPI interface
-  spi = new AVRSPI(cpu, spiConfig);
-  
-  // Create I2C interface
-  twi = new AVRTWI(cpu, twiConfig);
+  // Track previous port values for change detection
+  let prevPortB = 0;
+  let prevPortC = 0;
+  let prevPortD = 0;
   
   // Set up port change listeners
-  portB.addPortListener((value, oldValue) => {
-    handlePortChange('B', value, oldValue);
+  portB.addListener((value) => {
+    handlePortChange('B', value, prevPortB);
+    prevPortB = value;
   });
   
-  portC.addPortListener((value, oldValue) => {
-    handlePortChange('C', value, oldValue);
+  portC.addListener((value) => {
+    handlePortChange('C', value, prevPortC);
+    prevPortC = value;
   });
   
-  portD.addPortListener((value, oldValue) => {
-    handlePortChange('D', value, oldValue);
+  portD.addListener((value) => {
+    handlePortChange('D', value, prevPortD);
+    prevPortD = value;
   });
   
   // Log initialization
   self.postMessage({
     type: 'log',
-    data: { message: 'AVR8 Emulator initialized' }
+    data: 'AVR8 Emulator initialized'
   });
 }
 
@@ -131,11 +107,14 @@ function handlePortChange(portName: string, value: number, oldValue: number) {
       const pin = getArduinoPinFromPortBit(portName, bit);
       
       if (pin !== null) {
+        // Convert to number if it's a numeric string
+        const pinNum = typeof pin === 'string' && !isNaN(Number(pin)) ? Number(pin) : pin;
+        
         // Notify about pin change
         self.postMessage({
           type: 'pinChange',
           data: {
-            pin,
+            pin: pinNum,
             isHigh,
             value: isHigh ? 255 : 0 // Simple digital value
           }
@@ -157,61 +136,26 @@ function getArduinoPinFromPortBit(portName: string, bit: number): number | strin
 
 // Convert Arduino pin to port/bit
 function getPortBitFromArduinoPin(pin: number | string): { port: string, bit: number } | null {
-  return PIN_TO_PORT_BIT[pin] || null;
+  return PIN_TO_PORT_BIT[pin as keyof typeof PIN_TO_PORT_BIT] || null;
 }
 
-// Set the state of an Arduino pin
+// Set the state of an Arduino pin (for input simulation)
+// Note: This is not fully implemented yet as it requires direct port manipulation
 function setPinState(pin: number | string, isHigh: boolean) {
   const mapping = getPortBitFromArduinoPin(pin);
   if (!mapping || !cpu) return;
   
-  // Get the right port
-  let port: AVRIOPort | null = null;
-  if (mapping.port === 'B') port = portB;
-  else if (mapping.port === 'C') port = portC;
-  else if (mapping.port === 'D') port = portD;
-  
-  if (!port) return;
-  
-  // Set the pin value (respecting DDR)
-  if (isHigh) {
-    port.overrideInputMask |= (1 << mapping.bit);
-    port.overrideInput |= (1 << mapping.bit);
-  } else {
-    port.overrideInputMask |= (1 << mapping.bit);
-    port.overrideInput &= ~(1 << mapping.bit);
-  }
+  // TODO: Implement input pin state setting
+  // For now, this is a placeholder for future input simulation
+  console.warn('[AVR8Worker] setPinState not fully implemented');
 }
 
 // Set pin mode (INPUT, OUTPUT, INPUT_PULLUP)
+// Note: Pin modes are controlled by the program itself via DDR registers
 function setPinMode(pin: number | string, mode: string) {
-  const mapping = getPortBitFromArduinoPin(pin);
-  if (!mapping || !cpu) return;
-  
-  // Get the right port
-  let port: AVRIOPort | null = null;
-  if (mapping.port === 'B') port = portB;
-  else if (mapping.port === 'C') port = portC;
-  else if (mapping.port === 'D') port = portD;
-  
-  if (!port) return;
-  
-  // Determine DDR (data direction register) value
-  if (mode === 'OUTPUT') {
-    // Set as output
-    port.ddr |= (1 << mapping.bit);
-  } else {
-    // Set as input
-    port.ddr &= ~(1 << mapping.bit);
-    
-    if (mode === 'INPUT_PULLUP') {
-      // Enable pull-up resistor
-      port.port |= (1 << mapping.bit);
-    } else {
-      // Disable pull-up resistor
-      port.port &= ~(1 << mapping.bit);
-    }
-  }
+  // TODO: Implement pin mode setting if needed for input simulation
+  // For now, pin modes are controlled by the program itself
+  console.warn('[AVR8Worker] setPinMode not fully implemented');
 }
 
 // Load a hex file into program memory
@@ -353,7 +297,7 @@ async function compileArduinoCode(code: string) {
     console.error('Compilation error:', error);
     return {
       success: false,
-      error: error.message || 'Unknown compilation error'
+      error: error instanceof Error ? error.message : 'Unknown compilation error'
     };
   }
 }
@@ -362,8 +306,9 @@ async function compileArduinoCode(code: string) {
 function executeCycle() {
   if (!cpu) return;
   
-  // Execute 10000 CPU cycles (about 1ms at 16MHz)
-  for (let i = 0; i < 10000; i++) {
+  // Execute 16000 CPU cycles per tick (1ms worth at 16MHz)
+  const CYCLES_PER_MS = 16000;
+  for (let i = 0; i < CYCLES_PER_MS; i++) {
     cpu.tick();
   }
 }
@@ -372,16 +317,22 @@ function executeCycle() {
 function startEmulation() {
   if (!cpu || cycleInterval !== null) return;
   
-  // Reset the CPU
+  // Reset the CPU to start from address 0
   cpu.reset();
   
-  // Start interval for CPU execution
-  cycleInterval = setInterval(executeCycle, 10) as unknown as number;
+  // Log PC for debugging
+  self.postMessage({
+    type: 'log',
+    data: `CPU reset - PC: ${cpu.pc}`
+  });
+  
+  // Start interval for CPU execution (1ms ticks)
+  cycleInterval = setInterval(executeCycle, 1) as unknown as number;
   
   // Notify about start
   self.postMessage({
     type: 'log',
-    data: { message: 'Emulation started' }
+    data: 'AVR8 execution started - CPU is running'
   });
 }
 
@@ -410,17 +361,67 @@ self.onmessage = async (event) => {
       initEmulator();
       break;
       
+    case 'loadProgram':
+      // Load a pre-compiled program and start execution
+      if (data.program && data.program instanceof Uint16Array) {
+        // Stop any existing emulation
+        stopEmulation();
+        
+        // Load the new program
+        program = new Uint16Array(data.program);
+        
+        // Re-initialize CPU with new program
+        cpu = new CPU(program);
+        
+        // Re-create I/O ports with new CPU
+        portB = new AVRIOPort(cpu, portBConfig);
+        portC = new AVRIOPort(cpu, portCConfig);
+        portD = new AVRIOPort(cpu, portDConfig);
+        
+        // Re-create timer
+        timer0 = new AVRTimer(cpu, timer0Config);
+        
+        // Track previous port values for change detection
+        let prevPortB = 0;
+        let prevPortC = 0;
+        let prevPortD = 0;
+        
+        // Re-attach port listeners
+        portB.addListener((value) => {
+          handlePortChange('B', value, prevPortB);
+          prevPortB = value;
+        });
+        
+        portC.addListener((value) => {
+          handlePortChange('C', value, prevPortC);
+          prevPortC = value;
+        });
+        
+        portD.addListener((value) => {
+          handlePortChange('D', value, prevPortD);
+          prevPortD = value;
+        });
+        
+        // Log and start
+        self.postMessage({
+          type: 'log',
+          data: `Program loaded (${program.length} words)`
+        });
+        
+        // Start execution
+        startEmulation();
+      }
+      break;
+      
     case 'compile':
-      // Compile Arduino code
+      // Legacy support - compile Arduino code
       const result = await compileArduinoCode(data.code);
       
-      // Send compilation result
       self.postMessage({
         type: 'compilationComplete',
         data: result
       });
       
-      // Start emulation if compilation was successful
       if (result.success) {
         startEmulation();
       }

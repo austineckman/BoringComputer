@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { ArduinoCompilationService } from '../compiler/ArduinoCompilationService';
-import { AVR8Core } from '../avr8js/AVR8Core';
+import AVR8WorkerUrl from '../../desktop/emulator/AVR8Worker?worker&url';
 
 // Create a context for the simulator
 const SimulatorContext = createContext({
@@ -37,10 +37,9 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   const [wires, setWires] = useState([]);
   const [componentStates, setComponentStates] = useState({});
 
-  // AVR8 emulator state
-  const avrCoreRef = useRef(null);
-  const executionIntervalRef = useRef(null);
-  const isRunningRef = useRef(false); // Use a ref to track running state within intervals
+  // AVR8 worker state
+  const workerRef = useRef(null);
+  const isRunningRef = useRef(false);
 
   // Function to add a log entry with timestamp
   const addLog = (message) => {
@@ -236,9 +235,8 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     });
   };
 
-  // Function to start the simulation using real compilation and AVR8js
+  // Function to start the simulation using real compilation and AVR8js Worker
   const startSimulation = async (codeToExecute) => {
-    // Use passed code or fall back to context code
     const currentCode = codeToExecute || code;
     console.log('[Simulator] startSimulation called with code length:', currentCode?.length);
 
@@ -247,36 +245,28 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       return;
     }
 
-    // Always update the context code and force a refresh
+    // Update context code
     setCode(currentCode);
-
-    // Clear any cached state
     setComponentStates({});
-
-    console.log('[Simulator] Using code:', currentCode.substring(0, 100) + '...');
-
-    // Clear previous logs
     setLogs([]);
     setSerialLogs([]);
 
-    // Stop any running simulation
-    if (avrCoreRef.current) {
-      avrCoreRef.current.stop();
-    }
-    if (executionIntervalRef.current) {
-      clearInterval(executionIntervalRef.current);
+    // Stop and terminate old worker if exists
+    if (workerRef.current) {
+      console.log('[Simulator] Terminating old worker...');
+      workerRef.current.postMessage({ type: 'stop' });
+      workerRef.current.terminate();
+      workerRef.current = null;
     }
 
     // Compile the code
     console.log('[Simulator] Starting compilation...');
-    addLog('🔧 Compiling Arduino code on server...');
+    addLog('🔧 Compiling Arduino code...');
     setIsCompiling(true);
 
     try {
-      console.log('[Simulator] About to call ArduinoCompilationService.compileAndParse...');
       const result = await ArduinoCompilationService.compileAndParse(currentCode);
-      console.log('[Simulator] ✅ Received compilation result:', result.success, result);
-      setIsCompiling(false);
+      console.log('[Simulator] Compilation result:', result.success);
 
       if (!result.success) {
         console.error('[Simulator] Compilation failed:', result.errors);
@@ -287,100 +277,80 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
 
       console.log('[Simulator] Program size:', result.program?.length, 'words');
       addLog('✅ Compilation successful');
-      addLog('🚀 Loading program into AVR8 emulator...');
+      addLog('🚀 Starting AVR8 emulator worker...');
 
-      // Create AVR8 core and load program
-      avrCoreRef.current = new AVR8Core();
-      avrCoreRef.current.loadProgram(result.program);
+      // Create new worker
+      workerRef.current = new Worker(AVR8WorkerUrl, { type: 'module' });
 
-      addLog('🔌 Setting up pin callbacks...');
-      console.log('[Simulator] Setting up pin change callbacks...');
-
-      // Set up pin change callbacks for all AVR pins
-      // Map AVR port/pin combinations to Arduino pin numbers
-      const pinMappings = [
-        // Port D pins
-        { port: 'D', pin: 0, arduino: 0 },  // RXD
-        { port: 'D', pin: 1, arduino: 1 },  // TXD
-        { port: 'D', pin: 2, arduino: 2 },  // INT0
-        { port: 'D', pin: 3, arduino: 3 },  // INT1/PWM
-        { port: 'D', pin: 4, arduino: 4 },
-        { port: 'D', pin: 5, arduino: 5 },  // PWM
-        { port: 'D', pin: 6, arduino: 6 },  // PWM
-        { port: 'D', pin: 7, arduino: 7 },
-        // Port B pins
-        { port: 'B', pin: 0, arduino: 8 },
-        { port: 'B', pin: 1, arduino: 9 },  // PWM
-        { port: 'B', pin: 2, arduino: 10 }, // PWM/SS
-        { port: 'B', pin: 3, arduino: 11 }, // PWM/MOSI
-        { port: 'B', pin: 4, arduino: 12 }, // MISO
-        { port: 'B', pin: 5, arduino: 13 }, // SCK/LED
-        // Port C pins (analog)
-        { port: 'C', pin: 0, arduino: 14 }, // A0
-        { port: 'C', pin: 1, arduino: 15 }, // A1
-        { port: 'C', pin: 2, arduino: 16 }, // A2
-        { port: 'C', pin: 3, arduino: 17 }, // A3
-        { port: 'C', pin: 4, arduino: 18 }, // A4/SDA
-        { port: 'C', pin: 5, arduino: 19 }, // A5/SCL
-      ];
-
-      pinMappings.forEach(({ port, pin, arduino }) => {
-        avrCoreRef.current.onPinChange(port, pin, (isHigh) => {
-          handlePinChange(arduino, isHigh);
-        });
-      });
-
-      addLog('✅ Pin callbacks registered');
-      console.log('[Simulator] Pin callbacks set up successfully');
-
-      // Set up serial monitoring for OLED commands
-      addLog('📡 Setting up serial monitoring...');
+      // Set up serial buffer for message accumulation
       let serialBuffer = '';
 
-      avrCoreRef.current.onSerialData((byte) => {
-        const char = String.fromCharCode(byte);
+      // Set up worker message handler
+      workerRef.current.onmessage = (event) => {
+        const { type, data } = event.data;
 
-        // Accumulate characters until we get a newline
-        if (char === '\n') {
-          const line = serialBuffer.trim();
-          serialBuffer = '';
+        switch (type) {
+          case 'pinChange':
+            // Handle pin state change from worker
+            if (typeof data.pin !== 'undefined' && typeof data.isHigh !== 'undefined') {
+              handlePinChange(data.pin, data.isHigh);
+            }
+            break;
 
-          // Parse OLED commands
-          if (line.startsWith('OLED:')) {
-            console.log('[OLED Serial] Received command:', line);
-            parseOLEDCommand(line);
-          } else {
-            // Regular serial output
-            addSerialLog(line);
-          }
-        } else if (char !== '\r') {
-          // Accumulate non-carriage-return characters
-          serialBuffer += char;
+          case 'serialData':
+            // Handle serial data from worker
+            const char = typeof data === 'string' ? data : String.fromCharCode(data);
+            
+            if (char === '\n') {
+              const line = serialBuffer.trim();
+              serialBuffer = '';
+
+              if (line.startsWith('OLED:')) {
+                console.log('[OLED Serial] Received command:', line);
+                parseOLEDCommand(line);
+              } else if (line) {
+                addSerialLog(line);
+              }
+            } else if (char !== '\r') {
+              serialBuffer += char;
+            }
+            break;
+
+          case 'log':
+            // Handle log messages from worker
+            const message = typeof data === 'string' ? data : data.message;
+            if (message) {
+              addLog(message);
+            }
+            break;
+
+          default:
+            console.warn('[Simulator] Unknown worker message type:', type);
         }
+      };
+
+      workerRef.current.onerror = (error) => {
+        console.error('[Simulator] Worker error:', error);
+        addLog(`❌ Worker error: ${error.message}`);
+        setIsCompiling(false);
+        setIsRunning(false);
+      };
+
+      // Send program to worker
+      console.log('[Simulator] Sending program to worker...');
+      workerRef.current.postMessage({
+        type: 'loadProgram',
+        data: { program: result.program }
       });
 
-      addLog('✅ Serial monitoring active');
-      console.log('[Simulator] Serial monitoring set up successfully');
-
-      // Start the execution interval directly
-      console.log('[Simulator] Starting execution interval...');
-      setIsRunning(true); // Set isRunning state
-      isRunningRef.current = true; // Update ref
-
-      // Run simulation in intervals - need enough cycles for Arduino delay() functions to work
-      executionIntervalRef.current = setInterval(() => {
-        if (avrCoreRef.current && isRunningRef.current) {
-          // Execute more cycles to allow delay() functions and loops to work properly
-          avrCoreRef.current.execute(10000); // Increased to 10k cycles per interval
-        }
-      }, 100); // Run at 10 FPS to allow more computation per frame
-
-      console.log('[Simulator] ✅ EXECUTION INTERVAL STARTED - AVR8js is running!');
-
       setIsCompiling(false);
+      setIsRunning(true);
+      isRunningRef.current = true;
 
+      addLog('✅ AVR8 emulator running');
+      console.log('[Simulator] ✅ Worker started and running');
 
-      // Initialize OLED displays after a short delay to ensure components are loaded
+      // Initialize OLED displays
       setTimeout(() => {
         initializeOLEDDisplays();
       }, 100);
@@ -389,6 +359,8 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       setIsCompiling(false);
       addLog(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       console.error('[Simulator] Error:', error);
+    } finally {
+      setIsCompiling(false);
     }
   };
 
@@ -470,19 +442,14 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   const stopSimulation = () => {
     addLog('🛑 Stopping AVR8 simulation...');
     setIsRunning(false);
-    isRunningRef.current = false; // Update ref
+    isRunningRef.current = false;
 
-    // Stop AVR8 core if running
-    if (avrCoreRef.current) {
-      avrCoreRef.current.stop();
-      avrCoreRef.current = null;
-      addLog('⏹️ AVR8 core stopped');
-    }
-
-    // Stop execution loop
-    if (executionIntervalRef.current) {
-      clearInterval(executionIntervalRef.current);
-      executionIntervalRef.current = null;
+    // Terminate worker if running
+    if (workerRef.current) {
+      workerRef.current.postMessage({ type: 'stop' });
+      workerRef.current.terminate();
+      workerRef.current = null;
+      addLog('⏹️ AVR8 worker stopped');
     }
 
     // Reset all component states when stopping
@@ -554,18 +521,15 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     console.log(`[SimulatorContext] Stored ${wires.length} wires globally`);
   }, [wires]);
 
-  // Cleanup execution interval when simulation stops
+  // Cleanup worker on unmount
   useEffect(() => {
-    console.log('[Simulator useEffect] isRunning changed to:', isRunning);
-
-    // Only cleanup when stopping - interval is started directly in startSimulation()
-    if (!isRunning && executionIntervalRef.current) {
-      console.log('[Simulator] Cleaning up execution interval...');
-      clearInterval(executionIntervalRef.current);
-      executionIntervalRef.current = null;
-      console.log('[Simulator] Execution interval cleared');
-    }
-  }, [isRunning]);
+    return () => {
+      if (workerRef.current) {
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
+    };
+  }, []);
 
   // Make the simulator context available globally for non-React components
   useEffect(() => {
