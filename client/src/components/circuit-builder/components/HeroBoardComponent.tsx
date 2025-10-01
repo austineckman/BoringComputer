@@ -1,7 +1,9 @@
+
 import React from 'react';
 import BaseComponent from '../components/BaseComponent';
 import CircuitPin from '../CircuitPin';
 import { ComponentProps } from '../ComponentGenerator';
+import { useSimulator } from '../simulator/SimulatorContext';
 import heroBoardIconPath from '../../../assets/components/hero-board.icon.png';
 
 interface PinDefinition {
@@ -24,18 +26,61 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
 }) => {
   const { id, attrs } = componentData;
   const { rotate = 0, left, ledPower = true } = attrs;
+  const { componentStates, isRunning } = useSimulator();
 
-  // Simple blinking state - no dependencies on simulator
-  const [isBlinking, setIsBlinking] = React.useState(true);
+  // Get component state
+  const componentState = componentStates[id] || {};
+  
+  // Multiple ways to detect pin 13 state
+  const pin13IsHigh = Boolean(
+    componentState.pin13 ||
+    componentState.onboardLED ||
+    componentState.pin13LED ||
+    componentState.pins?.[13] ||
+    componentState.pins?.['13'] ||
+    componentState.pins?.['d13'] ||
+    false
+  );
 
-  // Simple blink effect - just blink every 500ms always
+  // Listen for global pin change events
+  const [ledState, setLedState] = React.useState(false);
+
   React.useEffect(() => {
-    const interval = setInterval(() => {
-      setIsBlinking(prev => !prev);
-    }, 500);
+    const handlePinChange = (event: CustomEvent) => {
+      const { pin, isHigh } = event.detail;
+      if (pin === 13) {
+        console.log(`🔴 HeroBoard ${id} received pin 13 change: ${isHigh}`);
+        setLedState(isHigh);
+      }
+    };
 
-    return () => clearInterval(interval);
-  }, []);
+    const handleStateChange = (event: CustomEvent) => {
+      const { componentId, pin, isHigh } = event.detail;
+      if (componentId === id && pin === 13) {
+        console.log(`🔴 HeroBoard ${id} received state change: ${isHigh}`);
+        setLedState(isHigh);
+      }
+    };
+
+    window.addEventListener('pinChange', handlePinChange as EventListener);
+    window.addEventListener('componentStateChange', handleStateChange as EventListener);
+
+    return () => {
+      window.removeEventListener('pinChange', handlePinChange as EventListener);
+      window.removeEventListener('componentStateChange', handleStateChange as EventListener);
+    };
+  }, [id]);
+
+  // Also update based on component state changes
+  React.useEffect(() => {
+    if (pin13IsHigh !== ledState) {
+      console.log(`🔴 HeroBoard ${id} updating LED state: ${pin13IsHigh}`);
+      setLedState(pin13IsHigh);
+    }
+  }, [pin13IsHigh, ledState, id]);
+
+  // Final LED state (either from simulator or local state)
+  const finalLedState = isRunning && (ledState || pin13IsHigh);
 
   // Define pins based on Arduino layout
   const basePins: PinDefinition[] = [
@@ -126,39 +171,38 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
           }}
         />
 
-        {/* Pin 13 onboard LED - SIMPLE ALWAYS WORKING VERSION */}
+        {/* Pin 13 onboard LED - RESTORED AND WORKING */}
         <div 
           className="absolute"
           style={{
             left: '135px',
             top: '75px',
-            width: '12px',
-            height: '12px',
-            backgroundColor: isBlinking ? '#ff0000' : '#440000',
+            width: '8px',
+            height: '8px',
+            backgroundColor: finalLedState ? '#ff0000' : '#330000',
             borderRadius: '50%',
-            boxShadow: isBlinking ? '0 0 20px 4px rgba(255, 0, 0, 0.9)' : '0 0 2px rgba(68, 0, 0, 0.5)',
+            boxShadow: finalLedState ? '0 0 10px #ff0000' : 'none',
             transition: 'all 0.1s ease',
-            border: isBlinking ? '3px solid #ff6666' : '2px solid #220000',
-            zIndex: 999,
+            zIndex: 1000,
           }}
-          title={`Built-in LED (Pin 13): ${isBlinking ? 'ON' : 'OFF'} - Always Blinking`}
+          title={`Built-in LED (Pin 13): ${finalLedState ? 'ON' : 'OFF'}`}
         />
 
-        {/* Status text */}
+        {/* Debug status */}
         <div 
           className="absolute text-xs font-mono"
           style={{
             right: '5px',
-            bottom: '25px',
+            bottom: '5px',
             fontSize: '8px',
             backgroundColor: 'rgba(0,0,0,0.8)',
-            color: isBlinking ? '#ff3300' : '#aaaaaa',
+            color: finalLedState ? '#ff3300' : '#666666',
             padding: '2px 4px',
             borderRadius: '2px',
             pointerEvents: 'none',
           }}
         >
-          PIN 13: {isBlinking ? 'HIGH' : 'LOW'}
+          PIN 13: {finalLedState ? 'HIGH' : 'LOW'}
         </div>
       </div>
 

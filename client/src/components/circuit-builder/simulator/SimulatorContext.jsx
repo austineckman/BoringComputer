@@ -367,102 +367,72 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
 
   // Handle pin state changes from AVR8 core
   const handlePinChange = (pin, isHigh) => {
-    console.log(`[AVR8] Arduino Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+    console.log(`🔴 [PIN CHANGE] Arduino Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+
+    // Add log entry
+    addLog(`Pin ${pin} ${isHigh ? 'HIGH' : 'LOW'}`);
 
     // Special logging for pin 13
     if (pin === 13) {
       console.log(`🔴🔴🔴 PIN 13 ONBOARD LED CHANGE DETECTED: ${isHigh ? 'HIGH' : 'LOW'}`);
-      addLog(`🔴 Arduino Pin 13 (Built-in LED) ${isHigh ? 'ON' : 'OFF'}`);
+      addLog(`🔴 Built-in LED ${isHigh ? 'ON' : 'OFF'}`);
     }
 
-    // Dispatch a global pin change event that components can listen to
+    // IMMEDIATELY dispatch global pin change event
     const pinChangeEvent = new CustomEvent('pinChange', {
       detail: { pin, isHigh }
     });
     window.dispatchEvent(pinChangeEvent);
 
-    // Get the latest components and wires from global storage (avoiding stale closure)
+    // Get the latest components
     const latestComponents = window.latestSimulatorData?.components || [];
     const latestWires = window.latestSimulatorData?.wires || [];
 
-    console.log(`[AVR8] Checking ${latestComponents.length} components for pin ${pin} changes`);
-
-    // Update ALL heroboard/Arduino components immediately
-    latestComponents.forEach(component => {
-      if (component.type === 'heroboard' || component.id.includes('heroboard') || component.id.includes('arduino')) {
-        console.log(`[AVR8] Updating component ${component.id} for pin ${pin} change`);
-
-        // ALWAYS update the basic pin state first
-        updateComponentPins(component.id, { [pin]: isHigh });
-
-        // Special handling for pin 13 - FORCE IMMEDIATE STATE UPDATE
-        if (pin === 13) {
-          console.log(`🔴🔴🔴 FORCING PIN 13 LED UPDATE FOR ${component.id}`);
+    // Update ALL heroboard components for pin 13
+    if (pin === 13) {
+      latestComponents.forEach(component => {
+        if (component.type === 'heroboard' || component.id.includes('heroboard')) {
+          console.log(`🔴 [PIN 13] Updating heroboard ${component.id}`);
           
-          // Force immediate state update with ALL possible pin 13 variations
-          setComponentStates(prevStates => {
-            const currentState = prevStates[component.id] || {};
-            const updatedState = {
-              ...currentState,
-              // Pin state tracking
-              pin13: isHigh,
-              onboardLED: isHigh,
-              pin13LED: isHigh,
-              ledBuiltIn: isHigh,
-              builtInLED: isHigh,
-              // Pin object updates
-              pins: {
-                ...(currentState.pins || {}),
-                [pin]: isHigh,
-                '13': isHigh,
-                'd13': isHigh,
-                'pin13': isHigh,
-                'LED_BUILTIN': isHigh
-              },
-              // Timestamp for forced re-render
-              lastUpdate: Date.now()
-            };
-
-            const newStates = {
-              ...prevStates,
-              [component.id]: updatedState
-            };
-            
-            console.log(`🔴 [IMMEDIATE UPDATE] Pin 13 state for ${component.id}:`, updatedState);
-            console.log(`🔴 [FULL STATE] All component states:`, Object.keys(newStates));
-            
-            // Also trigger a global state change event for components to listen to
-            setTimeout(() => {
-              const stateChangeEvent = new CustomEvent('componentStateChange', {
-                detail: { 
-                  componentId: component.id, 
-                  pin: 13, 
-                  isHigh,
-                  state: updatedState
-                }
-              });
-              window.dispatchEvent(stateChangeEvent);
-            }, 0);
-            
-            return newStates;
+          // Update component state immediately
+          updateComponentState(component.id, {
+            pin13: isHigh,
+            onboardLED: isHigh,
+            pin13LED: isHigh,
+            pins: { 13: isHigh, 'd13': isHigh }
           });
 
-          console.log(`🔴 [AVR8] Pin 13 LED FORCED UPDATE COMPLETE: ${component.id} -> ${isHigh ? 'HIGH' : 'LOW'}`);
+          // Also dispatch specific state change event
+          setTimeout(() => {
+            const stateChangeEvent = new CustomEvent('componentStateChange', {
+              detail: { 
+                componentId: component.id, 
+                pin: 13, 
+                isHigh
+              }
+            });
+            window.dispatchEvent(stateChangeEvent);
+          }, 0);
         }
+      });
+    }
+
+    // Update other pins normally
+    latestComponents.forEach(component => {
+      if (component.type === 'heroboard' || component.id.includes('heroboard')) {
+        updateComponentPins(component.id, { [pin]: isHigh });
       }
     });
 
-    // Update components connected to this pin via wires
+    // Update connected LEDs via wires
     latestComponents.forEach(component => {
       if (component.type === 'led' || component.id.includes('led')) {
-        // Check if this component is connected to the pin via wires
         const connectedWires = latestWires.filter(wire => {
           const isSourceConnected = wire.sourceComponent === component.id && 
                                    (wire.sourceName === pin.toString() || wire.sourceName === `pin${pin}`);
           const isTargetConnected = wire.targetComponent === component.id && 
                                    (wire.targetName === pin.toString() || wire.targetName === `pin${pin}`);
           
-          // Special check for heroboard connections to pin 13
           const isPin13Connected = pin === 13 && (
             (wire.sourceComponent.includes('heroboard') && wire.sourceName === '13') ||
             (wire.targetComponent.includes('heroboard') && wire.targetName === '13')
@@ -471,15 +441,12 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           return isSourceConnected || isTargetConnected || isPin13Connected;
         });
 
-        console.log(`[AVR8] Component ${component.id} has ${connectedWires.length} wires connected to pin ${pin}`);
-
         if (connectedWires.length > 0) {
           updateComponentState(component.id, {
             isOn: isHigh,
             brightness: isHigh ? 1.0 : 0.0
           });
           addLog(`💡 Pin ${pin} → ${component.id} ${isHigh ? 'ON' : 'OFF'}`);
-          console.log(`[AVR8] Updated LED ${component.id} state: ${isHigh ? 'ON' : 'OFF'}`);
         }
       }
     });
