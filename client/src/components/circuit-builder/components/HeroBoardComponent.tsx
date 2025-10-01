@@ -24,23 +24,63 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
   handleDeleteComponent
 }) => {
   const { id, attrs } = componentData;
-  const { rotate = 0, top, left, ledPower = true } = attrs;
-  
-  // Access simulator context to get the pin states
-  const { componentStates } = useSimulator();
-  
+  const { rotate = 0, left, ledPower = true } = attrs;
+
+  // Access simulator context to get the pin states and update function
+  const { componentStates, updateComponentState } = useSimulator();
+
   // Get component state from simulator context
   const componentState = componentStates[id] || {};
-  
+
   // Check multiple possible sources for pin 13 state
-  const pin13IsHigh = 
-    componentState.pin13 || 
-    componentState.onboardLED || 
-    componentState.pin13LED ||
-    componentState.pins?.['13'] ||
-    componentState.pins?.['d13'] ||
-    componentState.pins?.[13] ||
-    false;
+  const pin13IsHigh = React.useMemo(() => {
+    // Check various pin 13 state sources
+    const sources = [
+      componentState.pin13,
+      componentState.onboardLED,
+      componentState.pin13LED,
+      componentState.pins?.['13'],
+      componentState.pins?.[13],
+      componentState.pins?.['d13'],
+      componentState.pins?.['pin13']
+    ];
+
+    // Return the first truthy value or false
+    return sources.find(state => state === true) || false;
+  }, [componentState]);
+
+  // Listen for global pin change events specifically for pin 13
+  React.useEffect(() => {
+    const handleGlobalPinChange = (event: CustomEvent) => {
+      const { pin, isHigh, componentId } = event.detail;
+
+      // Only respond if this is pin 13 and either for this component or global
+      if (pin === 13 && (!componentId || componentId === id)) {
+        console.log(`🔴 HeroBoard ${id} received global pin 13 change: ${isHigh ? 'HIGH' : 'LOW'}`);
+
+        // Force a component state update
+        if (updateComponentState) {
+          updateComponentState(id, {
+            pin13: isHigh,
+            onboardLED: isHigh,
+            pins: {
+              ...(componentState.pins || {}),
+              13: isHigh,
+              '13': isHigh,
+              'd13': isHigh
+            }
+          });
+        }
+      }
+    };
+
+    // Add event listener for pin changes
+    window.addEventListener('pinChange', handleGlobalPinChange as EventListener);
+
+    return () => {
+      window.removeEventListener('pinChange', handleGlobalPinChange as EventListener);
+    };
+  }, [id, updateComponentState, componentState.pins]);
 
   // Debug logging for pin 13 state
   React.useEffect(() => {
@@ -56,7 +96,7 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
       hasAnyPinData: Object.keys(componentState).length > 0
     });
   }, [componentState, pin13IsHigh, id]);
-  
+
   // Define pins based on Arduino layout
   const basePins: PinDefinition[] = [
     // Power pins
@@ -67,7 +107,7 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
     { id: '3v3', x: -15, y: -90, label: '3.3V', isPower: true },
     { id: 'rst', x: -5, y: -90, label: 'RST' },
     { id: 'aref', x: 5, y: -90, label: 'AREF' },
-    
+
     // Digital pins (left side)
     { id: 'd0', x: -55, y: 90, label: 'D0', isDigital: true },
     { id: 'd1', x: -45, y: 90, label: 'D1', isDigital: true },
@@ -77,7 +117,7 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
     { id: 'd5', x: -5, y: 90, label: 'D5', isDigital: true },
     { id: 'd6', x: 5, y: 90, label: 'D6', isDigital: true },
     { id: 'd7', x: 15, y: 90, label: 'D7', isDigital: true },
-    
+
     // Digital pins (right side)
     { id: 'd8', x: 25, y: 90, label: 'D8', isDigital: true },
     { id: 'd9', x: 35, y: 90, label: 'D9', isDigital: true },
@@ -85,7 +125,7 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
     { id: 'd11', x: 55, y: 90, label: 'D11', isDigital: true },
     { id: 'd12', x: 65, y: 90, label: 'D12', isDigital: true },
     { id: 'd13', x: 75, y: 90, label: 'D13', isDigital: true },
-    
+
     // Analog pins
     { id: 'a0', x: 15, y: -90, label: 'A0', isAnalog: true },
     { id: 'a1', x: 25, y: -90, label: 'A1', isAnalog: true },
@@ -95,7 +135,7 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
     { id: 'a5', x: 65, y: -90, label: 'A5', isAnalog: true },
     { id: 'a6', x: 75, y: -90, label: 'A6', isAnalog: true },
   ];
-  
+
   // Rotate pins based on board rotation
   const getPinCoordinates = (pin: PinDefinition) => {
     switch (rotate) {
@@ -111,14 +151,14 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
         return { x: pin.x, y: pin.y };
     }
   };
-  
+
   console.log(`HeroBoardComponent ${id} rendering. Pin 13 state:`, pin13IsHigh ? 'HIGH' : 'LOW');
-  
+
   return (
     <BaseComponent
       id={id}
       left={left}
-      top={top}
+      top={componentData.attrs.top}
       rotate={rotate}
       width={170}
       height={220}
@@ -133,7 +173,7 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
           alt="HERO Board Component"
           className="w-full h-full object-contain"
         />
-        
+
         {/* Power LED overlay */}
         <div 
           className="absolute"
@@ -147,7 +187,7 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
             boxShadow: ledPower ? '0 0 4px #5fea00' : 'none',
           }}
         />
-        
+
         {/* Pin 13 LED overlay - responds to actual signals from simulation */}
         <div 
           className="absolute"
@@ -166,7 +206,7 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
           }}
           title={`Built-in LED (Pin 13): ${pin13IsHigh ? 'ON' : 'OFF'}`}
         />
-        
+
         {/* Debug info overlay to show pin 13 state */}
         <div 
           className="absolute text-xs font-mono"
@@ -184,7 +224,7 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
           PIN 13: {pin13IsHigh ? 'HIGH' : 'LOW'}
         </div>
       </div>
-      
+
       {/* Pins */}
       {basePins.map(pin => {
         const coords = getPinCoordinates(pin);

@@ -374,6 +374,12 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog(`🔴 Arduino Pin 13 (Built-in LED) ${isHigh ? 'ON' : 'OFF'}`);
     }
 
+    // Dispatch a global pin change event that components can listen to
+    const pinChangeEvent = new CustomEvent('pinChange', {
+      detail: { pin, isHigh }
+    });
+    window.dispatchEvent(pinChangeEvent);
+
     // Get the latest components and wires from global storage (avoiding stale closure)
     const latestComponents = window.latestSimulatorData?.components || [];
     const latestWires = window.latestSimulatorData?.wires || [];
