@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { ArduinoCompilationService } from '../compiler/ArduinoCompilationService';
-import AVR8WorkerUrl from '../../desktop/emulator/AVR8Worker?worker&url';
+import AVR8Worker from '../../desktop/emulator/AVR8Worker.ts?worker';
 
 // Create a context for the simulator
 const SimulatorContext = createContext({
@@ -280,7 +280,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog('🚀 Starting AVR8 emulator worker...');
 
       // Create new worker
-      workerRef.current = new Worker(AVR8WorkerUrl, { type: 'module' });
+      workerRef.current = new AVR8Worker();
 
       // Set up serial buffer for message accumulation
       let serialBuffer = '';
