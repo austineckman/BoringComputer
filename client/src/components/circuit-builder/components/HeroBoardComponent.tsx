@@ -29,6 +29,11 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
   // Access simulator context to get the pin states and update function
   const { componentStates, updateComponentState } = useSimulator();
 
+  // State to track the onboard LED status
+  const [onboardLedState, setOnboardLedState] = React.useState(false);
+  // State to trigger re-renders for visual updates
+  const [props, setProps] = React.useState({ lastUpdate: Date.now(), ledUpdate: Date.now() });
+
   // Get component state from simulator context
   const componentState = componentStates[id] || {};
 
@@ -39,48 +44,79 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
       componentState.pin13,
       componentState.onboardLED,
       componentState.pin13LED,
+      componentState.ledBuiltIn,
+      componentState.builtInLED,
       componentState.pins?.['13'],
       componentState.pins?.[13],
-      componentState.pins?.['d13'],
-      componentState.pins?.['pin13']
+      componentState.pins?.['pin13'],
+      componentState.pins?.['LED_BUILTIN']
     ];
 
     // Return the first truthy value or false
     return sources.find(state => state === true) || false;
   }, [componentState]);
 
-  // Listen for global pin change events specifically for pin 13
+  // Listen for pin change events from the simulator
   React.useEffect(() => {
-    const handleGlobalPinChange = (event: CustomEvent) => {
-      const { pin, isHigh, componentId } = event.detail;
+    const handlePinChange = (event: any) => {
+      const { pin, isHigh } = event.detail;
+      console.log(`[HeroBoard] Received pin change event: pin ${pin} = ${isHigh ? 'HIGH' : 'LOW'}`);
 
-      // Only respond if this is pin 13 and either for this component or global
-      if (pin === 13 && (!componentId || componentId === id)) {
-        console.log(`🔴 HeroBoard ${id} received global pin 13 change: ${isHigh ? 'HIGH' : 'LOW'}`);
-
-        // Force a component state update
-        if (updateComponentState) {
-          updateComponentState(id, {
-            pin13: isHigh,
-            onboardLED: isHigh,
-            pins: {
-              ...(componentState.pins || {}),
-              13: isHigh,
-              '13': isHigh,
-              'd13': isHigh
-            }
-          });
-        }
+      if (pin === 13) {
+        console.log(`🔴 [HeroBoard] Pin 13 (onboard LED) changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+        setOnboardLedState(isHigh);
+        // Force re-render
+        setProps(prev => ({ ...prev, lastUpdate: Date.now() }));
       }
     };
 
-    // Add event listener for pin changes
-    window.addEventListener('pinChange', handleGlobalPinChange as EventListener);
+    const handleComponentStateChange = (event: any) => {
+      const { componentId, pin, isHigh } = event.detail;
+      if (componentId === id && pin === 13) {
+        console.log(`🔴 [HeroBoard] Component state change for pin 13: ${isHigh ? 'HIGH' : 'LOW'}`);
+        setOnboardLedState(isHigh);
+        // Force re-render
+        setProps(prev => ({ ...prev, lastUpdate: Date.now() }));
+      }
+    };
+
+    window.addEventListener('pinChange', handlePinChange);
+    window.addEventListener('componentStateChange', handleComponentStateChange);
 
     return () => {
-      window.removeEventListener('pinChange', handleGlobalPinChange as EventListener);
+      window.removeEventListener('pinChange', handlePinChange);
+      window.removeEventListener('componentStateChange', handleComponentStateChange);
     };
-  }, [id, updateComponentState, componentState.pins]);
+  }, [id]);
+
+  // Monitor component state from simulator context
+  useEffect(() => {
+    const currentState = componentStates[id];
+    if (currentState) {
+      console.log(`[HeroBoard] Component state updated for ${id}:`, currentState);
+
+      // Check for pin 13 state in various formats
+      const pin13State = currentState.pin13 || 
+                        currentState.onboardLED || 
+                        currentState.pin13LED ||
+                        currentState.ledBuiltIn ||
+                        currentState.builtInLED ||
+                        currentState.pins?.['13'] || 
+                        currentState.pins?.[13] ||
+                        currentState.pins?.['pin13'] ||
+                        currentState.pins?.['LED_BUILTIN'] ||
+                        false;
+
+      console.log(`🔴 [HeroBoard] Pin 13 check for ${id}: current=${pin13State}, previous=${onboardLedState}`);
+
+      if (pin13State !== onboardLedState) {
+        console.log(`🔴 [HeroBoard] Pin 13 state change detected for ${id}: ${pin13State ? 'HIGH' : 'LOW'}`);
+        setOnboardLedState(pin13State);
+        // Force component re-render
+        setProps(prev => ({ ...prev, ledUpdate: Date.now() }));
+      }
+    }
+  }, [componentStates, id, onboardLedState]);
 
   // Debug logging for pin 13 state
   React.useEffect(() => {
@@ -187,6 +223,41 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
             boxShadow: ledPower ? '0 0 4px #5fea00' : 'none',
           }}
         />
+
+        {/* Pin 13 onboard LED - ENHANCED VISIBILITY */}
+        <div 
+          className={`absolute w-3 h-3 rounded-full transition-all duration-200 border ${
+            onboardLedState 
+              ? 'bg-orange-400 border-orange-300 shadow-orange-400/75 shadow-lg animate-pulse' 
+              : 'bg-gray-700 border-gray-500'
+          }`}
+          style={{
+            left: '84px',
+            top: '14px',
+            zIndex: 10
+          }}
+          title={`Pin 13 (Onboard LED) - ${onboardLedState ? 'ON' : 'OFF'}`}
+        >
+          {/* Extra glow effect when LED is on */}
+          {onboardLedState && (
+            <div className="absolute inset-0 rounded-full bg-orange-300 opacity-50 animate-ping" />
+          )}
+        </div>
+
+        {/* Debug indicator for pin 13 state */}
+        <div 
+          className={`absolute text-xs font-mono px-1 rounded ${
+            onboardLedState ? 'bg-orange-500 text-white' : 'bg-gray-600 text-gray-300'
+          }`}
+          style={{
+            left: '90px',
+            top: '12px',
+            fontSize: '8px',
+            zIndex: 11
+          }}
+        >
+          {onboardLedState ? 'ON' : 'OFF'}
+        </div>
 
         {/* Pin 13 LED overlay - responds to actual signals from simulation */}
         <div 
