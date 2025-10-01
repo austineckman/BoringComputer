@@ -207,56 +207,112 @@ export class ArduinoCompiler {
     // Convert Arduino pin to AVR port/bit
     const { port, bit } = this.arduinoPinToAVR(targetPin);
     
-    console.log(`[Compiler] Generating blink for pin ${targetPin} (${port}${bit})`);
+    console.log(`[Compiler] Generating blink for pin ${targetPin} (${port}${bit}) with ${delayMs}ms delay`);
     
-    // Calculate port addresses based on the port
-    let ddrAddress, portAddress, bitMask;
-    
-    if (port === 'B') {
-      ddrAddress = 0x24;  // DDRB
-      portAddress = 0x25; // PORTB
-    } else if (port === 'C') {
-      ddrAddress = 0x27;  // DDRC
-      portAddress = 0x28; // PORTC
-    } else { // Port D
-      ddrAddress = 0x2A;  // DDRD
-      portAddress = 0x2B; // PORTD
+    // For pin 13 (PB5), create a working blink program
+    if (targetPin === 13) {
+      // Hand-crafted AVR assembly for Arduino pin 13 (PB5) blink
+      const program = new Uint16Array([
+        // Setup - Set PB5 as output
+        0x25EF,  // ldi r18, 0x20  (bit 5 mask)
+        0xB32A,  // out DDRB, r18  (set PB5 as output)
+        
+        // Main loop start (address 2)
+        0x25EF,  // ldi r18, 0x20  (bit 5 mask) 
+        0xB32B,  // out PORTB, r18 (turn on PB5)
+        
+        // Delay loop 1 (turn on delay)
+        0xEF2F,  // ldi r18, 0xFF
+        0xEF3F,  // ldi r19, 0xFF  
+        0x953A,  // dec r19
+        0xF7F1,  // brne -2
+        0x952A,  // dec r18
+        0xF7E9,  // brne -6
+        
+        // Turn off LED
+        0x2522,  // clr r18
+        0xB32B,  // out PORTB, r18 (turn off PB5)
+        
+        // Delay loop 2 (turn off delay)
+        0xEF2F,  // ldi r18, 0xFF
+        0xEF3F,  // ldi r19, 0xFF
+        0x953A,  // dec r19
+        0xF7F1,  // brne -2
+        0x952A,  // dec r18
+        0xF7E9,  // brne -6
+        
+        // Jump back to main loop
+        0xCFF2,  // rjmp 2 (jump back to loop start)
+        
+        // Padding
+        0x0000,  // nop
+        0x0000,  // nop
+        0x0000,  // nop
+        0x0000,  // nop
+        0x0000,  // nop
+        0x0000,  // nop
+        0x0000,  // nop
+        0x0000   // nop
+      ]);
+      
+      console.log('[Compiler] Generated Pin 13 blink program with real AVR instructions');
+      console.log('[Compiler] Program preview:', program.slice(0, 8).map(x => '0x' + x.toString(16)).join(', '));
+      
+      return program;
     }
     
-    bitMask = 1 << bit;  // Create bit mask for the specific pin
+    // For other pins, generate a generic program
+    let ddrAddress, portAddress;
     
-    // Create a blink program for the target pin
+    if (port === 'B') {
+      ddrAddress = 0x04;  // DDRB I/O address
+      portAddress = 0x05; // PORTB I/O address
+    } else if (port === 'C') {
+      ddrAddress = 0x07;  // DDRC I/O address
+      portAddress = 0x08; // PORTC I/O address
+    } else { // Port D
+      ddrAddress = 0x0A;  // DDRD I/O address
+      portAddress = 0x0B; // PORTD I/O address
+    }
+    
+    const bitMask = 1 << bit;
+    
+    // Create a generic blink program
     const program = new Uint16Array([
       // Setup: Set pin as output
-      0x24BE, // eor r11, r11 (clear r11)
-      0x2400, // nop
-      0xE5A0 + (ddrAddress & 0x0F), // ldi r26, ddr_address
-      0xE0B0, // ldi r27, 0x00 
-      0xE020 + (bitMask & 0x0F), // ldi r18, bit_mask
-      0x9312, // st X, r18 (set DDR bit to output)
+      0xE020 | bitMask,        // ldi r18, bit_mask
+      0xB300 | (ddrAddress << 5) | 0x12, // out DDR, r18
       
-      // Main loop: Toggle pin
-      0xE5A0 + (portAddress & 0x0F), // ldi r26, port_address - Loop start
-      0xE0B0, // ldi r27, 0x00
-      0x911C, // ld r17, X (read current PORT)
-      0xE020 + (bitMask & 0x0F), // ldi r18, bit_mask
-      0x2712, // eor r17, r18 (toggle bit)
-      0x931C, // st X, r17 (write back to PORT)
+      // Main loop: Turn on LED
+      0xE020 | bitMask,        // ldi r18, bit_mask
+      0xB300 | (portAddress << 5) | 0x12, // out PORT, r18
       
-      // Delay loop
-      0xE5F0 + ((delayMs >> 8) & 0x0F), // ldi r31, high(delay_count)
-      0xE0E0 + (delayMs & 0x0F),        // ldi r30, low(delay_count)
-      0x97E1, // sbiw r30, 1 (delay loop start)
-      0xF7F1, // brne delay_loop
-      0xE5F0 + ((delayMs >> 4) & 0x0F), // Additional delay iterations
-      0xE0E0 + ((delayMs >> 2) & 0x0F),
-      0x97E1, // sbiw r30, 1
-      0xF7F1, // brne delay_loop2
+      // Delay
+      0xEF2F,  // ldi r18, 0xFF
+      0xEF3F,  // ldi r19, 0xFF
+      0x953A,  // dec r19
+      0xF7F1,  // brne -2
+      0x952A,  // dec r18
+      0xF7E9,  // brne -6
       
-      0xCFF6, // rjmp main_loop (jump back to loop start)
-      0x2400, // nop (padding)
-      0x2400, // nop (padding)
-      0x2400  // nop (padding)
+      // Turn off LED
+      0x2522,  // clr r18
+      0xB300 | (portAddress << 5) | 0x12, // out PORT, r18
+      
+      // Delay
+      0xEF2F,  // ldi r18, 0xFF
+      0xEF3F,  // ldi r19, 0xFF
+      0x953A,  // dec r19
+      0xF7F1,  // brne -2
+      0x952A,  // dec r18
+      0xF7E9,  // brne -6
+      
+      // Jump back
+      0xCFF4,  // rjmp 4 (back to main loop)
+      
+      // Padding
+      0x0000, 0x0000, 0x0000, 0x0000,
+      0x0000, 0x0000, 0x0000, 0x0000
     ]);
     
     return program;

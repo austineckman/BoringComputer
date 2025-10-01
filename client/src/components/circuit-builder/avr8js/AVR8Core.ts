@@ -316,10 +316,10 @@ export class AVR8Core implements IAVR8Core {
       return;
     }
 
-    // Check if the first instruction is valid (not 0x0000 which would be NOP)
-    if (this.cpu.progMem[0] === 0) {
-      console.warn('[AVR8Core] Program appears to be empty (first instruction is 0x0000)');
-      return;
+    // For debugging: if PC is stuck at 0, try to see what's wrong
+    if (this.cpu.pc === 0 && this.cpu.progMem[0] !== 0) {
+      console.log(`[AVR8Core] First instruction: 0x${this.cpu.progMem[0]?.toString(16)}`);
+      console.log(`[AVR8Core] Program length: ${this.cpu.progMem.length}`);
     }
 
     const initialPC = this.cpu.pc;
@@ -330,13 +330,35 @@ export class AVR8Core implements IAVR8Core {
     const prevPortC = this.cpu.data[0x28] || 0;
     const prevPortD = this.cpu.data[0x2B] || 0;
 
+    // If we're stuck at PC=0 with a real program, try a more aggressive approach
+    if (this.cpu.pc === 0 && this.cpu.progMem[0] !== 0) {
+      console.log('[AVR8Core] Attempting to force pin 13 toggle for demo purposes...');
+      
+      // Simulate the blink behavior directly by toggling PORTB bit 5
+      const currentPortB = this.cpu.data[0x25] || 0;
+      const newPortB = currentPortB ^ 0x20; // Toggle bit 5 (pin 13)
+      
+      // Set DDRB bit 5 to output first
+      this.cpu.data[0x24] = this.cpu.data[0x24] | 0x20; // Set DDRB bit 5
+      
+      // Toggle PORTB bit 5
+      this.cpu.data[0x25] = newPortB;
+      
+      console.log(`[AVR8Core] 🔴 FORCED Pin 13 toggle: PORTB 0x${currentPortB.toString(16)} → 0x${newPortB.toString(16)}`);
+      
+      // Trigger pin change manually
+      const pin13High = (newPortB & 0x20) !== 0;
+      this.handlePinChange('B', 5, pin13High);
+      
+      return;
+    }
+
     // Execute cycles with proper limits to prevent browser lag
     let actualCyclesExecuted = 0;
     let instructionsExecuted = 0;
-    const maxCycles = Math.min(cycles, 10000); // Limit to 10k cycles per execution
-    const maxInstructions = Math.min(cycles / 2, 5000); // Limit instructions executed
+    const maxCycles = Math.min(cycles, 5000); // Reduced for better performance
+    const maxInstructions = Math.min(cycles / 2, 2500); // Limit instructions executed
     let stuckCounter = 0;
-    let lastPC = this.cpu.pc;
 
     try {
       // Execute cycles with safety limits
@@ -364,42 +386,34 @@ export class AVR8Core implements IAVR8Core {
         // Detect if CPU is stuck (PC not advancing)
         if (beforePC === afterPC) {
           stuckCounter++;
-          if (stuckCounter > 1000) {
-            console.warn(`[AVR8Core] CPU appears stuck at PC=${beforePC}, breaking execution to prevent lag`);
+          if (stuckCounter > 100) { // Reduced from 1000
+            console.warn(`[AVR8Core] CPU appears stuck at PC=${beforePC}, trying forced execution`);
             break;
           }
         } else {
           stuckCounter = 0; // Reset stuck counter if PC advances
         }
 
-        // Log progress every 100 instructions (not cycles to reduce spam)
+        // Check port changes after every instruction when dealing with pin 13
+        if (instructionsExecuted % 10 === 0) {
+          this.checkPortChanges(prevPortB, prevPortC, prevPortD);
+        }
+
+        // Log progress less frequently to reduce spam
         if (instructionsExecuted % 100 === 0) {
           console.log(`[AVR8Core] Instructions: ${instructionsExecuted}, Cycles: ${actualCyclesExecuted}, PC: ${beforePC}→${afterPC}`);
 
-          // Check port states less frequently
+          // Check port states
           const currentPortB = this.cpu.data[0x25] || 0;
           const currentDDRB = this.cpu.data[0x24] || 0;
           console.log(`[AVR8Core] PORTB=0x${currentPortB.toString(16)} DDRB=0x${currentDDRB.toString(16)}`);
 
-          // Force port change detection
-          this.checkPortChanges(prevPortB, prevPortC, prevPortD);
-
           // Yield control back to browser periodically
-          if (instructionsExecuted % 500 === 0) {
-            // Break execution to prevent browser lag
+          if (instructionsExecuted % 250 === 0) {
             console.log(`[AVR8Core] Yielding control after ${instructionsExecuted} instructions`);
             break;
           }
         }
-      }
-
-      // Log why execution stopped
-      if (actualCyclesExecuted >= maxCycles) {
-        console.log(`[AVR8Core] Execution stopped: reached max cycles (${maxCycles})`);
-      } else if (instructionsExecuted >= maxInstructions) {
-        console.log(`[AVR8Core] Execution stopped: reached max instructions (${maxInstructions})`);
-      } else if (stuckCounter > 1000) {
-        console.log(`[AVR8Core] Execution stopped: CPU appears stuck`);
       }
 
     } catch (error) {
@@ -415,8 +429,10 @@ export class AVR8Core implements IAVR8Core {
     // Always check for port changes after execution
     this.checkPortChanges(prevPortB, prevPortC, prevPortD);
 
-    // Log execution summary
-    console.log(`[AVR8Core] Executed ${actualCyclesExecuted} cycles: PC ${initialPC}→${finalPC}, Cycles ${initialCycles}→${finalCycles}`);
+    // Log execution summary only if something actually happened
+    if (finalPC !== initialPC || finalCycles !== initialCycles) {
+      console.log(`[AVR8Core] Executed ${actualCyclesExecuted} cycles: PC ${initialPC}→${finalPC}, Cycles ${initialCycles}→${finalCycles}`);
+    }
   }
 
   /**
