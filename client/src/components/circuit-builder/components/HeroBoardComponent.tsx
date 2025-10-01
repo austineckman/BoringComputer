@@ -39,7 +39,23 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
     componentState.pin13LED ||
     componentState.pins?.['13'] ||
     componentState.pins?.['d13'] ||
+    componentState.pins?.[13] ||
     false;
+
+  // Debug logging for pin 13 state
+  React.useEffect(() => {
+    if (componentState.pins?.[13] !== undefined || componentState.pin13 !== undefined) {
+      console.log(`🔴 HeroBoard ${id} Pin 13 State Update:`, {
+        pin13: componentState.pin13,
+        onboardLED: componentState.onboardLED,
+        pin13LED: componentState.pin13LED,
+        'pins.13': componentState.pins?.['13'],
+        'pins[13]': componentState.pins?.[13],
+        'pins.d13': componentState.pins?.['d13'],
+        finalState: pin13IsHigh
+      });
+    }
+  }, [componentState, pin13IsHigh, id]);
   
   // Define pins based on Arduino layout
   const basePins: PinDefinition[] = [

@@ -296,19 +296,39 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog('🔌 Setting up pin callbacks...');
       console.log('[Simulator] Setting up pin change callbacks...');
 
-      // Set up pin change callbacks
-      for (let arduinoPin = 0; arduinoPin <= 19; arduinoPin++) {
-        const mapping = AVR8Core.mapArduinoPin(arduinoPin);
-        if (mapping) {
-          // The AVR8Core now handles pin change detection internally.
-          // We only need to register a callback to receive notifications.
-          // The callback signature expects `port`, `pin`, and a `callback` function.
-          // The `callback` function receives `isHigh` as an argument.
-          avrCoreRef.current.onPinChange(mapping.port, mapping.pin, (isHigh) => {
-            handlePinChange(arduinoPin, isHigh);
-          });
-        }
-      }
+      // Set up pin change callbacks for all AVR pins
+      // Map AVR port/pin combinations to Arduino pin numbers
+      const pinMappings = [
+        // Port D pins
+        { port: 'D', pin: 0, arduino: 0 },  // RXD
+        { port: 'D', pin: 1, arduino: 1 },  // TXD
+        { port: 'D', pin: 2, arduino: 2 },  // INT0
+        { port: 'D', pin: 3, arduino: 3 },  // INT1/PWM
+        { port: 'D', pin: 4, arduino: 4 },
+        { port: 'D', pin: 5, arduino: 5 },  // PWM
+        { port: 'D', pin: 6, arduino: 6 },  // PWM
+        { port: 'D', pin: 7, arduino: 7 },
+        // Port B pins
+        { port: 'B', pin: 0, arduino: 8 },
+        { port: 'B', pin: 1, arduino: 9 },  // PWM
+        { port: 'B', pin: 2, arduino: 10 }, // PWM/SS
+        { port: 'B', pin: 3, arduino: 11 }, // PWM/MOSI
+        { port: 'B', pin: 4, arduino: 12 }, // MISO
+        { port: 'B', pin: 5, arduino: 13 }, // SCK/LED
+        // Port C pins (analog)
+        { port: 'C', pin: 0, arduino: 14 }, // A0
+        { port: 'C', pin: 1, arduino: 15 }, // A1
+        { port: 'C', pin: 2, arduino: 16 }, // A2
+        { port: 'C', pin: 3, arduino: 17 }, // A3
+        { port: 'C', pin: 4, arduino: 18 }, // A4/SDA
+        { port: 'C', pin: 5, arduino: 19 }, // A5/SCL
+      ];
+
+      pinMappings.forEach(({ port, pin, arduino }) => {
+        avrCoreRef.current.onPinChange(port, pin, (isHigh) => {
+          handlePinChange(arduino, isHigh);
+        });
+      });
 
       addLog('✅ Pin callbacks registered');
       console.log('[Simulator] Pin callbacks set up successfully');
@@ -350,10 +370,10 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       // Run simulation in intervals with throttling to prevent lag
       executionIntervalRef.current = setInterval(() => {
         if (avrCoreRef.current && isRunningRef.current) {
-          // Execute fewer cycles per frame and less frequently to prevent lag
-          avrCoreRef.current.execute(800); // Reduced from 1600 to 800 cycles
+          // Execute very few cycles per frame to prevent lag but maintain responsiveness
+          avrCoreRef.current.execute(200); // Further reduced to 200 cycles
         }
-      }, 33); // Reduced from 60 FPS to ~30 FPS to prevent lag
+      }, 50); // Reduced to 20 FPS to prevent lag
 
       console.log('[Simulator] ✅ EXECUTION INTERVAL STARTED - AVR8js is running!');
 
