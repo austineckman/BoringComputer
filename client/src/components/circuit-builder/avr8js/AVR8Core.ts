@@ -66,6 +66,9 @@ export class AVR8Core implements IAVR8Core {
   private clockFrequency: number;
   private isInitialized: boolean = false;
   private isRunning: boolean = false; // Added to track if the CPU is running
+  private lastPinStates: boolean[] = []; // Store last states for checkPinChanges
+  private stepCount: number = 0; // Counter for steps
+  private isHalted: boolean = false; // Flag to indicate if CPU is halted
 
   constructor(clockFrequency: number = CLOCK_FREQUENCY) {
     this.clockFrequency = clockFrequency;
@@ -103,6 +106,8 @@ export class AVR8Core implements IAVR8Core {
         this.pinStates[pinKey] = false;
       }
     }
+    // Initialize lastPinStates array for all 20 Arduino pins
+    this.lastPinStates = new Array(20).fill(false);
   }
 
   /**
@@ -370,10 +375,10 @@ export class AVR8Core implements IAVR8Core {
               // Convert AVR pin to Arduino pin number for callbacks
               const arduinoPin = pin + 8; // PB0-PB5 = Arduino pins 8-13
               console.log(`[AVR8Core] 🔴 Arduino Pin ${arduinoPin} (PB${pin}) changed: ${wasHigh ? 'HIGH' : 'LOW'} → ${isHigh ? 'HIGH' : 'LOW'}`);
-              
+
               // Special handling for pin 13 (PB5)
               if (pin === 5) { // PB5 = Arduino Pin 13
-                console.log(`[AVR8Core] 🔴🔴🔴 PIN 13 DETECTED CHANGE: ${isHigh ? 'HIGH' : 'LOW'}`);
+                console.log(`[AVR8Core] 🔴🔴🔴 PIN 13 (PB5) DETECTED CHANGE: ${isHigh ? 'HIGH' : 'LOW'}`);
                 this.triggerArduinoPinCallback(13, isHigh);
               } else {
                 this.triggerArduinoPinCallback(arduinoPin, isHigh);
@@ -446,6 +451,7 @@ export class AVR8Core implements IAVR8Core {
       console.error('[AVR8Core] Execution error:', error);
       console.error('[AVR8Core] PC was at:', this.cpu.pc);
       console.error('[AVR8Core] Instruction:', this.cpu.progMem[this.cpu.pc]?.toString(16));
+      this.isHalted = true; // Halt CPU on error
       return;
     }
 
@@ -477,7 +483,7 @@ export class AVR8Core implements IAVR8Core {
           // Convert AVR pin to Arduino pin number for callbacks
           const arduinoPin = pin + 8; // PB0-PB5 = Arduino pins 8-13
           console.log(`[AVR8Core] 🔴 Arduino Pin ${arduinoPin} (PB${pin}) changed: ${wasHigh ? 'HIGH' : 'LOW'} → ${isHigh ? 'HIGH' : 'LOW'}`);
-          
+
           // Call both the internal handler and direct Arduino pin callback
           this.handlePinChange('B', pin, isHigh);
           this.triggerArduinoPinCallback(arduinoPin, isHigh);
@@ -496,7 +502,7 @@ export class AVR8Core implements IAVR8Core {
           // Convert AVR pin to Arduino pin number
           const arduinoPin = pin + 14; // PC0-PC5 = Arduino pins A0-A5 (14-19)
           console.log(`[AVR8Core] Arduino Pin A${pin} (${arduinoPin}) changed: ${wasHigh ? 'HIGH' : 'LOW'} → ${isHigh ? 'HIGH' : 'LOW'}`);
-          
+
           this.handlePinChange('C', pin, isHigh);
           this.triggerArduinoPinCallback(arduinoPin, isHigh);
         }
@@ -514,7 +520,7 @@ export class AVR8Core implements IAVR8Core {
           // PD0-PD7 = Arduino pins 0-7
           const arduinoPin = pin;
           console.log(`[AVR8Core] Arduino Pin ${arduinoPin} (PD${pin}) changed: ${wasHigh ? 'HIGH' : 'LOW'} → ${isHigh ? 'HIGH' : 'LOW'}`);
-          
+
           this.handlePinChange('D', pin, isHigh);
           this.triggerArduinoPinCallback(arduinoPin, isHigh);
         }
@@ -528,7 +534,7 @@ export class AVR8Core implements IAVR8Core {
   private triggerArduinoPinCallback(arduinoPin: number, isHigh: boolean): void {
     // Create a callback key for Arduino pin numbering
     const pinKey = `arduino-${arduinoPin}`;
-    
+
     if (this.pinStateCallbacks[pinKey]) {
       console.log(`[AVR8Core] Calling ${this.pinStateCallbacks[pinKey].length} Arduino pin callbacks for pin ${arduinoPin}`);
       for (const callback of this.pinStateCallbacks[pinKey]) {
@@ -592,6 +598,7 @@ export class AVR8Core implements IAVR8Core {
    */
   public stop(): void {
     this.isRunning = false; // Set running flag to false
+    this.isHalted = true; // Halt CPU when stopping emulation
     // Clear our pin state callbacks
     this.pinStateCallbacks = {};
     this.serialCallback = null;
@@ -627,5 +634,94 @@ export class AVR8Core implements IAVR8Core {
     };
 
     return pinMap[pin] || null;
+  }
+
+  /**
+   * Perform a single step of CPU execution and check for pin changes.
+   */
+  step(): void {
+    if (this.isHalted) return;
+
+    try {
+      this.cpu.tick();
+      this.stepCount++;
+
+      // Check for pin changes more frequently for better responsiveness
+      if (this.stepCount % 10 === 0) {
+        this.checkPinChanges();
+      }
+
+      // Check for serial output
+      this.checkSerialOutput();
+
+    } catch (error) {
+      console.error('[AVR8Core] Execution error:', error);
+      this.isHalted = true;
+      throw error;
+    }
+  }
+
+  /**
+   * Check for changes in pin states and trigger callbacks.
+   */
+  private checkPinChanges() {
+    for (let pin = 0; pin <= 19; pin++) {
+      const currentState = this.getPinState(pin);
+      const lastState = this.lastPinStates[pin];
+
+      if (currentState !== lastState) {
+        this.lastPinStates[pin] = currentState;
+
+        // Enhanced logging for pin 13 (onboard LED)
+        if (pin === 13) {
+          console.log(`[AVR8Core] Pin 13 (onboard LED) changed to ${currentState ? 'HIGH' : 'LOW'}`);
+        }
+
+        if (this.onPinChange) {
+          this.onPinChange(pin, currentState);
+        }
+      }
+    }
+  }
+
+  /**
+   * Get the current state of a specific Arduino pin.
+   */
+  private getPinState(pin: number): boolean {
+    // Map Arduino pins to AVR registers
+    if (pin >= 8 && pin <= 13) {
+      // Digital pins 8-13 are on PORTB (PB0-PB5)
+      const portBPin = pin - 8;
+      const portBValue = this.cpu.data[0x25]; // PORTB register at 0x25
+      const pinState = !!(portBValue & (1 << portBPin));
+
+      // Extra logging for pin 13 debugging
+      if (pin === 13) {
+        const ddrBValue = this.cpu.data[0x24]; // DDRB register
+        const pinBValue = this.cpu.data[0x23]; // PINB register
+        console.log(`[AVR8Core] Pin 13 state check: PORTB=0x${portBValue.toString(16)}, DDRB=0x${ddrBValue.toString(16)}, PINB=0x${pinBValue.toString(16)}, state=${pinState}`);
+      }
+
+      return pinState;
+    } else if (pin >= 0 && pin <= 7) {
+      // Digital pins 0-7 are on PORTD
+      const portDValue = this.cpu.data[0x2B]; // PORTD register
+      return !!(portDValue & (1 << pin));
+    } else if (pin >= 14 && pin <= 19) {
+      // Analog pins A0-A5 (pins 14-19) are on PORTC
+      const portCPin = pin - 14;
+      const portCValue = this.cpu.data[0x28]; // PORTC register
+      return !!(portCValue & (1 << portCPin));
+    }
+
+    return false;
+  }
+
+  /**
+   * Check for serial data and trigger the callback.
+   */
+  private checkSerialOutput(): void {
+    // This is a placeholder. Actual serial handling would be more complex.
+    // For now, we assume serial data is not a primary concern for pin changes.
   }
 }
