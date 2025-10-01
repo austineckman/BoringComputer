@@ -163,14 +163,21 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog('▶️ Starting AVR8 execution...');
       setIsRunning(true);
       
+      let executionCount = 0;
       executionIntervalRef.current = setInterval(() => {
         if (avrCoreRef.current) {
           // Execute 16000 cycles (1ms of real time)
           avrCoreRef.current.execute(16000);
+          executionCount++;
+          
+          // Log every 1000ms (1 second) to confirm execution
+          if (executionCount % 1000 === 0) {
+            console.log(`[AVR8] Executed ${executionCount}ms of simulation time`);
+          }
         }
       }, 1);
       
-      addLog('✅ Simulation running');
+      addLog('✅ Simulation running - AVR8 executing at 16MHz');
       
     } catch (error) {
       setIsCompiling(false);
@@ -191,6 +198,20 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     
     // Update components connected to this pin
     latestComponents.forEach(component => {
+      // Update HeroBoard pin states (including onboard LED on pin 13)
+      if (component.type === 'heroboard') {
+        updateComponentState(component.id, {
+          pins: {
+            ...((componentStates[component.id] || {}).pins || {}),
+            [pin]: isHigh
+          },
+          // Also set pin13 property for HeroBoard's onboard LED
+          ...(pin === 13 ? { pin13: isHigh } : {})
+        });
+        console.log(`[AVR8] HeroBoard ${component.id} pin ${pin} → ${isHigh ? 'HIGH' : 'LOW'}`);
+      }
+      
+      // Update LED components connected via wires
       if (component.type === 'led' || component.id.includes('led')) {
         const connectedWires = latestWires.filter(wire => 
           (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
