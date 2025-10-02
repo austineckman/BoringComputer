@@ -102,9 +102,7 @@ export class AVR8Core implements IAVR8Core {
    * Set up pin change listeners for all ports
    */
   private setupPinChangeListeners(): void {
-    // Monitor port B pins
     this.portB.addListener((pinValue) => {
-      console.log(`[AVR8Core] Port B changed: 0x${pinValue.toString(16).padStart(2, '0')}`);
       for (let pin = 0; pin < 8; pin++) {
         const pinMask = 1 << pin;
         const isHigh = (pinValue & pinMask) !== 0;
@@ -112,9 +110,7 @@ export class AVR8Core implements IAVR8Core {
       }
     });
     
-    // Monitor port C pins
     this.portC.addListener((pinValue) => {
-      console.log(`[AVR8Core] Port C changed: 0x${pinValue.toString(16).padStart(2, '0')}`);
       for (let pin = 0; pin < 8; pin++) {
         const pinMask = 1 << pin;
         const isHigh = (pinValue & pinMask) !== 0;
@@ -122,17 +118,13 @@ export class AVR8Core implements IAVR8Core {
       }
     });
     
-    // Monitor port D pins
     this.portD.addListener((pinValue) => {
-      console.log(`[AVR8Core] Port D changed: 0x${pinValue.toString(16).padStart(2, '0')}`);
       for (let pin = 0; pin < 8; pin++) {
         const pinMask = 1 << pin;
         const isHigh = (pinValue & pinMask) !== 0;
         this.handlePinChange('D', pin, isHigh);
       }
     });
-    
-    console.log('[AVR8Core] Port listeners installed');
   }
   
   /**
@@ -141,20 +133,14 @@ export class AVR8Core implements IAVR8Core {
   private handlePinChange(port: string, pin: number, isHigh: boolean): void {
     const pinKey = `${port}${pin}`;
     
-    // Only proceed if the state has actually changed
     if (this.pinStates[pinKey] !== isHigh) {
-      // Update our stored pin state
       this.pinStates[pinKey] = isHigh;
       
-      // Call any registered callbacks for this pin
       if (this.pinStateCallbacks[pinKey]) {
         for (const callback of this.pinStateCallbacks[pinKey]) {
           callback(isHigh);
         }
       }
-      
-      // Log pin change
-      console.log(`[AVR8Core] Pin ${port}${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
     }
   }
   
@@ -162,13 +148,10 @@ export class AVR8Core implements IAVR8Core {
    * Load compiled program bytes into the emulator
    */
   public loadProgram(program: Uint16Array): void {
-    // Reset the CPU and load the program
     this.cpu.reset();
-    // Copy program into CPU memory
     for (let i = 0; i < program.length; i++) {
       this.cpu.progMem[i] = program[i];
     }
-    console.log(`[AVR8Core] Program loaded (${program.length} words)`);
   }
   
   /**
