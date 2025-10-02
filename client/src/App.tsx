@@ -32,7 +32,7 @@ import LootBoxPreview from "@/pages/loot-box-preview";
 import NotFound from "@/pages/not-found";
 import MainLayout from "@/components/layout/MainLayout";
 import FullscreenUniversalEmulatorApp from "@/components/retro-ui/FullscreenUniversalEmulatorApp";
-import SimulatorDemo from "@/components/circuit-builder/demo/SimulatorDemo";
+// import SimulatorDemo from "@/components/circuit-builder/demo/SimulatorDemo";
 import SimpleBlinkDemo from "@/components/circuit-builder/demo/SimpleBlinkDemo";
 import RGBLEDDemo from "@/pages/RGBLEDDemo";
 import { useQuery } from "@tanstack/react-query";
@@ -133,10 +133,10 @@ function App() {
           component={() => <MissionPage />} 
         />
         
-        <ProtectedRoute 
+        {/* <ProtectedRoute 
           path="/simulator-demo" 
           component={() => <SimulatorDemo />} 
-        />
+        /> */}
         
         <ProtectedRoute 
           path="/blink-demo" 

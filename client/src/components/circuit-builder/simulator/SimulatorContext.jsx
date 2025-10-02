@@ -123,7 +123,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     setIsCompiling(true);
     
     try {
-      const response = await fetch('https://compiler.craftingtable.com/compile', {
+      const response = await fetch('/api/arduino-compiler/compile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: currentCode })
@@ -133,8 +133,12 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       setIsCompiling(false);
       
       if (!result.success) {
-        addLog('❌ Compilation failed:');
-        addLog(result.error || 'Unknown compilation error');
+        addLog('❌ Compilation failed');
+        if (result.errors) {
+          result.errors.forEach(err => addLog(`   ${err}`));
+        } else if (result.error) {
+          addLog(`   ${result.error}`);
+        }
         return;
       }
       
