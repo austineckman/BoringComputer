@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
-import { ArduinoCompilationService } from '../compiler/ArduinoCompilationService';
-import { AVR8Core } from '../avr8js/AVR8Core';
+import { AVRRunner } from '../avr8js/AVRRunner';
+import { loadHex } from '../avr8js/loadHex';
 
 // Create a context for the simulator
 const SimulatorContext = createContext({
@@ -38,7 +38,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   const [componentStates, setComponentStates] = useState({});
   
   // AVR8 emulator state
-  const avrCoreRef = useRef(null);
+  const avrRunnerRef = useRef(null);
   const executionIntervalRef = useRef(null);
   
   // Function to add a log entry with timestamp
@@ -115,9 +115,6 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     setLogs([]);
     setSerialLogs([]);
     
-    if (avrCoreRef.current) {
-      avrCoreRef.current.stop();
-    }
     if (executionIntervalRef.current) {
       clearInterval(executionIntervalRef.current);
     }
@@ -126,37 +123,57 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     setIsCompiling(true);
     
     try {
-      const result = await ArduinoCompilationService.compileAndParse(currentCode);
+      const response = await fetch('https://compiler.craftingtable.com/compile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: currentCode })
+      });
       
+      const result = await response.json();
       setIsCompiling(false);
       
       if (!result.success) {
         addLog('❌ Compilation failed:');
-        result.errors?.forEach(error => addLog(`   ${error}`));
+        addLog(result.error || 'Unknown compilation error');
         return;
       }
       
       addLog('✅ Compilation successful');
       addLog('🚀 Loading program into AVR8 emulator...');
       
-      avrCoreRef.current = new AVR8Core();
-      avrCoreRef.current.loadProgram(result.program);
+      const program = loadHex(result.binary);
+      avrRunnerRef.current = new AVRRunner(program);
       
-      for (let arduinoPin = 0; arduinoPin <= 19; arduinoPin++) {
-        const mapping = AVR8Core.mapArduinoPin(arduinoPin);
-        if (mapping) {
-          avrCoreRef.current.onPinChange(mapping.port, mapping.pin, (isHigh) => {
+      avrRunnerRef.current.portB.addListener((value) => {
+        for (let bit = 0; bit < 8; bit++) {
+          const isHigh = ((value >> bit) & 1) === 1;
+          const arduinoPin = [8, 9, 10, 11, 12, 13][bit];
+          if (arduinoPin !== undefined) {
             handlePinChange(arduinoPin, isHigh);
-          });
+          }
         }
-      }
+      });
+      
+      avrRunnerRef.current.portC.addListener((value) => {
+        for (let bit = 0; bit < 6; bit++) {
+          const isHigh = ((value >> bit) & 1) === 1;
+          handlePinChange(`A${bit}`, isHigh);
+        }
+      });
+      
+      avrRunnerRef.current.portD.addListener((value) => {
+        for (let bit = 0; bit < 8; bit++) {
+          const isHigh = ((value >> bit) & 1) === 1;
+          handlePinChange(bit, isHigh);
+        }
+      });
       
       addLog('▶️ Starting AVR8 execution...');
       setIsRunning(true);
       
       executionIntervalRef.current = setInterval(() => {
-        if (avrCoreRef.current) {
-          avrCoreRef.current.execute(16000);
+        if (avrRunnerRef.current) {
+          avrRunnerRef.current.execute(16000);
         }
       }, 1);
       
@@ -202,20 +219,13 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     addLog('🛑 Stopping AVR8 simulation...');
     setIsRunning(false);
     
-    // Stop AVR8 core if running
-    if (avrCoreRef.current) {
-      avrCoreRef.current.stop();
-      avrCoreRef.current = null;
-      addLog('⏹️ AVR8 core stopped');
-    }
+    avrRunnerRef.current = null;
     
-    // Stop execution loop
     if (executionIntervalRef.current) {
       clearInterval(executionIntervalRef.current);
       executionIntervalRef.current = null;
     }
     
-    // Reset all component states when stopping
     components.forEach(component => {
       if (component.type === 'led' || component.id.includes('led')) {
         updateComponentState(component.id, { 
@@ -233,19 +243,15 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       }
     });
     
-    addLog('✅ Simulation stopped - all components reset');
+    addLog('✅ Simulation stopped');
   };
   
   // Store the latest components and wires data globally for execution access
   useEffect(() => {
-    console.log(`[SimulatorContext] Components updated:`, components.length, components.map(c => `${c.id}(${c.type})`));
-    
-    // Store the latest arrays in global storage so they're always accessible during execution
     if (!window.latestSimulatorData) {
       window.latestSimulatorData = {};
     }
     window.latestSimulatorData.components = components;
-    console.log(`[SimulatorContext] Stored ${components.length} components globally`);
     
     // Add each component to the component states if it's not already there
     // This ensures components are registered in the simulator context immediately
@@ -262,7 +268,6 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
             pins: {}
           };
           hasChanges = true;
-          console.log(`[SimulatorContext] Registered component: ${component.id} (${component.type})`);
         }
       });
       
@@ -274,14 +279,10 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   }, [components, componentStates]);
   
   useEffect(() => {
-    console.log(`[SimulatorContext] Wires updated:`, wires.length, wires.map(w => `${w.sourceComponent}->${w.targetComponent} (${w.sourceName}->${w.targetName})`));
-    
-    // Store the latest wires in global storage
     if (!window.latestSimulatorData) {
       window.latestSimulatorData = {};
     }
     window.latestSimulatorData.wires = wires;
-    console.log(`[SimulatorContext] Stored ${wires.length} wires globally`);
   }, [wires]);
   
   // Make the simulator context available globally for non-React components
@@ -290,13 +291,8 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       componentStates,
       wires,
       updateComponentState,
-      updateComponentPins,
-      // Add a debug function to list all components
-      listComponents: () => console.log('All simulator components:', Object.keys(componentStates))
+      updateComponentPins
     };
-    
-    // Log all components for debugging
-    console.log('Current component states:', Object.keys(componentStates));
     
     return () => {
       delete window.simulatorContext;
