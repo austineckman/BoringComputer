@@ -40,6 +40,14 @@ export class AVRRunner {
     // based on memory hooks, so we just need to tick the CPU
     for (let i = 0; i < cycles; i++) {
       this.cpu.tick();
+      
+      // Diagnostic: Log every 1000 cycles
+      if (i % 1000 === 0) {
+        const pc = this.cpu.pc;
+        const portb = this.cpu.data[0x25]; // PORTB address
+        const ddrb = this.cpu.data[0x24];  // DDRB address
+        console.log(`[AVR8 Diagnostic] Cycle ${i}: PC=${pc.toString(16).padStart(4, '0')} DDRB=0x${ddrb?.toString(16).padStart(2, '0') || '??'} PORTB=0x${portb?.toString(16).padStart(2, '0') || '??'}`);
+      }
     }
   }
 }
