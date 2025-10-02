@@ -36,10 +36,15 @@ export class AVRRunner {
   }
   
   execute(cycles: number) {
-    // The CPU.tick() method automatically ticks connected peripherals
-    // based on memory hooks, so we just need to tick the CPU
+    // Execute CPU cycles and tick all peripherals
     for (let i = 0; i < cycles; i++) {
+      // Tick the CPU
       this.cpu.tick();
+      
+      // Tick all timers - critical for delay() to work
+      this.timer0.tick();
+      this.timer1.tick();
+      this.timer2.tick();
       
       // Diagnostic: Log every 1000 cycles
       if (i % 1000 === 0) {
