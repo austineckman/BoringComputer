@@ -24,17 +24,39 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
   handleDeleteComponent
 }) => {
   const { id, attrs } = componentData;
-  const { rotate = 0, top, left, ledPower = true } = attrs;
-  
-  // Access simulator context to get the pin states
-  const { componentStates } = useSimulator();
-  
+  const { rotate = 0, left, ledPower = true } = attrs;
+  const { isRunning, componentStates } = useSimulator();
+
+  // LED state from AVR8 emulator
+  const [ledState, setLedState] = React.useState(false);
+
+  // Listen for pin 13 changes from the AVR8 emulator
+  React.useEffect(() => {
+    if (!isRunning) {
+      setLedState(false);
+      return;
+    }
+
+    // Check component states for pin 13
+    const boardState = componentStates[id];
+
+    if (boardState) {
+      // Check for pin 13 state (Arduino pin 13 = Port B, bit 5)
+      const pin13High = boardState.pins?.[13] || boardState.pin13 || false;
+
+      if (pin13High !== ledState) {
+        console.log(`🔴 HeroBoard ${id} LED: Pin 13 is ${pin13High ? 'HIGH' : 'LOW'}`);
+        setLedState(pin13High);
+      }
+    }
+  }, [isRunning, componentStates, id, ledState]);
+
   // Get pin states from simulator context
   const pinStates = componentStates[id]?.pins || {};
-  
+
   // Check if pin 13 is HIGH
   const pin13IsHigh = pinStates['13']?.isHigh || pinStates['d13']?.isHigh || false;
-  
+
   // Define pins based on Arduino layout
   const basePins: PinDefinition[] = [
     // Power pins
@@ -45,7 +67,7 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
     { id: '3v3', x: -15, y: -90, label: '3.3V', isPower: true },
     { id: 'rst', x: -5, y: -90, label: 'RST' },
     { id: 'aref', x: 5, y: -90, label: 'AREF' },
-    
+
     // Digital pins (left side)
     { id: 'd0', x: -55, y: 90, label: 'D0', isDigital: true },
     { id: 'd1', x: -45, y: 90, label: 'D1', isDigital: true },
@@ -55,7 +77,7 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
     { id: 'd5', x: -5, y: 90, label: 'D5', isDigital: true },
     { id: 'd6', x: 5, y: 90, label: 'D6', isDigital: true },
     { id: 'd7', x: 15, y: 90, label: 'D7', isDigital: true },
-    
+
     // Digital pins (right side)
     { id: 'd8', x: 25, y: 90, label: 'D8', isDigital: true },
     { id: 'd9', x: 35, y: 90, label: 'D9', isDigital: true },
@@ -63,7 +85,7 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
     { id: 'd11', x: 55, y: 90, label: 'D11', isDigital: true },
     { id: 'd12', x: 65, y: 90, label: 'D12', isDigital: true },
     { id: 'd13', x: 75, y: 90, label: 'D13', isDigital: true },
-    
+
     // Analog pins
     { id: 'a0', x: 15, y: -90, label: 'A0', isAnalog: true },
     { id: 'a1', x: 25, y: -90, label: 'A1', isAnalog: true },
@@ -73,7 +95,7 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
     { id: 'a5', x: 65, y: -90, label: 'A5', isAnalog: true },
     { id: 'a6', x: 75, y: -90, label: 'A6', isAnalog: true },
   ];
-  
+
   // Rotate pins based on board rotation
   const getPinCoordinates = (pin: PinDefinition) => {
     switch (rotate) {
@@ -89,9 +111,9 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
         return { x: pin.x, y: pin.y };
     }
   };
-  
+
   console.log(`HeroBoardComponent ${id} rendering. Pin 13 state:`, pin13IsHigh ? 'HIGH' : 'LOW');
-  
+
   return (
     <BaseComponent
       id={id}
@@ -111,7 +133,7 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
           alt="HERO Board Component"
           className="w-full h-full object-contain"
         />
-        
+
         {/* Power LED overlay */}
         <div 
           className="absolute"
@@ -125,7 +147,7 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
             boxShadow: ledPower ? '0 0 4px #5fea00' : 'none',
           }}
         />
-        
+
         {/* Pin 13 LED overlay - responds to actual signals from simulation */}
         <div 
           className="absolute"
@@ -134,15 +156,15 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
             top: '75px',
             width: '8px',
             height: '8px',
-            backgroundColor: pin13IsHigh ? '#ff3300' : '#330000',
+            backgroundColor: ledState ? '#ff3300' : '#330000',
             borderRadius: '50%',
-            boxShadow: pin13IsHigh ? '0 0 10px 2px rgba(255, 50, 0, 0.8)' : 'none',
+            boxShadow: ledState ? '0 0 10px 2px rgba(255, 50, 0, 0.8)' : 'none',
             transition: 'background-color 0.05s, box-shadow 0.05s',
             border: '1px solid #661100',
             zIndex: 999,
           }}
         />
-        
+
         {/* Debug info overlay to show pin 13 state */}
         <div 
           className="absolute text-xs font-mono"
@@ -151,16 +173,16 @@ const HeroBoardComponent: React.FC<ComponentProps> = ({
             bottom: '5px',
             fontSize: '8px',
             backgroundColor: 'rgba(0,0,0,0.6)',
-            color: pin13IsHigh ? '#ff3300' : '#aaaaaa',
+            color: ledState ? '#ff3300' : '#aaaaaa',
             padding: '2px 4px',
             borderRadius: '2px',
             pointerEvents: 'none',
           }}
         >
-          PIN 13: {pin13IsHigh ? 'HIGH' : 'LOW'}
+          PIN 13: {ledState ? 'HIGH' : 'LOW'}
         </div>
       </div>
-      
+
       {/* Pins */}
       {basePins.map(pin => {
         const coords = getPinCoordinates(pin);

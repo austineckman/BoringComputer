@@ -200,14 +200,19 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     latestComponents.forEach(component => {
       // Update HeroBoard pin states (including onboard LED on pin 13)
       if (component.type === 'heroboard') {
-        updateComponentState(component.id, {
-          pins: {
-            ...((componentStates[component.id] || {}).pins || {}),
-            [pin]: isHigh
-          },
-          // Also set pin13 property for HeroBoard's onboard LED
-          ...(pin === 13 ? { pin13: isHigh } : {})
-        });
+        // Use setState callback to ensure we have the latest state
+        setComponentStates(prevStates => ({
+          ...prevStates,
+          [component.id]: {
+            ...(prevStates[component.id] || {}),
+            pins: {
+              ...((prevStates[component.id] || {}).pins || {}),
+              [pin]: isHigh
+            },
+            // Also set pin13 property for HeroBoard's onboard LED
+            ...(pin === 13 ? { pin13: isHigh } : {})
+          }
+        }));
         console.log(`[AVR8] HeroBoard ${component.id} pin ${pin} → ${isHigh ? 'HIGH' : 'LOW'}`);
       }
       
