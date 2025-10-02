@@ -148,16 +148,23 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       const program = loadHex(result.binary);
       avrRunnerRef.current = new AVRRunner(program);
       
+      // Port B: bits 0-5 map to Arduino pins 8-13
       avrRunnerRef.current.portB.addListener((value) => {
-        for (let bit = 0; bit < 8; bit++) {
-          const isHigh = ((value >> bit) & 1) === 1;
-          const arduinoPin = [8, 9, 10, 11, 12, 13][bit];
-          if (arduinoPin !== undefined) {
-            handlePinChange(arduinoPin, isHigh);
-          }
-        }
+        // Pin 8 = PB0 (bit 0)
+        handlePinChange(8, (value & (1 << 0)) !== 0);
+        // Pin 9 = PB1 (bit 1)
+        handlePinChange(9, (value & (1 << 1)) !== 0);
+        // Pin 10 = PB2 (bit 2)
+        handlePinChange(10, (value & (1 << 2)) !== 0);
+        // Pin 11 = PB3 (bit 3)
+        handlePinChange(11, (value & (1 << 3)) !== 0);
+        // Pin 12 = PB4 (bit 4)
+        handlePinChange(12, (value & (1 << 4)) !== 0);
+        // Pin 13 = PB5 (bit 5) - ONBOARD LED
+        handlePinChange(13, (value & (1 << 5)) !== 0);
       });
       
+      // Port C: bits 0-5 map to analog pins A0-A5
       avrRunnerRef.current.portC.addListener((value) => {
         for (let bit = 0; bit < 6; bit++) {
           const isHigh = ((value >> bit) & 1) === 1;
@@ -165,6 +172,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         }
       });
       
+      // Port D: bits 0-7 map to digital pins 0-7
       avrRunnerRef.current.portD.addListener((value) => {
         for (let bit = 0; bit < 8; bit++) {
           const isHigh = ((value >> bit) & 1) === 1;
