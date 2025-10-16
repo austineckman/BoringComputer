@@ -1,8 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
-import { AVRRunner } from '../avr8js/AVRRunner';
-import { loadHex } from '../avr8js/loadHex';
+import { ArduinoCompilationService } from '../compiler/ArduinoCompilationService';
+import { AVR8Core } from '../avr8js/AVR8Core';
 
-// Create a context for the simulator
 const SimulatorContext = createContext({
   code: '',
   logs: [],
@@ -22,12 +21,9 @@ const SimulatorContext = createContext({
   setWires: () => {}
 });
 
-// Custom hook to access simulator context
 export const useSimulator = () => useContext(SimulatorContext);
 
-// Simulator Provider component
 export const SimulatorProvider = ({ children, initialCode = '' }) => {
-  // State variables
   const [code, setCode] = useState(initialCode);
   const [logs, setLogs] = useState([]);
   const [serialLogs, setSerialLogs] = useState([]);
@@ -37,24 +33,20 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   const [wires, setWires] = useState([]);
   const [componentStates, setComponentStates] = useState({});
   
-  // AVR8 emulator state
-  const avrRunnerRef = useRef(null);
+  const avrCoreRef = useRef(null);
   const executionIntervalRef = useRef(null);
   
-  // Function to add a log entry with timestamp
   const addLog = (message) => {
     const timestamp = new Date().toLocaleTimeString();
     const formattedMessage = `[${timestamp}] ${message}`;
     
-    // Skip noisy system messages that aren't useful to the user
     if (message.includes('Refreshing component states') || 
         message.includes('updated:') ||
         message.includes('FALLBACK') ||
         message.includes('current_component_state')) {
-      return; // Skip these messages
+      return;
     }
     
-    // Clean up the message and add to logs
     const cleanMessage = formattedMessage
       .replace('[Arduino] ', '')
       .replace(/\[AVR8\] /g, '')
@@ -62,20 +54,18 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       .replace(/\[FALLBACK\] /g, '')
       .replace(/\[DIRECT\] /g, '');
     
-    setLogs(prevLogs => [...prevLogs.slice(-99), cleanMessage]); // Keep last 100 entries
+    setLogs(prevLogs => [...prevLogs.slice(-99), cleanMessage]);
   };
 
-  // Function to add a serial log entry (Arduino IDE style - clean output only)
   const addSerialLog = (message, isNewline = true) => {
     const serialEntry = {
       message: message,
       newline: isNewline
     };
     
-    setSerialLogs(prevLogs => [...prevLogs.slice(-99), serialEntry]); // Keep last 100 entries
+    setSerialLogs(prevLogs => [...prevLogs.slice(-99), serialEntry]);
   };
   
-  // Function to update the state of a component
   const updateComponentState = (componentId, newState) => {
     setComponentStates(prevStates => ({
       ...prevStates,
@@ -86,7 +76,6 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     }));
   };
   
-  // Function to update pin states for a component
   const updateComponentPins = (componentId, pinStates) => {
     const currentState = componentStates[componentId] || {};
     const currentPins = currentState.pins || {};
@@ -99,9 +88,9 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     });
   };
   
-  // Function to start the simulation using real compilation and AVR8js
   const startSimulation = async (codeToExecute) => {
     const currentCode = codeToExecute || code;
+    console.log('[Simulator] startSimulation called with code length:', currentCode?.length);
     
     if (!currentCode || currentCode.trim() === '') {
       addLog('❌ Error: No Arduino code to execute');
@@ -115,6 +104,9 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     setLogs([]);
     setSerialLogs([]);
     
+    if (avrCoreRef.current) {
+      avrCoreRef.current.stop();
+    }
     if (executionIntervalRef.current) {
       clearInterval(executionIntervalRef.current);
     }
@@ -123,84 +115,37 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     setIsCompiling(true);
     
     try {
-      const response = await fetch('/api/arduino-compiler/compile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: currentCode })
-      });
+      const result = await ArduinoCompilationService.compileAndParse(currentCode);
       
-      const result = await response.json();
       setIsCompiling(false);
       
       if (!result.success) {
-        addLog('❌ Compilation failed');
-        if (result.errors) {
-          result.errors.forEach(err => addLog(`   ${err}`));
-        } else if (result.error) {
-          addLog(`   ${result.error}`);
-        }
+        addLog('❌ Compilation failed:');
+        result.errors?.forEach(error => addLog(`   ${error}`));
         return;
       }
       
       addLog('✅ Compilation successful');
       addLog('🚀 Loading program into AVR8 emulator...');
       
-      if (!result.binary || result.binary.length === 0) {
-        addLog('❌ Error: Compiler returned empty binary');
-        return;
-      }
+      avrCoreRef.current = new AVR8Core();
+      avrCoreRef.current.loadProgram(result.program);
       
-      console.log('[Simulator] HEX length:', result.binary.length);
-      console.log('[Simulator] HEX preview:', result.binary.substring(0, 100));
-      
-      const program = loadHex(result.binary);
-      
-      if (!program || program.length === 0) {
-        addLog('❌ Error: Failed to load HEX into program memory');
-        return;
-      }
-      
-      console.log('[Simulator] Program loaded, size:', program.length, 'words');
-      avrRunnerRef.current = new AVRRunner(program);
-      
-      // Port B: bits 0-5 map to Arduino pins 8-13
-      avrRunnerRef.current.portB.addListener((value) => {
-        // Pin 8 = PB0 (bit 0)
-        handlePinChange(8, (value & (1 << 0)) !== 0);
-        // Pin 9 = PB1 (bit 1)
-        handlePinChange(9, (value & (1 << 1)) !== 0);
-        // Pin 10 = PB2 (bit 2)
-        handlePinChange(10, (value & (1 << 2)) !== 0);
-        // Pin 11 = PB3 (bit 3)
-        handlePinChange(11, (value & (1 << 3)) !== 0);
-        // Pin 12 = PB4 (bit 4)
-        handlePinChange(12, (value & (1 << 4)) !== 0);
-        // Pin 13 = PB5 (bit 5) - ONBOARD LED
-        handlePinChange(13, (value & (1 << 5)) !== 0);
-      });
-      
-      // Port C: bits 0-5 map to analog pins A0-A5
-      avrRunnerRef.current.portC.addListener((value) => {
-        for (let bit = 0; bit < 6; bit++) {
-          const isHigh = ((value >> bit) & 1) === 1;
-          handlePinChange(`A${bit}`, isHigh);
+      for (let arduinoPin = 0; arduinoPin <= 19; arduinoPin++) {
+        const mapping = AVR8Core.mapArduinoPin(arduinoPin);
+        if (mapping) {
+          avrCoreRef.current.onPinChange(mapping.port, mapping.pin, (isHigh) => {
+            handlePinChange(arduinoPin, isHigh);
+          });
         }
-      });
-      
-      // Port D: bits 0-7 map to digital pins 0-7
-      avrRunnerRef.current.portD.addListener((value) => {
-        for (let bit = 0; bit < 8; bit++) {
-          const isHigh = ((value >> bit) & 1) === 1;
-          handlePinChange(bit, isHigh);
-        }
-      });
+      }
       
       addLog('▶️ Starting AVR8 execution...');
       setIsRunning(true);
       
       executionIntervalRef.current = setInterval(() => {
-        if (avrRunnerRef.current) {
-          avrRunnerRef.current.execute(16000);
+        if (avrCoreRef.current) {
+          avrCoreRef.current.execute(16000);
         }
       }, 1);
       
@@ -209,13 +154,17 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     } catch (error) {
       setIsCompiling(false);
       addLog(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('[Simulator] Error:', error);
     }
   };
   
-  // Handle pin state changes from AVR8 core
   const handlePinChange = (pin, isHigh) => {
+    console.log(`[AVR8] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+    
     const latestComponents = window.latestSimulatorData?.components || [];
     const latestWires = window.latestSimulatorData?.wires || [];
+    
+    console.log(`[AVR8] Checking ${latestComponents.length} components and ${latestWires.length} wires`);
     
     latestComponents.forEach(component => {
       if (component.type === 'heroboard') {
@@ -231,22 +180,28 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           (wire.sourceName === pin.toString() || wire.targetName === pin.toString())
         );
         
+        console.log(`[AVR8] Component ${component.id} has ${connectedWires.length} wires connected to pin ${pin}`);
+        
         if (connectedWires.length > 0) {
           updateComponentState(component.id, { 
             isOn: isHigh,
             brightness: isHigh ? 1.0 : 0.0
           });
+          addLog(`💡 Pin ${pin} → ${component.id} ${isHigh ? 'ON' : 'OFF'}`);
         }
       }
     });
   };
   
-  // Function to stop the simulation
   const stopSimulation = () => {
     addLog('🛑 Stopping AVR8 simulation...');
     setIsRunning(false);
     
-    avrRunnerRef.current = null;
+    if (avrCoreRef.current) {
+      avrCoreRef.current.stop();
+      avrCoreRef.current = null;
+      addLog('⏹️ AVR8 core stopped');
+    }
     
     if (executionIntervalRef.current) {
       clearInterval(executionIntervalRef.current);
@@ -270,35 +225,34 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       }
     });
     
-    addLog('✅ Simulation stopped');
+    addLog('✅ Simulation stopped - all components reset');
   };
   
-  // Store the latest components and wires data globally for execution access
   useEffect(() => {
+    console.log(`[SimulatorContext] Components updated:`, components.length, components.map(c => `${c.id}(${c.type})`));
+    
     if (!window.latestSimulatorData) {
       window.latestSimulatorData = {};
     }
     window.latestSimulatorData.components = components;
+    console.log(`[SimulatorContext] Stored ${components.length} components globally`);
     
-    // Add each component to the component states if it's not already there
-    // This ensures components are registered in the simulator context immediately
     if (components.length > 0) {
       const newStates = { ...componentStates };
       let hasChanges = false;
       
       components.forEach(component => {
         if (!componentStates[component.id]) {
-          // Initialize component state with empty values
           newStates[component.id] = {
             id: component.id,
             type: component.type,
             pins: {}
           };
           hasChanges = true;
+          console.log(`[SimulatorContext] Registered component: ${component.id} (${component.type})`);
         }
       });
       
-      // Only update state if we have new components
       if (hasChanges) {
         setComponentStates(newStates);
       }
@@ -306,27 +260,31 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   }, [components, componentStates]);
   
   useEffect(() => {
+    console.log(`[SimulatorContext] Wires updated:`, wires.length, wires.map(w => `${w.sourceComponent}->${w.targetComponent} (${w.sourceName}->${w.targetName})`));
+    
     if (!window.latestSimulatorData) {
       window.latestSimulatorData = {};
     }
     window.latestSimulatorData.wires = wires;
+    console.log(`[SimulatorContext] Stored ${wires.length} wires globally`);
   }, [wires]);
   
-  // Make the simulator context available globally for non-React components
   useEffect(() => {
     window.simulatorContext = {
       componentStates,
       wires,
       updateComponentState,
-      updateComponentPins
+      updateComponentPins,
+      listComponents: () => console.log('All simulator components:', Object.keys(componentStates))
     };
+    
+    console.log('Current component states:', Object.keys(componentStates));
     
     return () => {
       delete window.simulatorContext;
     };
   }, [componentStates, wires]);
   
-  // Create an object with all the context values
   const contextValue = {
     code,
     logs,
