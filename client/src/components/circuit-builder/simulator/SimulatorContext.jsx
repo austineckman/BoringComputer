@@ -116,6 +116,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     
     try {
       const result = await ArduinoCompilationService.compileAndParse(currentCode);
+      console.log('[Simulator] Compilation result:', result);
       
       setIsCompiling(false);
       
@@ -128,8 +129,25 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog('✅ Compilation successful');
       addLog('🚀 Loading program into AVR8 emulator...');
       
-      avrCoreRef.current = new AVR8Core();
-      avrCoreRef.current.loadProgram(result.program);
+      console.log('[Simulator] Creating AVR8Core instance...');
+      console.log('[Simulator] AVR8Core class:', AVR8Core);
+      try {
+        avrCoreRef.current = new AVR8Core();
+        console.log('[Simulator] AVR8Core created successfully');
+      } catch (err) {
+        console.error('[Simulator] Failed to create AVR8Core:', err);
+        addLog(`❌ Failed to create emulator: ${err.message}`);
+        return;
+      }
+      
+      try {
+        avrCoreRef.current.loadProgram(result.program);
+        console.log('[Simulator] Program loaded into AVR8Core, size:', result.program?.length);
+      } catch (err) {
+        console.error('[Simulator] Failed to load program:', err);
+        addLog(`❌ Failed to load program: ${err.message}`);
+        return;
+      }
       
       for (let arduinoPin = 0; arduinoPin <= 19; arduinoPin++) {
         const mapping = AVR8Core.mapArduinoPin(arduinoPin);
