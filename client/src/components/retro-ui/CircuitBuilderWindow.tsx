@@ -898,8 +898,8 @@ void loop() {
       
       // Auto-place components on the canvas
       console.log('Auto-placing components:', componentExample.components);
-      setSimulatorComponents(componentExample.components);
-      setSimulatorWires(componentExample.wires || []);
+      setComponents(componentExample.components);
+      setWires(componentExample.wires || []);
       
       addSimulationLog(`Loaded ${componentExample.name} with components`);
       showNotification(`Loaded: ${componentExample.name} - Components auto-placed!`, 'success');
@@ -917,8 +917,8 @@ void loop() {
       
       // Load circuit data if available
       if (dbExample.circuitData) {
-        setSimulatorComponents(dbExample.circuitData.components || []);
-        setSimulatorWires(dbExample.circuitData.wires || []);
+        setComponents(dbExample.circuitData.components || []);
+        setWires(dbExample.circuitData.wires || []);
         if (dbExample.circuitData.zoom) setZoom(dbExample.circuitData.zoom);
         if (dbExample.circuitData.pan) setPan(dbExample.circuitData.pan);
       }
