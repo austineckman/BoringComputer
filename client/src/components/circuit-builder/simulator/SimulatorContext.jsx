@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect, useRef, useCallb
 import { ArduinoCompilationService } from '../compiler/ArduinoCompilationService';
 import { AVR8Core } from '../avr8js/AVR8Core';
 import { OLEDDecoder } from '../avr8js/OLEDDecoder';
+import { TM1637Decoder } from './TM1637Decoder';
 
 const SimulatorContext = createContext({
   code: '',
@@ -39,6 +40,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   const componentsRef = useRef([]);
   const wiresRef = useRef([]);
   const oledDecodersRef = useRef({});
+  const tm1637DecodersRef = useRef({});
 
   const addLog = (message) => {
     const timestamp = new Date().toLocaleTimeString();
@@ -182,6 +184,19 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           console.log(`[Simulator] Created OLED decoder for ${oled.id}`);
         });
         
+        // Initialize TM1637 decoders for all 7-segment displays
+        const segmentedDisplayComponents = latestComponents.filter(c => c.type === 'segmented-display');
+        
+        segmentedDisplayComponents.forEach(display => {
+          // Create decoder for each 7-segment display
+          tm1637DecodersRef.current[display.id] = new TM1637Decoder(
+            display.id,
+            updateComponentState,
+            addLog
+          );
+          console.log(`[Simulator] Created TM1637 decoder for ${display.id}`);
+        });
+        
         // Set up I2C START callback
         avrCoreRef.current.onI2CStart((address, write) => {
           console.log(`[Simulator] I2C START - Address: 0x${address.toString(16)}, ${write ? 'Write' : 'Read'}`);
@@ -223,6 +238,50 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       } catch (err) {
         console.error('[Simulator] Failed to set up I2C listeners:', err);
         addLog(`❌ Failed to set up I2C listeners: ${err.message}`);
+      }
+      
+      // Set up Serial output callback for TM1637 decoders
+      console.log('[Simulator] Setting up serial output listener for TM1637...');
+      try {
+        let serialBuffer = '';
+        
+        avrCoreRef.current.onSerialData((byte) => {
+          const char = String.fromCharCode(byte);
+          
+          // Add to serial log display
+          if (byte === 10) { // newline
+            addSerialLog(serialBuffer, true);
+            
+            // Process complete line for TM1637 decoders
+            Object.values(tm1637DecodersRef.current).forEach(decoder => {
+              decoder.processSerialOutput(serialBuffer);
+            });
+            
+            serialBuffer = '';
+          } else if (byte === 13) { // carriage return
+            // Skip carriage returns
+          } else {
+            serialBuffer += char;
+            // Also add non-newline chars to serial log
+            if (serialBuffer.length > 100) {
+              // Flush buffer if it gets too long
+              addSerialLog(serialBuffer, false);
+              
+              // Process for TM1637 decoders
+              Object.values(tm1637DecodersRef.current).forEach(decoder => {
+                decoder.processSerialOutput(serialBuffer);
+              });
+              
+              serialBuffer = '';
+            }
+          }
+        });
+        
+        console.log('[Simulator] Serial output listener set up successfully');
+        addLog('📟 Serial output enabled for 7-segment displays');
+      } catch (err) {
+        console.error('[Simulator] Failed to set up serial listener:', err);
+        addLog(`❌ Failed to set up serial listener: ${err.message}`);
       }
 
       addLog('▶️ Starting AVR8 execution...');
