@@ -32,28 +32,28 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   const [components, setComponents] = useState([]);
   const [wires, setWires] = useState([]);
   const [componentStates, setComponentStates] = useState({});
-  
+
   const avrCoreRef = useRef(null);
   const executionIntervalRef = useRef(null);
-  
+
   const addLog = (message) => {
     const timestamp = new Date().toLocaleTimeString();
     const formattedMessage = `[${timestamp}] ${message}`;
-    
+
     if (message.includes('Refreshing component states') || 
         message.includes('updated:') ||
         message.includes('FALLBACK') ||
         message.includes('current_component_state')) {
       return;
     }
-    
+
     const cleanMessage = formattedMessage
       .replace('[Arduino] ', '')
       .replace(/\[AVR8\] /g, '')
       .replace(/\[Simulator\] /g, '')
       .replace(/\[FALLBACK\] /g, '')
       .replace(/\[DIRECT\] /g, '');
-    
+
     setLogs(prevLogs => [...prevLogs.slice(-99), cleanMessage]);
   };
 
@@ -62,10 +62,10 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       message: message,
       newline: isNewline
     };
-    
+
     setSerialLogs(prevLogs => [...prevLogs.slice(-99), serialEntry]);
   };
-  
+
   const updateComponentState = (componentId, newState) => {
     setComponentStates(prevStates => ({
       ...prevStates,
@@ -75,11 +75,11 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       }
     }));
   };
-  
+
   const updateComponentPins = (componentId, pinStates) => {
     const currentState = componentStates[componentId] || {};
     const currentPins = currentState.pins || {};
-    
+
     updateComponentState(componentId, {
       pins: {
         ...currentPins,
@@ -87,48 +87,48 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       }
     });
   };
-  
+
   const startSimulation = async (codeToExecute) => {
     const currentCode = codeToExecute || code;
     console.log('[Simulator] startSimulation called with code length:', currentCode?.length);
-    
+
     if (!currentCode || currentCode.trim() === '') {
       addLog('❌ Error: No Arduino code to execute');
       return;
     }
-    
+
     if (codeToExecute && codeToExecute !== code) {
       setCode(codeToExecute);
     }
-    
+
     setLogs([]);
     setSerialLogs([]);
-    
+
     if (avrCoreRef.current) {
       avrCoreRef.current.stop();
     }
     if (executionIntervalRef.current) {
       clearInterval(executionIntervalRef.current);
     }
-    
+
     addLog('🔧 Compiling Arduino code on server...');
     setIsCompiling(true);
-    
+
     try {
       const result = await ArduinoCompilationService.compileAndParse(currentCode);
       console.log('[Simulator] Compilation result:', result);
-      
+
       setIsCompiling(false);
-      
+
       if (!result.success) {
         addLog('❌ Compilation failed:');
         result.errors?.forEach(error => addLog(`   ${error}`));
         return;
       }
-      
+
       addLog('✅ Compilation successful');
       addLog('🚀 Loading program into AVR8 emulator...');
-      
+
       console.log('[Simulator] Creating AVR8Core instance...');
       console.log('[Simulator] AVR8Core class:', AVR8Core);
       try {
@@ -139,7 +139,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         addLog(`❌ Failed to create emulator: ${err.message}`);
         return;
       }
-      
+
       try {
         avrCoreRef.current.loadProgram(result.program);
         console.log('[Simulator] Program loaded into AVR8Core, size:', result.program?.length);
@@ -148,7 +148,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         addLog(`❌ Failed to load program: ${err.message}`);
         return;
       }
-      
+
       console.log('[Simulator] Setting up pin change listeners...');
       try {
         for (let arduinoPin = 0; arduinoPin <= 19; arduinoPin++) {
@@ -165,43 +165,64 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         addLog(`❌ Failed to set up pin listeners: ${err.message}`);
         return;
       }
-      
+
       addLog('▶️ Starting AVR8 execution...');
       console.log('[Simulator] About to start execution interval...');
       setIsRunning(true);
-      
-      // Execute 16,000 cycles per 1ms interval to achieve real-time 16MHz simulation
-      // 16,000 cycles/ms × 1000ms = 16,000,000 cycles/second = 16MHz
-      // This makes delay(1000) complete in exactly 1 second of wall-clock time
+
+      // Use requestAnimationFrame for smoother, browser-optimized execution
+      // Similar to Wokwi's approach - execute cycles based on actual time elapsed
+      let lastTime = performance.now();
       let executionCount = 0;
-      executionIntervalRef.current = setInterval(() => {
-        if (avrCoreRef.current) {
-          avrCoreRef.current.execute(16000);
-          executionCount++;
-          if (executionCount % 1000 === 0) {
-            console.log(`[Simulator] Executed ${executionCount * 16000} total cycles`);
+      const CYCLES_PER_MS = 16000; // 16MHz = 16,000 cycles per millisecond
+
+      const executeFrame = () => {
+        if (!avrCoreRef.current) return;
+
+        const currentTime = performance.now();
+        const deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
+
+        // Calculate cycles to execute based on elapsed time
+        // Cap at 100ms to prevent huge jumps after tab switching
+        const cappedDelta = Math.min(deltaTime, 100);
+        const cyclesToExecute = Math.floor(cappedDelta * CYCLES_PER_MS);
+
+        if (cyclesToExecute > 0) {
+          avrCoreRef.current.execute(cyclesToExecute);
+          executionCount += cyclesToExecute;
+
+          if (executionCount > 16000000) { // Log every ~1 second
+            console.log(`[Simulator] Executed ${executionCount} total cycles`);
+            executionCount = 0;
           }
         }
-      }, 1);
-      
-      console.log('[Simulator] Execution interval started');
-      addLog('✅ Simulation running at 16MHz');
-      
+
+        // Continue the animation loop
+        executionIntervalRef.current = requestAnimationFrame(executeFrame);
+      };
+
+      // Start the execution loop
+      executionIntervalRef.current = requestAnimationFrame(executeFrame);
+
+      console.log('[Simulator] Execution loop started using requestAnimationFrame');
+      addLog('✅ Simulation running at 16MHz (browser-optimized)');
+
     } catch (error) {
       setIsCompiling(false);
       addLog(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       console.error('[Simulator] Error:', error);
     }
   };
-  
+
   const handlePinChange = (pin, isHigh) => {
     console.log(`[AVR8] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
-    
+
     const latestComponents = window.latestSimulatorData?.components || [];
     const latestWires = window.latestSimulatorData?.wires || [];
-    
+
     console.log(`[AVR8] Checking ${latestComponents.length} components and ${latestWires.length} wires`);
-    
+
     latestComponents.forEach(component => {
       if (component.type === 'heroboard') {
         updateComponentPins(component.id, {
@@ -209,15 +230,15 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           ...(pin === 13 ? { pin13: isHigh } : {})
         });
       }
-      
+
       if (component.type === 'led' || component.id.includes('led')) {
         const connectedWires = latestWires.filter(wire => 
           (wire.sourceComponent === component.id || wire.targetComponent === component.id) &&
           (wire.sourceName === pin.toString() || wire.targetName === pin.toString())
         );
-        
+
         console.log(`[AVR8] Component ${component.id} has ${connectedWires.length} wires connected to pin ${pin}`);
-        
+
         if (connectedWires.length > 0) {
           updateComponentState(component.id, { 
             isOn: isHigh,
@@ -228,22 +249,22 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       }
     });
   };
-  
+
   const stopSimulation = () => {
     addLog('🛑 Stopping AVR8 simulation...');
     setIsRunning(false);
-    
+
     if (avrCoreRef.current) {
       avrCoreRef.current.stop();
       avrCoreRef.current = null;
       addLog('⏹️ AVR8 core stopped');
     }
-    
+
     if (executionIntervalRef.current) {
-      clearInterval(executionIntervalRef.current);
+      cancelAnimationFrame(executionIntervalRef.current);
       executionIntervalRef.current = null;
     }
-    
+
     components.forEach(component => {
       if (component.type === 'led' || component.id.includes('led')) {
         updateComponentState(component.id, { 
@@ -251,7 +272,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           brightness: 0.0 
         });
       }
-      
+
       if (component.type === 'heroboard' || component.id.includes('heroboard')) {
         const pins = {};
         for (let i = 0; i <= 13; i++) {
@@ -260,23 +281,23 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         updateComponentState(component.id, { pins: pins });
       }
     });
-    
+
     addLog('✅ Simulation stopped - all components reset');
   };
-  
+
   useEffect(() => {
     console.log(`[SimulatorContext] Components updated:`, components.length, components.map(c => `${c.id}(${c.type})`));
-    
+
     if (!window.latestSimulatorData) {
       window.latestSimulatorData = {};
     }
     window.latestSimulatorData.components = components;
     console.log(`[SimulatorContext] Stored ${components.length} components globally`);
-    
+
     if (components.length > 0) {
       const newStates = { ...componentStates };
       let hasChanges = false;
-      
+
       components.forEach(component => {
         if (!componentStates[component.id]) {
           newStates[component.id] = {
@@ -288,23 +309,23 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           console.log(`[SimulatorContext] Registered component: ${component.id} (${component.type})`);
         }
       });
-      
+
       if (hasChanges) {
         setComponentStates(newStates);
       }
     }
   }, [components, componentStates]);
-  
+
   useEffect(() => {
     console.log(`[SimulatorContext] Wires updated:`, wires.length, wires.map(w => `${w.sourceComponent}->${w.targetComponent} (${w.sourceName}->${w.targetName})`));
-    
+
     if (!window.latestSimulatorData) {
       window.latestSimulatorData = {};
     }
     window.latestSimulatorData.wires = wires;
     console.log(`[SimulatorContext] Stored ${wires.length} wires globally`);
   }, [wires]);
-  
+
   useEffect(() => {
     window.simulatorContext = {
       componentStates,
@@ -313,14 +334,14 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       updateComponentPins,
       listComponents: () => console.log('All simulator components:', Object.keys(componentStates))
     };
-    
+
     console.log('Current component states:', Object.keys(componentStates));
-    
+
     return () => {
       delete window.simulatorContext;
     };
   }, [componentStates, wires]);
-  
+
   const contextValue = {
     code,
     logs,
@@ -340,7 +361,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     setComponents,
     setWires
   };
-  
+
   return (
     <SimulatorContext.Provider value={contextValue}>
       {children}
