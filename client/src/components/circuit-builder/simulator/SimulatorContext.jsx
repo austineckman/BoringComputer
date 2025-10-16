@@ -145,7 +145,22 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog('✅ Compilation successful');
       addLog('🚀 Loading program into AVR8 emulator...');
       
+      if (!result.binary || result.binary.length === 0) {
+        addLog('❌ Error: Compiler returned empty binary');
+        return;
+      }
+      
+      console.log('[Simulator] HEX length:', result.binary.length);
+      console.log('[Simulator] HEX preview:', result.binary.substring(0, 100));
+      
       const program = loadHex(result.binary);
+      
+      if (!program || program.length === 0) {
+        addLog('❌ Error: Failed to load HEX into program memory');
+        return;
+      }
+      
+      console.log('[Simulator] Program loaded, size:', program.length, 'words');
       avrRunnerRef.current = new AVRRunner(program);
       
       // Port B: bits 0-5 map to Arduino pins 8-13
