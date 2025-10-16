@@ -63,16 +63,20 @@ const CircuitBuilder = ({ initialComponents = [], initialWires = [] }) => {
   
   // Update components when initialComponents prop changes
   useEffect(() => {
+    console.log('[CircuitBuilder] initialComponents changed:', initialComponents?.length || 0, 'items');
     if (initialComponents && initialComponents.length > 0) {
-      console.log('CircuitBuilder: Updating components from props:', initialComponents);
+      console.log('[CircuitBuilder] Setting local components from props:', initialComponents);
       setComponents(initialComponents);
+    } else if (initialComponents && initialComponents.length === 0) {
+      console.log('[CircuitBuilder] ALERT: Received EMPTY initialComponents array!');
     }
   }, [initialComponents]);
   
   // Share components with the simulator context
   useEffect(() => {
+    console.log(`[CircuitBuilder] About to share ${components.length} components with simulator`);
     if (setSimulationComponents) {
-      console.log(`Sharing ${components.length} components with simulator context`);
+      console.log(`[CircuitBuilder] Sharing ${components.length} components with simulator context`);
       setSimulationComponents(components);
     }
   }, [components, setSimulationComponents]);

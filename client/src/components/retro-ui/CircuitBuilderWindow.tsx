@@ -897,8 +897,9 @@ void loop() {
       updateSimulatorCode(componentExample.code);
       
       // Auto-place components on the canvas
-      console.log('Auto-placing components:', componentExample.components);
+      console.log('[CircuitBuilderWindow] Auto-placing components:', componentExample.components);
       setComponents(componentExample.components);
+      console.log('[CircuitBuilderWindow] Components state set to:', componentExample.components.length, 'items');
       setWires(componentExample.wires || []);
       
       addSimulationLog(`Loaded ${componentExample.name} with components`);
