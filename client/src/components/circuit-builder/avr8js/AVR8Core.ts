@@ -16,7 +16,9 @@ import {
   timer0Config,
   timer1Config,
   timer2Config,
-  avrInstruction
+  avrInstruction,
+  AVRTWI,
+  twiConfig
 } from 'avr8js';
 
 export interface IAVR8Core {
@@ -39,6 +41,11 @@ export interface IAVR8Core {
    * Register a callback for when serial data is available
    */
   onSerialData(callback: (data: number) => void): void;
+  
+  /**
+   * Register a callback for I2C/TWI data transmission
+   */
+  onI2CData(callback: (address: number, data: number) => void): void;
   
   /**
    * Get the current state of all pins
@@ -65,8 +72,12 @@ export class AVR8Core implements IAVR8Core {
   private timer0: AVRTimer;
   private timer1: AVRTimer;
   private timer2: AVRTimer;
+  private twi: AVRTWI;
   private pinStateCallbacks: {[portPin: string]: ((state: boolean) => void)[]} = {};
   private serialCallback: ((data: number) => void) | null = null;
+  private i2cCallback: ((address: number, data: number) => void) | null = null;
+  private i2cStartCallback: ((address: number, write: boolean) => void) | null = null;
+  private i2cStopCallback: (() => void) | null = null;
   private pinStates: {[portPin: string]: boolean} = {};
   private clockFrequency: number;
   
@@ -85,11 +96,17 @@ export class AVR8Core implements IAVR8Core {
     this.timer1 = new AVRTimer(this.cpu, timer1Config);
     this.timer2 = new AVRTimer(this.cpu, timer2Config);
     
+    // Create TWI (I2C) interface
+    this.twi = new AVRTWI(this.cpu, twiConfig, this.clockFrequency);
+    
     // Initialize pin states
     this.initializePinStates();
     
     // Set up pin change listeners for all ports
     this.setupPinChangeListeners();
+    
+    // Set up I2C/TWI listeners
+    this.setupI2CListeners();
   }
   
   /**
@@ -195,6 +212,85 @@ export class AVR8Core implements IAVR8Core {
    */
   public onSerialData(callback: (data: number) => void): void {
     this.serialCallback = callback;
+  }
+  
+  /**
+   * Register a callback for I2C/TWI data
+   */
+  public onI2CData(callback: (address: number, data: number) => void): void {
+    this.i2cCallback = callback;
+  }
+  
+  /**
+   * Register a callback for I2C START condition
+   */
+  public onI2CStart(callback: (address: number, write: boolean) => void): void {
+    this.i2cStartCallback = callback;
+  }
+  
+  /**
+   * Register a callback for I2C STOP condition
+   */
+  public onI2CStop(callback: () => void): void {
+    this.i2cStopCallback = callback;
+  }
+  
+  /**
+   * Set up I2C/TWI listeners
+   */
+  private setupI2CListeners(): void {
+    // Track current I2C address
+    let currentAddress = 0;
+    let isWriteMode = false;
+    
+    // Create a custom event handler
+    const self = this;
+    this.twi.eventHandler = {
+      start(repeated: boolean) {
+        console.log(`[AVR8Core] I2C ${repeated ? 'Repeated ' : ''}Start`);
+        self.twi.completeStart();
+      },
+      
+      stop() {
+        console.log('[AVR8Core] I2C Stop');
+        
+        if (self.i2cStopCallback) {
+          self.i2cStopCallback();
+        }
+        
+        self.twi.completeStop();
+      },
+      
+      connectToSlave(addr: number, write: boolean) {
+        currentAddress = addr;
+        isWriteMode = write;
+        console.log(`[AVR8Core] I2C Connect - Address: 0x${addr.toString(16)}, ${write ? 'Write' : 'Read'}`);
+        
+        if (self.i2cStartCallback) {
+          self.i2cStartCallback(addr, write);
+        }
+        
+        // ACK the connection for OLED displays (typically at 0x3C or 0x3D)
+        self.twi.completeConnect(true);
+      },
+      
+      writeByte(value: number) {
+        console.log(`[AVR8Core] I2C Write - Address: 0x${currentAddress.toString(16)}, Data: 0x${value.toString(16)}`);
+        
+        if (self.i2cCallback) {
+          self.i2cCallback(currentAddress, value);
+        }
+        
+        // ACK the byte
+        self.twi.completeWrite(true);
+      },
+      
+      readByte(ack: boolean) {
+        console.log(`[AVR8Core] I2C Read - ACK: ${ack}`);
+        // Return dummy data for reads
+        self.twi.completeRead(0xFF);
+      }
+    };
   }
   
   /**

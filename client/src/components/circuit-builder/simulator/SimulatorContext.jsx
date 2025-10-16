@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useRef, useCallback } from 'react';
 import { ArduinoCompilationService } from '../compiler/ArduinoCompilationService';
 import { AVR8Core } from '../avr8js/AVR8Core';
+import { OLEDDecoder } from '../avr8js/OLEDDecoder';
 
 const SimulatorContext = createContext({
   code: '',
@@ -37,6 +38,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   const executionIntervalRef = useRef(null);
   const componentsRef = useRef([]);
   const wiresRef = useRef([]);
+  const oledDecodersRef = useRef({});
 
   const addLog = (message) => {
     const timestamp = new Date().toLocaleTimeString();
@@ -166,6 +168,61 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         console.error('[Simulator] Failed to set up pin listeners:', err);
         addLog(`❌ Failed to set up pin listeners: ${err.message}`);
         return;
+      }
+
+      console.log('[Simulator] Setting up I2C/TWI listeners...');
+      try {
+        // Initialize OLED decoders for all OLED components
+        const latestComponents = window.latestSimulatorData?.components || [];
+        const oledComponents = latestComponents.filter(c => c.type === 'oled-display');
+        
+        oledComponents.forEach(oled => {
+          // Create decoder for each OLED (default address 0x3C)
+          oledDecodersRef.current[oled.id] = new OLEDDecoder(0x3C);
+          console.log(`[Simulator] Created OLED decoder for ${oled.id}`);
+        });
+        
+        // Set up I2C START callback
+        avrCoreRef.current.onI2CStart((address, write) => {
+          console.log(`[Simulator] I2C START - Address: 0x${address.toString(16)}, ${write ? 'Write' : 'Read'}`);
+          
+          // Notify all OLED decoders of transaction start
+          Object.values(oledDecodersRef.current).forEach(decoder => {
+            decoder.onStart(address);
+          });
+        });
+        
+        // Set up I2C STOP callback
+        avrCoreRef.current.onI2CStop(() => {
+          console.log(`[Simulator] I2C STOP`);
+          
+          // Notify all OLED decoders of transaction end
+          Object.values(oledDecodersRef.current).forEach(decoder => {
+            decoder.onStop();
+          });
+        });
+        
+        // Set up I2C data callback
+        avrCoreRef.current.onI2CData((address, data) => {
+          console.log(`[Simulator] I2C data received - Address: 0x${address.toString(16)}, Data: 0x${data.toString(16)}`);
+          
+          // Send data to all OLED decoders
+          Object.entries(oledDecodersRef.current).forEach(([oledId, decoder]) => {
+            decoder.processByte(address, data);
+            
+            // Update component state with the latest display state
+            const displayState = decoder.getDisplayState();
+            updateComponentState(oledId, {
+              display: displayState
+            });
+          });
+        });
+        
+        console.log('[Simulator] I2C listeners set up successfully');
+        addLog('🔌 I2C/TWI communication enabled for OLED displays');
+      } catch (err) {
+        console.error('[Simulator] Failed to set up I2C listeners:', err);
+        addLog(`❌ Failed to set up I2C listeners: ${err.message}`);
       }
 
       addLog('▶️ Starting AVR8 execution...');
