@@ -28,12 +28,12 @@ import OLEDDisplay from './components/OLEDDisplay';
  * Main Circuit Builder component
  * Manages components, wires, and interactions
  */
-const CircuitBuilder = () => {
+const CircuitBuilder = ({ initialComponents = [], initialWires = [] }) => {
   // Access simulator context to share component data
   const { setComponents: setSimulationComponents } = useSimulator();
   
   // State for circuit components
-  const [components, setComponents] = useState([]);
+  const [components, setComponents] = useState(initialComponents);
   const [selectedComponentId, setSelectedComponentId] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const canvasRef = useRef(null);
@@ -60,6 +60,14 @@ const CircuitBuilder = () => {
     console.log(`Wire ${wireId} color changed to ${newColor}`);
     // The BasicWireManager will handle the actual color change
   };
+  
+  // Update components when initialComponents prop changes
+  useEffect(() => {
+    if (initialComponents && initialComponents.length > 0) {
+      console.log('CircuitBuilder: Updating components from props:', initialComponents);
+      setComponents(initialComponents);
+    }
+  }, [initialComponents]);
   
   // Share components with the simulator context
   useEffect(() => {
