@@ -149,16 +149,25 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         return;
       }
       
-      for (let arduinoPin = 0; arduinoPin <= 19; arduinoPin++) {
-        const mapping = AVR8Core.mapArduinoPin(arduinoPin);
-        if (mapping) {
-          avrCoreRef.current.onPinChange(mapping.port, mapping.pin, (isHigh) => {
-            handlePinChange(arduinoPin, isHigh);
-          });
+      console.log('[Simulator] Setting up pin change listeners...');
+      try {
+        for (let arduinoPin = 0; arduinoPin <= 19; arduinoPin++) {
+          const mapping = AVR8Core.mapArduinoPin(arduinoPin);
+          if (mapping) {
+            avrCoreRef.current.onPinChange(mapping.port, mapping.pin, (isHigh) => {
+              handlePinChange(arduinoPin, isHigh);
+            });
+          }
         }
+        console.log('[Simulator] Pin change listeners set up successfully');
+      } catch (err) {
+        console.error('[Simulator] Failed to set up pin listeners:', err);
+        addLog(`❌ Failed to set up pin listeners: ${err.message}`);
+        return;
       }
       
       addLog('▶️ Starting AVR8 execution...');
+      console.log('[Simulator] About to start execution interval...');
       setIsRunning(true);
       
       // Execute 100,000 cycles per interval to achieve real-time 16MHz simulation
@@ -169,6 +178,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
         }
       }, 1);
       
+      console.log('[Simulator] Execution interval started');
       addLog('✅ Simulation running at 16MHz');
       
     } catch (error) {
