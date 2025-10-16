@@ -15,7 +15,8 @@ import {
   AVRTimer,
   timer0Config,
   timer1Config,
-  timer2Config
+  timer2Config,
+  avrInstruction
 } from 'avr8js';
 
 export interface IAVR8Core {
@@ -169,6 +170,7 @@ export class AVR8Core implements IAVR8Core {
   public execute(cycles: number): void {
     // Run the CPU for the specified number of cycles
     for (let i = 0; i < cycles; i++) {
+      avrInstruction(this.cpu);
       this.cpu.tick();
     }
   }
