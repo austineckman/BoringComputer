@@ -3,6 +3,7 @@ import { ArduinoCompilationService } from '../compiler/ArduinoCompilationService
 import { AVR8Core } from '../avr8js/AVR8Core';
 import { OLEDDecoder } from '../avr8js/OLEDDecoder';
 import { TM1637Decoder } from './TM1637Decoder';
+import { TM1637ProtocolDecoder } from './TM1637ProtocolDecoder';
 
 const SimulatorContext = createContext({
   code: '',
@@ -41,6 +42,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   const wiresRef = useRef([]);
   const oledDecodersRef = useRef({});
   const tm1637DecodersRef = useRef({});
+  const tm1637ProtocolDecodersRef = useRef({});
 
   const addLog = (message) => {
     const timestamp = new Date().toLocaleTimeString();
@@ -184,17 +186,17 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
           console.log(`[Simulator] Created OLED decoder for ${oled.id}`);
         });
         
-        // Initialize TM1637 decoders for all 7-segment displays
+        // Initialize TM1637 protocol decoders for all 7-segment displays
         const segmentedDisplayComponents = latestComponents.filter(c => c.type === 'segmented-display');
         
         segmentedDisplayComponents.forEach(display => {
-          // Create decoder for each 7-segment display
-          tm1637DecodersRef.current[display.id] = new TM1637Decoder(
+          // Create protocol decoder for each 7-segment display
+          tm1637ProtocolDecodersRef.current[display.id] = new TM1637ProtocolDecoder(
             display.id,
             updateComponentState,
             addLog
           );
-          console.log(`[Simulator] Created TM1637 decoder for ${display.id}`);
+          console.log(`[Simulator] Created TM1637 protocol decoder for ${display.id}`);
         });
         
         // Set up I2C START callback
@@ -340,6 +342,17 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     const latestWires = window.latestSimulatorData?.wires || [];
 
     console.log(`[AVR8] Checking ${latestComponents.length} components and ${latestWires.length} wires`);
+
+    // Feed TM1637 protocol decoder with pin states (CLK=Pin2, DIO=Pin3)
+    if (pin === 2 || pin === 3) {
+      Object.values(tm1637ProtocolDecodersRef.current).forEach(decoder => {
+        if (pin === 2) {
+          decoder.setClkPin(isHigh);
+        } else if (pin === 3) {
+          decoder.setDioPin(isHigh);
+        }
+      });
+    }
 
     latestComponents.forEach(component => {
       if (component.type === 'heroboard') {
