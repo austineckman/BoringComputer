@@ -24,6 +24,29 @@ typedef int16_t u8g2_long_t;
 #define U8G2_DRAW_COLOR_TRANSPARENT 0
 #define U8G2_DRAW_COLOR_OPAQUE 1
 
+// Display element types
+enum ElementType {
+  ELEM_TEXT,
+  ELEM_PIXEL,
+  ELEM_LINE,
+  ELEM_FRAME,
+  ELEM_BOX,
+  ELEM_CIRCLE,
+  ELEM_DISC
+};
+
+// Display element structure
+struct DisplayElement {
+  ElementType type;
+  int x, y;
+  int x2, y2;
+  int width, height;
+  int radius;
+  char text[64];
+};
+
+#define MAX_ELEMENTS 100
+
 // Font positioning
 #define U8G2_FONT_POS_BASELINE 0
 #define U8G2_FONT_POS_BOTTOM 1
@@ -50,6 +73,11 @@ class U8G2 : public Print {
     bool _display_enabled;
     uint8_t _contrast;
     uint8_t _flip_mode;
+    
+    // Display elements for rendering
+    DisplayElement _elements[MAX_ELEMENTS];
+    int _element_count;
+    char _display_id[32];
     
     void sendCommand(uint8_t cmd);
     void sendData(uint8_t data);

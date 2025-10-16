@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef, useCallback } from 'react';
 import { ArduinoCompilationService } from '../compiler/ArduinoCompilationService';
 import { AVR8Core } from '../avr8js/AVR8Core';
 
@@ -35,6 +35,8 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
 
   const avrCoreRef = useRef(null);
   const executionIntervalRef = useRef(null);
+  const componentsRef = useRef([]);
+  const wiresRef = useRef([]);
 
   const addLog = (message) => {
     const timestamp = new Date().toLocaleTimeString();
@@ -287,6 +289,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
 
   useEffect(() => {
     console.log(`[SimulatorContext] Components updated:`, components.length, components.map(c => `${c.id}(${c.type})`));
+    componentsRef.current = components; // Update ref
 
     if (!window.latestSimulatorData) {
       window.latestSimulatorData = {};
@@ -318,6 +321,7 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
 
   useEffect(() => {
     console.log(`[SimulatorContext] Wires updated:`, wires.length, wires.map(w => `${w.sourceComponent}->${w.targetComponent} (${w.sourceName}->${w.targetName})`));
+    wiresRef.current = wires; // Update ref
 
     if (!window.latestSimulatorData) {
       window.latestSimulatorData = {};
@@ -326,21 +330,47 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     console.log(`[SimulatorContext] Stored ${wires.length} wires globally`);
   }, [wires]);
 
+  // OLED display update handler
+  const updateOLEDDisplay = useCallback((displayId, data) => {
+    console.log('[SimulatorContext] OLED update:', displayId, data);
+
+    setComponentStates(prev => {
+      const newStates = { ...prev };
+
+      // Find the OLED display component
+      const oledComponent = componentsRef.current.find(c => 
+        c.type === 'oled-display' || c.id.includes('oled')
+      );
+
+      if (oledComponent) {
+        newStates[oledComponent.id] = {
+          ...newStates[oledComponent.id],
+          display: data,
+          shouldDisplay: true
+        };
+        console.log('[SimulatorContext] Updated OLED state:', oledComponent.id, data);
+      }
+
+      return newStates;
+    });
+  }, []);
+
+  // Make context available globally for libraries
   useEffect(() => {
     window.simulatorContext = {
-      componentStates,
-      wires,
-      updateComponentState,
-      updateComponentPins,
-      listComponents: () => console.log('All simulator components:', Object.keys(componentStates))
+      components: componentsRef.current,
+      wires: wiresRef.current,
+      updateComponent: (id, newState) => {
+        const componentIndex = componentsRef.current.findIndex(c => c.id === id);
+        if (componentIndex !== -1) {
+          componentsRef.current[componentIndex] = { ...componentsRef.current[componentIndex], ...newState };
+          setComponents([...componentsRef.current]); // Trigger re-render
+        }
+      },
+      getComponentState: (id) => componentStates[id],
+      updateOLEDDisplay,
     };
-
-    console.log('Current component states:', Object.keys(componentStates));
-
-    return () => {
-      delete window.simulatorContext;
-    };
-  }, [componentStates, wires]);
+  }, [componentsRef.current, wiresRef.current, updateOLEDDisplay, componentStates]); // Added componentStates dependency
 
   const contextValue = {
     code,
@@ -359,7 +389,8 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     updateComponentState,
     updateComponentPins,
     setComponents,
-    setWires
+    setWires,
+    updateOLEDDisplay // Include updateOLEDDisplay in context value
   };
 
   return (
