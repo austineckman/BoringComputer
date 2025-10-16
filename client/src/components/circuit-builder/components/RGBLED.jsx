@@ -92,7 +92,7 @@ const RGBLED = ({
 
   // React to simulation state changes
   useEffect(() => {
-    if (!isSimActive) return;
+    if (!isSimActive || !componentStates) return;
     
     const simulationState = componentStates[id];
     if (simulationState) {
@@ -278,7 +278,7 @@ const RGBLED = ({
     // Register component with simulator directly for extra reliability
     if (window.simulatorContext) {
       // Ensure the component is registered in the simulator
-      if (!window.simulatorContext.componentStates[id]) {
+      if (window.simulatorContext.componentStates && !window.simulatorContext.componentStates[id]) {
         console.log(`Directly registering RGB LED ${id} with simulator context`);
         window.simulatorContext.updateComponentState(id, {
           id,
