@@ -282,25 +282,24 @@ const SegmentedDisplay = ({
         pins={pinLayout}
       ></ReactSevenSegmentComponent>
       
-      {/* Visual display overlay */}
-      {isActive && (
-        <div
-          className="absolute pointer-events-none font-mono font-bold text-center"
-          style={{
-            left: posLeft + 15,
-            top: posTop + 25,
-            fontSize: '18px',
-            color: '#ff4400',
-            textShadow: '0 0 8px #ff4400',
-            letterSpacing: '8px',
-            zIndex: 99998,
-            filter: `brightness(${brightness / 7})`,
-            fontFamily: 'monospace'
-          }}
-        >
-          {formatDisplayValue(displayValue)}
-        </div>
-      )}
+      {/* Visual display overlay - always visible */}
+      <div
+        className="absolute pointer-events-none font-mono font-bold text-center"
+        style={{
+          left: posLeft + 15,
+          top: posTop + 25,
+          fontSize: '18px',
+          color: isActive ? '#ff4400' : '#ff440055',
+          textShadow: isActive ? '0 0 8px #ff4400' : 'none',
+          letterSpacing: '8px',
+          zIndex: 99998,
+          filter: isActive ? `brightness(${brightness / 7})` : 'brightness(0.5)',
+          fontFamily: 'monospace',
+          opacity: isActive ? 1 : 0.5
+        }}
+      >
+        {formatDisplayValue(displayValue)}
+      </div>
 
       {/* Removed component menu - settings now in the properties panel */}
     </>

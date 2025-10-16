@@ -18,7 +18,9 @@ import {
   timer2Config,
   avrInstruction,
   AVRTWI,
-  twiConfig
+  twiConfig,
+  AVRUSART,
+  usart0Config
 } from 'avr8js';
 
 export interface IAVR8Core {
@@ -73,6 +75,7 @@ export class AVR8Core implements IAVR8Core {
   private timer1: AVRTimer;
   private timer2: AVRTimer;
   private twi: AVRTWI;
+  private usart: AVRUSART;
   private pinStateCallbacks: {[portPin: string]: ((state: boolean) => void)[]} = {};
   private serialCallback: ((data: number) => void) | null = null;
   private i2cCallback: ((address: number, data: number) => void) | null = null;
@@ -99,6 +102,9 @@ export class AVR8Core implements IAVR8Core {
     // Create TWI (I2C) interface
     this.twi = new AVRTWI(this.cpu, twiConfig, this.clockFrequency);
     
+    // Create USART (Serial) interface
+    this.usart = new AVRUSART(this.cpu, usart0Config, this.clockFrequency);
+    
     // Initialize pin states
     this.initializePinStates();
     
@@ -107,6 +113,9 @@ export class AVR8Core implements IAVR8Core {
     
     // Set up I2C/TWI listeners
     this.setupI2CListeners();
+    
+    // Set up USART/Serial listeners
+    this.setupSerialListeners();
   }
   
   /**
@@ -289,6 +298,20 @@ export class AVR8Core implements IAVR8Core {
         console.log(`[AVR8Core] I2C Read - ACK: ${ack}`);
         // Return dummy data for reads
         self.twi.completeRead(0xFF);
+      }
+    };
+  }
+  
+  /**
+   * Set up USART/Serial listeners
+   */
+  private setupSerialListeners(): void {
+    // Listen for serial data transmission
+    this.usart.onByteTransmit = (value: number) => {
+      console.log(`[AVR8Core] Serial TX: ${value} (${String.fromCharCode(value)})`);
+      
+      if (this.serialCallback) {
+        this.serialCallback(value);
       }
     };
   }
