@@ -1423,7 +1423,17 @@ void loop() {
         
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 overflow-hidden">
-            <div className="h-full">
+            <div className="h-full" onClick={(e) => {
+              // Allow clicks inside the editor
+              if ((e.target as HTMLElement).closest('.ace_editor')) {
+                return;
+              }
+              // Blur the editor when clicking outside
+              const editor = document.querySelector('.ace_editor') as any;
+              if (editor && editor.env && editor.env.editor) {
+                editor.env.editor.blur();
+              }
+            }}>
               <AceEditor
                 mode="c_cpp"
                 theme="monokai"
@@ -1437,21 +1447,25 @@ void loop() {
                 showGutter={true}
                 highlightActiveLine={true}
                 wrapEnabled={false}
+                onBlur={() => {
+                  // Ensure editor properly releases focus
+                  console.log('Editor blurred');
+                }}
                 setOptions={{
                   enableBasicAutocompletion: true,
                   enableLiveAutocompletion: true,
                   enableSnippets: true,
                   showLineNumbers: true,
                   tabSize: 2,
-                  firstLineNumber: 1, // Start line numbers at 1
-                  scrollPastEnd: false, // Prevents auto-scrolling past the end
+                  firstLineNumber: 1,
+                  scrollPastEnd: false,
                 }}
                 style={{
                   fontFamily: "'Source Code Pro', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace",
                   backgroundColor: "#1E1E1E",
                   minHeight: '200px'
                 }}
-                editorProps={{ $blockScrolling: Infinity }} // Prevents scrolling issues
+                editorProps={{ $blockScrolling: Infinity }}
               />
             </div>
           </div>
