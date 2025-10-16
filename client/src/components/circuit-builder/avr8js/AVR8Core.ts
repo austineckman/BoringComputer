@@ -109,6 +109,7 @@ export class AVR8Core implements IAVR8Core {
    */
   private setupPinChangeListeners(): void {
     this.portB.addListener((pinValue) => {
+      console.log('[AVR8Core] Port B changed:', pinValue.toString(2).padStart(8, '0'));
       for (let pin = 0; pin < 8; pin++) {
         const pinMask = 1 << pin;
         const isHigh = (pinValue & pinMask) !== 0;
@@ -117,6 +118,7 @@ export class AVR8Core implements IAVR8Core {
     });
     
     this.portC.addListener((pinValue) => {
+      console.log('[AVR8Core] Port C changed:', pinValue.toString(2).padStart(8, '0'));
       for (let pin = 0; pin < 8; pin++) {
         const pinMask = 1 << pin;
         const isHigh = (pinValue & pinMask) !== 0;
@@ -125,6 +127,7 @@ export class AVR8Core implements IAVR8Core {
     });
     
     this.portD.addListener((pinValue) => {
+      console.log('[AVR8Core] Port D changed:', pinValue.toString(2).padStart(8, '0'));
       for (let pin = 0; pin < 8; pin++) {
         const pinMask = 1 << pin;
         const isHigh = (pinValue & pinMask) !== 0;
