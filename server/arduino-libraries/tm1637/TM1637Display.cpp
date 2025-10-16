@@ -75,6 +75,9 @@ TM1637Display::TM1637Display(uint8_t pinClk, uint8_t pinDIO, unsigned int bitDel
 void TM1637Display::setBrightness(uint8_t brightness, bool on)
 {
 	m_brightness = (brightness & 0x7) | (on? 0x08 : 0x00);
+	Serial.print("TM1637_CALL: setBrightness(");
+	Serial.print(brightness);
+	Serial.println(")");
 }
 
 void TM1637Display::setSegments(const uint8_t segments[], uint8_t length, uint8_t pos)
@@ -98,22 +101,44 @@ void TM1637Display::setSegments(const uint8_t segments[], uint8_t length, uint8_
 	start();
 	writeByte(TM1637_I2C_COMM3 + (m_brightness & 0x0f));
 	stop();
+	
+	// Debug output for simulator
+	Serial.print("TM1637_CALL: setSegments([");
+	for (uint8_t k=0; k < length; k++) {
+	  if (k > 0) Serial.print(", ");
+	  Serial.print("0x");
+	  Serial.print(segments[k], HEX);
+	}
+	Serial.println("])");
 }
 
 void TM1637Display::clear()
 {
     uint8_t data[] = { 0, 0, 0, 0 };
 	setSegments(data);
+	Serial.println("TM1637_CALL: clear()");
 }
 
 void TM1637Display::showNumberDec(int num, bool leading_zero, uint8_t length, uint8_t pos)
 {
+  Serial.print("TM1637_CALL: showNumberDec(");
+  Serial.print(num);
+  Serial.print(", ");
+  Serial.print(leading_zero ? "true" : "false");
+  Serial.println(")");
   showNumberDecEx(num, 0, leading_zero, length, pos);
 }
 
 void TM1637Display::showNumberDecEx(int num, uint8_t dots, bool leading_zero,
                                     uint8_t length, uint8_t pos)
 {
+  Serial.print("TM1637_CALL: showNumberDecEx(");
+  Serial.print(num);
+  Serial.print(", 0x");
+  Serial.print(dots, HEX);
+  Serial.print(", ");
+  Serial.print(leading_zero ? "true" : "false");
+  Serial.println(")");
   showNumberBaseEx(num < 0? -10 : 10, num < 0? -num : num, dots, leading_zero, length, pos);
 }
 
