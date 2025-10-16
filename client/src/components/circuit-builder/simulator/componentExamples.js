@@ -296,7 +296,7 @@ export const dipSwitchComponentExample = {
     createHeroBoard(),
     {
       id: 'dipswitch-example-1',
-      type: 'dip-switch',
+      type: 'dipswitch',
       x: 250,
       y: 350,
       props: {
