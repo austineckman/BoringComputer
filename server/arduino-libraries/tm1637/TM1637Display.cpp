@@ -14,14 +14,14 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <Arduino.h>
+#include <TM1637Display.h>
+
 extern "C" {
   #include <stdlib.h>
   #include <string.h>
   #include <inttypes.h>
 }
-
-#include <TM1637Display.h>
-#include <Arduino.h>
 
 #define TM1637_I2C_COMM1    0x40
 #define TM1637_I2C_COMM2    0xC0

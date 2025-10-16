@@ -17,6 +17,7 @@
 #ifndef __TM1637DISPLAY__
 #define __TM1637DISPLAY__
 
+#include <Arduino.h>
 #include <inttypes.h>
 
 #define SEG_A   0b00000001
