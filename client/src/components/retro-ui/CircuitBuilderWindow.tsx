@@ -31,6 +31,9 @@ import {
   photoresistorExample
 } from '../circuit-builder/simulator/exampleLibraryCode';
 
+// Import new component examples with auto-placement
+import { allComponentExamples } from '../circuit-builder/simulator/componentExamples';
+
 // Import our CircuitBuilder component
 import CircuitBuilder from '../circuit-builder/CircuitBuilder';
 
@@ -885,6 +888,25 @@ void loop() {
   
   // Handle loading example code (both hardcoded and database examples)
   const loadExampleCode = (exampleType: string) => {
+    // Check if it's a component example with auto-placement
+    const componentExample = allComponentExamples.find(ex => ex.id === exampleType);
+    if (componentExample) {
+      // Load the example code
+      updateCurrentCode(componentExample.code);
+      setCode(componentExample.code);
+      updateSimulatorCode(componentExample.code);
+      
+      // Auto-place components on the canvas
+      console.log('Auto-placing components:', componentExample.components);
+      setSimulatorComponents(componentExample.components);
+      setSimulatorWires(componentExample.wires || []);
+      
+      addSimulationLog(`Loaded ${componentExample.name} with components`);
+      showNotification(`Loaded: ${componentExample.name} - Components auto-placed!`, 'success');
+      setShowExampleDropdown(false);
+      return;
+    }
+    
     // Check if it's a database example (UUID format)
     const dbExample = circuitExamples.find((ex: CircuitExample) => ex.id === exampleType);
     if (dbExample) {
@@ -895,8 +917,8 @@ void loop() {
       
       // Load circuit data if available
       if (dbExample.circuitData) {
-        setComponents(dbExample.circuitData.components || []);
-        setWires(dbExample.circuitData.wires || []);
+        setSimulatorComponents(dbExample.circuitData.components || []);
+        setSimulatorWires(dbExample.circuitData.wires || []);
         if (dbExample.circuitData.zoom) setZoom(dbExample.circuitData.zoom);
         if (dbExample.circuitData.pan) setPan(dbExample.circuitData.pan);
       }
@@ -1374,17 +1396,19 @@ void loop() {
                           </>
                         )}
                         
-                        {/* Built-in Examples */}
-                        <div className="px-4 py-1 text-xs text-gray-400 font-semibold">
-                          Component Examples (with Wiring Instructions)
+                        {/* Component Examples with Auto-Placement */}
+                        <div className="px-4 py-1 text-xs text-orange-400 font-semibold border-b border-gray-700">
+                          Component Examples (Auto-Places Components!)
                         </div>
-                        {allExamples.map((example) => (
+                        {allComponentExamples.map((example) => (
                           <button
                             key={example.id}
                             onClick={() => loadExampleCode(example.id)}
-                            className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                            className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 hover:bg-opacity-70"
+                            title={example.description}
                           >
-                            {example.name}
+                            <div className="font-medium">{example.name}</div>
+                            <div className="text-xs text-gray-400">{example.description}</div>
                           </button>
                         ))}
                       </>
