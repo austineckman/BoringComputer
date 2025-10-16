@@ -161,13 +161,15 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       addLog('▶️ Starting AVR8 execution...');
       setIsRunning(true);
       
+      // Execute 100,000 cycles per interval to achieve real-time 16MHz simulation
+      // This allows delay(1000) to complete in ~1 second of wall-clock time
       executionIntervalRef.current = setInterval(() => {
         if (avrCoreRef.current) {
-          avrCoreRef.current.execute(16000);
+          avrCoreRef.current.execute(100000);
         }
       }, 1);
       
-      addLog('✅ Simulation running');
+      addLog('✅ Simulation running at 16MHz');
       
     } catch (error) {
       setIsCompiling(false);
