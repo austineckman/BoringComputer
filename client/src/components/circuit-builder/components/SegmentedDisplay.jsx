@@ -45,6 +45,14 @@ const SegmentedDisplay = ({
   const [digitCount, setDigitCount] = useState(digits);
   const [pinLayout, setPinLayout] = useState(pins);
   
+  // Update position when initialX/initialY props change
+  useEffect(() => {
+    setPosTop(initialY);
+    setPosLeft(initialX);
+    setInitPosTop(initialY);
+    setInitPosLeft(initialX);
+  }, [initialX, initialY]);
+  
   // Simulator integration
   const { componentStates, updateComponentState } = useSimulator();
   const [displayValue, setDisplayValue] = useState("    "); // 4 spaces for blank display
