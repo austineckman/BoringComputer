@@ -170,15 +170,16 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
       console.log('[Simulator] About to start execution interval...');
       setIsRunning(true);
       
-      // Execute 100,000 cycles per interval to achieve real-time 16MHz simulation
-      // This allows delay(1000) to complete in ~1 second of wall-clock time
+      // Execute 16,000 cycles per 1ms interval to achieve real-time 16MHz simulation
+      // 16,000 cycles/ms × 1000ms = 16,000,000 cycles/second = 16MHz
+      // This makes delay(1000) complete in exactly 1 second of wall-clock time
       let executionCount = 0;
       executionIntervalRef.current = setInterval(() => {
         if (avrCoreRef.current) {
-          avrCoreRef.current.execute(100000);
+          avrCoreRef.current.execute(16000);
           executionCount++;
-          if (executionCount % 100 === 0) {
-            console.log(`[Simulator] Executed ${executionCount * 100000} total cycles`);
+          if (executionCount % 1000 === 0) {
+            console.log(`[Simulator] Executed ${executionCount * 16000} total cycles`);
           }
         }
       }, 1);
