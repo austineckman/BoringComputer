@@ -522,6 +522,8 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
   // Handle component movement events to update wire positions
   const handleComponentMoved = (event) => {
     const componentId = event.detail?.componentId;
+    const pinPositions = event.detail?.pinPositions;
+    
     if (!componentId) return;
     
     console.log(`Component ${componentId} moved, updating wire positions`);
@@ -533,102 +535,32 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
         
         // Update source position if it's from the moved component
         if (wire.sourceComponent === componentId) {
-          // Find position using component cache when available
-          const pinCacheKey = `${componentId}-${wire.sourceName}`;
-          const cachedPosition = window.pinPositionCache?.get(pinCacheKey);
-          
-          if (cachedPosition && cachedPosition.x !== undefined && cachedPosition.y !== undefined) {
-            newWire.sourcePos = { 
-              x: cachedPosition.x, 
-              y: cachedPosition.y 
-            };
-            console.log(`Updated source wire position from cache: (${newWire.sourcePos.x}, ${newWire.sourcePos.y})`);
-          } else {
-            // If no cached position, try to find the pin element
-            const pinId = `pt-${componentId.split('-')[0]}-${componentId}-${wire.sourceName}`;
-            const pinElement = document.getElementById(pinId);
-            
-            if (pinElement) {
-              const pos = getTrueElementPosition(pinElement);
-              if (pos) {
-                // Apply component-specific adjustments
-                let adjustedPos = adjustHeroboardPosition(pinId, pos, componentId);
-                adjustedPos = adjustRgbLedPosition(pinId, adjustedPos, componentId);
-                
-                newWire.sourcePos = adjustedPos;
-                console.log(`Updated source wire position from element: (${newWire.sourcePos.x}, ${newWire.sourcePos.y})`);
-              }
-            } else {
-              // Handle element not found - track component movement delta if we have previous positions
-              const movedX = event.detail.x;
-              const movedY = event.detail.y;
+          // First try to use the pinPositions from the event (most accurate during drag)
+          if (pinPositions && wire.sourceId) {
+            const pinPos = pinPositions[wire.sourceId];
+            if (pinPos) {
+              // Convert screen coordinates to world coordinates
+              const worldX = (pinPos.x - pan.x) / zoom;
+              const worldY = (pinPos.y - pan.y) / zoom;
               
-              if (movedX !== undefined && movedY !== undefined) {
-                // Calculate movement delta
-                const deltaX = movedX - (wire._lastKnownSourceX || 0);
-                const deltaY = movedY - (wire._lastKnownSourceY || 0);
-                
-                if (deltaX !== 0 || deltaY !== 0) {
-                  newWire.sourcePos = { 
-                    x: wire.sourcePos.x + deltaX, 
-                    y: wire.sourcePos.y + deltaY 
-                  };
-                  newWire._lastKnownSourceX = movedX;
-                  newWire._lastKnownSourceY = movedY;
-                  console.log(`Updated source wire position from delta: (${newWire.sourcePos.x}, ${newWire.sourcePos.y})`);
-                }
-              }
+              newWire.sourcePos = { x: worldX, y: worldY };
+              console.log(`Updated source wire position from event: (${worldX}, ${worldY})`);
             }
           }
         }
         
         // Update target position if it's from the moved component
         if (wire.targetComponent === componentId) {
-          // Find position using component cache when available
-          const pinCacheKey = `${componentId}-${wire.targetName}`;
-          const cachedPosition = window.pinPositionCache?.get(pinCacheKey);
-          
-          if (cachedPosition && cachedPosition.x !== undefined && cachedPosition.y !== undefined) {
-            newWire.targetPos = { 
-              x: cachedPosition.x, 
-              y: cachedPosition.y 
-            };
-            console.log(`Updated target wire position from cache: (${newWire.targetPos.x}, ${newWire.targetPos.y})`);
-          } else {
-            // If no cached position, try to find the pin element
-            const pinId = `pt-${componentId.split('-')[0]}-${componentId}-${wire.targetName}`;
-            const pinElement = document.getElementById(pinId);
-            
-            if (pinElement) {
-              const pos = getTrueElementPosition(pinElement);
-              if (pos) {
-                // Apply component-specific adjustments
-                let adjustedPos = adjustHeroboardPosition(pinId, pos, componentId);
-                adjustedPos = adjustRgbLedPosition(pinId, adjustedPos, componentId);
-                
-                newWire.targetPos = adjustedPos;
-                console.log(`Updated target wire position from element: (${newWire.targetPos.x}, ${newWire.targetPos.y})`);
-              }
-            } else {
-              // Handle element not found - track component movement delta if we have previous positions
-              const movedX = event.detail.x;
-              const movedY = event.detail.y;
+          // First try to use the pinPositions from the event (most accurate during drag)
+          if (pinPositions && wire.targetId) {
+            const pinPos = pinPositions[wire.targetId];
+            if (pinPos) {
+              // Convert screen coordinates to world coordinates
+              const worldX = (pinPos.x - pan.x) / zoom;
+              const worldY = (pinPos.y - pan.y) / zoom;
               
-              if (movedX !== undefined && movedY !== undefined) {
-                // Calculate movement delta
-                const deltaX = movedX - (wire._lastKnownTargetX || 0);
-                const deltaY = movedY - (wire._lastKnownTargetY || 0);
-                
-                if (deltaX !== 0 || deltaY !== 0) {
-                  newWire.targetPos = { 
-                    x: wire.targetPos.x + deltaX, 
-                    y: wire.targetPos.y + deltaY 
-                  };
-                  newWire._lastKnownTargetX = movedX;
-                  newWire._lastKnownTargetY = movedY;
-                  console.log(`Updated target wire position from delta: (${newWire.targetPos.x}, ${newWire.targetPos.y})`);
-                }
-              }
+              newWire.targetPos = { x: worldX, y: worldY };
+              console.log(`Updated target wire position from event: (${worldX}, ${worldY})`);
             }
           }
         }
