@@ -336,11 +336,26 @@ void loop() {
 
   // Get current tab's code
   const getCurrentCode = () => {
+    // If a board is selected, return its code
+    if (selectedBoard && boardCodes[selectedBoard]) {
+      return boardCodes[selectedBoard];
+    }
     return codeTabs[activeTab]?.code || '';
   };
 
   // Update current tab's code
   const updateCurrentCode = (newCode: string) => {
+    // If a board is selected, update its code
+    if (selectedBoard) {
+      setBoardCodes(prev => ({
+        ...prev,
+        [selectedBoard]: newCode
+      }));
+      // Also update simulator code if this is the actively running board
+      updateSimulatorCode(newCode);
+      return;
+    }
+    
     setCodeTabs(prev => ({
       ...prev,
       [activeTab]: {
@@ -406,6 +421,20 @@ void loop() {
   // Delete the selected component or wire
   const deleteSelectedItem = () => {
     if (selectedComponent) {
+      // Check if this is a hero board - clean up its code
+      if (selectedComponent.startsWith('heroboard-')) {
+        setBoardCodes(prev => {
+          const updated = { ...prev };
+          delete updated[selectedComponent];
+          return updated;
+        });
+        
+        // If this board was selected, deselect it
+        if (selectedBoard === selectedComponent) {
+          setSelectedBoard(null);
+        }
+      }
+      
       // Remove the component
       setComponents(components.filter(c => c.id !== selectedComponent));
       
@@ -1483,8 +1512,46 @@ void loop() {
         </div>
         
         <div className="flex-1 flex overflow-hidden">
-          <div className="flex-1 overflow-hidden">
-            <div className="h-full" onClick={(e) => {
+          <div className="flex-1 overflow-hidden flex flex-col">
+            {/* Board Selector - Show when hero boards exist */}
+            {components.filter(c => c.type === 'heroboard').length > 0 && (
+              <div className="bg-gray-800 border-b border-gray-700 px-3 py-2 flex items-center gap-2">
+                <span className="text-xs text-gray-400">Board:</span>
+                <div className="flex gap-1">
+                  {components
+                    .filter(c => c.type === 'heroboard')
+                    .map(board => (
+                      <button
+                        key={board.id}
+                        onClick={() => {
+                          setSelectedBoard(board.id);
+                          // If this board doesn't have code yet, initialize with default
+                          if (!boardCodes[board.id]) {
+                            setBoardCodes(prev => ({
+                              ...prev,
+                              [board.id]: defaultCode
+                            }));
+                          }
+                        }}
+                        className={`px-3 py-1 text-xs rounded transition-colors ${
+                          selectedBoard === board.id
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        }`}
+                      >
+                        {board.id}
+                      </button>
+                    ))}
+                </div>
+                {selectedBoard && (
+                  <span className="text-xs text-green-400 ml-2">
+                    ✓ Editing {selectedBoard}
+                  </span>
+                )}
+              </div>
+            )}
+            
+            <div className="flex-1" onClick={(e) => {
               // Allow clicks inside the editor
               if ((e.target as HTMLElement).closest('.ace_editor')) {
                 return;
