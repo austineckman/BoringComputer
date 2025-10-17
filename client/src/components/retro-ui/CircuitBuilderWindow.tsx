@@ -569,10 +569,10 @@ void loop() {
     }
   };
 
-  // Handle mouse down for panning (right-click)
+  // Handle mouse down for panning (middle mouse button or Space+Left click)
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Right-click for panning
-    if (e.button === 2) {
+    // Middle mouse button (1) or Space+Left click for panning
+    if (e.button === 1 || (e.button === 0 && (e.shiftKey || e.metaKey))) {
       e.preventDefault();
       setIsPanning(true);
       setPanStart({
@@ -597,14 +597,6 @@ void loop() {
     setIsPanning(false);
   };
 
-  // Disable context menu on right-click
-  useEffect(() => {
-    const handleContextMenu = (e: MouseEvent) => {
-      e.preventDefault();
-    };
-    document.addEventListener('contextmenu', handleContextMenu);
-    return () => document.removeEventListener('contextmenu', handleContextMenu);
-  }, []);
 
   // Handle wheel for zooming
   const handleWheel = (e: React.WheelEvent) => {
