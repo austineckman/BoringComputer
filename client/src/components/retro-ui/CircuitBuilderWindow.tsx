@@ -418,6 +418,42 @@ void loop() {
     setSelectedWire(null);
   };
 
+  // Wipe all components with vaporwave dust animation
+  const wipeSandbox = async () => {
+    // Add vaporwave dust class to all components and wires
+    const componentElements = document.querySelectorAll('.circuit-component');
+    const wireElements = document.querySelectorAll('.wire-connection');
+    
+    // Animate components
+    componentElements.forEach((el, index) => {
+      setTimeout(() => {
+        el.classList.add('vaporwave-dust');
+      }, index * 50); // Stagger the animation
+    });
+    
+    // Animate wires
+    wireElements.forEach((el, index) => {
+      setTimeout(() => {
+        el.classList.add('vaporwave-dust');
+      }, index * 50); // Stagger the animation
+    });
+    
+    // Wait for animation to complete
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Clear all components and wires
+    setComponents([]);
+    setWires([]);
+    setBoardCodes({});
+    setSelectedComponent(null);
+    setSelectedWire(null);
+    setSelectedBoard(null);
+    
+    // Show notification
+    showNotification('Sandbox wiped clean!');
+    setShowWipeConfirm(false);
+  };
+
   // Delete the selected component or wire
   const deleteSelectedItem = () => {
     if (selectedComponent) {
@@ -765,6 +801,7 @@ void loop() {
   const [notification, setNotification] = useState<NotificationType | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showExamplesWindow, setShowExamplesWindow] = useState(false);
+  const [showWipeConfirm, setShowWipeConfirm] = useState(false);
   
   // Check if user has admin/founder privileges
   const hasAdminAccess = user?.roles?.includes('admin') || user?.roles?.includes('Founder') || user?.roles?.includes('CraftingTable');
@@ -1242,9 +1279,18 @@ void loop() {
             className={`p-1 rounded text-xs ${selectedComponent || selectedWire ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-700 hover:bg-gray-600 opacity-50 cursor-not-allowed'}`}
             onClick={deleteSelectedItem}
             disabled={!selectedComponent && !selectedWire}
-            title="Delete Selected"
+            title="Delete Selected Item"
           >
             <Trash2 size={16} />
+          </button>
+          <button 
+            className={`px-2 py-1 rounded text-xs flex items-center space-x-1 ${components.length > 0 || wires.length > 0 ? 'bg-red-700 hover:bg-red-800' : 'bg-gray-700 hover:bg-gray-600 opacity-50 cursor-not-allowed'}`}
+            onClick={() => setShowWipeConfirm(true)}
+            disabled={components.length === 0 && wires.length === 0}
+            title="Wipe Entire Sandbox"
+          >
+            <Trash2 size={16} className="text-red-200" />
+            <span className="text-white text-xs font-medium">Clear All</span>
           </button>
           
           {/* Admin-only Save Example button */}
@@ -1673,6 +1719,99 @@ void loop() {
           onClose={() => setShowExamplesWindow(false)}
           onLoadExample={handleLoadExample}
         />
+      )}
+      
+      {/* Wipe Sandbox Confirmation Dialog - Windows 95 Style */}
+      {showWipeConfirm && (
+        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(128, 128, 128, 0.5)' }}>
+          <div className="bg-gray-300" style={{ 
+            width: '420px',
+            border: '2px solid',
+            borderTopColor: '#FFFFFF',
+            borderLeftColor: '#FFFFFF',
+            borderRightColor: '#000000',
+            borderBottomColor: '#000000',
+            boxShadow: '2px 2px 0px rgba(0,0,0,0.5)'
+          }}>
+            {/* Windows 95 Title Bar */}
+            <div className="bg-blue-700 px-2 py-1 flex items-center justify-between" style={{
+              backgroundImage: 'linear-gradient(to right, #000080, #1084d0)'
+            }}>
+              <div className="flex items-center space-x-1">
+                <div className="w-4 h-4 bg-yellow-400 border border-black flex items-center justify-center text-xs font-bold">!</div>
+                <h3 className="text-white font-bold text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>Wipe Sandbox</h3>
+              </div>
+              <button 
+                onClick={() => setShowWipeConfirm(false)}
+                className="bg-gray-300 border border-white text-black px-2 text-xs font-bold hover:bg-gray-400"
+                style={{
+                  borderTopColor: '#FFFFFF',
+                  borderLeftColor: '#FFFFFF', 
+                  borderRightColor: '#000000',
+                  borderBottomColor: '#000000'
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            {/* Content */}
+            <div className="p-6 bg-gray-300">
+              <div className="flex items-start space-x-4">
+                {/* Warning Icon */}
+                <div className="flex-shrink-0 w-12 h-12 bg-red-600 flex items-center justify-center text-white text-2xl font-bold border-2 border-black">
+                  !
+                </div>
+                
+                {/* Message */}
+                <div className="flex-1">
+                  <p className="text-black text-sm mb-3" style={{ fontFamily: 'Arial, sans-serif' }}>
+                    Are you sure you want to wipe the sandbox?
+                  </p>
+                  <p className="text-gray-700 text-xs" style={{ fontFamily: 'Arial, sans-serif' }}>
+                    This will remove all components and wires. This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Windows 95 Style Buttons */}
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  onClick={wipeSandbox}
+                  className="px-6 py-2 bg-gray-300 text-black border-2 hover:bg-gray-200 active:bg-gray-400"
+                  style={{
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    borderTopColor: '#FFFFFF',
+                    borderLeftColor: '#FFFFFF',
+                    borderRightColor: '#000000',
+                    borderBottomColor: '#000000',
+                    boxShadow: '1px 1px 0px rgba(0,0,0,0.5)'
+                  }}
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={() => setShowWipeConfirm(false)}
+                  className="px-6 py-2 bg-gray-300 text-black border-2 hover:bg-gray-200 active:bg-gray-400"
+                  style={{
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    borderTopColor: '#FFFFFF',
+                    borderLeftColor: '#FFFFFF',
+                    borderRightColor: '#000000',
+                    borderBottomColor: '#000000',
+                    boxShadow: '1px 1px 0px rgba(0,0,0,0.5)'
+                  }}
+                >
+                  No
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
       
       {/* Notification popup */}
