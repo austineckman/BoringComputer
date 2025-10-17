@@ -28,7 +28,7 @@ import OLEDDisplay from './components/OLEDDisplay';
  * Main Circuit Builder component
  * Manages components, wires, and interactions
  */
-const CircuitBuilder = ({ initialComponents = [], initialWires = [] }) => {
+const CircuitBuilder = ({ initialComponents = [], initialWires = [], isPanning = false }) => {
   // Access simulator context to share component data
   const { setComponents: setSimulationComponents } = useSimulator();
   
@@ -569,7 +569,7 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
       
       {/* Main canvas */}
       <div 
-        className="flex-1 relative h-full overflow-hidden blueprint-canvas" 
+        className={`flex-1 relative h-full overflow-hidden blueprint-canvas ${isPanning ? 'panning' : ''}`}
         ref={canvasRef}
         onClick={(e) => {
           // Only deselect when clicking directly on the canvas background

@@ -1152,7 +1152,11 @@ void loop() {
       <div className="flex flex-1 overflow-hidden">
         {/* Main Sandbox Component */}
         <div className="w-full bg-gray-900 overflow-hidden relative">
-          <CircuitBuilder initialComponents={components} initialWires={wires} />
+          <CircuitBuilder 
+            initialComponents={components} 
+            initialWires={wires} 
+            isPanning={isPanning}
+          />
           
           {/* Proper simulator implementation with real execution */}
           {/* Simulator removed - needs proper AVR8 implementation */}

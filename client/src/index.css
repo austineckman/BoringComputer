@@ -29,6 +29,19 @@ img[alt*="Breadboard"], img[alt*="Resistor"], img[alt*="Encoder"], img[alt*="Swi
     -1px -1px,
     -1px -1px,
     -1px -1px;
+  cursor: default;
+  transition: background-color 0.2s ease;
+}
+
+/* Pan mode cursor */
+.blueprint-canvas.panning {
+  cursor: grabbing !important;
+  background-color: #1e4063;
+}
+
+/* Shift+Click hint for pan mode */
+.blueprint-canvas:active:not(.dragging-component) {
+  cursor: grab;
 }
 
 /* OLED Display Canvas Styles */
