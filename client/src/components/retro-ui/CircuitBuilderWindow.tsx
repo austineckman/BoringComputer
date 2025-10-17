@@ -218,6 +218,11 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
   const [showComponentPanel, setShowComponentPanel] = useState(true);
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(true);
   
+  // Multi-board support
+  const [heroboardCounter, setHeroboardCounter] = useState(0);
+  const [boardCodes, setBoardCodes] = useState<Record<string, string>>({});
+  const [selectedBoard, setSelectedBoard] = useState<string | null>(null);
+  
   // Code editor state
   const [editorReady, setEditorReady] = useState(false);
   
@@ -367,7 +372,27 @@ void loop() {
       centerY = (canvasRect.height / 2 - pan.y) / zoom;
     }
     
-    const newComponent = createComponent(componentName);
+    let newComponent;
+    
+    // Special handling for hero boards - assign sequential IDs
+    if (componentName === 'hero-board') {
+      const nextBoardNumber = heroboardCounter + 1;
+      const boardId = `heroboard-${nextBoardNumber}`;
+      newComponent = createComponent(componentName, boardId);
+      setHeroboardCounter(nextBoardNumber);
+      
+      // Initialize code for this board with default blink example
+      setBoardCodes(prev => ({
+        ...prev,
+        [boardId]: defaultCode
+      }));
+      
+      // Auto-select this board for editing
+      setSelectedBoard(boardId);
+      updateSimulatorCode(defaultCode);
+    } else {
+      newComponent = createComponent(componentName);
+    }
     
     // Update position to be centered in the current view
     newComponent.attrs.left = Math.round(centerX / gridSize) * gridSize;
