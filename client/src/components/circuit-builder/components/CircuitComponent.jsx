@@ -34,7 +34,9 @@ const CircuitComponent = ({
   width = 100,
   height = 100,
   onMove,
-  onRotate
+  onRotate,
+  zoom = 1,
+  pan = { x: 0, y: 0 }
 }) => {
   // State for component position and interaction
   const [position, setPosition] = useState({ x: x || 0, y: y || 0 });
@@ -57,10 +59,19 @@ const CircuitComponent = ({
   const handleMouseDown = (e) => {
     e.stopPropagation();
     if (e.button === 0) { // Left mouse button
-      const rect = componentRef.current.getBoundingClientRect();
+      const canvasRect = canvasRef.current?.getBoundingClientRect();
+      if (!canvasRect) return;
+      
+      // Calculate mouse position in world coordinates
+      const screenX = e.clientX - canvasRect.left;
+      const screenY = e.clientY - canvasRect.top;
+      const worldX = (screenX - pan.x) / zoom;
+      const worldY = (screenY - pan.y) / zoom;
+      
+      // Calculate offset from component position
       setDragOffset({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
+        x: worldX - position.x,
+        y: worldY - position.y
       });
       setIsDragging(true);
     }
@@ -433,9 +444,15 @@ const CircuitComponent = ({
       // Get canvas position
       const canvasRect = canvasRef.current.getBoundingClientRect();
       
-      // Calculate new position relative to canvas
-      const newX = e.clientX - canvasRect.left - dragOffset.x;
-      const newY = e.clientY - canvasRect.top - dragOffset.y;
+      // Calculate mouse position in world coordinates
+      const screenX = e.clientX - canvasRect.left;
+      const screenY = e.clientY - canvasRect.top;
+      const worldX = (screenX - pan.x) / zoom;
+      const worldY = (screenY - pan.y) / zoom;
+      
+      // Calculate new position by subtracting drag offset
+      const newX = worldX - dragOffset.x;
+      const newY = worldY - dragOffset.y;
       
       // Update position
       setPosition({ x: newX, y: newY });
@@ -527,7 +544,7 @@ const CircuitComponent = ({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragOffset, canvasRef, id, onMove]);
+  }, [isDragging, dragOffset, canvasRef, id, onMove, zoom, pan]);
   
   return (
     <div

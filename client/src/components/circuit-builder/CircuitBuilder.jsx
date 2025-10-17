@@ -81,15 +81,22 @@ const CircuitBuilder = ({ initialComponents = [], initialWires = [], isPanning =
     }
   }, [components, setSimulationComponents]);
   
-  // Track mouse position for wire connections
+  // Track mouse position for wire connections (in world coordinates)
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!canvasRef?.current) return;
       
       const canvasRect = canvasRef.current.getBoundingClientRect();
+      const screenX = e.clientX - canvasRect.left;
+      const screenY = e.clientY - canvasRect.top;
+      
+      // Convert screen coordinates to world coordinates
+      const worldX = (screenX - pan.x) / zoom;
+      const worldY = (screenY - pan.y) / zoom;
+      
       setMousePosition({
-        x: e.clientX - canvasRect.left,
-        y: e.clientY - canvasRect.top
+        x: worldX,
+        y: worldY
       });
     };
     
@@ -97,7 +104,7 @@ const CircuitBuilder = ({ initialComponents = [], initialWires = [], isPanning =
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
     };
-  }, [canvasRef]);
+  }, [canvasRef, zoom, pan]);
   
   // Add a new component to the canvas
   const handleAddComponent = (type) => {
@@ -118,13 +125,20 @@ const CircuitBuilder = ({ initialComponents = [], initialWires = [], isPanning =
       // Log the image path to debug
       console.log(`Adding component with image: ${componentInfo.imagePath || 'no image path'}`);
       
-      // Generate random position near the center of the canvas
+      // Generate random position near the center of the canvas (in world coordinates)
       const canvasWidth = canvasRef.current?.clientWidth || 800;
       const canvasHeight = canvasRef.current?.clientHeight || 600;
       
-      // Adjust position to be more centered and randomized slightly
-      const randomX = (canvasWidth / 2) + (Math.random() * 100 - 50);
-      const randomY = (canvasHeight / 2) + (Math.random() * 100 - 50);
+      // Calculate center in screen space, then convert to world coordinates
+      const screenCenterX = canvasWidth / 2;
+      const screenCenterY = canvasHeight / 2;
+      
+      // Convert to world coordinates and add random offset
+      const worldCenterX = (screenCenterX - pan.x) / zoom;
+      const worldCenterY = (screenCenterY - pan.y) / zoom;
+      
+      const randomX = worldCenterX + (Math.random() * 100 - 50);
+      const randomY = worldCenterY + (Math.random() * 100 - 50);
       
       // Generate a unique ID that's safe for use as a component identifier
       const safeType = type.replace(/[^a-zA-Z0-9-]/g, '');
@@ -556,6 +570,8 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
         canvasRef={canvasRef}
         width={width}
         height={height}
+        zoom={zoom}
+        pan={pan}
       />
     );
   };
