@@ -283,16 +283,21 @@ export const missionDiagrams = pgTable("mission_diagrams", {
 // Arduino Circuit Projects table - for saving user-created circuit designs
 export const circuitProjects = pgTable("circuit_projects", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").references(() => users.id), // Nullable for guest users
+  guestName: text("guest_name"), // Optional name for guest users
   name: text("name").notNull(),
   description: text("description"),
   // The actual circuit design, stored as a serialized JSON object
   circuit: jsonb("circuit").notNull(),
-  // The Arduino code associated with this circuit
+  // The Arduino code associated with this circuit (single code for backward compatibility)
   code: text("code").notNull(),
+  // Multi-board support: code for each hero board
+  boardCodes: jsonb("board_codes").$type<Record<string, string>>().default({}),
   thumbnail: text("thumbnail"), // Optional image representation
   isPublic: boolean("is_public").default(false),
   tags: json("tags").$type<string[]>().default([]),
+  views: integer("views").default(0), // Track how many times viewed
+  likes: integer("likes").default(0), // Track likes/favorites
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -537,10 +542,12 @@ export const insertCharacterEquipmentSchema = createInsertSchema(characterEquipm
 // Insert schemas for Arduino tables
 export const insertCircuitProjectSchema = createInsertSchema(circuitProjects).pick({
   userId: true,
+  guestName: true,
   name: true,
   description: true,
   circuit: true,
   code: true,
+  boardCodes: true,
   thumbnail: true,
   isPublic: true,
   tags: true
