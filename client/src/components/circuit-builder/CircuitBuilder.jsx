@@ -28,7 +28,7 @@ import OLEDDisplay from './components/OLEDDisplay';
  * Main Circuit Builder component
  * Manages components, wires, and interactions
  */
-const CircuitBuilder = ({ initialComponents = [], initialWires = [], isPanning = false }) => {
+const CircuitBuilder = ({ initialComponents = [], initialWires = [], isPanning = false, showComponentPanel = true, showPropertiesPanel = true }) => {
   // Access simulator context to share component data
   const { setComponents: setSimulationComponents } = useSimulator();
   
@@ -563,9 +563,11 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
   return (
     <div className="flex h-full">
       {/* Left sidebar - Component palette */}
-      <div className="w-64 h-full overflow-y-auto border-r border-gray-300 p-3">
-        <ComponentPalette onAddComponent={handleAddComponent} />
-      </div>
+      {showComponentPanel && (
+        <div className="w-64 h-full overflow-y-auto border-r border-gray-300 p-3 bg-gray-800">
+          <ComponentPalette onAddComponent={handleAddComponent} />
+        </div>
+      )}
       
       {/* Main canvas */}
       <div 
@@ -606,10 +608,11 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
       </div>
       
       {/* Right sidebar - Component properties */}
-      <div className="w-64 h-full overflow-y-auto border-l border-gray-300 p-3">
-        <h3 className="font-semibold text-lg mb-3">Properties</h3>
-        
-        {selectedComponent ? (
+      {showPropertiesPanel && (
+        <div className="w-64 h-full overflow-y-auto border-l border-gray-300 p-3 bg-gray-800">
+          <h3 className="font-semibold text-lg mb-3 text-white">Properties</h3>
+          
+          {selectedComponent ? (
           <div>
             <div className="mb-3">
               <label className="block text-sm font-medium text-gray-700">
@@ -1353,12 +1356,13 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
               </ul>
             </div>
           </div>
-        ) : (
-          <div className="text-gray-500 text-sm">
-            Select a component or wire to view and edit its properties
-          </div>
-        )}
-      </div>
+          ) : (
+            <div className="text-gray-400 text-sm">
+              Select a component or wire to view and edit its properties
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

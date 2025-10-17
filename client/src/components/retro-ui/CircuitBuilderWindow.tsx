@@ -1178,6 +1178,8 @@ void loop() {
             initialComponents={components} 
             initialWires={wires} 
             isPanning={isPanning}
+            showComponentPanel={showComponentPanel}
+            showPropertiesPanel={showPropertiesPanel}
           />
           
           {/* Proper simulator implementation with real execution */}
