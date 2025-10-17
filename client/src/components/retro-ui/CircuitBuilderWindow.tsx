@@ -649,9 +649,9 @@ void loop() {
     const pointXBeforeZoom = (mouseX - pan.x) / zoom;
     const pointYBeforeZoom = (mouseY - pan.y) / zoom;
     
-    // Adjust zoom based on wheel direction
+    // Adjust zoom based on wheel direction (conservative range)
     const zoomDelta = e.deltaY > 0 ? 0.9 : 1.1;
-    const newZoom = Math.max(0.1, Math.min(3, zoom * zoomDelta));
+    const newZoom = Math.max(0.5, Math.min(1.5, zoom * zoomDelta));
     
     // Calculate the point after zooming
     const pointXAfterZoom = (mouseX - pan.x) / newZoom;
@@ -1242,14 +1242,14 @@ void loop() {
           <div className="flex items-center space-x-1 bg-gray-800 rounded px-2 py-1">
             <button 
               className="bg-gray-700 p-1 rounded hover:bg-blue-600 transition-colors text-xs"
-              onClick={() => setZoom(Math.min(3, zoom * 1.25))}
+              onClick={() => setZoom(Math.min(1.5, zoom * 1.25))}
               title="Zoom In"
             >
               <ZoomIn size={14} />
             </button>
             <button 
               className="bg-gray-700 p-1 rounded hover:bg-blue-600 transition-colors text-xs"
-              onClick={() => setZoom(Math.max(0.1, zoom * 0.8))}
+              onClick={() => setZoom(Math.max(0.5, zoom * 0.8))}
               title="Zoom Out"
             >
               <ZoomOut size={14} />
