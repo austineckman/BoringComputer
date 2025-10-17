@@ -263,22 +263,6 @@ void loop() {
   - BasicEncoder.h: For rotary encoders
 */`;
 
-  // Tab management state
-  const [activeTab, setActiveTab] = useState('main');
-  const [codeTabs, setCodeTabs] = useState<{[key: string]: {
-    name: string;
-    code: string;
-    type: string;
-    libraryName?: string;
-  }}>({
-    main: {
-      name: 'Main code',
-      code: defaultCode,
-      type: 'main'
-    }
-  });
-  const [showLibrarySelector, setShowLibrarySelector] = useState(false);
-  
   // References
   const canvasRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLTextAreaElement>(null);
@@ -289,84 +273,35 @@ void loop() {
     setEditorReady(true);
   }, []);
 
-  // Function to add a new library tab
-  const addLibraryTab = (libraryName: string, libraryCode?: string, isArduinoLibrary = false) => {
-    const tabId = `lib_${libraryName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
-    
-    // If it's an Arduino library, fetch the library details for better code template
-    let code = libraryCode;
-    if (!code && isArduinoLibrary) {
-      const arduinoLib = arduinoLibraries.find((lib: any) => lib.name === libraryName);
-      if (arduinoLib && arduinoLib.examples && arduinoLib.examples.length > 0) {
-        // Use the first example as the template
-        code = arduinoLib.examples[0].code;
-      } else {
-        code = `// ${libraryName} Library Code\n#include <${libraryName}.h>\n\n// Your ${libraryName} code here\nvoid setup() {\n  // Initialize library\n}\n\nvoid loop() {\n  // Main code\n}`;
+  // Auto-select first board if none selected
+  useEffect(() => {
+    const heroBoards = components.filter(c => c.type === 'heroboard');
+    if (heroBoards.length > 0 && !selectedBoard) {
+      const firstBoard = heroBoards[0].id;
+      setSelectedBoard(firstBoard);
+      if (!boardCodes[firstBoard]) {
+        setBoardCodes(prev => ({ ...prev, [firstBoard]: defaultCode }));
       }
-    } else if (!code) {
-      code = `// ${libraryName} Library Code\n#include <${libraryName}.h>\n\n// Your ${libraryName} code here\n`;
     }
-    
-    setCodeTabs(prev => ({
-      ...prev,
-      [tabId]: {
-        name: libraryName,
-        code,
-        type: 'library',
-        libraryName
-      }
-    }));
-    setActiveTab(tabId);
-    setShowLibrarySelector(false);
-  };
+  }, [components, selectedBoard, boardCodes, defaultCode]);
 
-  // Function to close a tab
-  const closeTab = (tabId: string) => {
-    if (tabId === 'main') return; // Can't close main tab
-    
-    const newTabs = { ...codeTabs };
-    delete newTabs[tabId];
-    setCodeTabs(newTabs);
-    
-    // Switch to main tab if closing active tab
-    if (activeTab === tabId) {
-      setActiveTab('main');
-    }
-  };
-
-  // Get current tab's code
+  // Get current board's code
   const getCurrentCode = () => {
-    // If a board is selected, return its code
     if (selectedBoard && boardCodes[selectedBoard]) {
       return boardCodes[selectedBoard];
     }
-    return codeTabs[activeTab]?.code || '';
+    return defaultCode;
   };
 
-  // Update current tab's code
+  // Update current board's code
   const updateCurrentCode = (newCode: string) => {
-    // If a board is selected, update its code
     if (selectedBoard) {
       setBoardCodes(prev => ({
         ...prev,
         [selectedBoard]: newCode
       }));
-      // Also update simulator code if this is the actively running board
+      // Also update simulator code
       updateSimulatorCode(newCode);
-      return;
-    }
-    
-    setCodeTabs(prev => ({
-      ...prev,
-      [activeTab]: {
-        ...prev[activeTab],
-        code: newCode
-      }
-    }));
-    
-    // Also update the main code state for compatibility
-    if (activeTab === 'main') {
-      setCode(newCode);
     }
   };
 
@@ -790,13 +725,6 @@ void loop() {
     setSelectedComponent(null);
   };
 
-  // Get code from the editor (simple textarea for now)
-  const [code, setCode] = useState(defaultCode);
-  
-  const getCode = () => {
-    return code;
-  };
-
   // Notification system
   const [notification, setNotification] = useState<NotificationType | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -821,20 +749,18 @@ void loop() {
   // Save the current project
   const saveProject = () => {
     // Get the current code from the editor
-    const currentCode = getCode();
+    const currentCode = getCurrentCode();
     
     // Update the project data
     const projectData = {
       components,
       wires,
-      code: currentCode
+      code: currentCode,
+      boardCodes // Save all board codes
     };
     
     // In a real app, you'd save this to a database or file
     console.log('Saving project:', projectData);
-    
-    // Update the local code state
-    setCode(currentCode);
     
     // Update the simulator context with the latest code
     // This is crucial for the simulator to use the latest code
@@ -905,7 +831,7 @@ void loop() {
         body: JSON.stringify({
           name,
           description,
-          arduinoCode: code,
+          arduinoCode: getCurrentCode(),
           circuitData,
           isPublished
         })
@@ -939,9 +865,12 @@ void loop() {
       if (example.circuitData.pan) setPan(example.circuitData.pan);
     }
     
-    // Load the Arduino code
-    setCode(example.arduinoCode || '');
-    updateSimulatorCode(example.arduinoCode || '');
+    // Load the Arduino code to the current board
+    const codeToLoad = example.arduinoCode || '';
+    if (selectedBoard) {
+      updateCurrentCode(codeToLoad);
+    }
+    updateSimulatorCode(codeToLoad);
     
     // Show success notification
     setNotification({
@@ -977,7 +906,7 @@ void loop() {
       showNotification('Compiling Arduino code...', 'info');
       
       // Get the current code from the editor
-      const currentCode = getCode();
+      const currentCode = getCurrentCode();
       console.log('CircuitBuilderWindow: Getting code for simulation, length:', currentCode?.length);
       console.log('CircuitBuilderWindow: Code preview:', currentCode?.substring(0, 100));
       
@@ -1032,9 +961,8 @@ void loop() {
     // Check if it's a component example with auto-placement
     const componentExample = allComponentExamples.find(ex => ex.id === exampleType);
     if (componentExample) {
-      // Load the example code
+      // Load the example code to the current board
       updateCurrentCode(componentExample.code);
-      setCode(componentExample.code);
       updateSimulatorCode(componentExample.code);
       
       // Auto-place components on the canvas
@@ -1052,9 +980,8 @@ void loop() {
     // Check if it's a database example (UUID format)
     const dbExample = circuitExamples.find((ex: CircuitExample) => ex.id === exampleType);
     if (dbExample) {
-      // Load database example
+      // Load database example to the current board
       updateCurrentCode(dbExample.arduinoCode);
-      setCode(dbExample.arduinoCode);
       updateSimulatorCode(dbExample.arduinoCode);
       
       // Load circuit data if available
@@ -1146,11 +1073,8 @@ void loop() {
       addSimulationLog(`Detected pins: ${pins.join(', ')}`);
     }
     
-    // Update the code in the current tab (this is what the editor displays)
+    // Update the code in the current board (this is what the editor displays)
     updateCurrentCode(exampleCode);
-    
-    // Also update the standalone code state for compatibility
-    setCode(exampleCode);
     
     // Update the simulator code
     updateSimulatorCode(exampleCode);
@@ -1423,117 +1347,46 @@ void loop() {
       
       {/* Bottom Code Editor */}
       <div className="h-1/3 bg-gray-800 border-t border-gray-700 flex flex-col">
-        {/* Tab Header */}
-        <div className="bg-gray-900 border-b border-gray-700 flex flex-col">
-          {/* Tab Bar */}
-          <div className="flex items-center">
-            {Object.entries(codeTabs).map(([tabId, tab]) => (
-              <div
-                key={tabId}
-                className={`flex items-center px-3 py-2 cursor-pointer border-r border-gray-700 text-sm ${
-                  activeTab === tabId 
-                    ? 'bg-gray-800 text-white border-b-2 border-blue-400' 
-                    : 'bg-gray-900 text-gray-400 hover:text-white hover:bg-gray-800'
-                }`}
-                onClick={() => setActiveTab(tabId)}
-              >
-                <FileCode size={14} className="mr-2" />
-                <span>{tab.name}</span>
-                {tab.type === 'library' && (
+        {/* Code Editor Header */}
+        <div className="bg-gray-900 border-b border-gray-700">
+          {/* Hero Board Tabs - One tab per board */}
+          {components.filter(c => c.type === 'heroboard').length > 0 ? (
+            <div className="bg-gray-800 border-b border-gray-700 flex items-center">
+              {components
+                .filter(c => c.type === 'heroboard')
+                .map((board, index) => (
                   <button
-                    className="ml-2 text-gray-500 hover:text-red-400"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      closeTab(tabId);
+                    key={board.id}
+                    onClick={() => {
+                      setSelectedBoard(board.id);
+                      // If this board doesn't have code yet, initialize with default
+                      if (!boardCodes[board.id]) {
+                        setBoardCodes(prev => ({
+                          ...prev,
+                          [board.id]: defaultCode
+                        }));
+                      }
                     }}
+                    className={`flex items-center px-4 py-2 border-r border-gray-700 text-sm transition-colors ${
+                      selectedBoard === board.id
+                        ? 'bg-gray-900 text-white border-b-2 border-blue-500'
+                        : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-750'
+                    }`}
                   >
-                    <X size={12} />
+                    <div className="w-3 h-3 bg-green-500 rounded-sm mr-2"></div>
+                    <span className="font-medium">Board {index + 1}</span>
+                    <span className="ml-2 text-xs opacity-60">({board.id})</span>
                   </button>
-                )}
-              </div>
-            ))}
-            
-            {/* Add Tab Button */}
-            <div className="relative">
-              <button
-                className="flex items-center px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm"
-                onClick={() => setShowLibrarySelector(!showLibrarySelector)}
-                title="Add Library Tab"
-              >
-                <span className="text-lg">+</span>
-              </button>
-              
-              {/* Library Selector Dropdown */}
-              {showLibrarySelector && (
-                <div className="absolute top-full left-0 mt-1 w-64 bg-gray-800 border border-gray-700 rounded shadow-lg z-50 max-h-64 overflow-y-auto">
-                  <div className="p-2 border-b border-gray-700">
-                    <div className="text-xs text-gray-400 font-semibold">Select Library to Add</div>
-                  </div>
-                  <div className="py-1">
-                    {/* Arduino Libraries Section */}
-                    {arduinoLibraries.length > 0 && (
-                      <>
-                        <div className="px-4 py-1 text-xs text-gray-400 font-semibold border-b border-gray-700">
-                          Arduino Libraries
-                        </div>
-                        {arduinoLibraries.map((lib: any) => (
-                          <button
-                            key={lib.name}
-                            onClick={() => addLibraryTab(lib.name, undefined, true)}
-                            className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                            disabled={Object.values(codeTabs).some(tab => tab.libraryName === lib.name)}
-                          >
-                            <div className="font-medium">{lib.name}</div>
-                            <div className="text-xs text-gray-400">
-                              v{lib.version} - {lib.description?.split('.')[0]}
-                            </div>
-                          </button>
-                        ))}
-                        {Object.keys(libraries).length > 0 && <div className="border-t border-gray-700 my-1"></div>}
-                      </>
-                    )}
-                    
-                    {/* Custom Libraries Section */}
-                    {Object.keys(libraries).length > 0 && (
-                      <>
-                        <div className="px-4 py-1 text-xs text-gray-400 font-semibold">
-                          Custom Libraries
-                        </div>
-                        {Object.entries(libraries).map(([libName, lib]) => (
-                          <button
-                            key={libName}
-                            onClick={() => addLibraryTab(libName)}
-                            className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                            disabled={Object.values(codeTabs).some(tab => tab.libraryName === libName)}
-                          >
-                            <div className="font-medium">{libName}</div>
-                            <div className="text-xs text-gray-400">
-                              {(lib as any)?.type === 'custom' ? 'Custom Library' : 'Built-in Library'}
-                            </div>
-                          </button>
-                        ))}
-                      </>
-                    )}
-                    
-                    {/* Loading state */}
-                    {isLoadingArduinoLibraries && Object.keys(libraries).length === 0 && (
-                      <div className="px-4 py-2 text-sm text-gray-400">Loading libraries...</div>
-                    )}
-                    
-
-                    
-                    {/* Empty state */}
-                    {!isLoadingArduinoLibraries && arduinoLibraries.length === 0 && Object.keys(libraries).length === 0 && (
-                      <div className="px-4 py-2 text-sm text-gray-400">No libraries available</div>
-                    )}
-                  </div>
-                </div>
-              )}
+                ))}
             </div>
-          </div>
+          ) : (
+            <div className="px-4 py-3 text-sm text-gray-500 italic bg-gray-800 border-b border-gray-700">
+              Add a Hero Board from the components panel to start coding
+            </div>
+          )}
           
           {/* Toolbar */}
-          <div className="p-2 flex justify-between items-center border-t border-gray-700">
+          <div className="p-2 flex justify-between items-center">
             <div className="flex items-center space-x-2">
             <button 
               className={`px-2 py-1 rounded text-xs flex items-center ${isSimulationRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
@@ -1613,44 +1466,6 @@ void loop() {
         
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 overflow-hidden flex flex-col">
-            {/* Board Selector - Show when hero boards exist */}
-            {simulatorComponents && simulatorComponents.filter(c => c.type === 'heroboard').length > 0 && (
-              <div className="bg-gray-800 border-b border-gray-700 px-3 py-2 flex items-center gap-2">
-                <span className="text-xs text-gray-400">Board:</span>
-                <div className="flex gap-1">
-                  {simulatorComponents
-                    .filter(c => c.type === 'heroboard')
-                    .map(board => (
-                      <button
-                        key={board.id}
-                        onClick={() => {
-                          setSelectedBoard(board.id);
-                          // If this board doesn't have code yet, initialize with default
-                          if (!boardCodes[board.id]) {
-                            setBoardCodes(prev => ({
-                              ...prev,
-                              [board.id]: defaultCode
-                            }));
-                          }
-                        }}
-                        className={`px-3 py-1 text-xs rounded transition-colors ${
-                          selectedBoard === board.id
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        }`}
-                      >
-                        {board.id}
-                      </button>
-                    ))}
-                </div>
-                {selectedBoard && (
-                  <span className="text-xs text-green-400 ml-2">
-                    ✓ Editing {selectedBoard}
-                  </span>
-                )}
-              </div>
-            )}
-            
             <div className="flex-1" onClick={(e) => {
               // Allow clicks inside the editor
               if ((e.target as HTMLElement).closest('.ace_editor')) {
