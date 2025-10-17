@@ -59,10 +59,10 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create a new project
-router.post('/', authenticate, conditionalCsrfProtection, async (req, res) => {
+// Create a new project (supports both authenticated users and guests)
+router.post('/', conditionalCsrfProtection, async (req, res) => {
   try {
-    const user = (req as any).user;
+    const user = (req as any).user; // May be undefined for guest users
     
     // Validate request body
     const schema = z.object({
@@ -70,9 +70,11 @@ router.post('/', authenticate, conditionalCsrfProtection, async (req, res) => {
       description: z.string().optional(),
       circuit: z.any(), // Circuit design JSON
       code: z.string(),
+      boardCodes: z.record(z.string()).optional(), // Multi-board support
       thumbnail: z.string().optional(),
       isPublic: z.boolean().default(false),
-      tags: z.array(z.string()).optional()
+      tags: z.array(z.string()).optional(),
+      guestName: z.string().optional() // For guest users
     });
     
     const result = schema.safeParse(req.body);
@@ -88,18 +90,22 @@ router.post('/', authenticate, conditionalCsrfProtection, async (req, res) => {
     
     // Create the project
     const project = await storage.createCircuitProject({
-      userId: user.id,
+      userId: user?.id, // Optional for guests
+      guestName: projectData.guestName,
       name: projectData.name,
       description: projectData.description || '',
       circuit: projectData.circuit,
       code: projectData.code,
+      boardCodes: projectData.boardCodes || {},
       thumbnail: projectData.thumbnail,
       isPublic: projectData.isPublic,
       tags: projectData.tags || []
     });
     
-    // Add to user's recent projects
-    await storage.addRecentProject(user.id, project.id);
+    // Add to user's recent projects if authenticated
+    if (user) {
+      await storage.addRecentProject(user.id, project.id);
+    }
     
     return res.status(201).json(project);
   } catch (error) {
@@ -131,6 +137,7 @@ router.put('/:id', authenticate, conditionalCsrfProtection, async (req, res) => 
       description: z.string().optional(),
       circuit: z.any().optional(), // Circuit design JSON
       code: z.string().optional(),
+      boardCodes: z.record(z.string()).optional(), // Multi-board support
       thumbnail: z.string().optional(),
       isPublic: z.boolean().optional(),
       tags: z.array(z.string()).optional()
