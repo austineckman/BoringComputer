@@ -6,7 +6,7 @@ import { WireRouter } from '../utils/WireRouter';
  * BasicWireManager - A simplified wire manager component that handles
  * connecting pins between circuit components.
  */
-const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange }) => {
+const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom = 1, pan = { x: 0, y: 0 } }) => {
   // Access the simulator context to share wire information
   const { setWires: setSimulatorWires } = useSimulator();
   
@@ -275,15 +275,25 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange }) => 
       if (detail.clientX !== undefined && detail.clientY !== undefined) {
         // Get the position directly from the click event
         if (canvasRect) {
+          const screenX = detail.clientX - canvasRect.left;
+          const screenY = detail.clientY - canvasRect.top;
+          
+          // Convert to world coordinates
+          const worldX = (screenX - pan.x) / zoom;
+          const worldY = (screenY - pan.y) / zoom;
+          
           pinPosition = {
-            x: detail.clientX - canvasRect.left,
-            y: detail.clientY - canvasRect.top
+            x: worldX,
+            y: worldY
           };
         } else {
-          // Fallback to raw client coordinates
+          // Fallback to raw client coordinates (also convert to world coords)
+          const worldX = (detail.clientX - pan.x) / zoom;
+          const worldY = (detail.clientY - pan.y) / zoom;
+          
           pinPosition = {
-            x: detail.clientX,
-            y: detail.clientY
+            x: worldX,
+            y: worldY
           };
         }
       } 
@@ -393,9 +403,16 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange }) => 
       if (pendingConnection) {
         // Get the click position relative to the canvas
         const canvasRect = canvasRef.current.getBoundingClientRect();
+        const screenX = e.clientX - canvasRect.left;
+        const screenY = e.clientY - canvasRect.top;
+        
+        // Convert to world coordinates
+        const worldX = (screenX - pan.x) / zoom;
+        const worldY = (screenY - pan.y) / zoom;
+        
         const clickPosition = {
-          x: e.clientX - canvasRect.left,
-          y: e.clientY - canvasRect.top
+          x: worldX,
+          y: worldY
         };
         
         // Add a waypoint at the click position
@@ -468,9 +485,16 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange }) => 
     if (!canvasRef?.current) return;
     
     const canvasRect = canvasRef.current.getBoundingClientRect();
+    const screenX = e.clientX - canvasRect.left;
+    const screenY = e.clientY - canvasRect.top;
+    
+    // Convert to world coordinates
+    const worldX = (screenX - pan.x) / zoom;
+    const worldY = (screenY - pan.y) / zoom;
+    
     const currentMousePos = {
-      x: e.clientX - canvasRect.left,
-      y: e.clientY - canvasRect.top
+      x: worldX,
+      y: worldY
     };
     
     setMousePosition(currentMousePos);
@@ -652,7 +676,7 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange }) => 
       // No longer needed for click-based drawing
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [canvasRef, pendingConnection, pendingWireWaypoints, selectedWireId, wires]);
+  }, [canvasRef, pendingConnection, pendingWireWaypoints, selectedWireId, wires, zoom, pan]);
   
   // Share wires with the simulator through context
   useEffect(() => {
