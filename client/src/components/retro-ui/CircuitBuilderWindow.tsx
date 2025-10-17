@@ -1050,29 +1050,36 @@ void loop() {
           <h2 className="text-lg font-bold">Sandbox</h2>
         </div>
         <div className="flex items-center space-x-2">
-          {/* Canvas controls */}
-          <button 
-            className="bg-gray-700 p-1 rounded hover:bg-gray-600 text-xs"
-            onClick={() => setZoom(Math.min(3, zoom * 1.2))}
-            title="Zoom In"
-          >
-            <ZoomIn size={18} />
-          </button>
-          <button 
-            className="bg-gray-700 p-1 rounded hover:bg-gray-600 text-xs"
-            onClick={() => setZoom(Math.max(0.1, zoom * 0.8))}
-            title="Zoom Out"
-          >
-            <ZoomOut size={18} />
-          </button>
-          <button 
-            className="bg-gray-700 p-1 rounded hover:bg-gray-600 text-xs"
-            onClick={() => { setPan({ x: 0, y: 0 }); setZoom(1); }}
-            title="Reset View"
-          >
-            <Move size={18} />
-          </button>
-          <span className="text-xs">{Math.round(zoom * 100)}%</span>
+          {/* Canvas Navigation Controls */}
+          <div className="flex items-center space-x-1 bg-gray-800 rounded px-2 py-1">
+            <button 
+              className="bg-gray-700 p-1 rounded hover:bg-blue-600 transition-colors text-xs"
+              onClick={() => setZoom(Math.min(3, zoom * 1.25))}
+              title="Zoom In (Mouse Wheel)"
+            >
+              <ZoomIn size={16} />
+            </button>
+            <button 
+              className="bg-gray-700 p-1 rounded hover:bg-blue-600 transition-colors text-xs"
+              onClick={() => setZoom(Math.max(0.1, zoom * 0.8))}
+              title="Zoom Out (Mouse Wheel)"
+            >
+              <ZoomOut size={16} />
+            </button>
+            <button 
+              className="bg-gray-700 p-1 rounded hover:bg-green-600 transition-colors text-xs"
+              onClick={() => { setPan({ x: 0, y: 0 }); setZoom(1); }}
+              title="Reset View (Center & 100%)"
+            >
+              <Move size={16} />
+            </button>
+            <span className="text-xs font-mono bg-gray-900 px-2 py-0.5 rounded" title="Current Zoom Level">
+              {Math.round(zoom * 100)}%
+            </span>
+          </div>
+          <span className="text-xs text-gray-400" title="Pan: Middle Mouse or Shift+Drag">
+            🖱️ Pan
+          </span>
           
           {/* Component controls */}
           <button 
