@@ -271,8 +271,16 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
       // Get pin position directly from the click event - this is what works for LED
       let pinPosition;
       
-      // Use clientX/Y directly (LED approach) which works
-      if (detail.clientX !== undefined && detail.clientY !== undefined) {
+      // Check if we have world coordinates (from CircuitComponent)
+      if (detail.worldX !== undefined && detail.worldY !== undefined) {
+        // Already in world coordinates, use directly
+        pinPosition = {
+          x: detail.worldX,
+          y: detail.worldY
+        };
+      }
+      // Legacy: Use clientX/Y and convert from screen to world coordinates
+      else if (detail.clientX !== undefined && detail.clientY !== undefined) {
         // Get the position directly from the click event
         if (canvasRect) {
           const screenX = detail.clientX - canvasRect.left;

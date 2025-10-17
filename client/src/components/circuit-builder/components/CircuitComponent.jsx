@@ -115,8 +115,8 @@ const CircuitComponent = ({
           pinId,
           componentId: id,
           pinType,
-          clientX: pinPosition.x,
-          clientY: pinPosition.y,
+          worldX: pinPosition.x,
+          worldY: pinPosition.y,
           componentType: type.toLowerCase(),
           // Include full position data to ensure consistency
           pinData: JSON.stringify(pinPositionData)
