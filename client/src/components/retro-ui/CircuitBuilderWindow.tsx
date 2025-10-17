@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, RotateCcw, Trash2, ZoomIn, ZoomOut, Move, Play, Save, FileCode, Download, BookOpen, Eye, EyeOff, FolderOpen } from 'lucide-react';
+import { X, RotateCcw, Trash2, ZoomIn, ZoomOut, Move, Play, Save, FileCode, Download, BookOpen, Eye, EyeOff, FolderOpen, PanelLeft, PanelRight, Layers } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { apiRequest } from '@/lib/queryClient';
 import { useQuery } from '@tanstack/react-query';
@@ -213,6 +213,10 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  
+  // Panel visibility state
+  const [showComponentPanel, setShowComponentPanel] = useState(true);
+  const [showPropertiesPanel, setShowPropertiesPanel] = useState(true);
   
   // Code editor state
   const [editorReady, setEditorReady] = useState(false);
