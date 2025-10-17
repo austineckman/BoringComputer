@@ -4,6 +4,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { apiRequest } from '@/lib/queryClient';
 import { useQuery } from '@tanstack/react-query';
 import CircuitExamplesWindow from './CircuitExamplesWindow';
+import { SaveProjectModal } from './SaveProjectModal';
+import { BrowseProjectsModal } from './BrowseProjectsModal';
 import AceEditor from 'react-ace';
 import ace from 'ace-builds';
 
@@ -225,6 +227,10 @@ const CircuitBuilderWindow: React.FC<CircuitBuilderWindowProps> = ({ onClose }) 
   
   // Code editor state
   const [editorReady, setEditorReady] = useState(false);
+  
+  // Project name state
+  const [projectName, setProjectName] = useState('Sandbox');
+  const [isEditingName, setIsEditingName] = useState(false);
   
   // Default Arduino code for new projects - Basic Blink Example
   const defaultCode = `// Basic LED Blink Example
@@ -730,6 +736,8 @@ void loop() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showExamplesWindow, setShowExamplesWindow] = useState(false);
   const [showWipeConfirm, setShowWipeConfirm] = useState(false);
+  const [showSaveProjectModal, setShowSaveProjectModal] = useState(false);
+  const [showBrowseProjectsModal, setShowBrowseProjectsModal] = useState(false);
   
   // Check if user has admin/founder privileges
   const hasAdminAccess = user?.roles?.includes('admin') || user?.roles?.includes('Founder') || user?.roles?.includes('CraftingTable');
@@ -880,6 +888,81 @@ void loop() {
     
     // Close the examples window
     setShowExamplesWindow(false);
+  };
+
+  // Handle saving a project
+  const handleSaveProject = async (name: string, description: string, isPublic: boolean, guestName?: string) => {
+    try {
+      const circuitData = {
+        components,
+        wires,
+        zoom,
+        pan
+      };
+
+      const response = await apiRequest('/api/circuit-projects', {
+        method: 'POST',
+        body: JSON.stringify({
+          name,
+          description,
+          circuit: circuitData,
+          code: getCurrentCode(),
+          boardCodes: boardCodes,
+          isPublic,
+          guestName: user ? undefined : guestName, // Only include guestName for non-authenticated users
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save project');
+      }
+
+      const savedProject = await response.json();
+      
+      // Update project name in UI
+      setProjectName(name);
+
+      showNotification(
+        isPublic 
+          ? `Project "${name}" published successfully!` 
+          : `Project "${name}" saved successfully!`,
+        'success'
+      );
+      setShowSaveProjectModal(false);
+    } catch (error) {
+      console.error('Error saving project:', error);
+      showNotification('Failed to save project. Please try again.', 'error');
+    }
+  };
+
+  // Handle loading a project
+  const handleLoadProject = (project: any) => {
+    // Load the circuit data
+    if (project.circuit) {
+      setComponents(project.circuit.components || []);
+      setWires(project.circuit.wires || []);
+      if (project.circuit.zoom) setZoom(project.circuit.zoom);
+      if (project.circuit.pan) setPan(project.circuit.pan);
+    }
+    
+    // Load project name
+    setProjectName(project.name);
+    
+    // Load the Arduino code
+    if (project.boardCodes && Object.keys(project.boardCodes).length > 0) {
+      // Load multi-board codes
+      setBoardCodes(project.boardCodes);
+    } else if (project.code) {
+      // Load single code to current board
+      const codeToLoad = project.code || '';
+      if (selectedBoard) {
+        updateCurrentCode(codeToLoad);
+      }
+      updateSimulatorCode(codeToLoad);
+    }
+    
+    // Show success notification
+    showNotification(`Loaded project: ${project.name}`, 'success');
   };
   
   // Run the simulation
@@ -1109,10 +1192,33 @@ void loop() {
         <div className="flex items-center space-x-3">
           <img 
             src="/@fs/home/runner/workspace/attached_assets/led.icon.png" 
-            alt="Sandbox" 
+            alt={projectName} 
             className="h-6" 
           />
-          <h2 className="text-lg font-bold">Sandbox</h2>
+          {isEditingName ? (
+            <input
+              type="text"
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              onBlur={() => setIsEditingName(false)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  setIsEditingName(false);
+                }
+              }}
+              autoFocus
+              className="text-lg font-bold bg-gray-800 text-white px-2 py-1 rounded border border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              style={{ minWidth: '150px' }}
+            />
+          ) : (
+            <h2 
+              className="text-lg font-bold cursor-pointer hover:text-blue-400 transition-colors"
+              onClick={() => setIsEditingName(true)}
+              title="Click to edit project name"
+            >
+              {projectName}
+            </h2>
+          )}
           
           <div className="w-px h-6 bg-gray-600"></div>
           
@@ -1215,6 +1321,26 @@ void loop() {
           >
             <Trash2 size={16} className="text-red-200" />
             <span className="text-white text-xs font-medium">Clear All</span>
+          </button>
+
+          {/* Save Project Button */}
+          <button 
+            className="px-2 py-1 rounded text-xs flex items-center space-x-1 bg-blue-600 hover:bg-blue-700"
+            onClick={() => setShowSaveProjectModal(true)}
+            title="Save or Publish Project"
+          >
+            <Save size={16} />
+            <span className="text-white text-xs font-medium">Save Project</span>
+          </button>
+
+          {/* Browse Projects Button */}
+          <button 
+            className="px-2 py-1 rounded text-xs flex items-center space-x-1 bg-green-600 hover:bg-green-700"
+            onClick={() => setShowBrowseProjectsModal(true)}
+            title="Browse Public Projects"
+          >
+            <FolderOpen size={16} />
+            <span className="text-white text-xs font-medium">Browse</span>
           </button>
           
           {/* Admin-only Save Example button */}
@@ -1535,6 +1661,22 @@ void loop() {
           onLoadExample={handleLoadExample}
         />
       )}
+
+      {/* Save Project Modal */}
+      <SaveProjectModal
+        isOpen={showSaveProjectModal}
+        onClose={() => setShowSaveProjectModal(false)}
+        onSave={handleSaveProject}
+        currentProjectName={projectName}
+        isAuthenticated={!!user}
+      />
+
+      {/* Browse Projects Modal */}
+      <BrowseProjectsModal
+        isOpen={showBrowseProjectsModal}
+        onClose={() => setShowBrowseProjectsModal(false)}
+        onLoadProject={handleLoadProject}
+      />
       
       {/* Wipe Sandbox Confirmation Dialog - Windows 95 Style */}
       {showWipeConfirm && (
