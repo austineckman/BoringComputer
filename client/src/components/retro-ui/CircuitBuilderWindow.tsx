@@ -900,22 +900,15 @@ void loop() {
         pan
       };
 
-      const response = await apiRequest('/api/circuit-projects', {
-        method: 'POST',
-        body: JSON.stringify({
-          name,
-          description,
-          circuit: circuitData,
-          code: getCurrentCode(),
-          boardCodes: boardCodes,
-          isPublic,
-          guestName: user ? undefined : guestName, // Only include guestName for non-authenticated users
-        })
+      const response = await apiRequest('POST', '/api/circuit-projects', {
+        name,
+        description,
+        circuit: circuitData,
+        code: getCurrentCode(),
+        boardCodes: boardCodes,
+        isPublic,
+        guestName: user ? undefined : guestName, // Only include guestName for non-authenticated users
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to save project');
-      }
 
       const savedProject = await response.json();
       
@@ -1592,7 +1585,7 @@ void loop() {
         
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 overflow-hidden flex flex-col">
-            <div className="flex-1" onClick={(e) => {
+            <div className="flex-1 relative" onClick={(e) => {
               // Allow clicks inside the editor
               if ((e.target as HTMLElement).closest('.ace_editor')) {
                 return;
@@ -1636,6 +1629,13 @@ void loop() {
                 }}
                 editorProps={{ $blockScrolling: Infinity }}
               />
+              
+              {/* Board ID indicator in bottom left corner */}
+              {selectedBoard && (
+                <div className="absolute bottom-4 left-4 text-white text-sm font-mono bg-black bg-opacity-50 px-3 py-1 rounded pointer-events-none">
+                  Board ID: {selectedBoard}
+                </div>
+              )}
             </div>
           </div>
           
