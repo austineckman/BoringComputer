@@ -569,32 +569,69 @@ void loop() {
     }
   };
 
+  // Handle mouse down for panning (right-click)
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Right-click for panning
+    if (e.button === 2) {
+      e.preventDefault();
+      setIsPanning(true);
+      setPanStart({
+        x: e.clientX - pan.x,
+        y: e.clientY - pan.y
+      });
+    }
+  };
+
+  // Handle mouse move for panning
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isPanning && panStart) {
+      setPan({
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y
+      });
+    }
+  };
+
+  // Handle mouse up to stop panning
+  const handleMouseUp = () => {
+    setIsPanning(false);
+  };
+
+  // Disable context menu on right-click
+  useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+    };
+    document.addEventListener('contextmenu', handleContextMenu);
+    return () => document.removeEventListener('contextmenu', handleContextMenu);
+  }, []);
+
   // Handle wheel for zooming
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     
     // Get the cursor position relative to the canvas
-    const canvasRect = canvasRef.current?.getBoundingClientRect();
+    const canvasRect = e.currentTarget.getBoundingClientRect();
     if (!canvasRect) return;
     
     const mouseX = e.clientX - canvasRect.left;
     const mouseY = e.clientY - canvasRect.top;
     
     // Calculate the point on the canvas under the cursor before zooming
-    const pointXBeforeZoom = mouseX / zoom - pan.x;
-    const pointYBeforeZoom = mouseY / zoom - pan.y;
+    const pointXBeforeZoom = (mouseX - pan.x) / zoom;
+    const pointYBeforeZoom = (mouseY - pan.y) / zoom;
     
     // Adjust zoom based on wheel direction
     const zoomDelta = e.deltaY > 0 ? 0.9 : 1.1;
     const newZoom = Math.max(0.1, Math.min(3, zoom * zoomDelta));
     
     // Calculate the point after zooming
-    const pointXAfterZoom = mouseX / newZoom - pan.x;
-    const pointYAfterZoom = mouseY / newZoom - pan.y;
+    const pointXAfterZoom = (mouseX - pan.x) / newZoom;
+    const pointYAfterZoom = (mouseY - pan.y) / newZoom;
     
     // Adjust pan to keep the point under the cursor
-    const panXDelta = pointXAfterZoom - pointXBeforeZoom;
-    const panYDelta = pointYAfterZoom - pointYBeforeZoom;
+    const panXDelta = (pointXAfterZoom - pointXBeforeZoom) * newZoom;
+    const panYDelta = (pointYAfterZoom - pointYBeforeZoom) * newZoom;
     
     setZoom(newZoom);
     setPan({
@@ -1244,7 +1281,13 @@ void loop() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Main Sandbox Component */}
-        <div className="w-full bg-gray-900 overflow-hidden relative">
+        <div 
+          className="w-full bg-gray-900 overflow-hidden relative"
+          onWheel={handleWheel}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+        >
           <CircuitBuilder 
             initialComponents={components} 
             initialWires={wires} 
